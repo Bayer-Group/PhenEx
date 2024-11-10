@@ -1,0 +1,9 @@
+ibis-framework[snowflake,duckdb,examples]==9.5.0
+black==24.10.0
+python-dotenv
+pytest
+snowflake-connector-python
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-jupyter

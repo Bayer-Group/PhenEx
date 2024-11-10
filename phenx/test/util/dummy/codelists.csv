@@ -1,0 +1,13 @@
+code,codelist,code_type,description
+c1,c1,ICD10CM,desc
+c2,c2,ICD10CM,desc
+c3,c3,ICD10CM,desc
+c1,c1c2,ICD10CM,desc
+c2,c1c2,ICD10CM,desc
+c1,c1c3,ICD10CM,desc
+c3,c1c3,ICD10CM,desc
+c2,c2c3,ICD10CM,desc
+c3,c2c3,ICD10CM,desc
+c1,c1c2c3,ICD10CM,desc
+c2,c1c2c3,ICD10CM,desc
+c3,c1c2c3,ICD10CM,desc

@@ -1,0 +1,19 @@
+name: Run unit tests
+
+on: push
+
+jobs:
+  run_test_pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: install python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: install requirements
+        run: pip install -r requirements.txt
+      - name: run tests
+        run: PYTHONPATH=. pytest

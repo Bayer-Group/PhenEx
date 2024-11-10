@@ -1,0 +1,48 @@
+/* custom.css */
+@font-face {
+    font-family: "SNPro-regular";
+    src: url("./fonts/SNPro-Regular.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "SNPro-bold";
+    src: url("./fonts/SNPro-Bold.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "SNPro-black";
+    src: url("./fonts/SNPro-Black.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Example usage */
+body {
+    font-family: "SNPro-regular", sans-serif; /* Use the custom font */
+}
+
+#main_title {
+    font-family: "SNPro-black", sans-serif; /* Use the custom font */
+    background-size: 100% 100%; /* Ensure the gradient covers the entire text */
+    background: linear-gradient(#e32b0e 20%, #71010c 80%);
+    -webkit-background-clip: text; /* Clip the background to the text */
+    -webkit-text-fill-color: transparent; /* Make the text color transparent */
+    font-size: 150px; /* Change size of h1 headings */
+}
+
+h1,
+h2,
+h3 {
+    font-family: "SNPro-bold", sans-serif; /* Apply to headings */
+    background: linear-gradient(#e32b0e 20%, #71010c 80%);
+    -webkit-background-clip: text; /* Clip the background to the text */
+}
+
+h2 {
+    font-size: 100px;
+}
+h3 {
+    font-size: 25px;
+}

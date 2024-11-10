@@ -1,0 +1,45 @@
+site_name: PhenEx
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - License: LICENSE.md
+  - Tutorials:
+      - Cohort Basics:
+          - Optum Data Format: tutorials/cohort_basics/Optum_Format.ipynb
+          - OMOP CDM Data Format: tutorials/cohort_basics/OMOP_CDM_Format.ipynb
+          - Custom Data Structures: tutorials/cohort_basics/Custom_Data_Structure.ipynb
+      - Phenotypes:
+          - CodelistPhenotype: tutorials/phenotypes/CodelistPhenotype_Tutorial.ipynb
+          - MeasurementPhenotype: tutorials/phenotypes/MeasurementPhenotype_Tutorial.ipynb
+          - ArithmeticPhenotype: tutorials/phenotypes/ArithmeticPhenotype_Tutorial.ipynb
+          - LogicPhenotype: tutorials/phenotypes/LogicPhenotype_Tutorial.ipynb
+  - API:
+      - Phenotypes:
+          - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
+          - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
+          - Cohort: api/phenotypes/cohort.md
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../phenx] # search packages in the src folder
+          options:
+            docstring_style: "google" # or "numpy", "restructuredtext", etc.
+  - mkdocs-jupyter
+theme:
+  name: material
+  palette:
+    primary: red
+  features:
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: false # Try setting this to false
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+extra_css:
+  - assets/style.css
