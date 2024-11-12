@@ -2,7 +2,6 @@ site_name: PhenEx
 nav:
   - Home: index.md
   - Installation: installation.md
-  - License: LICENSE.md
   - Tutorials:
       - Cohort Basics:
           - Optum Data Format: tutorials/cohort_basics/Optum_Format.ipynb
@@ -18,6 +17,7 @@ nav:
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - Cohort: api/phenotypes/cohort.md
+  - License: LICENSE.md
 
 plugins:
   - mkdocstrings:
