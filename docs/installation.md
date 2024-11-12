@@ -1,3 +1,5 @@
+# Installation Instructions
+
 ## Setup environment
 
 We strongly suggest to install PhenEx in an isolated python virtual environment using your favorite package
