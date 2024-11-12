@@ -10,7 +10,7 @@ def parse_requirements(filename):
 
 
 setup(
-    name="phenx",
+    name="phenex",
     version="0.0.1",
     author="Bayer AG",
     author_email="alexander.hartenstein@bayer.com",

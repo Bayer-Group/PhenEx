@@ -1,3 +1,3 @@
 # CodelistPhenotype
 
-::: phenx.phenotypes.codelist_phenotype.CodelistPhenotype
+::: phenex.phenotypes.codelist_phenotype.CodelistPhenotype

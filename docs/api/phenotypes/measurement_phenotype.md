@@ -1,3 +1,3 @@
 # MeaurementPhenotype
 
-::: phenx.phenotypes.measurement_phenotype.MeasurementPhenotype
+::: phenex.phenotypes.measurement_phenotype.MeasurementPhenotype

@@ -23,7 +23,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [../phenx] # search packages in the src folder
+          paths: [../phenex] # search packages in the src folder
           options:
             docstring_style: "google" # or "numpy", "restructuredtext", etc.
   - mkdocs-jupyter

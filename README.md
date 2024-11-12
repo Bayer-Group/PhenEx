@@ -1,8 +1,8 @@
 # PhenEx: Automatic PHENotype EXtractor
 
-<a href="https://github.com/Bayer-Group/phenx">
+<a href="https://github.com/Bayer-Group/PhenEx">
   <div style="text-align: center;">
-    <img src="phenx.png" alt="PhenEx Logo" width="500" />
+    <img src="phenex.png" alt="PhenEx Logo" width="500" />
   </div>
 </a>
 

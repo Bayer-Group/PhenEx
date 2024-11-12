@@ -14,7 +14,7 @@ description of the proposed change, including the use case for the change.
 
 ## Contributing to the codebase
 
-To contribute to the codebase, open a pull request on the [Pull Requests](https://github.com/Bayer-Group/phenx/pulls).
+To contribute to the codebase, open a pull request on the [Pull Requests](https://github.com/Bayer-Group/PhenEx/pulls).
 
 All pull requests must be approved by at least one reviewer. If there is a
 dispute regarding a pull request, a second reviewer will be asked to review the

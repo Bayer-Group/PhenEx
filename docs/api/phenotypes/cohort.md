@@ -1,3 +1,3 @@
 # Cohort
 
-::: phenx.phenotypes.cohort.Cohort
+::: phenex.phenotypes.cohort.Cohort
