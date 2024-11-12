@@ -1,25 +1,6 @@
 ## Setup environment
 
-Before installing, it is best to use a separate virtual environment for the installation. You can create a conda virtual environment as follows:
-
-```
-conda create -n phenex python=3.12
-```
-
-If you do not have condas, you can install it by following the instructions `here <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`\_.
-phenx requires Python 3.9 or above.
-
-To use the virtual environment, activate it:
-
-```
-conda activate phenex
-```
-
-With condas, sometimes you have explicitly reference python3.12; to avoid this, you can set up an alias:
-
-```
-alias python=python3.12
-```
+We strongly suggest to install PhenEx in an isolated python virtual environment using your favorite package manager, such as [condas](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or (pyenv)[https://github.com/pyenv/pyenv]. PhenEx requires Python 3.9 or above. After setting up and activating your virtual environment, move on to the next step.
 
 ## Source installation
 
