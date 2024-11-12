@@ -1,3 +1,4 @@
+import ast
 from typing import Dict, Union
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
@@ -23,10 +24,10 @@ class LogicPhenotype(Phenotype):
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
         # Evaluate the boolean expression
-        boolean_result = self.evaluate_boolean(self.boolean_expression, tables)
+        boolean_result = self._evaluate_boolean(self.boolean_expression, tables)
 
         # Evaluate the date expression
-        date_result = self.evaluate_date(self.date_expression, tables)
+        date_result = self._evaluate_date(self.date_expression, tables)
 
         # Create a PhenotypeTable with the results
         result_table = PhenotypeTable()
@@ -35,7 +36,7 @@ class LogicPhenotype(Phenotype):
 
         return result_table
 
-    def evaluate_boolean(self, boolean_expression, tables):
+    def _evaluate_boolean(self, boolean_expression, tables):
         """
         Evaluates the boolean expression.
 
@@ -49,9 +50,9 @@ class LogicPhenotype(Phenotype):
         # Implement the logic to evaluate the boolean expression
         # Here we assume boolean_expression is a logical expression involving booleans
         # For simplicity, we use eval to evaluate the expression
-        return eval(boolean_expression)
+        return ast.literal_eval(boolean_expression)
 
-    def evaluate_date(self, date_expression, tables):
+    def _evaluate_date(self, date_expression, tables):
         """
         Evaluates the date expression.
 
@@ -65,23 +66,3 @@ class LogicPhenotype(Phenotype):
         # Implement the logic to evaluate the date expression
         # Here we just return the expression for simplicity
         return date_expression
-
-
-if False:
-    # Example usage
-    overt_bleed = True
-    cv_death = False
-    symptomatic_bleed = True
-
-    logic = LogicPhenotype(
-        boolean="overt_bleed or cv_death or symptomatic_bleed",
-        date="first|last|Phenotype",
-        value="greatest|least|Phenotype",
-    )
-
-    # Assuming tables is a dictionary of table names to Table objects
-    tables = {}
-
-    result = logic.execute(tables)
-    print(f"Boolean: {result['boolean']}")
-    print(f"Date: {result['date']}")

@@ -17,6 +17,8 @@ nav:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
+          - AgePhenotype: api/phenotypes/age_phenotype.md
+          - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - Cohort: api/phenotypes/cohort.md
   - License: LICENSE.md
 
