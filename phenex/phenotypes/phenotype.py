@@ -9,19 +9,23 @@ from phenex.tables import (
 
 class Phenotype:
     """
-    Phenotypes take in the set of all tables and return a single PhenotypeTable.
-    Phenotypes depend on other phenotypes and execute recursively.
+    All Phenotype's in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype
+    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns 
+    a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
 
-    To subclass:
-        1. define self.children
+    To subclass Phenotype, you must:
+        1. define self.children in __init__()
         2. define self._execute
+
+    self.children is a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and
+    executed recursively. The self._execute() method is reponsible for interpreting the input parameters to the Phenotype and returning
+    the appropriate PhenotypeTable.
     """
 
     def __init__(self):
-        self.table = None
+        self.table = None # self.table is populated ONLY AFTER self.execute() is called!
         self._namespaced_table = None
-        self._namespaced_boolean_value_table = None
-        self.children = []
+        self.children = [] # List[Phenotype]
         self._check_for_children()
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
