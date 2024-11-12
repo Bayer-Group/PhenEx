@@ -14,6 +14,7 @@ nav:
           - LogicPhenotype: tutorials/phenotypes/LogicPhenotype_Tutorial.ipynb
   - API:
       - Phenotypes:
+          - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - Cohort: api/phenotypes/cohort.md
