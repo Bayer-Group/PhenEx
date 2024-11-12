@@ -32,7 +32,6 @@ class CodelistPhenotype(Phenotype):
 
     Example:
         ```python
-        import tensorflow as tf
         from phenex.codelists import Codelist
 
         codelist = Codelist(name="example_codelist", codes=[...])
