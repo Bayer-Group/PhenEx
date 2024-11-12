@@ -27,9 +27,11 @@ class AgePhenotype(Phenotype):
         _execute(tables: Dict[str, Table]) -> PhenotypeTable:
             Executes the phenotype calculation and returns a table with the computed age.
     Example:
+        ```
         >>> age_phenotype = AgePhenotype(min_age=18, max_age=65, anchor_phenotype=some_anchor_phenotype)
         >>> result_table = age_phenotype.execute(tables)
         >>> display(result_table)
+        ```
     """
 
     # FIXME this will become a problem when modern medicine allows people to live more
