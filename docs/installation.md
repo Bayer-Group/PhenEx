@@ -1,65 +1,47 @@
 ## Setup environment
 
-We strongly suggest to install PhenEx in an isolated python virtual environment using your favorite package manager, such as [condas](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or [pyenv](https://github.com/pyenv/pyenv). PhenEx requires Python 3.9 or above. After setting up and activating your virtual environment, move on to the next step.
+We strongly suggest to install PhenEx in an isolated python virtual environment using your favorite package
+manager, such as [condas](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or
+[pyenv](https://github.com/pyenv/pyenv). PhenEx requires Python 3.9 or above. After setting up and activating
+your virtual environment, move on to the next step.
+
+## Pip installation
+
+Coming soon!
 
 ## Source installation
 
-The code can currently only be installed from git source. To install the code, first clone the repository:
+To install from source, run the following from within your virtual environment:
 
 ```
-git clone git@github.com:Bayer-Group/PhenEx.git
+git clone git@github.com:Bayer-Group/PhenEx.git && \
+    cd PhenEx && \
+    pip install -r requirements.txt && \
+    pip install .
 ```
 
-Then, change into the directory containing the code:
-
-```
-cd PhenEx
-```
-
-Use these instructions if you do not plan to change code within PhenEx.
-
-After activating the virtual environment, install the required dependencies with
-
-```
-pip install -r requirements.txt
-```
-
-and install PhenEx with
-
-```
-pip install .
-```
-
-### Running the tests
-
-A good way to check your source installation is to run the extensive test suite that PhenEx comes with. You can do so by running:
-
-```
-pytest
-```
-
-from the root directory of the project.
+This will clone the repository and build all the required dependencies.
 
 ## Installing Jupyter
 
 If you wish to use PhenEx within a Jupyter notebook, you can install the Jupyter kernel with
 
 ```
-python3 -m ipykernel install --user --name phenex --display-name "PhenEx"
+python -m ipykernel install --user --name phenex --display-name "PhenEx"
 ```
 
-That's it! Proceed to the [tutorials](tutorials.md).
-
-## Pip installation
-
-Coming soon!
+where `--name phenex` specifies the name of your virtual environment.
 
 ## Check installation
 
-Check that the installation has succeeded:
+Check that the installation has succeeded, run:
 
 ```
-python3 -c "import phenex;print(phenex.__version__)"
+python -c "import phenex;print(phenex.__version__)"
 ```
 
 This will display the installed version of PhenEx.
+
+## Now what?
+
+That's it! Proceed to the [tutorials](tutorials.md).
