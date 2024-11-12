@@ -45,7 +45,7 @@ from the root directory of the project.
 If you wish to use PhenEx within a Jupyter notebook, you can install the Jupyter kernel with
 
 ```
-python3.12 -m ipykernel install --user --name phenex --display-name "PhenEx"
+python3 -m ipykernel install --user --name phenex --display-name "PhenEx"
 ```
 
 That's it! Proceed to the [tutorials](tutorials.md).
@@ -59,7 +59,7 @@ Coming soon!
 Check that the installation has succeeded:
 
 ```
-python3.12 -c "import phenex;print(phenex.__version__)"
+python3 -c "import phenex;print(phenex.__version__)"
 ```
 
 This will display the installed version of PhenEx.
