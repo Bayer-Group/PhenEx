@@ -14,6 +14,7 @@ class AgePhenotype(Phenotype):
     AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
     based on their date of birth and an optional anchor phenotype. The age is computed in years and can
     be filtered within a specified range.
+
     Attributes:
         DAYS_IN_YEAR (float): Number of days in a year, used for age calculation.
         name (str): Name of the phenotype, default is 'age'.
@@ -23,9 +24,11 @@ class AgePhenotype(Phenotype):
         anchor_phenotype (Phenotype, optional): An optional anchor phenotype to calculate relative age.
         time_range_filter (RelativeTimeRangeFilter): A filter to apply the age range constraints.
         children (list): List of dependent phenotypes.
+
     Methods:
         _execute(tables: Dict[str, Table]) -> PhenotypeTable:
             Executes the phenotype calculation and returns a table with the computed age.
+            
     Example:
         ```
         >>> age_phenotype = AgePhenotype(min_age=18, max_age=65, anchor_phenotype=some_anchor_phenotype)
