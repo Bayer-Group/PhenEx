@@ -13,7 +13,7 @@ class Phenotype:
     must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns 
     a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
 
-    To subclass Phenotype, you must:
+    To subclass:
         1. define self.children in __init__()
         2. define self._execute
 
