@@ -4,13 +4,14 @@ PhenEx
 
 ![Alt text](assets/phenex_feather_horizontal.png)
 
-Implementing observational studies using real-world data (RWD) is challenging, requiring expertise in epidemiology, medical practice, statistics and data engineering. Observational studies are often implemented as bespoke software packages by individual data analysts or small teams. While tools exist, such as open-source tools from the OHDSI program in the R language and proprietary tools, they are typically bound to a specific data model (e.g. OMOP) and limited in their ability to express and implement complicated medical definitions.
+Implementing observational studies using real-world data (RWD) is challenging, requiring expertise in epidemiology, medical practice, statistics and data engineering. Observational studies are often implemented as bespoke software packages by individual data analysts or small teams. While tools exist to help, such as open-source tools from the [OHDSI community](https://ohdsi.github.io/Hades/) in the R language and proprietary tools, they are typically bound to a specific data model (e.g. [OMOP](https://ohdsi.github.io/CommonDataModel/cdm54.html)) and limited in their ability to express and implement complicated medical definitions.
 
 PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based software package that provides reusuable and end-to-end tested implementations of commonly performed operations in the implementation of observational studies. The main advantages of PhenEx are:
 
 - **Arbitrarily complex medical definitions**: Build medical definitions that depend on diagnoses, labs, procedures, and encounter context, as well as on other medical definitions
-- **Data-model agnostic**: Requires only an extremely minimal mapping to work with almost any RWD dataset. Only need to map the data needed for the study execution.
-- **Intuitive interface**: Study specification mirrors plain language description of the study. Ideally, a cohort definition should read like free text.
+- **Data-model agnostic**: Work with almost any RWD dataset with only extremely minimal mappings required. Only map the data needed for the study execution.
+- **Portable**: Built on top of [ibis](https://ibis-project.org/), PhenEx works with any backend that ibis supports, including snowflake, PySpark and many more!
+- **Intuitive interface**: Study specification in PhenEx mirrors plain language description of the study.
 - **High test coverage**: Full confidence answer is correct.
 
 ## Basics of PhenEx design
@@ -47,11 +48,11 @@ These foundational Phenotype's allow you to express complex constraints with jus
 
 Furthermore, they can be combined using the following derived Phenotypes:
 
-| Phenotype Class     | Identify patients using ...                       | Example                                                      |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| LogicPhenotype      | Logical combinations of any other phenotypes      | high blood pressure observation OR blood pressure medication |
-| ArithmeticPhenotype | Mathematical combinations of any other phenotypes | BMI                                                          |
-| ScorePhenotype      | Logical combinations of any other phenotypes      | CHADSVASc, CCI, HASBLED                                      |
+| Phenotype Class     | Identify patients using ...                       | Example                                                                             |
+| ------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| LogicPhenotype      | Logical combinations of any other phenotypes      | high blood pressure observation OR blood pressure medication in the baseline period |
+| ArithmeticPhenotype | Mathematical combinations of any other phenotypes | BMI at index                                                                        |
+| ScorePhenotype      | Logical combinations of any other phenotypes      | CHADSVASc, CCI, HASBLED                                                             |
 
 Each phenotype class provides methods for defining the criteria and for evaluating the phenotype against a dataset. By using these classes, researchers can define complex phenotypes in a clear and concise manner, without needing to write custom code for each study.
 
@@ -63,4 +64,4 @@ Below is an illustration of the basic design of the PhenEx in the evidence gener
 
 ## Getting started
 
-To get started, please head over to our [tutorials](tutorials.md).
+To get started, head over to our [tutorials](tutorials.md) to get a better feel for how the library works. Then, learn how to [install PhenEx](installation.md) and start using it yourself for your own studies. Any questions? Feel free to reach out or create a [github issue](https://github.com/Bayer-Group/PhenEx/issues).
