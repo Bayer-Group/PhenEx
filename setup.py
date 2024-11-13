@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 
+__version__ = '0.0.1'
 
 # Function to parse requirements.txt
 def parse_requirements(filename):
@@ -11,7 +12,7 @@ def parse_requirements(filename):
 
 setup(
     name="phenex",
-    version="0.0.1",
+    version=__version__,
     author="Bayer AG",
     author_email="alexander.hartenstein@bayer.com",
     description="PhenEx is a Python package for analysis-ready datasets from real-world data",
