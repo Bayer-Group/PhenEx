@@ -6,11 +6,16 @@ PhenEx
 
 Implementing observational studies using real-world data (RWD) is challenging, requiring expertise in epidemiology, medical practice, statistics and data engineering. Observational studies are often implemented as bespoke software packages by individual data analysts or small teams. While tools exist, such as open-source tools from the OHDSI program in the R language and proprietary tools, they are typically bound to a specific data model (e.g. OMOP) and limited in their ability to express and implement complicated medical definitions.
 
-PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based software package that provides reusuable and end-to-end tested implementations of commonly performed operations in the implementation of observational studies. PhenEx allows for the calculation of arbitrarily complex phenotypes by combining these reusable components. PhenEx is data-model-agnostic. PhenEx is designed with a focus on ease of writing and reading cohort definitions. Medical domain knowledge should be clear and simple, without requiring an understandmkdocsing of complex data schemas. Ideally, a cohort definition should read like free text.
+PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based software package that provides reusuable and end-to-end tested implementations of commonly performed operations in the implementation of observational studies. The main advantages of PhenEx are:
+
+- **Arbitrarily complex medical definitions**: Build medical definitions that depend on diagnoses, labs, procedures, and encounter context, as well as on other medical definitions
+- **Data-model agnostic**: Requires only an extremely minimal mapping to work with almost any RWD dataset. Only need to map the data needed for the study execution.
+- **Intuitive interface**: Study specification mirrors plain language description of the study. Ideally, a cohort definition should read like free text.
+- **High test coverage**: Full confidence answer is correct.
 
 ## Basics of PhenEx design
 
-### Working with phenotypes
+### Electronic phenotypes
 
 The most basic concept in PhenEx is the (electronic) [phenotype](https://rethinkingclinicaltrials.org/chapters/conduct/electronic-health-records-based-phenotyping/electronic-health-records-based-phenotyping-introduction/). A phenotype defines a set of patients that share some physiological state. In a clinical setting, a phenotype is usually identified by the phrase "patient presents with ...". For example, a phenotype could be "patient presents with diabetes". In the observational setting, we would cacluate the phenotype "patient presents with diabetes" by looking for patients who have a diagnosis of diabetes in their medical record in certain time frame.
 
@@ -26,7 +31,7 @@ All studies are built through the calculation of various phenotypes:
 
 After defining the parameters of all these phenotypes in the study definition file, PhenEx will compute the phenotypes and return a cohort table, which contains the set of patients which satisfied all the inclusion / exclusion / entry criteria for the specified study. Additionally, a baseline characteristics table will be computed and reports generated, including a waterfall chart, the distributions of baseline characteristics.
 
-## Phenotype classes
+### Phenotype classes
 
 In PhenEx, the concept on an electronic phenotype is encapsulated by Phenotype classes that expose all relevant parameters to express an electronic phenotype. These classes are designed to be reusable and composable, allowing complex phenotypes to be built from simpler ones. The foundational Phenotype classes include:
 
