@@ -72,6 +72,12 @@ class ComputationGraphPhenotype(Phenotype):
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
         joined_table = hstack(self.children, tables['PERSON'].select('PERSON_ID'))
+
+        if self._populate == 'value' and self._operate_on == 'boolean':
+            for child in self.children:
+                column_name = f"{child.name}_BOOLEAN"
+                joined_table = joined_table.mutate(**{column_name: joined_table[column_name].cast(float)})
+
         if self._populate == "value":
             _expression = self.computation_graph.get_value_expression(
                 joined_table, operate_on=self._operate_on

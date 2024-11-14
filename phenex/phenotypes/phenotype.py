@@ -256,7 +256,7 @@ class ComputationGraph:
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
                     return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_vALUE"]
+                return table[f"{node.name}_VALUE"]
             return node
 
         left = manage_node(self.left)
