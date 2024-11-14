@@ -10,7 +10,7 @@ from phenex.tables import (
 class Phenotype:
     """
     All Phenotype's in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype
-    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns 
+    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns
     a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
 
     To subclass:
@@ -140,6 +140,9 @@ class Phenotype:
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "|")
 
+    def __invert__(self) -> "ComputationGraph":
+        return ComputationGraph(self, None, "~")
+
     def get_codelists(self, to_pandas=False):
         codelists = []
         for child in self.children:
@@ -169,14 +172,14 @@ class ComputationGraph:
     def __init__(
         self,
         left: Union["Phenotype", "ComputationGraph"],
-        right: Union["Phenotype", "ComputationGraph", int, float],
+        right: Union["Phenotype", "ComputationGraph", int, float, None],
         operator: str,
     ):
         self.table = None
         self.left = left
         self.right = right
         self.operator = operator
-        self.children = [left] if isinstance(right, (int, float)) else [left, right]
+        self.children = [left] if right is None or isinstance(right, (int, float)) else [left, right]
 
     def __add__(
         self, other: Union["Phenotype", "ComputationGraph"]
@@ -217,6 +220,9 @@ class ComputationGraph:
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "|")
+
+    def __invert__(self) -> "ComputationGraph":
+        return ComputationGraph(self, None, "~")
 
     def get_leaf_phenotypes(self):
         """
@@ -267,21 +273,32 @@ class ComputationGraph:
             raise ValueError(f"Operator {self.operator} not supported.")
 
     def get_boolean_expression(self, table, operate_on="boolean"):
+        print("GET BOOLEAN EXPRESSION")
         def manage_node(node):
             if isinstance(node, ComputationGraph):
+                print('COMPUTATION GRAPH')
                 return node.get_boolean_expression(table, operate_on)
             elif isinstance(node, Phenotype):
+                print('PHENOTYPE', node.name)
                 if operate_on == "boolean":
                     return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_vALUE"]
+                return table[f"{node.name}_VALUE"]
+            else:
+                print("IS NONE")
             return node
 
+        print("LEFT")
         left = manage_node(self.left)
+        print("RIGHT")
         right = manage_node(self.right)
+        print(self.operator)
+
         if self.operator == "|":
-            return left | right
+            return (left | right)
         elif self.operator == "&":
-            return left & right
+            return (left & right)
+        elif self.operator == '~':
+            return ~(left)
         else:
             raise ValueError(f"Operator {self.operator} not supported.")
 

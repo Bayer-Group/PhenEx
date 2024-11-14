@@ -28,7 +28,7 @@ class LogicPhenotypeTestGenerator(PhenotypeTestGenerator):
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -187,7 +187,7 @@ class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -379,7 +379,7 @@ class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -667,9 +667,6 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
 
         for test_info in test_infos:
             test_info["phenotype"].name = test_info["name"]
-            test_info["column_types"] = {
-                f"{test_info['phenotype'].name_model}_date": "date"
-            }
 
         return test_infos
 
@@ -729,7 +726,7 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -881,14 +878,13 @@ def test_logic_phenotype_4():
     spg.run_tests()
 
 def test_logic_phenotype_5():
-    pass
-    # spg = LogicPhenotypeInverseReturnDateLastTestGenerator()
-    # spg.run_tests()
+    spg = LogicPhenotypeInverseReturnDateLastTestGenerator()
+    spg.run_tests()
 
 
 if __name__ == "__main__":
-    test_logic_phenotype_1()
-    test_logic_phenotype_2()
-    test_logic_phenotype_3()
-    test_logic_phenotype_4()
+    # test_logic_phenotype_1()
+    # test_logic_phenotype_2()
+    # test_logic_phenotype_3()
+    # test_logic_phenotype_4()
     test_logic_phenotype_5()

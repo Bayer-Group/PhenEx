@@ -71,7 +71,7 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children)
+        joined_table = hstack(self.children, tables['PERSON'].select('PERSON_ID'))
         if self._populate == "value":
             _expression = self.computation_graph.get_value_expression(
                 joined_table, operate_on=self._operate_on
@@ -85,6 +85,8 @@ class ComputationGraphPhenotype(Phenotype):
 
         # Return the first or last event date
         ibis.options.interactive = True
+        print(joined_table.schema())
+        print(joined_table.to_pandas())
         date_columns = self._coalesce_all_date_columns(joined_table)
         if self.return_date == "first":
             joined_table = joined_table.mutate(
