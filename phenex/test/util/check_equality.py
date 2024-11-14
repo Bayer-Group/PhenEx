@@ -13,6 +13,7 @@ def check_equality(
     )
     found_not_expected = full_results[full_results["DUMMY_expected"].isnull()]
     expected_not_found = full_results[full_results["DUMMY_result"].isnull()]
+
     assert (
         len(found_not_expected) == 0
     ), f"Found unexpected in test {test_name}: {found_not_expected['PERSON_ID'].values}"

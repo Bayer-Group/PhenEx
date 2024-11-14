@@ -84,9 +84,6 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(BOOLEAN=_expression)
 
         # Return the first or last event date
-        ibis.options.interactive = True
-        print(joined_table.schema())
-        print(joined_table.to_pandas())
         date_columns = self._coalesce_all_date_columns(joined_table)
         if self.return_date == "first":
             joined_table = joined_table.mutate(
@@ -107,7 +104,7 @@ class ComputationGraphPhenotype(Phenotype):
 
         # Reduce the table to only include rows where the boolean column is True
         if self._reduce:
-            joined_table = joined_table.filter(joined_table.BOOLEAN == 1)
+            joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Add a null value column if it doesn't exist, for example in the case of a LogicPhenotype
         schema = joined_table.schema()

@@ -24,13 +24,13 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         join_table = join_table.select(columns)
 
     for pt in phenotypes:
-        column_operation = join_table[f"{pt.name}_BOOLEAN"].fill_null(0)
+        column_operation = join_table[f"{pt.name}_BOOLEAN"].fill_null(False)
         join_table = join_table.mutate(**{f"{pt.name}_BOOLEAN": column_operation})
     return join_table
 
 
 def select_phenotype_columns(
-    table, fill_date=ibis.null(), fill_value=ibis.null(), fill_boolean=1
+    table, fill_date=ibis.null(), fill_value=ibis.null(), fill_boolean=True
 ):
     if "PERSON_ID" not in table.columns:
         raise ValueError("Table must have a PERSON_ID column")

@@ -50,7 +50,7 @@ class Phenotype:
             if child.table is None:
                 child.execute(tables)
 
-        table = self._execute(tables).mutate(BOOLEAN=1)
+        table = self._execute(tables).mutate(BOOLEAN=True)
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(
@@ -273,25 +273,17 @@ class ComputationGraph:
             raise ValueError(f"Operator {self.operator} not supported.")
 
     def get_boolean_expression(self, table, operate_on="boolean"):
-        print("GET BOOLEAN EXPRESSION")
         def manage_node(node):
             if isinstance(node, ComputationGraph):
-                print('COMPUTATION GRAPH')
                 return node.get_boolean_expression(table, operate_on)
             elif isinstance(node, Phenotype):
-                print('PHENOTYPE', node.name)
                 if operate_on == "boolean":
                     return table[f"{node.name}_BOOLEAN"]
                 return table[f"{node.name}_VALUE"]
-            else:
-                print("IS NONE")
             return node
 
-        print("LEFT")
         left = manage_node(self.left)
-        print("RIGHT")
         right = manage_node(self.right)
-        print(self.operator)
 
         if self.operator == "|":
             return (left | right)

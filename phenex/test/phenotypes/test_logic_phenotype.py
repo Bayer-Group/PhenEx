@@ -601,6 +601,7 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         c1andc2orc1andc3 = {
             "name": "notc1andc2ornotc1andc3",
             "persons": ["P2", "P3", "P4", "P5", "P6", "P7"],
+            "dates": [self.event_dates[3], self.event_dates[5], self.event_dates[7], self.event_dates[8], self.event_dates[10], self.event_dates[11]],
             "phenotype": LogicPhenotype(
                 expression=~(c1["phenotype"] & c2["phenotype"])
                 | ~(c1["phenotype"] & c3["phenotype"]),
@@ -610,6 +611,7 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         notc1andc2orc1andc3 = {
             "name": "notc1andc2orc1andc3",
             "persons": ["P4", "P5", "P6", "P7"],
+            "dates": [self.event_dates[7], self.event_dates[8], self.event_dates[10], self.event_dates[11]],
             "phenotype": LogicPhenotype(
                 expression=~(
                     (c1["phenotype"] & c2["phenotype"])
@@ -657,11 +659,11 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
 
         test_infos = [
             c1andc2,
+            not_c1,
             c1orc2,
             c1andc3,
             c1andc2orc1andc3,
             notc1andc2orc1andc3,
-            not_c1,
             not_c1_and_not_c2,
         ]
 
@@ -883,8 +885,8 @@ def test_logic_phenotype_5():
 
 
 if __name__ == "__main__":
-    # test_logic_phenotype_1()
-    # test_logic_phenotype_2()
-    # test_logic_phenotype_3()
-    # test_logic_phenotype_4()
+    test_logic_phenotype_1()
+    test_logic_phenotype_2()
+    test_logic_phenotype_3()
+    test_logic_phenotype_4()
     test_logic_phenotype_5()
