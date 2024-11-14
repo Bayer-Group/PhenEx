@@ -147,11 +147,10 @@ class ComputationGraphPhenotype(Phenotype):
 
     def _coalesce_all_date_columns(self, table):
         """
-        Generate COALESCE strings for the GREATEST or LEAST function using Ibis.
+        ComputationGraphPhenotypes have multiple possible date columns. To work with these date columns, which may be null, we perform a coalesce operation for each date column, which allows operations such as 'least' and 'greatest' to work correctly.
 
         Args:
             table: The Ibis table object (e.g., joined_table).
-            names: List of base column names (without the '_date' suffix).
 
         Returns:
             Ibis expression representing the COALESCE of the columns.
