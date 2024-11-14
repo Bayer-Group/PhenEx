@@ -780,7 +780,7 @@ def test_measurement_phenotype_return_values():
 
 def test_measurement_phenotype_value_aggregation():
     spg = MeasurementPhenotypeValueAggregationTestGenerator()
-    spg.run_tests(verbose=True)
+    spg.run_tests(verbose=False)
 
 
 if __name__ == "__main__":

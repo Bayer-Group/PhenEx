@@ -88,7 +88,6 @@ class ValueAggregator:
             _aggregation_column = getattr(input_table, self.aggregation_column)
 
         ibis.options.interactive = True
-        print(input_table)
         # Define the window specification
         window_spec = ibis.window(group_by=_aggregation_index_cols)
 
@@ -98,7 +97,6 @@ class ValueAggregator:
         elif self.aggregation_function == "mean":
             aggregation = _aggregation_column.mean().over(window_spec)
         elif self.aggregation_function == "max":
-            print("DOING MAX")
             aggregation = _aggregation_column.max().over(window_spec)
         elif self.aggregation_function == "min":
             aggregation = _aggregation_column.min().over(window_spec)

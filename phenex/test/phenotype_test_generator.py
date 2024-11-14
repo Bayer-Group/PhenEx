@@ -4,6 +4,7 @@ import datetime
 import pandas as pd
 import ibis
 import ibis.expr.datatypes as dt
+from pyarrow import int8
 
 from .util.check_equality import check_equality
 
@@ -25,7 +26,7 @@ class PhenotypeTestGenerator:
 
     def run_tests(self, verbose=False):
         self.verbose = verbose
-        self.con = ibis.sqlite.connect()
+        self.con = ibis.duckdb.connect()
         self._create_artifact_directory(self.name_space)
         self._create_input_data()
         self._run_tests()
@@ -69,9 +70,20 @@ class PhenotypeTestGenerator:
             # seed data dates in pandas datetime format and let the
             # TestGenerator format them into strings.
             input_info["df"].to_csv(path, index=False, date_format=self.date_format)
+
+            schema = {}
+            for col in input_info["df"].columns:
+                if 'date' in col.lower():
+                    schema[col] = datetime.date
+                elif 'value' in col.lower():
+                    schema[col] = float
+                else:
+                    schema[col] = str
+
             self.domains[input_info["name"]] = self.con.create_table(
-                input_info["name"], input_info["df"]
+                input_info["name"], input_info["df"], schema = schema
             )
+
 
     def _run_tests(self):
         def df_from_test_info(test_info):
@@ -124,8 +136,21 @@ class PhenotypeTestGenerator:
                 path, index=False, date_format=self.date_format
             )
 
+
+            schema = {}
+            for col in df.columns:
+                if 'date' in col.lower():
+                    schema[col] = datetime.date
+                elif 'value' in col.lower():
+                    schema[col] = float
+                elif 'boolean' in col.lower():
+                    schema[col] = bool
+                else:
+                    schema[col] = str
+
             expected_output_table = self.con.create_table(
-                self.name_output_file(test_info), df
+                self.name_output_file(test_info), df, schema=schema
+
             )
 
             join_on = ['PERSON_ID']
