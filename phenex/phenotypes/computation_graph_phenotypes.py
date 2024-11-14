@@ -71,12 +71,14 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables['PERSON'].select('PERSON_ID'))
+        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
 
-        if self._populate == 'value' and self._operate_on == 'boolean':
+        if self._populate == "value" and self._operate_on == "boolean":
             for child in self.children:
                 column_name = f"{child.name}_BOOLEAN"
-                joined_table = joined_table.mutate(**{column_name: joined_table[column_name].cast(float)})
+                joined_table = joined_table.mutate(
+                    **{column_name: joined_table[column_name].cast(float)}
+                )
 
         if self._populate == "value":
             _expression = self.computation_graph.get_value_expression(
@@ -92,18 +94,14 @@ class ComputationGraphPhenotype(Phenotype):
         # Return the first or last event date
         date_columns = self._coalesce_all_date_columns(joined_table)
         if self.return_date == "first":
-            joined_table = joined_table.mutate(
-                EVENT_DATE=ibis.least(*date_columns)
-            )
+            joined_table = joined_table.mutate(EVENT_DATE=ibis.least(*date_columns))
         elif self.return_date == "last":
-            joined_table = joined_table.mutate(
-                EVENT_DATE=ibis.greatest(*date_columns)
-            )
-        elif self.return_date == 'all':
+            joined_table = joined_table.mutate(EVENT_DATE=ibis.greatest(*date_columns))
+        elif self.return_date == "all":
             joined_table = self._return_all_dates(joined_table, date_columns)
         elif isinstance(self.return_date, Phenotype):
             joined_table = joined_table.mutate(
-                EVENT_DATE=getattr(joined_table,f"{self.return_date.name}_EVENT_DATE")
+                EVENT_DATE=getattr(joined_table, f"{self.return_date.name}_EVENT_DATE")
             )
         else:
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
@@ -133,9 +131,8 @@ class ComputationGraphPhenotype(Phenotype):
         # get all the non-null dates for each date column
         non_null_dates_by_date_col = []
         for date_col in date_columns:
-            non_null_dates = (
-                table.filter(date_col.notnull())
-                    .mutate(EVENT_DATE=date_col)
+            non_null_dates = table.filter(date_col.notnull()).mutate(
+                EVENT_DATE=date_col
             )
             non_null_dates_by_date_col.append(non_null_dates)
 
@@ -161,7 +158,9 @@ class ComputationGraphPhenotype(Phenotype):
 
         for i in range(len(names)):
             rotated_names = names[i:] + names[:i]
-            coalesce_expr = ibis.coalesce(*(getattr(table,col) for col in rotated_names))
+            coalesce_expr = ibis.coalesce(
+                *(getattr(table, col) for col in rotated_names)
+            )
             coalesce_expressions.append(coalesce_expr)
 
         return coalesce_expressions

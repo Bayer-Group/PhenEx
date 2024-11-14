@@ -601,7 +601,14 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         c1andc2orc1andc3 = {
             "name": "notc1andc2ornotc1andc3",
             "persons": ["P2", "P3", "P4", "P5", "P6", "P7"],
-            "dates": [self.event_dates[3], self.event_dates[5], self.event_dates[7], self.event_dates[8], self.event_dates[10], self.event_dates[11]],
+            "dates": [
+                self.event_dates[3],
+                self.event_dates[5],
+                self.event_dates[7],
+                self.event_dates[8],
+                self.event_dates[10],
+                self.event_dates[11],
+            ],
             "phenotype": LogicPhenotype(
                 expression=~(c1["phenotype"] & c2["phenotype"])
                 | ~(c1["phenotype"] & c3["phenotype"]),
@@ -611,7 +618,12 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         notc1andc2orc1andc3 = {
             "name": "notc1andc2orc1andc3",
             "persons": ["P4", "P5", "P6", "P7"],
-            "dates": [self.event_dates[7], self.event_dates[8], self.event_dates[10], self.event_dates[11]],
+            "dates": [
+                self.event_dates[7],
+                self.event_dates[8],
+                self.event_dates[10],
+                self.event_dates[11],
+            ],
             "phenotype": LogicPhenotype(
                 expression=~(
                     (c1["phenotype"] & c2["phenotype"])
@@ -676,6 +688,7 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
 class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
     name_space = "lgpt_returndate_first"
     test_date = True
+
     def define_input_tables(self):
         """
         P1,c1,01-01-2022  0
@@ -867,17 +880,21 @@ def test_logic_phenotype_1():
     spg = LogicPhenotypeTestGenerator()
     spg.run_tests()
 
+
 def test_logic_phenotype_2():
     spg = LogicPhenotypeReturnDateLastTestGenerator()
     spg.run_tests()
+
 
 def test_logic_phenotype_3():
     spg = LogicPhenotypeReturnDateAllTestGenerator()
     spg.run_tests()
 
+
 def test_logic_phenotype_4():
     spg = LogicPhenotypeReturnDateFirstTestGenerator()
     spg.run_tests()
+
 
 def test_logic_phenotype_5():
     spg = LogicPhenotypeInverseReturnDateLastTestGenerator()

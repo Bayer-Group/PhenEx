@@ -101,7 +101,9 @@ class ValueAggregator:
         elif self.aggregation_function == "min":
             aggregation = _aggregation_column.min().over(window_spec)
         else:
-            raise ValueError(f"Unsupported aggregation function: {self.aggregation_function}")
+            raise ValueError(
+                f"Unsupported aggregation function: {self.aggregation_function}"
+            )
         # Select the necessary columns
         selected_columns = _aggregation_index_cols + [aggregation.name("VALUE")]
 
@@ -113,17 +115,21 @@ class ValueAggregator:
         else:
             return input_table.select(selected_columns)
 
+
 class Mean(ValueAggregator):
     def __init__(self, **kwargs):
         super(Mean, self).__init__(aggregation_function="mean", **kwargs)
+
 
 class Max(ValueAggregator):
     def __init__(self, **kwargs):
         super(Max, self).__init__(aggregation_function="max", **kwargs)
 
+
 class Min(ValueAggregator):
     def __init__(self, **kwargs):
         super(Min, self).__init__(aggregation_function="min", **kwargs)
+
 
 class DailyValueAggregator(ValueAggregator):
     def __init__(self, aggregation_index=["PERSON_ID", "EVENT_DATE"], **kwargs):
@@ -132,17 +138,21 @@ class DailyValueAggregator(ValueAggregator):
             aggregation_index=aggregation_index, **kwargs
         )
 
+
 class DailyMean(DailyValueAggregator):
     def __init__(self):
         super(DailyMean, self).__init__(aggregation_function="mean")
+
 
 class DailyMedian(DailyValueAggregator):
     def __init__(self):
         super(DailyMedian, self).__init__(aggregation_function="median")
 
+
 class DailyMax(DailyValueAggregator):
     def __init__(self, **kwargs):
         super(DailyMax, self).__init__(aggregation_function="max", **kwargs)
+
 
 class DailyMin(DailyValueAggregator):
     def __init__(self, **kwargs):

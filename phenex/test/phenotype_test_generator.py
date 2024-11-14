@@ -73,17 +73,16 @@ class PhenotypeTestGenerator:
 
             schema = {}
             for col in input_info["df"].columns:
-                if 'date' in col.lower():
+                if "date" in col.lower():
                     schema[col] = datetime.date
-                elif 'value' in col.lower():
+                elif "value" in col.lower():
                     schema[col] = float
                 else:
                     schema[col] = str
 
             self.domains[input_info["name"]] = self.con.create_table(
-                input_info["name"], input_info["df"], schema = schema
+                input_info["name"], input_info["df"], schema=schema
             )
-
 
     def _run_tests(self):
         def df_from_test_info(test_info):
@@ -122,12 +121,10 @@ class PhenotypeTestGenerator:
 
             result_table = test_info["phenotype"].execute(self.domains)
 
-
             if self.verbose:
                 ibis.options.interactive = True
                 print("PRINTING THE SQL")
-                ibis.to_sql(result_table
-                )
+                ibis.to_sql(result_table)
                 print(
                     f"Running test: {test_info['name']}\nExpected output:\n{df}\nActualOutput:\n{result_table}\n\n"
                 )
@@ -136,24 +133,22 @@ class PhenotypeTestGenerator:
                 path, index=False, date_format=self.date_format
             )
 
-
             schema = {}
             for col in df.columns:
-                if 'date' in col.lower():
+                if "date" in col.lower():
                     schema[col] = datetime.date
-                elif 'value' in col.lower():
+                elif "value" in col.lower():
                     schema[col] = float
-                elif 'boolean' in col.lower():
+                elif "boolean" in col.lower():
                     schema[col] = bool
                 else:
                     schema[col] = str
 
             expected_output_table = self.con.create_table(
                 self.name_output_file(test_info), df, schema=schema
-
             )
 
-            join_on = ['PERSON_ID']
+            join_on = ["PERSON_ID"]
             if self.test_values:
                 join_on.append("VALUE")
             if self.test_date:
@@ -163,6 +158,6 @@ class PhenotypeTestGenerator:
                 expected_output_table,
                 test_name=test_info["name"],
                 test_values=self.test_values,
-                test_date = self.test_date,
-                join_on=join_on
+                test_date=self.test_date,
+                join_on=join_on,
             )

@@ -25,16 +25,13 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
         )
 
         df_person = pd.DataFrame()
-        df_person['PERSON_ID'] = df['PERSON_ID'].unique()
+        df_person["PERSON_ID"] = df["PERSON_ID"].unique()
         return [
             {
                 "name": "CONDITION_OCCURRENCE",
                 "df": df,
             },
-            {
-                "name": "PERSON",
-                "df": df_person
-            }
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -72,14 +69,14 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
         score1 = {
             "name": "score1",
             "persons": [f"P{x}" for x in range(1, 8)],
-            "values": [2, 2, 1, 1, 1, 1,0],
+            "values": [2, 2, 1, 1, 1, 1, 0],
             "phenotype": ScorePhenotype(expression=(c1["phenotype"] + c2["phenotype"])),
         }
 
         score2 = {
             "name": "score2",
             "persons": [f"P{x}" for x in range(1, 8)],
-            "values": [3, 3, 2, 2, 1, 1,0],
+            "values": [3, 3, 2, 2, 1, 1, 0],
             "phenotype": ScorePhenotype(
                 expression=(c1["phenotype"] * 2 + c2["phenotype"])
             ),
@@ -88,7 +85,7 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
         score3 = {
             "name": "score3",
             "persons": [f"P{x}" for x in range(1, 8)],
-            "values": [3, 3, 1, 1, 2, 2,0],
+            "values": [3, 3, 1, 1, 2, 2, 0],
             "phenotype": ScorePhenotype(
                 expression=(c1["phenotype"] + c2["phenotype"] * 2)
             ),
@@ -115,7 +112,7 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
         score6 = {
             "name": "score6",
             "persons": [f"P{x}" for x in range(1, 8)],
-            "values": [3, 3, 1, 1, 2, 2,0],
+            "values": [3, 3, 1, 1, 2, 2, 0],
             "phenotype": ScorePhenotype(expression=(c1["phenotype"] * c2["phenotype"])),
         }
 

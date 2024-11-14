@@ -23,9 +23,11 @@ class Phenotype:
     """
 
     def __init__(self):
-        self.table = None # self.table is populated ONLY AFTER self.execute() is called!
+        self.table = (
+            None  # self.table is populated ONLY AFTER self.execute() is called!
+        )
         self._namespaced_table = None
-        self.children = [] # List[Phenotype]
+        self.children = []  # List[Phenotype]
         self._check_for_children()
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -179,7 +181,11 @@ class ComputationGraph:
         self.left = left
         self.right = right
         self.operator = operator
-        self.children = [left] if right is None or isinstance(right, (int, float)) else [left, right]
+        self.children = (
+            [left]
+            if right is None or isinstance(right, (int, float))
+            else [left, right]
+        )
 
     def __add__(
         self, other: Union["Phenotype", "ComputationGraph"]
@@ -286,10 +292,10 @@ class ComputationGraph:
         right = manage_node(self.right)
 
         if self.operator == "|":
-            return (left | right)
+            return left | right
         elif self.operator == "&":
-            return (left & right)
-        elif self.operator == '~':
+            return left & right
+        elif self.operator == "~":
             return ~(left)
         else:
             raise ValueError(f"Operator {self.operator} not supported.")
