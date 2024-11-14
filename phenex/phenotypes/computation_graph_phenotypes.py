@@ -36,6 +36,7 @@ class ComputationGraphPhenotype(Phenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype],
         name: str = None,
+        aggregation_index=["PERSON_ID"],
         _operate_on: str = "boolean",
         _populate: str = "value",
         _reduce: bool = False,
@@ -43,6 +44,7 @@ class ComputationGraphPhenotype(Phenotype):
         super(ComputationGraphPhenotype, self).__init__()
         self.computation_graph = expression
         self.return_date = return_date
+        self.aggregation_index = aggregation_index
         self._name = name
         self._operate_on = _operate_on
         self._populate = _populate
@@ -74,16 +76,32 @@ class ComputationGraphPhenotype(Phenotype):
             _expression = self.computation_graph.get_value_expression(
                 joined_table, operate_on=self._operate_on
             )
-            joined_table = joined_table.mutate(VALUE=_expression).mutate(
-                EVENT_DATE=ibis.null(date)
-            )
+            joined_table = joined_table.mutate(VALUE=_expression)
         elif self._populate == "boolean":
             _expression = self.computation_graph.get_boolean_expression(
                 joined_table, operate_on=self._operate_on
             )
-            joined_table = joined_table.mutate(BOOLEAN=_expression).mutate(
-                EVENT_DATE=ibis.null(date)
+            joined_table = joined_table.mutate(BOOLEAN=_expression)
+
+        # Return the first or last event date
+        ibis.options.interactive = True
+        date_columns = self._coalesce_all_date_columns(joined_table)
+        if self.return_date == "first":
+            joined_table = joined_table.mutate(
+                EVENT_DATE=ibis.least(*date_columns)
             )
+        elif self.return_date == "last":
+            joined_table = joined_table.mutate(
+                EVENT_DATE=ibis.greatest(*date_columns)
+            )
+        elif self.return_date == 'all':
+            joined_table = self._return_all_dates(joined_table, date_columns)
+        elif isinstance(self.return_date, Phenotype):
+            joined_table = joined_table.mutate(
+                EVENT_DATE=getattr(joined_table,f"{self.return_date.name}_EVENT_DATE")
+            )
+        else:
+            joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
         # Reduce the table to only include rows where the boolean column is True
         if self._reduce:
@@ -95,6 +113,54 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(VALUE=ibis.null())
 
         return joined_table
+
+    def _return_all_dates(self, table, date_columns):
+        """
+        If return date = all, we want to return all the dates on which phenotype criteria are fulfilled; this is a union of all the non-null dates in any leaf phenotype date columns.
+
+        Args:
+            table: The Ibis table object (e.g., joined_table) that contains all leaf phenotypes stacked horizontally
+            date_columns: List of base columns as ibis objects
+
+        Returns:
+            Ibis expression representing the UNION of all non null dates.
+        """
+        # get all the non-null dates for each date column
+        non_null_dates_by_date_col = []
+        for date_col in date_columns:
+            non_null_dates = (
+                table.filter(date_col.notnull())
+                    .mutate(EVENT_DATE=date_col)
+            )
+            non_null_dates_by_date_col.append(non_null_dates)
+
+        # do the union of all the non-null dates
+        all_dates = non_null_dates_by_date_col[0]
+        for non_null_dates in non_null_dates_by_date_col[1:]:
+            all_dates = all_dates.union(non_null_dates)
+        return all_dates
+
+    def _coalesce_all_date_columns(self, table):
+        """
+        Generate COALESCE strings for the GREATEST or LEAST function using Ibis.
+
+        Args:
+            table: The Ibis table object (e.g., joined_table).
+            names: List of base column names (without the '_date' suffix).
+
+        Returns:
+            Ibis expression representing the COALESCE of the columns.
+        """
+        coalesce_expressions = []
+
+        names = [col for col in table.columns if "EVENT_DATE" in col]
+
+        for i in range(len(names)):
+            rotated_names = names[i:] + names[:i]
+            coalesce_expr = ibis.coalesce(*(getattr(table,col) for col in rotated_names))
+            coalesce_expressions.append(coalesce_expr)
+
+        return coalesce_expressions
 
 
 class ScorePhenotype(ComputationGraphPhenotype):

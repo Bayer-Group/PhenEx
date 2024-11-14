@@ -20,6 +20,8 @@ class PhenotypeTestGenerator:
     name_space = ""
     date_format = "%m-%d-%Y"
     test_values = False
+    test_date = False
+    join_on = ["PERSON_ID"]
 
     def run_tests(self, verbose=False):
         self.verbose = verbose
@@ -77,7 +79,7 @@ class PhenotypeTestGenerator:
             df["PERSON_ID"] = test_info["persons"]
 
             columnname_boolean = "boolean"
-            columnname_date = "DATE"
+            columnname_date = "EVENT_DATE"
             columnname_value = "VALUE"
 
             df[columnname_boolean] = True
@@ -126,13 +128,16 @@ class PhenotypeTestGenerator:
                 self.name_output_file(test_info), df
             )
 
-            join_on = ["PERSON_ID"]
+            join_on = ['PERSON_ID']
             if self.test_values:
                 join_on.append("VALUE")
+            if self.test_date:
+                join_on.append("EVENT_DATE")
             check_equality(
                 result_table,
                 expected_output_table,
                 test_name=test_info["name"],
                 test_values=self.test_values,
+                test_date = self.test_date,
                 join_on=join_on
             )
