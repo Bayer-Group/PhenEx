@@ -16,7 +16,7 @@ Coming soon!
 To install from source, run the following from within your virtual environment:
 
 ```
-git clone git@github.com:Bayer-Group/PhenEx.git && \
+git clone https://github.com/Bayer-Group/PhenEx.git && \
     cd PhenEx && \
     pip install -r requirements.txt && \
     pip install .

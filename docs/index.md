@@ -9,7 +9,7 @@ Implementing observational studies using real-world data (RWD) is challenging, r
 PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based software package that provides reusuable and end-to-end tested implementations of commonly performed operations in the implementation of observational studies. The main advantages of PhenEx are:
 
 - **Arbitrarily complex medical definitions**: Build medical definitions that depend on diagnoses, labs, procedures, and encounter context, as well as on other medical definitions
-- **Data-model agnostic**: Work with almost any RWD dataset with only extremely minimal mappings required. Only map the data needed for the study execution.
+- **Data-model agnostic**: Work with almost any RWD dataset with only extremely minimal mappings. Only map the data needed for the study execution. Use the ontologies native to your dataset.
 - **Portable**: Built on top of [ibis](https://ibis-project.org/), PhenEx works with any backend that ibis supports, including snowflake, PySpark and many more!
 - **Intuitive interface**: Study specification in PhenEx mirrors plain language description of the study.
 - **High test coverage**: Full confidence answer is correct.
