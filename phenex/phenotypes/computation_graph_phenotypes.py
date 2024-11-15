@@ -26,9 +26,9 @@ class ComputationGraphPhenotype(Phenotype):
     Attributes:
         expression (ComputationGraph): The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
         return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
-        _operate_on (str): The column to operate on. Can be "boolean" or "value".
-        _populate (str): The column to populate. Can be "boolean" or "value".
-        _reduce (bool): Whether to reduce the phenotype table to only include rows where the boolean column is True. This is only relevant if _populate is "boolean".
+        operate_on (str): The column to operate on. Can be "boolean" or "value".
+        populate (str): The column to populate. Can be "boolean" or "value".
+        reduce (bool): Whether to reduce the phenotype table to only include rows where the boolean column is True. This is only relevant if populate is "boolean".
     """
 
     def __init__(
@@ -37,18 +37,18 @@ class ComputationGraphPhenotype(Phenotype):
         return_date: Union[str, Phenotype],
         name: str = None,
         aggregation_index=["PERSON_ID"],
-        _operate_on: str = "boolean",
-        _populate: str = "value",
-        _reduce: bool = False,
+        operate_on: str = "boolean",
+        populate: str = "value",
+        reduce: bool = False,
     ):
         super(ComputationGraphPhenotype, self).__init__()
         self.computation_graph = expression
         self.return_date = return_date
         self.aggregation_index = aggregation_index
         self._name = name
-        self._operate_on = _operate_on
-        self._populate = _populate
-        self._reduce = _reduce
+        self.operate_on = operate_on
+        self.populate = populate
+        self.reduce = reduce
         self.children = self.computation_graph.get_leaf_phenotypes()
 
     @property
@@ -73,21 +73,21 @@ class ComputationGraphPhenotype(Phenotype):
         """
         joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
 
-        if self._populate == "value" and self._operate_on == "boolean":
+        if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
                 column_name = f"{child.name}_BOOLEAN"
                 joined_table = joined_table.mutate(
                     **{column_name: joined_table[column_name].cast(float)}
                 )
 
-        if self._populate == "value":
+        if self.populate == "value":
             _expression = self.computation_graph.get_value_expression(
-                joined_table, operate_on=self._operate_on
+                joined_table, operate_on=self.operate_on
             )
             joined_table = joined_table.mutate(VALUE=_expression)
-        elif self._populate == "boolean":
+        elif self.populate == "boolean":
             _expression = self.computation_graph.get_boolean_expression(
-                joined_table, operate_on=self._operate_on
+                joined_table, operate_on=self.operate_on
             )
             joined_table = joined_table.mutate(BOOLEAN=_expression)
 
@@ -107,7 +107,7 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
         # Reduce the table to only include rows where the boolean column is True
-        if self._reduce:
+        if self.reduce:
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Add a null value column if it doesn't exist, for example in the case of a LogicPhenotype
@@ -196,8 +196,8 @@ class ScorePhenotype(ComputationGraphPhenotype):
         super(ScorePhenotype, self).__init__(
             expression=expression,
             return_date=return_date,
-            _operate_on="boolean",
-            _populate="value",
+            operate_on="boolean",
+            populate="value",
         )
 
 
@@ -228,8 +228,8 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         super(ArithmeticPhenotype, self).__init__(
             expression=expression,
             return_date=return_date,
-            _operate_on="value",
-            _populate="value",
+            operate_on="value",
+            populate="value",
         )
 
 
@@ -262,7 +262,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
         super(LogicPhenotype, self).__init__(
             expression=expression,
             return_date=return_date,
-            _operate_on="boolean",
-            _populate="boolean",
-            _reduce=True,
+            operate_on="boolean",
+            populate="boolean",
+            reduce=True,
         )
