@@ -18,13 +18,13 @@ PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based
 
 ### Electronic phenotypes
 
-The most basic concept in PhenEx is the (electronic) [phenotype](https://rethinkingclinicaltrials.org/chapters/conduct/electronic-health-records-based-phenotyping/electronic-health-records-based-phenotyping-introduction/). A phenotype defines a set of patients that share some physiological state. In a clinical setting, a phenotype is usually identified by the phrase "patient presents with ...". For example, a phenotype could be "patient presents with diabetes". In the observational setting, we would cacluate the phenotype "patient presents with diabetes" by looking for patients who have a diagnosis of diabetes in their medical record in certain time frame.
+The most basic concept in PhenEx is the (electronic) [phenotype](https://rethinkingclinicaltrials.org/chapters/conduct/electronic-health-records-based-phenotyping/electronic-health-records-based-phenotyping-introduction/). A phenotype defines a set of patients that share some physiological state. In a clinical setting, a phenotype is usually identified by the phrase "patient presents with ...". For example, a phenotype could be "patient presents with diabetes". In the observational setting, we would calculate the phenotype "patient presents with diabetes" by looking for patients who have a diagnosis of diabetes in their medical record in certain time frame.
 
-A phenotype can reference other phenotypes. For instance, the phenotype "untreated diabetic patients" might translate to real-world data as "having a diagnosis of diabetes but not having a prescription for insulin or metformin". In this case, the prescription phenotype refers to the diabetes phenotype to build the overall phenotype. In PhenEx, your job is to simply specify these criteria. PhenEx will take care of the rest.
+A phenotype can reference other phenotypes. For instance, the phenotype "untreated diabetic patients" might translate to real-world data as "having a diagnosis of diabetes but not having a prescription for insulin or metformin". In this case, we create a medication phenotype that refers to the diabetes phenotype to build the overall phenotype. In PhenEx, your job is to simply specify these criteria. PhenEx will take care of the rest.
 
 All studies are built through the calculation of various phenotypes:
 
-- entry criterion phenotype
+- entry criterion phenotype (defines an index date)
 - inclusion phenotypes
 - exclusion phenotypes
 - baseline characteristic phenotypes, and
