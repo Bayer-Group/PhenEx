@@ -88,7 +88,7 @@ class ComputationGraphPhenotype(Phenotype):
             # Arithmetic operations imply a boolean 'and' of children i.e. child1 + child two implies child1 and child2. if there are any null values in value calculations this is because one of the children is null, so we filter them out as the implied boolean condition is not met.
             joined_table = joined_table.filter(joined_table["VALUE"].notnull())
 
-        elif self._populate == "boolean":
+        elif self.populate == "boolean":
             _expression = self.computation_graph.get_boolean_expression(
                 joined_table, operate_on=self.operate_on
             )
