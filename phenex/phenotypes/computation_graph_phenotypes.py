@@ -85,6 +85,8 @@ class ComputationGraphPhenotype(Phenotype):
                 joined_table, operate_on=self._operate_on
             )
             joined_table = joined_table.mutate(VALUE=_expression)
+            joined_table = joined_table.filter(joined_table["VALUE"].notnull())
+
         elif self._populate == "boolean":
             _expression = self.computation_graph.get_boolean_expression(
                 joined_table, operate_on=self._operate_on

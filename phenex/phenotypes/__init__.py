@@ -1,6 +1,7 @@
 from .phenotype import Phenotype
 
 from .codelist_phenotype import CodelistPhenotype
+from .measurement_phenotype import MeasurementPhenotype
 from .computation_graph_phenotypes import (
     ScorePhenotype,
     ArithmeticPhenotype,
