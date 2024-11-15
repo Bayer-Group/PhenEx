@@ -9,6 +9,7 @@ on:
   release:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-beta"
 
 jobs:
   pypi-publish:
