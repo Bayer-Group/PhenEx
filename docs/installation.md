@@ -9,11 +9,15 @@ your virtual environment, move on to the next step.
 
 ## Pip installation
 
-Coming soon!
+To install from pip (recommended), run the following from within your virtual environment:
+
+```
+pip install PhenEx
+```
 
 ## Source installation
 
-To install from source, run the following from within your virtual environment:
+To install from source (for developers), run the following from within your virtual environment:
 
 ```
 git clone https://github.com/Bayer-Group/PhenEx.git && \
