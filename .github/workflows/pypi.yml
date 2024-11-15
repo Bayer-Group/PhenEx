@@ -8,9 +8,7 @@ permissions:
 on:
   release:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+(-beta(.[0-9]+)?|-alpha(.[0-9]+)?)?"
 
 jobs:
   pypi-publish:
@@ -26,7 +24,7 @@ jobs:
       - name: Install Python 3.9 🐍
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       - name: Clean old build artifacts
         run: rm -rf dist/*
       - name: Build deps
