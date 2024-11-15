@@ -5,6 +5,7 @@ from phenex.phenotypes.functions import select_phenotype_columns
 
 from ibis import _
 
+
 class MeasurementPhenotype(CodelistPhenotype):
     """
     # What is MeasurementPhenotype for?
@@ -89,10 +90,9 @@ class MeasurementPhenotype(CodelistPhenotype):
             further_value_filter_phenotype (str): If the input to the current MeasurementPhenotype is the output of a previous MeasurementPhenotype, set this parameter to the previous MeasurementPhenotype.
         """
         # Default value of return_date in codelist_phenotype is 'first'. This is not helpful behavior for measurementphenotype as we will perform further operations that require all values. For example, if we want the mean of all values in the post index period, setting return_date = 'first' will return only the values on the first day
-        if 'return_date' not in kwargs:
+        if "return_date" not in kwargs:
             kwargs["return_date"] = "all"
         super(MeasurementPhenotype, self).__init__(
-
             **kwargs,
         )
         self.clean_nonphysiologicals_value_filter = clean_nonphysiologicals_value_filter

@@ -28,7 +28,7 @@ class LogicPhenotypeTestGenerator(PhenotypeTestGenerator):
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -133,6 +133,7 @@ class LogicPhenotypeTestGenerator(PhenotypeTestGenerator):
 
 class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
     name_space = "lgpt_returndate_last"
+    test_date = True
 
     def define_input_tables(self):
         """
@@ -179,14 +180,14 @@ class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
                 "01-01-2022",  # P7 c3 11
             ]
         ]
-        df["event_date"] = self.event_dates
+        df["EVENT_DATE"] = self.event_dates
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -323,6 +324,8 @@ class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
 
 class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
     name_space = "lgpt_returndate_all"
+    test_date = True
+    join_on = ["PERSON_ID", "EVENT_DATE"]
 
     def define_input_tables(self):
         """
@@ -369,14 +372,14 @@ class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
                 "01-01-2022",  # P7 c3 11
             ]
         ]
-        df["event_date"] = self.event_dates
+        df["EVENT_DATE"] = self.event_dates
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -502,12 +505,12 @@ class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
 
         test_infos = [
             c1andc2,
-            # c1orc2,
-            # c1andc3,
-            # c1andc2orc1andc3,
-            # c1andc2andc1andc3,
-            # c1andc2orc3,
-            # c1andc2andc3,
+            c1orc2,
+            c1andc3,
+            c1andc2orc1andc3,
+            c1andc2andc1andc3,
+            c1andc2orc3,
+            c1andc2andc3,
         ]
 
         for test_info in test_infos:
@@ -520,6 +523,7 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
     LogicPhenotypeReturnDateLastTestGenerator
 ):
     name_space = "lgpt_inverse_returndate_last"
+    test_date = True
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
@@ -597,6 +601,14 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         c1andc2orc1andc3 = {
             "name": "notc1andc2ornotc1andc3",
             "persons": ["P2", "P3", "P4", "P5", "P6", "P7"],
+            "dates": [
+                self.event_dates[3],
+                self.event_dates[5],
+                self.event_dates[7],
+                self.event_dates[8],
+                self.event_dates[10],
+                self.event_dates[11],
+            ],
             "phenotype": LogicPhenotype(
                 expression=~(c1["phenotype"] & c2["phenotype"])
                 | ~(c1["phenotype"] & c3["phenotype"]),
@@ -606,6 +618,12 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
         notc1andc2orc1andc3 = {
             "name": "notc1andc2orc1andc3",
             "persons": ["P4", "P5", "P6", "P7"],
+            "dates": [
+                self.event_dates[7],
+                self.event_dates[8],
+                self.event_dates[10],
+                self.event_dates[11],
+            ],
             "phenotype": LogicPhenotype(
                 expression=~(
                     (c1["phenotype"] & c2["phenotype"])
@@ -653,25 +671,23 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
 
         test_infos = [
             c1andc2,
+            not_c1,
             c1orc2,
             c1andc3,
             c1andc2orc1andc3,
             notc1andc2orc1andc3,
-            not_c1,
             not_c1_and_not_c2,
         ]
 
         for test_info in test_infos:
             test_info["phenotype"].name = test_info["name"]
-            test_info["column_types"] = {
-                f"{test_info['phenotype'].name_model}_date": "date"
-            }
 
         return test_infos
 
 
 class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
     name_space = "lgpt_returndate_first"
+    test_date = True
 
     def define_input_tables(self):
         """
@@ -718,14 +734,14 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
                 "01-01-2022",  # P7 c3 11
             ]
         ]
-        df["event_date"] = self.event_dates
+        df["EVENT_DATE"] = self.event_dates
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
 
         return [
             {"name": "condition_occurrence", "df": df},
-            {"name": "person", "df": df_person},
+            {"name": "PERSON", "df": df_person},
         ]
 
     def define_phenotype_tests(self):
@@ -860,25 +876,34 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
-def test_logic_phenotype():
-    import ibis
+def test_logic_phenotype_1():
     spg = LogicPhenotypeTestGenerator()
-    # spg.con = ibis.duckdb.connect()
+    spg.run_tests()
 
-    # spg.run_tests()
 
-    # spg = LogicPhenotypeReturnDateLastTestGenerator()
-    # spg.generate()
+def test_logic_phenotype_2():
+    spg = LogicPhenotypeReturnDateLastTestGenerator()
+    spg.run_tests()
 
-    # spg = LogicPhenotypeInverseReturnDateLastTestGenerator()
-    # spg.generate()
 
-    # spg = LogicPhenotypeReturnDateAllTestGenerator()
-    # spg.generate()
+def test_logic_phenotype_3():
+    spg = LogicPhenotypeReturnDateAllTestGenerator()
+    spg.run_tests()
 
-    # spg = LogicPhenotypeReturnDateFirstTestGenerator()
-    # spg.generate()
+
+def test_logic_phenotype_4():
+    spg = LogicPhenotypeReturnDateFirstTestGenerator()
+    spg.run_tests()
+
+
+def test_logic_phenotype_5():
+    spg = LogicPhenotypeInverseReturnDateLastTestGenerator()
+    spg.run_tests()
 
 
 if __name__ == "__main__":
-    test_logic_phenotype()
+    test_logic_phenotype_1()
+    test_logic_phenotype_2()
+    test_logic_phenotype_3()
+    test_logic_phenotype_4()
+    test_logic_phenotype_5()

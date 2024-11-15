@@ -11,6 +11,7 @@ from phenex.test.util.dummy.generate_dummy_data import (
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 
+
 class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "clpt"
 
@@ -56,7 +57,6 @@ class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
                 domain="CONDITION_OCCURRENCE",
             )
         return test_infos
-
 
 
 class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerator):
@@ -178,6 +178,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerat
             )
 
         return test_infos
+
 
 class CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator(
     PhenotypeTestGenerator

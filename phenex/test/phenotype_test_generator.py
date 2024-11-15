@@ -4,6 +4,7 @@ import datetime
 import pandas as pd
 import ibis
 import ibis.expr.datatypes as dt
+from pyarrow import int8
 
 from .util.check_equality import check_equality
 
@@ -20,10 +21,12 @@ class PhenotypeTestGenerator:
     name_space = ""
     date_format = "%m-%d-%Y"
     test_values = False
+    test_date = False
+    join_on = ["PERSON_ID"]
 
     def run_tests(self, verbose=False):
         self.verbose = verbose
-        self.con = ibis.sqlite.connect()
+        self.con = ibis.duckdb.connect()
         self._create_artifact_directory(self.name_space)
         self._create_input_data()
         self._run_tests()
@@ -67,8 +70,18 @@ class PhenotypeTestGenerator:
             # seed data dates in pandas datetime format and let the
             # TestGenerator format them into strings.
             input_info["df"].to_csv(path, index=False, date_format=self.date_format)
+
+            schema = {}
+            for col in input_info["df"].columns:
+                if "date" in col.lower():
+                    schema[col] = datetime.date
+                elif "value" in col.lower():
+                    schema[col] = float
+                else:
+                    schema[col] = str
+
             self.domains[input_info["name"]] = self.con.create_table(
-                input_info["name"], input_info["df"]
+                input_info["name"], input_info["df"], schema=schema
             )
 
     def _run_tests(self):
@@ -77,7 +90,7 @@ class PhenotypeTestGenerator:
             df["PERSON_ID"] = test_info["persons"]
 
             columnname_boolean = "boolean"
-            columnname_date = "DATE"
+            columnname_date = "EVENT_DATE"
             columnname_value = "VALUE"
 
             df[columnname_boolean] = True
@@ -108,12 +121,10 @@ class PhenotypeTestGenerator:
 
             result_table = test_info["phenotype"].execute(self.domains)
 
-
             if self.verbose:
                 ibis.options.interactive = True
                 print("PRINTING THE SQL")
-                ibis.to_sql(result_table
-                )
+                ibis.to_sql(result_table)
                 print(
                     f"Running test: {test_info['name']}\nExpected output:\n{df}\nActualOutput:\n{result_table}\n\n"
                 )
@@ -122,17 +133,31 @@ class PhenotypeTestGenerator:
                 path, index=False, date_format=self.date_format
             )
 
+            schema = {}
+            for col in df.columns:
+                if "date" in col.lower():
+                    schema[col] = datetime.date
+                elif "value" in col.lower():
+                    schema[col] = float
+                elif "boolean" in col.lower():
+                    schema[col] = bool
+                else:
+                    schema[col] = str
+
             expected_output_table = self.con.create_table(
-                self.name_output_file(test_info), df
+                self.name_output_file(test_info), df, schema=schema
             )
 
             join_on = ["PERSON_ID"]
             if self.test_values:
                 join_on.append("VALUE")
+            if self.test_date:
+                join_on.append("EVENT_DATE")
             check_equality(
                 result_table,
                 expected_output_table,
                 test_name=test_info["name"],
                 test_values=self.test_values,
-                join_on=join_on
+                test_date=self.test_date,
+                join_on=join_on,
             )

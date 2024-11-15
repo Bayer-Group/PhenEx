@@ -10,7 +10,7 @@ from phenex.tables import (
 class Phenotype:
     """
     All Phenotype's in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype
-    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns 
+    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns
     a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
 
     To subclass:
@@ -23,9 +23,11 @@ class Phenotype:
     """
 
     def __init__(self):
-        self.table = None # self.table is populated ONLY AFTER self.execute() is called!
+        self.table = (
+            None  # self.table is populated ONLY AFTER self.execute() is called!
+        )
         self._namespaced_table = None
-        self.children = [] # List[Phenotype]
+        self.children = []  # List[Phenotype]
         self._check_for_children()
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -50,7 +52,7 @@ class Phenotype:
             if child.table is None:
                 child.execute(tables)
 
-        table = self._execute(tables).mutate(BOOLEAN=1)
+        table = self._execute(tables).mutate(BOOLEAN=True)
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(
@@ -140,6 +142,9 @@ class Phenotype:
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "|")
 
+    def __invert__(self) -> "ComputationGraph":
+        return ComputationGraph(self, None, "~")
+
     def get_codelists(self, to_pandas=False):
         codelists = []
         for child in self.children:
@@ -169,14 +174,18 @@ class ComputationGraph:
     def __init__(
         self,
         left: Union["Phenotype", "ComputationGraph"],
-        right: Union["Phenotype", "ComputationGraph", int, float],
+        right: Union["Phenotype", "ComputationGraph", int, float, None],
         operator: str,
     ):
         self.table = None
         self.left = left
         self.right = right
         self.operator = operator
-        self.children = [left] if isinstance(right, (int, float)) else [left, right]
+        self.children = (
+            [left]
+            if right is None or isinstance(right, (int, float))
+            else [left, right]
+        )
 
     def __add__(
         self, other: Union["Phenotype", "ComputationGraph"]
@@ -218,6 +227,9 @@ class ComputationGraph:
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "|")
 
+    def __invert__(self) -> "ComputationGraph":
+        return ComputationGraph(self, None, "~")
+
     def get_leaf_phenotypes(self):
         """
         A recursive function to extract all the leaf phenotypes from a computation graph.
@@ -250,7 +262,7 @@ class ComputationGraph:
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
                     return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_vALUE"]
+                return table[f"{node.name}_VALUE"]
             return node
 
         left = manage_node(self.left)
@@ -273,15 +285,18 @@ class ComputationGraph:
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
                     return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_vALUE"]
+                return table[f"{node.name}_VALUE"]
             return node
 
         left = manage_node(self.left)
         right = manage_node(self.right)
+
         if self.operator == "|":
             return left | right
         elif self.operator == "&":
             return left & right
+        elif self.operator == "~":
+            return ~(left)
         else:
             raise ValueError(f"Operator {self.operator} not supported.")
 
