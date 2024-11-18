@@ -85,6 +85,46 @@ class Codelist:
             data, name=os.path.basename(path.replace(".yaml", "").replace(".yml", ""))
         )
 
+    @classmethod
+    def from_excel(
+        cls,
+        path: str,
+        sheet_name: Optional[str] = None,
+        code_column: Optional[str] = "code",
+        code_type_column: Optional[str] = "code_type",
+        codelist_column: Optional[str] = None,
+        codelist_name: Optional[str] = None,
+    ) -> "Codelist":
+        """
+        Load a codelist from a yaml file.
+        """
+        import pandas as pd
+
+        if sheet_name is None:
+            _df = pd.read_excel(path)
+        else:
+            xl = pd.ExcelFile(path)
+            if sheet_name not in xl.sheet_names:
+                raise ValueError(
+                    f"Sheet name {sheet_name} not found in the Excel file."
+                )
+            _df = xl.parse(sheet_name)
+
+        if codelist_name is not None:
+            # codelist name is not none, therefore we subset the table to the current codelist
+            _df = _df[_df[codelist_column] == codelist_name]
+
+        code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
+
+        if codelist_name is None:
+            name = codelist_name
+        elif sheet_name is not None:
+            name = sheet_name
+        else:
+            name = path.split(os.sep)[-1].replace(".xlsx", "")
+
+        return cls(code_dict, name=name)
+
     def to_tuples(self) -> List[tuple]:
         """
         Convert the codelist to a list of tuples, where each tuple is of the form
