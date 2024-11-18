@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import Dict, Optional, Union, List
+from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.tables import PhenotypeTable, is_phenex_person_table
@@ -18,10 +19,20 @@ class DeathPhenotype(Phenotype):
             Executes the phenotype calculation and returns a table with the filtered individuals.
     """
 
-    def __init__(self, name: str = "death", domain: str = "PERSON"):
+    def __init__(self, name: str = "death", domain: str = "PERSON",
+        relative_time_range: Union[
+            RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
+        ] = None):
         self.name = name
         self.domain = domain
         self.children = []
+        self.relative_time_range = relative_time_range
+        if self.relative_time_range is not None:
+            if isinstance(self.relative_time_range, RelativeTimeRangeFilter):
+                self.relative_time_range = [self.relative_time_range]
+            for rtr in self.relative_time_range:
+                if rtr.anchor_phenotype is not None:
+                    self.children.append(rtr.anchor_phenotype)
         super(DeathPhenotype, self).__init__()
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -29,4 +40,7 @@ class DeathPhenotype(Phenotype):
         assert is_phenex_person_table(person_table)
 
         death_table = person_table.filter(person_table.DEATH_DATE.notnull())
+        if self.relative_time_range is not None:
+            for rtr in self.relative_time_range:
+                death_table = rtr.filter(death_table)
         return death_table.mutate(EVENT_DATE=death_table.DEATH_DATE)
