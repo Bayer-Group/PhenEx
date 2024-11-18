@@ -40,6 +40,7 @@ class PersonTableColumnMapper:
     NAME_TABLE: str = "PERSON"
     PERSON_ID: str = "PERSON_ID"
     DATE_OF_BIRTH: str = "DATE_OF_BIRTH"
+    DATE_OF_DEATH: str = "DATE_OF_DEATH"
 
     def rename(self, table: Table) -> Table:
         """
@@ -200,8 +201,46 @@ OptumEHRColumnMappers = {
 }
 
 #
+# Optum Claims Column Mappers
+#
+OptumClaimsPersonTableColumnMapper = PersonTableColumnMapper(
+    NAME_TABLE="PATIENT_CLAIMS",
+    PERSON_ID="PATID",
+    DATE_OF_BIRTH="BIRTH_DATE",
+)
+
+OptumClaimsConditionOccurrenceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="CLAIMS_DIAGNOSIS",
+    EVENT_DATE="DIAGNOSIS_DATE",
+    CODE="DIAGNOSIS_CODE",
+    CODE_TYPE="DIAGNOSIS_CODE_TYPE",
+)
+
+OptumClaimsProcedureOccurrenceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="CLAIMS_PROCEDURE",
+    EVENT_DATE="PROCEDURE_DATE",
+    CODE="PROCEDURE_CODE",
+    CODE_TYPE="PROCEDURE_CODE_TYPE",
+)
+
+OptumClaimsDrugExposureColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="CLAIMS_DRUG",
+    EVENT_DATE="PRESCRIPTION_DATE",
+    CODE="DRUG_CODE",
+    CODE_TYPE="DRUG_CODE_TYPE",
+)
+
+OptumClaimsColumnMappers = {
+    "PERSON": OptumClaimsPersonTableColumnMapper,
+    "CONDITION_OCCURRENCE": OptumClaimsConditionOccurrenceColumnMapper,
+    "PROCEDURE_OCCURRENCE": OptumClaimsProcedureOccurrenceColumnMapper,
+    "DRUG_EXPOSURE": OptumClaimsDrugExposureColumnMapper,
+}
+
+#
 # Domains
 #
 OMOPDomains = DomainsDictionary(**OMOPColumnMappers)
 VerantosDomains = DomainsDictionary(**VerantosColumnMappers)
 OptumEHRDomains = DomainsDictionary(**OptumEHRColumnMappers)
+OptumClaimsDomains = DomainsDictionary(**OptumClaimsColumnMappers)
