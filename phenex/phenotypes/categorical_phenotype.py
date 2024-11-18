@@ -15,15 +15,15 @@ class HospitalizationPhenotype(Phenotype):
     It uses a CategoricalFilter to filter for inpatient events and can apply additional date and time range filters.
 
     Attributes:
-        name (str): The name of the phenotype.
-        domain (str): The domain of the phenotype, default is 'ENCOUNTER'.
-        column_name (str): The name of the column to filter on, default is 'ENCOUNTER_TYPE'.
-        allowed_values (List[str]): List of allowed values for the encounter_type column, default is ['inpatient'].
-        date_range (DateRangeFilter, optional): A date range filter to apply.
-        relative_time_range (Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]], optional): A relative time range filter or a list of filters to apply.
-        return_date (str): Specifies whether to return the 'first', 'last', 'nearest', or 'all' event dates. Default is 'first'.
-        table (PhenotypeTable): The resulting phenotype table after filtering.
-        children (list): List of child phenotypes.
+        name: The name of the phenotype.
+        domain: The domain of the phenotype, default is 'ENCOUNTER'.
+        column_name: The name of the column to filter on, default is 'ENCOUNTER_TYPE'.
+        allowed_values: List of allowed values for the encounter_type column, default is ['inpatient'].
+        date_range: A date range filter to apply.
+        relative_time_range: A relative time range filter or a list of filters to apply.
+        return_date: Specifies whether to return the 'first', 'last', 'nearest', or 'all' event dates. Default is 'first'.
+        table: The resulting phenotype table after filtering.
+        children: List of child phenotypes.
 
     Methods:
         _execute(tables: Dict[str, Table]) -> PhenotypeTable:
