@@ -12,6 +12,7 @@ from phenex.filters.value import *
 
 class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "dtpt"
+    test_date = True
 
     def define_input_tables(self):
         index_date = datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")
@@ -32,7 +33,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         df_person["INDEX_DATE"] = index_date
 
         input_info_person = {
-            "name": "person",
+            "name": "PERSON",
             "df": df_person,
         }
 
@@ -44,8 +45,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t1 = {
             "name": "death_prior_including_index",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="before",
-                name_eventdate="DATE_OF_DEATH",
+                when="before"
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -62,8 +62,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "death_prior_index",
             "time_range_filter": RelativeTimeRangeFilter(
                 when="before",
-                min_days=GreaterThan(0),
-                name_eventdate="DATE_OF_DEATH",
+                min_days=GreaterThan(0)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -80,8 +79,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "death_prior_including_index_max20",
             "time_range_filter": RelativeTimeRangeFilter(
                 when="before",
-                max_days=Value("<=", 30),
-                name_eventdate="DATE_OF_DEATH",
+                max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -99,8 +97,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "time_range_filter": RelativeTimeRangeFilter(
                 when="before",
                 min_days=GreaterThan(0),
-                max_days=Value("<=", 30),
-                name_eventdate="DATE_OF_DEATH",
+                max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -116,8 +113,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t5 = {
             "name": "death_post_including_index",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="after",
-                name_eventdate="DATE_OF_DEATH",
+                when="after"
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -134,8 +130,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "death_post_index",
             "time_range_filter": RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThan(0),
-                name_eventdate="DATE_OF_DEATH",
+                min_days=GreaterThan(0)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -152,8 +147,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "death_post_including_index_max20",
             "time_range_filter": RelativeTimeRangeFilter(
                 when="after",
-                max_days=Value("<=", 30),
-                name_eventdate="DATE_OF_DEATH",
+                max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -170,8 +164,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "time_range_filter": RelativeTimeRangeFilter(
                 when="after",
                 min_days=GreaterThan(0),
-                max_days=Value("<=", 30),
-                name_eventdate="DATE_OF_DEATH",
+                max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -188,8 +181,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
             "time_range_filter": RelativeTimeRangeFilter(
                 when="after",
                 min_days=Value(">", 30),
-                max_days=Value("<=", 50),
-                name_eventdate="DATE_OF_DEATH",
+                max_days=Value("<=", 50)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
@@ -206,7 +198,7 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = DeathPhenotype(
                 name=test_info["name"],
-                time_range_filter=test_info.get("time_range_filter"),
+                relative_time_range=test_info.get("time_range_filter"),
             )
 
         return test_infos

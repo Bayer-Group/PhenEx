@@ -3,6 +3,7 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.tables import PhenotypeTable, is_phenex_person_table
+import ibis 
 
 class DeathPhenotype(Phenotype):
     """
@@ -37,10 +38,12 @@ class DeathPhenotype(Phenotype):
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
+        person_table = person_table.mutate(EVENT_DATE=person_table.DATE_OF_DEATH)
         assert is_phenex_person_table(person_table)
 
-        death_table = person_table.filter(person_table.DEATH_DATE.notnull())
+        death_table = person_table.filter(person_table.DATE_OF_DEATH.notnull())
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
-        return death_table.mutate(EVENT_DATE=death_table.DEATH_DATE)
+        death_table = death_table.mutate(VALUE=ibis.null())
+        return death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
