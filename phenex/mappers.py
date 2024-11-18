@@ -111,6 +111,26 @@ class MeasurementTableColumnMapper(CodeTableColumnMapper):
 
     VALUE: str = "VALUE"
 
+@dataclass
+class ObservationPeriodTableMapper:
+    NAME_TABLE: str = "OBSERVATION_PERIOD"
+    PERSON_ID: str = "PERSON_ID"
+    OBSERVATION_PERIOD_START_DATE: str = "OBSERVATION_PERIOD_START_DATE"
+    OBSERVATION_PERIOD_END_DATE: str = "OBSERVATION_PERIOD_END_DATE"
+
+    def rename(self, table: Table) -> Table:
+        """
+        Renames the columns of the given table according to the internal representation.
+
+        Args:
+            table (Table): The table to rename columns for.
+
+        Returns:
+            Table: The table with renamed columns.
+        """
+        mapping = copy.deepcopy(asdict(self))
+        mapping.pop("NAME_TABLE")
+        return table.rename(**mapping)
 
 #
 # OMOP Column Mappers
@@ -137,110 +157,23 @@ OMOPDrugExposureColumnMapper = CodeTableColumnMapper(
     CODE="DRUG_CONCEPT_ID",
 )
 
+OMOPObservationPeriodColumnMapper = ObservationPeriodTableMapper(
+    NAME_TABLE="OBSERVATION_PERIOD",
+    PERSON_ID="PERSON_ID",
+    OBSERVATION_PERIOD_START_DATE="OBSERVATION_PERIOD_START_DATE",
+    OBSERVATION_PERIOD_END_DATE="OBSERVATION_PERIOD_END_DATE",
+)
+
 OMOPColumnMappers = {
     "PERSON": OMOPPersonTableColumnMapper,
     "CONDITION_OCCURRENCE": OMOPConditionOccurrenceColumnMapper,
     "PROCEDURE_OCCURRENCE": OMOPProcedureOccurrenceColumnMapper,
     "DRUG_EXPOSURE": OMOPDrugExposureColumnMapper,
+    "OBSERVATION_PERIOD": OMOPObservationPeriodColumnMapper,
 }
 
-
-#
-# Verantos WITH SOURCE CODES
-#
-VerantosSourceCodeTableColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="CONDITION_OCCURRENCE",
-    EVENT_DATE="CONDITION_START_DATE",
-    CODE="CONDITION_SOURCE_CONCEPT_CODE",
-    CODE_TYPE="CONDITION_SOURCE_VOCABULARY_ID",
-)
-
-VerantosColumnMappers = {
-    "PERSON": OMOPPersonTableColumnMapper,
-    "CONDITION_OCCURRENCE": OMOPConditionOccurrenceColumnMapper,
-    "CONDITION_OCCURRENCE_SOURCE": VerantosSourceCodeTableColumnMapper,
-    "PROCEDURE_OCCURRENCE": OMOPProcedureOccurrenceColumnMapper,
-    "DRUG_EXPOSURE": OMOPDrugExposureColumnMapper,
-}
-
-#
-# Optum EHR Column Mappers
-#
-OptumPersonTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PATIENT",
-    PERSON_ID="PATID",
-    DATE_OF_BIRTH="BIRTH_YR",
-)
-
-OptumConditionOccurrenceColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="DIAGNOSIS",
-    EVENT_DATE="DIAGNOSIS_DATE",
-    CODE="DIAGNOSIS_CODE",
-    CODE_TYPE="DIAGNOSIS_CODE_TYPE",
-)
-
-OptumProcedureOccurrenceColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="PROCEDURE",
-    EVENT_DATE="PROCEDURE_DATE",
-    CODE="PROCEDURE_CODE",
-    CODE_TYPE="PROCEDURE_CODE_TYPE",
-)
-
-OptumDrugExposureColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="RX_PRESCRIBED",
-    EVENT_DATE="RXDATE",
-    CODE="NDC",
-    CODE_TYPE=None,
-)
-
-OptumEHRColumnMappers = {
-    "PERSON": OptumPersonTableColumnMapper,
-    "CONDITION_OCCURRENCE": OptumConditionOccurrenceColumnMapper,
-    "PROCEDURE_OCCURRENCE": OptumProcedureOccurrenceColumnMapper,
-    "DRUG_EXPOSURE": OptumDrugExposureColumnMapper,
-}
-
-#
-# Optum Claims Column Mappers
-#
-OptumClaimsPersonTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PATIENT_CLAIMS",
-    PERSON_ID="PATID",
-    DATE_OF_BIRTH="BIRTH_DATE",
-)
-
-OptumClaimsConditionOccurrenceColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="CLAIMS_DIAGNOSIS",
-    EVENT_DATE="DIAGNOSIS_DATE",
-    CODE="DIAGNOSIS_CODE",
-    CODE_TYPE="DIAGNOSIS_CODE_TYPE",
-)
-
-OptumClaimsProcedureOccurrenceColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="CLAIMS_PROCEDURE",
-    EVENT_DATE="PROCEDURE_DATE",
-    CODE="PROCEDURE_CODE",
-    CODE_TYPE="PROCEDURE_CODE_TYPE",
-)
-
-OptumClaimsDrugExposureColumnMapper = CodeTableColumnMapper(
-    NAME_TABLE="CLAIMS_DRUG",
-    EVENT_DATE="PRESCRIPTION_DATE",
-    CODE="DRUG_CODE",
-    CODE_TYPE="DRUG_CODE_TYPE",
-)
-
-OptumClaimsColumnMappers = {
-    "PERSON": OptumClaimsPersonTableColumnMapper,
-    "CONDITION_OCCURRENCE": OptumClaimsConditionOccurrenceColumnMapper,
-    "PROCEDURE_OCCURRENCE": OptumClaimsProcedureOccurrenceColumnMapper,
-    "DRUG_EXPOSURE": OptumClaimsDrugExposureColumnMapper,
-}
 
 #
 # Domains
 #
 OMOPDomains = DomainsDictionary(**OMOPColumnMappers)
-VerantosDomains = DomainsDictionary(**VerantosColumnMappers)
-OptumEHRDomains = DomainsDictionary(**OptumEHRColumnMappers)
-OptumClaimsDomains = DomainsDictionary(**OptumClaimsColumnMappers)
