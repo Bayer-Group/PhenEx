@@ -20,6 +20,8 @@ nav:
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - Cohort: api/phenotypes/cohort.md
+      - Codelists:
+          - Codelist: api/codelists/codelists.md
   - License: LICENSE.md
 
 plugins:

@@ -90,13 +90,21 @@ class Codelist:
         cls,
         path: str,
         sheet_name: Optional[str] = None,
+        codelist_name: Optional[str] = None,
         code_column: Optional[str] = "code",
         code_type_column: Optional[str] = "code_type",
-        codelist_column: Optional[str] = None,
-        codelist_name: Optional[str] = None,
+        codelist_column: Optional[str] = "codelist",
     ) -> "Codelist":
         """
-        Load a codelist from a yaml file.
+        Load a codelist from an Excel file.
+
+        Parameters:
+            path: path to the excel file.
+            sheet_name: an optional label for the sheet to read from. If defined, the codelist will be taken from that sheet. If no sheet_name is defined, the first sheet is taken.
+            codelist_name: an optional name of the codelist which to extract. If defined, codelist_column must be present and the codelist_name must occur within the codelist_column.
+            code_column: the name of the column containing the codes.
+            code_type_column: the name of the column containing the code types.
+            codelist_column: the name of the column containing the codelist names.
         """
         import pandas as pd
 
