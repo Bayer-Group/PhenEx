@@ -29,7 +29,7 @@ class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
 
         column_types_person = {}
         input_info_person = {
-            "name": "person",
+            "name": "PERSON",
             "df": df_person,
             "column_types": column_types_person,
         }

@@ -24,7 +24,7 @@ class SexPhenotype(Phenotype):
     def __init__(
         self,
         name: str = "sex",
-        allowed_values: List[str] = ["male", "female"],
+        allowed_values: Optional[List[str]] = None,
         domain: str = "PERSON",
     ):
         self.name = name
@@ -37,7 +37,8 @@ class SexPhenotype(Phenotype):
         person_table = tables[self.domain]
         assert is_phenex_person_table(person_table)
 
-        sex_filter = CategoricalFilter(column_name="SEX", allowed_values=self.allowed_values)
-        filtered_table = sex_filter._filter(person_table)
+        if self.allowed_values is not None:
+            sex_filter = CategoricalFilter(column_name="SEX", allowed_values=self.allowed_values)
+            person_table = sex_filter._filter(person_table)
 
-        return filtered_table.mutate(VALUE=filtered_table.SEX, EVENT_DATE= ibis.null())
+        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE= ibis.null())
