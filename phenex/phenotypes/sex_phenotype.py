@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.categorical_filter import CategoricalFilter
@@ -39,4 +40,4 @@ class SexPhenotype(Phenotype):
         sex_filter = CategoricalFilter(column_name="SEX", allowed_values=self.allowed_values)
         filtered_table = sex_filter._filter(person_table)
 
-        return filtered_table.mutate(VALUE=filtered_table.SEX)
+        return filtered_table.mutate(VALUE=filtered_table.SEX, EVENT_DATE= ibis.null())

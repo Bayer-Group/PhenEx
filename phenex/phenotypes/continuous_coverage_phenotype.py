@@ -10,6 +10,7 @@ from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, Phenoty
 from phenex.phenotypes.functions import select_phenotype_columns
 from ibis import _
 from ibis.expr.types.relations import Table
+import ibis
 
 
 class ContinuousCoveragePhenotype(Phenotype):
@@ -54,6 +55,8 @@ class ContinuousCoveragePhenotype(Phenotype):
         # ensure that coverage end extends past the anchor date
         coverage_table = self._filter_observation_period_end(coverage_table)
         coverage_table = self._filter_coverage_period(coverage_table)
+
+        coverage_table = coverage_table.mutate(EVENT_DATE = ibis.null())
         return coverage_table
 
     def _perform_time_filtering(self, coverage_table):
