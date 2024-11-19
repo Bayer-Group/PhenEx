@@ -148,12 +148,12 @@ OMOPPersonTableColumnMapper = PersonTableColumnMapper(
     SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
 )
 
-OMOPPersonTableSourceColumnMapper = PersonTableColumnMapper(
+OMOPDeathTableColumnMapper = PersonTableColumnMapper(
     NAME_TABLE="DEATH", PERSON_ID="PERSON_ID",
     DATE_OF_DEATH="DEATH_DATE"
 )
 
-OMOPDeathTableColumnMapper = PersonTableColumnMapper(
+OMOPPersonTableSourceColumnMapper = PersonTableColumnMapper(
     NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
     SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
