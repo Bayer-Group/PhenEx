@@ -36,24 +36,22 @@ class VerticalDateAggregator:
                 f"Unsupported aggregation function: {self.aggregation_function}"
             )
 
-        # # Add the aggregated date as a new column
-        # table = input_table.mutate(aggregated_date=aggregated_date)
+        # Add the aggregated date as a new column
+        input_table = input_table.mutate(aggregated_date=aggregated_date)
 
-        # # Filter rows where the original date matches the aggregated date
-        # result = table.filter(table[self.event_date_column] == table.aggregated_date)
+        # Filter rows where the original date matches the aggregated date
+        input_table = input_table.filter(input_table[self.event_date_column] == input_table.aggregated_date)
 
         # Select the necessary columns
-        selected_columns = self.aggregation_index + [self.event_date_column]
 
         # Apply the distinct reduction if required
         if self.reduce:
+            selected_columns = self.aggregation_index + [self.event_date_column]
             input_table = input_table.select(selected_columns).distinct()
             input_table = input_table.mutate(VALUE=ibis.null())
-        else:
-            input_table = input_table.select(selected_columns)
 
         return input_table
-    
+
 class Nearest(VerticalDateAggregator):
     def __init__(self, **kwargs):
         super().__init__(aggregation_function="max", **kwargs)
