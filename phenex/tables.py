@@ -1,6 +1,4 @@
 from ibis.expr.types.relations import Table
-from dataclasses import asdict
-from phenex.mappers import PersonTableColumnMapper, CodeTableColumnMapper
 
 
 class PersonTable(Table):
@@ -33,7 +31,7 @@ class PhenotypeTable(Table):
     pass
 
 
-PERSON_TABLE_COLUMNS = ["PERSON_ID", "DATE_OF_BIRTH"]
+PERSON_TABLE_COLUMNS = ["PERSON_ID"]
 CODE_TABLE_COLUMNS = ["PERSON_ID", "EVENT_DATE", "CODE"]
 PHENOTYPE_TABLE_COLUMNS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]
 EVENT_TABLE_COLUMNS = ["PERSON_ID", "EVENT_DATE"]

@@ -8,10 +8,12 @@ class VerticalDateAggregator:
         aggregation_index=["PERSON_ID"],
         aggregation_function="sum",
         event_date_column="EVENT_DATE",
+        reduce=False
     ):
         self.aggregation_index = aggregation_index
         self.aggregation_function = aggregation_function
         self.event_date_column = event_date_column
+        self.reduce = reduce
 
     def aggregate(self, input_table: Table):
         # Define the window specification
@@ -35,12 +37,20 @@ class VerticalDateAggregator:
             )
 
         # Add the aggregated date as a new column
-        table = input_table.mutate(aggregated_date=aggregated_date)
+        input_table = input_table.mutate(aggregated_date=aggregated_date)
 
         # Filter rows where the original date matches the aggregated date
-        result = table.filter(table[self.event_date_column] == table.aggregated_date)
-        return result
+        input_table = input_table.filter(input_table[self.event_date_column] == input_table.aggregated_date)
 
+        # Select the necessary columns
+
+        # Apply the distinct reduction if required
+        if self.reduce:
+            selected_columns = self.aggregation_index + [self.event_date_column]
+            input_table = input_table.select(selected_columns).distinct()
+            input_table = input_table.mutate(VALUE=ibis.null())
+
+        return input_table
 
 class Nearest(VerticalDateAggregator):
     def __init__(self, **kwargs):

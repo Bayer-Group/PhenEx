@@ -56,7 +56,7 @@ class Phenotype:
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(
-                f"Phenotype must return columns {PHENOTYPE_TABLE_COLUMNS}. Found {table.columns}."
+                f"Phenotype {self.name} must return columns {PHENOTYPE_TABLE_COLUMNS}. Found {table.columns}."
             )
 
         self.table = table.select(PHENOTYPE_TABLE_COLUMNS)

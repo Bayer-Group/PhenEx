@@ -5,7 +5,9 @@ import numpy as np
 from dataclasses import asdict
 
 
-def generate_mock_mapped_tables(n_patients: int, domains: DomainsDictionary) -> Dict[str, pd.DataFrame]:
+def generate_mock_mapped_tables(
+    n_patients: int, domains: DomainsDictionary
+) -> Dict[str, pd.DataFrame]:
     """
     Generate fake data for N patients based on the given domains.
 
@@ -22,24 +24,28 @@ def generate_mock_mapped_tables(n_patients: int, domains: DomainsDictionary) -> 
         data = {}
         for col in columns:
             if "DATE" in col:
-                start_date = pd.to_datetime('2000-01-01')
-                end_date = pd.to_datetime('2020-12-31')
-                data[col] = pd.to_datetime(np.random.randint(start_date.value, end_date.value, n_patients)).date
+                start_date = pd.to_datetime("2000-01-01")
+                end_date = pd.to_datetime("2020-12-31")
+                data[col] = pd.to_datetime(
+                    np.random.randint(start_date.value, end_date.value, n_patients)
+                ).date
             elif "ID" in col:
                 data[col] = np.arange(1, n_patients + 1)
             elif "VALUE" in col:
                 data[col] = np.random.uniform(0, 100, n_patients)
             elif "CODE_TYPE" in col:
                 if "CONDITION" in domain:
-                    data[col] = np.random.choice(['ICD-10', 'SNOMED'], n_patients)
+                    data[col] = np.random.choice(["ICD-10", "SNOMED"], n_patients)
                 elif "DRUG" in domain:
-                    data[col] = np.random.choice(['NDC', 'RxNorm'], n_patients)
+                    data[col] = np.random.choice(["NDC", "RxNorm"], n_patients)
                 elif "PROCEDURE" in domain:
-                    data[col] = np.random.choice(['CPT', 'HCPCS'], n_patients)
+                    data[col] = np.random.choice(["CPT", "HCPCS"], n_patients)
                 else:
-                    data[col] = np.random.choice(['TYPE1', 'TYPE2'], n_patients)
+                    data[col] = np.random.choice(["TYPE1", "TYPE2"], n_patients)
             elif "CODE" in col:
-                data[col] = np.random.choice(['A', 'B', 'C', 'D', 'E', 'F', 'G'], n_patients)
+                data[col] = np.random.choice(
+                    ["A", "B", "C", "D", "E", "F", "G"], n_patients
+                )
             else:
                 data[col] = np.random.choice(range(1000), n_patients)
         fake_data[domain] = pd.DataFrame(data)

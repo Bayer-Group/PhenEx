@@ -26,6 +26,8 @@ class CodelistFilter(Filter):
 
     def _convert_codelist_to_tuples(self) -> List[Tuple[str, str]]:
         if self.codelist is not None:
+            if not isinstance(self.codelist, Codelist):
+                raise ValueError("Codelist must be an instance of Codelist")
             return [
                 (ct, c) for ct, codes in self.codelist.codelist.items() for c in codes
             ]

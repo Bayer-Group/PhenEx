@@ -139,7 +139,7 @@ class PhenotypeTestGenerator:
                 if "date" in col.lower():
                     schema[col] = datetime.date
                 elif "value" in col.lower():
-                    schema[col] = float
+                    schema[col] = str if isinstance(df[col].iloc[0], str) else float
                 elif "boolean" in col.lower():
                     schema[col] = bool
                 else:

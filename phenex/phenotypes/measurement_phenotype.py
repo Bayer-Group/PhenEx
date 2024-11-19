@@ -114,7 +114,7 @@ class MeasurementPhenotype(CodelistPhenotype):
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table)
         code_table = self._perform_time_filtering(code_table)
-        code_table = self._perform_date_selection(code_table)
+        code_table = self._perform_date_selection(code_table, reduce=False)
         code_table = self._perform_nonphysiological_value_filtering(code_table)
         code_table = self._perform_value_aggregation(code_table)
         code_table = self._perform_value_filtering(code_table)
