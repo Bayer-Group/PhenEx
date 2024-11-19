@@ -39,8 +39,11 @@ class PersonTableColumnMapper:
 
     NAME_TABLE: str = "PERSON"
     PERSON_ID: str = "PERSON_ID"
-    DATE_OF_BIRTH: str = "DATE_OF_BIRTH"
-    DATE_OF_DEATH: str = "DATE_OF_DEATH"
+    DATE_OF_BIRTH: Optional[str] = None
+    YEAR_OF_BIRTH: Optional[str] = None
+    DATE_OF_DEATH: Optional[str] = None
+    SEX: Optional[str] = None
+    ETHNICITY: Optional[str] = None
 
     def rename(self, table: Table) -> Table:
         """
@@ -54,6 +57,10 @@ class PersonTableColumnMapper:
         """
         mapping = copy.deepcopy(asdict(self))
         mapping.pop("NAME_TABLE")
+        # delete optional params from mapping
+        for key in ["DATE_OF_BIRTH", "DATE_OF_DEATH", "YEAR_OF_BIRTH", "SEX", "ETHNICITY"]:
+            if getattr(self, key) is None:
+                del mapping[key]
         return table.rename(**mapping)
 
 
@@ -136,7 +143,20 @@ class ObservationPeriodTableMapper:
 # OMOP Column Mappers
 #
 OMOPPersonTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", DATE_OF_BIRTH="BIRTH_DATETIME"
+    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    YEAR_OF_BIRTH="YEAR_OF_BIRTH",
+    SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
+)
+
+OMOPPersonTableSourceColumnMapper = PersonTableColumnMapper(
+    NAME_TABLE="DEATH", PERSON_ID="PERSON_ID",
+    DATE_OF_DEATH="DEATH_DATE"
+)
+
+OMOPDeathTableColumnMapper = PersonTableColumnMapper(
+    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    YEAR_OF_BIRTH="YEAR_OF_BIRTH",
+    SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
 )
 
 OMOPConditionOccurrenceColumnMapper = CodeTableColumnMapper(
@@ -145,16 +165,34 @@ OMOPConditionOccurrenceColumnMapper = CodeTableColumnMapper(
     CODE="CONDITION_CONCEPT_ID",
 )
 
+OMOPConditionOccurrenceSourceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="CONDITION_OCCURRENCE",
+    EVENT_DATE="CONDITION_START_DATE",
+    CODE="CONDITION_SOURCE_VALUE",
+)
+
 OMOPProcedureOccurrenceColumnMapper = CodeTableColumnMapper(
     NAME_TABLE="PROCEDURE_OCCURRENCE",
     EVENT_DATE="PROCEDURE_DATE",
     CODE="PROCEDURE_CONCEPT_ID",
 )
 
+OMOPProcedureOccurrenceSourceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="PROCEDURE_OCCURRENCE",
+    EVENT_DATE="PROCEDURE_DATE",
+    CODE="PROCEDURE_SOURCE_VALUE",
+)
+
 OMOPDrugExposureColumnMapper = CodeTableColumnMapper(
     NAME_TABLE="DRUG_EXPOSURE",
     EVENT_DATE="DRUG_EXPOSURE_START_DATE",
     CODE="DRUG_CONCEPT_ID",
+)
+
+OMOPDrugExposureSourceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="DRUG_EXPOSURE",
+    EVENT_DATE="DRUG_EXPOSURE_START_DATE",
+    CODE="DRUG_SOURCE_VALUE",
 )
 
 OMOPObservationPeriodColumnMapper = ObservationPeriodTableMapper(
@@ -166,18 +204,21 @@ OMOPObservationPeriodColumnMapper = ObservationPeriodTableMapper(
 
 OMOPColumnMappers = {
     "PERSON": OMOPPersonTableColumnMapper,
+    "DEATH": OMOPDeathTableColumnMapper,
     "CONDITION_OCCURRENCE": OMOPConditionOccurrenceColumnMapper,
     "PROCEDURE_OCCURRENCE": OMOPProcedureOccurrenceColumnMapper,
     "DRUG_EXPOSURE": OMOPDrugExposureColumnMapper,
+    "PERSON_SOURCE": OMOPPersonTableSourceColumnMapper,
+    "CONDITION_OCCURRENCE_SOURCE": OMOPConditionOccurrenceSourceColumnMapper,
+    "PROCEDURE_OCCURRENCE_SOURCE": OMOPProcedureOccurrenceSourceColumnMapper,
+    "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSourceColumnMapper,
     "OBSERVATION_PERIOD": OMOPObservationPeriodColumnMapper,
 }
-
 
 #
 # Domains
 #
 OMOPDomains = DomainsDictionary(**OMOPColumnMappers)
-
 
 
 
