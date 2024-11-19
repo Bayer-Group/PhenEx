@@ -1,6 +1,5 @@
 from phenex.filters.filter import Filter
-from typing import List
-from typing import Optional
+from typing import List, Optional, Union
 from ibis.expr.types.relations import Table
 
 class CategoricalFilter(Filter):
@@ -20,9 +19,9 @@ class CategoricalFilter(Filter):
     """
 
     def __init__(
-            self, 
+            self,
             column_name: str,
-            allowed_values: List[str, int],
+            allowed_values: List[Union[str, int]],
             domain: Optional[str] = None
     ):
         self.column_name = column_name

@@ -177,3 +177,52 @@ OMOPColumnMappers = {
 # Domains
 #
 OMOPDomains = DomainsDictionary(**OMOPColumnMappers)
+
+
+
+
+#
+# Vera Column Mappers
+#
+VeraPersonTableColumnMapper = PersonTableColumnMapper(
+    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", DATE_OF_BIRTH="BIRTH_DATETIME", DATE_OF_DEATH="DEATH_DATETIME"
+)
+
+VeraConditionOccurrenceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="CONDITION_OCCURRENCE",
+    EVENT_DATE="CONDITION_START_DATE",
+    CODE="CONDITION_CONCEPT_ID",
+)
+
+VeraProcedureOccurrenceColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="PROCEDURE_OCCURRENCE",
+    EVENT_DATE="PROCEDURE_DATE",
+    CODE="PROCEDURE_CONCEPT_ID",
+)
+
+VeraDrugExposureColumnMapper = CodeTableColumnMapper(
+    NAME_TABLE="DRUG_EXPOSURE",
+    EVENT_DATE="DRUG_EXPOSURE_START_DATE",
+    CODE="DRUG_CONCEPT_ID",
+)
+
+VeraObservationPeriodColumnMapper = ObservationPeriodTableMapper(
+    NAME_TABLE="OBSERVATION_PERIOD",
+    PERSON_ID="PERSON_ID",
+    OBSERVATION_PERIOD_START_DATE="OBSERVATION_PERIOD_START_DATE",
+    OBSERVATION_PERIOD_END_DATE="OBSERVATION_PERIOD_END_DATE",
+)
+
+VeraColumnMappers = {
+    "PERSON": VeraPersonTableColumnMapper,
+    "CONDITION_OCCURRENCE": VeraConditionOccurrenceColumnMapper,
+    "PROCEDURE_OCCURRENCE": VeraProcedureOccurrenceColumnMapper,
+    "DRUG_EXPOSURE": VeraDrugExposureColumnMapper,
+    "OBSERVATION_PERIOD": VeraObservationPeriodColumnMapper,
+}
+
+
+#
+# Domains
+#
+VeraDomains = DomainsDictionary(**VeraColumnMappers)

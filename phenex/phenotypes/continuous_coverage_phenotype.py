@@ -1,5 +1,6 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
+from phenex.filters.value import Value
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_range_filter import DateRangeFilter
@@ -32,30 +33,72 @@ class ContinuousCoveragePhenotype(Phenotype):
     >>> phenotype = ContinuousCoveragePhenotype(coverage_period_min=coverage_min_filter)
     """
 
-    def __init__(self, domain, start_date, end_date, gap_days=30, name=None):
+    def __init__(self,
+        name:Optional[str] = 'continuous_coverage',
+        domain:Optional[str] = 'OBSERVATION_PERIOD',
+        relative_time_range:Optional[RelativeTimeRangeFilter] = None,
+        min_days : Optional[Value] = None,
+        anchor_phenotype:Optional[Phenotype] = None,
+    ):
         super().__init__()
+        self.name = name
         self.domain = domain
-        self.start_date = start_date
-        self.end_date = end_date
-        self.gap_days = gap_days
-        self.name = name or f"ContinuousCoverage_{domain}"
+        self.relative_time_range = relative_time_range
+        self.min_days = min_days
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         coverage_table = tables[self.domain]
+        # first perform time range filter on observation period start date
+        coverage_table = coverage_table.mutate(EVENT_DATE = coverage_table.OBSERVATION_PERIOD_START_DATE)
+        coverage_table = self._perform_time_filtering(coverage_table)
+        # ensure that coverage end extends past the anchor date
+        coverage_table = self._filter_observation_period_end(coverage_table)
         coverage_table = self._filter_coverage_period(coverage_table)
-        coverage_table = self._check_continuous_coverage(coverage_table)
-        return select_phenotype_columns(coverage_table)
+        return coverage_table
+
+    def _perform_time_filtering(self, coverage_table):
+        '''
+        Filter the observation period start
+        '''
+        if self.relative_time_range is not None:
+            coverage_table = self.relative_time_range.filter(coverage_table)
+        return coverage_table
+
+    def _filter_observation_period_end(self, coverage_table):
+        '''
+        Get only rows where the observation period end date is after the anchor date
+        '''
+        if self.relative_time_range is not None:
+            if self.relative_time_range.anchor_phenotype is not None:
+                reference_column = self.relative_time_range.anchor_phenotype.table.EVENT_DATE
+            else:
+                reference_column = coverage_table.INDEX_DATE
+
+            coverage_table = coverage_table.filter(
+                coverage_table.OBSERVATION_PERIOD_END_DATE >= reference_column
+            )
+        return coverage_table
+
 
     def _filter_coverage_period(self, coverage_table: Table) -> Table:
-        return coverage_table.filter(
-            (coverage_table['COVERAGE_START_DATE'] <= self.end_date) &
-            (coverage_table['COVERAGE_END_DATE'] >= self.start_date)
-        )
+        if self.min_days.operator == '>':
+            coverage_table = coverage_table.filter(
+                (coverage_table['DAYS_FROM_ANCHOR'] > self.min_days.value)
+            )
+        elif self.min_days.operator == '>=':
+            coverage_table = coverage_table.filter(
+                (coverage_table['DAYS_FROM_ANCHOR'] >= self.min_days.value)
+            )
+        elif self.min_days.operator == '<':
+            coverage_table = coverage_table.filter(
+                (coverage_table['DAYS_FROM_ANCHOR'] < self.min_days.value)
+            )
+        elif self.min_days.operator == '<=':
+            coverage_table = coverage_table.filter(
+                (coverage_table['DAYS_FROM_ANCHOR'] <= self.min_days.value)
+            )
+        return coverage_table
 
-    def _check_continuous_coverage(self, coverage_table: Table) -> Table:
-        # Logic to check for continuous coverage with allowed gap_days
-        # This is a placeholder and should be replaced with actual implementation
-        return coverage_table.mutate(BOOLEAN=True)
 
     def get_codelists(self):
         return []
