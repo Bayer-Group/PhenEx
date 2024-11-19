@@ -18,7 +18,12 @@ nav:
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
+          - SexPhenotype: api/phenotypes/sec_phenotype.md
+          - DeathPhenotype: api/phenotypes/death_phenotype.md
+          - AgePhenotype: api/phenotypes/age_phenotype.md
+          - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
+          - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
       - Codelists:
           - Codelist: api/codelists/codelists.md
