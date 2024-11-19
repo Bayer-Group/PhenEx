@@ -144,6 +144,7 @@ class ObservationPeriodTableMapper:
 #
 OMOPPersonTableColumnMapper = PersonTableColumnMapper(
     NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    DATE_OF_BIRTH="BIRTH_DATETIME",
     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
     SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
 )
@@ -155,8 +156,9 @@ OMOPDeathTableColumnMapper = PersonTableColumnMapper(
 
 OMOPPersonTableSourceColumnMapper = PersonTableColumnMapper(
     NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    DATE_OF_BIRTH="BIRTH_DATETIME",
     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
-    SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
+    SEX="GENDER_SOURCE_VALUE", ETHNICITY="ETHNICITY_SOURCE_VALUE"
 )
 
 OMOPConditionOccurrenceColumnMapper = CodeTableColumnMapper(
