@@ -1,5 +1,6 @@
 import os
 from typing import Dict, List, Union, Optional
+import pandas as pd
 
 
 class Codelist:
@@ -149,8 +150,15 @@ class Codelist:
     codelist={self.codelist}
 )"""
 
+    def to_pandas(self) -> pd.DataFrame:
+        """
+        Convert the codelist to a pandas DataFrame.
+        """
 
-import pandas as pd
+        _df = pd.DataFrame(self.to_tuples(), columns=["code_type", "code"])
+        _df['codelist'] = self.name
+        return _df
+
 
 
 class LocalCSVCodelistFactory:

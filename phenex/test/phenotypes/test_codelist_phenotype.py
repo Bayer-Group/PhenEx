@@ -547,6 +547,6 @@ def test_codelist_phenotype():
 
 if __name__ == "__main__":
     test_codelist_phenotype()
-    test_relative_time_range_filter()
-    test_anchor_phenotype()
-    test_return_date()
+    # test_relative_time_range_filter()
+    # test_anchor_phenotype()
+    # test_return_date()

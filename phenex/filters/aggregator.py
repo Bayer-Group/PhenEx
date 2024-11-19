@@ -46,10 +46,13 @@ class VerticalDateAggregator:
 
         # Apply the distinct reduction if required
         if self.reduce:
+            print("REDUCING")
             selected_columns = self.aggregation_index + [self.event_date_column]
             input_table = input_table.select(selected_columns).distinct()
+            print(selected_columns)
             input_table = input_table.mutate(VALUE=ibis.null())
 
+        print(input_table.to_pandas())
         return input_table
 
 class Nearest(VerticalDateAggregator):
