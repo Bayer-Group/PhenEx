@@ -42,8 +42,10 @@ class Phenotype:
 
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
+
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
+
         Raises:
             ValueError: If the table returned by _execute() does not contain the required phenotype
             columns.
@@ -70,6 +72,7 @@ class Phenotype:
         The phenotype.table has columns 'person_id', 'boolean', 'event_date', and 'value'. The namespaced_table
         appends the phenotype name to all of these columns. This is useful when joining multiple phenotype tables
         together
+
         Returns:
             Table: The namespaced table for the current phenotype.
         """
