@@ -24,7 +24,7 @@ class SexPhenotype(Phenotype):
     def __init__(
         self,
         name: str = "sex",
-        allowed_values: Optional[List[Union[str, int, float]]] = ["male", "female"],
+        allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
     ):
         self.name = name

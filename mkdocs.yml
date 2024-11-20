@@ -18,7 +18,7 @@ nav:
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
-          - SexPhenotype: api/phenotypes/sec_phenotype.md
+          - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - ContinuousCoveragePhenotype: api/phenotypes/continuous_coverage_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
@@ -28,6 +28,8 @@ nav:
           - Cohort: api/phenotypes/cohort.md
       - Codelists:
           - Codelist: api/codelists/codelists.md
+          - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md
+      - Connectors: api/ibis_connect.md
   - License: LICENSE.md
 
 plugins:
