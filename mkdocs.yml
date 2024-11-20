@@ -27,6 +27,7 @@ nav:
           - Cohort: api/phenotypes/cohort.md
       - Codelists:
           - Codelist: api/codelists/codelists.md
+      - Connectors: api/ibis_connect.md
   - License: LICENSE.md
 
 plugins:
