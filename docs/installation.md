@@ -4,7 +4,7 @@
 
 We strongly suggest to install PhenEx in an isolated python virtual environment using your favorite package
 manager, such as [condas](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) or
-[pyenv](https://github.com/pyenv/pyenv). PhenEx requires Python 3.9 or above. After setting up and activating
+[pyenv](https://github.com/pyenv/pyenv). PhenEx requires Python 3.12 or above. After setting up and activating
 your virtual environment, move on to the next step.
 
 ## Pip installation

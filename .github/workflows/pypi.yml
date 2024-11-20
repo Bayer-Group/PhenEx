@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout Repository 🛎️
         uses: actions/checkout@v3
-      - name: Install Python 3.9 🐍
+      - name: Install Python 3.12 🐍
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"

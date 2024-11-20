@@ -26,6 +26,6 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.12",
     install_requires=parse_requirements("requirements.txt"),
 )
