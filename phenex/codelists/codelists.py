@@ -7,27 +7,36 @@ class Codelist:
     """
     A Codelist has two fields:
 
-    :param name: Descriptive name of codelist
-    :param codelist: User can enter codelists as either a string, a list of strings
+    Parameters:
+    name: Descriptive name of codelist
+    codelist: User can enter codelists as either a string, a list of strings
     or a dictionary keyed by code type. In first two cases, the class will convert
     the input to a dictionary with a single key None. All consumers of the Codelist
     instance can then assume the codelist in that format.
 
+    Example: 
+    ```python
     # Initialize with a list
-    >> cl = Codelist(
+    cl = Codelist(
         ['x', 'y', 'z'],
         'mycodelist'
         )
-    >> print(cl.codelist)
+    print(cl.codelist)
     {None: ['x', 'y', 'z']}
+    ```
 
+    Example:
+    ```python
     # Initialize with string
-    >> cl = Codelist(
+    cl = Codelist(
         'SBP'
         )
-    >> print(cl.codelist)
+    print(cl.codelist)
     {None: ['SBP']}
-
+    ```
+    
+    Example:
+    ```python
     # Initialize with a dictionary
     >> atrial_fibrillation_icd_codes = {
         "ICD-9": [
@@ -40,11 +49,11 @@ class Codelist:
             "I48.91", # Unspecified atrial fibrillation
         ]
     }
-    >> cl = Codelist(
+    cl = Codelist(
         atrial_fibrillation_icd_codes,
         'atrial_fibrillation',
     )
-    >> print(cl.codelist)
+    print(cl.codelist)
     {
         "ICD-9": [
             "427.31"  # Atrial fibrillation
@@ -56,6 +65,7 @@ class Codelist:
             "I48.91", # Unspecified atrial fibrillation
         ]
     }
+    ```
     """
 
     def __init__(
@@ -77,6 +87,26 @@ class Codelist:
     def from_yaml(cls, path: str) -> "Codelist":
         """
         Load a codelist from a yaml file.
+
+        The YAML file should contain a dictionary where the keys are code types
+        (e.g., "ICD-9", "ICD-10") and the values are lists of codes for each type.
+
+        Example:
+        ```yaml
+        ICD-9:
+          - "427.31"  # Atrial fibrillation
+        ICD-10:
+          - "I48.0"   # Paroxysmal atrial fibrillation
+          - "I48.1"   # Persistent atrial fibrillation
+          - "I48.2"   # Chronic atrial fibrillation
+          - "I48.91"  # Unspecified atrial fibrillation
+        ```
+
+        Parameters:
+            path: Path to the YAML file.
+
+        Returns:
+            Codelist instance.
         """
         import yaml
 
@@ -99,13 +129,49 @@ class Codelist:
         """
         Load a codelist from an Excel file.
 
+        The Excel file should contain columns for code types, codes, and optionally
+        codelist names. Each row represents a code entry.
+
+        The codelists can be in one sheet or spread across multiple sheets:
+
+        1. Single Sheet:
+        If all codelists are in one sheet, the sheet should have a column for codelist names.
+        Use codelist_name to point to the specific codelist of interest.
+
+        Example:
+        ```markdown
+        | code_type | code   | codelist           |
+        |-----------|--------|--------------------|
+        | ICD-9     | 427.31 | atrial_fibrillation|
+        | ICD-10    | I48.0  | atrial_fibrillation|
+        | ICD-10    | I48.1  | atrial_fibrillation|
+        | ICD-10    | I48.2  | atrial_fibrillation|
+        | ICD-10    | I48.91 | atrial_fibrillation|
+        ```
+        
+        2. Multiple Sheets:
+        If codelists are spread across multiple sheets, each sheet should represent a single codelist.
+        Example:
+        ```markdown
+        | code_type | code   |
+        |-----------|--------|
+        | ICD-9     | 427.31 |
+        | ICD-10    | I48.0  |
+        | ICD-10    | I48.1  |
+        | ICD-10    | I48.2  |
+        | ICD-10    | I48.91 |
+        ```
+        
         Parameters:
-            path: path to the excel file.
-            sheet_name: an optional label for the sheet to read from. If defined, the codelist will be taken from that sheet. If no sheet_name is defined, the first sheet is taken.
-            codelist_name: an optional name of the codelist which to extract. If defined, codelist_column must be present and the codelist_name must occur within the codelist_column.
-            code_column: the name of the column containing the codes.
-            code_type_column: the name of the column containing the code types.
-            codelist_column: the name of the column containing the codelist names.
+            path: Path to the Excel file.
+            sheet_name: An optional label for the sheet to read from. If defined, the codelist will be taken from that sheet. If no sheet_name is defined, the first sheet is taken.
+            codelist_name: An optional name of the codelist which to extract. If defined, codelist_column must be present and the codelist_name must occur within the codelist_column.
+            code_column: The name of the column containing the codes.
+            code_type_column: The name of the column containing the code types.
+            codelist_column: The name of the column containing the codelist names.
+
+        Returns:
+            Codelist instance.
         """
         import pandas as pd
 
