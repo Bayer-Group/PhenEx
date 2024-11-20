@@ -9,8 +9,10 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 
+
 class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
-    name_space = "sex_phenotype"
+    name_space = "sxpt"
+    value_datatype = str
 
     def define_input_tables(self):
         self.n_persons = 6
@@ -27,11 +29,9 @@ class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
             "Unknown",
         ]
 
-        column_types_person = {}
         input_info_person = {
-            "name": "person",
+            "name": "PERSON",
             "df": df_person,
-            "column_types": column_types_person,
         }
 
         return [input_info_person]

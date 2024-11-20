@@ -3,7 +3,8 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.tables import PhenotypeTable, is_phenex_person_table
-import ibis 
+import ibis
+
 
 class DeathPhenotype(Phenotype):
     """
@@ -20,10 +21,14 @@ class DeathPhenotype(Phenotype):
             Executes the phenotype calculation and returns a table with the filtered individuals.
     """
 
-    def __init__(self, name: str = "death", domain: str = "PERSON",
+    def __init__(
+        self,
+        name: str = "death",
+        domain: str = "PERSON",
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
-        ] = None):
+        ] = None,
+    ):
         self.name = name
         self.domain = domain
         self.children = []

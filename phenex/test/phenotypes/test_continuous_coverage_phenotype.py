@@ -10,13 +10,12 @@ from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 
 
-
 class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
-    name_space = "continuouscoverage"
+    name_space = "ccpt"
 
     def define_input_tables(self):
         oneday = datetime.timedelta(days=1)
-        index_date = datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")
+        index_date = datetime.date(2022, 1, 1)
 
         observation_period_min = 90 * oneday
         possible_start_dates = [
@@ -45,17 +44,20 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
 
         N = len(end_dates)
         df_observation_period = pd.DataFrame()
-        df_observation_period["PERSON_ID"] = [
-            f"P{x}" for x in list(range(N))
-        ]
+        df_observation_period["PERSON_ID"] = [f"P{x}" for x in list(range(N))]
         df_observation_period["INDEX_DATE"] = index_date
-        df_observation_period["observation_period_start_date"] = start_dates
-        df_observation_period["observation_period_end_date"] = end_dates
+        df_observation_period["OBSERVATION_PERIOD_START_DATE"] = start_dates
+        df_observation_period["OBSERVATION_PERIOD_END_DATE"] = end_dates
 
+        df_observation_period["start_from_end"] = [
+            x - y for x, y in zip(end_dates, start_dates)
+        ]
+        df_observation_period["start_from_index"] = [index_date - x for x in end_dates]
+        df_observation_period["end_from_index"] = [index_date - x for x in start_dates]
 
         self.df_input = df_observation_period
         input_info_observation_period = {
-            "name": "observation_period",
+            "name": "OBSERVATION_PERIOD",
             "df": df_observation_period,
         }
 
@@ -77,10 +79,8 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                domain="observation_period",
-                coverage_period_min=test_info.get("coverage_period_min"),
+                min_days=test_info.get("coverage_period_min"),
             )
-            test_info["refactor"] = True  # TODO remove once refactored
 
         return test_infos
 
@@ -89,9 +89,10 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
     ContinuousCoveragePhenotypeTestGenerator
 ):
     name_space = "ccpt_returnlast"
+    test_date = True
 
     def define_phenotype_tests(self):
-        persons = ["P7", "P10", "P11", "P12", "P14", "P15"]
+        persons = ["P15", "P19", "P20", "P22", "P23"]
 
         t1 = {
             "name": "coverage_min_geq_90",
@@ -99,19 +100,19 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "observation_period_end_date"
+                    "OBSERVATION_PERIOD_END_DATE"
                 ].values
             ),
         }
 
-        persons = ["P7", "P10", "P11"]
+        persons = ["P19", "P22", "P23"]
         t2 = {
             "name": "coverage_min_gt_90",
             "coverage_period_min": Value(value=90, operator=">"),
-            "persons": ["P7", "P10", "P11"],
+            "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "observation_period_end_date"
+                    "OBSERVATION_PERIOD_END_DATE"
                 ].values
             ),
         }
@@ -120,9 +121,8 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                domain="observation_period",
-                return_date="last",
-                coverage_period_min=test_info.get("coverage_period_min"),
+                min_days=test_info.get("coverage_period_min"),
+                when="after",
             )
             test_info["column_types"] = {f"{test_info['name']}_date": "date"}
 
@@ -133,9 +133,12 @@ def test_continuous_coverage_phenotypes():
     spg = ContinuousCoveragePhenotypeTestGenerator()
     spg.run_tests()
 
+
+def test_continuous_coverage_return_last():
     spg = ContinuousCoverageReturnLastPhenotypeTestGenerator()
     spg.run_tests()
 
 
 if __name__ == "__main__":
     test_continuous_coverage_phenotypes()
+    test_continuous_coverage_return_last()

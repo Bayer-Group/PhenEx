@@ -29,12 +29,13 @@ class HospitalizationPhenotype(Phenotype):
         _execute(tables: Dict[str, Table]) -> PhenotypeTable:
             Executes the filtering process on the provided tables and returns the filtered phenotype table.
     """
+
     def __init__(
         self,
         domain,
         column_name: str,
         allowed_values: List[str],
-        name = None,
+        name=None,
         date_range: DateRangeFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
@@ -43,7 +44,9 @@ class HospitalizationPhenotype(Phenotype):
     ):
         super(HospitalizationPhenotype, self).__init__()
 
-        self.categorical_filter = CategoricalFilter(column_name=column_name, allowed_values=allowed_values)
+        self.categorical_filter = CategoricalFilter(
+            column_name=column_name, allowed_values=allowed_values
+        )
         self.name = name
         self.date_range = date_range
         self.return_date = return_date

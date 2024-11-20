@@ -21,6 +21,7 @@ class PhenotypeTestGenerator:
     name_space = ""
     date_format = "%m-%d-%Y"
     test_values = False
+    value_datatype = float
     test_date = False
     join_on = ["PERSON_ID"]
 
@@ -139,7 +140,7 @@ class PhenotypeTestGenerator:
                 if "date" in col.lower():
                     schema[col] = datetime.date
                 elif "value" in col.lower():
-                    schema[col] = float
+                    schema[col] = self.value_datatype
                 elif "boolean" in col.lower():
                     schema[col] = bool
                 else:

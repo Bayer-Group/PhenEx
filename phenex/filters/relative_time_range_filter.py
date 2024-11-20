@@ -56,24 +56,7 @@ class RelativeTimeRangeFilter(Filter):
         when: Optional[str] = "before",
         anchor_phenotype: "Phenotype" = None,
     ):
-        if min_days is not None:
-            assert min_days.operator in [
-                ">",
-                ">=",
-            ], f"min_days operator must be > or >=, not {min_days.operator}"
-        if max_days is not None:
-            assert max_days.operator in [
-                "<",
-                "<=",
-            ], f"max_days operator must be > or >=, not {max_days.operator}"
-        if max_days is not None and min_days is not None:
-            assert (
-                min_days.value <= max_days.value
-            ), f"min_days must be less than or equal to max_days"
-        assert when in [
-            "before",
-            "after",
-        ], f"when must be 'before' or 'after', not {when}"
+        verify_relative_time_range_filter_input(min_days, max_days, when)
 
         self.min_days = min_days
         self.max_days = max_days
@@ -125,3 +108,24 @@ class RelativeTimeRangeFilter(Filter):
             table = table.filter(conditions)
 
         return table
+
+
+def verify_relative_time_range_filter_input(min_days, max_days, when):
+    if min_days is not None:
+        assert min_days.operator in [
+            ">",
+            ">=",
+        ], f"min_days operator must be > or >=, not {min_days.operator}"
+    if max_days is not None:
+        assert max_days.operator in [
+            "<",
+            "<=",
+        ], f"max_days operator must be > or >=, not {max_days.operator}"
+    if max_days is not None and min_days is not None:
+        assert (
+            min_days.value <= max_days.value
+        ), f"min_days must be less than or equal to max_days"
+    assert when in [
+        "before",
+        "after",
+    ], f"when must be 'before' or 'after', not {when}"

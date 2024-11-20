@@ -1,8 +1,12 @@
 from typing import Union, List, Dict, Optional
+from phenex.mappers import ObservationPeriodTableMapper
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters.value import Value
+from phenex.filters.value import GreaterThanOrEqualTo, Value
 from phenex.filters.codelist_filter import CodelistFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.filters.relative_time_range_filter import (
+    verify_relative_time_range_filter_input,
+    RelativeTimeRangeFilter,
+)
 from phenex.filters.date_range_filter import DateRangeFilter
 from phenex.filters.aggregator import First, Last
 from phenex.codelists import Codelist
@@ -15,93 +19,112 @@ import ibis
 
 class ContinuousCoveragePhenotype(Phenotype):
     """
-    A phenotype based on continuous coverage within an observation period.
+    ContinuousCoveragePhenotype identifies patients based on duration of observation data. ContinuousCoveragePhenotype requires an anchor phenotype, typically the entry criterion. It then identifies an observation time period that contains the anchor phenotype. The phenotype can then be used to identify patients with a user specified continuous coverage before or after the anchor phenotype.
 
-    This class helps generate SQL queries to filter a population based on
-    continuous coverage criteria within the observation period.
+    There are two primary use cases for ContinuousCoveragePhenotype:
+        1. Identify patients with some minimum duration of coverage prior to anchor_phenotype date e.g. "identify patients with 1 year of continuous coverage prior to index date"
+        2. Determine the date of loss to followup (right censoring) i.e. the duration of coverage after the anchor_phenotype event
 
-    :param domain: The domain of the phenotype, default is 'observation_period'. The domain
-        key is used at runtime to determine which table to run on.
-    :param coverage_period_min: The minimum coverage period for the phenotype with a default
-        of 0 days. The operator must be '>=' or '>'.
-    :param return_date: An optional return date for the phenotype result. Possible values are
-        "first" and "last", where "first" is the beginning of the coverage period containing
-        the index date and "last" in the end of the coverage period containing the index date.
+    ## Data for ContinuousCoveragePhenotype
+    This phenotype requires a table with PersonID and a coverage start date and end date. Depending on the datasource used, this information is a separate ObservationPeriod table or found in the PersonTable. Use an ObservationPeriodTableMapper to map required coverage start and end date columns.
 
-    Example usage: Find all patients with at least 90 days of continuous coverage
-    --------------
-    >>> coverage_min_filter = ValueFilter(">=", 90)
-    >>> phenotype = ContinuousCoveragePhenotype(coverage_period_min=coverage_min_filter)
+    | PersonID    |   coverageStartDate  |   coverageEndDate  |
+    |-------------|----------------------|--------------------|
+    | 1           |   2009-01-01         |   2010-01-01       |
+    | 2           |   2008-01-01         |   2010-01-02       |
+
+    One assumption that is made by ContinuousCoveragePhenotype is that there are **NO overlapping coverage periods**.
+
     """
 
-    def __init__(self,
-        name:Optional[str] = 'continuous_coverage',
-        domain:Optional[str] = 'OBSERVATION_PERIOD',
-        relative_time_range:Optional[RelativeTimeRangeFilter] = None,
-        min_days : Optional[Value] = None,
-        anchor_phenotype:Optional[Phenotype] = None,
+    def __init__(
+        self,
+        name: Optional[str] = "continuous_coverage",
+        domain: Optional[str] = "OBSERVATION_PERIOD",
+        min_days: Optional[Value] = None,
+        max_days: Optional[Value] = None,
+        when: Optional[str] = "before",
+        anchor_phenotype: Optional[Phenotype] = None,
     ):
+        """
+        Parameters:
+            name: The name of the phenotype. Default is provided by parameters when, min_days, max_days, and anchor_phenotype.
+            domain: The domain of the phenotype. Default is 'observation_period'.
+            min_days: The minimum number of days of continuous coverage. The operator must be '>=' or '>'.
+            max_days: The maximum number of days of continuous coverage. The operator must be '<=' or '<'.
+            when: 'before', 'after'. If before, the return date is the start of the coverage period containing the anchor_phenotype. If after, the return date is the end of the coverage period containing the anchor_phenotype.
+        Example :
+        ```python
+
+        # make sure to create an entry phenotype, for example 'atrial fibrillation diagnosis'
+        entry_phenotype = CodelistPhenotype(...)
+
+        # one year continuous coverage prior to index
+        one_year_coverage = ContinuousCoveragePhenotype(
+            when = 'before',
+            min_days = GreaterThanOrEqualTo(365),
+            anchor_phenotype = entry_phenotype
+        )
+
+        # determine the date of loss to followup
+        loss_to_followup = ContinuousCoveragePhenotype(
+            when = 'after',
+            anchor_phenotype = entry_phenotype
+        )
+        ```
+        """
         super().__init__()
         self.name = name
         self.domain = domain
-        self.relative_time_range = relative_time_range
+        verify_relative_time_range_filter_input(min_days, max_days, when)
         self.min_days = min_days
+        self.max_days = max_days
+        self.when = when
+        self.anchor_phenotype = anchor_phenotype
+        if self.anchor_phenotype is not None:
+            self.children.append(self.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
-        coverage_table = tables[self.domain]
-        # first perform time range filter on observation period start date
-        coverage_table = coverage_table.mutate(EVENT_DATE = coverage_table.OBSERVATION_PERIOD_START_DATE)
-        coverage_table = self._perform_time_filtering(coverage_table)
-        # ensure that coverage end extends past the anchor date
-        coverage_table = self._filter_observation_period_end(coverage_table)
-        coverage_table = self._filter_coverage_period(coverage_table)
+        table = tables[self.domain]
 
-        coverage_table = coverage_table.mutate(EVENT_DATE = ibis.null())
-        return coverage_table
+        # set time range filters depending on the when parameter
+        if self.when == "before":
+            min_days_for_trf_prior = self.min_days
+            max_days_for_trf_prior = self.max_days
 
-    def _perform_time_filtering(self, coverage_table):
-        '''
-        Filter the observation period start
-        '''
-        if self.relative_time_range is not None:
-            coverage_table = self.relative_time_range.filter(coverage_table)
-        return coverage_table
+            min_days_for_trf_post = GreaterThanOrEqualTo(0)
+            max_days_for_trf_post = None
+        else:
+            min_days_for_trf_prior = GreaterThanOrEqualTo(0)
+            max_days_for_trf_prior = None
 
-    def _filter_observation_period_end(self, coverage_table):
-        '''
-        Get only rows where the observation period end date is after the anchor date
-        '''
-        if self.relative_time_range is not None:
-            if self.relative_time_range.anchor_phenotype is not None:
-                reference_column = self.relative_time_range.anchor_phenotype.table.EVENT_DATE
-            else:
-                reference_column = coverage_table.INDEX_DATE
+            min_days_for_trf_post = self.min_days
+            max_days_for_trf_post = self.max_days
 
-            coverage_table = coverage_table.filter(
-                coverage_table.OBSERVATION_PERIOD_END_DATE >= reference_column
-            )
-        return coverage_table
+        # Ensure that the observation period start date is before the anchor date by defined time range
+        table = table.mutate(EVENT_DATE=table.OBSERVATION_PERIOD_START_DATE)
+        trf_prior = RelativeTimeRangeFilter(
+            min_days=min_days_for_trf_prior,
+            max_days=max_days_for_trf_prior,
+            when="before",
+            anchor_phenotype=self.anchor_phenotype,
+        )
+        table = trf_prior.filter(table)
 
+        # Ensure that end date is after the anchor date
+        table = table.mutate(EVENT_DATE=table.OBSERVATION_PERIOD_END_DATE)
+        trf_post = RelativeTimeRangeFilter(
+            min_days=min_days_for_trf_post,
+            max_days=max_days_for_trf_post,
+            when="after",
+            anchor_phenotype=self.anchor_phenotype,
+        )
+        table = trf_post.filter(table)
 
-    def _filter_coverage_period(self, coverage_table: Table) -> Table:
-        if self.min_days.operator == '>':
-            coverage_table = coverage_table.filter(
-                (coverage_table['DAYS_FROM_ANCHOR'] > self.min_days.value)
-            )
-        elif self.min_days.operator == '>=':
-            coverage_table = coverage_table.filter(
-                (coverage_table['DAYS_FROM_ANCHOR'] >= self.min_days.value)
-            )
-        elif self.min_days.operator == '<':
-            coverage_table = coverage_table.filter(
-                (coverage_table['DAYS_FROM_ANCHOR'] < self.min_days.value)
-            )
-        elif self.min_days.operator == '<=':
-            coverage_table = coverage_table.filter(
-                (coverage_table['DAYS_FROM_ANCHOR'] <= self.min_days.value)
-            )
-        return coverage_table
+        if self.when == "before":
+            table = table.mutate(EVENT_DATE=table.OBSERVATION_PERIOD_START_DATE)
+        else:
+            table = table.mutate(EVENT_DATE=table.OBSERVATION_PERIOD_END_DATE)
 
-
-    def get_codelists(self):
-        return []
+        table = table.mutate(VALUE=ibis.null())
+        return table

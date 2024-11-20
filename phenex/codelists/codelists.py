@@ -156,9 +156,8 @@ class Codelist:
         """
 
         _df = pd.DataFrame(self.to_tuples(), columns=["code_type", "code"])
-        _df['codelist'] = self.name
+        _df["codelist"] = self.name
         return _df
-
 
 
 class LocalCSVCodelistFactory:
