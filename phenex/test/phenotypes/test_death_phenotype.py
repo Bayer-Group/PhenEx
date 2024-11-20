@@ -44,15 +44,11 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         idx_persons = [1, 2, 3, 4, 5]
         t1 = {
             "name": "death_prior_including_index",
-            "time_range_filter": RelativeTimeRangeFilter(
-                when="before"
-            ),
+            "time_range_filter": RelativeTimeRangeFilter(when="before"),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -61,15 +57,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t2 = {
             "name": "death_prior_index",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="before",
-                min_days=GreaterThan(0)
+                when="before", min_days=GreaterThan(0)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -78,15 +71,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t3 = {
             "name": "death_prior_including_index_max20",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="before",
-                max_days=Value("<=", 30)
+                when="before", max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -95,16 +85,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t4 = {
             "name": "death_prior_index_max_20",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="before",
-                min_days=GreaterThan(0),
-                max_days=Value("<=", 30)
+                when="before", min_days=GreaterThan(0), max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -112,15 +98,11 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         idx_persons = [1, 5, 6, 7, 8]
         t5 = {
             "name": "death_post_including_index",
-            "time_range_filter": RelativeTimeRangeFilter(
-                when="after"
-            ),
+            "time_range_filter": RelativeTimeRangeFilter(when="after"),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -129,15 +111,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t6 = {
             "name": "death_post_index",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="after",
-                min_days=GreaterThan(0)
+                when="after", min_days=GreaterThan(0)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -146,15 +125,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t7 = {
             "name": "death_post_including_index_max20",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="after",
-                max_days=Value("<=", 30)
+                when="after", max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -162,16 +138,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t8 = {
             "name": "death_post_index_max_20",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="after",
-                min_days=GreaterThan(0),
-                max_days=Value("<=", 30)
+                when="after", min_days=GreaterThan(0), max_days=Value("<=", 30)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }
@@ -179,16 +151,12 @@ class DeathPhenotypeTestGenerator(PhenotypeTestGenerator):
         t9 = {
             "name": "death_post_min_30_max_50",
             "time_range_filter": RelativeTimeRangeFilter(
-                when="after",
-                min_days=Value(">", 30),
-                max_days=Value("<=", 50)
+                when="after", min_days=Value(">", 30), max_days=Value("<=", 50)
             ),
             "persons": [f"P{x}" for x in idx_persons],
             "dates": [
                 x
-                for i, x in enumerate(
-                    self.input_table["DATE_OF_DEATH"].values
-                )
+                for i, x in enumerate(self.input_table["DATE_OF_DEATH"].values)
                 if i in idx_persons
             ],
         }

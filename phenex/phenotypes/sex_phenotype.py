@@ -5,6 +5,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.tables import PhenotypeTable, is_phenex_person_table
 
+
 class SexPhenotype(Phenotype):
     """
     SexPhenotype is a class that represents a sex-based phenotype. It filters individuals
@@ -38,7 +39,9 @@ class SexPhenotype(Phenotype):
         assert is_phenex_person_table(person_table)
 
         if self.allowed_values is not None:
-            sex_filter = CategoricalFilter(column_name="SEX", allowed_values=self.allowed_values)
+            sex_filter = CategoricalFilter(
+                column_name="SEX", allowed_values=self.allowed_values
+            )
             person_table = sex_filter._filter(person_table)
 
-        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE= ibis.null())
+        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE=ibis.null())

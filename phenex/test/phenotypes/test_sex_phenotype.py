@@ -9,6 +9,7 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 
+
 class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "sex_phenotype"
 

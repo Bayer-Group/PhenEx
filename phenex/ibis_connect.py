@@ -23,13 +23,14 @@ def _check_env_vars(*vars: str) -> None:
 
 
 def ibis_snowflake_connect(
-        SNOWFLAKE_USER: Optional[str] = None,
-        SNOWFLAKE_ACCOUNT: Optional[str] = None,
-        SNOWFLAKE_WAREHOUSE: Optional[str] = None,
-        SNOWFLAKE_DATABASE: Optional[str] = None,
-        SNOWFLAKE_SCHEMA: Optional[str] = None,
-        SNOWFLAKE_ROLE: Optional[str] = None,
-        SNOWFLAKE_PASSWORD: Optional[str] = None) -> BaseBackend:
+    SNOWFLAKE_USER: Optional[str] = None,
+    SNOWFLAKE_ACCOUNT: Optional[str] = None,
+    SNOWFLAKE_WAREHOUSE: Optional[str] = None,
+    SNOWFLAKE_DATABASE: Optional[str] = None,
+    SNOWFLAKE_SCHEMA: Optional[str] = None,
+    SNOWFLAKE_ROLE: Optional[str] = None,
+    SNOWFLAKE_PASSWORD: Optional[str] = None,
+) -> BaseBackend:
     """
     Establish a connection to Snowflake using Ibis. Variables for the connection can
     be passed either via this function call or as environment variables of the same name.

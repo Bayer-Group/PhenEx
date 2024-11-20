@@ -58,7 +58,13 @@ class PersonTableColumnMapper:
         mapping = copy.deepcopy(asdict(self))
         mapping.pop("NAME_TABLE")
         # delete optional params from mapping
-        for key in ["DATE_OF_BIRTH", "DATE_OF_DEATH", "YEAR_OF_BIRTH", "SEX", "ETHNICITY"]:
+        for key in [
+            "DATE_OF_BIRTH",
+            "DATE_OF_DEATH",
+            "YEAR_OF_BIRTH",
+            "SEX",
+            "ETHNICITY",
+        ]:
             if getattr(self, key) is None:
                 del mapping[key]
         return table.rename(**mapping)
@@ -118,6 +124,7 @@ class MeasurementTableColumnMapper(CodeTableColumnMapper):
 
     VALUE: str = "VALUE"
 
+
 @dataclass
 class ObservationPeriodTableMapper:
     NAME_TABLE: str = "OBSERVATION_PERIOD"
@@ -139,26 +146,30 @@ class ObservationPeriodTableMapper:
         mapping.pop("NAME_TABLE")
         return table.rename(**mapping)
 
+
 #
 # OMOP Column Mappers
 #
 OMOPPersonTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    NAME_TABLE="PERSON",
+    PERSON_ID="PERSON_ID",
     DATE_OF_BIRTH="BIRTH_DATETIME",
     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
-    SEX="GENDER_CONCEPT_ID", ETHNICITY="ETHNICITY_CONCEPT_ID"
+    SEX="GENDER_CONCEPT_ID",
+    ETHNICITY="ETHNICITY_CONCEPT_ID",
 )
 
 OMOPDeathTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="DEATH", PERSON_ID="PERSON_ID",
-    DATE_OF_DEATH="DEATH_DATE"
+    NAME_TABLE="DEATH", PERSON_ID="PERSON_ID", DATE_OF_DEATH="DEATH_DATE"
 )
 
 OMOPPersonTableSourceColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", 
+    NAME_TABLE="PERSON",
+    PERSON_ID="PERSON_ID",
     DATE_OF_BIRTH="BIRTH_DATETIME",
     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
-    SEX="GENDER_SOURCE_VALUE", ETHNICITY="ETHNICITY_SOURCE_VALUE"
+    SEX="GENDER_SOURCE_VALUE",
+    ETHNICITY="ETHNICITY_SOURCE_VALUE",
 )
 
 OMOPConditionOccurrenceColumnMapper = CodeTableColumnMapper(
@@ -223,12 +234,14 @@ OMOPColumnMappers = {
 OMOPDomains = DomainsDictionary(**OMOPColumnMappers)
 
 
-
 #
 # Vera Column Mappers
 #
 VeraPersonTableColumnMapper = PersonTableColumnMapper(
-    NAME_TABLE="PERSON", PERSON_ID="PERSON_ID", DATE_OF_BIRTH="BIRTH_DATETIME", DATE_OF_DEATH="DEATH_DATETIME"
+    NAME_TABLE="PERSON",
+    PERSON_ID="PERSON_ID",
+    DATE_OF_BIRTH="BIRTH_DATETIME",
+    DATE_OF_DEATH="DEATH_DATETIME",
 )
 
 VeraConditionOccurrenceColumnMapper = CodeTableColumnMapper(
