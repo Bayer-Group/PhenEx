@@ -152,6 +152,7 @@ class Codelist:
         2. Multiple Sheets:
         If codelists are spread across multiple sheets, each sheet should represent a single codelist.
         Use sheet_name to point to the specific codelist of interest.
+        
         Example:
         ```markdown
         | code_type | code   |
