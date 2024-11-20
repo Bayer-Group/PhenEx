@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
@@ -8,8 +8,7 @@ from phenex.tables import PhenotypeTable, is_phenex_person_table
 
 class SexPhenotype(Phenotype):
     """
-    SexPhenotype is a class that represents a sex-based phenotype. It filters individuals
-    based on their sex (e.g., male, female) using the CategoricalFilter.
+    SexPhenotype is a class that represents a sex-based phenotype. It is able to identify the sex of individuals and filter them based on identified sex.
 
     Attributes:
         name (str): Name of the phenotype, default is 'sex'.
@@ -25,7 +24,7 @@ class SexPhenotype(Phenotype):
     def __init__(
         self,
         name: str = "sex",
-        allowed_values: Optional[List[str]] = None,
+        allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
     ):
         self.name = name
