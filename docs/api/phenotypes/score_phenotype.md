@@ -1,3 +1,3 @@
 # ScorePhenotype
 
-::: phenex.phenotypes.score_phenotype
+::: phenex.phenotypes.computation_graph_phenotypes.ScorePhenotype

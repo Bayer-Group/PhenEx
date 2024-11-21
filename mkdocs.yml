@@ -3,25 +3,20 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Tutorials:
-      - Cohort Basics:
-          - Optum Data Format: tutorials/cohort_basics/Optum_Format.ipynb
-          - OMOP CDM Data Format: tutorials/cohort_basics/OMOP_CDM_Format.ipynb
-          - Custom Data Structures: tutorials/cohort_basics/Custom_Data_Structure.ipynb
-      - Phenotypes:
-          - CodelistPhenotype: tutorials/phenotypes/CodelistPhenotype_Tutorial.ipynb
-          - MeasurementPhenotype: tutorials/phenotypes/MeasurementPhenotype_Tutorial.ipynb
-          - ArithmeticPhenotype: tutorials/phenotypes/ArithmeticPhenotype_Tutorial.ipynb
-          - LogicPhenotype: tutorials/phenotypes/LogicPhenotype_Tutorial.ipynb
+      - CodelistPhenotype: tutorials/CodelistPhenotype_Tutorial.ipynb
+      - MeasurementPhenotype: tutorials/MeasurementPhenotype_Tutorial.ipynb
+      - ArithmeticPhenotype: tutorials/ArithmeticPhenotype_Tutorial.ipynb
+      - LogicPhenotype: tutorials/LogicPhenotype_Tutorial.ipynb
   - API:
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
+          - MultipleOccurrencePhenotype: api/phenotypes/multiple_occurrences_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - ContinuousCoveragePhenotype: api/phenotypes/continuous_coverage_phenotype.md
-          - AgePhenotype: api/phenotypes/age_phenotype.md
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md

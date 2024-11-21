@@ -23,12 +23,19 @@ class ComputationGraphPhenotype(Phenotype):
     | ScorePhenotype      | boolean     | value      |
     +---------------------+-------------+------------+
 
+    Parameters:
+        expression: The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
+        return_date: The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        operate_on: The column to operate on. Can be "boolean" or "value".
+        populate: The column to populate. Can be "boolean" or "value".
+        reduce: Whether to reduce the phenotype table to only include rows where the boolean column is True. This is only relevant if populate is "boolean".
+
     Attributes:
-        expression (ComputationGraph): The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
-        return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
-        operate_on (str): The column to operate on. Can be "boolean" or "value".
-        populate (str): The column to populate. Can be "boolean" or "value".
-        reduce (bool): Whether to reduce the phenotype table to only include rows where the boolean column is True. This is only relevant if populate is "boolean".
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
+
+    Methods:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(
@@ -175,19 +182,33 @@ class ScorePhenotype(ComputationGraphPhenotype):
 
     --> See the comparison table of CompositePhenotype classes
 
+    Parameters:
+        expression: The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
+        return_date: The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        name: The name of the phenotype.
+
     Attributes:
-        expression (ComputationGraph): The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
-        return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
+    Methods:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
+
+    Example:
+    ```python
     # Create component phenotypes individually
-    >> hypertension = Phenotype(Codelist('hypertension'))
-    >> chf = Phenotype(Codelist('chf'))
-    >> age_gt_45 = AgePhenotype(min_age=GreaterThan(45))
-    # Create the ScorePhenotype that defines a score which is 2*age + 1 if hypertension or chf are present, respectively. Notice that the boolean column of the component phenotypes are used for calculation and the value column is populated of the ScorePhenotype table.
-    >> pt = ScorePhenotype(
-                expression = 2 * age_gt_45 + hypertension + chf,
-            )
+    hypertension = Phenotype(Codelist('hypertension'))
+    hf = Phenotype(Codelist('chf'))
+    age_gt_45 = AgePhenotype(min_age=GreaterThan(45))
 
+    # Create the ScorePhenotype that defines a score which is 2*age + 1 if 
+    # hypertension or chf are present, respectively. Notice that the boolean 
+    # column of the component phenotypes are used for calculation and the value 
+    # column is populated of the ScorePhenotype table.
+    pt = ScorePhenotype(
+        expression = 2 * age_gt_45 + hypertension + chf,
+    )
+    ```
     """
 
     def __init__(
@@ -209,17 +230,29 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
     ArithmeticPhenotype is a composite phenotype that performs arithmetic operations using the **value** column of its component phenotypes and populations the **value** column. It should be used for calculating values such as BMI, GFR or converting units.
     --> See the comparison table of CompositePhenotype classes
 
-    Attributes:
+    Parameters:
         expression (ComputationGraph): The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
         return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        name: The name of the phenotype.
 
-        # Create component phenotypes individually
-        >> height = MeasurementPhenotype(Codelist('height'))
-        >> weight = MeasurementPhenotype(Codelist('weight'))
-        # Create the ArithmeticPhenotype that defines a score which is 2*age +  1 if hypertension or chf are present, respectively. Notice that the boolean column of the component phenotypes are used for calculation and the value column is populated of the ScorePhenotype table.
-        >> bmi = ArithmeticPhenotype(
-                    expression = weight / height**2,
-        )
+    Attributes:
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
+
+    Methods:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
+
+    Example:
+    ```python
+    # Create component phenotypes individually
+    height = MeasurementPhenotype(Codelist('height'))
+    weight = MeasurementPhenotype(Codelist('weight'))
+
+    # Create the ArithmeticPhenotype that defines the BMI score
+    bmi = ArithmeticPhenotype(
+        expression = weight / height**2,
+    )
+    ```
     """
 
     def __init__(
@@ -242,18 +275,17 @@ class LogicPhenotype(ComputationGraphPhenotype):
 
     --> See the comparison table of CompositePhenotype classes
 
-    # Create component phenotypes individually
-    >> hypertension = Phenotype(Codelist('hypertension'))
-    >> chf = Phenotype(Codelist('chf'))
-    >> age_gt_45 = AgePhenotype(min_age=GreaterThan(45))
-    # Create the LogicPhenotype that returns the patients who are agreater than 45 years old and have both hypertension and chf. Notice that the logical operation operates on the boolean columns of the component phenotypes and populations the boolean column of the LogicPhenotype table.
-    >> pt = ScorePhenotype(
-                expression = age_gt_45 | hypertension | chf,
-            )
-
-    Attributes:
+    Parameters:
         expression (ComputationGraph): The logical expression to be evaluated composed of phenotypes combined by python arithmetic operations.
         return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        name: The name of the phenotype.
+
+    Attributes:
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
+
+    Methods:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(

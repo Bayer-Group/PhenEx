@@ -15,23 +15,27 @@ class AgePhenotype(Phenotype):
     based on their date of birth and an optional anchor phenotype. The age is computed in years and can
     be filtered within a specified range.
 
+    Parameters:
+        name: Name of the phenotype, default is 'age'.
+        min_age: Minimum age for filtering, in years.
+        max_age: Maximum age for filtering, in years.
+        domain: Domain of the phenotype, default is 'PERSON'.
+        anchor_phenotype: An optional anchor phenotype to calculate relative age.
+
     Attributes:
-        DAYS_IN_YEAR (float): Number of days in a year, used for age calculation.
-        name (str): Name of the phenotype, default is 'age'.
-        min_age (float, optional): Minimum age for filtering, in years.
-        max_age (float, optional): Maximum age for filtering, in years.
-        domain (str): Domain of the phenotype, default is 'PERSON'.
-        anchor_phenotype (Phenotype, optional): An optional anchor phenotype to calculate relative age.
-        time_range_filter (RelativeTimeRangeFilter): A filter to apply the age range constraints.
-        children (list): List of dependent phenotypes.
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
     Methods:
-        _execute(tables: Dict[str, Table]) -> PhenotypeTable:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
             Executes the phenotype calculation and returns a table with the computed age.
 
     Example:
         ```
-        >>> age_phenotype = AgePhenotype(min_age=18, max_age=65, anchor_phenotype=some_anchor_phenotype)
+        >>> age_phenotype = AgePhenotype(
+            min_age=18, 
+            max_age=65, 
+            anchor_phenotype=some_anchor_phenotype
+            )
         >>> result_table = age_phenotype.execute(tables)
         >>> display(result_table)
         ```

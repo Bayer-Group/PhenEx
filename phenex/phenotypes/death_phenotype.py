@@ -11,14 +11,17 @@ class DeathPhenotype(Phenotype):
     DeathPhenotype is a class that represents a death-based phenotype. It filters individuals
     who have died and returns their date of death.
 
-    Attributes:
+    Parameters:
         name (str): Name of the phenotype, default is 'death'.
         domain (str): Domain of the phenotype, default is 'PERSON'.
         children (list): List of dependent phenotypes.
 
+    Attributes:
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
+
     Methods:
-        _execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the filtered individuals.
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(

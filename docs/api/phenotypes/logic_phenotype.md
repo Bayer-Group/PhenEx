@@ -1,3 +1,3 @@
 # LogicPhenotype
 
-::: phenex.phenotypes.logic_phenotype
+::: phenex.phenotypes.computation_graph_phenotypes.LogicPhenotype
