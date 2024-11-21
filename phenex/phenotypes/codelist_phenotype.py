@@ -12,31 +12,35 @@ from ibis import _
 
 class CodelistPhenotype(Phenotype):
     """
-    CodelistPhenotype filters a CodeTable based on a specified codelist and other optional filters
-    such as date range and relative time range.
+    CodelistPhenotype filters a CodeTable based on a specified codelist and other optional filters such as date range and relative time range.
+
+    Parameters:
+        name: The name of the phenotype.
+        domain: The domain of the phenotype.
+        codelist: The codelist used for filtering.
+        use_code_type: Whether to use the code type in filtering. Default is True.
+        date_range: A date range filter to apply.
+        relative_time_range: A relative time range filter or a list of filters to apply.
+        return_date: Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
 
     Attributes:
-        name (str): The name of the phenotype.
-        domain (str): The domain of the phenotype.
-        codelist (Codelist): The codelist used for filtering.
-        use_code_type (bool): Whether to use the code type in filtering. Default is True.
-        date_range (DateRangeFilter, optional): A date range filter to apply.
-        relative_time_range (Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]], optional): A relative time range filter or a list of filters to apply.
-        return_date (str): Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
-        table (PhenotypeTable): The resulting phenotype table after filtering.
-        children (list): List of child phenotypes.
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
     Methods:
-        execute(tables: dict) -> PhenotypeTable:
-            Executes the filtering process on the provided tables and returns the filtered phenotype table.
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
 
     Example:
         ```python
         from phenex.codelists import Codelist
 
-        codelist = Codelist(name="example_codelist", codes=[...])
+        codelist = Codelist(
+            name="example_codelist",
+            codelist=[...])
 
-        date_range = DateRangeFilter(start_date="2020-01-01", end_date="2020-12-31")
+        date_range = DateRangeFilter(
+            start_date="2020-01-01", 
+            end_date="2020-12-31")
 
         phenotype = CodelistPhenotype(
             name="example_phenotype",

@@ -20,13 +20,18 @@ class Cohort(Phenotype):
     The Cohort class represents a cohort of individuals based on specified entry criteria,
     inclusions, exclusions, and baseline characteristics. It extends the Phenotype class.
 
+    Parameters:
+        entry_criterion: The primary phenotype used to define the cohort.
+        inclusions: A list of phenotypes that must be included in the cohort.
+        exclusions: A list of phenotypes that must be excluded from the cohort.
+        characteristics: A list of phenotypes representing baseline characteristics of the cohort.
+
     Attributes:
-        table (Table): The table representing the cohort.
-        entry_criterion (Phenotype): The primary phenotype used to define the cohort.
-        inclusions (List[Phenotype]): A list of phenotypes that must be included in the cohort.
-        exclusions (List[Phenotype]): A list of phenotypes that must be excluded from the cohort.
-        characteristics (List[Phenotype]): A list of phenotypes representing baseline characteristics of the cohort.
-        children (List[Phenotype]): A list of all phenotypes involved in defining the cohort.
+        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
+
+    Methods:
+        execute(tables: Dict[str, Table]) -> PhenotypeTable:
+            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     table = None

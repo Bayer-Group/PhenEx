@@ -1,3 +1,3 @@
 # ArithmeticPhenotype
 
-::: phenex.phenotypes.arithmetic_phenotype
+::: phenex.phenotypes.computation_graph_phenotypes.ArithmeticPhenotype
