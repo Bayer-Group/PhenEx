@@ -8,6 +8,7 @@ class Filter:
     but cannot trigger recursive execution. Fitlers can add columns but may not remove columns.
     All classes in the filters module should subclass this class. Subclasses must implement
     the _filter method.
+
     """
 
     def __init__(self):
@@ -19,6 +20,7 @@ class Filter:
         if not set(input_columns) <= set(table.columns):
             raise ValueError(f"Filter must not remove columns.")
 
+        table = table.select(input_columns)
         return table
 
     def _filter(self, table: Table) -> Table:

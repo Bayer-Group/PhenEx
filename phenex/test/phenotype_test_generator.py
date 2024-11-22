@@ -99,7 +99,7 @@ class PhenotypeTestGenerator:
             if test_info.get("dates") is not None:
                 df[columnname_date] = test_info["dates"]
             else:
-                test_info[columnname_date] = ibis.null(type=datetime.date)
+                df[columnname_date] = None
 
             if test_info.get("values") is not None:
                 df[columnname_value] = test_info["values"]

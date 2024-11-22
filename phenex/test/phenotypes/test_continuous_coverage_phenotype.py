@@ -2,7 +2,8 @@ import datetime, os
 import pandas as pd
 
 from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
-from phenex.codelists import LocalCSVCodelistFactory
+from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
+from phenex.codelists import LocalCSVCodelistFactory, Codelist
 from phenex.filters.date_range_filter import DateRangeFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 
@@ -124,8 +125,51 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
                 min_days=test_info.get("coverage_period_min"),
                 when="after",
             )
-            test_info["column_types"] = {f"{test_info['name']}_date": "date"}
 
+        return test_infos
+
+
+class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGenerator):
+    name_space = "ccpt_anchorphenotype"
+
+    def define_input_tables(self):
+        tables = super().define_input_tables()
+
+        tables[0]["df"].drop(columns=["INDEX_DATE"], inplace=True)
+        df = pd.DataFrame()
+        n_patients = tables[0]["df"]["PERSON_ID"].unique().shape[0]
+        c1s = ["c1"] * 12
+        df["CODE"] = c1s + ["c2"] * (n_patients - len(c1s))
+        df["CODE_TYPE"] = "ICD10"
+        df["EVENT_DATE"] = datetime.date(2022, 1, 1)
+        df["PERSON_ID"] = ["P" + str(x) for x in range(n_patients)]
+        tables.append({"name": "CONDITION_OCCURRENCE", "df": df})
+        return tables
+
+    def define_phenotype_tests(self):
+
+        entry = CodelistPhenotype(
+            name="entry",
+            codelist=Codelist(name="c1", codelist={"ICD10": ["c1"]}),
+            domain="CONDITION_OCCURRENCE",
+        )
+
+        cc1 = ContinuousCoveragePhenotype(
+            name="cc_prior_entry",
+            min_days=GreaterThanOrEqualTo(90),
+            when="before",
+            anchor_phenotype=entry,
+        )
+
+        persons = ["P7", "P10", "P11"]
+
+        t1 = {
+            "name": "coverage_min_geq_90",
+            "persons": persons,
+            "phenotype": cc1,
+        }
+
+        test_infos = [t1]
         return test_infos
 
 
@@ -139,6 +183,12 @@ def test_continuous_coverage_return_last():
     spg.run_tests()
 
 
+def test_continuous_coverage_with_anchor_phenotype():
+    spg = ContinuousCoverageWithAnchorPhenotype()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_continuous_coverage_phenotypes()
     test_continuous_coverage_return_last()
+    test_continuous_coverage_with_anchor_phenotype()
