@@ -13,6 +13,7 @@ def check_equality(
     result.loc[:, "DUMMY"] = 1
     expected = expected.to_pandas()
     expected.loc[:, "DUMMY"] = 1
+
     full_results = result.merge(
         expected, on=join_on, suffixes=("_result", "_expected"), how="outer"
     )
