@@ -203,22 +203,27 @@ class Cohort(Phenotype):
         if self._table1 is None:
             ds = []
             N = (
-                self.index_table.filter(self.index_table.BOOLEAN == 1)
+                self.index_table.filter(self.index_table.BOOLEAN == True)
                 .select("PERSON_ID")
                 .distinct()
                 .count()
                 .execute()
             )
 
-            ds.append({"name": self.name, "N": N, "%": 100})
-            for pt in self.characteristics:
-                d = {}
-                print(pt.name)
-                d["name"] = pt.name
-                d["N"] = pt.table.filter(pt.table.BOOLEAN == 1).count().execute()
-                d["%"] = 100 * d["N"] / N
-                ds.append(d)
-            import pandas as pd
+            self.characteristics_table.sum
 
-            self._table1 = pd.DataFrame(ds)
+
+            boolean_columns = [col for col in table.columns if col.endswith('_BOOLEAN')]
+
+            # Create a list of expressions to count 'True' values
+            true_counts = [table[col].sum().name(f"{col}_N") for col in boolean_columns]
+
+            # Create a new table with the counts of 'True' values
+            result_table = table.select(*true_counts)
+
+            # Execute the query to get the results
+            result = result_table.execute()
+
+            self._table1 = result.to_pandas().T
+
         return self._table1
