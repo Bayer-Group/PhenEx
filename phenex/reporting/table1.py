@@ -1,6 +1,5 @@
 import pandas as pd
 
-from phenex.phenotypes.cohort import Cohort
 from .reporter import Reporter
 
 
@@ -13,7 +12,7 @@ class Table1(Reporter):
         1. implement categorical value reporting
     """
 
-    def execute(self, cohort: Cohort) -> pd.DataFrame:
+    def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
