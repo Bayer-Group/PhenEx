@@ -32,8 +32,8 @@ class AgePhenotype(Phenotype):
     Example:
         ```
         >>> age_phenotype = AgePhenotype(
-            min_age=18, 
-            max_age=65, 
+            min_age=18,
+            max_age=65,
             anchor_phenotype=some_anchor_phenotype
             )
         >>> result_table = age_phenotype.execute(tables)

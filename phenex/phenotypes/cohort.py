@@ -4,6 +4,7 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
+from phenex.reporting import Table1
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -201,29 +202,6 @@ class Cohort(Phenotype):
     @property
     def table1(self):
         if self._table1 is None:
-            ds = []
-            N = (
-                self.index_table.filter(self.index_table.BOOLEAN == True)
-                .select("PERSON_ID")
-                .distinct()
-                .count()
-                .execute()
-            )
-
-            self.characteristics_table.sum
-
-
-            boolean_columns = [col for col in table.columns if col.endswith('_BOOLEAN')]
-
-            # Create a list of expressions to count 'True' values
-            true_counts = [table[col].sum().name(f"{col}_N") for col in boolean_columns]
-
-            # Create a new table with the counts of 'True' values
-            result_table = table.select(*true_counts)
-
-            # Execute the query to get the results
-            result = result_table.execute()
-
-            self._table1 = result.to_pandas().T
-
+            reporter = Table1()
+            self._table1 = reporter.execute(self)
         return self._table1

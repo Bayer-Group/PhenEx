@@ -25,6 +25,9 @@ nav:
           - Codelist: api/codelists/codelists.md
           - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md
       - Connectors: api/ibis_connect.md
+      - Reporting:
+          - Report: api/reporting/reporter.md
+          - Table1: api/reporting/table1.md
   - License: LICENSE.md
 
 plugins:
