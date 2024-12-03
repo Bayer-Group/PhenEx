@@ -4,6 +4,7 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
+from phenex.reporting import Table1
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -201,24 +202,6 @@ class Cohort(Phenotype):
     @property
     def table1(self):
         if self._table1 is None:
-            ds = []
-            N = (
-                self.index_table.filter(self.index_table.BOOLEAN == 1)
-                .select("PERSON_ID")
-                .distinct()
-                .count()
-                .execute()
-            )
-
-            ds.append({"name": self.name, "N": N, "%": 100})
-            for pt in self.characteristics:
-                d = {}
-                print(pt.name)
-                d["name"] = pt.name
-                d["N"] = pt.table.filter(pt.table.BOOLEAN == 1).count().execute()
-                d["%"] = 100 * d["N"] / N
-                ds.append(d)
-            import pandas as pd
-
-            self._table1 = pd.DataFrame(ds)
+            reporter = Table1()
+            self._table1 = reporter.execute(self)
         return self._table1

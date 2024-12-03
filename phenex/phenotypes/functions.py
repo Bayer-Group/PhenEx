@@ -11,11 +11,13 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         phenotypes (List[Phenotype]): A list of Phenotype objects to stack.
     """
     idx_phenotype_to_begin = 0
+    join_type = "left" # if join table is defined, we want to left join
     if join_table is None:
         idx_phenotype_to_begin = 1
         join_table = phenotypes[0].namespaced_table
+        join_type = "outer" # if join table is NOT defined, we want an outer join
     for pt in phenotypes[idx_phenotype_to_begin:]:
-        join_table = join_table.join(pt.namespaced_table, "PERSON_ID", how="outer")
+        join_table = join_table.join(pt.namespaced_table, "PERSON_ID", how=join_type)
         join_table = join_table.mutate(
             PERSON_ID=ibis.coalesce(join_table.PERSON_ID, join_table.PERSON_ID_right)
         )
