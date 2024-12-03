@@ -24,7 +24,10 @@ nav:
       - Codelists:
           - Codelist: api/codelists/codelists.md
           - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md
-      - Connectors: api/ibis_connect.md
+      - Connectors:
+          - Connectors: api/ibis_connect.md
+          - Mappers: api/mappers.md
+          - DomainsDictionary: api/domains_dictionary.md
   - License: LICENSE.md
 
 plugins:

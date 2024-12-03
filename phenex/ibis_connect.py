@@ -32,11 +32,7 @@ def ibis_snowflake_connect(
     SNOWFLAKE_PASSWORD: Optional[str] = None,
 ) -> BaseBackend:
     """
-    Establish a connection to Snowflake using Ibis. Variables for the connection can
-    be passed either via this function call or as environment variables of the same name.
-    All arguments are required to be specified by one of these two methods except
-    SNOWFLAKE_PASSWORD.
-
+    Establish a connection to Snowflake using Ibis. Variables for the connection can be passed either via this function call or as environment variables of the same name. All arguments are required to be specified by one of these two methods except SNOWFLAKE_PASSWORD. If SNOWFLAKE_PASSWORD is not set, the externalbrowser authenticator is used. Keyword arguments take precedence over environment variables.
 
     Args:
         SNOWFLAKE_USER: Snowflake user name.
@@ -61,31 +57,30 @@ def ibis_snowflake_connect(
     _check_env_vars(*required_vars)
     if "SNOWFLAKE_PASSWORD" in os.environ:
         return ibis.snowflake.connect(
-            user=os.getenv("SNOWFLAKE_USER", SNOWFLAKE_USER),
-            password=os.getenv("SNOWFLAKE_PASSWORD", SNOWFLAKE_PASSWORD),
-            account=os.getenv("SNOWFLAKE_ACCOUNT", SNOWFLAKE_ACCOUNT),
-            warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", SNOWFLAKE_WAREHOUSE),
-            database=os.getenv("SNOWFLAKE_DATABASE", SNOWFLAKE_DATABASE),
-            role=os.getenv("SNOWFLAKE_ROLE", SNOWFLAKE_ROLE),
-            schema=os.getenv("SNOWFLAKE_SCHEMA", SNOWFLAKE_SCHEMA),
+            user=SNOWFLAKE_USER or os.getenv("SNOWFLAKE_USER"),
+            password=SNOWFLAKE_PASSWORD or os.getenv("SNOWFLAKE_PASSWORD"),
+            account=SNOWFLAKE_ACCOUNT or os.getenv("SNOWFLAKE_ACCOUNT"),
+            warehouse=SNOWFLAKE_WAREHOUSE or os.getenv("SNOWFLAKE_WAREHOUSE"),
+            database=SNOWFLAKE_DATABASE or os.getenv("SNOWFLAKE_DATABASE"),
+            role=SNOWFLAKE_ROLE or os.getenv("SNOWFLAKE_ROLE"),
+            schema=SNOWFLAKE_SCHEMA or os.getenv("SNOWFLAKE_SCHEMA"),
         )
     else:
         return ibis.snowflake.connect(
-            user=os.getenv("SNOWFLAKE_USER", SNOWFLAKE_USER),
+            user=SNOWFLAKE_USER or os.getenv("SNOWFLAKE_USER"),
             authenticator="externalbrowser",
-            account=os.getenv("SNOWFLAKE_ACCOUNT", SNOWFLAKE_ACCOUNT),
-            warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", SNOWFLAKE_WAREHOUSE),
-            database=os.getenv("SNOWFLAKE_DATABASE", SNOWFLAKE_DATABASE),
-            role=os.getenv("SNOWFLAKE_ROLE", SNOWFLAKE_ROLE),
-            schema=os.getenv("SNOWFLAKE_SCHEMA", SNOWFLAKE_SCHEMA),
+            account=SNOWFLAKE_ACCOUNT or os.getenv("SNOWFLAKE_ACCOUNT"),
+            warehouse=SNOWFLAKE_WAREHOUSE or os.getenv("SNOWFLAKE_WAREHOUSE"),
+            database=SNOWFLAKE_DATABASE or os.getenv("SNOWFLAKE_DATABASE"),
+            role=SNOWFLAKE_ROLE or os.getenv("SNOWFLAKE_ROLE"),
+            schema=SNOWFLAKE_SCHEMA or os.getenv("SNOWFLAKE_SCHEMA"),
         )
 
 
 # DuckDB connection function
 def ibis_duckdb_connect(DUCKDB_PATH: Optional[str] = ":memory") -> BaseBackend:
     """
-    Establish a connection to DuckDB using Ibis. Variables for the connection can
-    be passed either via this function call or as environment variables of the same name.
+    Establish a connection to DuckDB using Ibis. Variables for the connection can be passed either via this function call or as environment variables of the same name.
 
     Returns:
         BaseBackend: An Ibis backend connection to DuckDB.
@@ -93,4 +88,4 @@ def ibis_duckdb_connect(DUCKDB_PATH: Optional[str] = ":memory") -> BaseBackend:
     required_vars = ["DUCKDB_PATH"]
     _check_env_vars(*required_vars)
 
-    return ibis.connect(backend="duckdb", path=os.getenv("DUCKDB_PATH", DUCKDB_PATH))
+    return ibis.connect(backend="duckdb", path=DUCKDB_PATH or os.getenv("DUCKDB_PATH"))
