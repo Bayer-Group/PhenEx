@@ -152,9 +152,9 @@ class SnowflakeConnector:
         '''
         name_table = name_table or self._get_output_table_name(table)
             
-        return con.dest_connection.create_view(
+        return self.dest_connection.create_view(
             name=name_table,
-            database=con.SNOWFLAKE_DEST_DATABASE,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite
         )
@@ -165,23 +165,23 @@ class SnowflakeConnector:
         '''
         name_table = name_table or self._get_output_table_name(table)
             
-        return con.dest_connection.create_table(
+        return self.dest_connection.create_table(
             name=name_table,
-            database=con.SNOWFLAKE_DEST_DATABASE,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite
         )
 
     def drop_table(self, name_table):
-        return con.dest_connection.drop_table(
+        return self.dest_connection.drop_table(
             name=name_table,
-            database=con.SNOWFLAKE_DEST_DATABASE
+            database=self.SNOWFLAKE_DEST_DATABASE
         )  
         
     def drop_view(self, name_table):
-        return con.dest_connection.drop_view(
+        return self.dest_connection.drop_view(
             name=name_table,
-            database=con.SNOWFLAKE_DEST_DATABASE
+            database=self.SNOWFLAKE_DEST_DATABASE
         )  
 
 class DuckDBConnector:
