@@ -38,9 +38,6 @@ class SnowflakeConnector:
         SNOWFLAKE_DEST_DATABASE: Snowflake destination database name. Use a fully qualified database name (e.g. CATALOG.DATABASE).
 
     Methods:
-        connect(database: str, schema: str) -> BaseBackend:
-            Establishes and returns an Ibis backend connection to Snowflake for the specified database and schema.
-        
         connect_dest() -> BaseBackend:
             Establishes and returns an Ibis backend connection to the destination Snowflake database and schema.
         
@@ -98,7 +95,10 @@ class SnowflakeConnector:
             self.SNOWFLAKE_SOURCE_SCHEMA == self.SNOWFLAKE_DEST_SCHEMA):
             raise ValueError("Source and destination locations cannot be the same.")
 
-    def connect(self, database) -> BaseBackend:
+    def _connect(self, database) -> BaseBackend:
+        '''
+        Private method to get a database connection. End users should use connect_source() and connect_dest() to get connections to source and destination databases.
+        '''
         if self.SNOWFLAKE_PASSWORD:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
@@ -119,12 +119,12 @@ class SnowflakeConnector:
             )
         
     def connect_dest(self) -> BaseBackend:
-        return self.connect(
+        return self._connect(
                 database=self.SNOWFLAKE_DEST_DATABASE,
             )
 
     def connect_source(self) -> BaseBackend:
-        return self.connect(
+        return self._connect(
                 database=self.SNOWFLAKE_SOURCE_DATABASE,
             )
 
