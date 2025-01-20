@@ -28,6 +28,9 @@ nav:
           - Connectors: api/ibis_connect.md
           - Mappers: api/mappers.md
           - DomainsDictionary: api/domains_dictionary.md
+      - Reporting:
+          - Report: api/reporting/reporter.md
+          - Table1: api/reporting/table1.md
   - License: LICENSE.md
 
 plugins:
