@@ -117,6 +117,8 @@ class SnowflakeConnector:
         '''
         Private method to get a database connection. End users should use connect_source() and connect_dest() to get connections to source and destination databases.
         '''
+        database, schema = database.split('.')
+
         if self.SNOWFLAKE_PASSWORD:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
@@ -125,6 +127,7 @@ class SnowflakeConnector:
                 warehouse=self.SNOWFLAKE_WAREHOUSE,
                 role=self.SNOWFLAKE_ROLE,
                 database=database,
+                schema=schema
             )
         else:
             return ibis.snowflake.connect(
@@ -134,6 +137,7 @@ class SnowflakeConnector:
                 warehouse=self.SNOWFLAKE_WAREHOUSE,
                 role=self.SNOWFLAKE_ROLE,
                 database=database,
+                schema=schema
             )
         
     def connect_dest(self) -> BaseBackend:
@@ -207,6 +211,11 @@ class SnowflakeConnector:
             View: Ibis view object created in the destination Snowflake database.
         """
         name_table = name_table or self._get_output_table_name(table)
+        
+        # Check if the destination database exists, if not, create it
+        catalog, database = self.SNOWFLAKE_DEST_DATABASE.split('.')
+        if not database in self.dest_connection.list_databases():
+            self.dest_connection.create_database(name=database, catalog=catalog)
             
         return self.dest_connection.create_view(
             name=name_table,
@@ -228,10 +237,15 @@ class SnowflakeConnector:
             Table: Ibis table object created in the destination Snowflake database.
         """
         name_table = name_table or self._get_output_table_name(table)
+        
+        # Check if the destination database exists, if not, create it
+        catalog, database = self.SNOWFLAKE_DEST_DATABASE.split('.')
+        if not database in self.dest_connection.list_databases():
+            self.dest_connection.create_database(name=database, catalog=catalog)
             
         return self.dest_connection.create_table(
             name=name_table,
-            database=self.SNOWFLAKE_DEST_DATABASE,
+            database=database,
             obj=table,
             overwrite=overwrite
         )
