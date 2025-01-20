@@ -118,7 +118,16 @@ class SnowflakeConnector:
         Private method to get a database connection. End users should use connect_source() and connect_dest() to get connections to source and destination databases.
         '''
         database, schema = database.split('.')
-
+        #
+        # In Ibis speak: catalog = collection of databases
+        #                database = collection of tables
+        #                schema = columns and column types
+        # In snowflake speak: database = collection of schemas = ibis catalog
+        #                schema = collection of tables = ibis database
+        #
+        # In the below connect method, the arguments are the SNOWFLAKE terms.
+        #
+        
         if self.SNOWFLAKE_PASSWORD:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
