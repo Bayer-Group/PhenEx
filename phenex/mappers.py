@@ -10,7 +10,7 @@ class ColumnMapper:
     The ColumnMapper class provides a template for mapping columns of a table from an arbitrary schema to an internal representation.
 
     To subclass:
-        1. Check whether one of the existing ColumnMapper's fits your use case. 
+        1. Check whether one of the existing ColumnMapper's fits your use case.
         2. If not, define a new one by specifying the columns understood by the new ColumnMapper and adding those which are required to required_columns.
 
     Attributes:
@@ -141,11 +141,9 @@ class DomainsDictionary:
             Dict[str, Table]: A dictionary where keys are domain names and values are mapped tables.
         """
         mapped_tables = {}
-        database = database or f'{con.current_catalog}.{con.current_database}'
         for domain, mapper in self.domains_dict.items():
-            t = con.table(
-                mapper.NAME_TABLE,
-                database=database
+            t = con.get_source_table(
+                mapper.NAME_TABLE
             )
             mapped_tables[domain] = mapper.rename(t)
         return mapped_tables
