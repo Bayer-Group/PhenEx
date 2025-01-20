@@ -43,6 +43,24 @@ class SnowflakeConnector:
         
         connect_source() -> BaseBackend:
             Establishes and returns an Ibis backend connection to the source Snowflake database and schema.
+        
+        get_source_table(name_table: str) -> Table:
+            Retrieves a table from the source Snowflake database.
+        
+        get_dest_table(name_table: str) -> Table:
+            Retrieves a table from the destination Snowflake database.
+        
+        create_view(table: Table, name_table: Optional[str] = None, overwrite: bool = False) -> View:
+            Create a view of a table in the destination Snowflake database.
+        
+        create_table(table: Table, name_table: Optional[str] = None, overwrite: bool = False) -> Table:
+            Materialize a table in the destination Snowflake database.
+        
+        drop_table(name_table: str) -> None:
+            Drop a table from the destination Snowflake database.
+        
+        drop_view(name_table: str) -> None:
+            Drop a view from the destination Snowflake database.
     """
     def __init__(
         self,
@@ -119,22 +137,52 @@ class SnowflakeConnector:
             )
         
     def connect_dest(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the destination Snowflake database.
+
+        Returns:
+            BaseBackend: Ibis backend connection to the destination Snowflake database.
+        """
         return self._connect(
                 database=self.SNOWFLAKE_DEST_DATABASE,
             )
 
     def connect_source(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the source Snowflake database.
+
+        Returns:
+            BaseBackend: Ibis backend connection to the source Snowflake database.
+        """
         return self._connect(
                 database=self.SNOWFLAKE_SOURCE_DATABASE,
             )
 
     def get_source_table(self, name_table):
+        """
+        Retrieves a table from the source Snowflake database.
+
+        Args:
+            name_table (str): Name of the table to retrieve.
+
+        Returns:
+            Table: Ibis table object from the source Snowflake database.
+        """
         return self.dest_connection.table(
             name_table,
             database=self.SNOWFLAKE_SOURCE_DATABASE
         )
 
     def get_dest_table(self, name_table):
+        """
+        Retrieves a table from the destination Snowflake database.
+
+        Args:
+            name_table (str): Name of the table to retrieve.
+
+        Returns:
+            Table: Ibis table object from the destination Snowflake database.
+        """
         return self.dest_connection.table(
             name_table,
             database=self.SNOWFLAKE_DEST_DATABASE
@@ -147,9 +195,17 @@ class SnowflakeConnector:
         return name_table
     
     def create_view(self, table, name_table=None, overwrite=False):
-        '''
-        Create a view of table in SNOWFLAKE_DEST_DATABASE. If name_table not specified, uses name of table if this exists.
-        '''
+        """
+        Create a view of a table in the destination Snowflake database.
+
+        Args:
+            table (Table): Ibis table object to create a view from.
+            name_table (str, optional): Name of the view to create. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite the view if it exists. Defaults to False.
+
+        Returns:
+            View: Ibis view object created in the destination Snowflake database.
+        """
         name_table = name_table or self._get_output_table_name(table)
             
         return self.dest_connection.create_view(
@@ -160,9 +216,17 @@ class SnowflakeConnector:
         )
 
     def create_table(self, table, name_table=None, overwrite=False):
-        '''
-        Materialize table in SNOWFLAKE_DEST_DATABASE. If name_table not specified, uses name of table if this exists.
-        '''
+        """
+        Materialize a table in the destination Snowflake database.
+
+        Args:
+            table (Table): Ibis table object to materialize.
+            name_table (str, optional): Name of the table to create. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite the table if it exists. Defaults to False.
+
+        Returns:
+            Table: Ibis table object created in the destination Snowflake database.
+        """
         name_table = name_table or self._get_output_table_name(table)
             
         return self.dest_connection.create_table(
@@ -173,22 +237,62 @@ class SnowflakeConnector:
         )
 
     def drop_table(self, name_table):
+        """
+        Drop a table from the destination Snowflake database.
+
+        Args:
+            name_table (str): Name of the table to drop.
+
+        Returns:
+            None
+        """
         return self.dest_connection.drop_table(
             name=name_table,
             database=self.SNOWFLAKE_DEST_DATABASE
         )  
         
     def drop_view(self, name_table):
+        """
+        Drop a view from the destination Snowflake database.
+
+        Args:
+            name_table (str): Name of the view to drop.
+
+        Returns:
+            None
+        """
         return self.dest_connection.drop_view(
             name=name_table,
             database=self.SNOWFLAKE_DEST_DATABASE
         )  
 
 class DuckDBConnector:
+    """
+    DuckDBConnector manages connections to DuckDB using Ibis.
+
+    Attributes:
+        DUCKDB_PATH: Path to the DuckDB database file.
+
+    Methods:
+        connect() -> BaseBackend:
+            Establishes and returns an Ibis backend connection to the DuckDB database.
+    """
     def __init__(self, DUCKDB_PATH: Optional[str] = ":memory"):
+        """
+        Initializes the DuckDBConnector with the specified path.
+
+        Args:
+            DUCKDB_PATH (str, optional): Path to the DuckDB database file. Defaults to ":memory".
+        """
         self.DUCKDB_PATH = DUCKDB_PATH
 
     def connect(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the DuckDB database.
+
+        Returns:
+            BaseBackend: Ibis backend connection to the DuckDB database.
+        """
         required_vars = ["DUCKDB_PATH"]
         _check_env_vars(*required_vars)
         return ibis.connect(backend="duckdb", path=self.DUCKDB_PATH or os.getenv("DUCKDB_PATH"))
