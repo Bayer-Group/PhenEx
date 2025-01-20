@@ -219,7 +219,7 @@ class SnowflakeConnector:
             
         return self.dest_connection.create_view(
             name=name_table,
-            database=self.SNOWFLAKE_DEST_DATABASE,
+            database=database,
             obj=table,
             overwrite=overwrite
         )
