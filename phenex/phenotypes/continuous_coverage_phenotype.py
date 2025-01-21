@@ -1,5 +1,5 @@
 from typing import Union, List, Dict, Optional
-from phenex.mappers import ObservationPeriodTableMapper
+from phenex.tables import PhenexObservationPeriodTable
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.value import GreaterThanOrEqualTo, Value
 from phenex.filters.codelist_filter import CodelistFilter
@@ -26,7 +26,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         2. Determine the date of loss to followup (right censoring) i.e. the duration of coverage after the anchor_phenotype event
 
     ## Data for ContinuousCoveragePhenotype
-    This phenotype requires a table with PersonID and a coverage start date and end date. Depending on the datasource used, this information is a separate ObservationPeriod table or found in the PersonTable. Use an ObservationPeriodTableMapper to map required coverage start and end date columns.
+    This phenotype requires a table with PersonID and a coverage start date and end date. Depending on the datasource used, this information is a separate ObservationPeriod table or found in the PersonTable. Use an PhenexObservationPeriodTable to map required coverage start and end date columns.
 
     | PersonID    |   coverageStartDate  |   coverageEndDate  |
     |-------------|----------------------|--------------------|
