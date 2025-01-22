@@ -69,12 +69,14 @@ class DomainsDictionary:
 # OMOP Column Mappers
 #
 class OMOPPersonTable(PhenexPersonTable):
+    NAME_TABLE = 'PERSON'
     JOIN_KEYS = {
         'OMOPConditionOccurenceTable': ['PERSON_ID'],
         'OMOPVisitDetailTable': ['PERSON_ID']
     }
 
 class OMOPVisitDetailTable(PhenexVisitDetailTable):
+    NAME_TABLE = 'VISIT_DETAIL'
     JOIN_KEYS = {
         'OMOPPersonTable': ['PERSON_ID'],
         'OMOPConditionOccurenceTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
@@ -92,89 +94,119 @@ class OMOPConditionOccurenceTable(CodeTable):
         'CODE': "CONDITION_CONCEPT_ID",
     }
 
+class OMOPDeathTable(PhenexTable):
+    NAME_TABLE = 'DEATH'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID']
+    }
+    KNOWN_FIELDS = [
+        'PERSON_ID',
+        'DATE_OF_DEATH'
+    ]
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'DATE_OF_DEATH': "DEATH_DATE"
+    }
+
+class OMOPProcedureOccurrenceTable(CodeTable):
+    NAME_TABLE = 'PROCEDURE_OCCURRENCE'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "PROCEDURE_DATE",
+        'CODE': "PROCEDURE_CONCEPT_ID",
+    }
+
+class OMOPDrugExposureTable(CodeTable):
+    NAME_TABLE = 'DRUG_EXPOSURE'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "DRUG_EXPOSURE_START_DATE",
+        'CODE': "DRUG_CONCEPT_ID",
+    }
+
+class OMOPConditionOccurrenceSourceTable(CodeTable):
+    NAME_TABLE = 'CONDITION_OCCURRENCE'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "CONDITION_START_DATE",
+        'CODE': "CONDITION_SOURCE_VALUE",
+    }
+
+class OMOPProcedureOccurrenceSourceTable(CodeTable):
+    NAME_TABLE = 'PROCEDURE_OCCURRENCE'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "PROCEDURE_DATE",
+        'CODE': "PROCEDURE_SOURCE_VALUE",
+    }
+
+class OMOPDrugExposureSourceTable(CodeTable):
+    NAME_TABLE = 'DRUG_EXPOSURE'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "DRUG_EXPOSURE_START_DATE",
+        'CODE': "DRUG_SOURCE_VALUE",
+    }
+
+class OMOPPersonTableSource(PhenexPersonTable):
+    NAME_TABLE = 'PERSON'
+    JOIN_KEYS = {
+        'OMOPConditionOccurenceTable': ['PERSON_ID'],
+        'OMOPVisitDetailTable': ['PERSON_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'DATE_OF_BIRTH': "BIRTH_DATETIME",
+        'YEAR_OF_BIRTH': "YEAR_OF_BIRTH",
+        'SEX': "GENDER_SOURCE_VALUE",
+        'ETHNICITY': "ETHNICITY_SOURCE_VALUE",
+    }
+
+class OMOPObservationPeriodTable(PhenexObservationPeriodTable):
+    NAME_TABLE = 'OBSERVATION_PERIOD'
+    JOIN_KEYS = {
+        'OMOPPersonTable': ['PERSON_ID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'OBSERVATION_PERIOD_START_DATE': "OBSERVATION_PERIOD_START_DATE",
+        'OBSERVATION_PERIOD_END_DATE': 'OBSERVATION_PERIOD_END_DATE'
+    }
+
 #
 # Domains
 #
 OMOPs = {
     "PERSON": OMOPPersonTable,
-    "VISIT": OMOPVisitDetailTable,
+    "VISIT_DETAIL": OMOPVisitDetailTable,
     "CONDITION_OCCURRENCE": OMOPConditionOccurenceTable,
-    # "DEATH": OMOPDeathTable,
-    # "CONDITION_OCCURRENCE": OMOPConditionOccurrence,
-    # "PROCEDURE_OCCURRENCE": OMOPProcedureOccurrence,
-    # "DRUG_EXPOSURE": OMOPDrugExposure,
-    # "PERSON_SOURCE": OMOPPersonTableSource,
-    # "CONDITION_OCCURRENCE_SOURCE": OMOPConditionOccurrenceSource,
-    # "PROCEDURE_OCCURRENCE_SOURCE": OMOPProcedureOccurrenceSource,
-    # "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSource,
-    # "OBSERVATION_PERIOD": OMOPObservationPeriod,
+    "DEATH": OMOPDeathTable,
+    "PROCEDURE_OCCURRENCE": OMOPProcedureOccurrenceTable,
+    "DRUG_EXPOSURE": OMOPDrugExposureTable,
+    "CONDITION_OCCURRENCE_SOURCE": OMOPConditionOccurrenceSourceTable,
+    "PROCEDURE_OCCURRENCE_SOURCE": OMOPProcedureOccurrenceSourceTable,
+    "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSourceTable,
+    "PERSON_SOURCE": OMOPPersonTableSource,
+    "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
 }
 OMOPDomains = DomainsDictionary(OMOPs)
-
-#
-# OLD vvvvv
-#
-# OMOPPersonTable = PersonTable(
-#     NAME_TABLE="PERSON",
-#     PERSON_ID="PERSON_ID",
-#     DATE_OF_BIRTH="BIRTH_DATETIME",
-#     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
-#     SEX="GENDER_CONCEPT_ID",
-#     ETHNICITY="ETHNICITY_CONCEPT_ID",
-# )
-
-# OMOPDeathTable = PersonTable(
-#     NAME_TABLE="DEATH", PERSON_ID="PERSON_ID", DATE_OF_DEATH="DEATH_DATE"
-# )
-
-# OMOPPersonTableSource = PersonTable(
-#     NAME_TABLE="PERSON",
-#     PERSON_ID="PERSON_ID",
-#     DATE_OF_BIRTH="BIRTH_DATETIME",
-#     YEAR_OF_BIRTH="YEAR_OF_BIRTH",
-#     SEX="GENDER_SOURCE_VALUE",
-#     ETHNICITY="ETHNICITY_SOURCE_VALUE",
-# )
-
-# OMOPConditionOccurrence = CodeTable(
-#     NAME_TABLE="CONDITION_OCCURRENCE",
-#     EVENT_DATE="CONDITION_START_DATE",
-#     CODE="CONDITION_CONCEPT_ID",
-# )
-
-# OMOPConditionOccurrenceSource = CodeTable(
-#     NAME_TABLE="CONDITION_OCCURRENCE",
-#     EVENT_DATE="CONDITION_START_DATE",
-#     CODE="CONDITION_SOURCE_VALUE",
-# )
-
-# OMOPProcedureOccurrence = CodeTable(
-#     NAME_TABLE="PROCEDURE_OCCURRENCE",
-#     EVENT_DATE="PROCEDURE_DATE",
-#     CODE="PROCEDURE_CONCEPT_ID",
-# )
-
-# OMOPProcedureOccurrenceSource = CodeTable(
-#     NAME_TABLE="PROCEDURE_OCCURRENCE",
-#     EVENT_DATE="PROCEDURE_DATE",
-#     CODE="PROCEDURE_SOURCE_VALUE",
-# )
-
-# OMOPDrugExposure = CodeTable(
-#     NAME_TABLE="DRUG_EXPOSURE",
-#     EVENT_DATE="DRUG_EXPOSURE_START_DATE",
-#     CODE="DRUG_CONCEPT_ID",
-# )
-
-# OMOPDrugExposureSource = CodeTable(
-#     NAME_TABLE="DRUG_EXPOSURE",
-#     EVENT_DATE="DRUG_EXPOSURE_START_DATE",
-#     CODE="DRUG_SOURCE_VALUE",
-# )
-
-# OMOPObservationPeriod = PhenexObservationPeriodTable(
-#     NAME_TABLE="OBSERVATION_PERIOD",
-#     PERSON_ID="PERSON_ID",
-#     OBSERVATION_PERIOD_START_DATE="OBSERVATION_PERIOD_START_DATE",
-#     OBSERVATION_PERIOD_END_DATE="OBSERVATION_PERIOD_END_DATE",
-# )
