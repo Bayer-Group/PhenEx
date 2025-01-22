@@ -1,6 +1,4 @@
-import copy
-from typing import Optional, Dict
-from dataclasses import dataclass, asdict
+from typing import Dict
 from ibis.expr.types.relations import Table
 
 from phenex.tables import *
@@ -11,11 +9,13 @@ class DomainsDictionary:
     A DomainsDictionary is used to map an entire database from an arbitrary schema to a PhenEx internal representation.
 
     Attributes:
-        domains_dict (Dict[str, ]): A dictionary where keys are domain names and values are  instances.
+        domains_dict (Dict[str, class]): A dictionary where keys are domain names and values are uninstantiated PhenexTable class objects.
 
     Methods:
         get_mapped_tables(con, database=None) -> Dict[str, Table]:
             Get all tables mapped to PhenEx representation using the given connection.
+        set_mapped_tables(con, con, overwrite=False) -> None:
+            Create a view for all mapped tables in the destination database.
     """
 
     def __init__(self, domains_dict):
@@ -37,19 +37,15 @@ class DomainsDictionary:
         existing_tables = con.dest_connection.list_tables(database=con.SNOWFLAKE_DEST_DATABASE)
         for domain, mapper in self.domains_dict.items():
             if domain not in existing_tables or overwrite:
-                t = con.source_connection.table(
-                    mapper.NAME_TABLE,
-                    database=con.SNOWFLAKE_SOURCE_DATABASE
-                )
+                t = con.get_source_table(mapper.NAME_TABLE)
                 mapped_table = mapper(t).table
-                con.dest_connection.create_view(
-                    name=mapper.NAME_TABLE,
-                    database=con.SNOWFLAKE_DEST_DATABASE,
-                    obj=mapped_table,
+                con.create_view(
+                    mapped_table,
+                    name_table=mapper.NAME_TABLE,
                     overwrite=overwrite
-                )
+                    )
 
-    def get_mapped_tables(self, con) -> Dict[str, Table]:
+    def get_mapped_tables(self, con) -> Dict[str, PhenexTable]:
         """
         Get all tables mapped to PhenEx representation using the given connection.
 
@@ -60,15 +56,12 @@ class DomainsDictionary:
             database (Optional[str]): The name of the database. Defaults to the current database of the connection.
 
         Returns:
-            Dict[str, Table]: A dictionary where keys are domain names and values are mapped tables.
+            Dict[str, PhenexTable]: A dictionary where keys are domain names and values are mapped tables.
         """
         # self.set_mapped_tables(con)
         mapped_tables = {}
         for domain, mapper in self.domains_dict.items():
-            mapped_tables[domain] = mapper(con.dest_connection.table(
-                mapper.NAME_TABLE,
-                database=con.SNOWFLAKE_DEST_DATABASE
-            ))
+            mapped_tables[domain] = mapper(con.get_source_table(mapper.NAME_TABLE))
         return mapped_tables
 
 
