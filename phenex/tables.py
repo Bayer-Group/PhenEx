@@ -150,7 +150,8 @@ class PhenexPersonTable(PhenexTable):
         'ETHNICITY'
     ]
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID"
+        'PERSON_ID': "PERSON_ID",
+        'DATE_OF_BIRTH': 'DATE_OF_BIRTH'
     }
 
 class EventTable(PhenexTable):

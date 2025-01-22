@@ -70,6 +70,10 @@ class DomainsDictionary:
 #
 class OMOPPersonTable(PhenexPersonTable):
     NAME_TABLE = 'PERSON'
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'DATE_OF_BIRTH': 'BIRTH_DATETIME'
+    }    
     JOIN_KEYS = {
         'OMOPConditionOccurenceTable': ['PERSON_ID'],
         'OMOPVisitDetailTable': ['PERSON_ID']
