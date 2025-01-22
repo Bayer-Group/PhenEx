@@ -30,7 +30,7 @@ class CategoricalFilter(Filter):
         self.domain = domain
         super(CategoricalFilter, self).__init__()
 
-    def _filter(self, table: 'PhenexTable', tables:dict):
+    def _filter(self, table: 'PhenexTable', tables:dict = None):
         if self.column_name not in table.columns:
             if self.domain not in tables.keys():
                 raise ValueError(f"Table required for categorical filter ({self.domain}) does not exist within domains dicitonary")

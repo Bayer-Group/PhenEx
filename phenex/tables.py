@@ -60,6 +60,9 @@ class PhenexTable:
         # pass all attributes on to underlying table
         return getattr(self._table, name)
 
+    def __getitem__(self, key):
+        return self._table[key]
+
     @property
     def REQUIRED_FIELDS(self):
         return list(self.DEFAULT_MAPPING.keys())
