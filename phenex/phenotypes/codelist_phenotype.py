@@ -112,7 +112,7 @@ class CodelistPhenotype(Phenotype):
     def _perform_categorical_filtering(self, code_table, tables):
         if self.categorical_filter is not None:
             assert is_phenex_code_table(code_table)
-            code_table = self.categorical_filter.filter(code_table, tables)
+            code_table = self.categorical_filter.autojoin_filter(code_table, tables)
         return code_table
 
     def _perform_time_filtering(self, code_table):

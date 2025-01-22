@@ -2,7 +2,6 @@ from ibis.expr.types.relations import Table
 
 from typing import Union
 import ibis
-from ibis.expr.types.relations import Table
 import copy
 
 class PhenexTable:
@@ -75,6 +74,9 @@ class PhenexTable:
         """
         The join method performs a join of PhenexTables, using autojoin functionality if Phenex is able to find the table types specified in PATHS.
         """
+        if isinstance(other, Table):
+            return type(self)(self.table.join(other, *args, **kwargs))
+
         if not isinstance(other, PhenexTable):
             raise TypeError(f"Expected a PhenexTable instance, got {type(other)}")
         if len(args):
@@ -96,7 +98,6 @@ class PhenexTable:
             columns = list(set(joined_table.columns + next_table.columns))
             joined_table = joined_table.join(next_table, join_keys, **kwargs).select(columns)
             current_table = next_table
-
         return joined_table
 
 
@@ -122,7 +123,7 @@ class PhenexTable:
         Filter the table by an Ibis Expression or using a PhenExFilter.
         '''
         input_columns = self.columns
-        if isinstance(expr, ibis.expr.types.Expr):
+        if isinstance(expr, ibis.expr.types.Expr) or isinstance(expr, list):
             filtered_table = self.table.filter(expr)
         else:
             filtered_table = expr.filter(self)

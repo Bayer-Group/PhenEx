@@ -128,7 +128,6 @@ class PhenotypeTestGenerator:
             # data may have to be in a different format. It's best to keep your
             # seed data dates in pandas datetime format and let the
             # TestGenerator format them into strings.
-            print(path)
             df.to_csv(path, index=False, date_format=self.date_format)
 
             result_table = test_info["phenotype"].execute(self.domains)
