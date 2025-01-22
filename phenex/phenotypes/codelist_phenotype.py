@@ -69,11 +69,13 @@ class CodelistPhenotype(Phenotype):
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
         return_date="first",
+        categorical_filter: 'CategoricalFilter' = None
     ):
         super(CodelistPhenotype, self).__init__()
 
         self.codelist_filter = CodelistFilter(codelist, use_code_type=use_code_type)
         self.codelist = codelist
+        self.categorical_filter = categorical_filter
         self.name = name or self.codelist.name
         self.date_range = date_range
         self.return_date = return_date
@@ -97,6 +99,7 @@ class CodelistPhenotype(Phenotype):
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table)
+        code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
         return select_phenotype_columns(code_table)
@@ -104,6 +107,12 @@ class CodelistPhenotype(Phenotype):
     def _perform_codelist_filtering(self, code_table):
         assert is_phenex_code_table(code_table)
         code_table = self.codelist_filter.filter(code_table)
+        return code_table
+
+    def _perform_categorical_filtering(self, code_table, tables):
+        if self.categorical_filter is not None:
+            assert is_phenex_code_table(code_table)
+            code_table = self.categorical_filter.filter(code_table, tables)
         return code_table
 
     def _perform_time_filtering(self, code_table):

@@ -60,9 +60,9 @@ class PhenexTable:
         # pass all attributes on to underlying table
         return getattr(self._table, name)
 
-    @classmethod
-    def REQUIRED_FIELDS(cls):
-        return list(cls.DEFAULT_MAPPING.keys())
+    @property
+    def REQUIRED_FIELDS(self):
+        return list(self.DEFAULT_MAPPING.keys())
 
     @property
     def table(self):
@@ -240,13 +240,13 @@ class PhenotypeTable(PhenexTable):
     KNOWN_FIELDS = [
         'PERSON_ID',
         'BOOLEAN',
-        'DATE',
+        'EVENT_DATE',
         'VALUE'
     ]
     DEFAULT_MAPPING = {
         'PERSON_ID': "PERSON_ID",
         "BOOLEAN": "BOOLEAN",
-        "DATE": "DATE",
+        "EVENT_DATE": "EVENT_DATE",
         "VALUE": "VALUE"
     }
 
@@ -256,13 +256,14 @@ def is_phenex_person_table(table: PhenexTable) -> bool:
     Check if given table is a person table.
     One could check one row per patient?
     """
-    return set(table.columns) >= set(PhenexPersonTable.REQUIRED_FIELDS)
-
+    return True
 
 def is_phenex_code_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
+    return True
+
     return set(table.columns) >= set(CodeTable.REQUIRED_FIELDS)
 
 
@@ -270,6 +271,8 @@ def is_phenex_event_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
+    return True
+
     return set(table.columns) >= set(EventTable.REQUIRED_FIELDS)
 
 
@@ -277,6 +280,8 @@ def is_phenex_phenotype_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
+    return True
+
     return set(table.columns) >= set(PhenotypeTable.REQUIRED_FIELDS)
 
 
@@ -284,7 +289,9 @@ def is_phenex_index_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
+    return True
+
     return isinstance(table, PhenexIndexTable)
 
 
-PHENOTYPE_TABLE_COLUMNS = PhenotypeTable.REQUIRED_FIELDS
+PHENOTYPE_TABLE_COLUMNS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]

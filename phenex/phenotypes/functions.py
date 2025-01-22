@@ -1,6 +1,7 @@
 from typing import List
 from ibis.expr.types.relations import Table
 import ibis
+from phenex.tables import PhenexTable
 
 
 def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
@@ -10,6 +11,9 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
     Args:
         phenotypes (List[Phenotype]): A list of Phenotype objects to stack.
     """
+    # TODO decide if phenotypes should be returning a phenextable
+    if isinstance(join_table, PhenexTable):
+        join_table = join_table.table
     idx_phenotype_to_begin = 0
     join_type = "left" # if join table is defined, we want to left join
     if join_table is None:

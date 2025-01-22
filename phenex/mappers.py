@@ -80,7 +80,7 @@ class OMOPPersonTable(PhenexPersonTable):
         'OMOPConditionOccurenceTable': ['PERSON_ID'],
         'OMOPVisitDetailTable': ['PERSON_ID']
     }
-    
+
 class OMOPVisitDetailTable(PhenexVisitDetailTable):
     JOIN_KEYS = {
         'OMOPPersonTable': ['PERSON_ID'],
@@ -179,7 +179,7 @@ OMOPDomains = DomainsDictionary(OMOPs)
 #     CODE="DRUG_SOURCE_VALUE",
 # )
 
-# OMOPObservationPeriod = ObservationPeriodTableMapper(
+# OMOPObservationPeriod = PhenexObservationPeriodTable(
 #     NAME_TABLE="OBSERVATION_PERIOD",
 #     PERSON_ID="PERSON_ID",
 #     OBSERVATION_PERIOD_START_DATE="OBSERVATION_PERIOD_START_DATE",
