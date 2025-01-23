@@ -10,6 +10,7 @@ from phenex.test.util.dummy.generate_dummy_data import (
 )
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
+from phenex.filters.categorical_filter import CategoricalFilter
 
 
 class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
@@ -525,6 +526,225 @@ class CodelistPhenotypeReturnDateFilterTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
+from phenex.tables import CodeTable, PhenexTable
+
+class DummyConditionOccurenceTable(CodeTable):
+    NAME_TABLE = 'DIAGNOSIS'
+    JOIN_KEYS = {
+        'DummyPersonTable': ['PERSON_ID'],
+        'DummyEncounterTable': ['PERSON_ID', 'ENCID'] # I changed this from EVENT_DATE
+    }
+    PATHS = {
+        'DummyVisitDetailTable': ['DummyEncounterTable']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID",
+        'EVENT_DATE': "DATE",
+        'CODE': "CODE",
+        "CODE_TYPE":"CODE_TYPE"
+    }
+
+class DummyEncounterTable(PhenexTable):
+    NAME_TABLE = 'ENCOUNTER'
+    JOIN_KEYS = {
+        'DummyPersonTable': ['PERSON_ID'],
+        'DummyConditionOccurenceTable': ['PERSON_ID', 'ENCID'], # I changed this from EVENT_DATE
+        'DummyVisitDetailTable': ['PERSON_ID', 'VISITID'] # I changed this from EVENT_DATE
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID"
+    }
+
+class DummyVisitDetailTable(PhenexTable):
+    NAME_TABLE = 'VISIT'
+    JOIN_KEYS = {
+        'DummyPersonTable': ['PERSON_ID'],
+        'DummyEncounterTable': ['PERSON_ID', 'VISITID']
+    }
+    DEFAULT_MAPPING = {
+        'PERSON_ID': "PERSON_ID"
+    }
+
+
+class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
+    name_space = "clpt_categorical_filter"
+
+    def define_input_tables(self):
+        N = 10
+        df = pd.DataFrame()
+        df["PERSON_ID"] = [f"P{i}" for i in range(N)]
+        df["ENCID"] = [f"E{i}" for i in range(N)]
+        df["CODE"] = "c1"
+        df["CODE_TYPE"] = "ICD10CM"
+        df["DATE"] = datetime.datetime.strptime("10-10-2021", "%m-%d-%Y")
+
+        df2 = pd.DataFrame()
+        df2['PERSON_ID'] = [f"P{i}" for i in range(N)]
+        df2["ENCID"] = [f"E{i}" for i in range(N)]
+        df2['VISITID'] = [f"V{i}" for i in range(N)]
+        df2['flag1'] = ['a']*2 + ['b']*2 + ['c']*(N-2-2)
+
+        df3 = pd.DataFrame()
+        df3['PERSON_ID'] = [f"P{i}" for i in range(N)]
+        df3['VISITID'] = [f"V{i}" for i in range(N)]
+        df3['flag2'] = ['d']*5 + ['e']*3 + ['f']*(N-5-3)
+
+
+        return [
+            {"name": "condition_occurrence", "df": df, "type":DummyConditionOccurenceTable},
+            {"name": "encounter", "df":df2, "type":DummyEncounterTable},
+            {"name": "visit", "df":df3, "type":DummyVisitDetailTable}
+        ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        c1a = {
+            "name": "single_flag_direct_join_a",
+            "persons": [f"P{i}" for i in range(2)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    allowed_values=["a"], column_name="flag1", domain = 'encounter'
+                ),
+            ),
+        }
+
+        c1b = {
+            "name": "single_flag_direct_join_b",
+            "persons": [f"P{i}" for i in range(2,4)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    allowed_values=["b"], column_name="flag1", domain = 'encounter'
+                ),
+            ),
+        }
+
+        c2a = {
+            "name": "single_flag_intermediary_join_a",
+            "persons": [f"P{i}" for i in range(5)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    allowed_values=["d"], column_name="flag2", domain = 'visit'
+                ),
+            ),
+        }
+
+        c2b = {
+            "name": "single_flag_intermediary_join_b",
+            "persons": [f"P{i}" for i in range(5,8)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    allowed_values=["e"], column_name="flag2", domain = 'visit'
+                ),
+            ),
+        }
+
+        test_infos = [c1a, c1b, c2a, c2b]
+        for test_info in test_infos:
+            test_info["phenotype"].name = test_info["name"]
+
+        return test_infos
+
+# class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(PhenotypeTestGenerator):
+#     name_space = "clpt_categorical_filter_logic"
+
+#     def define_input_tables(self):
+#         def add_flag(df, flag_name, flag_values):
+#             dfs = []
+#             for flag in flag_values:
+#                 _df = df.copy()
+#                 _df[flag_name] = flag
+#                 dfs.append(_df)
+#             return pd.concat(dfs)
+
+#         df = pd.DataFrame()
+#         df[self.columnnames["person_id"]] = ["p1"]
+#         df[self.columnnames["source_code"]] = ["c1"]
+#         df[self.columnnames["code_type"]] = ["ICD10CM"]
+#         df = add_flag(df, "x", ["x1", "x2"])
+#         df = add_flag(df, "y", ["y1", "y2"])
+#         df = add_flag(df, "z", ["z1", "z2"])
+#         df[self.columnnames["person_id"]] = [f"P{i}" for i in range(df.shape[0])]
+
+#         return [{"name": "condition_occurrence", "df": df, "column_types": {}}]
+
+#     def define_phenotype_tests(self):
+#         codelist_factory = LocalCSVCodelistFactory(
+#             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+#         )
+
+#         c1 = {
+#             "name": "single_flag",
+#             "persons": [f"P{i}" for i in range(4)],
+#             "phenotype": CodelistPhenotype(
+#                 codelist=codelist_factory.get_codelist("c1"),
+#                 domain="condition_occurrence",
+#                 categorical_filter=CategoricalFilter(
+#                     allowed_values=["z1"], columnname="z"
+#                 ),
+#             ),
+#         }
+
+#         c2 = {
+#             "name": "two_categorical_filter_or",
+#             "persons": [f"P{i}" for i in range(4)] + [f"P{i}" for i in range(6, 8)],
+#             "phenotype": CodelistPhenotype(
+#                 codelist=codelist_factory.get_codelist("c1"),
+#                 domain="condition_occurrence",
+#                 categorical_filter=CategoricalFilter(
+#                     allowed_values=["z1"], columnname="z"
+#                 )
+#                 | CategoricalFilter(allowed_values=["y2"], columnname="y"),
+#             ),
+#         }
+
+#         c3 = {
+#             "name": "two_categorical_filter_and",
+#             "persons": [f"P{i}" for i in range(2, 4)],
+#             "phenotype": CodelistPhenotype(
+#                 codelist=codelist_factory.get_codelist("c1"),
+#                 domain="condition_occurrence",
+#                 categorical_filter=CategoricalFilter(
+#                     allowed_values=["z1"], columnname="z"
+#                 )
+#                 & CategoricalFilter(allowed_values=["y2"], columnname="y"),
+#             ),
+#         }
+
+#         c4 = {
+#             "name": "four_categorical_filter",
+#             "persons": [f"P{i}" for i in range(2, 4)] + [f"P{i}" for i in range(6, 8)],
+#             "phenotype": CodelistPhenotype(
+#                 codelist=codelist_factory.get_codelist("c1"),
+#                 domain="condition_occurrence",
+#                 categorical_filter=(
+#                     CategoricalFilter(allowed_values=["z1"], columnname="z")
+#                     & CategoricalFilter(allowed_values=["y2"], columnname="y")
+#                 )
+#                 | (
+#                     CategoricalFilter(allowed_values=["z2"], columnname="z")
+#                     & CategoricalFilter(allowed_values=["y2"], columnname="y")
+#                 ),
+#             ),
+#         }
+
+#         test_infos = [c1, c2, c3, c4]
+#         for test_info in test_infos:
+#             test_info["phenotype"].name_phenotype = test_info["name"]
+
+#         return test_infos
+
+
 def test_return_date():
     tg = CodelistPhenotypeReturnDateFilterTestGenerator()
     tg.run_tests()
@@ -545,8 +765,12 @@ def test_codelist_phenotype():
     tg.run_tests()
 
 
+def test_categorical_filter_phenotype():
+    tg = CodelistPhenotypeCategoricalFilterTestGenerator()
+    tg.run_tests()
+
 if __name__ == "__main__":
-    test_codelist_phenotype()
-    # test_relative_time_range_filter()
-    # test_anchor_phenotype()
-    # test_return_date()
+    test_categorical_filter_phenotype()
+    test_relative_time_range_filter()
+    test_anchor_phenotype()
+    test_return_date()

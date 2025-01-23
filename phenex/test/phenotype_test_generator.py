@@ -9,7 +9,7 @@ from pyarrow import int8
 from .util.check_equality import check_equality
 
 import logging
-
+from phenex.tables import *
 
 class PhenotypeTestGenerator:
     """
@@ -81,9 +81,19 @@ class PhenotypeTestGenerator:
                 else:
                     schema[col] = str
 
-            self.domains[input_info["name"]] = self.con.create_table(
+            table = self.con.create_table(
                 input_info["name"], input_info["df"], schema=schema
             )
+            if 'type' in input_info.keys():
+                table_type = input_info['type']
+            else:
+                table_type = PhenexTable
+                if input_info['name'].lower() in ['condition_occurrence', 'measurement']:
+                    table_type = CodeTable
+                elif input_info['name'].lower() in ['person']:
+                    table_type = PhenexPersonTable
+
+            self.domains[input_info["name"]] = table_type(table)
 
     def _run_tests(self):
         def df_from_test_info(test_info):
@@ -118,7 +128,6 @@ class PhenotypeTestGenerator:
             # data may have to be in a different format. It's best to keep your
             # seed data dates in pandas datetime format and let the
             # TestGenerator format them into strings.
-            print(path)
             df.to_csv(path, index=False, date_format=self.date_format)
 
             result_table = test_info["phenotype"].execute(self.domains)

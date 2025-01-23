@@ -58,4 +58,5 @@ class CodelistFilter(Filter):
             code_table.columns
         )
 
-        return filtered_table.select(input_columns)
+        # return table with downselected columns, of same type as input table
+        return type(code_table)(filtered_table.select(input_columns))
