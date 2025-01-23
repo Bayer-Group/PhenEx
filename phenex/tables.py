@@ -4,6 +4,7 @@ from typing import Union
 import ibis
 import copy
 
+
 class PhenexTable:
     """
     Phenex provides certain table types on which it knows how to operate. For instance, Phenex implements a CodeTable, which is an event table containing codes. Phenex has abstracted operations for each table type. For instance, given a CodeTable, Phenex knows how to filter this table based on the presence of codes within that table. Phenex doesn't care if the code table is actually a diagnosis code table or a procedure code table or a medication code table.
@@ -16,20 +17,23 @@ class PhenexTable:
 
     Note that for each table type, there are REQUIRED_FIELDS, i.e., fields that MUST be defined for Phenex to work with such a table and KNOWN_FIELDS, i.e., fields that Phenex internally understands what to do with (there is a Phenotype that knows how to work with that field). For instance, in a PhenexPersonTable, one MUST define PERSON_ID, but DATE_OF_BIRTH is an optional field that PhenEx can process if given and transform into AGE. These are fixed for each table type and should not be overridden.
     """
-    NAME_TABLE = 'PHENEX_TABLE' # name of table in the database
-    JOIN_KEYS = {} # dict: class name -> List[phenex column names]
-    KNOWN_FIELDS = [] # List[phenex column names]
-    DEFAULT_MAPPING = {} # dict: input column name -> phenex column name
-    PATHS = {} # dict: table class name -> List[other table class names]
+
+    NAME_TABLE = "PHENEX_TABLE"  # name of table in the database
+    JOIN_KEYS = {}  # dict: class name -> List[phenex column names]
+    KNOWN_FIELDS = []  # List[phenex column names]
+    DEFAULT_MAPPING = {}  # dict: input column name -> phenex column name
+    PATHS = {}  # dict: table class name -> List[other table class names]
     REQUIRED_FIELDS = list(DEFAULT_MAPPING.keys())
 
     def __init__(self, table, name=None, column_mapping={}):
-        '''
+        """
         Instantiate a PhenexTable, possibly overriding NAME_TABLE and COLUMN_MAPPING.
-        '''
+        """
 
         if not isinstance(table, Table):
-            raise TypeError(f"Cannot instantiatiate {self.__class__.__name__} from {type(table)}. Must be ibis Table.")
+            raise TypeError(
+                f"Cannot instantiatiate {self.__class__.__name__} from {type(table)}. Must be ibis Table."
+            )
 
         self.NAME_TABLE = name or self.NAME_TABLE
 
@@ -45,13 +49,15 @@ class PhenexTable:
         self._add_phenotype_table_relationship()
 
     def _add_phenotype_table_relationship(self):
-        self.JOIN_KEYS['PhenotypeTable'] = ['PERSON_ID']
+        self.JOIN_KEYS["PhenotypeTable"] = ["PERSON_ID"]
 
     def _get_column_mapping(self, column_mapping=None):
         column_mapping = column_mapping or {}
         for key in column_mapping.keys():
             if key not in self.KNOWN_FIELDS:
-                raise ValueError(f"Unknown mapped field {key} --> {column_mapping[key]} for f{type(self)}.")
+                raise ValueError(
+                    f"Unknown mapped field {key} --> {column_mapping[key]} for f{type(self)}."
+                )
         default_mapping = copy.deepcopy(self.DEFAULT_MAPPING)
         default_mapping.update(column_mapping)
         return default_mapping
@@ -67,7 +73,7 @@ class PhenexTable:
     def table(self):
         return self._table
 
-    def join(self, other: 'PhenexTable', *args, domains = None, **kwargs):
+    def join(self, other: "PhenexTable", *args, domains=None, **kwargs):
         """
         The join method performs a join of PhenexTables, using autojoin functionality if Phenex is able to find the table types specified in PATHS.
         """
@@ -81,22 +87,37 @@ class PhenexTable:
             return type(self)(self.table.join(other.table, *args, **kwargs))
 
         # Do an autojoin by finding a path from the left to the right table and sequentially joining as necessary
-        joined_table = current_table = self
-        for next_table_class_name in self._find_path(other):
-            next_table = [v for k,v in domains.items() if v.__class__.__name__ == next_table_class_name]
-            if len(next_table) != 1:
-                raise ValueError(f"Unable to find unqiue {next_table_class_name} required to join {other.__class__.__name__}")
-
-            next_table = next_table[0]
-            print(f"Joining : {current_table.__class__.__name__} to {next_table.__class__.__name__}")
+        # joined table is the sequentially joined table
+        # current table is the table for the left join in the current iteration
+        joined_table = current_left_table = self
+        for right_table_class_name in self._find_path(other):
+            # get the next right table
+            right_table_search_results = [
+                v
+                for k, v in domains.items()
+                if v.__class__.__name__ == right_table_class_name
+            ]
+            if len(right_table_search_results) != 1:
+                raise ValueError(
+                    f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
+                )
+            right_table = right_table_search_results[0]
+            print(
+                f"\tJoining : {current_left_table.__class__.__name__} to {right_table.__class__.__name__}"
+            )
 
             # join keys are defined by the left table; in theory should enforce symmetry
-            join_keys = current_table.JOIN_KEYS[next_table_class_name]
-            columns = list(set(joined_table.columns + next_table.columns))
-            joined_table = joined_table.join(next_table, join_keys, **kwargs).select(columns)
-            current_table = next_table
+            join_keys = current_left_table.JOIN_KEYS[right_table_class_name]
+            columns = list(set(joined_table.columns + right_table.columns))
+            # subset columns, making sure to set type of table to the very left table (self)
+            joined_table = type(self)(
+                joined_table.join(right_table, join_keys, **kwargs).select(columns)
+            )
+            current_left_table = right_table
         return joined_table
 
+    def mutate(self, *args, **kwargs):
+        return type(self)(self.table.mutate(*args, **kwargs), name=self.NAME_TABLE)
 
     def _find_path(self, other):
 
@@ -110,15 +131,14 @@ class PhenexTable:
             try:
                 return self.PATHS[end_name] + [end_name]
             except KeyError:
-                raise ValueError(f'Cannot autojoin {start_name} --> {end_name}. Please specify join path in PATHS.')
-
-    def select(self, *args, **kwargs):
-        return type(self)(self.table.select(*args, **kwargs), name=self.NAME_TABLE)
+                raise ValueError(
+                    f"Cannot autojoin {start_name} --> {end_name}. Please specify join path in PATHS."
+                )
 
     def filter(self, expr):
-        '''
+        """
         Filter the table by an Ibis Expression or using a PhenExFilter.
-        '''
+        """
         input_columns = self.columns
         if isinstance(expr, ibis.expr.types.Expr) or isinstance(expr, list):
             filtered_table = self.table.filter(expr)
@@ -128,108 +148,94 @@ class PhenexTable:
         return type(self)(
             filtered_table.select(input_columns),
             name=self.NAME_TABLE,
-            column_mapping=self.column_mapping)
+            column_mapping=self.column_mapping,
+        )
 
 
 class PhenexPersonTable(PhenexTable):
 
-    NAME_TABLE = 'PERSON'
-    JOIN_KEYS = {
-        'CodeTable': ['PERSON_ID'],
-        'PhenexVisitDetailTable': ['PERSON_ID']
-    }
+    NAME_TABLE = "PERSON"
+    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
     KNOWN_FIELDS = [
-        'PERSON_ID',
-        'DATE_OF_BIRTH',
-        'YEAR_OF_BIRTH',
-        'DATE_OF_DEATH',
-        'SEX',
-        'ETHNICITY'
+        "PERSON_ID",
+        "DATE_OF_BIRTH",
+        "YEAR_OF_BIRTH",
+        "DATE_OF_DEATH",
+        "SEX",
+        "ETHNICITY",
     ]
-    DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID"
-    }
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+
 
 class EventTable(PhenexTable):
 
-    NAME_TABLE = 'EVENT'
-    KNOWN_FIELDS = [
-        'PERSON_ID',
-        'EVENT_DATE'
-    ]
+    NAME_TABLE = "EVENT"
+    KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE"]
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
-        'EVENT_DATE': "EVENT_DATE",
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
     }
+
 
 class CodeTable(PhenexTable):
 
-    NAME_TABLE = 'CODE'
+    NAME_TABLE = "CODE"
     RELATIONSHIPS = {
-        'PhenexPersonTable': ['PERSON_ID'],
-        'PhenexVisitDetailTable': ['PERSON_ID', 'VISIT_DETAIL_ID'],
+        "PhenexPersonTable": ["PERSON_ID"],
+        "PhenexVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
-    KNOWN_FIELDS = [
-        'PERSON_ID',
-        'EVENT_DATE',
-        'CODE',
-        'CODE_TYPE',
-        'VISIT_DETAIL_ID'
-    ]
+    KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
-        'EVENT_DATE': "EVENT_DATE",
-        'CODE': "CODE",
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "CODE": "CODE",
     }
+
 
 class PhenexVisitDetailTable(PhenexTable):
 
-    NAME_TABLE = 'VISIT_DETAIL'
+    NAME_TABLE = "VISIT_DETAIL"
     RELATIONSHIPS = {
-        'PhenexPersonTable': ['PERSON_ID'],
-        'CodeTable': ['PERSON_ID', 'VISIT_DETAIL_ID'],
+        "PhenexPersonTable": ["PERSON_ID"],
+        "CodeTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
     KNOWN_FIELDS = [
-        'PERSON_ID',
-        'VISIT_DETAIL_ID',
-        'VISIT_DETAIL_SOURCE_VALUE',
+        "PERSON_ID",
+        "VISIT_DETAIL_ID",
+        "VISIT_DETAIL_SOURCE_VALUE",
     ]
 
     DEFAULT_MAPPING = {
-        'PERSON_ID':'PERSON_ID',
-        'VISIT_DETAIL_ID': 'VISIT_DETAIL_ID',
-        'VISIT_DETAIL_SOURCE_VALUE': 'VISIT_DETAIL_SOURCE_VALUE'
+        "PERSON_ID": "PERSON_ID",
+        "VISIT_DETAIL_ID": "VISIT_DETAIL_ID",
+        "VISIT_DETAIL_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
     }
 
 
 class PhenexIndexTable(PhenexTable):
 
-    NAME_TABLE = 'INDEX'
-    JOIN_KEYS = {
-        'CodeTable': ['PERSON_ID'],
-        'PhenexVisitDetailTable': ['PERSON_ID']
-    }
+    NAME_TABLE = "INDEX"
+    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
     KNOWN_FIELDS = [
-        'PERSON_ID',
-        'INDEX_DATE',
+        "PERSON_ID",
+        "INDEX_DATE",
     ]
-    DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
-        "INDEX_DATE": "INDEX_DATE"
-    }
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID", "INDEX_DATE": "INDEX_DATE"}
+
 
 class PhenexObservationPeriodTable(PhenexTable):
-    NAME_TABLE = 'OBSERVATION_PERIOD'
+    NAME_TABLE = "OBSERVATION_PERIOD"
     KNOWN_FIELDS = [
-        'PERSON_ID',
-        'OBSERVATION_PERIOD_START_DATE',
-        'OBSERVATION_PERIOD_END_DATE'
+        "PERSON_ID",
+        "OBSERVATION_PERIOD_START_DATE",
+        "OBSERVATION_PERIOD_END_DATE",
     ]
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
+        "PERSON_ID": "PERSON_ID",
         "OBSERVATION_PERIOD_START_DATE": "OBSERVATION_PERIOD_START_DATE",
-        "OBSERVATION_PERIOD_END_DATE": 'OBSERVATION_PERIOD_END_DATE'
+        "OBSERVATION_PERIOD_END_DATE": "OBSERVATION_PERIOD_END_DATE",
     }
+
 
 class MeasurementTable(Table):
     # These datatpyes are just used for type hinting
@@ -237,18 +243,13 @@ class MeasurementTable(Table):
 
 
 class PhenotypeTable(PhenexTable):
-    NAME_TABLE = 'PHENOTYPE'
-    KNOWN_FIELDS = [
-        'PERSON_ID',
-        'BOOLEAN',
-        'EVENT_DATE',
-        'VALUE'
-    ]
+    NAME_TABLE = "PHENOTYPE"
+    KNOWN_FIELDS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
+        "PERSON_ID": "PERSON_ID",
         "BOOLEAN": "BOOLEAN",
         "EVENT_DATE": "EVENT_DATE",
-        "VALUE": "VALUE"
+        "VALUE": "VALUE",
     }
 
 

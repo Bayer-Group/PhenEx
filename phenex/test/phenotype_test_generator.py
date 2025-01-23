@@ -11,6 +11,7 @@ from .util.check_equality import check_equality
 import logging
 from phenex.tables import *
 
+
 class PhenotypeTestGenerator:
     """
     This class is a base class for all TestGenerators.
@@ -84,13 +85,16 @@ class PhenotypeTestGenerator:
             table = self.con.create_table(
                 input_info["name"], input_info["df"], schema=schema
             )
-            if 'type' in input_info.keys():
-                table_type = input_info['type']
+            if "type" in input_info.keys():
+                table_type = input_info["type"]
             else:
                 table_type = PhenexTable
-                if input_info['name'].lower() in ['condition_occurrence', 'measurement']:
+                if input_info["name"].lower() in [
+                    "condition_occurrence",
+                    "measurement",
+                ]:
                     table_type = CodeTable
-                elif input_info['name'].lower() in ['person']:
+                elif input_info["name"].lower() in ["person"]:
                     table_type = PhenexPersonTable
 
             self.domains[input_info["name"]] = table_type(table)
