@@ -26,27 +26,20 @@ jobs:
       - name: build docs
         run: |
           PYTHONPATH=. mkdocs build
-      - uses: actions/upload-artifact@v4
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
         with:
-          name: page
-          path: site
-          if-no-files-found: error
+          path: site/
 
+  # Deployment job
   deploy:
-    runs-on: ubuntu-latest
-    needs: build
     environment:
       name: github-pages
-      url: ${{steps.deployment.outputs.page_url}}
-
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: page
-          path: .
-      - uses: actions/configure-pages@v1
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v3
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
