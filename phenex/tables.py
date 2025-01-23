@@ -21,6 +21,7 @@ class PhenexTable:
     KNOWN_FIELDS = [] # List[phenex column names]
     DEFAULT_MAPPING = {} # dict: input column name -> phenex column name
     PATHS = {} # dict: table class name -> List[other table class names]
+    REQUIRED_FIELDS = list(DEFAULT_MAPPING.keys())
 
     def __init__(self, table, name=None, column_mapping={}):
         '''
@@ -61,10 +62,6 @@ class PhenexTable:
 
     def __getitem__(self, key):
         return self._table[key]
-
-    @property
-    def REQUIRED_FIELDS(self):
-        return list(self.DEFAULT_MAPPING.keys())
 
     @property
     def table(self):
@@ -260,14 +257,13 @@ def is_phenex_person_table(table: PhenexTable) -> bool:
     Check if given table is a person table.
     One could check one row per patient?
     """
-    return True
+    return set(table.columns) >= set(PhenexPersonTable.REQUIRED_FIELDS)
+
 
 def is_phenex_code_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
-    return True
-
     return set(table.columns) >= set(CodeTable.REQUIRED_FIELDS)
 
 
@@ -275,8 +271,6 @@ def is_phenex_event_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
-    return True
-
     return set(table.columns) >= set(EventTable.REQUIRED_FIELDS)
 
 
@@ -284,8 +278,6 @@ def is_phenex_phenotype_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
-    return True
-
     return set(table.columns) >= set(PhenotypeTable.REQUIRED_FIELDS)
 
 
@@ -293,9 +285,7 @@ def is_phenex_index_table(table: PhenexTable) -> bool:
     """
     Check if given table is a code table.
     """
-    return True
-
-    return isinstance(table, PhenexIndexTable)
+    return set(table.columns) >= set(PhenexIndexTable.REQUIRED_FIELDS)
 
 
 PHENOTYPE_TABLE_COLUMNS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]
