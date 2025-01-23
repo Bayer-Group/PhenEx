@@ -69,7 +69,7 @@ class CodelistPhenotype(Phenotype):
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
         return_date="first",
-        categorical_filter: 'CategoricalFilter' = None
+        categorical_filter: "CategoricalFilter" = None,
     ):
         super(CodelistPhenotype, self).__init__()
 
