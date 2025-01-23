@@ -99,7 +99,6 @@ class CodelistPhenotype(Phenotype):
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table)
-        print("just did codelist filtering", type(code_table))
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
