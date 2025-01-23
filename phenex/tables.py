@@ -87,31 +87,37 @@ class PhenexTable:
             return type(self)(self.table.join(other.table, *args, **kwargs))
 
         # Do an autojoin by finding a path from the left to the right table and sequentially joining as necessary
-        joined_table = current_table = self
-        for next_table_class_name in self._find_path(other):
-            next_table = [
+        # joined table is the sequentially joined table
+        # current table is the table for the left join in the current iteration
+        joined_table = current_left_table = self
+        for right_table_class_name in self._find_path(other):
+            # get the next right table
+            right_table_search_results = [
                 v
                 for k, v in domains.items()
-                if v.__class__.__name__ == next_table_class_name
+                if v.__class__.__name__ == right_table_class_name
             ]
-            if len(next_table) != 1:
+            if len(right_table_search_results) != 1:
                 raise ValueError(
-                    f"Unable to find unqiue {next_table_class_name} required to join {other.__class__.__name__}"
+                    f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
                 )
-
-            next_table = next_table[0]
+            right_table = right_table_search_results[0]
             print(
-                f"Joining : {current_table.__class__.__name__} to {next_table.__class__.__name__}"
+                f"\tJoining : {current_left_table.__class__.__name__} to {right_table.__class__.__name__}"
             )
 
             # join keys are defined by the left table; in theory should enforce symmetry
-            join_keys = current_table.JOIN_KEYS[next_table_class_name]
-            columns = list(set(joined_table.columns + next_table.columns))
-            joined_table = joined_table.join(next_table, join_keys, **kwargs).select(
-                columns
+            join_keys = current_left_table.JOIN_KEYS[right_table_class_name]
+            columns = list(set(joined_table.columns + right_table.columns))
+            # subset columns, making sure to set type of table to the very left table (self)
+            joined_table = type(self)(
+                joined_table.join(right_table, join_keys, **kwargs).select(columns)
             )
-            current_table = next_table
+            current_left_table = right_table
         return joined_table
+
+    def mutate(self, *args, **kwargs):
+        return type(self)(self.table.mutate(*args, **kwargs), name=self.NAME_TABLE)
 
     def _find_path(self, other):
 
@@ -128,9 +134,6 @@ class PhenexTable:
                 raise ValueError(
                     f"Cannot autojoin {start_name} --> {end_name}. Please specify join path in PATHS."
                 )
-
-    def select(self, *args, **kwargs):
-        return type(self)(self.table.select(*args, **kwargs), name=self.NAME_TABLE)
 
     def filter(self, expr):
         """

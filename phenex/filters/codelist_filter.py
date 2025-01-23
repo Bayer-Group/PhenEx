@@ -57,6 +57,5 @@ class CodelistFilter(Filter):
         filtered_table = code_table.inner_join(codelist_table, join_condition).select(
             code_table.columns
         )
-
         # return table with downselected columns, of same type as input table
-        return type(code_table)(filtered_table.select(input_columns))
+        return filtered_table

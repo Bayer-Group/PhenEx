@@ -16,12 +16,11 @@ class Filter:
 
     def filter(self, table: Table) -> Table:
         input_columns = table.columns
-        table = self._filter(table)
-        if not set(input_columns) <= set(table.columns):
+        filtered_table = self._filter(table)
+        if not set(input_columns) <= set(filtered_table.columns):
             raise ValueError(f"Filter must not remove columns.")
 
-        table = table.select(input_columns)
-        return table
+        return type(table)(filtered_table.select(input_columns))
 
     def _filter(self, table: Table) -> Table:
         raise NotImplementedError()
