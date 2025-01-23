@@ -528,42 +528,45 @@ class CodelistPhenotypeReturnDateFilterTestGenerator(PhenotypeTestGenerator):
 
 from phenex.tables import CodeTable, PhenexTable
 
+
 class DummyConditionOccurenceTable(CodeTable):
-    NAME_TABLE = 'DIAGNOSIS'
+    NAME_TABLE = "DIAGNOSIS"
     JOIN_KEYS = {
-        'DummyPersonTable': ['PERSON_ID'],
-        'DummyEncounterTable': ['PERSON_ID', 'ENCID'] # I changed this from EVENT_DATE
+        "DummyPersonTable": ["PERSON_ID"],
+        "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # I changed this from EVENT_DATE
     }
-    PATHS = {
-        'DummyVisitDetailTable': ['DummyEncounterTable']
-    }
+    PATHS = {"DummyVisitDetailTable": ["DummyEncounterTable"]}
     DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID",
-        'EVENT_DATE': "DATE",
-        'CODE': "CODE",
-        "CODE_TYPE":"CODE_TYPE"
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "DATE",
+        "CODE": "CODE",
+        "CODE_TYPE": "CODE_TYPE",
     }
+
 
 class DummyEncounterTable(PhenexTable):
-    NAME_TABLE = 'ENCOUNTER'
+    NAME_TABLE = "ENCOUNTER"
     JOIN_KEYS = {
-        'DummyPersonTable': ['PERSON_ID'],
-        'DummyConditionOccurenceTable': ['PERSON_ID', 'ENCID'], # I changed this from EVENT_DATE
-        'DummyVisitDetailTable': ['PERSON_ID', 'VISITID'] # I changed this from EVENT_DATE
+        "DummyPersonTable": ["PERSON_ID"],
+        "DummyConditionOccurenceTable": [
+            "PERSON_ID",
+            "ENCID",
+        ],  # I changed this from EVENT_DATE
+        "DummyVisitDetailTable": [
+            "PERSON_ID",
+            "VISITID",
+        ],  # I changed this from EVENT_DATE
     }
-    DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID"
-    }
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+
 
 class DummyVisitDetailTable(PhenexTable):
-    NAME_TABLE = 'VISIT'
+    NAME_TABLE = "VISIT"
     JOIN_KEYS = {
-        'DummyPersonTable': ['PERSON_ID'],
-        'DummyEncounterTable': ['PERSON_ID', 'VISITID']
+        "DummyPersonTable": ["PERSON_ID"],
+        "DummyEncounterTable": ["PERSON_ID", "VISITID"],
     }
-    DEFAULT_MAPPING = {
-        'PERSON_ID': "PERSON_ID"
-    }
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
 
 
 class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
@@ -579,21 +582,24 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
         df["DATE"] = datetime.datetime.strptime("10-10-2021", "%m-%d-%Y")
 
         df2 = pd.DataFrame()
-        df2['PERSON_ID'] = [f"P{i}" for i in range(N)]
+        df2["PERSON_ID"] = [f"P{i}" for i in range(N)]
         df2["ENCID"] = [f"E{i}" for i in range(N)]
-        df2['VISITID'] = [f"V{i}" for i in range(N)]
-        df2['flag1'] = ['a']*2 + ['b']*2 + ['c']*(N-2-2)
+        df2["VISITID"] = [f"V{i}" for i in range(N)]
+        df2["flag1"] = ["a"] * 2 + ["b"] * 2 + ["c"] * (N - 2 - 2)
 
         df3 = pd.DataFrame()
-        df3['PERSON_ID'] = [f"P{i}" for i in range(N)]
-        df3['VISITID'] = [f"V{i}" for i in range(N)]
-        df3['flag2'] = ['d']*5 + ['e']*3 + ['f']*(N-5-3)
-
+        df3["PERSON_ID"] = [f"P{i}" for i in range(N)]
+        df3["VISITID"] = [f"V{i}" for i in range(N)]
+        df3["flag2"] = ["d"] * 5 + ["e"] * 3 + ["f"] * (N - 5 - 3)
 
         return [
-            {"name": "condition_occurrence", "df": df, "type":DummyConditionOccurenceTable},
-            {"name": "encounter", "df":df2, "type":DummyEncounterTable},
-            {"name": "visit", "df":df3, "type":DummyVisitDetailTable}
+            {
+                "name": "condition_occurrence",
+                "df": df,
+                "type": DummyConditionOccurenceTable,
+            },
+            {"name": "encounter", "df": df2, "type": DummyEncounterTable},
+            {"name": "visit", "df": df3, "type": DummyVisitDetailTable},
         ]
 
     def define_phenotype_tests(self):
@@ -608,19 +614,19 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["a"], column_name="flag1", domain = 'encounter'
+                    allowed_values=["a"], column_name="flag1", domain="encounter"
                 ),
             ),
         }
 
         c1b = {
             "name": "single_flag_direct_join_b",
-            "persons": [f"P{i}" for i in range(2,4)],
+            "persons": [f"P{i}" for i in range(2, 4)],
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["b"], column_name="flag1", domain = 'encounter'
+                    allowed_values=["b"], column_name="flag1", domain="encounter"
                 ),
             ),
         }
@@ -632,19 +638,19 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["d"], column_name="flag2", domain = 'visit'
+                    allowed_values=["d"], column_name="flag2", domain="visit"
                 ),
             ),
         }
 
         c2b = {
             "name": "single_flag_intermediary_join_b",
-            "persons": [f"P{i}" for i in range(5,8)],
+            "persons": [f"P{i}" for i in range(5, 8)],
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["e"], column_name="flag2", domain = 'visit'
+                    allowed_values=["e"], column_name="flag2", domain="visit"
                 ),
             ),
         }
@@ -654,6 +660,7 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
             test_info["phenotype"].name = test_info["name"]
 
         return test_infos
+
 
 # class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(PhenotypeTestGenerator):
 #     name_space = "clpt_categorical_filter_logic"
@@ -768,6 +775,7 @@ def test_codelist_phenotype():
 def test_categorical_filter_phenotype():
     tg = CodelistPhenotypeCategoricalFilterTestGenerator()
     tg.run_tests()
+
 
 if __name__ == "__main__":
     test_categorical_filter_phenotype()
