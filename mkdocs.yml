@@ -3,6 +3,7 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Tutorials:
+      - Phenex Study Tutorial: tutorials/PhenEx_Study_Tutorial.ipynb
       - CodelistPhenotype: tutorials/CodelistPhenotype_Tutorial.ipynb
       - MeasurementPhenotype: tutorials/MeasurementPhenotype_Tutorial.ipynb
       - ArithmeticPhenotype: tutorials/ArithmeticPhenotype_Tutorial.ipynb
@@ -55,5 +56,6 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+
 extra_css:
   - assets/style.css
