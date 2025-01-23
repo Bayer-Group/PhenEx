@@ -34,7 +34,6 @@ class CategoricalFilter(Filter):
         return table.filter(table[self.column_name].isin(self.allowed_values))
 
     def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
-        print("categorical_filter", type(table))
         if self.column_name not in table.columns:
             if self.domain not in tables.keys():
                 raise ValueError(
