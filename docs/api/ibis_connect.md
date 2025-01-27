@@ -1,3 +1,3 @@
 # Ibis Connectors
 
-::: phenex.SnowflakeConnector
+::: phenex.ibis_connect.SnowflakeConnector

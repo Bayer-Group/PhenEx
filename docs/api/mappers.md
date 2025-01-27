@@ -1,6 +1,6 @@
-# ColumnMapper
+<!-- # ColumnMapper
 
-::: phenex.mappers.ColumnMapper
+::: phenex.mappers.PhenexTable
 
 # PersonTableColumnMapper
 
@@ -8,4 +8,4 @@
 
 # CodeTableColumnMapper
 
-::: phenex.mappers.CodeTableColumnMapper
+::: phenex.mappers.CodeTableColumnMapper -->
