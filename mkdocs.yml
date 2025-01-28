@@ -8,6 +8,7 @@ nav:
       - MeasurementPhenotype: tutorials/MeasurementPhenotype_Tutorial.ipynb
       - ArithmeticPhenotype: tutorials/ArithmeticPhenotype_Tutorial.ipynb
       - LogicPhenotype: tutorials/LogicPhenotype_Tutorial.ipynb
+      - Python For PhenEx Tutorial: tutorials/Python_For_Phenex_Tutorial.ipynb
   - API:
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
