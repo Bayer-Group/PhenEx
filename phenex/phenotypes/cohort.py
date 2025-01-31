@@ -85,25 +85,27 @@ class Cohort(Phenotype):
         """
         # Compute entry criterion
         entry_table = self.entry_criterion.table
-        subset_tables_entry = subset_and_add_index_date(tables, entry_table)
+        # subset_tables_entry = subset_and_add_index_date(tables, entry_table)
 
         index_table = entry_table
         # Apply inclusions if any
         if self.inclusions:
             self._compute_inclusions_table()
-            index_table = index_table.inner_join(
-                self.inclusions_table.select(["PERSON_ID", "BOOLEAN"]), ["PERSON_ID"]
-            )
+            include = self.inclusions_table.filter(
+                self.inclusions_table["BOOLEAN"] == True
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(include, ["PERSON_ID"])
 
         # Apply exclusions if any
         if self.exclusions:
             self._compute_exclusions_table()
-            index_table = index_table.inner_join(
-                self.exclusions_table.select(["PERSON_ID", "BOOLEAN"]), ["PERSON_ID"]
-            )
+            exclude = self.exclusions_table.filter(
+                self.exclusions_table["BOOLEAN"] == False
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(exclude, ["PERSON_ID"])
 
         self.index_table = index_table
-        subset_tables_index = subset_and_add_index_date(tables, index_table)
+        # subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
             self._compute_characteristics_table()
 
@@ -120,15 +122,13 @@ class Cohort(Phenotype):
             column that is the logical OR of all individual exclusion phenotypes
         """
         exclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
-        for i in self.inclusions:
+        for i in self.exclusions:
             i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
                 **{
                     f"{i.name}_BOOLEAN": "BOOLEAN",
                 }
             )
-            exclusions_table = exclusions_table.left_join(
-                i_table, ["PERSON_ID"]
-            ).fillna(False)
+            exclusions_table = exclusions_table.left_join(i_table, ["PERSON_ID"])
             columns = exclusions_table.columns
             columns.remove("PERSON_ID_right")
             exclusions_table = exclusions_table.select(columns)
@@ -145,6 +145,7 @@ class Cohort(Phenotype):
             )
 
         self.exclusions_table = exclusions_table
+
         return self.exclusions_table
 
     def _compute_inclusions_table(self) -> Table:

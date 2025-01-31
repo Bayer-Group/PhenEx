@@ -97,12 +97,13 @@ class SnowflakeConnector:
             raise ValueError(
                 "Use a fully qualified database name (e.g. CATALOG.DATABASE)."
             )
-        try:
-            _, _ = self.SNOWFLAKE_SOURCE_DATABASE.split(".")
-        except:
-            raise ValueError(
-                "Use a fully qualified database name (e.g. CATALOG.DATABASE)."
-            )
+        if self.SNOWFLAKE_DEST_DATABASE:
+            try:
+                _, _ = self.SNOWFLAKE_DEST_DATABASE.split(".")
+            except:
+                raise ValueError(
+                    "Use a fully qualified database name (e.g. CATALOG.DATABASE)."
+                )
 
         required_vars = [
             "SNOWFLAKE_USER",
@@ -110,12 +111,14 @@ class SnowflakeConnector:
             "SNOWFLAKE_WAREHOUSE",
             "SNOWFLAKE_ROLE",
             "SNOWFLAKE_SOURCE_DATABASE",
-            "SNOWFLAKE_DEST_DATABASE",
         ]
         self._check_env_vars(required_vars)
         self._check_source_dest()
         self.source_connection = self.connect_source()
-        self.dest_connection = self.connect_dest()
+        if self.SNOWFLAKE_DEST_DATABASE:
+            self.dest_connection = self.connect_dest()
+        else:
+            self.dest_connection = None
 
     def _check_env_vars(self, required_vars: List[str]):
         for var in required_vars:
@@ -125,7 +128,7 @@ class SnowflakeConnector:
                 )
 
     def _check_source_dest(self):
-        if (
+        if self.SNOWFLAKE_DEST_DATABASE and (
             self.SNOWFLAKE_SOURCE_DATABASE == self.SNOWFLAKE_DEST_DATABASE
             and self.SNOWFLAKE_SOURCE_SCHEMA == self.SNOWFLAKE_DEST_SCHEMA
         ):
@@ -199,7 +202,7 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object from the source Snowflake database.
         """
-        return self.dest_connection.table(
+        return self.source_connection.table(
             name_table, database=self.SNOWFLAKE_SOURCE_DATABASE
         )
 
@@ -213,6 +216,8 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object from the destination Snowflake database.
         """
+        if self.dest_connection is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.table(
             name_table, database=self.SNOWFLAKE_DEST_DATABASE
         )
@@ -236,6 +241,8 @@ class SnowflakeConnector:
         Returns:
             View: Ibis view object created in the destination Snowflake database.
         """
+        if self.dest_connection is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         name_table = name_table or self._get_output_table_name(table)
 
         # Check if the destination database exists, if not, create it
@@ -259,6 +266,9 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object created in the destination Snowflake database.
         """
+        if self.dest_connection is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
+
         name_table = name_table or self._get_output_table_name(table)
 
         # Check if the destination database exists, if not, create it
@@ -280,6 +290,8 @@ class SnowflakeConnector:
         Returns:
             None
         """
+        if self.dest_connection is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_table(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
         )
@@ -294,6 +306,8 @@ class SnowflakeConnector:
         Returns:
             None
         """
+        if self.dest_connection is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_view(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
         )
