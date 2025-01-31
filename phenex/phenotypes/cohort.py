@@ -91,13 +91,17 @@ class Cohort(Phenotype):
         # Apply inclusions if any
         if self.inclusions:
             self._compute_inclusions_table()
-            include = self.inclusions_table.filter(self.inclusions_table['BOOLEAN'] == True).select(["PERSON_ID"])
+            include = self.inclusions_table.filter(
+                self.inclusions_table["BOOLEAN"] == True
+            ).select(["PERSON_ID"])
             index_table = index_table.inner_join(include, ["PERSON_ID"])
 
         # Apply exclusions if any
         if self.exclusions:
             self._compute_exclusions_table()
-            exclude = self.exclusions_table.filter(self.exclusions_table['BOOLEAN'] == False).select(["PERSON_ID"])
+            exclude = self.exclusions_table.filter(
+                self.exclusions_table["BOOLEAN"] == False
+            ).select(["PERSON_ID"])
             index_table = index_table.inner_join(exclude, ["PERSON_ID"])
 
         self.index_table = index_table

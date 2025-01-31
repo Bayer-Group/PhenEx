@@ -268,7 +268,7 @@ class SnowflakeConnector:
         """
         if self.dest_connection is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
-        
+
         name_table = name_table or self._get_output_table_name(table)
 
         # Check if the destination database exists, if not, create it

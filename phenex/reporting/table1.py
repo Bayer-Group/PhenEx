@@ -26,7 +26,7 @@ class Table1(Reporter):
         self.df_values = self._report_value_columns()
 
         # add percentage column
-        if self.df_booleans is not None and self.df_values is not None :
+        if self.df_booleans is not None and self.df_values is not None:
             self.df = pd.concat([self.df_booleans, self.df_values])
         else:
             self.df = self.df_booleans or self.df_values
@@ -63,7 +63,7 @@ class Table1(Reporter):
         ]
         if len(boolean_columns) == 0:
             return None
-        
+
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
         true_counts = [
             table[col].sum().name(col.split("_BOOLEAN")[0]) for col in boolean_columns
