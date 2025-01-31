@@ -30,12 +30,10 @@ class SnowflakeConnector:
         SNOWFLAKE_USER: Snowflake user name.
         SNOWFLAKE_ACCOUNT: Snowflake account identifier.
         SNOWFLAKE_WAREHOUSE: Snowflake warehouse name.
-        SNOWFLAKE_DATABASE: Snowflake database name.
-        SNOWFLAKE_SCHEMA: Snowflake schema name.
         SNOWFLAKE_ROLE: Snowflake role name.
         SNOWFLAKE_PASSWORD: Snowflake password. If not specified, will attempt to authenticate with externalbrowser.
-        SNOWFLAKE_SOURCE_DATABASE: Snowflake source database name. Use a fully qualified database name (e.g. CATALOG.DATABASE).
-        SNOWFLAKE_DEST_DATABASE: Snowflake destination database name. Use a fully qualified database name (e.g. CATALOG.DATABASE).
+        SNOWFLAKE_SOURCE_DATABASE: Snowflake source database name. Use a fully qualified database name (in snowflake terminology DATABASE.SCHEMA; ibis calls this a "database").
+        SNOWFLAKE_DEST_DATABASE: Snowflake destination database name. Use a fully qualified database name (in snowflake terminology DATABASE.SCHEMA; ibis calls this a "database").
 
     Methods:
         connect_dest() -> BaseBackend:
