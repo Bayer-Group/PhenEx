@@ -6,7 +6,6 @@ from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 
-
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
@@ -120,15 +119,15 @@ class Cohort(Phenotype):
             column that is the logical OR of all individual exclusion phenotypes
         """
         exclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
-        for i in self.inclusions:
-            i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
-                **{
-                    f"{i.name}_BOOLEAN": "BOOLEAN",
-                }
-            )
+        for i in self.exclusions:
+            print("HERE I AM NEW2")
+            i_table = i.table[
+                i.table.PERSON_ID,
+                i.table.BOOLEAN.name(f"{i.name}_BOOLEAN")
+            ]
             exclusions_table = exclusions_table.left_join(
                 i_table, ["PERSON_ID"]
-            ).fillna(False)
+            )
             columns = exclusions_table.columns
             columns.remove("PERSON_ID_right")
             exclusions_table = exclusions_table.select(columns)
@@ -159,11 +158,11 @@ class Cohort(Phenotype):
         """
         inclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
         for i in self.inclusions:
-            i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
-                **{
-                    f"{i.name}_BOOLEAN": "BOOLEAN",
-                }
-            )
+            i_table = i.table[
+                i.table.PERSON_ID,
+                i.table.BOOLEAN.name(f"{i.name}_BOOLEAN")
+            ]
+            
             inclusions_table = inclusions_table.left_join(i_table, ["PERSON_ID"])
             columns = inclusions_table.columns
             columns.remove("PERSON_ID_right")

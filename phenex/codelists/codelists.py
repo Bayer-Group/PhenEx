@@ -198,6 +198,32 @@ class Codelist:
 
         return cls(code_dict, name=name)
 
+    @classmethod
+    def from_csv(
+        cls,
+        path: str,
+        codelist_name: Optional[str] = None,
+        code_column: Optional[str] = "code",
+        code_type_column: Optional[str] = "code_type",
+        codelist_column: Optional[str] = "codelist",
+    ) -> "Codelist":
+        _df = pd.read_csv(path)
+
+        if codelist_name is not None:
+            # codelist name is not none, therefore we subset the table to the current codelist
+            _df = _df[_df[codelist_column] == codelist_name]
+
+        code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
+        
+        if codelist_name is None:
+            name = codelist_name
+        else:
+            name = path.split(os.sep)[-1].replace(".csv", "")
+
+        return cls(code_dict, name=name)
+
+
+    
     def to_tuples(self) -> List[tuple]:
         """
         Convert the codelist to a list of tuples, where each tuple is of the form
