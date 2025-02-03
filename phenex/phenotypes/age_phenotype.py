@@ -89,10 +89,13 @@ class AgePhenotype(Phenotype):
         assert is_phenex_person_table(person_table)
 
         if "YEAR_OF_BIRTH" in person_table.columns:
-            date_of_birth = ibis.coalesce(
-                ibis.date(person_table.DATE_OF_BIRTH),
-                ibis.date(person_table.YEAR_OF_BIRTH, 6, 1),
-            )
+            if "DATE_OF_BIRTH" in person_table.columns:
+                date_of_birth = ibis.coalesce(
+                    ibis.date(person_table.DATE_OF_BIRTH),
+                    ibis.date(person_table.YEAR_OF_BIRTH, 6, 1),
+                )
+            else:
+                date_of_birth = ibis.date(person_table.YEAR_OF_BIRTH, 6, 1)
         else:
             date_of_birth = ibis.date(person_table.DATE_OF_BIRTH)
         person_table = person_table.mutate(EVENT_DATE=date_of_birth)
