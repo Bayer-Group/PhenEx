@@ -41,7 +41,7 @@ class CategoricalPhenotype(Phenotype):
         super(CategoricalPhenotype, self).__init__()
 
     def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
-        table = tables[self.domain]
+        table = tables[self.categorical_filter.domain]
         table = self.categorical_filter._filter(table)
         return table.mutate(VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null())
 
