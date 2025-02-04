@@ -758,7 +758,7 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
     def define_input_tables(self):
         df = pd.DataFrame({
             "PERSON_ID": ["P1", "P2", "P3", "P4", "P5", "P6"],
-            "CODE": ["A123", "B456", "A789", "B012", "C123", "D345"],
+            "CODE": ["A123", "B456", "A789", "B012", "C123", "D785"],
             "CODE_TYPE": ["ICD10CM", "ICD10CM", "ICD9CM", "ICD9CM", "ICD10CM", "ICD9CM"],
             "EVENT_DATE": [datetime.date(2021, 1, 1)] * 6
         })
@@ -768,6 +768,9 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
 
         fuzzy_codelist_no_type = Codelist(
             ["A%", "B%"], name="fuzzy_no_type"
+        )
+        fuzzy_codelist_no_type_begin_end = Codelist(
+            ["%78%"], name="fuzzy_codelist_no_type_begin_end"
         )
         fuzzy_codelist_with_type = Codelist(
             {"ICD10CM": ["A%"], "ICD9CM": ["B%"]}, name="fuzzy_with_type"
@@ -791,7 +794,15 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
             ),
         }
 
-        return [test1, test2]
+        test3 = {
+            "name": "fuzzy_no_type_begin_end",
+            "persons": ["P3", "P6"],
+            "phenotype": CodelistPhenotype(
+                codelist=fuzzy_codelist_no_type_begin_end,
+                domain="CONDITION_OCCURRENCE",
+            ),
+        }
+        return [test1, test2, test3]
 
 def test_fuzzy_match():
     tg = CodelistPhenotypeFuzzyMatchTestGenerator()

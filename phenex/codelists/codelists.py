@@ -9,6 +9,10 @@ class Codelist:
 
     Codelist is a simple class that stores the codelist as a dictionary. The dictionary is keyed by code type and the value is a list of codes. Codelist also has various convenience methods such as read from excel, csv or yaml files, and export to excel files.
 
+    Fuzzy codelists allow the use of '%' as a wildcard character in codes. This can be useful when you want to match a range of codes that share a common prefix. For example, 'I48.%' will match any code that starts with 'I48.'. Multiple fuzzy matches can be passed just like ordinary codes in a list.
+
+    If a codelist contains more than 100 fuzzy codes, a warning will be issued as performance may suffer significantly.
+
     Parameters:
         name: Descriptive name of codelist
         codelist: User can enter codelists as either a string, a list of strings or a dictionary keyed by code type. In first two cases, the class will convert the input to a dictionary with a single key None. All consumers of the Codelist instance can then assume the codelist in that format.
@@ -64,6 +68,15 @@ class Codelist:
             "I48.91", # Unspecified atrial fibrillation
         ]
     }
+    ```
+
+    ```python
+    # Initialize with a fuzzy codelist
+    anemia = Codelist(
+        {'ICD10CM': ['D55%', 'D56%', 'D57%', 'D58%', 'D59%', 'D60%']},
+        {'ICD9CM': ['284%', '285%', '282%']},
+        'fuzzy_codelist'
+    )
     ```
     """
 
