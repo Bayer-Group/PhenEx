@@ -6,12 +6,13 @@ from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 
+
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
     for key, table in tables.items():
         columns = ["INDEX_DATE"] + table.columns
-        subset_tables[key] = table.join(index_table, "PERSON_ID").select(columns)
+        subset_tables[key] = type(table)(table.inner_join(index_table, "PERSON_ID").select(columns))
     return subset_tables
 
 
@@ -69,24 +70,32 @@ class Cohort(Phenotype):
         )
         self._table1 = None
 
-    def _execute(
-        self,
-        tables: Dict[str, Table],
-    ) -> PhenotypeTable:
+    def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
-        Executes the cohort definition by applying the entry criterion, inclusions, exclusions, and characteristics.
+        Executes the phenotype computation for the current object and its children.
+        This method iterates over the children of the current object and calls their
+        execute method if their table attribute is None. It then calls the _execute
+        method to perform the actual computation for the current object. The resulting
+        table is checked to ensure it contains the required phenotype columns. If the
+        required columns are present, the table is filtered to include only these columns
+        and assigned to the table attribute of the current object.
 
         Args:
-            tables (Dict[str, Table]): A dictionary of tables available for phenotype execution.
+            tables (Dict[str, Table]): A dictionary of table names to Table objects.
 
         Returns:
-            PhenotypeTable: The resulting table representing the cohort.
-        """
-        # Compute entry criterion
-        entry_table = self.entry_criterion.table
-        # subset_tables_entry = subset_and_add_index_date(tables, entry_table)
+            PhenotypeTable: The resulting phenotype table containing the required columns.
 
-        index_table = entry_table
+        Raises:
+            ValueError: If the table returned by _execute() does not contain the required phenotype
+            columns.
+        """
+       # Compute entry criterion
+        self.entry_criterion.execute(tables)
+        print("Finished entry criteriion, about to subset")
+        self.subset_tables_entry = subset_and_add_index_date(tables, self.entry_criterion.table)
+        print("Finished subset tables entry")
+        index_table = self.entry_criterion.table
         # Apply inclusions if any
         if self.inclusions:
             self._compute_inclusions_table()
@@ -104,11 +113,16 @@ class Cohort(Phenotype):
             index_table = index_table.inner_join(exclude, ["PERSON_ID"])
 
         self.index_table = index_table
-        # subset_tables_index = subset_and_add_index_date(tables, index_table)
-        if self.characteristics:
-            self._compute_characteristics_table()
+        
+        #self.subset_tables_index = subset_and_add_index_date(tables, index_table)
+        #if self.characteristics:
+        #    self._compute_characteristics_table()
 
         return index_table
+    
+    
+
+ 
 
     def _compute_exclusions_table(self) -> Table:
         """
@@ -122,23 +136,14 @@ class Cohort(Phenotype):
         """
         exclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
         for i in self.exclusions:
-<<<<<<< HEAD
-            print("HERE I AM NEW2")
-            i_table = i.table[
-                i.table.PERSON_ID,
-                i.table.BOOLEAN.name(f"{i.name}_BOOLEAN")
-            ]
-            exclusions_table = exclusions_table.left_join(
-                i_table, ["PERSON_ID"]
-            )
-=======
+            print("Executing inclusion", i.name)
+            i.execute(self.subset_tables_entry)
             i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
                 **{
                     f"{i.name}_BOOLEAN": "BOOLEAN",
                 }
             )
             exclusions_table = exclusions_table.left_join(i_table, ["PERSON_ID"])
->>>>>>> main
             columns = exclusions_table.columns
             columns.remove("PERSON_ID_right")
             exclusions_table = exclusions_table.select(columns)
@@ -170,11 +175,13 @@ class Cohort(Phenotype):
         """
         inclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
         for i in self.inclusions:
-            i_table = i.table[
-                i.table.PERSON_ID,
-                i.table.BOOLEAN.name(f"{i.name}_BOOLEAN")
-            ]
-            
+            print("Executing inclusion", i.name)
+            i.execute(self.subset_tables_entry)
+            i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+                **{
+                    f"{i.name}_BOOLEAN": "BOOLEAN",
+                }
+            )
             inclusions_table = inclusions_table.left_join(i_table, ["PERSON_ID"])
             columns = inclusions_table.columns
             columns.remove("PERSON_ID_right")
@@ -204,6 +211,8 @@ class Cohort(Phenotype):
         Returns:
             Table: The join of all characteristic tables.
         """
+        for c in self.characteristics:
+            c.execute(self.subset_tables_index)
         self.characteristics_table = hstack(
             self.characteristics,
             join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),

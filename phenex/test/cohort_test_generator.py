@@ -1,6 +1,7 @@
 import yaml
 import os
 import pandas as pd
+import ibis
 
 class CohortTestGenerator:
     """
@@ -19,7 +20,7 @@ class CohortTestGenerator:
         self.cohort = self.define_cohort()
         self.mapped_tables = self.define_mapped_tables()
 
-        self._create_artifact_directory(self.name_space)
+        self._create_artifact_directory(self.cohort.name)
         self._generate_output_artifacts()
         self._run_tests()
 
@@ -33,7 +34,7 @@ class CohortTestGenerator:
         raise NotImplementedError
 
     def name_file(self, test_info):
-        return f"{self.name_space}__{test_info['name']}"
+        return f"{self.cohort.name}__{test_info['name']}"
 
     def name_output_file(self, test_info):
         return self.name_file(test_info) + "_output"
@@ -48,7 +49,9 @@ class CohortTestGenerator:
             df.to_csv(path, index=False, date_format=self.date_format)
 
     def _run_tests(self):
-        pass
+        self.cohort.execute(self.mapped_tables)
+        ibis.options.interactive = True
+        print(self.cohort.table1)
 
     def _create_artifact_directory(self, name_demo):
         path_artifacts = os.path.join("cohorts/artifacts", name_demo)
