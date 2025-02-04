@@ -17,11 +17,10 @@ class CodelistFilter(Filter):
         use_code_type (bool): A flag indicating whether to use the code type in the filtering process. Defaults to True.
     """
 
-    def __init__(self, codelist: Codelist, name=None, use_code_type: bool = True):
+    def __init__(self, codelist: Codelist, name=None):
         self.codelist = codelist
         self.name = name or self.codelist.name
         self.codelist_as_tuples = self._convert_codelist_to_tuples()
-        self.use_code_type = use_code_type
         super(CodelistFilter, self).__init__()
 
     def _convert_codelist_to_tuples(self) -> List[Tuple[str, str]]:
@@ -46,7 +45,7 @@ class CodelistFilter(Filter):
 
         # Create a join condition based on code and possibly code_type
         code_column = code_table.CODE
-        if self.use_code_type:
+        if self.codelist.use_code_type:
             code_type_column = code_table.CODE_TYPE
             join_condition = (code_column == codelist_table.code) & (
                 code_type_column == codelist_table.code_type

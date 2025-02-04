@@ -81,6 +81,38 @@ class Codelist:
             self.codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
+        
+    @property
+    def use_code_type(self):
+        if list(self.codelist.keys()) == [None]:
+            return False
+        else:
+            return True
+
+    def resolve(self, use_code_type: bool = True, remove_punctuation: bool = False) -> "Codelist":
+        """
+        Resolve the codelist based on the provided arguments.
+
+        Parameters:
+            use_code_type: If False, merge all the code lists into one with None as the key.
+            remove_punctuation: If True, remove '.' from all codes.
+
+        Returns:
+            Codelist instance with the resolved codelist.
+        """
+        resolved_codelist = {}
+
+        for code_type, codes in self.codelist.items():
+            if remove_punctuation:
+                codes = [code.replace('.', '') for code in codes]
+            if use_code_type:
+                resolved_codelist[code_type] = codes
+            else:
+                if None not in resolved_codelist:
+                    resolved_codelist[None] = []
+                resolved_codelist[None] = list(set(resolved_codelist[None]) | set(codes))
+
+        return Codelist(resolved_codelist, name=self.name)
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":

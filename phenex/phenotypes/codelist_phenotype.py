@@ -18,7 +18,6 @@ class CodelistPhenotype(Phenotype):
         name: The name of the phenotype.
         domain: The domain of the phenotype.
         codelist: The codelist used for filtering.
-        use_code_type: Whether to use the code type in filtering. Default is True.
         date_range: A date range filter to apply.
         relative_time_range: A relative time range filter or a list of filters to apply.
         return_date: Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
@@ -63,7 +62,6 @@ class CodelistPhenotype(Phenotype):
         domain,
         codelist: Codelist,
         name=None,
-        use_code_type=True,
         date_range: DateRangeFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
@@ -73,7 +71,7 @@ class CodelistPhenotype(Phenotype):
     ):
         super(CodelistPhenotype, self).__init__()
 
-        self.codelist_filter = CodelistFilter(codelist, use_code_type=use_code_type)
+        self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
         self.categorical_filter = categorical_filter
         self.name = name or self.codelist.name
