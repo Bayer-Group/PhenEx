@@ -1,6 +1,7 @@
 import os
 from typing import Dict, List, Union, Optional
 import pandas as pd
+import warnings
 
 
 class Codelist:
@@ -8,6 +9,10 @@ class Codelist:
     Codelist is a class that allows us to conveniently work with medical codes used in RWD analyses. A Codelist represents a (single) specific medical concept, such as 'atrial fibrillation' or 'myocardial infarction'. A Codelist is associated with a set of medical codes from one or multiple source vocabularies (such as ICD10CM or CPT); we call these vocabularies 'code types'. Code type is important, as there are no assurances that codes from different vocabularies (different code types) do not overlap. It is therefore highly recommended to always specify the code type when using a codelist.
 
     Codelist is a simple class that stores the codelist as a dictionary. The dictionary is keyed by code type and the value is a list of codes. Codelist also has various convenience methods such as read from excel, csv or yaml files, and export to excel files.
+
+    Fuzzy codelists allow the use of '%' as a wildcard character in codes. This can be useful when you want to match a range of codes that share a common prefix. For example, 'I48.%' will match any code that starts with 'I48.'. Multiple fuzzy matches can be passed just like ordinary codes in a list.
+
+    If a codelist contains more than 100 fuzzy codes, a warning will be issued as performance may suffer significantly.
 
     Parameters:
         name: Descriptive name of codelist
@@ -65,6 +70,15 @@ class Codelist:
         ]
     }
     ```
+
+    ```python
+    # Initialize with a fuzzy codelist
+    anemia = Codelist(
+        {'ICD10CM': ['D55%', 'D56%', 'D57%', 'D58%', 'D59%', 'D60%']},
+        {'ICD9CM': ['284%', '285%', '282%']},
+        'fuzzy_codelist'
+    )
+    ```
     """
 
     def __init__(
@@ -81,15 +95,24 @@ class Codelist:
             self.codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
-        
-    @property
-    def use_code_type(self):
-        if list(self.codelist.keys()) == [None]:
-            return False
-        else:
-            return True
 
-    def resolve(self, use_code_type: bool = True, remove_punctuation: bool = False) -> "Codelist":
+        if list(self.codelist.keys()) == [None]:
+            self.use_code_type = False
+        else:
+            self.use_code_type = True
+
+        self.fuzzy_match = False
+        for code_type, codelist in self.codelist.items():
+            if any(["%" in code for code in codelist]):
+                self.fuzzy_match = True
+                if len(codelist) > 100:
+                    warnings.warn(
+                        f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
+                    )
+
+    def resolve(
+        self, use_code_type: bool = True, remove_punctuation: bool = False
+    ) -> "Codelist":
         """
         Resolve the codelist based on the provided arguments.
 
@@ -104,13 +127,15 @@ class Codelist:
 
         for code_type, codes in self.codelist.items():
             if remove_punctuation:
-                codes = [code.replace('.', '') for code in codes]
+                codes = [code.replace(".", "") for code in codes]
             if use_code_type:
                 resolved_codelist[code_type] = codes
             else:
                 if None not in resolved_codelist:
                     resolved_codelist[None] = []
-                resolved_codelist[None] = list(set(resolved_codelist[None]) | set(codes))
+                resolved_codelist[None] = list(
+                    set(resolved_codelist[None]) | set(codes)
+                )
 
         return Codelist(resolved_codelist, name=self.name)
 
