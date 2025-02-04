@@ -37,7 +37,7 @@ class CodelistFilter(Filter):
         assert is_phenex_code_table(code_table)
 
         if self.codelist.fuzzy_match:
-            return self._filter_fuzzy_match(code_table)
+            return self._filter_fuzzy_codelist(code_table)
         else:
             return self._filter_literal_codelist(code_table)
     
