@@ -756,19 +756,26 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
     name_space = "clpt_fuzzy_match"
 
     def define_input_tables(self):
-        df = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2", "P3", "P4", "P5", "P6"],
-            "CODE": ["A123", "B456", "A789", "B012", "C123", "D785"],
-            "CODE_TYPE": ["ICD10CM", "ICD10CM", "ICD9CM", "ICD9CM", "ICD10CM", "ICD9CM"],
-            "EVENT_DATE": [datetime.date(2021, 1, 1)] * 6
-        })
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2", "P3", "P4", "P5", "P6"],
+                "CODE": ["A123", "B456", "A789", "B012", "C123", "D785"],
+                "CODE_TYPE": [
+                    "ICD10CM",
+                    "ICD10CM",
+                    "ICD9CM",
+                    "ICD9CM",
+                    "ICD10CM",
+                    "ICD9CM",
+                ],
+                "EVENT_DATE": [datetime.date(2021, 1, 1)] * 6,
+            }
+        )
         return [{"name": "CONDITION_OCCURRENCE", "df": df}]
 
     def define_phenotype_tests(self):
 
-        fuzzy_codelist_no_type = Codelist(
-            ["A%", "B%"], name="fuzzy_no_type"
-        )
+        fuzzy_codelist_no_type = Codelist(["A%", "B%"], name="fuzzy_no_type")
         fuzzy_codelist_no_type_begin_end = Codelist(
             ["%78%"], name="fuzzy_codelist_no_type_begin_end"
         )
@@ -804,9 +811,11 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
         }
         return [test1, test2, test3]
 
+
 def test_fuzzy_match():
     tg = CodelistPhenotypeFuzzyMatchTestGenerator()
     tg.run_tests()
+
 
 def test_return_date():
     tg = CodelistPhenotypeReturnDateFilterTestGenerator()
