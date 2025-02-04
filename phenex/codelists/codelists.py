@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List, Union, Optional
 import pandas as pd
-
+import warnings
 
 class Codelist:
     """
@@ -82,12 +82,17 @@ class Codelist:
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
         
-    @property
-    def use_code_type(self):
         if list(self.codelist.keys()) == [None]:
-            return False
+            self.use_code_type = False
         else:
-            return True
+            self.use_code_type = True
+
+        self.fuzzy_match = False
+        for code_type, codelist in self.codelist.items():
+            if any(["%" in code for code in codelist]):
+                self.fuzzy_match = True
+                if len(codelist) > 100:
+                    warnings.warn(f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly.")
 
     def resolve(self, use_code_type: bool = True, remove_punctuation: bool = False) -> "Codelist":
         """

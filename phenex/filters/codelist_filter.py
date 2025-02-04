@@ -35,7 +35,18 @@ class CodelistFilter(Filter):
     def _filter(self, code_table: CodeTable) -> CodeTable:
 
         assert is_phenex_code_table(code_table)
-        input_columns = code_table.columns
+
+        if self.codelist.fuzzy_match:
+            filter_condition = False
+            for code_type, codelist in self.codelist.codelist.items():
+                codelist = [str(code) for code in codelist]
+                if self.codelist.use_code_type:
+                    filter_condition = filter_condition | ((code_table.CODE_TYPE == code_type) & (code_table.CODE.like(codelist)))
+                else:
+                    filter_condition = filter_condition | code_table.CODE.cast('str').like(codelist)
+            
+            filtered_table = code_table.filter(filter_condition)
+            return filtered_table
 
         # Generate the codelist table as an Ibis literal set
         codelist_df = pd.DataFrame(
