@@ -3,7 +3,7 @@ import pandas as pd
 
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.codelists.codelists import Codelist
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_3variables,
@@ -752,6 +752,51 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
 #         return test_infos
 
 
+class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
+    name_space = "clpt_fuzzy_match"
+
+    def define_input_tables(self):
+        df = pd.DataFrame({
+            "PERSON_ID": ["P1", "P2", "P3", "P4", "P5", "P6"],
+            "CODE": ["A123", "B456", "A789", "B012", "C123", "D345"],
+            "CODE_TYPE": ["ICD10CM", "ICD10CM", "ICD9CM", "ICD9CM", "ICD10CM", "ICD9CM"],
+            "EVENT_DATE": [datetime.date(2021, 1, 1)] * 6
+        })
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+
+        fuzzy_codelist_no_type = Codelist(
+            ["A%", "B%"], name="fuzzy_no_type"
+        )
+        fuzzy_codelist_with_type = Codelist(
+            {"ICD10CM": ["A%"], "ICD9CM": ["B%"]}, name="fuzzy_with_type"
+        )
+
+        test1 = {
+            "name": "fuzzy_no_type",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "phenotype": CodelistPhenotype(
+                codelist=fuzzy_codelist_no_type,
+                domain="CONDITION_OCCURRENCE",
+            ),
+        }
+
+        test2 = {
+            "name": "fuzzy_with_type",
+            "persons": ["P1", "P4"],
+            "phenotype": CodelistPhenotype(
+                codelist=fuzzy_codelist_with_type,
+                domain="CONDITION_OCCURRENCE",
+            ),
+        }
+
+        return [test1, test2]
+
+def test_fuzzy_match():
+    tg = CodelistPhenotypeFuzzyMatchTestGenerator()
+    tg.run_tests()
+
 def test_return_date():
     tg = CodelistPhenotypeReturnDateFilterTestGenerator()
     tg.run_tests()
@@ -782,3 +827,4 @@ if __name__ == "__main__":
     test_relative_time_range_filter()
     test_anchor_phenotype()
     test_return_date()
+    test_fuzzy_match()
