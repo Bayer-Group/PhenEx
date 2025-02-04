@@ -17,11 +17,10 @@ class CodelistFilter(Filter):
         use_code_type (bool): A flag indicating whether to use the code type in the filtering process. Defaults to True.
     """
 
-    def __init__(self, codelist: Codelist, name=None, use_code_type: bool = True):
+    def __init__(self, codelist: Codelist, name=None):
         self.codelist = codelist
         self.name = name or self.codelist.name
         self.codelist_as_tuples = self._convert_codelist_to_tuples()
-        self.use_code_type = use_code_type
         super(CodelistFilter, self).__init__()
 
     def _convert_codelist_to_tuples(self) -> List[Tuple[str, str]]:
@@ -36,7 +35,30 @@ class CodelistFilter(Filter):
     def _filter(self, code_table: CodeTable) -> CodeTable:
 
         assert is_phenex_code_table(code_table)
-        input_columns = code_table.columns
+
+        if self.codelist.fuzzy_match:
+            return self._filter_fuzzy_codelist(code_table)
+        else:
+            return self._filter_literal_codelist(code_table)
+
+    def _filter_fuzzy_codelist(self, code_table):
+        filter_condition = False
+        for code_type, codelist in self.codelist.codelist.items():
+            codelist = [str(code) for code in codelist]
+            if self.codelist.use_code_type:
+                filter_condition = filter_condition | (
+                    (code_table.CODE_TYPE == code_type)
+                    & (code_table.CODE.like(codelist))
+                )
+            else:
+                filter_condition = filter_condition | code_table.CODE.cast("str").like(
+                    codelist
+                )
+
+        filtered_table = code_table.filter(filter_condition)
+        return filtered_table
+
+    def _filter_literal_codelist(self, code_table):
 
         # Generate the codelist table as an Ibis literal set
         codelist_df = pd.DataFrame(
@@ -46,7 +68,7 @@ class CodelistFilter(Filter):
 
         # Create a join condition based on code and possibly code_type
         code_column = code_table.CODE
-        if self.use_code_type:
+        if self.codelist.use_code_type:
             code_type_column = code_table.CODE_TYPE
             join_condition = (code_column == codelist_table.code) & (
                 code_type_column == codelist_table.code_type
@@ -54,8 +76,8 @@ class CodelistFilter(Filter):
         else:
             join_condition = code_column == codelist_table.code
 
+        # return table with downselected columns, of same type as input table
         filtered_table = code_table.inner_join(codelist_table, join_condition).select(
             code_table.columns
         )
-        # return table with downselected columns, of same type as input table
         return filtered_table
