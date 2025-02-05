@@ -7,12 +7,14 @@ from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 
 
-def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable): 
+def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
     for key, table in tables.items():
         columns = ["INDEX_DATE"] + table.columns
-        subset_tables[key] = type(table)(table.inner_join(index_table, "PERSON_ID").select(columns))
+        subset_tables[key] = type(table)(
+            table.inner_join(index_table, "PERSON_ID").select(columns)
+        )
     return subset_tables
 
 
@@ -70,10 +72,12 @@ class Cohort(Phenotype):
         )
         self._table1 = None
 
-    def execute(self, tables: Dict[str, Table], con:"SnowflakeConnector" = None) -> PhenotypeTable:
+    def execute(
+        self, tables: Dict[str, Table], con: "SnowflakeConnector" = None
+    ) -> PhenotypeTable:
         """
         The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
-        
+
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
             con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
@@ -85,9 +89,11 @@ class Cohort(Phenotype):
             ValueError: If the table returned by _execute() does not contain the required phenotype
             columns.
         """
-       # Compute entry criterion
+        # Compute entry criterion
         self.entry_criterion.execute(tables)
-        self.subset_tables_entry = subset_and_add_index_date(tables, self.entry_criterion.table)
+        self.subset_tables_entry = subset_and_add_index_date(
+            tables, self.entry_criterion.table
+        )
         index_table = self.entry_criterion.table
         # Apply inclusions if any
         if self.inclusions:
@@ -106,13 +112,13 @@ class Cohort(Phenotype):
             index_table = index_table.inner_join(exclude, ["PERSON_ID"])
 
         self.index_table = index_table
-        
+
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
-           self._compute_characteristics_table()
+            self._compute_characteristics_table()
 
         return index_table
-    
+
     def _compute_inclusions_table(self) -> Table:
         """
         Compute the inclusions table from the individual inclusions phenotypes.
@@ -123,7 +129,7 @@ class Cohort(Phenotype):
             Table: The join of all inclusion phenotypes together with a single "BOOLEAN"
             column that is the logical AND of all individual inclusion phenotypes
         """
-        # create an inex table; 
+        # create an inex table;
         # rows are persons that fulfill the entry criterion
         # columns are inclusion criteria with true of false if that column pt criteria are fulfilled
         inclusions_table = self._compute_inex_table(self.inclusions)
@@ -137,7 +143,6 @@ class Cohort(Phenotype):
         )
         self.inclusions_table = inclusions_table
         return self.inclusions_table
- 
 
     def _compute_exclusions_table(self) -> Table:
         """
@@ -147,7 +152,7 @@ class Cohort(Phenotype):
             Table: The join of all exclusions phenotypes together with a single "BOOLEAN"
             column that is the logical OR of all individual inclusion phenotypes
         """
-        # create an inex table; 
+        # create an inex table;
         # rows are persons that fulfill the entry criterion
         # columns are inclusion criteria with true of false if fulfill
         exclusions_table = self._compute_inex_table(self.exclusions)
@@ -183,13 +188,11 @@ class Cohort(Phenotype):
             columns = inex_table.columns
             columns.remove("PERSON_ID_right")
             inex_table = inex_table.select(columns)
-        
+
         # fill all nones with False
         boolean_columns = [col for col in inex_table.columns if "BOOLEAN" in col]
         for col in boolean_columns:
-            inex_table = inex_table.mutate(
-                {col: inex_table[col].fill_null(False)}
-            )
+            inex_table = inex_table.mutate({col: inex_table[col].fill_null(False)})
         return inex_table
 
     def _compute_characteristics_table(self) -> Table:

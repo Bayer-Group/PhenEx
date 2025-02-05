@@ -320,7 +320,7 @@ class Codelist:
             _df = _df[_df[codelist_column] == codelist_name]
 
         code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
-        
+
         if codelist_name is None:
             name = codelist_name
         else:
@@ -328,8 +328,6 @@ class Codelist:
 
         return cls(code_dict, name=name)
 
-
-    
     def to_tuples(self) -> List[tuple]:
         """
         Convert the codelist to a list of tuples, where each tuple is of the form

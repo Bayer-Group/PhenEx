@@ -30,20 +30,21 @@ class CategoricalPhenotype(Phenotype):
         name: str = None,
         domain: str = None,
         allowed_values: List = None,
-        column_name : str = None
+        column_name: str = None,
     ):
         self.name = name
         self.categorical_filter = CategoricalFilter(
-            allowed_values=allowed_values,
-            domain=domain,
-            column_name=column_name
+            allowed_values=allowed_values, domain=domain, column_name=column_name
         )
         super(CategoricalPhenotype, self).__init__()
 
     def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
         table = tables[self.categorical_filter.domain]
         table = self.categorical_filter._filter(table)
-        return table.mutate(VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null())
+        return table.mutate(
+            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null()
+        )
+
 
 class HospitalizationPhenotype(Phenotype):
     """

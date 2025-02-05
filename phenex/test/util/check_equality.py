@@ -52,11 +52,10 @@ def check_equality(
         ), f"Found unexpected in test {test_name} : not all pairs match"
 
 
-
 def check_counts_table_equal(
     result,
     expected,
-    test_name = 'test',
+    test_name="test",
     join_on=["phenotype"],
 ):
     result.loc[:, "DUMMY"] = 1

@@ -6,6 +6,7 @@ import ibis
 from phenex.reporting import InExCounts
 from .util.check_equality import check_counts_table_equal
 
+
 class CohortTestGenerator:
     """
     This class is a base class for all TestGenerators.
@@ -18,7 +19,7 @@ class CohortTestGenerator:
     def __init__(self):
         pass
 
-    def run_tests(self, path = 'phenex/test/cohort', verbose=False):
+    def run_tests(self, path="phenex/test/cohort", verbose=False):
         self.verbose = verbose
         self.cohort = self.define_cohort()
         self.mapped_tables = self.define_mapped_tables()
@@ -53,27 +54,33 @@ class CohortTestGenerator:
         self.cohort.execute(self.mapped_tables)
         r = InExCounts()
         r.execute(self.cohort)
-        r.df_counts_inclusion.to_csv(os.path.join(self.dirpaths['result'],"counts_inclusion.csv"),index=False)
-        r.df_counts_exclusion.to_csv(os.path.join(self.dirpaths['result'],"counts_exclusion.csv"),index=False)
+        r.df_counts_inclusion.to_csv(
+            os.path.join(self.dirpaths["result"], "counts_inclusion.csv"), index=False
+        )
+        r.df_counts_exclusion.to_csv(
+            os.path.join(self.dirpaths["result"], "counts_exclusion.csv"), index=False
+        )
 
-        if len(self.cohort.inclusions)>0:
+        if len(self.cohort.inclusions) > 0:
             check_counts_table_equal(
-                result = r.df_counts_inclusion,
-                expected = self.test_infos['counts_inclusion'], 
-                test_name=self.cohort.name+'_inclusion'
+                result=r.df_counts_inclusion,
+                expected=self.test_infos["counts_inclusion"],
+                test_name=self.cohort.name + "_inclusion",
             )
-        if len(self.cohort.exclusions)>0:
+        if len(self.cohort.exclusions) > 0:
             check_counts_table_equal(
-                result = r.df_counts_exclusion,
-                expected = self.test_infos['counts_exclusion'], 
-                test_name=self.cohort.name+'_exclusion'
+                result=r.df_counts_exclusion,
+                expected=self.test_infos["counts_exclusion"],
+                test_name=self.cohort.name + "_exclusion",
             )
 
     def _create_artifact_directory(self, name_demo, path):
         if os.path.exists(path):
             path_artifacts = os.path.join(path, "artifacts")
         else:
-            raise ValueError("Pass a path to the cohort test generator where expected and calculated output should be written")
+            raise ValueError(
+                "Pass a path to the cohort test generator where expected and calculated output should be written"
+            )
         path_cohort = os.path.join(path_artifacts, name_demo)
 
         self.dirpaths = {
