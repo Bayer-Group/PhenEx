@@ -18,6 +18,55 @@ class Codelist:
         name: Descriptive name of codelist
         codelist: User can enter codelists as either a string, a list of strings or a dictionary keyed by code type. In first two cases, the class will convert the input to a dictionary with a single key None. All consumers of the Codelist instance can then assume the codelist in that format.
 
+    Methods:
+        from_yaml: Load a codelist from a YAML file.
+        from_excel: Load a codelist from an Excel file.
+        from_csv: Load a codelist from a CSV file.
+
+    File Formats:
+        YAML:
+        The YAML file should contain a dictionary where the keys are code types
+        (e.g., "ICD-9", "ICD-10") and the values are lists of codes for each type.
+
+        Example:
+        ```yaml
+        ICD-9:
+          - "427.31"  # Atrial fibrillation
+        ICD-10:
+          - "I48.0"   # Paroxysmal atrial fibrillation
+          - "I48.1"   # Persistent atrial fibrillation
+          - "I48.2"   # Chronic atrial fibrillation
+          - "I48.91"  # Unspecified atrial fibrillation
+        ```
+
+        Excel:
+        The Excel file should contain a minimum of two columns for code and code_type. If multiple codelists exist in the same table, an additional column for codelist names is required.
+
+        Example (Single codelist):
+        ```markdown
+        | code_type | code   |
+        |-----------|--------|
+        | ICD-9     | 427.31 |
+        | ICD-10    | I48.0  |
+        | ICD-10    | I48.1  |
+        | ICD-10    | I48.2  |
+        | ICD-10    | I48.91 |
+        ```
+
+        Example (Multiple codelists):
+        ```markdown
+        | code_type | code   | codelist           |
+        |-----------|--------|--------------------|
+        | ICD-9     | 427.31 | atrial_fibrillation|
+        | ICD-10    | I48.0  | atrial_fibrillation|
+        | ICD-10    | I48.1  | atrial_fibrillation|
+        | ICD-10    | I48.2  | atrial_fibrillation|
+        | ICD-10    | I48.91 | atrial_fibrillation|
+        ```
+
+        CSV:
+        The CSV file should follow the same format as the Excel file, with columns for code, code_type, and optionally codelist names.
+
     Example:
     ```python
     # Initialize with a list
@@ -252,6 +301,30 @@ class Codelist:
             name = sheet_name
         else:
             name = path.split(os.sep)[-1].replace(".xlsx", "")
+
+        return cls(code_dict, name=name)
+
+    @classmethod
+    def from_csv(
+        cls,
+        path: str,
+        codelist_name: Optional[str] = None,
+        code_column: Optional[str] = "code",
+        code_type_column: Optional[str] = "code_type",
+        codelist_column: Optional[str] = "codelist",
+    ) -> "Codelist":
+        _df = pd.read_csv(path)
+
+        if codelist_name is not None:
+            # codelist name is not none, therefore we subset the table to the current codelist
+            _df = _df[_df[codelist_column] == codelist_name]
+
+        code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
+
+        if codelist_name is None:
+            name = codelist_name
+        else:
+            name = path.split(os.sep)[-1].replace(".csv", "")
 
         return cls(code_dict, name=name)
 
