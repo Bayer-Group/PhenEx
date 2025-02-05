@@ -3,10 +3,17 @@ import pandas as pd
 from .reporter import Reporter
 
 
-class WaterfallDiagram(Reporter):
+class Waterfall(Reporter):
     """
+    A waterfall diagram, also known as an attrition table, shows how inclusion/exclusion criteria contribute to a final population size. Each inclusion/exclusion criteria is a row in the table, and the number of patients remaining after applying that criteria are shown on that row.
 
-
+    | Column name | Description |
+    | --- | --- |
+    | type | The type of the phenotype, either entry, inclusion or exclusion |
+    | name | The name of entry, inclusion or exclusion criteria |
+    | N | The absolute number of patients that fulfill that phenotype. For the entry criterium this is the absolute number in the dataset. For inclusion/exclusion criteria this is the number of patients that fulfill the entry criterium AND the phenotype and that row. |
+    | waterfall | The number of patients remaining in the cohort after sequentially applying the inclusion/exclusion criteria in the order that they are listed in this table. |
+    | delta | The change in number of patients that occurs by applying the phenotype on that row. |
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
@@ -37,6 +44,7 @@ class WaterfallDiagram(Reporter):
         for exclusion in cohort.exclusions:
             table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion")
 
+        self.ds = self.append_delta(self.ds)
         self.df = pd.DataFrame(self.ds)
         return self.df
 
@@ -58,3 +66,11 @@ class WaterfallDiagram(Reporter):
             }
         )
         return table.select('PERSON_ID')
+
+    def append_delta(self, ds):
+        ds[0]['delta'] = None
+        for i in range(1,len(ds)):
+            d_current = ds[i]
+            d_previous = ds[i-1]
+            d_current['delta'] = d_current['waterfall'] - d_previous['waterfall']
+        return ds
