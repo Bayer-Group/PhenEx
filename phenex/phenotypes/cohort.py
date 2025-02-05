@@ -1,4 +1,3 @@
-import os
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
 import ibis
@@ -6,12 +5,9 @@ from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
-import logging
+from phenex.util import create_logger
 
-logger = logging.getLogger(__name__)
-log_level = os.environ.get("PHENEX_LOG_LEVEL", "INFO").upper()
-logger.setLevel(log_level)
-
+logger = create_logger(__name__)
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
