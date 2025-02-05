@@ -50,3 +50,38 @@ def check_equality(
         assert (
             dates_match.all()
         ), f"Found unexpected in test {test_name} : not all pairs match"
+
+
+
+def check_counts_table_equal(
+    result,
+    expected,
+    test_name = 'test',
+    join_on=["phenotype"],
+):
+    result.loc[:, "DUMMY"] = 1
+    expected.loc[:, "DUMMY"] = 1
+
+    full_results = result.merge(
+        expected, on=join_on, suffixes=("_result", "_expected"), how="outer"
+    )
+    found_not_expected = full_results[full_results["DUMMY_expected"].isnull()]
+    expected_not_found = full_results[full_results["DUMMY_result"].isnull()]
+
+    assert (
+        len(found_not_expected) == 0
+    ), f"Found unexpected in test {test_name}: {found_not_expected['phenotype'].values}"
+    assert (
+        len(expected_not_found) == 0
+    ), f"Expected not found in test {test_name}: {expected_not_found['phenotype'].values}"
+
+    if "n" not in join_on:
+        values_match = full_results["n_result"] == full_results["n_expected"]
+        assert (
+            values_match.all()
+        ), f"Found unexpected in test {test_name} : not all pairs match"
+    elif "n" in join_on:
+        values_match = full_results["DUMMY_result"] == full_results["DUMMY_expected"]
+        assert (
+            values_match.all()
+        ), f"Found unexpected in test {test_name} : not all pairs match"
