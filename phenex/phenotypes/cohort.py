@@ -72,16 +72,11 @@ class Cohort(Phenotype):
 
     def execute(self, tables: Dict[str, Table], con:"SnowflakeConnector" = None) -> PhenotypeTable:
         """
-        Executes the phenotype computation for the current object and its children.
-        This method iterates over the children of the current object and calls their
-        execute method if their table attribute is None. It then calls the _execute
-        method to perform the actual computation for the current object. The resulting
-        table is checked to ensure it contains the required phenotype columns. If the
-        required columns are present, the table is filtered to include only these columns
-        and assigned to the table attribute of the current object.
-
+        The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
+        
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
+            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
 
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
