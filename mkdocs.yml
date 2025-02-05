@@ -2,6 +2,7 @@ site_name: PhenEx
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Data Model: data_model.md
   - Tutorials:
       - Phenex Study Tutorial: tutorials/PhenEx_Study_Tutorial.ipynb
       - CodelistPhenotype: tutorials/CodelistPhenotype_Tutorial.ipynb
