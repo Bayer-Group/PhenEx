@@ -7,7 +7,7 @@ from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 
 
-def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
+def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable): 
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
     for key, table in tables.items():
@@ -70,7 +70,7 @@ class Cohort(Phenotype):
         )
         self._table1 = None
 
-    def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+    def execute(self, tables: Dict[str, Table], con:"SnowflakeConnector" = None) -> PhenotypeTable:
         """
         Executes the phenotype computation for the current object and its children.
         This method iterates over the children of the current object and calls their
@@ -92,9 +92,7 @@ class Cohort(Phenotype):
         """
        # Compute entry criterion
         self.entry_criterion.execute(tables)
-        print("Finished entry criteriion, about to subset")
         self.subset_tables_entry = subset_and_add_index_date(tables, self.entry_criterion.table)
-        print("Finished subset tables entry")
         index_table = self.entry_criterion.table
         # Apply inclusions if any
         if self.inclusions:
@@ -114,93 +112,90 @@ class Cohort(Phenotype):
 
         self.index_table = index_table
         
-        #self.subset_tables_index = subset_and_add_index_date(tables, index_table)
-        #if self.characteristics:
-        #    self._compute_characteristics_table()
+        self.subset_tables_index = subset_and_add_index_date(tables, index_table)
+        if self.characteristics:
+           self._compute_characteristics_table()
 
         return index_table
     
-    
-
- 
-
-    def _compute_exclusions_table(self) -> Table:
-        """
-        Compute the exclusion table from the individual exclusion phenotypes.
-        Meant only to be called internally from _execute() so that all dependent phenotypes
-        have already been computed.
-
-        Returns:
-            Table: The join of all exclusion phenotypes together with a single "BOOLEAN"
-            column that is the logical OR of all individual exclusion phenotypes
-        """
-        exclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
-        for i in self.exclusions:
-            print("Executing inclusion", i.name)
-            i.execute(self.subset_tables_entry)
-            i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
-                **{
-                    f"{i.name}_BOOLEAN": "BOOLEAN",
-                }
-            )
-            exclusions_table = exclusions_table.left_join(i_table, ["PERSON_ID"])
-            columns = exclusions_table.columns
-            columns.remove("PERSON_ID_right")
-            exclusions_table = exclusions_table.select(columns)
-            exclusions_table = exclusions_table.mutate(
-                BOOLEAN=ibis.greatest(
-                    exclusions_table["BOOLEAN"], exclusions_table[f"{i.name}_BOOLEAN"]
-                )
-            )
-
-        boolean_columns = [col for col in exclusions_table.columns if "BOOLEAN" in col]
-        for col in boolean_columns:
-            exclusions_table = exclusions_table.mutate(
-                {col: exclusions_table[col].fill_null(False)}
-            )
-
-        self.exclusions_table = exclusions_table
-
-        return self.exclusions_table
-
     def _compute_inclusions_table(self) -> Table:
         """
-        Compute the exclusion table from the individual exclusion phenotypes.
-        Meant only to be called internally from _execute() so that all dependent phenotypes
+        Compute the inclusions table from the individual inclusions phenotypes.
+        Meant only to be called internally from execute() so that all dependent phenotypes
         have already been computed.
 
         Returns:
             Table: The join of all inclusion phenotypes together with a single "BOOLEAN"
             column that is the logical AND of all individual inclusion phenotypes
         """
-        inclusions_table = self.entry_criterion.table.select(["PERSON_ID", "BOOLEAN"])
-        for i in self.inclusions:
-            print("Executing inclusion", i.name)
-            i.execute(self.subset_tables_entry)
-            i_table = i.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+        # create an inex table; 
+        # rows are persons that fulfill the entry criterion
+        # columns are inclusion criteria with true of false if that column pt criteria are fulfilled
+        inclusions_table = self._compute_inex_table(self.inclusions)
+
+        # create the final boolean inclusion column
+        # this is true only if all inclusion criteria are true
+        inclusions_table = inclusions_table.mutate(
+            BOOLEAN=ibis.least(
+                *[inclusions_table[f"{x.name}_BOOLEAN"] for x in self.inclusions]
+            )
+        )
+        self.inclusions_table = inclusions_table
+        return self.inclusions_table
+ 
+
+    def _compute_exclusions_table(self) -> Table:
+        """
+        Compute the exclusions table from the individual exclusions phenotypes.
+
+        Returns:
+            Table: The join of all exclusions phenotypes together with a single "BOOLEAN"
+            column that is the logical OR of all individual inclusion phenotypes
+        """
+        # create an inex table; 
+        # rows are persons that fulfill the entry criterion
+        # columns are inclusion criteria with true of false if fulfill
+        exclusions_table = self._compute_inex_table(self.exclusions)
+
+        # create the boolean inclusions column
+        # this is true only if all inclusions criteria are true
+        exclusions_table = exclusions_table.mutate(
+            BOOLEAN=ibis.greatest(
+                *[exclusions_table[f"{x.name}_BOOLEAN"] for x in self.exclusions]
+            )
+        )
+        self.exclusions_table = exclusions_table
+        return self.exclusions_table
+
+    def _compute_inex_table(self, phenotypes: List["Phenotype"]) -> Table:
+        """
+        Compute the exclusion table from the individual exclusion phenotypes.
+
+        Returns:
+            Table: The join of all inclusion phenotypes together with a single "BOOLEAN"
+            column that is the logical AND of all individual inclusion phenotypes
+        """
+        inex_table = self.entry_criterion.table.select(["PERSON_ID"])
+        # execute all phenotypes and join the boolean column only
+        for pt in phenotypes:
+            pt.execute(self.subset_tables_entry)
+            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
                 **{
-                    f"{i.name}_BOOLEAN": "BOOLEAN",
+                    f"{pt.name}_BOOLEAN": "BOOLEAN",
                 }
             )
-            inclusions_table = inclusions_table.left_join(i_table, ["PERSON_ID"])
-            columns = inclusions_table.columns
+            inex_table = inex_table.left_join(pt_table, ["PERSON_ID"])
+            columns = inex_table.columns
             columns.remove("PERSON_ID_right")
-            inclusions_table = inclusions_table.select(columns)
-            inclusions_table = inclusions_table.mutate(
-                BOOLEAN=ibis.least(
-                    inclusions_table["BOOLEAN"], inclusions_table[f"{i.name}_BOOLEAN"]
-                )
-            )
-
-        boolean_columns = [col for col in inclusions_table.columns if "BOOLEAN" in col]
+            inex_table = inex_table.select(columns)
+        
+        # fill all nones with False
+        boolean_columns = [col for col in inex_table.columns if "BOOLEAN" in col]
         for col in boolean_columns:
-            inclusions_table = inclusions_table.mutate(
-                {col: inclusions_table[col].fill_null(False)}
+            inex_table = inex_table.mutate(
+                {col: inex_table[col].fill_null(False)}
             )
-
-        self.inclusions_table = inclusions_table
-
-        return self.inclusions_table
+        return inex_table
 
     def _compute_characteristics_table(self) -> Table:
         """
