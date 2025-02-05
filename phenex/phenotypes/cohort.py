@@ -5,6 +5,9 @@ from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -71,6 +74,7 @@ class Cohort(Phenotype):
             [entry_criterion] + self.inclusions + self.exclusions + self.characteristics
         )
         self._table1 = None
+        logger.info(f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'")
 
     def execute(
         self, tables: Dict[str, Table], con: "SnowflakeConnector" = None
@@ -89,37 +93,49 @@ class Cohort(Phenotype):
             ValueError: If the table returned by _execute() does not contain the required phenotype
             columns.
         """
+        logger.info(f"Executing cohort '{self.name}'...")
         # Compute entry criterion
+        logger.debug("Computing entry criterion ...")
         self.entry_criterion.execute(tables)
         self.subset_tables_entry = subset_and_add_index_date(
             tables, self.entry_criterion.table
         )
         index_table = self.entry_criterion.table
+        logger.debug("Entry criterion computed.")
+
         # Apply inclusions if any
         if self.inclusions:
+            logger.debug("Applying inclusions ...")
             self._compute_inclusions_table()
             include = self.inclusions_table.filter(
                 self.inclusions_table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
             index_table = index_table.inner_join(include, ["PERSON_ID"])
+            logger.debug("Inclusions applied.")
 
         # Apply exclusions if any
         if self.exclusions:
+            logger.debug("Applying exclusions ...")
             self._compute_exclusions_table()
             exclude = self.exclusions_table.filter(
                 self.exclusions_table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
             index_table = index_table.inner_join(exclude, ["PERSON_ID"])
+            logger.debug("Exclusions applied.")
 
         self.index_table = index_table
 
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
+            logger.debug("Computing characteristics ...")
             self._compute_characteristics_table()
+            logger.debug("Characteristics computed.")
 
+        logger.info(f"Cohort '{self.name}' execution completed.")
         return index_table
 
     def _compute_inclusions_table(self) -> Table:
+        logger.debug("Computing inclusions table")
         """
         Compute the inclusions table from the individual inclusions phenotypes.
         Meant only to be called internally from execute() so that all dependent phenotypes
@@ -142,9 +158,11 @@ class Cohort(Phenotype):
             )
         )
         self.inclusions_table = inclusions_table
+        logger.debug("Inclusions table computed")
         return self.inclusions_table
 
     def _compute_exclusions_table(self) -> Table:
+        logger.debug("Computing exclusions table")
         """
         Compute the exclusions table from the individual exclusions phenotypes.
 
@@ -165,9 +183,11 @@ class Cohort(Phenotype):
             )
         )
         self.exclusions_table = exclusions_table
+        logger.debug("Exclusions table computed")
         return self.exclusions_table
 
     def _compute_inex_table(self, phenotypes: List["Phenotype"]) -> Table:
+        logger.debug("Computing inex table")
         """
         Compute the exclusion table from the individual exclusion phenotypes.
 
@@ -193,9 +213,11 @@ class Cohort(Phenotype):
         boolean_columns = [col for col in inex_table.columns if "BOOLEAN" in col]
         for col in boolean_columns:
             inex_table = inex_table.mutate({col: inex_table[col].fill_null(False)})
+        logger.debug("Inex table computed")
         return inex_table
 
     def _compute_characteristics_table(self) -> Table:
+        logger.debug("Computing characteristics table")
         """
         Retrieves and joins all characteristic tables.
         Meant only to be called internally from _execute() so that all dependent phenotypes
@@ -210,11 +232,14 @@ class Cohort(Phenotype):
             self.characteristics,
             join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
         )
+        logger.debug("Characteristics table computed")
         return self.characteristics_table
 
     @property
     def table1(self):
         if self._table1 is None:
+            logger.debug("Generating Table1 report")
             reporter = Table1()
             self._table1 = reporter.execute(self)
+            logger.debug("Table1 report generated")
         return self._table1
