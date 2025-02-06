@@ -13,7 +13,7 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_3variables,
 )
-from phenex.filters.aggregator import *
+from phenex.aggregators import *
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 
 
