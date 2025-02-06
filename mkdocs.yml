@@ -38,6 +38,7 @@ nav:
           - InExCounts: api/reporting/counts.md
   - License: LICENSE.md
 
+site_url: https://bayer-group.github.io/PhenEx/
 plugins:
   - mkdocstrings:
       handlers:
