@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import ibis
 
-from phenex.reporting import InExCounts
+from phenex.reporting import InExCounts, Waterfall
 from .util.check_equality import check_counts_table_equal
 
 
@@ -52,6 +52,8 @@ class CohortTestGenerator:
 
     def _run_tests(self):
         self.cohort.execute(self.mapped_tables)
+
+        # get inclusion exclusion counts and compare
         r = InExCounts()
         r.execute(self.cohort)
         r.df_counts_inclusion.to_csv(
@@ -60,7 +62,6 @@ class CohortTestGenerator:
         r.df_counts_exclusion.to_csv(
             os.path.join(self.dirpaths["result"], "counts_exclusion.csv"), index=False
         )
-
         if len(self.cohort.inclusions) > 0:
             check_counts_table_equal(
                 result=r.df_counts_inclusion,
@@ -73,6 +74,8 @@ class CohortTestGenerator:
                 expected=self.test_infos["counts_exclusion"],
                 test_name=self.cohort.name + "_exclusion",
             )
+        r = Waterfall()
+        r.execute(self.cohort)
 
     def _create_artifact_directory(self, name_demo, path):
         if os.path.exists(path):

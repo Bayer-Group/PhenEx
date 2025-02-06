@@ -34,6 +34,8 @@ nav:
       - Reporting:
           - Report: api/reporting/reporter.md
           - Table1: api/reporting/table1.md
+          - Waterfall: api/reporting/waterfall.md
+          - InExCounts: api/reporting/counts.md
   - License: LICENSE.md
 
 plugins:
