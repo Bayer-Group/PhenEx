@@ -328,6 +328,16 @@ class Codelist:
 
         return cls(code_dict, name=name)
 
+    @classmethod
+    def from_medconb(cls, codelist):
+        '''
+        Converts a MedConB style Codelist into a PhenEx style codelist.
+        '''
+        phenex_codelist = {}
+        for codeset in codelist.codesets:
+            phenex_codelist[codeset.ontology] = [c[0] for c in codeset.codes]
+        return cls(codelist=phenex_codelist, name=codelist.name)
+
     def to_tuples(self) -> List[tuple]:
         """
         Convert the codelist to a list of tuples, where each tuple is of the form
