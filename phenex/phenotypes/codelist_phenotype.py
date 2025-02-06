@@ -3,7 +3,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_range_filter import DateRangeFilter
-from phenex.filters.aggregator import First, Last
+from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import select_phenotype_columns
