@@ -1,6 +1,6 @@
-<div id="main_title" class="my-class">
-PhenEx
-</div>
+<div id="main_title" class="my-class">PhenEx</div>
+
+# Building real-world data cohorts
 
 ![Alt text](assets/phenex_feather_horizontal.png)
 
@@ -14,9 +14,7 @@ PhenEx (Automated Phenotype Extraction) fills this gap. PhenEx is a Python-based
 - **Intuitive interface**: Study specification in PhenEx mirrors plain language description of the study.
 - **High test coverage**: Full confidence answer is correct.
 
-## Basics of PhenEx design
-
-### Electronic phenotypes
+## Electronic phenotypes
 
 The most basic concept in PhenEx is the (electronic) [phenotype](https://rethinkingclinicaltrials.org/chapters/conduct/electronic-health-records-based-phenotyping/electronic-health-records-based-phenotyping-introduction/). A phenotype defines a set of patients that share some physiological state. In a clinical setting, a phenotype is usually identified by the phrase "patient presents with ...". For example, a phenotype could be "patient presents with diabetes". In the observational setting, we would calculate the phenotype "patient presents with diabetes" by looking for patients who have a diagnosis of diabetes in their medical record in certain time frame.
 
@@ -32,7 +30,7 @@ All studies are built through the calculation of various phenotypes:
 
 After defining the parameters of all these phenotypes in the study definition file, PhenEx will compute the phenotypes and return a cohort table, which contains the set of patients which satisfied all the inclusion / exclusion / entry criteria for the specified study. Additionally, a baseline characteristics table will be computed and reports generated, including a waterfall chart, the distributions of baseline characteristics.
 
-### Phenotype classes
+## Phenotype classes
 
 In PhenEx, the concept on an electronic phenotype is encapsulated by Phenotype classes that expose all relevant parameters to express an electronic phenotype. These classes are designed to be reusable and composable, allowing complex phenotypes to be built from simpler ones. The foundational Phenotype classes include:
 
@@ -56,12 +54,12 @@ Furthermore, they can be combined using the following derived Phenotypes:
 
 Each phenotype class provides methods for defining the criteria and for evaluating the phenotype against a dataset. By using these classes, researchers can define complex phenotypes in a clear and concise manner, without needing to write custom code for each study.
 
-### Architecture
+## Library Architecture
 
 Below is an illustration of the basic design of the PhenEx in the evidence generation ecosystem.
 
 ![Architecture](assets/architecture.png)
 
-## Getting started
+## Get started building cohorts
 
 To get started, head over to our [tutorials](tutorials.md) to get a better feel for how the library works. Then, learn how to [install PhenEx](installation.md) and start using it yourself for your own studies. Any questions? Feel free to reach out or create a [github issue](https://github.com/Bayer-Group/PhenEx/issues).
