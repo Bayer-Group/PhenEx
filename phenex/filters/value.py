@@ -1,8 +1,10 @@
+from typing import Union
+from datetime import date
 from phenex.filters.filter import Filter
 
 
 class Value(Filter):
-    def __init__(self, operator: str, value: int):
+    def __init__(self, operator: str, value: Union[int, float, date]):
         self.operator = operator
         self.value = value
         assert operator in [

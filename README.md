@@ -50,3 +50,7 @@ PhenEx is for anyone seeking to analyze real-world patient data, such as claims,
 ## I'm convinced! How can I get started?
 
 Head on over to the [Official PhenEx Documentation](https://bayer-group.github.io/PhenEx). If you have any questions, please feel free to reach out to any of the developers and we'll be happy to get you on your way.
+
+## API Stability
+
+Please note that for the 0.\* series of releases we do not guarantee API stability. That means upgrading may break your scripts. In general, we use the convention that 0.X.Y -> 0.X.Z is non-breaking. O.X.Y -> X.Z.0 may be breaking, but we try to keep breakage to a minimum and "worth it". If your scripts break upon upgrading, please reach out to one of the developers and we will happily help you. Starting with 1.0, we will not break between minor revisions.

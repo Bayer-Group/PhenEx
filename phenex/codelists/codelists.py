@@ -152,7 +152,7 @@ class Codelist:
 
         self.fuzzy_match = False
         for code_type, codelist in self.codelist.items():
-            if any(["%" in code for code in codelist]):
+            if any(["%" in str(code) for code in codelist]):
                 self.fuzzy_match = True
                 if len(codelist) > 100:
                     warnings.warn(
