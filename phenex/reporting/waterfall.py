@@ -1,7 +1,9 @@
 import pandas as pd
 
 from .reporter import Reporter
+from phenex.util import create_logger
 
+logger = create_logger(__name__)
 
 class Waterfall(Reporter):
     """
@@ -18,6 +20,7 @@ class Waterfall(Reporter):
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
+        logger.debug(f"Beginning execution of waterfall. Calculating N patents")
         N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
             .select("PERSON_ID")
@@ -25,6 +28,7 @@ class Waterfall(Reporter):
             .count()
             .execute()
         )
+        logger.debug(f"Cohort has {N} patients")
         self.ds = []
 
         table = cohort.entry_criterion.table
@@ -57,6 +61,7 @@ class Waterfall(Reporter):
             table = table.anti_join(
                 phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
             )
+        logger.debug(f"Starting {type} criteria {phenotype.name}")
         self.ds.append(
             {
                 "type": type,
@@ -65,6 +70,7 @@ class Waterfall(Reporter):
                 "waterfall": table.count().execute(),
             }
         )
+        logger.debug(f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['waterfall']}")
         return table.select('PERSON_ID')
 
     def append_delta(self, ds):
