@@ -198,6 +198,13 @@ class OMOPObservationPeriodTable(PhenexObservationPeriodTable):
     }
 
 
+class OMOPConceptTable(PhenexTable):
+    NAME_TABLE = "CONCEPT"
+    JOIN_KEYS = {"OMOPConditionOccurenceTable": ["CONCEPT_ID", "CONDITION_CONCEPT_ID"]}
+    KNOWN_FIELDS = ["CONCEPT_ID", "CONCEPT_NAME"]
+    DEFAULT_MAPPING = {}
+
+
 #
 # Domains
 #
@@ -213,5 +220,6 @@ OMOPs = {
     "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSourceTable,
     "PERSON_SOURCE": OMOPPersonTableSource,
     "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
+    "CONCEPT": OMOPConceptTable,
 }
 OMOPDomains = DomainsDictionary(OMOPs)

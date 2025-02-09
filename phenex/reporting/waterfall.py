@@ -47,20 +47,30 @@ class Waterfall(Reporter):
 
         for exclusion in cohort.exclusions:
             table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion")
-
+        
+        self.ds.append(
+            {
+                "type": "final_cohort",
+                "name": "index_table",
+                "N": None,
+                "waterfall": N,
+            }
+        )
         self.ds = self.append_delta(self.ds)
         self.df = pd.DataFrame(self.ds)
         return self.df
 
     def append_phenotype_to_waterfall(self, table, phenotype, type):
-        if type in ["inclusion", "exclusion"]:
+        if type == "inclusion":
             table = table.inner_join(
                 phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
             )
-        else:
+        elif type == 'exclusion':
             table = table.anti_join(
                 phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
             )
+        else:
+            raise ValueError("type must be either inclusion or exclusion")
         logger.debug(f"Starting {type} criteria {phenotype.name}")
         self.ds.append(
             {
@@ -75,7 +85,7 @@ class Waterfall(Reporter):
 
     def append_delta(self, ds):
         ds[0]['delta'] = None
-        for i in range(1,len(ds)):
+        for i in range(1,len(ds)-1):
             d_current = ds[i]
             d_previous = ds[i-1]
             d_current['delta'] = d_current['waterfall'] - d_previous['waterfall']
