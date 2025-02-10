@@ -18,55 +18,9 @@ from phenex.filters import (
     GreaterThan,
 )
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
-
-from phenex.mappers import DomainsDictionary
-
-
-class TestPersonTable(PhenexPersonTable):
-    NAME_TABLE = "PATIENT"
-    DEFAULT_MAPPING = {
-        "PERSON_ID": "PATID",
-        "YEAR_OF_BIRTH": "YOB",
-        "SEX": "GENDER",
-    }
-    JOIN_KEYS = {
-        "TestConditionOccurenceTable": ["PERSON_ID"],
-        "TestVisitDetailTable": ["PERSON_ID"],
-    }
+from phenex.test.cohort.test_mappings import PersonTableForTests, DrugExposureTableForTests, ObservationPeriodTableForTests, ConditionOccurenceTableForTests
 
 
-class TestConditionOccurenceTable(CodeTable):
-    NAME_TABLE = "OBSERVATION"
-    JOIN_KEYS = {
-        "TestPersonTable": ["PATID"],
-    }
-    DEFAULT_MAPPING = {
-        "PERSON_ID": "PATID",
-        "EVENT_DATE": "OBSDATE",
-        "CODE": "MEDCODEID",
-    }
-
-
-class TestDrugExposureTable(CodeTable):
-    NAME_TABLE = "DRUGISSUE"
-    JOIN_KEYS = {
-        "TestPersonTable": ["PATID"],
-    }
-    DEFAULT_MAPPING = {
-        "PERSON_ID": "PATID",
-        "EVENT_DATE": "ISSUEDATE",
-        "CODE": "PRODCODEID",
-    }
-
-
-class TestObservationPeriodTable(PhenexObservationPeriodTable):
-    NAME_TABLE = "PATIENT"
-    JOIN_KEYS = {"TestPersonTable": ["PATID"]}
-    DEFAULT_MAPPING = {
-        "PERSON_ID": "PATID",
-        "OBSERVATION_PERIOD_START_DATE": "REGSTARTDATE",
-        "OBSERVATION_PERIOD_END_DATE": "REGENDDATE",
-    }
 
 
 def create_cohort():
@@ -165,7 +119,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
         # create dummy person table
         df_person = pd.DataFrame(df_allvalues[["PATID", "YOB", "GENDER", "ACCEPTABLE"]])
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
-        person_table = TestPersonTable(
+        person_table = PersonTableForTests(
             self.con.create_table("PERSON", df_person, schema=schema_person)
         )
 
@@ -177,7 +131,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
             "REGSTARTDATE": datetime.date,
             "REGENDDATE": datetime.date,
         }
-        observation_period_table = TestObservationPeriodTable(
+        observation_period_table = ObservationPeriodTableForTests(
             self.con.create_table(
                 "OBSERVATION_PERIOD", df_observation, schema=schema_observation
             )
@@ -193,7 +147,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
             "MEDCODEID": str,
             "OBSDATE": datetime.date,
         }
-        condition_occurrence_table = TestConditionOccurenceTable(
+        condition_occurrence_table = ConditionOccurenceTableForTests(
             self.con.create_table(
                 "CONDITION_OCCURRENCE",
                 df_condition_occurrence,
@@ -209,7 +163,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
             "PRODCODEID": str,
             "ISSUEDATE": datetime.date,
         }
-        drug_exposure_table = TestDrugExposureTable(
+        drug_exposure_table = DrugExposureTableForTests(
             self.con.create_table(
                 "DRUG_EXPOSURE", df_drug_exposure, schema=schema_drug_exposure
             )

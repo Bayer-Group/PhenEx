@@ -1,6 +1,6 @@
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
 
-class TestPersonTable(PhenexPersonTable):
+class PersonTableForTests(PhenexPersonTable):
     NAME_TABLE = "PATIENT"
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
@@ -8,15 +8,15 @@ class TestPersonTable(PhenexPersonTable):
         "SEX": "GENDER",
     }
     JOIN_KEYS = {
-        "TestConditionOccurenceTable": ["PERSON_ID"],
+        "ConditionOccurenceTableForTests": ["PERSON_ID"],
         "TestVisitDetailTable": ["PERSON_ID"],
     }
 
 
-class TestConditionOccurenceTable(CodeTable):
+class ConditionOccurenceTableForTests(CodeTable):
     NAME_TABLE = "OBSERVATION"
     JOIN_KEYS = {
-        "TestPersonTable": ["PATID"],
+        "PersonTableForTests": ["PATID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
@@ -25,10 +25,10 @@ class TestConditionOccurenceTable(CodeTable):
     }
 
 
-class TestDrugExposureTable(CodeTable):
+class DrugExposureTableForTests(CodeTable):
     NAME_TABLE = "DRUGISSUE"
     JOIN_KEYS = {
-        "TestPersonTable": ["PATID"],
+        "PersonTableForTests": ["PATID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
@@ -37,9 +37,9 @@ class TestDrugExposureTable(CodeTable):
     }
 
 
-class TestObservationPeriodTable(PhenexObservationPeriodTable):
+class ObservationPeriodTableForTests(PhenexObservationPeriodTable):
     NAME_TABLE = "PATIENT"
-    JOIN_KEYS = {"TestPersonTable": ["PATID"]}
+    JOIN_KEYS = {"PersonTableForTests": ["PATID"]}
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
         "OBSERVATION_PERIOD_START_DATE": "REGSTARTDATE",
