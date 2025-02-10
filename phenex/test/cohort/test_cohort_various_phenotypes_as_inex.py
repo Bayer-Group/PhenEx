@@ -16,9 +16,14 @@ from phenex.filters import (
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,
     GreaterThan,
-    LessThan
+    LessThan,
 )
-from phenex.test.cohort.test_mappings import PersonTableForTests, DrugExposureTableForTests, ObservationPeriodTableForTests, ConditionOccurenceTableForTests
+from phenex.test.cohort.test_mappings import (
+    PersonTableForTests,
+    DrugExposureTableForTests,
+    ObservationPeriodTableForTests,
+    ConditionOccurenceTableForTests,
+)
 
 from phenex.test.util.dummy.generate_dummy_cohort_data import generate_dummy_cohort_data
 
@@ -32,6 +37,7 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
     | **d1** | 2020-01-01 | 2018-12-30 | 2019-12-31 | P4 | obs_end before entry_date |
     | **d1** | 2020-01-01 | 2019-01-03 | 2019-12-31 | P6 | obs_start <1 year prior to entry and obs_end before entry_date |
     """
+
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
@@ -46,25 +52,31 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
         return Cohort(
             name="test_continuous_coverage",
             entry_criterion=entry,
-            inclusions = [cc],
+            inclusions=[cc],
         )
-    
+
     def generate_dummy_input_data(self):
         values = [
             {
                 "name": "entry",
                 "values": ["d1", "d4"],
-            }, 
+            },
             {
                 "name": "entry_date",
                 "values": [datetime.date(2020, 1, 1)],
-            }, 
-            {"name":"obs_start", "values":[datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name":"obs_end", "values":[datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
         ]
 
         return generate_dummy_cohort_data(values)
-    
+
     def define_mapped_tables(self):
         self.con = ibis.duckdb.connect()
         df_allvalues = self.generate_dummy_input_data()
@@ -79,7 +91,9 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
             self.con.create_table("PERSON", df_person, schema=schema_person)
         )
         # create drug exposure table
-        df_drug_exposure_entry = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
+        df_drug_exposure_entry = pd.DataFrame(
+            df_allvalues[["PATID", "entry", "entry_date"]]
+        )
         # df_drug_exclusion_exposure = pd.DataFrame(df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]])
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         # df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
@@ -107,24 +121,22 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.create_table(
-                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
-            )
+            self.con.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
         )
         return {
             "PERSON": person_table,
             "DRUG_EXPOSURE": drug_exposure_table,
-            "OBSERVATION_PERIOD":obs_table
+            "OBSERVATION_PERIOD": obs_table,
         }
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index['PERSON_ID'] = ['P0']
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
-    
+
 
 class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator):
     """
@@ -147,6 +159,7 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
     | **P14** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 |
     | **P15** | d4 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 |
     """
+
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
@@ -162,29 +175,37 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             name="prior_et_usage",
             codelist=Codelist(["e4"]).resolve(use_code_type=False),
             domain="DRUG_EXPOSURE",
-            relative_time_range=RelativeTimeRangeFilter(when='before', min_days=GreaterThanOrEqualTo(0))
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
         )
 
         return Cohort(
             name="test_continuous_coverage_with_exclusion",
             entry_criterion=entry,
-            inclusions = [cc],
-            exclusions = [e4]
+            inclusions=[cc],
+            exclusions=[e4],
         )
-    
+
     def generate_dummy_input_data(self):
         values = [
             {
                 "name": "entry",
                 "values": ["d1", "d4"],
-            }, 
+            },
             {
                 "name": "entry_date",
                 "values": [datetime.date(2020, 1, 1)],
-            }, 
-            {"name":"obs_start", "values":[datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name":"obs_end", "values":[datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
-            {"name":"prior_et_use", "values":['e1','e4']}, 
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+            {"name": "prior_et_use", "values": ["e1", "e4"]},
             {
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
@@ -192,7 +213,7 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
         ]
 
         return generate_dummy_cohort_data(values)
-    
+
     def define_mapped_tables(self):
         self.con = ibis.duckdb.connect()
         df_allvalues = self.generate_dummy_input_data()
@@ -207,11 +228,17 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             self.con.create_table("PERSON", df_person, schema=schema_person)
         )
         # create drug exposure table
-        df_drug_exposure_entry = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
-        df_drug_exclusion_exposure = pd.DataFrame(df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]])
+        df_drug_exposure_entry = pd.DataFrame(
+            df_allvalues[["PATID", "entry", "entry_date"]]
+        )
+        df_drug_exclusion_exposure = pd.DataFrame(
+            df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]]
+        )
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-        df_drug_exposure = pd.concat([df_drug_exposure_entry, df_drug_exclusion_exposure])
+        df_drug_exposure = pd.concat(
+            [df_drug_exposure_entry, df_drug_exclusion_exposure]
+        )
 
         schema_drug_exposure = {
             "PATID": str,
@@ -234,24 +261,23 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.create_table(
-                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
-            )
+            self.con.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
         )
         return {
             "PERSON": person_table,
             "DRUG_EXPOSURE": drug_exposure_table,
-            "OBSERVATION_PERIOD":obs_table
+            "OBSERVATION_PERIOD": obs_table,
         }
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index['PERSON_ID'] = ['P0']
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
-    
+
+
 class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerator):
     """
     | **PATID** | **entry** | **entry_date** | **obs_start** | **obs_end** | **prior_et_use** | **prior_et_use_date** | **YOB** |
@@ -289,6 +315,7 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
     | **P30** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 | 2010 |
     | **P31** | d4 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 | 2010 |
     """
+
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
@@ -305,39 +332,46 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
             name="prior_et_usage",
             codelist=Codelist(["e4"]).resolve(use_code_type=False),
             domain="DRUG_EXPOSURE",
-            relative_time_range=RelativeTimeRangeFilter(when='before', min_days=GreaterThanOrEqualTo(0))
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
         )
 
         return Cohort(
             name="test_continuous_coverage_age_with_exclusion",
             entry_criterion=entry,
-            inclusions = [cc, agege18],
-            exclusions = [e4]
+            inclusions=[cc, agege18],
+            exclusions=[e4],
         )
-    
+
     def generate_dummy_input_data(self):
         values = [
             {
                 "name": "entry",
                 "values": ["d1", "d4"],
-            }, 
+            },
             {
                 "name": "entry_date",
                 "values": [datetime.date(2020, 1, 1)],
-            }, 
-            {"name":"obs_start", "values":[datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name":"obs_end", "values":[datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
-            {"name":"prior_et_use", "values":['e1','e4']}, 
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+            {"name": "prior_et_use", "values": ["e1", "e4"]},
             {
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
-            {"name":"YOB", "values":[2000,2010]}, 
-
+            {"name": "YOB", "values": [2000, 2010]},
         ]
 
         return generate_dummy_cohort_data(values)
-    
+
     def define_mapped_tables(self):
         self.con = ibis.duckdb.connect()
         df_allvalues = self.generate_dummy_input_data()
@@ -351,11 +385,17 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
             self.con.create_table("PERSON", df_person, schema=schema_person)
         )
         # create drug exposure table
-        df_drug_exposure_entry = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
-        df_drug_exclusion_exposure = pd.DataFrame(df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]])
+        df_drug_exposure_entry = pd.DataFrame(
+            df_allvalues[["PATID", "entry", "entry_date"]]
+        )
+        df_drug_exclusion_exposure = pd.DataFrame(
+            df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]]
+        )
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-        df_drug_exposure = pd.concat([df_drug_exposure_entry, df_drug_exclusion_exposure])
+        df_drug_exposure = pd.concat(
+            [df_drug_exposure_entry, df_drug_exclusion_exposure]
+        )
 
         schema_drug_exposure = {
             "PATID": str,
@@ -377,29 +417,30 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.create_table(
-                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
-            )
+            self.con.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
         )
         return {
             "PERSON": person_table,
             "DRUG_EXPOSURE": drug_exposure_table,
-            "OBSERVATION_PERIOD":obs_table
+            "OBSERVATION_PERIOD": obs_table,
         }
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index['PERSON_ID'] = ['P0']
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
-    
 
-class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(CohortWithContinuousCoverageExclusionAndAgeTestGenerator):
+
+class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
+    CohortWithContinuousCoverageExclusionAndAgeTestGenerator
+):
     """
     Identical output and cohort definition to CohortWithContinuousCoverageExclusionAndAgeTestGenerator however using inverse of age. Instead of inclusion age >= 18, use exclusion age<18
     """
+
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
@@ -416,40 +457,47 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(Cohort
             name="prior_et_usage",
             codelist=Codelist(["e4"]).resolve(use_code_type=False),
             domain="DRUG_EXPOSURE",
-            relative_time_range=RelativeTimeRangeFilter(when='before', min_days=GreaterThanOrEqualTo(0))
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
         )
 
         return Cohort(
             name="test_continuous_coverage_age_with_exclusion",
             entry_criterion=entry,
-            inclusions = [cc],
-            exclusions = [e4, agel18]
+            inclusions=[cc],
+            exclusions=[e4, agel18],
         )
-    
+
     def generate_dummy_input_data(self):
         values = [
             {
                 "name": "entry",
                 "values": ["d1", "d4"],
-            }, 
+            },
             {
                 "name": "entry_date",
                 "values": [datetime.date(2020, 1, 1)],
-            }, 
-            {"name":"obs_start", "values":[datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name":"obs_end", "values":[datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
-            {"name":"prior_et_use", "values":['e1','e4']}, 
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+            {"name": "prior_et_use", "values": ["e1", "e4"]},
             {
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
-            {"name":"YOB", "values":[2000,2010]}, 
-
+            {"name": "YOB", "values": [2000, 2010]},
         ]
 
         return generate_dummy_cohort_data(values)
-    
-    
+
+
 class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerator):
     """
     | **PATID** | **entry** | **entry_date** | **obs_start** | **obs_end** | **prior_et_use** | **prior_et_use_date** | **YOB** | **GENDER** |
@@ -519,6 +567,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
     | **P62** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 | 2010 | 2 |
     | **P63** | d4 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 | 2010 | 2 |
     """
+
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
@@ -536,40 +585,47 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
             name="prior_et_usage",
             codelist=Codelist(["e4"]).resolve(use_code_type=False),
             domain="DRUG_EXPOSURE",
-            relative_time_range=RelativeTimeRangeFilter(when='before', min_days=GreaterThanOrEqualTo(0))
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
         )
 
         return Cohort(
             name="test_continuous_coverage_age_sex_with_exclusion",
             entry_criterion=entry,
-            inclusions = [cc, agege18, sex],
-            exclusions = [e4]
+            inclusions=[cc, agege18, sex],
+            exclusions=[e4],
         )
-    
+
     def generate_dummy_input_data(self):
         values = [
             {
                 "name": "entry",
                 "values": ["d1", "d4"],
-            }, 
+            },
             {
                 "name": "entry_date",
                 "values": [datetime.date(2020, 1, 1)],
-            }, 
-            {"name":"obs_start", "values":[datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name":"obs_end", "values":[datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
-            {"name":"prior_et_use", "values":['e1','e4']}, 
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+            {"name": "prior_et_use", "values": ["e1", "e4"]},
             {
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
-            {"name":"YOB", "values":[2000,2010]}, 
-            {"name":"GENDER", "values":[1,2]}, 
-
+            {"name": "YOB", "values": [2000, 2010]},
+            {"name": "GENDER", "values": [1, 2]},
         ]
 
         return generate_dummy_cohort_data(values)
-    
+
     def define_mapped_tables(self):
         self.con = ibis.duckdb.connect()
         df_allvalues = self.generate_dummy_input_data()
@@ -582,11 +638,17 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
             self.con.create_table("PERSON", df_person, schema=schema_person)
         )
         # create drug exposure table
-        df_drug_exposure_entry = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
-        df_drug_exclusion_exposure = pd.DataFrame(df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]])
+        df_drug_exposure_entry = pd.DataFrame(
+            df_allvalues[["PATID", "entry", "entry_date"]]
+        )
+        df_drug_exclusion_exposure = pd.DataFrame(
+            df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]]
+        )
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-        df_drug_exposure = pd.concat([df_drug_exposure_entry, df_drug_exclusion_exposure])
+        df_drug_exposure = pd.concat(
+            [df_drug_exposure_entry, df_drug_exclusion_exposure]
+        )
 
         schema_drug_exposure = {
             "PATID": str,
@@ -608,39 +670,42 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.create_table(
-                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
-            )
+            self.con.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
         )
         return {
             "PERSON": person_table,
             "DRUG_EXPOSURE": drug_exposure_table,
-            "OBSERVATION_PERIOD":obs_table
+            "OBSERVATION_PERIOD": obs_table,
         }
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index['PERSON_ID'] = ['P0']
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
-    
+
+
 def test_continuous_coverage_phenotype():
     g = CohortWithContinuousCoverageTestGenerator()
     g.run_tests()
+
 
 def test_continuous_coverage_with_exclusion():
     g = CohortWithContinuousCoverageAndExclusionTestGenerator()
     g.run_tests()
 
+
 def test_continuous_coverage_age_with_exclusion():
     g = CohortWithContinuousCoverageExclusionAndAgeTestGenerator()
     g.run_tests()
 
+
 def test_continuous_coverage_age_as_exclusion_with_exclusion():
     g = CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator()
     g.run_tests()
+
 
 def test_continuous_coverage_age_sex_with_exclusion():
     g = CohortWithContinuousCoverageExclusionAgeSexTestGenerator()

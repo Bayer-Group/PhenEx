@@ -1,5 +1,6 @@
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
 
+
 class PersonTableForTests(PhenexPersonTable):
     NAME_TABLE = "PATIENT"
     DEFAULT_MAPPING = {

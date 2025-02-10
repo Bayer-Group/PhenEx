@@ -1,6 +1,7 @@
 import datetime
 import pandas as pd
 
+
 def generate_dummy_cohort_data(data_dictionary):
     """
     This method creates every possible combination of variables passed in the data dictionary. This is useful for testing all edge cases of a cohort definition.
@@ -15,7 +16,7 @@ def generate_dummy_cohort_data(data_dictionary):
             "name": "entry_date",
             "values": [datetime.date(2020, 1, 1)],
         },{
-            "name":"prior_et_use", 
+            "name":"prior_et_use",
             "values":['e1','e4']
         },{
             "name": "prior_et_use_date",
@@ -33,7 +34,7 @@ def generate_dummy_cohort_data(data_dictionary):
     | **d4** | 2020-01-01 | e4 | 2019-04-01 | P3 |
 
 
-    """  
+    """
     # create the dataframe with two rows; first patient fulfills entry criteria, second does not
     item = data_dictionary[0]
     df = pd.DataFrame()

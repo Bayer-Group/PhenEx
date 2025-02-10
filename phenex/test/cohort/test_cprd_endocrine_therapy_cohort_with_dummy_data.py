@@ -18,9 +18,12 @@ from phenex.filters import (
     GreaterThan,
 )
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
-from phenex.test.cohort.test_mappings import PersonTableForTests, DrugExposureTableForTests, ObservationPeriodTableForTests, ConditionOccurenceTableForTests
-
-
+from phenex.test.cohort.test_mappings import (
+    PersonTableForTests,
+    DrugExposureTableForTests,
+    ObservationPeriodTableForTests,
+    ConditionOccurenceTableForTests,
+)
 
 
 def create_cohort():

@@ -11,8 +11,9 @@ logger = create_logger(__name__)
 
 
 def sort_by_personid(_df):
-    _df['id'] = [int(x.replace('P','')) for x in _df['PERSON_ID'].values]
-    return _df.sort_values(by='id').drop('id',axis=1)
+    _df["id"] = [int(x.replace("P", "")) for x in _df["PERSON_ID"].values]
+    return _df.sort_values(by="id").drop("id", axis=1)
+
 
 class CohortTestGenerator:
     """
@@ -24,6 +25,7 @@ class CohortTestGenerator:
     date_format = "%m-%d-%Y"
     test_values = False
     test_date = False
+
     def __init__(self):
         pass
 
@@ -61,22 +63,34 @@ class CohortTestGenerator:
     def _run_tests(self):
         self.cohort.execute(self.mapped_tables)
 
-        logger.debug(f"\nENTRY\n{sort_by_personid(self.cohort.entry_criterion.table.to_pandas())}")
-        if len(self.cohort.inclusions)>0:
-            logger.debug(f"\nINCLUSIONS\n{sort_by_personid(self.cohort.inclusions_table.to_pandas())}")
+        logger.debug(
+            f"\nENTRY\n{sort_by_personid(self.cohort.entry_criterion.table.to_pandas())}"
+        )
+        if len(self.cohort.inclusions) > 0:
+            logger.debug(
+                f"\nINCLUSIONS\n{sort_by_personid(self.cohort.inclusions_table.to_pandas())}"
+            )
 
-        if len(self.cohort.exclusions)>0:
-            logger.debug(f"\nEXCLUSIONS\n{sort_by_personid(self.cohort.exclusions_table.to_pandas())}")
+        if len(self.cohort.exclusions) > 0:
+            logger.debug(
+                f"\nEXCLUSIONS\n{sort_by_personid(self.cohort.exclusions_table.to_pandas())}"
+            )
         r = Waterfall()
         logger.debug(f"\nWATERFALL\n{r.execute(self.cohort)}")
-        logger.debug(f"\nINDEX\n{sort_by_personid(self.cohort.index_table.to_pandas())}")
+        logger.debug(
+            f"\nINDEX\n{sort_by_personid(self.cohort.index_table.to_pandas())}"
+        )
 
+        if (
+            "counts_inclusion" in self.test_infos.keys()
+            or "counts_exclusion" in self.test_infos.keys()
+        ):
+            self._test_inex_counts()
 
-        if 'counts_inclusion' in self.test_infos.keys() or 'counts_exclusion' in self.test_infos.keys():
-           self._test_inex_counts()
-
-        if 'index' in self.test_infos.keys():
-            self._test_index_table(result = self.cohort.index_table, expected = self.test_infos['index'])
+        if "index" in self.test_infos.keys():
+            self._test_index_table(
+                result=self.cohort.index_table, expected=self.test_infos["index"]
+            )
 
     def _create_artifact_directory(self, name_demo, path):
         if os.path.exists(path):
@@ -97,12 +111,9 @@ class CohortTestGenerator:
             if not os.path.exists(_path):
                 os.makedirs(_path)
 
-
     def _test_index_table(self, result, expected):
-        name = self.cohort.name+'_index'
-        expected_output_table = self.con.create_table(
-            name, expected
-        )
+        name = self.cohort.name + "_index"
+        expected_output_table = self.con.create_table(name, expected)
         join_on = ["PERSON_ID"]
         if self.test_values:
             join_on.append("VALUE")
@@ -111,7 +122,7 @@ class CohortTestGenerator:
         check_equality(
             result,
             expected_output_table,
-            test_name=self.cohort.name+'_index',
+            test_name=self.cohort.name + "_index",
             test_values=self.test_values,
             test_date=self.test_date,
             join_on=join_on,
