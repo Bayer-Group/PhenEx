@@ -135,6 +135,7 @@ class Cohort(Phenotype):
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table(n_threads)
             logger.debug("Characteristics computed.")
+            _ = self.table1
 
         if self.outcomes:
             logger.debug("Computing outcomes ...")
@@ -272,8 +273,8 @@ class Cohort(Phenotype):
     @property
     def table1(self):
         if self._table1 is None:
-            logger.debug("Generating Table1 report")
+            logger.debug("Generating Table1 report ...")
             reporter = Table1()
-            self._table1 = reporter.execute(self)
-            logger.debug("Table1 report generated")
+            self._table1 = reporter.execute(self).to_pandas()
+            logger.debug("Table1 report generated.")
         return self._table1
