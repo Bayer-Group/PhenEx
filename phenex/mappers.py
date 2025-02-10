@@ -220,6 +220,5 @@ OMOPs = {
     "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSourceTable,
     "PERSON_SOURCE": OMOPPersonTableSource,
     "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
-    "CONCEPT": OMOPConceptTable,
 }
 OMOPDomains = DomainsDictionary(OMOPs)
