@@ -198,6 +198,13 @@ class OMOPObservationPeriodTable(PhenexObservationPeriodTable):
     }
 
 
+class OMOPConceptTable(PhenexTable):
+    NAME_TABLE = "CONCEPT"
+    JOIN_KEYS = {"OMOPConditionOccurenceTable": ["CONCEPT_ID", "CONDITION_CONCEPT_ID"]}
+    KNOWN_FIELDS = ["CONCEPT_ID", "CONCEPT_NAME"]
+    DEFAULT_MAPPING = {}
+
+
 #
 # Domains
 #
@@ -215,3 +222,87 @@ OMOPs = {
     "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
 }
 OMOPDomains = DomainsDictionary(OMOPs)
+
+
+
+#
+# Vera Column Mappers
+#
+class VeraPersonTable(PhenexPersonTable):
+    NAME_TABLE = "PERSON"
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID", "DATE_OF_BIRTH": "BIRTH_DATETIME"}
+    JOIN_KEYS = {
+        "VeraConditionOccurenceTable": ["PERSON_ID"],
+        "VeraVisitDetailTable": ["PERSON_ID"],
+    }
+
+
+class VeraConditionOccurenceTable(CodeTable):
+    NAME_TABLE = "CONDITION_OCCURRENCE"
+    JOIN_KEYS = {
+        "VeraPersonTable": ["PERSON_ID"],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "CODE": "SOURCE_CODE",
+        "CODE_TYPE": "SOURCE_CODE_TYPE"
+    }
+
+
+class VeraDeathTable(PhenexTable):
+    NAME_TABLE = "PERSON"
+    JOIN_KEYS = {"VeraPersonTable": ["PERSON_ID"]}
+    KNOWN_FIELDS = ["PERSON_ID", "DEATH_DATETIME"]
+    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID", "DATE_OF_DEATH": "DEATH_DATETIME"}
+
+
+class VeraProcedureOccurrenceTable(CodeTable):
+    NAME_TABLE = "PROCEDURE_OCCURRENCE"
+    JOIN_KEYS = {
+        "VeraPersonTable": ["PERSON_ID"],
+        "VeraVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "CODE": "SOURCE_CODE",
+        "CODE_TYPE": "SOURCE_CODE_TYPE"
+    }
+
+
+class VeraDrugExposureTable(CodeTable):
+    NAME_TABLE = "DRUG_EXPOSURE"
+    JOIN_KEYS = {
+        "VeraPersonTable": ["PERSON_ID"],
+        "VeraVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "CODE": "SOURCE_CODE",
+        "CODE_TYPE": "SOURCE_CODE_TYPE"
+    }
+
+class VeraObservationPeriodTable(PhenexObservationPeriodTable):
+    NAME_TABLE = "OBSERVATION_PERIOD"
+    JOIN_KEYS = {"VeraPersonTable": ["PERSON_ID"]}
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "OBSERVATION_PERIOD_START_DATE": "OBSERVATION_PERIOD_START_DATE",
+        "OBSERVATION_PERIOD_END_DATE": "OBSERVATION_PERIOD_END_DATE",
+    }
+
+
+#
+# Domains
+#
+Veras = {
+    "PERSON": VeraPersonTable,
+    "CONDITION_OCCURRENCE": VeraConditionOccurenceTable,
+    "DEATH": VeraDeathTable,
+    "PROCEDURE_OCCURRENCE": VeraProcedureOccurrenceTable,
+    "DRUG_EXPOSURE": VeraDrugExposureTable,
+    "OBSERVATION_PERIOD": VeraObservationPeriodTable,
+}
+VeraDomains = DomainsDictionary(Veras)
