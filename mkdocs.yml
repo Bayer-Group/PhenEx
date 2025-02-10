@@ -1,8 +1,9 @@
-site_name: PhenEx - Automatic Electionic Phenotype Execution
+site_name: PhenEx - Automatic Electronic Phenotype Execution
 nav:
   - Introduction: index.md
   - Installation: installation.md
   - Data Model: data_model.md
+  - Roadmap: roadmap.md
   - Tutorials:
       - Phenex Study Tutorial: tutorials/PhenEx_Study_Tutorial.ipynb
       - CodelistPhenotype: tutorials/CodelistPhenotype_Tutorial.ipynb
@@ -39,6 +40,9 @@ nav:
   - License: LICENSE.md
 
 site_url: https://bayer-group.github.io/PhenEx/
+repo_url: https://github.com/bayer-group/PhenEx
+edit_uri: edit/main/docs/
+
 plugins:
   - mkdocstrings:
       handlers:
@@ -53,6 +57,7 @@ theme:
     primary: red
   features:
     - content.code.copy
+    - content.action.edit
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

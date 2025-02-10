@@ -48,9 +48,10 @@ class Cohort(Phenotype):
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
         characteristics: Optional[List[Phenotype]] = None,
+        outcomes: Optional[List[Phenotype]] = None,
     ):
         """
-        Initializes the Cohort with the specified entry criterion, inclusions, exclusions, and characteristics.
+        Initializes the Cohort with the specified entry criterion, inclusions, exclusions, characteristics, and outcomes.
 
         Args:
             name (str): The name of the cohort.
@@ -58,6 +59,7 @@ class Cohort(Phenotype):
             inclusions (Optional[List[Phenotype]]): A list of phenotypes that must be included in the cohort. Defaults to an empty list.
             exclusions (Optional[List[Phenotype]]): A list of phenotypes that must be excluded from the cohort. Defaults to an empty list.
             characteristics (Optional[List[Phenotype]]): A list of phenotypes representing baseline characteristics of the cohort. Defaults to an empty list.
+            outcomes (Optional[List[Phenotype]]): A list of phenotypes representing outcomes of the cohort. Defaults to an empty list.
         """
         super(Cohort, self).__init__()
         self.name = name
@@ -65,12 +67,14 @@ class Cohort(Phenotype):
         self.inclusions = inclusions if inclusions is not None else []
         self.exclusions = exclusions if exclusions is not None else []
         self.characteristics = characteristics if characteristics is not None else []
+        self.outcomes = outcomes if outcomes is not None else []
         self.index_table = None
         self.exclusions_table = None
         self.inclusions_table = None
         self.characteristics_table = None
+        self.outcomes_table = None
         self.children = (
-            [entry_criterion] + self.inclusions + self.exclusions + self.characteristics
+            [entry_criterion] + self.inclusions + self.exclusions + self.characteristics + self.outcomes
         )
         self._table1 = None
         logger.info(f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'")
@@ -129,6 +133,11 @@ class Cohort(Phenotype):
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table()
             logger.debug("Characteristics computed.")
+
+        if self.outcomes:
+            logger.debug("Computing outcomes ...")
+            self._compute_outcomes_table()
+            logger.debug("Outcomes computed.")
 
         logger.info(f"Cohort '{self.name}' execution completed.")
         return index_table
@@ -233,6 +242,23 @@ class Cohort(Phenotype):
         )
         logger.debug("Characteristics table computed")
         return self.characteristics_table
+
+    def _compute_outcomes_table(self) -> Table:
+        logger.debug("Computing outcomes table")
+        """
+        Retrieves and joins all outcome tables. Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
+
+        Returns:
+            Table: The join of all outcome tables.
+        """
+        for o in self.outcomes:
+            o.execute(self.subset_tables_index)
+        self.outcomes_table = hstack(
+            self.outcomes,
+            join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
+        )
+        logger.debug("Outcomes table computed")
+        return self.outcomes_table
 
     @property
     def table1(self):
