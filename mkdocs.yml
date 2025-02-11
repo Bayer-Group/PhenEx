@@ -40,6 +40,9 @@ nav:
   - License: LICENSE.md
 
 site_url: https://bayer-group.github.io/PhenEx/
+repo_url: https://github.com/bayer-group/PhenEx
+edit_uri: edit/main/docs/
+
 plugins:
   - mkdocstrings:
       handlers:
@@ -54,6 +57,7 @@ theme:
     primary: red
   features:
     - content.code.copy
+    - content.action.edit
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

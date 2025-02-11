@@ -11,6 +11,7 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 class AgePhenotype(Phenotype):
     """
     AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
@@ -91,13 +92,17 @@ class AgePhenotype(Phenotype):
 
         if "YEAR_OF_BIRTH" in person_table.columns:
             if "DATE_OF_BIRTH" in person_table.columns:
-                logger.debug("Year of birth and date of birth is present, taking date of birth where possible otherwise setting date of birth to june 6th")
+                logger.debug(
+                    "Year of birth and date of birth is present, taking date of birth where possible otherwise setting date of birth to june 6th"
+                )
                 date_of_birth = ibis.coalesce(
                     ibis.date(person_table.DATE_OF_BIRTH),
                     ibis.date(person_table.YEAR_OF_BIRTH, 6, 1),
                 )
             else:
-                logger.debug("Only year of birth is present in person table, setting birth date to june 6th")
+                logger.debug(
+                    "Only year of birth is present in person table, setting birth date to june 6th"
+                )
                 date_of_birth = ibis.date(person_table.YEAR_OF_BIRTH, 6, 1)
         else:
             logger.debug("Year of birth not present, taking date of birth")

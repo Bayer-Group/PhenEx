@@ -198,6 +198,13 @@ class OMOPObservationPeriodTable(PhenexObservationPeriodTable):
     }
 
 
+class OMOPConceptTable(PhenexTable):
+    NAME_TABLE = "CONCEPT"
+    JOIN_KEYS = {"OMOPConditionOccurenceTable": ["CONCEPT_ID", "CONDITION_CONCEPT_ID"]}
+    KNOWN_FIELDS = ["CONCEPT_ID", "CONCEPT_NAME"]
+    DEFAULT_MAPPING = {}
+
+
 #
 # Domains
 #
