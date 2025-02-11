@@ -249,9 +249,11 @@ class SnowflakeConnector:
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_view(
-            name=name_table, database=database, obj=table, overwrite=overwrite,
-                        schema=table.schema
-
+            name=name_table,
+            database=database,
+            obj=table,
+            overwrite=overwrite,
+            schema=table.schema,
         )
 
     def create_table(self, table, name_table=None, overwrite=False):
@@ -277,8 +279,11 @@ class SnowflakeConnector:
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_table(
-            name=name_table, database=database, obj=table, overwrite=overwrite,
-            schema=table.schema
+            name=name_table,
+            database=database,
+            obj=table,
+            overwrite=overwrite,
+            schema=table.schema,
         )
 
     def drop_table(self, name_table):
