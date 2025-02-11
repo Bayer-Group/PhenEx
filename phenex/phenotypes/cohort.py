@@ -88,7 +88,10 @@ class Cohort(Phenotype):
         )
 
     def execute(
-        self, tables: Dict[str, Table], con: "SnowflakeConnector" = None, n_threads: int = 1
+        self,
+        tables: Dict[str, Table],
+        con: "SnowflakeConnector" = None,
+        n_threads: int = 1,
     ) -> PhenotypeTable:
         """
         The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
@@ -204,7 +207,9 @@ class Cohort(Phenotype):
         logger.debug("Exclusions table computed")
         return self.exclusions_table
 
-    def _compute_inex_table(self, phenotypes: List["Phenotype"], n_threads: int) -> Table:
+    def _compute_inex_table(
+        self, phenotypes: List["Phenotype"], n_threads: int
+    ) -> Table:
         logger.debug("Computing inex table")
         """
         Compute the exclusion table from the individual exclusion phenotypes.
@@ -216,7 +221,10 @@ class Cohort(Phenotype):
         inex_table = self.entry_criterion.table.select(["PERSON_ID"])
         # execute all phenotypes and join the boolean column only
         with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            futures = [executor.submit(pt.execute, self.subset_tables_entry) for pt in phenotypes]
+            futures = [
+                executor.submit(pt.execute, self.subset_tables_entry)
+                for pt in phenotypes
+            ]
             for future in futures:
                 future.result()
         for pt in phenotypes:
@@ -248,7 +256,10 @@ class Cohort(Phenotype):
             Table: The join of all characteristic tables.
         """
         with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            futures = [executor.submit(c.execute, self.subset_tables_index) for c in self.characteristics]
+            futures = [
+                executor.submit(c.execute, self.subset_tables_index)
+                for c in self.characteristics
+            ]
             for future in futures:
                 future.result()
         self.characteristics_table = hstack(
@@ -267,7 +278,10 @@ class Cohort(Phenotype):
             Table: The join of all outcome tables.
         """
         with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            futures = [executor.submit(o.execute, self.subset_tables_index) for o in self.outcomes]
+            futures = [
+                executor.submit(o.execute, self.subset_tables_index)
+                for o in self.outcomes
+            ]
             for future in futures:
                 future.result()
         self.outcomes_table = hstack(
