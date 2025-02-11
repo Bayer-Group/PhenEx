@@ -65,12 +65,12 @@ class Waterfall(Reporter):
                 "waterfall": table.count().execute(),
             }
         )
-        return table.select('PERSON_ID')
+        return table.select("PERSON_ID")
 
     def append_delta(self, ds):
-        ds[0]['delta'] = None
-        for i in range(1,len(ds)):
+        ds[0]["delta"] = None
+        for i in range(1, len(ds)):
             d_current = ds[i]
-            d_previous = ds[i-1]
-            d_current['delta'] = d_current['waterfall'] - d_previous['waterfall']
+            d_previous = ds[i - 1]
+            d_current["delta"] = d_current["waterfall"] - d_previous["waterfall"]
         return ds

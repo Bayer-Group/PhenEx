@@ -3,7 +3,21 @@ name: Run unit tests
 on: push
 
 jobs:
-  run_test_pipeline:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository 🛎️
+        uses: actions/checkout@v3
+      - name: Install Python 3.12 🐍
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Set up runner 📦
+        run: pip3 install black==24.4.2
+      - name: "Black: Code Formatting 👮🏽‍♀️"
+        run: black --diff . && black -v --check .
+
+  test_pipeline:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
