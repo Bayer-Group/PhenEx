@@ -253,7 +253,7 @@ class SnowflakeConnector:
             database=database,
             obj=table,
             overwrite=overwrite,
-            schema=table.schema,
+            schema=table.schema(),
         )
 
     def create_table(self, table, name_table=None, overwrite=False):
@@ -283,7 +283,7 @@ class SnowflakeConnector:
             database=database,
             obj=table,
             overwrite=overwrite,
-            schema=table.schema,
+            schema=table.schema(),
         )
 
     def drop_table(self, name_table):
