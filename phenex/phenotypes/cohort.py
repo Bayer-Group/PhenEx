@@ -6,6 +6,7 @@ from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 from phenex.util import create_logger
+from concurrent.futures import ThreadPoolExecutor
 
 logger = create_logger(__name__)
 
@@ -87,7 +88,10 @@ class Cohort(Phenotype):
         )
 
     def execute(
-        self, tables: Dict[str, Table], con: "SnowflakeConnector" = None
+        self,
+        tables: Dict[str, Table],
+        con: "SnowflakeConnector" = None,
+        n_threads: int = 1,
     ) -> PhenotypeTable:
         """
         The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
@@ -95,6 +99,7 @@ class Cohort(Phenotype):
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
             con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
+            n_threads (int, optional): Number of threads to use for parallel execution. Defaults to 1.
 
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
@@ -103,7 +108,7 @@ class Cohort(Phenotype):
             ValueError: If the table returned by _execute() does not contain the required phenotype
             columns.
         """
-        logger.info(f"Executing cohort '{self.name}'...")
+        logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
         # Compute entry criterion
         logger.debug("Computing entry criterion ...")
         self.entry_criterion.execute(tables)
@@ -116,7 +121,7 @@ class Cohort(Phenotype):
         # Apply inclusions if any
         if self.inclusions:
             logger.debug("Applying inclusions ...")
-            self._compute_inclusions_table()
+            self._compute_inclusions_table(n_threads)
             include = self.inclusions_table.filter(
                 self.inclusions_table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
@@ -126,7 +131,7 @@ class Cohort(Phenotype):
         # Apply exclusions if any
         if self.exclusions:
             logger.debug("Applying exclusions ...")
-            self._compute_exclusions_table()
+            self._compute_exclusions_table(n_threads)
             exclude = self.exclusions_table.filter(
                 self.exclusions_table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
@@ -138,18 +143,19 @@ class Cohort(Phenotype):
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
             logger.debug("Computing characteristics ...")
-            self._compute_characteristics_table()
+            self._compute_characteristics_table(n_threads)
             logger.debug("Characteristics computed.")
+            _ = self.table1
 
         if self.outcomes:
             logger.debug("Computing outcomes ...")
-            self._compute_outcomes_table()
+            self._compute_outcomes_table(n_threads)
             logger.debug("Outcomes computed.")
 
         logger.info(f"Cohort '{self.name}' execution completed.")
         return index_table
 
-    def _compute_inclusions_table(self) -> Table:
+    def _compute_inclusions_table(self, n_threads: int) -> Table:
         logger.debug("Computing inclusions table")
         """
         Compute the inclusions table from the individual inclusions phenotypes.
@@ -163,7 +169,7 @@ class Cohort(Phenotype):
         # create an inex table;
         # rows are persons that fulfill the entry criterion
         # columns are inclusion criteria with true of false if that column pt criteria are fulfilled
-        inclusions_table = self._compute_inex_table(self.inclusions)
+        inclusions_table = self._compute_inex_table(self.inclusions, n_threads)
 
         # create the final boolean inclusion column
         # this is true only if all inclusion criteria are true
@@ -176,7 +182,7 @@ class Cohort(Phenotype):
         logger.debug("Inclusions table computed")
         return self.inclusions_table
 
-    def _compute_exclusions_table(self) -> Table:
+    def _compute_exclusions_table(self, n_threads: int) -> Table:
         logger.debug("Computing exclusions table")
         """
         Compute the exclusions table from the individual exclusions phenotypes.
@@ -188,7 +194,7 @@ class Cohort(Phenotype):
         # create an inex table;
         # rows are persons that fulfill the entry criterion
         # columns are inclusion criteria with true of false if fulfill
-        exclusions_table = self._compute_inex_table(self.exclusions)
+        exclusions_table = self._compute_inex_table(self.exclusions, n_threads)
 
         # create the boolean inclusions column
         # this is true only if all inclusions criteria are true
@@ -201,7 +207,9 @@ class Cohort(Phenotype):
         logger.debug("Exclusions table computed")
         return self.exclusions_table
 
-    def _compute_inex_table(self, phenotypes: List["Phenotype"]) -> Table:
+    def _compute_inex_table(
+        self, phenotypes: List["Phenotype"], n_threads: int
+    ) -> Table:
         logger.debug("Computing inex table")
         """
         Compute the exclusion table from the individual exclusion phenotypes.
@@ -212,8 +220,14 @@ class Cohort(Phenotype):
         """
         inex_table = self.entry_criterion.table.select(["PERSON_ID"])
         # execute all phenotypes and join the boolean column only
+        with ThreadPoolExecutor(max_workers=n_threads) as executor:
+            futures = [
+                executor.submit(pt.execute, self.subset_tables_entry)
+                for pt in phenotypes
+            ]
+            for future in futures:
+                future.result()
         for pt in phenotypes:
-            pt.execute(self.subset_tables_entry)
             pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
                 **{
                     f"{pt.name}_BOOLEAN": "BOOLEAN",
@@ -231,7 +245,7 @@ class Cohort(Phenotype):
         logger.debug("Inex table computed")
         return inex_table
 
-    def _compute_characteristics_table(self) -> Table:
+    def _compute_characteristics_table(self, n_threads: int) -> Table:
         logger.debug("Computing characteristics table")
         """
         Retrieves and joins all characteristic tables.
@@ -241,8 +255,13 @@ class Cohort(Phenotype):
         Returns:
             Table: The join of all characteristic tables.
         """
-        for c in self.characteristics:
-            c.execute(self.subset_tables_index)
+        with ThreadPoolExecutor(max_workers=n_threads) as executor:
+            futures = [
+                executor.submit(c.execute, self.subset_tables_index)
+                for c in self.characteristics
+            ]
+            for future in futures:
+                future.result()
         self.characteristics_table = hstack(
             self.characteristics,
             join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
@@ -250,7 +269,7 @@ class Cohort(Phenotype):
         logger.debug("Characteristics table computed")
         return self.characteristics_table
 
-    def _compute_outcomes_table(self) -> Table:
+    def _compute_outcomes_table(self, n_threads: int) -> Table:
         logger.debug("Computing outcomes table")
         """
         Retrieves and joins all outcome tables. Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
@@ -258,8 +277,13 @@ class Cohort(Phenotype):
         Returns:
             Table: The join of all outcome tables.
         """
-        for o in self.outcomes:
-            o.execute(self.subset_tables_index)
+        with ThreadPoolExecutor(max_workers=n_threads) as executor:
+            futures = [
+                executor.submit(o.execute, self.subset_tables_index)
+                for o in self.outcomes
+            ]
+            for future in futures:
+                future.result()
         self.outcomes_table = hstack(
             self.outcomes,
             join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
@@ -270,8 +294,8 @@ class Cohort(Phenotype):
     @property
     def table1(self):
         if self._table1 is None:
-            logger.debug("Generating Table1 report")
+            logger.debug("Generating Table1 report ...")
             reporter = Table1()
-            self._table1 = reporter.execute(self)
-            logger.debug("Table1 report generated")
+            self._table1 = reporter.execute(self).to_pandas()
+            logger.debug("Table1 report generated.")
         return self._table1
