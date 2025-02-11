@@ -9,6 +9,7 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
@@ -74,10 +75,16 @@ class Cohort(Phenotype):
         self.characteristics_table = None
         self.outcomes_table = None
         self.children = (
-            [entry_criterion] + self.inclusions + self.exclusions + self.characteristics + self.outcomes
+            [entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
         )
         self._table1 = None
-        logger.info(f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'")
+        logger.info(
+            f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
+        )
 
     def execute(
         self, tables: Dict[str, Table], con: "SnowflakeConnector" = None

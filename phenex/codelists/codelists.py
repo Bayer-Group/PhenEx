@@ -330,9 +330,9 @@ class Codelist:
 
     @classmethod
     def from_medconb(cls, codelist):
-        '''
+        """
         Converts a MedConB style Codelist into a PhenEx style codelist.
-        '''
+        """
         phenex_codelist = {}
         for codeset in codelist.codesets:
             phenex_codelist[codeset.ontology] = [c[0] for c in codeset.codes]
