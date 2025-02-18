@@ -5,7 +5,9 @@ from phenex.tables import (
     PHENOTYPE_TABLE_COLUMNS,
     is_phenex_phenotype_table,
 )
+from phenex.util import create_logger
 
+logger = create_logger(__name__)
 
 class Phenotype:
     """
@@ -50,9 +52,13 @@ class Phenotype:
             ValueError: If the table returned by _execute() does not contain the required phenotype
             columns.
         """
+        logger.info(f"Phenotype '{self.name}': executing...")
         for child in self.children:
             if child.table is None:
+                logger.debug(f"Phenotype {self.name}: executing child phenotype '{child.name}'...")
                 child.execute(tables)
+            else:
+                logger.debug(f"Phenotype {self.name}: skipping already computed child phenotype '{child.name}'.")
 
         table = self._execute(tables).mutate(BOOLEAN=True)
 
@@ -63,7 +69,7 @@ class Phenotype:
 
         self.table = table.select(PHENOTYPE_TABLE_COLUMNS)
         assert is_phenex_phenotype_table(self.table)
-
+        logger.info(f"Phenotype '{self.name}': execution completed.")
         return self.table
 
     @property

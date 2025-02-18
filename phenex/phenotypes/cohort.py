@@ -296,6 +296,6 @@ class Cohort(Phenotype):
         if self._table1 is None:
             logger.debug("Generating Table1 report ...")
             reporter = Table1()
-            self._table1 = reporter.execute(self).to_pandas()
+            self._table1 = reporter.execute(self)
             logger.debug("Table1 report generated.")
         return self._table1

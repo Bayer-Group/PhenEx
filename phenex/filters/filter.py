@@ -23,13 +23,13 @@ class Filter:
             Table: The filtered table.
         """
         input_columns = table.columns
-        filtered_table = table.filter(self._get_predicate(table))
+        filtered_table = self._filter(table)
         if not set(input_columns) <= set(filtered_table.columns):
             raise ValueError(f"Filter must not remove columns.")
 
         return type(table)(filtered_table.select(input_columns))
     
-    def _get_predicate(self, table: Table) -> Table:
+    def _filter(self, table: Table) -> Table:
         """
         Returns the logical condition that the filter is applying.
         """
@@ -41,7 +41,7 @@ class Filter:
     def __or__(self, other):
         return OrFilter(self, other)
 
-    def __neg__(self):
+    def __invert__(self):
         return NotFilter(self)
     
 
@@ -56,6 +56,15 @@ class AndFilter(Filter):
 
     def _get_predicate(self, table: Table) -> Table:
         return self.filter1._get_predicate(table) & self.filter2._get_predicate(table)
+    
+    def filter(self, table: Table) -> Table:
+        table = self.filter1.filter(table)
+        return self.filter2.filter(table)
+
+    def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
+        table = self.filter1.autojoin_filter(table, tables)
+        return self.filter2.autojoin_filter(table, tables)
+
 
 class OrFilter(Filter):
     """
@@ -68,6 +77,17 @@ class OrFilter(Filter):
 
     def _get_predicate(self, table: Table) -> Table:
         return self.filter1._get_predicate(table) | self.filter2._get_predicate(table)
+    
+    def filter(self, table: Table) -> Table:
+        table1 = self.filter1.filter(table).table
+        table2 = self.filter2.filter(table).table
+        return type(table)(table1.union(table2).distinct())
+
+    def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
+        table1 = self.filter1.autojoin_filter(table, tables).table
+        table2 = self.filter2.autojoin_filter(table, tables).table
+        return type(table)(table1.union(table2, distinct=True))
+    
 
 class NotFilter(Filter):
     """
@@ -79,3 +99,11 @@ class NotFilter(Filter):
 
     def _get_predicate(self, table: Table) -> Table:
         return ~self.filter._get_predicate(table)
+
+    def filter(self, table: Table) -> Table:
+        filtered_table = self.filter.filter(table).table
+        return type(table)(table.difference(filtered_table))
+    
+    def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
+        filtered_table = self.filter.autojoin_filter(table, tables).table
+        return type(table)(table.difference(filtered_table))
