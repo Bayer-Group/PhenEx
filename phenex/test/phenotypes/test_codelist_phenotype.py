@@ -12,8 +12,10 @@ from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 from phenex.filters.categorical_filter import CategoricalFilter
 
-import ibis 
-ibis.options.interactive =True
+import ibis
+
+ibis.options.interactive = True
+
 
 class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "clpt"
@@ -664,7 +666,9 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
-class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(PhenotypeTestGenerator):
+class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(
+    PhenotypeTestGenerator
+):
     name_space = "clpt_categorical_filter_logic"
 
     def define_input_tables(self):
@@ -755,7 +759,7 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(Phenoty
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
-                categorical_filter= ~CategoricalFilter(
+                categorical_filter=~CategoricalFilter(
                     allowed_values=["z1"], column_name="z"
                 ),
             ),
@@ -828,7 +832,9 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
         return [test1, test2, test3]
 
 
-class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator(PhenotypeTestGenerator):
+class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator(
+    PhenotypeTestGenerator
+):
     name_space = "clpt_categorical_filter_autojoin"
 
     def define_input_tables(self):
@@ -839,7 +845,7 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
         df["CODE"] = "c1"
         df["CODE_TYPE"] = "ICD10CM"
         df["DATE"] = datetime.datetime.strptime("10-10-2021", "%m-%d-%Y")
-        df['DX_POS'] = ['first'] * 5 + ['second'] * 5
+        df["DX_POS"] = ["first"] * 5 + ["second"] * 5
 
         df2 = pd.DataFrame()
         df2["PERSON_ID"] = [f"P{i}" for i in range(N)]
@@ -880,12 +886,14 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
-                categorical_filter= a_cat_filter | b_cat_filter
+                categorical_filter=a_cat_filter | b_cat_filter,
             ),
         }
 
-        primary_pos =  CategoricalFilter(
-            allowed_values=["first"], column_name="DX_POS", domain="condition_occurrence"
+        primary_pos = CategoricalFilter(
+            allowed_values=["first"],
+            column_name="DX_POS",
+            domain="condition_occurrence",
         )
         c2 = {
             "name": "a_and_primary_pos_autojoin_table",
@@ -893,7 +901,7 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
-                categorical_filter= a_cat_filter & primary_pos
+                categorical_filter=a_cat_filter & primary_pos,
             ),
         }
 
@@ -903,21 +911,20 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
-                categorical_filter= (a_cat_filter & primary_pos) | b_cat_filter
+                categorical_filter=(a_cat_filter & primary_pos) | b_cat_filter,
             ),
         }
-
 
         c_cat_filter = CategoricalFilter(
             allowed_values=["c"], column_name="flag1", domain="encounter"
         )
         c4 = {
             "name": "a_and_not_primary_pos_or_b_autojoin_table",
-            "persons": [f"P{i}" for i in range(2, 4)] +  [f"P{i}" for i in range(5, 10)],
+            "persons": [f"P{i}" for i in range(2, 4)] + [f"P{i}" for i in range(5, 10)],
             "phenotype": CodelistPhenotype(
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="condition_occurrence",
-                categorical_filter= (c_cat_filter & ~primary_pos) | b_cat_filter
+                categorical_filter=(c_cat_filter & ~primary_pos) | b_cat_filter,
             ),
         }
 
@@ -932,9 +939,11 @@ def test_categorical_filter_logic():
     tg = CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator()
     tg.run_tests()
 
+
 def test_categorical_filter_logic_autojoin():
     tg = CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator()
     tg.run_tests()
+
 
 def test_fuzzy_match():
     tg = CodelistPhenotypeFuzzyMatchTestGenerator()
