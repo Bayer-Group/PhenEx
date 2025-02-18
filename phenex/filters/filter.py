@@ -3,7 +3,7 @@ from ibis.expr.types.relations import Table
 
 class Filter:
     """
-    Filters operate on single tables and return these tables with rows removed. Filters are generally used within a Phenotype as a subquery. Filters may add columns but may not remove columns. All classes in the filters module should subclass this class. Subclasses must implement the _get_predicate() method, which returns the row-wise logical value by which to filter the input table.
+    Filters operate on single tables and return these tables with rows removed. Filters are generally used within a Phenotype as a subquery. Filters know about their dependencies but cannot trigger recursive execution. Fitlers can add columns but may not remove columns. All classes in the filters module should subclass this class. Subclasses must implement the _filter method.
 
     Methods:
         filter(table: Table) -> Table: Filters the given table.
