@@ -44,7 +44,7 @@ class ValueFilter(Filter):
         self.max = max
         super(ValueFilter, self).__init__()
 
-    def _filter(self, table: MeasurementTable):
+    def _get_predicate(self, table: MeasurementTable):
         # TODO assert that value column is in table
         # assert (
         #    "INDEX_DATE" in table.columns
@@ -68,4 +68,4 @@ class ValueFilter(Filter):
                 raise ValueError("Operator for max days be < or <=")
         if conditions:
             table = table.filter(conditions)
-        return table
+        return conditions or True

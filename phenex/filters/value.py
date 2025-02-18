@@ -1,9 +1,8 @@
 from typing import Union
 from datetime import date
-from phenex.filters.filter import Filter
 
 
-class Value(Filter):
+class Value:
     def __init__(self, operator: str, value: Union[int, float, date]):
         self.operator = operator
         self.value = value
@@ -15,23 +14,6 @@ class Value(Filter):
             "=",
         ], "Operator must be >, >=, <, <=, or ="
         super(Value, self).__init__()
-
-    def _filter(self, table, column):
-
-        if self.operator == ">":
-            table = getattr(table, column) > self.value
-        elif self.operator == ">=":
-            table = getattr(table, column) >= self.value
-        elif self.operator == "<":
-            table = getattr(table, column) < self.value
-        elif self.operator == "<=":
-            table = getattr(table, column) <= self.value
-        elif self.operator == "=":
-            table = getattr(table, column) == self.value
-        else:
-            raise ValueError("Operator must be >, >=, <, <=, or =")
-
-        return table
 
 
 class GreaterThan(Value):

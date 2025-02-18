@@ -32,16 +32,17 @@ class CodelistFilter(Filter):
             ]
         return []
 
-    def _filter(self, code_table: CodeTable) -> CodeTable:
+    def _get_predicate(self, code_table: CodeTable) -> CodeTable:
 
         assert is_phenex_code_table(code_table)
 
         if self.codelist.fuzzy_match:
-            return self._filter_fuzzy_codelist(code_table)
+            return self._get_predicate_fuzzy_codelist(code_table)
         else:
-            return self._filter_literal_codelist(code_table)
+            return self._get_predicate_literal_codelist(code_table)
 
-    def _filter_fuzzy_codelist(self, code_table):
+    def _get_predicate_fuzzy_codelist(self, code_table):
+
         filter_condition = False
         for code_type, codelist in self.codelist.codelist.items():
             codelist = [str(code) for code in codelist]
@@ -55,29 +56,23 @@ class CodelistFilter(Filter):
                     codelist
                 )
 
-        filtered_table = code_table.filter(filter_condition)
-        return filtered_table
+        return filter_condition
 
-    def _filter_literal_codelist(self, code_table):
+    def _get_predicate_literal_codelist(self, code_table):
 
-        # Generate the codelist table as an Ibis literal set
-        codelist_df = pd.DataFrame(
-            self.codelist_as_tuples, columns=["code_type", "code"]
-        ).fillna("")
-        codelist_table = ibis.memtable(codelist_df)
+        # IN and JOIN have similar / identical performance? 
+        # https://stackoverflow.com/questions/1200295/sql-join-vs-in-performance
+        filter_condition = False
+        for code_type, codelist in self.codelist.codelist.items():
+            codelist = [str(code) for code in codelist]
+            if self.codelist.use_code_type:
+                filter_condition = filter_condition | (
+                    (code_table.CODE_TYPE == code_type)
+                    & (code_table.CODE.isin(codelist))
+                )
+            else:
+                filter_condition = filter_condition | code_table.CODE.isin(
+                    codelist
+                )
 
-        # Create a join condition based on code and possibly code_type
-        code_column = code_table.CODE
-        if self.codelist.use_code_type:
-            code_type_column = code_table.CODE_TYPE
-            join_condition = (code_column == codelist_table.code) & (
-                code_type_column == codelist_table.code_type
-            )
-        else:
-            join_condition = code_column == codelist_table.code
-
-        # return table with downselected columns, of same type as input table
-        filtered_table = code_table.inner_join(codelist_table, join_condition).select(
-            code_table.columns
-        )
-        return filtered_table
+        return filter_condition

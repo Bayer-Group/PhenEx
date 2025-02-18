@@ -30,8 +30,8 @@ class CategoricalFilter(Filter):
         self.domain = domain
         super(CategoricalFilter, self).__init__()
 
-    def _filter(self, table: "PhenexTable"):
-        return table.filter(table[self.column_name].isin(self.allowed_values))
+    def _get_predicate(self, table: "PhenexTable"):
+        return table[self.column_name].isin(self.allowed_values)
 
     def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
         if self.column_name not in table.columns:

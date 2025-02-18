@@ -23,7 +23,7 @@ class DateRangeFilter:
         self.max_date = max_date
         super(DateRangeFilter, self).__init__()
 
-    def filter(self, table: EventTable):
+    def _get_predicate(self, table: EventTable):
 
         assert is_phenex_event_table(table)
 
@@ -33,9 +33,4 @@ class DateRangeFilter:
         if self.max_date is not None:
             conditions.append(table.EVENT_DATE <= self.max_date)
 
-        if conditions:
-            output_table = table.filter(conditions)
-        else:
-            output_table = table
-
-        return output_table
+        return conditions or True
