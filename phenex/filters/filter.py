@@ -1,4 +1,5 @@
 from ibis.expr.types.relations import Table
+from phenex.tables import PhenexTable
 
 
 class Filter:
@@ -12,15 +13,15 @@ class Filter:
     def __init__(self):
         pass
 
-    def filter(self, table: Table) -> Table:
+    def filter(self, table: PhenexTable) -> PhenexTable:
         """
-        Filters the given table.
+        Filters the given table according to the rules of the Filter.
 
         Args:
-            table (Table): The table to be filtered.
+            table (PhenexTable): The table to be filtered.
 
         Returns:
-            Table: The filtered table.
+            PhenexTable: The filtered table. The returned table has the exact same schema as the input table but has rows removed.
         """
         input_columns = table.columns
         filtered_table = self._filter(table)
@@ -31,7 +32,7 @@ class Filter:
 
     def _filter(self, table: Table) -> Table:
         """
-        Returns the logical condition that the filter is applying.
+        Performs the operations required to filter the table.
         """
         raise NotImplementedError()
 
