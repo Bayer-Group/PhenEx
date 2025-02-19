@@ -78,23 +78,18 @@ class CategoricalFilter(Filter):
             # TODO downselect to original columns
         return table.filter(table[self.column_name].isin(self.allowed_values))
 
+
 # Example 0: Filter for sex = 'Female' (domain = person)
 sex_filter = CategoricalFilter(
-    column_name="sex",
-    allowed_values=["Female"],
-    domain="person"
+    column_name="sex", allowed_values=["Female"], domain="person"
 )
 
 # Example 1: Filter for inpatient (domain = encounter)
 inpatient_filter = CategoricalFilter(
-    column_name="encounter_type",
-    allowed_values=["inpatient"],
-    domain="encounter"
+    column_name="encounter_type", allowed_values=["inpatient"], domain="encounter"
 )
 
 # Example 2: Filter for primary diagnosis position (domain = condition_occurrence)
 primary_diagnosis_filter = CategoricalFilter(
-    column_name="diagnosis_position",
-    allowed_values=[1],
-    domain="condition_occurrence"
+    column_name="diagnosis_position", allowed_values=[1], domain="condition_occurrence"
 )
