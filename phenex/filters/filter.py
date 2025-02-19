@@ -55,9 +55,6 @@ class AndFilter(Filter):
         self.filter1 = filter1
         self.filter2 = filter2
 
-    def _get_predicate(self, table: Table) -> Table:
-        return self.filter1._get_predicate(table) & self.filter2._get_predicate(table)
-
     def filter(self, table: Table) -> Table:
         table = self.filter1.filter(table)
         return self.filter2.filter(table)
@@ -75,9 +72,6 @@ class OrFilter(Filter):
     def __init__(self, filter1, filter2):
         self.filter1 = filter1
         self.filter2 = filter2
-
-    def _get_predicate(self, table: Table) -> Table:
-        return self.filter1._get_predicate(table) | self.filter2._get_predicate(table)
 
     def filter(self, table: Table) -> Table:
         table1 = self.filter1.filter(table).table
@@ -97,9 +91,6 @@ class NotFilter(Filter):
 
     def __init__(self, filter):
         self.filter = filter
-
-    def _get_predicate(self, table: Table) -> Table:
-        return ~self.filter._get_predicate(table)
 
     def filter(self, table: Table) -> Table:
         filtered_table = self.filter.filter(table).table
