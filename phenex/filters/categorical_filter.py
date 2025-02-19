@@ -5,18 +5,53 @@ from ibis.expr.types.relations import Table
 
 class CategoricalFilter(Filter):
     """
-    This class filters events in an EventTable based on specified categorical values
+    This class filters events in an EventTable based on specified categorical values.
 
     Attributes:
-        category (Optional[str]): The category to filter events by.
+        column_name (str): The name of the column to filter by.
+        allowed_values (List[Union[str, int]]): The list of allowed values for the column.
+        domain (Optional[str]): The domain to which the filter applies.
 
     Methods:
-        _filter(table: MeasurementTable) -> MeasurementTable:
-            Filters the given MeasurementTable based on the specified category.
+        filter(table: PhenexTable) -> PhenexTable:
+            Filters the given PhenexTable based on the specified column and allowed values.
             Parameters:
-                table (Measurement): The table containing events to be filtered.
+                table (PhenexTable): The table containing events to be filtered.
             Returns:
-                MeasurementTable: The filtered MeasurementTable with events matching the category.
+                PhenexTable: The filtered PhenexTable with events matching the allowed values.
+
+        autojoin_filter(table: PhenexTable, tables: dict = None) -> PhenexTable:
+            Automatically joins the necessary tables and applies the filter. Use when the input table does not contain the column that defines the filter. For this to work, the tables must specify all required join keys. See DomainsDictionary for details.
+            Parameters:
+                table (PhenexTable): The table containing events to be filtered.
+                tables (dict): A dictionary of tables for joining.
+            Returns:
+                PhenexTable: The filtered PhenexTable with events matching the allowed values.
+
+    Examples:
+        # Example 1: Filter for SEX = 'Female'
+        sex_filter = CategoricalFilter(
+            column_name="SEX",
+            allowed_values=["Female"],
+            domain="PERSON"
+        )
+
+        # Example 2: Filter for inpatient (domain = encounter)
+        inpatient_filter = CategoricalFilter(
+            column_name="ENCOUNTER_TYPE",
+            allowed_values=["INPATIENT"],
+            domain="ENCOUNTER"
+        )
+
+        # Example 3: Filter for primary diagnosis position
+        primary_diagnosis_filter = CategoricalFilter(
+            column_name="DIAGNOSIS_POSITION",
+            allowed_values=[1],
+            domain="DIAGNOSIS"
+        )
+
+        # Example 4: Applying multiple filters in combination
+        inpatient_primary_position = inpatient_filter & primary_diagnosis_filter
     """
 
     def __init__(
@@ -42,3 +77,24 @@ class CategoricalFilter(Filter):
             table = table.join(tables[self.domain], domains=tables)
             # TODO downselect to original columns
         return table.filter(table[self.column_name].isin(self.allowed_values))
+
+# Example 0: Filter for sex = 'Female' (domain = person)
+sex_filter = CategoricalFilter(
+    column_name="sex",
+    allowed_values=["Female"],
+    domain="person"
+)
+
+# Example 1: Filter for inpatient (domain = encounter)
+inpatient_filter = CategoricalFilter(
+    column_name="encounter_type",
+    allowed_values=["inpatient"],
+    domain="encounter"
+)
+
+# Example 2: Filter for primary diagnosis position (domain = condition_occurrence)
+primary_diagnosis_filter = CategoricalFilter(
+    column_name="diagnosis_position",
+    allowed_values=[1],
+    domain="condition_occurrence"
+)
