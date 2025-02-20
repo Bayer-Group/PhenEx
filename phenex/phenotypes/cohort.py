@@ -123,19 +123,20 @@ class Cohort(Phenotype):
             tables, self.entry_criterion.table
         )
         if write_subset_tables:
+            logger.debug("Writing subset entry tables ...")
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
-                logger.debug("Writing subset entry tables ...")
-                futures = [
-                    executor.submit(
+                futures = {}
+                for key, table in self.subset_tables_entry.items():
+                    futures[key] = executor.submit(
                         con.create_table,
                         table.table,
                         f"{self.name}__subset_entry_{key}",
                         overwrite,
                     )
-                    for key, table in self.subset_tables_entry.items()
-                ]
-                for future in futures:
-                    future.result()
+                for key, future in futures.items():
+                    self.subset_tables_entry[key] = type(self.subset_tables_entry[key])(
+                        future.result()
+                    )
 
         index_table = self.entry_criterion.table
 
@@ -184,17 +185,18 @@ class Cohort(Phenotype):
         if write_subset_tables:
             logger.debug("Writing subset index tables ...")
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
-                futures = [
-                    executor.submit(
+                futures = {}
+                for key, table in self.subset_tables_index.items():
+                    futures[key] = executor.submit(
                         con.create_table,
                         table.table,
                         f"{self.name}__subset_index_{key}",
                         overwrite,
                     )
-                    for key, table in self.subset_tables_index.items()
-                ]
-                for future in futures:
-                    future.result()
+                for key, future in futures.items():
+                    self.subset_tables_index[key] = type(self.subset_tables_index[key])(
+                        future.result()
+                    )
 
         if self.characteristics:
             logger.debug("Computing characteristics ...")
