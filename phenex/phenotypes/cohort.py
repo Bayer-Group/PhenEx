@@ -100,8 +100,8 @@ class Cohort(Phenotype):
 
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
-            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None. If passed, will write index, inclusions, exclusions, characteristics and outcomes tables.
-            write_subset_tables (bool, optional): Whether to write subset tables in addition to the standard intermediate tables.
+            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None. If passed, will write entry, inclusions, exclusions, index, characteristics and outcomes tables.
+            write_subset_tables (bool, optional): Whether to write subset tables (subset-entry and subset-index) in addition to the standard intermediate tables.
             overwrite (bool, optional): Whether to overwrite existing tables when writing to disk.
             n_threads (int, optional): Number of threads to use for parallel execution. Defaults to 1.
 
