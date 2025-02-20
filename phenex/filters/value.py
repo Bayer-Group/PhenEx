@@ -3,6 +3,16 @@ from datetime import date
 
 
 class Value:
+    """
+    The Value class is used to define threshold on values in databases. Importantly, Value's define not just numeric values but also the boundary (including or excluding the endpoint).
+
+    Attributes:
+    operator (str): The comparison operator, one of '>', '>=', '<', '<=', '='.
+    value (Union[int, float, date]): The threshold value.
+
+    Examples:
+    greater_than_zero = Value(0, '>')
+    """
     def __init__(self, operator: str, value: Union[int, float, date]):
         self.operator = operator
         self.value = value
