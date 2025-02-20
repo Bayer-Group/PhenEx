@@ -30,7 +30,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
 
     Example:
         >>> codelist = Codelist(name="example_codelist", codes=[...])
-        >>> date_range = DateRangeFilter(start_date="2020-01-01", end_date="2020-12-31")
+        >>> date_range = DateRangeFilter(min_date="2020-01-01", max_date="2020-12-31")
         >>> phenotype = CodelistPhenotype(
         ...     name="example_phenotype",
         ...     domain="CONDITION_OCCURRENCE",
