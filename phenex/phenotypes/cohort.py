@@ -127,8 +127,8 @@ class Cohort(Phenotype):
                 logger.debug(f"Writing subset entry table ({key}) ...")
                 self.subset_tables_entry[key] = type(table)(
                     con.create_table(
-                        f"{self.name}__subset_entry_{key}",
                         table.table,
+                        f"{self.name}__subset_entry_{key}",
                         overwrite=overwrite,
                     )
                 )
@@ -172,18 +172,18 @@ class Cohort(Phenotype):
         self.index_table = index_table
         if con:
             logger.debug("Writing index table ...")
-            self.index_table = index_table = con.create_table(
+            self.index_table = con.create_table(
                 index_table, f"{self.name}__index", overwrite=overwrite
             )
 
-        self.subset_tables_index = subset_and_add_index_date(tables, index_table)
+        self.subset_tables_index = subset_and_add_index_date(tables, self.index_table)
         if write_subset_tables:
             for key, table in self.subset_tables_index.items():
                 logger.debug(f"Writing subset index table ({key}) ...")
                 self.subset_tables_entry[key] = type(table)(
                     con.create_table(
-                        f"{self.name}__subset_index_{key}",
                         table.table,
+                        f"{self.name}__subset_index_{key}",
                         overwrite=overwrite,
                     )
                 )
