@@ -91,6 +91,7 @@ class Cohort(Phenotype):
         self,
         tables: Dict[str, Table],
         con: "SnowflakeConnector" = None,
+        overwrite: bool = False,
         n_threads: int = 1,
     ) -> PhenotypeTable:
         """
@@ -99,14 +100,11 @@ class Cohort(Phenotype):
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
             con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite existing tables when writing to disk.
             n_threads (int, optional): Number of threads to use for parallel execution. Defaults to 1.
 
         Returns:
-            PhenotypeTable: The resulting phenotype table containing the required columns.
-
-        Raises:
-            ValueError: If the table returned by _execute() does not contain the required phenotype
-            columns.
+            PhenotypeTable: The index table corresponding the cohort.
         """
         logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
         # Compute entry criterion
@@ -114,8 +112,9 @@ class Cohort(Phenotype):
         self.entry_criterion.execute(tables)
         if con:
             logger.debug("Writing entry table ...")
-            con.create_table(self.entry_criterion.table, f"{self.name}__entry")
-            self.entry_criterion.table = con.get_dest_table(f"{self.name}__entry")
+            self.entry_criterion.table = con.create_table(
+                self.entry_criterion.table, f"{self.name}__entry", overwrite=overwrite
+            )
 
         logger.debug("Entry criterion computed.")
         self.subset_tables_entry = subset_and_add_index_date(
@@ -129,8 +128,11 @@ class Cohort(Phenotype):
             self._compute_inclusions_table(n_threads)
             if con:
                 logger.debug("Writing inclusions table ...")
-                con.create_table(self.inclusions_table, f"{self.name}__inclusions")
-                self.inclusions_table = con.get_dest_table(f"{self.name}__inclusions")
+                self.inclusions_table = con.create_table(
+                    self.inclusions_table,
+                    f"{self.name}__inclusions",
+                    overwrite=overwrite,
+                )
             include = self.inclusions_table.filter(
                 self.inclusions_table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
@@ -143,8 +145,11 @@ class Cohort(Phenotype):
             self._compute_exclusions_table(n_threads)
             if con:
                 logger.debug("Writing exclusions table ...")
-                con.create_table(self.exclusions_table, f"{self.name}__exclusions")
-                self.exclusions_table = con.get_dest_table(f"{self.name}__exclusions")
+                self.exclusions_table = con.create_table(
+                    self.exclusions_table,
+                    f"{self.name}__exclusions",
+                    overwrite=overwrite,
+                )
             exclude = self.exclusions_table.filter(
                 self.exclusions_table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
@@ -154,8 +159,9 @@ class Cohort(Phenotype):
         self.index_table = index_table
         if con:
             logger.debug("Writing index table ...")
-            con.create_table(index_table, f"{self.name}__index")
-            self.index_table = index_table = con.get_dest_table(f"{self.name}__index")
+            self.index_table = index_table = con.create_table(
+                index_table, f"{self.name}__index", overwrite=overwrite
+            )
 
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
@@ -163,11 +169,10 @@ class Cohort(Phenotype):
             self._compute_characteristics_table(n_threads)
             if con:
                 logger.debug("Writing characteristics table ...")
-                con.create_table(
-                    self.characteristics_table, f"{self.name}__characteristics"
-                )
-                self.characteristics_table = con.get_dest_table(
-                    f"{self.name}__characteristics"
+                self.characteristics_table = con.create_table(
+                    self.characteristics_table,
+                    f"{self.name}__characteristics",
+                    overwrite=overwrite,
                 )
             logger.debug("Characteristics computed.")
             _ = self.table1
