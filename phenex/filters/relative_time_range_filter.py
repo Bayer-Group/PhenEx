@@ -17,10 +17,6 @@ class RelativeTimeRangeFilter(Filter):
             option is mutually exclusive with min_years.
         max_days (Optional[int]): Maximum number of days from the anchor date to filter events. This
             option is mutually exclusive with max_years.
-        min_years (Optional[Value]): Minimum number of years from the anchor date to filter events. This
-            option is mutually exclusive with min_days.
-        max_years (Optional[Value]): Maximum number of years from the anchor date to filter events.
-            This option is mutually exclusive with max_days.
         anchor_phenotype (Phenotype): A phenotype providing the anchor date for filtering.
         when (Optional[str]): when can be "before" or "after"; if "before", days prior to anchor
             event_date are positive, and days after are negative; using after, days before the
@@ -42,17 +38,10 @@ class RelativeTimeRangeFilter(Filter):
     Filters an EventTable relative to some reference date.
     """
 
-    # FIXME this will become a problem when modern medicine allows people to live more
-    # than 365*4 years (so they accumulate enough leap days to get an extra year)
-    # ibis.delta counts leap days
-    DAYS_IN_YEAR = 365
-
     def __init__(
         self,
         min_days: Optional[Value] = GreaterThanOrEqualTo(0),
         max_days: Optional[Value] = None,
-        min_years: Optional[Value] = None,
-        max_years: Optional[Value] = None,
         when: Optional[str] = "before",
         anchor_phenotype: "Phenotype" = None,
     ):

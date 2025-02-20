@@ -1,41 +1,34 @@
-from typing import Optional
-from datetime import date
+from typing import Optional, Union
+from datetime import date, datetime
 
-from phenex.tables import EventTable, is_phenex_event_table
+from phenex.filters.value import Value
+from phenex.filters.value_filter import ValueFilter
 
 
-class DateRangeFilter:
+class DateRangeFilter(ValueFilter):
     """
-    DateRangeFilter is a class designed to filter an EventTable between two specified dates.
+    DateRangeFilter is a ValueFilter applied to dates.
 
     Attributes:
-    -----------
-    min_date : Optional[date]
-        The minimum date for the filter. Events occurring before this date will be excluded.
-    max_date : Optional[date]
-        The maximum date for the filter. Events occurring after this date will be excluded.
+        min_date (Optional[Union[date, str]]): The minimum date for the filter. If a string is provided, it will be converted to a date according to date_format.
+        max_date (Optional[Union[date, str]]): The maximum date for the filter. If a string is provided, it will be converted to a date according to date_format.
+        column_name (Optional[str]): The name of the column to apply the filter on. Defaults to EVENT_DATE, the default value for date columns in Phenex.
+        date_format (str): The format to use for parsing date strings.
     """
 
     def __init__(
-        self, min_date: Optional[date] = None, max_date: Optional[date] = None
+        self,
+        min_date: Optional[Union[date, str]] = None,
+        max_date: Optional[Union[date, str]] = None,
+        column_name: Optional[str] = "EVENT_DATE",
+        date_format="YYYY-MM-DD",
     ):
-        self.min_date = min_date
-        self.max_date = max_date
-        super(DateRangeFilter, self).__init__()
-
-    def filter(self, table: EventTable):
-
-        assert is_phenex_event_table(table)
-
-        conditions = []
-        if self.min_date is not None:
-            conditions.append(table.EVENT_DATE >= self.min_date)
-        if self.max_date is not None:
-            conditions.append(table.EVENT_DATE <= self.max_date)
-
-        if conditions:
-            output_table = table.filter(conditions)
-        else:
-            output_table = table
-
-        return output_table
+        if isinstance(min_date, str):
+            min_date = datetime.strptime(min_date, date_format).date()
+        if isinstance(max_date, str):
+            max_date = datetime.strptime(max_date, date_format).date()
+        super(DateRangeFilter, self).__init__(
+            min=Value(">=", min_date),
+            max=Value("<=", max_date),
+            column_name=column_name,
+        )
