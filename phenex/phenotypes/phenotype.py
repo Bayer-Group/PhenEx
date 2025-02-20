@@ -62,6 +62,10 @@ class Phenotype:
             )
 
         self.table = table.select(PHENOTYPE_TABLE_COLUMNS)
+        # for some reason, having NULL datatype screws up writing the table to disk; here we make explicit cast
+        if type(self.table.schema()["VALUE"]) == ibis.expr.datatypes.core.Null:
+            self.table = self.table.cast({"VALUE": "float64"})
+
         assert is_phenex_phenotype_table(self.table)
 
         return self.table

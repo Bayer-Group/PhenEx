@@ -112,16 +112,25 @@ class Cohort(Phenotype):
         # Compute entry criterion
         logger.debug("Computing entry criterion ...")
         self.entry_criterion.execute(tables)
+        if con:
+            logger.debug("Writing entry table ...")
+            con.create_table(self.entry_criterion.table, f"{self.name}__entry")
+            self.entry_criterion.table = con.get_dest_table(f"{self.name}__entry")
+
+        logger.debug("Entry criterion computed.")
         self.subset_tables_entry = subset_and_add_index_date(
             tables, self.entry_criterion.table
         )
         index_table = self.entry_criterion.table
-        logger.debug("Entry criterion computed.")
 
         # Apply inclusions if any
         if self.inclusions:
             logger.debug("Applying inclusions ...")
             self._compute_inclusions_table(n_threads)
+            if con:
+                logger.debug("Writing inclusions table ...")
+                con.create_table(self.inclusions_table, f"{self.name}__inclusions")
+                self.inclusions_table = con.get_dest_table(f"{self.name}__inclusions")
             include = self.inclusions_table.filter(
                 self.inclusions_table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
@@ -132,6 +141,10 @@ class Cohort(Phenotype):
         if self.exclusions:
             logger.debug("Applying exclusions ...")
             self._compute_exclusions_table(n_threads)
+            if con:
+                logger.debug("Writing exclusions table ...")
+                con.create_table(self.exclusions_table, f"{self.name}__exclusions")
+                self.exclusions_table = con.get_dest_table(f"{self.name}__exclusions")
             exclude = self.exclusions_table.filter(
                 self.exclusions_table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
@@ -139,11 +152,23 @@ class Cohort(Phenotype):
             logger.debug("Exclusions applied.")
 
         self.index_table = index_table
+        if con:
+            logger.debug("Writing index table ...")
+            con.create_table(index_table, f"{self.name}__index")
+            self.index_table = index_table = con.get_dest_table(f"{self.name}__index")
 
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
         if self.characteristics:
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table(n_threads)
+            if con:
+                logger.debug("Writing characteristics table ...")
+                con.create_table(
+                    self.characteristics_table, f"{self.name}__characteristics"
+                )
+                self.characteristics_table = con.get_dest_table(
+                    f"{self.name}__characteristics"
+                )
             logger.debug("Characteristics computed.")
             _ = self.table1
 
@@ -296,6 +321,6 @@ class Cohort(Phenotype):
         if self._table1 is None:
             logger.debug("Generating Table1 report ...")
             reporter = Table1()
-            self._table1 = reporter.execute(self).to_pandas()
+            self._table1 = reporter.execute(self)
             logger.debug("Table1 report generated.")
         return self._table1
