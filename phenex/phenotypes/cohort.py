@@ -91,6 +91,7 @@ class Cohort(Phenotype):
         self,
         tables: Dict[str, Table],
         con: "SnowflakeConnector" = None,
+        write_subset_tables=False,
         overwrite: bool = False,
         n_threads: int = 1,
     ) -> PhenotypeTable:
@@ -99,7 +100,8 @@ class Cohort(Phenotype):
 
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
-            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
+            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None. If passed, will write index, inclusions, exclusions, characteristics and outcomes tables.
+            write_subset_tables (bool, optional): Whether to write subset tables in addition to the standard intermediate tables.
             overwrite (bool, optional): Whether to overwrite existing tables when writing to disk.
             n_threads (int, optional): Number of threads to use for parallel execution. Defaults to 1.
 
@@ -120,6 +122,17 @@ class Cohort(Phenotype):
         self.subset_tables_entry = subset_and_add_index_date(
             tables, self.entry_criterion.table
         )
+        if write_subset_tables:
+            for key, table in self.subset_tables_entry.items():
+                logger.debug(f"Writing subset entry table ({key}) ...")
+                self.subset_tables_entry[key] = type(table)(
+                    con.create_table(
+                        f"{self.name}__subset_entry_{key}",
+                        table.table,
+                        overwrite=overwrite,
+                    )
+                )
+
         index_table = self.entry_criterion.table
 
         # Apply inclusions if any
@@ -164,6 +177,17 @@ class Cohort(Phenotype):
             )
 
         self.subset_tables_index = subset_and_add_index_date(tables, index_table)
+        if write_subset_tables:
+            for key, table in self.subset_tables_index.items():
+                logger.debug(f"Writing subset index table ({key}) ...")
+                self.subset_tables_entry[key] = type(table)(
+                    con.create_table(
+                        f"{self.name}__subset_index_{key}",
+                        table.table,
+                        overwrite=overwrite,
+                    )
+                )
+
         if self.characteristics:
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table(n_threads)
