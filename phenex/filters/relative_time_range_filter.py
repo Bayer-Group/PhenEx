@@ -28,7 +28,7 @@ class RelativeTimeRangeFilter(Filter):
             when = 'before'
             )
         ```
-        
+
         ```
         # filter events to one year after index date, including index date
         anytime_after_index = RelativeTimeRangeFilter(
