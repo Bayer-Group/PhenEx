@@ -123,15 +123,19 @@ class Cohort(Phenotype):
             tables, self.entry_criterion.table
         )
         if write_subset_tables:
-            for key, table in self.subset_tables_entry.items():
-                logger.debug(f"Writing subset entry table ({key}) ...")
-                self.subset_tables_entry[key] = type(table)(
-                    con.create_table(
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                logger.debug("Writing subset entry tables ...")
+                futures = [
+                    executor.submit(
+                        con.create_table,
                         table.table,
                         f"{self.name}__subset_entry_{key}",
-                        overwrite=overwrite,
+                        overwrite,
                     )
-                )
+                    for key, table in self.subset_tables_entry.items()
+                ]
+                for future in futures:
+                    future.result()
 
         index_table = self.entry_criterion.table
 
@@ -178,15 +182,19 @@ class Cohort(Phenotype):
 
         self.subset_tables_index = subset_and_add_index_date(tables, self.index_table)
         if write_subset_tables:
-            for key, table in self.subset_tables_index.items():
-                logger.debug(f"Writing subset index table ({key}) ...")
-                self.subset_tables_entry[key] = type(table)(
-                    con.create_table(
+            logger.debug("Writing subset index tables ...")
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                futures = [
+                    executor.submit(
+                        con.create_table,
                         table.table,
                         f"{self.name}__subset_index_{key}",
-                        overwrite=overwrite,
+                        overwrite,
                     )
-                )
+                    for key, table in self.subset_tables_index.items()
+                ]
+                for future in futures:
+                    future.result()
 
         if self.characteristics:
             logger.debug("Computing characteristics ...")
