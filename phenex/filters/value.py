@@ -13,6 +13,7 @@ class Value:
     Examples:
         greater_than_zero = Value(0, '>')
     """
+
     def __init__(self, operator: str, value: Union[int, float, date]):
         self.operator = operator
         self.value = value
