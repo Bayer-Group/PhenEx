@@ -1,6 +1,5 @@
 from phenex.filters.filter import Filter
-from typing import List, Optional, Union
-from ibis.expr.types.relations import Table
+from typing import List, Optional, Union, Dict
 
 
 class CategoricalFilter(Filter):
@@ -68,7 +67,7 @@ class CategoricalFilter(Filter):
     def _filter(self, table: "PhenexTable"):
         return table.filter(table[self.column_name].isin(self.allowed_values))
 
-    def autojoin_filter(self, table: "PhenexTable", tables: dict = None):
+    def autojoin_filter(self, table: "PhenexTable", tables: Optional[Dict[str, "PhenexTable"]] = None) -> "PhenexTable":
         if self.column_name not in table.columns:
             if self.domain not in tables.keys():
                 raise ValueError(
