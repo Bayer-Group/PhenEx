@@ -12,10 +12,6 @@ from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 from phenex.filters.categorical_filter import CategoricalFilter
 
-import ibis
-
-ibis.options.interactive = True
-
 
 class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "clpt"
