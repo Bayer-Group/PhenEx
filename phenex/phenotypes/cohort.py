@@ -91,6 +91,8 @@ class Cohort(Phenotype):
         self,
         tables: Dict[str, Table],
         con: "SnowflakeConnector" = None,
+        write_subset_tables=False,
+        overwrite: bool = False,
         n_threads: int = 1,
     ) -> PhenotypeTable:
         """
@@ -98,30 +100,57 @@ class Cohort(Phenotype):
 
         Args:
             tables (Dict[str, Table]): A dictionary of table names to Table objects.
-            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None.
+            con (SnowflakeConnector, optional): A connection to Snowflake. Defaults to None. If passed, will write entry, inclusions, exclusions, index, characteristics and outcomes tables.
+            write_subset_tables (bool, optional): Whether to write subset tables (subset-entry and subset-index) in addition to the standard intermediate tables.
+            overwrite (bool, optional): Whether to overwrite existing tables when writing to disk.
             n_threads (int, optional): Number of threads to use for parallel execution. Defaults to 1.
 
         Returns:
-            PhenotypeTable: The resulting phenotype table containing the required columns.
-
-        Raises:
-            ValueError: If the table returned by _execute() does not contain the required phenotype
-            columns.
+            PhenotypeTable: The index table corresponding the cohort.
         """
         logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
         # Compute entry criterion
         logger.debug("Computing entry criterion ...")
         self.entry_criterion.execute(tables)
+        if con:
+            logger.debug("Writing entry table ...")
+            self.entry_criterion.table = con.create_table(
+                self.entry_criterion.table, f"{self.name}__entry", overwrite=overwrite
+            )
+
+        logger.debug("Entry criterion computed.")
         self.subset_tables_entry = subset_and_add_index_date(
             tables, self.entry_criterion.table
         )
+        if write_subset_tables:
+            logger.debug("Writing subset entry tables ...")
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                futures = {}
+                for key, table in self.subset_tables_entry.items():
+                    futures[key] = executor.submit(
+                        con.create_table,
+                        table.table,
+                        f"{self.name}__subset_entry_{key}",
+                        overwrite,
+                    )
+                for key, future in futures.items():
+                    self.subset_tables_entry[key] = type(self.subset_tables_entry[key])(
+                        future.result()
+                    )
+
         index_table = self.entry_criterion.table
-        logger.debug("Entry criterion computed.")
 
         # Apply inclusions if any
         if self.inclusions:
             logger.debug("Applying inclusions ...")
             self._compute_inclusions_table(n_threads)
+            if con:
+                logger.debug("Writing inclusions table ...")
+                self.inclusions_table = con.create_table(
+                    self.inclusions_table,
+                    f"{self.name}__inclusions",
+                    overwrite=overwrite,
+                )
             include = self.inclusions_table.filter(
                 self.inclusions_table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
@@ -132,6 +161,13 @@ class Cohort(Phenotype):
         if self.exclusions:
             logger.debug("Applying exclusions ...")
             self._compute_exclusions_table(n_threads)
+            if con:
+                logger.debug("Writing exclusions table ...")
+                self.exclusions_table = con.create_table(
+                    self.exclusions_table,
+                    f"{self.name}__exclusions",
+                    overwrite=overwrite,
+                )
             exclude = self.exclusions_table.filter(
                 self.exclusions_table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
@@ -139,11 +175,39 @@ class Cohort(Phenotype):
             logger.debug("Exclusions applied.")
 
         self.index_table = index_table
+        if con:
+            logger.debug("Writing index table ...")
+            self.index_table = con.create_table(
+                index_table, f"{self.name}__index", overwrite=overwrite
+            )
 
-        self.subset_tables_index = subset_and_add_index_date(tables, index_table)
+        self.subset_tables_index = subset_and_add_index_date(tables, self.index_table)
+        if write_subset_tables:
+            logger.debug("Writing subset index tables ...")
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                futures = {}
+                for key, table in self.subset_tables_index.items():
+                    futures[key] = executor.submit(
+                        con.create_table,
+                        table.table,
+                        f"{self.name}__subset_index_{key}",
+                        overwrite,
+                    )
+                for key, future in futures.items():
+                    self.subset_tables_index[key] = type(self.subset_tables_index[key])(
+                        future.result()
+                    )
+
         if self.characteristics:
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table(n_threads)
+            if con:
+                logger.debug("Writing characteristics table ...")
+                self.characteristics_table = con.create_table(
+                    self.characteristics_table,
+                    f"{self.name}__characteristics",
+                    overwrite=overwrite,
+                )
             logger.debug("Characteristics computed.")
             _ = self.table1
 
