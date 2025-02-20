@@ -976,10 +976,10 @@ def test_categorical_filter_phenotype():
 
 
 if __name__ == "__main__":
-    # test_categorical_filter_logic()
+    test_categorical_filter_logic()
     test_categorical_filter_logic_autojoin()
-    # test_categorical_filter_phenotype()
-    # test_relative_time_range_filter()
-    # test_anchor_phenotype()
-    # test_return_date()
-    # test_fuzzy_match()
+    test_categorical_filter_phenotype()
+    test_relative_time_range_filter()
+    test_anchor_phenotype()
+    test_return_date()
+    test_fuzzy_match()
