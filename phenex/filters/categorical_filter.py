@@ -67,7 +67,9 @@ class CategoricalFilter(Filter):
     def _filter(self, table: "PhenexTable"):
         return table.filter(table[self.column_name].isin(self.allowed_values))
 
-    def autojoin_filter(self, table: "PhenexTable", tables: Optional[Dict[str, "PhenexTable"]] = None) -> "PhenexTable":
+    def autojoin_filter(
+        self, table: "PhenexTable", tables: Optional[Dict[str, "PhenexTable"]] = None
+    ) -> "PhenexTable":
         if self.column_name not in table.columns:
             if self.domain not in tables.keys():
                 raise ValueError(
