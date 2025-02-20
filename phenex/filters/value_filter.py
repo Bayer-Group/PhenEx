@@ -48,13 +48,8 @@ class ValueFilter(Filter):
         super(ValueFilter, self).__init__()
 
     def _filter(self, table: PhenexTable) -> PhenexTable:
-        # TODO assert that value column is in table
-        # assert (
-        #    "INDEX_DATE" in table.columns
-        # ), f"INDEX_DATE column not found in table {table}"
-
+  
         conditions = []
-        # Fix this, this logic needs to be abstracted to a ValueFilter
         value_column = getattr(table, self.column_name)
         if self.min is not None:
             if self.min.operator == ">":
