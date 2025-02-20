@@ -25,6 +25,13 @@ nav:
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
+      - Filters:
+          - Filter: api/filters/filter.md
+          - ValueFilter: api/filters/value_filter.md
+          - DateRangeFilter: api/filters/date_range_filter.md
+          - RelativeTimeRangeFilter: api/filters/relative_time_range_filter.md
+          - CodelistFilter: api/filters/codelist_filter.md
+          - CategoricalFilter: api/filters/categorical_filter.md
       - Codelists:
           - Codelist: api/codelists/codelists.md
           - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md

@@ -28,29 +28,37 @@ class CategoricalFilter(Filter):
                 PhenexTable: The filtered PhenexTable with events matching the allowed values.
 
     Examples:
+        ```
         # Example 1: Filter for SEX = 'Female'
         sex_filter = CategoricalFilter(
             column_name="SEX",
             allowed_values=["Female"],
             domain="PERSON"
         )
+        ```
 
+        ```
         # Example 2: Filter for inpatient (domain = encounter)
         inpatient_filter = CategoricalFilter(
             column_name="ENCOUNTER_TYPE",
             allowed_values=["INPATIENT"],
             domain="ENCOUNTER"
         )
+        ```
 
+        ```
         # Example 3: Filter for primary diagnosis position
         primary_diagnosis_filter = CategoricalFilter(
             column_name="DIAGNOSIS_POSITION",
             allowed_values=[1],
             domain="DIAGNOSIS"
         )
+        ```
 
+        ```
         # Example 4: Applying multiple filters in combination
         inpatient_primary_position = inpatient_filter & primary_diagnosis_filter
+        ```
     """
 
     def __init__(

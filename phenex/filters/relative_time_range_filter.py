@@ -8,34 +8,34 @@ from phenex.filters.value import *
 
 class RelativeTimeRangeFilter(Filter):
     """
-    This class filters events in an EventTable based on a specified time range relative to an anchor date.
-    The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the
-    EventTable.
+    This class filters events in an EventTable based on a specified time range relative to an anchor date.  The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the EventTable.
 
     Attributes:
-        min_days (Optional[int]): Minimum number of days from the anchor date to filter events. This
-            option is mutually exclusive with min_years.
-        max_days (Optional[int]): Maximum number of days from the anchor date to filter events. This
-            option is mutually exclusive with max_years.
+        min_days (Optional[int]): Minimum number of days from the anchor date to filter events.
+        max_days (Optional[int]): Maximum number of days from the anchor date to filter events.
         anchor_phenotype (Phenotype): A phenotype providing the anchor date for filtering.
-        when (Optional[str]): when can be "before" or "after"; if "before", days prior to anchor
-            event_date are positive, and days after are negative; using after, days before the
-            anchor event_date are negative and days after the anchor event_date are positive.
-            So
-                * max_days = Value('<', 365)
-                * min_days = Value('>', 0)
-                * when = 'before',
-            means between 0 and 365 days before anchor event_date (excluding endpoints), where 'after'
-            means between 0 and 365 days after.
+        when (Optional[str]): when can be "before" or "after"; if "before", days prior to anchor event_date are positive, and days after are negative; using after, days before the anchor event_date are negative and days after the anchor event_date are positive.
 
     Methods:
-        _filter(table: EventTable) -> EventTable:
-            Filters the given EventTable based on the specified time range relative to the anchor date.
-            Parameters:
-                table (EventTable): The table containing events to be filtered.
-            Returns:
-                EventTable: The filtered EventTable with events within the specified time range.
-    Filters an EventTable relative to some reference date.
+        filter: Filters the given EventTable based on the specified time range relative to the anchor date.
+
+    Examples:
+        ```
+        # filter events to one year before index date, excluding index date
+        one_year_preindex = RelativeTimeRangeFilter(
+            max_days = Value('<', 365),
+            min_days = Value('>', 0),
+            when = 'before'
+            )
+        ```
+        
+        ```
+        # filter events to one year after index date, including index date
+        anytime_after_index = RelativeTimeRangeFilter(
+            min_days = Value('>=', 0),
+            when = 'after'
+            )
+        ```
     """
 
     def __init__(

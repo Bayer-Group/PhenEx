@@ -6,22 +6,15 @@ from phenex.filters.value import Value
 
 class ValueFilter(Filter):
     """
-    This class filters events in an EventTable based on a specified value range.
+    ValueFilter filters events in an PhenexTable based on a specified value range.
 
     Attributes:
-        min (Optional[int]): Minimum number of days from the anchor date to filter events. This
-            option is mutually exclusive with min_years.
-        max (Optional[int]): Maximum number of days from the anchor date to filter events. This
-            option is mutually exclusive with max_years.
+        min (Optional[Value]): Minimum value required to pass through the filter.
+        max (Optional[Value]): Maximum value required to pass through the filter.
         column_name (Optional[str]): The column name to which the value range should be applied. Default to VALUE, which is the default name of the value column in PhenotypeTable's.
 
     Methods:
-        filter(table: PhenexTable) -> PhenexTable:
-            Filters the given PhenexTable based on the range of values specified by the min and max attributes.
-            Parameters:
-                table (Measurement): The table containing events to be filtered.
-            Returns:
-                MeasurementTable: The filtered MeasurementTable with events within the range.
+        filter: Filters the given PhenexTable based on the range of values specified by the min and max attributes. See Filter.
     """
 
     def __init__(
