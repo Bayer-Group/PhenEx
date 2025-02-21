@@ -163,12 +163,12 @@ class CodelistPhenotype(Phenotype):
             raise ValueError(f"Unknown return_date: {self.return_date}")
         return aggregator.aggregate(code_table)
 
-    def get_codelists(self):
+    def get_codelists(self) -> List[Codelist]:
         """
-        Get all codelists used in the cohort definition.
+        Get all codelists used in the phenotype definition, including all children / dependent phenotypes.
 
         Returns:
-            List[str]: A list of codelists used in the cohort definition.
+            codeslist: A list of codelists used in the cohort definition.
         """
         codelists = [self.codelist]
         for p in self.children:

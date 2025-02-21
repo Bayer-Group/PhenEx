@@ -12,9 +12,7 @@ logger = create_logger(__name__)
 
 class Phenotype:
     """
-    All Phenotype's in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype
-    must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a DomainsMapping and returns
-    a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
+    All Phenotypes in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a mapping of domains to PhenexTable objects and returns a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
 
     To subclass:
         1. define self.children in __init__()
@@ -38,7 +36,7 @@ class Phenotype:
         Executes the phenotype computation for the current object and its children. This method recursively iterates over the children of the current object and calls their execute method if their table attribute is None.
 
         Args:
-            tables (Dict[str, PhenexTable]): A dictionary of table names to PhenexTable objects.
+            tables (Dict[str, PhenexTable]): A dictionary mapping table names to PhenexTable objects. See phenex.mappers.DomainsDictionary.get_mapped_tables().
 
         Returns:
             table (PhenotypeTable): The resulting phenotype table containing the required columns.
@@ -74,9 +72,7 @@ class Phenotype:
     @property
     def namespaced_table(self) -> Table:
         """
-        The phenotype.table has columns 'person_id', 'boolean', 'event_date', and 'value'. The namespaced_table
-        appends the phenotype name to all of these columns. This is useful when joining multiple phenotype tables
-        together
+        A PhenotypeTable has generic column names 'person_id', 'boolean', 'event_date', and 'value'. The namespaced_table appends the phenotype name to all of these columns. This is useful when joining multiple phenotype tables together.
 
         Returns:
             table (Table): The namespaced table for the current phenotype.
