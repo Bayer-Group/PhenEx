@@ -28,12 +28,12 @@ class Cohort(Phenotype):
     inclusions, exclusions, and baseline characteristics. It extends the Phenotype class.
 
     Parameters:
+        name: A descriptive name for the cohort.
         entry_criterion: The phenotype used to define index date for the cohort.
         inclusions: A list of phenotypes that must evaluate to True for patients to be included in the cohort.
         exclusions: A list of phenotypes that must evaluate to False for patients to be included in the cohort.
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
         outcomes: A list of phenotypes representing outcomes of the cohort.
-        name: A descriptive name for the cohort.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)

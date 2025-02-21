@@ -10,46 +10,43 @@ from ibis import _
 
 class MultipleOccurrencesPhenotype(Phenotype):
     """
-    CodelistPhenotype is a class that looks for N occurrences of a event (from an EventTable).
+    CodelistPhenotype is a class that looks for N occurrences of a event (from an EventTable). In this Phenotype, the returned VALUE is equal to the number of occurrences of the event passing all filters.
 
-    Attributes:
-        name (str): The name of the phenotype.
-        phenotype (Phenotype): The phenotype events to look for.
-        n_occurrences (int): The minimum number of occurrences to look for.
-        date_range (DateRangeFilter, optional): A date range filter to apply.
-        relative_time_range (RelativeTimeRangeFilter, optional): A relative time range filter to apply.
-        return_date (str): Specifies whether to return the 'first' or 'last' event date.
-            Default is 'first'.
-
-    Methods:
-        execute(tables: dict) -> PhenotypeTable:
-            Executes the filtering process on the provided tables and returns the filtered phenotype table.
-            The PhenotypeTable will contain the columns: PERSON_ID, EVENT_DATE, VALUE.
-            DATE is determined by the return_date attribute.
-            VALUE is equal to the number of occurrences of the event passing all filters.
+    Parameters:
+        name: The name of the phenotype.
+        phenotype: The phenotype events to look for.
+        n_occurrences: The minimum number of occurrences to look for.
+        date_range: A date range filter to apply.
+        relative_time_range: A relative time range filter to apply.
+        return_date: Specifies whether to return the 'first' or 'last' event date. Default is 'first'.
 
     Example:
-        >>> codelist = Codelist(name="example_codelist", codes=[...])
-        >>> date_range = DateRangeFilter(min_date="2020-01-01", max_date="2020-12-31")
-        >>> phenotype = CodelistPhenotype(
-        ...     name="example_phenotype",
-        ...     domain="CONDITION_OCCURRENCE",
-        ...     codelist=codelist,
-        ...     date_range=date_range,
-        ...     return_date='first'
-        ... )
-        >>> tables = {"CONDITION_OCCURRENCE": example_code_table}
-        >>> multiple_occurrences = MultipleOccurrencePhenotype(
+        ```python
+        codelist = Codelist(name="example_codelist", codes=[...])
+
+        date_range = DateRangeFilter(min_date="2020-01-01", max_date="2020-12-31")
+        phenotype = CodelistPhenotype(
+            name="example_phenotype",
+            domain="CONDITION_OCCURRENCE",
+            codelist=codelist,
+            date_range=date_range,
+            return_date='first'
+        )
+
+        tables = {"CONDITION_OCCURRENCE": example_code_table}
+        multiple_occurrences = MultipleOccurrencePhenotype(
             phenoype=phenotype,
             n_occurrences=2,
             return_date='second')
-        >>> result_table = multiple_occurrences.execute(tables)
-        >>> display(result_table)
+
+        result_table = multiple_occurrences.execute(tables)
+        display(result_table)
+        ```
     """
 
     def __init__(
         self,
-        name,
+        name: str,
         phenotype: Phenotype,
         n_occurrences: int = 2,
         date_range: DateRangeFilter = None,
@@ -63,7 +60,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
         self.n_occurrences = n_occurrences
         self.phenotype = phenotype
         self.children = [phenotype]
-        super(MultipleOccurrencePhenotype, self).__init__()
+        super(MultipleOccurrencesPhenotype, self).__init__()
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table

@@ -39,7 +39,7 @@ class Phenotype:
             tables (Dict[str, PhenexTable]): A dictionary mapping table names to PhenexTable objects. See phenex.mappers.DomainsDictionary.get_mapped_tables().
 
         Returns:
-            table (PhenotypeTable): The resulting phenotype table containing the required columns.
+            table (PhenotypeTable): The resulting phenotype table containing the required columns. The PhenotypeTable will contain the columns: PERSON_ID, EVENT_DATE, VALUE. DATE is determined by the return_date parameter. VALUE is different for each phenotype. For example, AgePhenotype will return the age in the VALUE column. A MeasurementPhenotype will return the observed value for the measurement. See the specific phenotype of interest to understand more.
         """
         logger.info(f"Phenotype '{self.name}': executing...")
         for child in self.children:
