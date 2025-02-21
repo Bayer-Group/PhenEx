@@ -28,17 +28,21 @@ class Cohort(Phenotype):
     inclusions, exclusions, and baseline characteristics. It extends the Phenotype class.
 
     Parameters:
-        entry_criterion: The primary phenotype used to define the cohort.
-        inclusions: A list of phenotypes that must be included in the cohort.
-        exclusions: A list of phenotypes that must be excluded from the cohort.
-        characteristics: A list of phenotypes representing baseline characteristics of the cohort.
+        entry_criterion: The phenotype used to define index date for the cohort.
+        inclusions: A list of phenotypes that must evaluate to True for patients to be included in the cohort.
+        exclusions: A list of phenotypes that must evaluate to False for patients to be included in the cohort.
+        characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
+        outcomes: A list of phenotypes representing outcomes of the cohort.
+        name: A descriptive name for the cohort.
 
     Attributes:
-        table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
-
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
+        table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
+        inclusions_table (Table): The patient-level result of all inclusion criteria calculations (None until execute is called)
+        exclusions_table (Table): The patient-level result of all exclusion criteria calculations (None until execute is called)
+        characteristics_table (Table): The patient-level result of all baseline characteristics caclulations. (None until execute is called)
+        outcomes_table (Table): The patient-level result of all outcomes caclulations. (None until execute is called)
+        subset_tables_entry (Dict[str, PhenexTable]): Tables that have been subset by those patients satisfying the entry criterion.
+        subset_tables_index (Dict[str, PhenexTable]): Tables that have been subset by those patients satisfying the entry, inclusion and exclusion criteria.
     """
 
     table = None
@@ -52,17 +56,6 @@ class Cohort(Phenotype):
         characteristics: Optional[List[Phenotype]] = None,
         outcomes: Optional[List[Phenotype]] = None,
     ):
-        """
-        Initializes the Cohort with the specified entry criterion, inclusions, exclusions, characteristics, and outcomes.
-
-        Args:
-            name (str): The name of the cohort.
-            entry_criterion (Phenotype): The primary phenotype used to define the cohort.
-            inclusions (Optional[List[Phenotype]]): A list of phenotypes that must be included in the cohort. Defaults to an empty list.
-            exclusions (Optional[List[Phenotype]]): A list of phenotypes that must be excluded from the cohort. Defaults to an empty list.
-            characteristics (Optional[List[Phenotype]]): A list of phenotypes representing baseline characteristics of the cohort. Defaults to an empty list.
-            outcomes (Optional[List[Phenotype]]): A list of phenotypes representing outcomes of the cohort. Defaults to an empty list.
-        """
         super(Cohort, self).__init__()
         self.name = name
         self.entry_criterion = entry_criterion
