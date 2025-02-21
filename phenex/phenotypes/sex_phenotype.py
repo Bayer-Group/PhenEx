@@ -10,15 +10,10 @@ class SexPhenotype(Phenotype):
     """
     SexPhenotype is a class that represents a sex-based phenotype. It is able to identify the sex of individuals and filter them based on identified sex.
 
-    Attributes:
-        name (str): Name of the phenotype, default is 'sex'.
-        allowed_values (List[str]): List of allowed values for the sex column.
-        domain (str): Domain of the phenotype, default is 'PERSON'.
-        children (list): List of dependent phenotypes.
-
-    Methods:
-        _execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the filtered individuals.
+    Parameters:
+        name: Name of the phenotype, default is 'sex'.
+        allowed_values: List of allowed values for the sex column.
+        domain: Domain of the phenotype, default is 'PERSON'.
     """
 
     def __init__(

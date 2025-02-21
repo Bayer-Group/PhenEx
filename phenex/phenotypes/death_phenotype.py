@@ -12,16 +12,12 @@ class DeathPhenotype(Phenotype):
     who have died and returns their date of death.
 
     Parameters:
-        name (str): Name of the phenotype, default is 'death'.
-        domain (str): Domain of the phenotype, default is 'PERSON'.
-        children (list): List of dependent phenotypes.
+        name: Name of the phenotype, default is 'death'.
+        domain: Domain of the phenotype, default is 'PERSON'.
+        relative_time_range: Filter patients relative to some date (e.g. death after discharge from hospital)
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
-
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(
