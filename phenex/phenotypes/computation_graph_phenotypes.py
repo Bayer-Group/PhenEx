@@ -32,10 +32,6 @@ class ComputationGraphPhenotype(Phenotype):
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
-
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(
@@ -190,10 +186,6 @@ class ScorePhenotype(ComputationGraphPhenotype):
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
-
     Example:
     ```python
     # Create component phenotypes individually
@@ -231,16 +223,12 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
     --> See the comparison table of CompositePhenotype classes
 
     Parameters:
-        expression (ComputationGraph): The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
-        return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        expression: The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
+        return_date: The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
         name: The name of the phenotype.
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
-
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
 
     Example:
     ```python
@@ -276,16 +264,12 @@ class LogicPhenotype(ComputationGraphPhenotype):
     --> See the comparison table of CompositePhenotype classes
 
     Parameters:
-        expression (ComputationGraph): The logical expression to be evaluated composed of phenotypes combined by python arithmetic operations.
-        return_date (Union[str, Phenotype]): The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
+        expression: The logical expression to be evaluated composed of phenotypes combined by python arithmetic operations.
+        return_date: The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
         name: The name of the phenotype.
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
-
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
     """
 
     def __init__(
