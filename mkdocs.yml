@@ -57,6 +57,7 @@ plugins:
           paths: [../phenex] # search packages in the src folder
           options:
             docstring_style: "google" # or "numpy", "restructuredtext", etc.
+            inherited_members: true
   - mkdocs-jupyter
 theme:
   name: material
