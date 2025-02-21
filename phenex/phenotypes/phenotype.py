@@ -12,15 +12,19 @@ logger = create_logger(__name__)
 
 class Phenotype:
     """
-    All Phenotypes in PhenEx derive from the Phenotype class. Phenotype's take in the complete specification of what the Phenotype must compute. Phenotypes are not executed until execute() is called; the execute() method takes in a mapping of domains to PhenexTable objects and returns a single PhenotypeTable. Phenotypes depend on other phenotypes and execute recursively.
+    A phenotype is a description of the state of a person at a specific time.
+
+    In Phenex, phenotypes are implemented using the Phenotype class. The Phenotype class is designed so that there is clear separation between the "what" from the "how". The "what" is expressed in the Phenotype init function: what codelists to use, what time range to include, constraints relative to other Phenotype's, visit detail information to include, etc. The "what" is meant to mirror how we normally talk about real-world data studies.
+
+    The translation of this description in actual executable code (the "how") is handled via the `Phenotype.execute()` method. The execute method returns a PhenotypeTable - the realization of the defined Phenotype in a particular database. See `execute()` for details.
+
+    All Phenotype's in Phenex derive from the Phenotype class.
 
     To subclass:
-        1. define self.children in __init__()
-        2. define self._execute
-
-    self.children is a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and
-    executed recursively. The self._execute() method is reponsible for interpreting the input parameters to the Phenotype and returning
-    the appropriate PhenotypeTable.
+        1. Define the parameters required to compute the Phenotype in the `__init__()` interface.
+        2. Within `__init__()`, define `self.children` - a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and executed recursively.
+        3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Phenotype and returning the appropriate PhenotypeTable.
+        4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
     """
 
     def __init__(self):
