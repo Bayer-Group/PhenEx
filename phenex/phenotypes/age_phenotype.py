@@ -22,25 +22,33 @@ class AgePhenotype(Phenotype):
         name: Name of the phenotype, default is 'age'.
         min_age: Minimum age for filtering, in years.
         max_age: Maximum age for filtering, in years.
-        domain: Domain of the phenotype, default is 'PERSON'.
         anchor_phenotype: An optional anchor phenotype to calculate relative age.
+        domain: Domain of the phenotype, default is 'PERSON'.
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
+    Example: Age at First Atrial Fibrillation Diagnosis
+        ```python
+        from phenex.phenotypes import CodelistPhenotype
+        from phenex.codelists import Codelist
 
-    Example:
-        ```
-        >>> age_phenotype = AgePhenotype(
-            min_age=18,
-            max_age=65,
-            anchor_phenotype=some_anchor_phenotype
-            )
-        >>> result_table = age_phenotype.execute(tables)
-        >>> display(result_table)
+        af_codelist = Codelist([313217])
+        af_phenotype = CodelistPhenotype(
+            name="af",
+            domain='CONDITION_OCCURRENCE',
+            codelist=af_codelist,
+            return_date='first',
+        )
+
+        age_phenotype = AgePhenotype(
+            min_age=Value('>=', 18),
+            max_age=Value('<=', 65),
+            anchor_phenotype=af_phenotype
+        )
+
+        result_table = age_phenotype.execute(tables)
+        display(result_table)
         ```
     """
 

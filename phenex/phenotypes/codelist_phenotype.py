@@ -39,7 +39,7 @@ class CodelistPhenotype(Phenotype):
         con = SnowflakeConnector() # requires some configuration
         mapped_tables = OMOPDomains.get_mapped_tables(con)
 
-        mi_codelist = Codelist([4329847]) # list of concept ids
+        af_codelist = Codelist([313217]) # list of concept ids
         date_range = DateRangeFilter(
             min_date="2020-01-01",
             max_date="2020-12-31")
