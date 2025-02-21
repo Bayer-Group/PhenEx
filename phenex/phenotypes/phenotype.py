@@ -35,23 +35,13 @@ class Phenotype:
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
-        Executes the phenotype computation for the current object and its children.
-        This method iterates over the children of the current object and calls their
-        execute method if their table attribute is None. It then calls the _execute
-        method to perform the actual computation for the current object. The resulting
-        table is checked to ensure it contains the required phenotype columns. If the
-        required columns are present, the table is filtered to include only these columns
-        and assigned to the table attribute of the current object.
+        Executes the phenotype computation for the current object and its children. This method recursively iterates over the children of the current object and calls their execute method if their table attribute is None.
 
         Args:
-            tables (Dict[str, Table]): A dictionary of table names to Table objects.
+            tables (Dict[str, PhenexTable]): A dictionary of table names to PhenexTable objects.
 
         Returns:
-            PhenotypeTable: The resulting phenotype table containing the required columns.
-
-        Raises:
-            ValueError: If the table returned by _execute() does not contain the required phenotype
-            columns.
+            table (PhenotypeTable): The resulting phenotype table containing the required columns.
         """
         logger.info(f"Phenotype '{self.name}': executing...")
         for child in self.children:
@@ -89,7 +79,7 @@ class Phenotype:
         together
 
         Returns:
-            Table: The namespaced table for the current phenotype.
+            table (Table): The namespaced table for the current phenotype.
         """
         if self._namespaced_table is None:
             if self.table is None:

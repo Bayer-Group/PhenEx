@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
@@ -12,62 +12,93 @@ from ibis import _
 
 class CodelistPhenotype(Phenotype):
     """
-    CodelistPhenotype filters a CodeTable based on a specified codelist and other optional filters such as date range and relative time range.
+    CodelistPhenotype extracts patients from a CodeTable based on a specified codelist and other optional filters such as date range, relative time range and categorical filters.
 
     Parameters:
-        name: The name of the phenotype.
         domain: The domain of the phenotype.
         codelist: The codelist used for filtering.
+        name: The name of the phenotype. Optional. If not passed, name will be derived from the name of the codelist.
         date_range: A date range filter to apply.
         relative_time_range: A relative time range filter or a list of filters to apply.
         return_date: Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
+        categorical_filter: Additional categorical filters to apply.
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
 
-    Methods:
-        execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the computed age.
+    Examples:
 
-    Example:
+    Example: Inpatient Atrial Fibrillation (OMOP)
         ```python
+        from phenex.phenotypes import CodelistPhenotype
         from phenex.codelists import Codelist
+        from phenex.mappers import OMOPDomains
+        from phenex.filters import DateRangeFilter, CategoricalFilter, Value
+        from phenex.ibis_connect import SnowflakeConnector
 
-        codelist = Codelist(
-            name="example_codelist",
-            codelist=[...])
+        con = SnowflakeConnector() # requires some configuration
+        mapped_tables = OMOPDomains.get_mapped_tables(con)
 
+        mi_codelist = Codelist([4329847]) # list of concept ids
         date_range = DateRangeFilter(
             min_date="2020-01-01",
             max_date="2020-12-31")
 
-        phenotype = CodelistPhenotype(
-            name="example_phenotype",
-            domain="example_domain",
-            codelist=codelist,
-            date_range=date_range,
-            return_date='first'
+        inpatient = CategoricalFilter(
+            column_name='VISIT_DETAIL_CONCEPT_ID',
+            allowed_values=[9201],
+            domain='VISIT_DETAIL'
         )
 
-        tables = {"example_domain": example_code_table}
+        af_phenotype = CodelistPhenotype(
+            name="af",
+            domain='CONDITION_OCCURRENCE',
+            codelist=af_codelist,
+            date_range=date_range,
+            return_date='first',
+            categorical_filter=inpatient
+        )
 
-        result_table = phenotype.execute(tables)
+        af = af_phenotype.execute(mapped_tables)
+        af.head()
+        ```
 
-        display(result_table)
+    Example: Myocardial Infarction One Year Pre-index (OMOP)
+        ```python
+        from phenex.filters import RelativeTimeRangeFilter, Value
+
+        af_phenotype = (...) # take from above example
+
+        oneyear_preindex = RelativeTimeRangeFilter(
+            min_days=Value('>', 0), # exclude index date
+            max_days=Value('<', 365),
+            anchor_phenotype=af_phenotype # use af phenotype above as reference date
+            )
+
+        mi_codelist = Codelist([49601007]) # list of concept ids
+        mi_phenotype = CodelistPhenotype(
+            name='mi',
+            domain='CONDITION_OCCURRENCE',
+            codelist=mi_codelist,
+            return_date='first',
+            relative_time_range=oneyear_preindex
+        )
+        mi = mi_phenotype.execute(mapped_tables)
+        mi.head()
         ```
     """
 
     def __init__(
         self,
-        domain,
+        domain: str,
         codelist: Codelist,
-        name=None,
+        name: Optional[str] = None,
         date_range: DateRangeFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
         return_date="first",
-        categorical_filter: "CategoricalFilter" = None,
+        categorical_filter: Optional["CategoricalFilter"] = None,
     ):
         super(CodelistPhenotype, self).__init__()
 
@@ -83,7 +114,7 @@ class CodelistPhenotype(Phenotype):
             "nearest",
             "all",
         ], f"Unknown return_date: {return_date}"
-        self.table = None
+        self.table: PhenotypeTable = None
         self.domain = domain
         if isinstance(relative_time_range, RelativeTimeRangeFilter):
             relative_time_range = [relative_time_range]
