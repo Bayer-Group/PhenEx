@@ -1,6 +1,7 @@
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenexTable
 from typing import Optional, Dict
+from phenex.util.serialization.to_dict import to_dict
 
 
 class Filter:
@@ -52,6 +53,9 @@ class Filter:
 
     def __invert__(self):
         return NotFilter(self)
+
+    def to_dict(self):
+        return to_dict(self)
 
 
 class AndFilter(Filter):

@@ -1,5 +1,6 @@
 from ibis.expr.types.relations import Table
 import ibis
+from phenex.util.serialization.to_dict import to_dict
 
 
 class VerticalDateAggregator:
@@ -53,6 +54,10 @@ class VerticalDateAggregator:
             input_table = input_table.mutate(VALUE=ibis.null())
 
         return input_table
+
+    def to_dict(self):
+        return to_dict(self)
+
 
 
 class Nearest(VerticalDateAggregator):
@@ -128,6 +133,8 @@ class ValueAggregator:
         else:
             return input_table.select(selected_columns)
 
+    def to_dict(self):
+        return to_dict(self)
 
 class Mean(ValueAggregator):
     def __init__(self, **kwargs):

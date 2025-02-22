@@ -6,6 +6,7 @@ from phenex.tables import (
     is_phenex_phenotype_table,
 )
 from phenex.util import create_logger
+from phenex.util.serialization.to_dict import to_dict
 
 logger = create_logger(__name__)
 
@@ -163,6 +164,9 @@ class Phenotype:
 
             return pd.concat([x.to_pandas() for x in codelists]).drop_duplicates()
         return codelists
+
+    def to_dict(self):
+        return to_dict(self)
 
 
 from typing import Dict, Union
