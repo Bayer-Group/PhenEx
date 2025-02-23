@@ -13,7 +13,7 @@ def dump(obj, fp, **kwargs):
     from phenex.phenotypes import CodelistPhenotype
     import phenex.util.serialization.json as pxjson
 
-    
+
     # Initialize with a list
     cl = Codelist(
         ['x', 'y', 'z'],
@@ -34,7 +34,7 @@ def dump(obj, fp, **kwargs):
 
     # serialize the phenex object to file
     with open(PATH, "w") as f:
-        pxjson.dump(cohort, f, indent=4)    
+        pxjson.dump(cohort, f, indent=4)
     ```
 
     """
@@ -57,7 +57,7 @@ def load(fp, **kwargs):
     PATH = ''
     # serialize the phenex object to file
     with open(PATH, "r") as f:
-        cohort = pxjson.load(f)    
+        cohort = pxjson.load(f)
     ```
     """
     data = pyjson.load(fp, **kwargs)
