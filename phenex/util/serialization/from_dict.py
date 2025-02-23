@@ -7,7 +7,7 @@ import inspect
 
 def from_dict(data: dict):
     """
-    Primary method from_dict PhenEx serialized data.
+    Method to decode all PhenEx classes. Given encoded PhenEx data, it will return the corresponding PhenEx class.
     """
     class_name = data.pop("class_name")
     cls = globals()[class_name]
