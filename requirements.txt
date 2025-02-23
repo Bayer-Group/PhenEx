@@ -9,3 +9,4 @@ mkdocstrings[python]
 mkdocs-jupyter
 setuptools
 openpyxl
+deepdiff

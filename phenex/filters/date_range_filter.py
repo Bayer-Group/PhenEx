@@ -23,6 +23,9 @@ class DateRangeFilter(ValueFilter):
         column_name: Optional[str] = "EVENT_DATE",
         date_format="YYYY-MM-DD",
     ):
+        self.min_date = min_date
+        self.max_date = max_date
+        self.date_format = date_format
         if isinstance(min_date, str):
             min_date = datetime.strptime(min_date, date_format).date()
         if isinstance(max_date, str):

@@ -1,5 +1,6 @@
 from typing import Dict, Union
 from ibis.expr.types.relations import Table
+from deepdiff import DeepDiff
 from phenex.tables import (
     PhenotypeTable,
     PHENOTYPE_TABLE_COLUMNS,
@@ -153,6 +154,15 @@ class Phenotype:
 
     def __invert__(self) -> "ComputationGraph":
         return ComputationGraph(self, None, "~")
+
+    def __eq__(self, other) -> bool:
+        diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
+        if diff:
+            logger.info("Phenotypes NOT equal")
+            logger.info(diff)
+        else:
+            logger.debug("Phenotypes are equal")
+
 
     def get_codelists(self, to_pandas=False):
         codelists = []
