@@ -29,6 +29,7 @@ class Value:
     def to_dict(self):
         return to_dict(self)
 
+
 class GreaterThan(Value):
     def __init__(self, value: int):
         super(GreaterThan, self).__init__(">", value)

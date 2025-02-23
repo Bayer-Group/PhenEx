@@ -158,11 +158,10 @@ class Phenotype:
     def __eq__(self, other) -> bool:
         diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
         if diff:
-            logger.info("Phenotypes NOT equal")
+            logger.info(f"{self.__class__.__name__}s NOT equal")
             logger.info(diff)
         else:
-            logger.debug("Phenotypes are equal")
-
+            logger.debug(f"{self.__class__.__name__}s are equal")
 
     def get_codelists(self, to_pandas=False):
         codelists = []

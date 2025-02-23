@@ -4,9 +4,10 @@ from phenex.phenotypes import *
 from phenex.filters import *
 import inspect
 
+
 def from_dict(data: dict):
     """
-    Primary method from_dict PhenEx serialized data. 
+    Primary method from_dict PhenEx serialized data.
     """
     class_name = data.pop("class_name")
     cls = globals()[class_name]
@@ -39,12 +40,12 @@ def from_dict(data: dict):
 
 
 def convert_null_keys_to_none_in_dictionary(_dict):
-    '''
+    """
     Given a dictionary with strings 'null' as keys, replaces the 'null' string key with a python NoneType this is required because Codelists are implemented as a dictionary with keys = code_type and If code_type is not defined the key is None (in python) and null in json
-    '''
+    """
     new_dict = {}
-    for k,v in _dict.items():
-        if k=='null':
+    for k, v in _dict.items():
+        if k == "null":
             new_key = None
         else:
             new_key = k

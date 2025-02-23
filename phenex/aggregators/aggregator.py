@@ -59,7 +59,6 @@ class VerticalDateAggregator:
         return to_dict(self)
 
 
-
 class Nearest(VerticalDateAggregator):
     def __init__(self, **kwargs):
         super().__init__(aggregation_function="max", **kwargs)
@@ -135,6 +134,7 @@ class ValueAggregator:
 
     def to_dict(self):
         return to_dict(self)
+
 
 class Mean(ValueAggregator):
     def __init__(self, **kwargs):
