@@ -1,0 +1,47 @@
+.node {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--border-radius);
+  font-size: 24px;
+}
+
+.node:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.arrow {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.caret {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.nodeName {
+  font-size: 18px;
+  color: #333;
+  font: 'SNPro-bold';
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addCohortNode {
+  color: var(--button-color-inactive);
+  background-color: var(--button-color-inactive);
+}
+
+.addCohortNode:hover {
+  background-color: var(--button-color-hover);
+}

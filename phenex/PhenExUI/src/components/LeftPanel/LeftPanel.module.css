@@ -1,0 +1,68 @@
+.leftPanel {
+  width: 100%;
+  height: 100vh;
+  background-color: var(--background-color);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding-left: 40px;
+  height: 150px;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px; */
+}
+
+.pathInput {
+  width: calc(100% - 40px);
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-family: 'SNPro-bold';
+  font-size: 14px;
+  outline: none;
+  position: relative;
+  z-index: 10;
+}
+
+.pathInput::placeholder {
+  color: #6c757d;
+}
+
+.content {
+  padding: 20px;
+  width: 100%;
+  flex: 1;
+  overflow: auto;
+  font-family: 'SNPro-bold';
+}
+
+.logoText {
+  font-family: 'SNPro-bold';
+  font-size: 50px;
+  height: 100px;
+  margin-top: 30px;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.image {
+  width: 700px;
+  position: absolute;
+  bottom: -390px;
+  left: -280px;
+  opacity: 1;
+}

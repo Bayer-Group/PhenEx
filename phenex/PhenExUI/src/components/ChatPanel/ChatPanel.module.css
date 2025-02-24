@@ -1,0 +1,76 @@
+.chatPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: purple; /*var(--background-color);*/
+  /* margin-right: 10px; */
+  font-family: 'SNPro-regular';
+  font-size: 16px;
+}
+
+.messagesContainer {
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: var(--background-color);
+  height: calc(100% - 150px);
+  width: 100%;
+}
+
+.messageBubble {
+  max-width: 70%;
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  word-wrap: break-word;
+}
+
+.userMessage {
+  align-self: flex-end;
+  background-color: var(--accent-color);
+  color: white;
+  border-bottom-right-radius: 0.3rem;
+  margin-right: 20px;
+}
+
+.assistantMessage {
+  align-self: flex-start;
+  background-color: var(--secondary-background-color);
+  color: var(--text-color);
+  border-bottom-left-radius: 0.3rem;
+}
+
+.inputContainer {
+  position: absolute;
+  height: 150px;
+  width: 100%;
+  bottom: 0;
+  background-color: var(--background-color);
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.input {
+  position: relative;
+  height: 100px;
+  padding: 10px;
+  width: calc(100% - 50px);
+  background: var(--background-color);
+  border: solid 1px transparent;
+  color: var(--text-color);
+  font-size: 1rem;
+  outline: none;
+  resize: none;
+  background:
+    linear-gradient(var(--background-color), var(--background-color)) padding-box,
+    linear-gradient(to right, var(--phenex-coral), var(--phenex-red), var(--phenex-blue)) border-box;
+  border-radius: 8px;
+  font-family: 'SNPro-regular';
+}
+
+.input:focus {
+  border: solid 3px transparent;
+}

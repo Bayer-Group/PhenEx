@@ -1,0 +1,130 @@
+.cohortTableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.buttonsContainer {
+  display: flex;
+  gap: 8px;
+  position: absolute;
+  right: 30px;
+  /* margin-left: 0px; */
+}
+
+.addPhenotypeButton,
+.reportButton {
+  padding: 8px 16px;
+  background-color: var(--button-color-inactive);
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.addPhenotypeButton {
+  color: white;
+  background-color: var(--accent-color);
+}
+
+.addPhenotypeButton:hover,
+.reportButton:hover {
+  background-color: var(--accent-color-hover);
+}
+
+.topSection {
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.bottomSection {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.cohortInfoPanel {
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: transform 0.1s ease;
+  background: white;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.rightPanel {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  /* background: white; */
+  z-index: 1;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.cohortDescription {
+  flex: 1;
+  padding: 12px;
+}
+
+.cohortDescription .ql-container {
+  height: calc(100% - 42px);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cohortDescription .ql-toolbar {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cohortDescription .ql-editor {
+  height: 100px;
+}
+
+.cohortDescription .ql-editor.ql-blank::before {
+  color: #999;
+}
+.cohortNameInput {
+  border: none;
+  padding: 8px;
+  font-size: 40px;
+  outline: none;
+  margin-right: 16px;
+  font-family: 'SNPro-Bold';
+}
+
+.cohortNameInput::placeholder {
+  color: #999;
+}
+
+.cohortDescription .ql-tooltip {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.rag-green-outer {
+  background-color: #b7e1cd;
+  color: #000;
+}
