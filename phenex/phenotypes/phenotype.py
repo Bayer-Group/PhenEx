@@ -1,11 +1,13 @@
 from typing import Dict, Union
 from ibis.expr.types.relations import Table
+from deepdiff import DeepDiff
 from phenex.tables import (
     PhenotypeTable,
     PHENOTYPE_TABLE_COLUMNS,
     is_phenex_phenotype_table,
 )
 from phenex.util import create_logger
+from phenex.util.serialization.to_dict import to_dict
 
 logger = create_logger(__name__)
 
@@ -153,6 +155,16 @@ class Phenotype:
     def __invert__(self) -> "ComputationGraph":
         return ComputationGraph(self, None, "~")
 
+    def __eq__(self, other) -> bool:
+        diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
+        if diff:
+            logger.info(f"{self.__class__.__name__}s NOT equal")
+            logger.info(diff)
+            return False
+        else:
+            logger.debug(f"{self.__class__.__name__}s are equal")
+            return True
+
     def get_codelists(self, to_pandas=False):
         codelists = []
         for child in self.children:
@@ -163,6 +175,9 @@ class Phenotype:
 
             return pd.concat([x.to_pandas() for x in codelists]).drop_duplicates()
         return codelists
+
+    def to_dict(self):
+        return to_dict(self)
 
 
 from typing import Dict, Union
@@ -322,3 +337,6 @@ class ComputationGraph:
 
     def __str__(self):
         return self.get_str()
+
+    def to_dict(self):
+        return to_dict(self)

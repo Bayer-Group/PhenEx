@@ -2,6 +2,7 @@ import os
 from typing import Dict, List, Union, Optional
 import pandas as pd
 import warnings
+from phenex.util.serialization.to_dict import to_dict
 
 
 class Codelist:
@@ -362,6 +363,9 @@ class Codelist:
         _df = pd.DataFrame(self.to_tuples(), columns=["code_type", "code"])
         _df["codelist"] = self.name
         return _df
+
+    def to_dict(self):
+        return to_dict(self)
 
 
 class LocalCSVCodelistFactory:

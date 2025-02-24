@@ -45,19 +45,19 @@ class ComputationGraphPhenotype(Phenotype):
         reduce: bool = False,
     ):
         super(ComputationGraphPhenotype, self).__init__()
-        self.computation_graph = expression
+        self.expression = expression
         self.return_date = return_date
         self.aggregation_index = aggregation_index
         self._name = name
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
-        self.children = self.computation_graph.get_leaf_phenotypes()
+        self.children = self.expression.get_leaf_phenotypes()
 
     @property
     def name(self):
         if self._name is None:
-            self._name = str(self.computation_graph)
+            self._name = str(self.expression)
         return self._name
 
     @name.setter
@@ -84,7 +84,7 @@ class ComputationGraphPhenotype(Phenotype):
                 )
 
         if self.populate == "value":
-            _expression = self.computation_graph.get_value_expression(
+            _expression = self.expression.get_value_expression(
                 joined_table, operate_on=self.operate_on
             )
             joined_table = joined_table.mutate(VALUE=_expression)
@@ -92,7 +92,7 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.filter(joined_table["VALUE"].notnull())
 
         elif self.populate == "boolean":
-            _expression = self.computation_graph.get_boolean_expression(
+            _expression = self.expression.get_boolean_expression(
                 joined_table, operate_on=self.operate_on
             )
             joined_table = joined_table.mutate(BOOLEAN=_expression)
@@ -208,8 +208,10 @@ class ScorePhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs,
     ):
         super(ScorePhenotype, self).__init__(
+            name=name,
             expression=expression,
             return_date=return_date,
             operate_on="boolean",
@@ -248,8 +250,11 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs,
     ):
+
         super(ArithmeticPhenotype, self).__init__(
+            name=name,
             expression=expression,
             return_date=return_date,
             operate_on="value",
@@ -277,8 +282,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs,
     ):
         super(LogicPhenotype, self).__init__(
+            name=name,
             expression=expression,
             return_date=return_date,
             operate_on="boolean",

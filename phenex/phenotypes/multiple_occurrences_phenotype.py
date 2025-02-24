@@ -34,8 +34,8 @@ class MultipleOccurrencesPhenotype(Phenotype):
         )
 
         tables = {"CONDITION_OCCURRENCE": example_code_table}
-        multiple_occurrences = MultipleOccurrencePhenotype(
-            phenoype=phenotype,
+        multiple_occurrences = MultipleOccurrencesPhenotype(
+            phenotype=phenotype,
             n_occurrences=2,
             return_date='second')
 
