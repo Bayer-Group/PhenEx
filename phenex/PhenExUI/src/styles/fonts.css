@@ -1,0 +1,27 @@
+@font-face {
+  font-family: 'SNPro-regular';
+  src: url('../assets/fonts/SNPro-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SNPro-bold';
+  src: url('../assets/fonts/SNPro-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SNPro-black';
+  src: url('../assets/fonts/SNPro-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Zed Mono';
+  src: url('../assets/fonts/zed-mono-extended.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
