@@ -99,7 +99,7 @@ class CodelistPhenotype(Phenotype):
         ] = None,
         return_date="first",
         categorical_filter: Optional["CategoricalFilter"] = None,
-        **kwargs
+        **kwargs,
     ):
         super(CodelistPhenotype, self).__init__()
 

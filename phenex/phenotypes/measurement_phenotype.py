@@ -47,7 +47,6 @@ class MeasurementPhenotype(CodelistPhenotype):
 
     def __init__(
         self,
-
         value_filter: Optional["ValueFilter"] = None,
         clean_nonphysiologicals_value_filter: Optional["ValueFilter"] = None,
         clean_null_values: Optional[bool] = True,

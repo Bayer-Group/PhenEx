@@ -18,6 +18,7 @@ PATH_ARTIFACTS = "phenex/test/serialization/artifacts"
 if not os.path.exists(PATH_ARTIFACTS):
     os.mkdir(PATH_ARTIFACTS)
 
+
 def test_CodelistPhenotype():
     pt = CodelistPhenotype(
         name="test",
@@ -26,13 +27,16 @@ def test_CodelistPhenotype():
     )
     assertions(pt)
 
+
 def test_AgePhenotype():
     pt = AgePhenotype()
     assertions(pt)
 
+
 def test_SexPhenotype():
     pt = SexPhenotype()
     assertions(pt)
+
 
 def test_MultipleOccurrencesPhenotype():
     study_period = DateRangeFilter(
@@ -44,34 +48,33 @@ def test_MultipleOccurrencesPhenotype():
         domain="CONDITION_OCCURRENCE",
         codelist=Codelist(name="test", codelist=["a", "b"]),
         date_range=study_period,
-        return_date='first'
+        return_date="first",
     )
 
     pt = MultipleOccurrencesPhenotype(
-        name='motest',
-        phenotype=phenotype,
-        n_occurrences=2,
-        return_date='second'
+        name="motest", phenotype=phenotype, n_occurrences=2, return_date="second"
     )
     assertions(pt)
 
+
 def test_MeasurementPhenotype():
-    ONEYEAR_PREINDEX = RelativeTimeRangeFilter(
-        when='before',
-        max_days=LessThan(365)
-    )
+    ONEYEAR_PREINDEX = RelativeTimeRangeFilter(when="before", max_days=LessThan(365))
     pt = MeasurementPhenotype(
-        name = 'measurement',
-        codelist = Codelist(name="test", codelist=["a", "b"]),
-        domain = 'observation',
-        relative_time_range = ONEYEAR_PREINDEX,
-        categorical_filter = CategoricalFilter(allowed_values=['mmHg'], column_name='UNIT') # we set a categorical_filter to specify units
+        name="measurement",
+        codelist=Codelist(name="test", codelist=["a", "b"]),
+        domain="observation",
+        relative_time_range=ONEYEAR_PREINDEX,
+        categorical_filter=CategoricalFilter(
+            allowed_values=["mmHg"], column_name="UNIT"
+        ),  # we set a categorical_filter to specify units
     )
     assertions(pt)
+
 
 def test_DeathPhenotype():
     pt = DeathPhenotype()
     assertions(pt)
+
 
 def test_CategoricalPhenotype():
     pt = CategoricalPhenotype(
@@ -82,46 +85,49 @@ def test_CategoricalPhenotype():
     )
     assertions(pt)
 
+
 def test_ContinuousCoveragePhenotype():
     pt = ContinuousCoveragePhenotype()
     assertions(pt)
 
+
 def test_ScorePhenotype():
     c1, c2, c3 = create_three_phenotypes()
-    
+
     pt1 = ScorePhenotype(
         name="scpt_simple",
-        expression= c1 + c2,
+        expression=c1 + c2,
         return_date="first",
     )
 
     pt2 = ScorePhenotype(
         name="scpt_withmultiplication",
-        expression= c1 + c2 + 2*c3,
+        expression=c1 + c2 + 2 * c3,
         return_date="first",
     )
 
     assertions(pt1)
     assertions(pt2)
 
+
 def test_ArithmeticPhenotype():
     c1, c2, c3 = create_three_phenotypes()
 
     pt1 = ArithmeticPhenotype(
         name="arpt_div",
-        expression= c1 / c2,
+        expression=c1 / c2,
         return_date="first",
     )
 
     pt2 = ArithmeticPhenotype(
         name="arpt_mul",
-        expression= c1 * c2,
+        expression=c1 * c2,
         return_date="first",
     )
 
     pt3 = ArithmeticPhenotype(
         name="arpt_eqt",
-        expression= (c1 + c2) / c3,
+        expression=(c1 + c2) / c3,
         return_date="first",
     )
 
@@ -135,25 +141,26 @@ def test_LogicPhenotype():
 
     pt1 = LogicPhenotype(
         name="lgpt_or",
-        expression= c1 | c2,
+        expression=c1 | c2,
         return_date="first",
     )
 
     pt2 = LogicPhenotype(
         name="lgpt_or",
-        expression= c1 & c2,
+        expression=c1 & c2,
         return_date="first",
     )
 
     pt3 = LogicPhenotype(
         name="lgpt_or",
-        expression= (c1 & c2) | c3,
+        expression=(c1 & c2) | c3,
         return_date="first",
     )
 
     assertions(pt1)
     assertions(pt2)
     assertions(pt3)
+
 
 def test_cohort_serialization():
     cohort = create_cohort()
@@ -238,14 +245,14 @@ def create_cohort():
     )
     return cohort
 
+
 def create_three_phenotypes():
     c1 = CodelistPhenotype(
         name="c1",
         codelist=Codelist(name="test", codelist=["a", "b"]),
         domain="PROCEDURE_OCCURRENCE",
     )
-    
-    
+
     c2 = CodelistPhenotype(
         name="c2",
         codelist=Codelist(name="test", codelist=["c", "d"]),
@@ -258,6 +265,7 @@ def create_three_phenotypes():
         domain="DRUG_EXPOSURE",
     )
     return c1, c2, c3
+
 
 if __name__ == "__main__":
     test_cohort_serialization()
