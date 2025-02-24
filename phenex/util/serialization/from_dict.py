@@ -3,20 +3,31 @@ from phenex.codelists import *
 from phenex.phenotypes import *
 from phenex.filters import *
 import inspect
+from phenex.util import create_logger
+from phenex.util.serialization.to_dict import get_phenex_init_params
+
+logger = create_logger(__name__)
 
 
 def from_dict(data: dict):
     """
     Method to decode all PhenEx classes. Given encoded PhenEx data, it will return the corresponding PhenEx class.
     """
+    #logger.debug(f"Decoding data: {data}")
+    
     class_name = data.pop("class_name")
+    #logger.debug(f"Class name: {class_name}")
     cls = globals()[class_name]
-    init_params = inspect.signature(cls.__init__).parameters
+    all_params = get_phenex_init_params(cls)
+    #logger.debug(f"Current params: {all_params}")
+    
     init_args = {}
-    for param in init_params:
+    kwargs = {}
+    for param in all_params:
         if param != "self":
             value = data.get(param)
-            param_type = init_params[param].annotation
+            param_type = all_params[param].annotation
+            #logger.debug(f"Processing param: {param}, value: {value}, type: {param_type}")
             if value is None:
                 init_args[param] = None
             elif isinstance(value, list):
@@ -36,6 +47,11 @@ def from_dict(data: dict):
                 init_args[param] = convert_null_keys_to_none_in_dictionary(value)
             else:
                 init_args[param] = value
+
+    #logger.debug(f"Init args: {init_args}")
+    #logger.debug(f"Kwargs: {kwargs}")
+    if len(kwargs.keys()) > 0:
+        return cls(**init_args)
     return cls(**init_args)
 
 

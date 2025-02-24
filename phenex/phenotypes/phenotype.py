@@ -160,8 +160,10 @@ class Phenotype:
         if diff:
             logger.info(f"{self.__class__.__name__}s NOT equal")
             logger.info(diff)
+            return False
         else:
             logger.debug(f"{self.__class__.__name__}s are equal")
+            return True
 
     def get_codelists(self, to_pandas=False):
         codelists = []
@@ -335,3 +337,6 @@ class ComputationGraph:
 
     def __str__(self):
         return self.get_str()
+
+    def to_dict(self):
+        return to_dict(self)

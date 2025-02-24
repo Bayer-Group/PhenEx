@@ -208,6 +208,7 @@ class ScorePhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs
     ):
         super(ScorePhenotype, self).__init__(
             expression=expression,
@@ -248,6 +249,7 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs
     ):
         super(ArithmeticPhenotype, self).__init__(
             expression=expression,
@@ -277,6 +279,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        **kwargs
     ):
         super(LogicPhenotype, self).__init__(
             expression=expression,

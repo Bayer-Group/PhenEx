@@ -31,25 +31,25 @@ class Value:
 
 
 class GreaterThan(Value):
-    def __init__(self, value: int):
+    def __init__(self, value: int, **kwargs):
         super(GreaterThan, self).__init__(">", value)
 
 
 class GreaterThanOrEqualTo(Value):
-    def __init__(self, value: int):
+    def __init__(self, value: int, **kwargs):
         super(GreaterThanOrEqualTo, self).__init__(">=", value)
 
 
 class LessThan(Value):
-    def __init__(self, value: int):
+    def __init__(self, value: int, **kwargs):
         super(LessThan, self).__init__("<", value)
 
 
 class LessThanOrEqualTo(Value):
-    def __init__(self, value: int):
+    def __init__(self, value: int, **kwargs):
         super(LessThanOrEqualTo, self).__init__("<=", value)
 
 
 class EqualTo(Value):
-    def __init__(self, value: int):
+    def __init__(self, value: int, **kwargs):
         super(EqualTo, self).__init__("=", value)
