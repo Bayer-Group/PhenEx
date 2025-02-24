@@ -86,36 +86,53 @@ def test_ContinuousCoveragePhenotype():
     pt = ContinuousCoveragePhenotype()
     assertions(pt)
 
-# def test_ScorePhenotype():
-#     pt = ScorePhenotype()
-#     assertions(pt)
+def test_ScorePhenotype():
+    c1, c2, c3 = create_three_phenotypes()
+    
+    pt1 = ScorePhenotype(
+        name="scpt_simple",
+        expression= c1 + c2,
+        return_date="first",
+    )
 
-# def test_ArithmeticPhenotype():
-#     pt = ArithmeticPhenotype()
-#     assertions(pt)
+    pt2 = ScorePhenotype(
+        name="scpt_withmultiplication",
+        expression= c1 + c2 + 2*c3,
+        return_date="first",
+    )
+
+    assertions(pt1)
+    assertions(pt2)
+
+def test_ArithmeticPhenotype():
+    c1, c2, c3 = create_three_phenotypes()
+
+    pt1 = ArithmeticPhenotype(
+        name="arpt_div",
+        expression= c1 / c2,
+        return_date="first",
+    )
+
+    pt2 = ArithmeticPhenotype(
+        name="arpt_mul",
+        expression= c1 * c2,
+        return_date="first",
+    )
+
+    pt3 = ArithmeticPhenotype(
+        name="arpt_eqt",
+        expression= (c1 + c2) / c3,
+        return_date="first",
+    )
+
+    assertions(pt1)
+    assertions(pt2)
+    assertions(pt3)
+
 
 def test_LogicPhenotype():
-    c1 = CodelistPhenotype(
-        name="c1",
-        codelist=Codelist(name="test", codelist=["a", "b"]),
-        domain="PROCEDURE_OCCURRENCE",
-    )
-    
-    
-    c2 = CodelistPhenotype(
-        name="c2",
-        codelist=Codelist(name="test", codelist=["c", "d"]),
-        domain="CONDITION_OCCURRENCE",
-    )
+    c1, c2, c3 = create_three_phenotypes()
 
-    c3 = CodelistPhenotype(
-        name="c3",
-        codelist=Codelist(name="test", codelist=["e", "f"]),
-        domain="DRUG_EXPOSURE",
-    )
-
-
-    # create a logic phenotype combining all components
     pt1 = LogicPhenotype(
         name="lgpt_or",
         expression= c1 | c2,
@@ -221,6 +238,26 @@ def create_cohort():
     )
     return cohort
 
+def create_three_phenotypes():
+    c1 = CodelistPhenotype(
+        name="c1",
+        codelist=Codelist(name="test", codelist=["a", "b"]),
+        domain="PROCEDURE_OCCURRENCE",
+    )
+    
+    
+    c2 = CodelistPhenotype(
+        name="c2",
+        codelist=Codelist(name="test", codelist=["c", "d"]),
+        domain="CONDITION_OCCURRENCE",
+    )
+
+    c3 = CodelistPhenotype(
+        name="c3",
+        codelist=Codelist(name="test", codelist=["e", "f"]),
+        domain="DRUG_EXPOSURE",
+    )
+    return c1, c2, c3
 
 if __name__ == "__main__":
     test_cohort_serialization()
@@ -232,6 +269,6 @@ if __name__ == "__main__":
     test_DeathPhenotype()
     test_CategoricalPhenotype()
     test_ContinuousCoveragePhenotype()
-    # test_ScorePhenotype()
-    # test_ArithmeticPhenotype()
+    test_ScorePhenotype()
+    test_ArithmeticPhenotype()
     test_LogicPhenotype()

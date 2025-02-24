@@ -1,6 +1,7 @@
 from datetime import datetime
 from phenex.codelists import *
 from phenex.phenotypes import *
+from phenex.phenotypes.phenotype import ComputationGraph
 from phenex.filters import *
 import inspect
 from phenex.util import create_logger
