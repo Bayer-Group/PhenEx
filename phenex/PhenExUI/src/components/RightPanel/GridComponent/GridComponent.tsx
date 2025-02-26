@@ -122,8 +122,8 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
           suppressColumnVirtualisation={true}
           onCellValueChanged={onCellValueChanged}
           loadThemeGoogleFonts={true}
-          editType="fullRow"
-          animateRows={false}
+          // editType="fullRow"
+          animateRows={true}
           getRowHeight={params => {
             const descriptionCol = params.api.getColumnDef('description');
             if (!descriptionCol || !params.data.description) return 40;

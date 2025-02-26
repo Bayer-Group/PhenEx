@@ -21,7 +21,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
 
@@ -44,10 +44,11 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     const mouseX = e.clientX - containerRect.left;
 
     if (activeDivider === 'left') {
-      const newWidth = Math.max(minSizeLeft, mouseX);
+      const newWidth = Math.max(minSizeLeft, mouseX-10);
       setLeftWidth(newWidth);
     } else {
-      const newWidth = Math.max(minSizeRight, containerRect.width - mouseX);
+      const newWidth = Math.max(minSizeRight, containerRect.width - mouseX - 7);
+      console.log("SETTING RIGTH WIDTH", rightWidth, newWidth)
       setRightWidth(newWidth);
     }
   };
@@ -77,6 +78,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const toggleRightPanel = () => {
+    console.log("TOGGLING RIGHT PANEL", rightWidth)
     setIsRightCollapsed(!isRightCollapsed);
   };
 
@@ -90,6 +92,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       </div>
 
       <div className={styles.divider} onMouseDown={handleMouseDown('left')}>
+        <div className={styles.dividerLine} />
         <button
           className={`${styles.collapseButton} ${isLeftCollapsed ? styles.collapsed : ''}`}
           onClick={toggleLeftPanel}
@@ -101,6 +104,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
 
       <div className={styles.divider} onMouseDown={handleMouseDown('right')}>
+        <div className={styles.dividerLine} />
+
         <button
           className={`${styles.collapseButton} ${styles.rightCollapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={toggleRightPanel}

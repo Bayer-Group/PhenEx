@@ -39,17 +39,26 @@ export class CohortTableDataService {
       },
     },
     {
-      field: 'phenotype',
+      field: 'class_name',
       headerName: 'Phenotype',
       width: 200,
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
-        values: ['Codelist', 'Measurement', 'ContinuousCoverage', 'Age', 'Death', 'Logic'],
+        values: [
+          'CodelistPhenotype',
+          'MeasurementPhenotype',
+          'ContinuousCoveragePhenotype',
+          'AgePhenotype',
+          'DeathPhenotype',
+          'LogicPhenotype',
+          'ScorePhenotype',
+          'ArithmeticPhenotype',
+        ],
       },
     },
     { field: 'codelists', headerName: 'Codelists', width: 200, editable: true },
-    { field: 'categorical_filters', headerName: 'Categorical filters', width: 200, editable: true },
+    { field: 'categorical_filter', headerName: 'Categorical filters', width: 200, editable: true },
     {
       field: 'relative_time_range',
       headerName: 'Relative time ranges',
@@ -100,15 +109,10 @@ export class CohortTableDataService {
   public async loadCohortData(cohortName: string): Promise<void> {
     this._cohort_name = cohortName;
     this._cohort_data = await this._parser.fetchCohortData(cohortName);
-    this._table_data = this.tableDataFromCohortData();
-  }
-
-  public async fetchTableData(): Promise<TableData> {
-    // check if cohort_data is already defined
-    if (Object.keys(this._cohort_data).length === 0) {
-      this._cohort_data = await this._parser.fetchCohortData(this._cohort_name);
+    if (!this._cohort_data.id) {
+      this._cohort_data.id = this.createId();
     }
-    return this.tableDataFromCohortData();
+    this._table_data = this.tableDataFromCohortData();
   }
 
   public onCellValueChanged(event: any) {
@@ -121,11 +125,13 @@ export class CohortTableDataService {
       (row: TableRow) => row.id === rowIdEdited
     );
     phenotypeEdited[fieldEdited] = event.newValue;
+    console.log("EDITED THIS ON", phenotypeEdited)
     this.saveChangesToCohort();
   }
 
   public saveChangesToCohort() {
     this.sortPhenotypes();
+    this.splitPhenotypesByType()
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
@@ -146,6 +152,30 @@ export class CohortTableDataService {
       sortedPhenotypes = sortedPhenotypes.concat(phenotypesOfType);
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
+    console.log("AFTER SORTING", this._cohort_data)
+    this._table_data= this.tableDataFromCohortData()
+    console.log("AFTER SORTING", this._table_data)
+  }
+
+  private splitPhenotypesByType() {
+    const types = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    const type_keys = ['entry_criterion', 'inclusions', 'exclusions', 'characteristics', 'outcomes'];
+
+    // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
+    let i = 0;
+    for (const type of types) {
+      const phenotypesOfType = this._cohort_data.phenotypes.filter(
+        (row: TableRow) => row.type === type
+      );
+      if (type == 'entry'){
+        this._cohort_data.entry_criterion = phenotypesOfType[0];
+      }
+      else{
+        const type_key = type_keys[i]
+        this._cohort_data[type_key] = phenotypesOfType;
+      }
+      i++;
+    }
   }
 
   public addPhenotype() {
@@ -178,11 +208,18 @@ export class CohortTableDataService {
 
   public createNewCohort() {
     // TODO check that no phenotype named new cohort exists in directory
+    const id_ = this._cohort_data.id
     this._cohort_data = {
-      id: this.createId(),
-      name: 'New Cohort',
-      type: 'cohort',
+      id: id_,
+      name: 'Cohort_'+id_,
+      class_name: 'Cohort',
       phenotypes: [],
+    };
+
+    this._cohort_name = id_
+    this._table_data = {
+      rows: [],
+      columns: this.columns,
     };
   }
 }
