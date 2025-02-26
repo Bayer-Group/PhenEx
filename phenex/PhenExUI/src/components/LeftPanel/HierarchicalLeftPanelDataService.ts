@@ -30,7 +30,7 @@ export class HierarchicalLeftPanelDataService {
   private constructor() {
     this.parser = PhenexDirectoryParserService.getInstance();
     this.setupDirectoryListener();
-    this.updateTreeData();
+    this.treeData = [];
   }
 
   static getInstance(): HierarchicalLeftPanelDataService {
@@ -48,8 +48,6 @@ export class HierarchicalLeftPanelDataService {
 
   private async updateTreeData() {
     const cohorts = await this.parser.getCohortNames();
-
-    this.treeData = [];
 
     this.treeData = [
       { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },

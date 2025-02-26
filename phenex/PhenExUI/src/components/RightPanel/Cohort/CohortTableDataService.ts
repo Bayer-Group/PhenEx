@@ -120,12 +120,12 @@ export class CohortTableDataService {
     Update phenotype data with new value from grid editor
     */
     const fieldEdited = event.colDef.field;
-    const rowIdEdited = event.data.id;
+    const rowIdEdited = event.data.name; // TODO consider giving all phenotypes an ID
+    console.log("onCellValueChanged", fieldEdited, rowIdEdited)
     let phenotypeEdited = this._cohort_data.phenotypes.find(
-      (row: TableRow) => row.id === rowIdEdited
+      (row: TableRow) => row.name === rowIdEdited
     );
     phenotypeEdited[fieldEdited] = event.newValue;
-    console.log("EDITED THIS ON", phenotypeEdited)
     this.saveChangesToCohort();
   }
 
@@ -152,9 +152,7 @@ export class CohortTableDataService {
       sortedPhenotypes = sortedPhenotypes.concat(phenotypesOfType);
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
-    console.log("AFTER SORTING", this._cohort_data)
     this._table_data= this.tableDataFromCohortData()
-    console.log("AFTER SORTING", this._table_data)
   }
 
   private splitPhenotypesByType() {
