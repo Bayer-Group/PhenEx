@@ -4,6 +4,7 @@ import styles from './GridComponent.module.css';
 import '../../../styles/variables.css';
 import { themeQuartz } from 'ag-grid-community';
 import { ModuleRegistry } from '@ag-grid-community/core';
+
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import { TableData, TableRow } from '../Tables/tableTypes';
 import { ColDef, ColGroupDef } from '@ag-grid-community/core';
@@ -70,8 +71,7 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
           if (!col) return {} as ColDef<TableRow>;
           const baseCol = {
             ...col,
-            menuTabs: ['generalMenuTab', 'filterMenuTab'],
-            suppressMenu: false,
+            suppressHeaderMenuButton: false,
             sortable: true,
             filter: true,
           };
@@ -117,7 +117,7 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
             sortable: true,
             filter: true,
             resizable: true,
-            menuTabs: ['generalMenuTab', 'filterMenuTab'],
+            menuTabs: [ 'filterMenuTab'],
           }}
           suppressColumnVirtualisation={true}
           onCellValueChanged={onCellValueChanged}

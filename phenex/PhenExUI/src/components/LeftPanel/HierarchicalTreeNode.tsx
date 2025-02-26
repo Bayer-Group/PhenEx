@@ -22,11 +22,12 @@ export const Node: FC<NodeProps> = ({ node, onNavigate, style, dragHandle }) => 
     } else if (node.data.viewInfo) {
       onNavigate(node.data.viewInfo);
     }
+    node.focus();
   };
 
   return (
     <div
-      className={`${styles.node} ${node.data.id === 'add_cohort' ? styles.addCohortNode : ''}`}
+      className={`${styles.node} ${node.data.id === 'add_cohort' ? styles.addCohortNode : ''} ${node.isSelected ? styles.selected : ''}`}
       style={style}
       {...dragHandle}
       onClick={handleClick}

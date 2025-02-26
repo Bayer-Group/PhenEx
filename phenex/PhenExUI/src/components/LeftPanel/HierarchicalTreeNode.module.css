@@ -12,6 +12,10 @@
   background-color: rgba(0, 0, 0, 0.05);
 }
 
+.selected {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
 .arrow {
   width: 16px;
   height: 16px;

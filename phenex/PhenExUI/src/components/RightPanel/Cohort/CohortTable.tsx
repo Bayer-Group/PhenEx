@@ -56,6 +56,7 @@ export const CohortTable: FC<CohortTableProps> = ({ data, onAddPhenotype }) => {
   }, [quillRef.current]);
 
   const onCellValueChanged = async (event: any) => {
+    console.log(event)
     const isTypeChange = event.colDef.field === 'type';
     dataService.onCellValueChanged(event);
     setTableData(dataService.table_data);
