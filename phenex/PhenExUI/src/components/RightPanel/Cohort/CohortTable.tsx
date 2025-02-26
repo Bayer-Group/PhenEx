@@ -19,6 +19,24 @@ export const CohortTable: FC<CohortTableProps> = ({ data, onAddPhenotype }) => {
   const gridRef = useRef<any>(null);
   const quillRef = useRef<HTMLDivElement>(null);
   const [quillInstance, setQuillInstance] = useState<Quill | null>(null);
+  const [dataService] = useState(CohortTableDataService.getInstance());
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (data !== undefined) {
+        console.log('Data prop changed:', data);
+        setCohortName(data);
+        dataService.cohort_name = data;
+        await dataService.loadCohortData(data);
+        setTableData(dataService.table_data);
+      } else {
+        console.log('Creating a new cohort');
+        dataService.createNewCohort();
+        setTableData(dataService.table_data);
+      }
+    };
+    loadData();
+  }, [data, dataService]);
 
   useEffect(() => {
     if (quillRef.current && !quillInstance) {
@@ -37,32 +55,23 @@ export const CohortTable: FC<CohortTableProps> = ({ data, onAddPhenotype }) => {
     }
   }, [quillRef.current]);
 
-  useEffect(() => {
-    if (data !== undefined) {
-      console.log('Data prop changed:', data);
-      setCohortName(data);
-      const dataService = CohortTableDataService.getInstance();
-      dataService.cohort_name = data;
-      dataService.loadCohortData(data);
-    }
-  }, [data]);
-
-  const dataService = CohortTableDataService.getInstance();
-  if (data === undefined) {
-    console.log('IS UNDEFINED< CREATING A NEW COHORT');
-    dataService.createNewCohort();
-  }
-  dataService.cohort_name = cohortName;
-
-  const onCellValueChanged = (event: any) => {
+  const onCellValueChanged = async (event: any) => {
+    const isTypeChange = event.colDef.field === 'type';
     dataService.onCellValueChanged(event);
+    setTableData(dataService.table_data);
+
+    if (isTypeChange && gridRef.current?.api) {
+      gridRef.current.api.redrawRows();
+    } 
+    console.log(dataService.table_data)
   };
 
-  const clickedAddPhenotype = () => {
+  const clickedAddPhenotype = async () => {
     const updatedData = dataService.addPhenotype();
     if (gridRef.current?.api) {
       gridRef.current.api.applyTransaction(updatedData);
     }
+    setTableData(dataService.table_data);
     if (onAddPhenotype) {
       onAddPhenotype();
     }
@@ -77,14 +86,19 @@ export const CohortTable: FC<CohortTableProps> = ({ data, onAddPhenotype }) => {
           placeholder="Name your cohort..."
           value={cohortName}
           onChange={e => {
-            setCohortName(e.target.value);
+            const newValue = e.target.value;
+            setCohortName(newValue);
+            dataService.cohort_name = newValue;
           }}
-          onKeyDown={e => {
+          onKeyDown={async e => {
             if (e.key === 'Enter') {
               const newValue = e.target.value;
               console.log('on enter', newValue);
+              console.log("DATA SERVICE", dataService)
               dataService.cohort_name = newValue;
-              dataService.saveChangesToCohort();
+              await dataService.saveChangesToCohort();
+              const updatedTableData = dataService.table_data;
+              setTableData(updatedTableData);
             }
           }}
         />
@@ -106,7 +120,6 @@ export const CohortTable: FC<CohortTableProps> = ({ data, onAddPhenotype }) => {
         {/* </div> */}
         <div className={styles.rightPanel}>
           <Table
-            data={data}
             dataService={dataService}
             onCellValueChanged={onCellValueChanged}
             gridRef={gridRef}

@@ -18,6 +18,7 @@ export class FileWriterService {
 
       // Close the file and write the contents to disk
       await writable.close();
+      console.log('File written successfully!', filePath, content);
     } catch (error) {
       console.error('Error writing file:', error);
       throw error;

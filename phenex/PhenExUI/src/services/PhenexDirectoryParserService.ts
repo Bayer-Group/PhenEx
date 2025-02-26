@@ -79,7 +79,7 @@ export class PhenexDirectoryParserService {
         try {
           const content = await this.directoryService.readFile(file);
           const jsonContent = JSON.parse(content);
-          if (jsonContent.type === 'cohort') {
+          if (jsonContent.class_name === 'Cohort') {
             cohorts.push(jsonContent['name']);
           }
         } catch (error) {
@@ -99,7 +99,7 @@ export class PhenexDirectoryParserService {
         try {
           const content = await this.directoryService.readFile(file);
           const jsonContent = JSON.parse(content);
-          if (jsonContent.type === 'cohort') {
+          if (jsonContent.class_name === 'Cohort') {
             cohorts.push(jsonContent);
           }
         } catch (error) {
@@ -114,6 +114,35 @@ export class PhenexDirectoryParserService {
   async fetchCohortData(cohort_name: string): Promise<Record<string, any>> {
     const allCohortData = await this.getDataForAllCohorts();
     const cohort = allCohortData.find(cohort => cohort.name === cohort_name);
-    return cohort || {};
+    if (cohort === undefined) {
+      return {};
+    }
+    if ('phenotypes' in cohort) {
+      return cohort;
+    }
+
+    return this._concatenate_phenotypes(cohort);
+  }
+
+  _append_key(phenotypes: Array<Record<string, any>>, settype: string) {
+    for (let i = 0; i < phenotypes.length; i++) {
+      phenotypes[i].type = settype;
+    }
+  }
+
+  _concatenate_phenotypes(cohort: dict) {
+    cohort.entry_criterion.type = 'entry';
+    this._append_key(cohort.inclusions, 'inclusion');
+    this._append_key(cohort.exclusions, 'exclusion');
+    this._append_key(cohort.characteristics, 'baseline');
+    this._append_key(cohort.outcomes, 'outcome');
+
+    cohort.phenotypes = [cohort.entry_criterion].concat(
+      cohort.inclusions,
+      cohort.exclusions,
+      cohort.characteristics,
+      cohort.outcomes
+    );
+    return cohort;
   }
 }

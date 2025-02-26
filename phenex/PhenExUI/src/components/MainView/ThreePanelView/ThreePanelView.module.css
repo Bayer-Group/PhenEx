@@ -27,13 +27,31 @@
 }
 
 .divider {
-  width: 4px;
+  width: 15px;
+  /* background-color: blue; */
   background-color: var(--background-color);
   cursor: col-resize;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.dividerLine {
+  height: 100%;
+  pointer-events: none;
+  width: 1px;
+  background-color: var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.divider:hover .dividerLine {
+  background-color: var(--accent-color);
+}
+
+.container[data-dragging='true'] .dividerLine {
+  background-color: var(--accent-color);
+  width: 2px;
 }
 
 .collapseButton {
@@ -50,9 +68,9 @@
   overflow: hidden;
 }
 
-.divider:hover {
+/* .divider:hover {
   background-color: var(--accent-color);
-}
+} */
 
 .collapseButton {
   position: absolute;
@@ -72,7 +90,7 @@
 }
 
 .rightCollapseButton {
-  left: -25px;
+  left: -15px;
 }
 
 .collapseButton:hover {

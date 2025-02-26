@@ -39,11 +39,12 @@ export const MainView = () => {
       case ViewType.Empty:
         return null;
       case ViewType.CohortDefinition:
-        return <CohortTable key={currentView.data} data={currentView.data} />;
+        console.log("CLICKED ON A COHORT NAVIGATION", currentView.data)
+        return <CohortTable data={currentView.data} />;
       case ViewType.NewCohort:
-        return <CohortTable key="new-cohort" data={undefined} />;
+        return <CohortTable data={undefined} />;
       default:
-        return <FullPageTable {...currentView.data} />;
+        return null;
     }
   };
 

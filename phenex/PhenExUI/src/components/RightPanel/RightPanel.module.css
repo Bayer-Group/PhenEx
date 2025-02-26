@@ -14,8 +14,8 @@
 
 .rightPanelCard {
   margin-top: 10px;
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-left: 1px;
+  margin-right: 1px;
   background-color: white;
   height: calc(100% - 10px);
   border-radius: 10px 10px 0 0;
