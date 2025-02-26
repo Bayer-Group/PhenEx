@@ -51,25 +51,25 @@ export class HierarchicalLeftPanelDataService {
 
     this.treeData = [];
 
+    this.treeData = [
+      { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },
+      { id: 'databases', name: 'Databases', viewInfo: { viewType: ViewType.Databases } },
+      {
+        id: 'cohorts',
+        name: 'Cohorts',
+        collapsed: false,
+        children: [],
+      },
+    ];
+
+    const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
+  
+    cohortsNode?.children?.push({
+      id: 'add_cohort',
+      name: '+ New Cohort',
+      viewInfo: { viewType: ViewType.NewCohort, data: '' },
+    });
     if (cohorts && cohorts.length > 0) {
-      this.treeData = [
-        { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },
-        { id: 'databases', name: 'Databases', viewInfo: { viewType: ViewType.Databases } },
-        {
-          id: 'cohorts',
-          name: 'Cohorts',
-          collapsed: false,
-          children: [],
-        },
-      ];
-
-      const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
-
-      cohortsNode?.children?.push({
-        id: 'add_cohort',
-        name: '+ New Cohort',
-        viewInfo: { viewType: ViewType.NewCohort, data: '' },
-      });
       if (cohortsNode?.children) {
         cohorts.forEach((cohort, index) => {
           cohortsNode.children?.push({
