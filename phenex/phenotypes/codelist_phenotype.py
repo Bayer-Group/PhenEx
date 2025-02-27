@@ -93,11 +93,11 @@ class CodelistPhenotype(Phenotype):
         domain: str,
         codelist: Codelist,
         name: Optional[str] = None,
-        date_range: DateRangeFilter = None,
-        relative_time_range: Union[
-            RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
+        date_range: Optional[DateRangeFilter] = None,
+        relative_time_range: Optional[
+            Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]]
         ] = None,
-        return_date="first",
+        return_date: Optional[str] = "first",
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
