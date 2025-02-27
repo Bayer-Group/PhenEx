@@ -175,5 +175,4 @@ def get_type_name_and_if_required(annotation: type) -> tuple:
 
 if __name__ == "__main__":
     create_call_signature_info_dict_for_all_phenex_classes(
-        "/Users/ahartens/Desktop/params.json"
     )
