@@ -64,6 +64,12 @@ def create_cohort():
         exclusions=exclusion,
     )
 
+    from phenex.util.serialization.json import dump
+
+    print("WRITING THE FILES~~~")
+    with open("/Users/ahartens/Desktop/phenex_test.json", "w") as f:
+        dump(cohort, f, indent=4)
+
     return cohort
 
 
@@ -251,4 +257,4 @@ def test_simple_cohort():
 
 
 if __name__ == "__main__":
-    test_simple_cohort()
+    create_cohort()

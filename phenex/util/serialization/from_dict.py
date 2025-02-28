@@ -25,7 +25,7 @@ def from_dict(data: dict):
     init_args = {}
     kwargs = {}
     for param in all_params:
-        if param != "self":
+        if param != "self" and param in data: # if param is provided by the dictionary, use it (if not, we don't want to set it to None but instead use the defaults provided by the class...)
             value = data.get(param)
             param_type = all_params[param].annotation
             # logger.debug(f"Processing param: {param}, value: {value}, type: {param_type}")

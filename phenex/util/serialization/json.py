@@ -1,6 +1,6 @@
 import json as pyjson
-from .to_dict import to_dict
-from .from_dict import from_dict
+from phenex.util.serialization.to_dict import to_dict
+from phenex.util.serialization.from_dict import from_dict
 
 
 def dump(obj, fp, **kwargs):
