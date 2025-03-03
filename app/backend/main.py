@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request
 from phenex.phenotypes import Cohort
 from phenex.ibis_connect import SnowflakeConnector
+from phenex.util.serialization import from_dict
 
 from phenex import PHENEX_MAPPERS
 from phenex_projects.mappers import PHENEX_PROJECTS_MAPPERS
@@ -25,13 +26,28 @@ app.add_middleware(
 
 @app.post("/execute_study")
 async def execute_study(request: Request):
+    #
+    # {
+    #   'mappers': str (OMOPDomains / OptumEHRDomains / ...)
+    #   'connection': { 
+    #        'SOURCE_DATABASE': ...
+    #        'DEST_DATABASE': ...
+    #        'connector_type': 'snowflake'
+    #        'user': ...
+    #   }
+    #   'cohort': {
+    #       'name': ...
+    #       'description': ...
+    #       ...
+    #    }
+    
     try:
         input_json = await request.json()
         mappers = PHENEX_MAPPERS[input_json['mappers']]
         con = SnowflakeConnector(**input_json['connection'])
         mapped_tables = mappers.get_mapped_tables(con)
         cohort_config = input_json['cohort']
-        c = Cohort.from_json(cohort_config)
+        c = from_dict(cohort_config)
         c.execute(mapped_tables, n_threads=6, con=con)
         return {"status": 200}
     except Exception as e:
