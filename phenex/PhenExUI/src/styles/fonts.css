@@ -20,8 +20,8 @@
 }
 
 @font-face {
-  font-family: 'Zed Mono';
-  src: url('../assets/fonts/zed-mono-extended.ttf') format('truetype');
+  font-family: 'NotoSansMono';
+  src: url('../assets/fonts/NotoSansMono-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }

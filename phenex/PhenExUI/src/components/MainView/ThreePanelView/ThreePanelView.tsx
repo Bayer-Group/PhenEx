@@ -44,11 +44,11 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     const mouseX = e.clientX - containerRect.left;
 
     if (activeDivider === 'left') {
-      const newWidth = Math.max(minSizeLeft, mouseX-10);
+      const newWidth = Math.max(minSizeLeft, mouseX - 10);
       setLeftWidth(newWidth);
     } else {
       const newWidth = Math.max(minSizeRight, containerRect.width - mouseX - 7);
-      console.log("SETTING RIGTH WIDTH", rightWidth, newWidth)
+      console.log('SETTING RIGTH WIDTH', rightWidth, newWidth);
       setRightWidth(newWidth);
     }
   };
@@ -78,7 +78,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const toggleRightPanel = () => {
-    console.log("TOGGLING RIGHT PANEL", rightWidth)
+    console.log('TOGGLING RIGHT PANEL', rightWidth);
     setIsRightCollapsed(!isRightCollapsed);
   };
 

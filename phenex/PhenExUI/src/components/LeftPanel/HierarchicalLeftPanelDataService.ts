@@ -61,10 +61,10 @@ export class HierarchicalLeftPanelDataService {
     ];
 
     const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
-  
+
     cohortsNode?.children?.push({
       id: 'add_cohort',
-      name: '+ New Cohort',
+      name: 'Create new cohort',
       viewInfo: { viewType: ViewType.NewCohort, data: '' },
     });
     if (cohorts && cohorts.length > 0) {

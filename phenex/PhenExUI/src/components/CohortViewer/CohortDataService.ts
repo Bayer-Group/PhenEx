@@ -1,10 +1,10 @@
-import { TableData, ColumnDefinition, TableRow } from '../Tables/tableTypes';
-import { PhenexDirectoryParserService } from '../../../services/PhenexDirectoryParserService';
-import { DirectoryReaderWriterService } from '../../LeftPanel/DirectoryReaderWriterService';
+import { TableData, ColumnDefinition, TableRow } from './tableTypes';
+import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
+import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
 
-// export abstract class CohortTableDataService {
-export class CohortTableDataService {
-  private static instance: CohortTableDataService;
+// export abstract class CohortDataService {
+export class CohortDataService {
+  private static instance: CohortDataService;
   private _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
   private _table_data: TableData = {
@@ -25,17 +25,24 @@ export class CohortTableDataService {
         values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
       },
     },
-    { field: 'name', headerName: 'Name', width: 250, pinned: 'left', editable: true },
+    {
+      field: 'name',
+      headerName: 'Name',
+      width: 200,
+      pinned: 'left',
+      editable: true,
+      cellRenderer: 'NameCellRenderer',
+    },
     {
       field: 'description',
       headerName: 'Description',
-      width: 500,
+      width: 250,
       editable: true,
       cellEditor: 'agLargeTextCellEditor',
       cellEditorPopup: true,
       wrapText: true,
       cellEditorParams: {
-        maxLength: 1000,
+        maxLength: 2000,
       },
     },
     {
@@ -57,13 +64,41 @@ export class CohortTableDataService {
         ],
       },
     },
-    { field: 'codelists', headerName: 'Codelists', width: 200, editable: true },
+    {
+      field: 'domain',
+      headerName: 'Domain',
+      width: 120,
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [
+          'Condition Occurrence',
+          'Drug Exposure',
+          'Procedure Occurrence',
+          'Person',
+          'Observation',
+        ],
+      },
+    },
+    {
+      field: 'codelist',
+      headerName: 'Codelists',
+      width: 200,
+      editable: true,
+      cellEditor: 'CodelistCellEditor',
+      cellEditorPopup: true,
+    },
     { field: 'categorical_filter', headerName: 'Categorical filters', width: 200, editable: true },
     {
       field: 'relative_time_range',
       headerName: 'Relative time ranges',
       width: 200,
       editable: true,
+      cellEditor: 'RelativeTimeRangeFilterCellEditor',
+      cellEditorPopup: true,
+      cellEditorParams: {
+        maxLength: 2000,
+      },
     },
     { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
     { field: 'value', headerName: 'Value', width: 150, editable: true },
@@ -71,11 +106,11 @@ export class CohortTableDataService {
 
   private constructor() {}
 
-  public static getInstance(): CohortTableDataService {
-    if (!CohortTableDataService.instance) {
-      CohortTableDataService.instance = new CohortTableDataService();
+  public static getInstance(): CohortDataService {
+    if (!CohortDataService.instance) {
+      CohortDataService.instance = new CohortDataService();
     }
-    return CohortTableDataService.instance;
+    return CohortDataService.instance;
   }
 
   public get cohort_name(): string {
@@ -120,18 +155,19 @@ export class CohortTableDataService {
     Update phenotype data with new value from grid editor
     */
     const fieldEdited = event.colDef.field;
-    const rowIdEdited = event.data.name; // TODO consider giving all phenotypes an ID
-    console.log("onCellValueChanged", fieldEdited, rowIdEdited)
+    const rowIdEdited = event.data.id; // TODO consider giving all phenotypes an ID
+    console.log('onCellValueChanged', fieldEdited, rowIdEdited);
     let phenotypeEdited = this._cohort_data.phenotypes.find(
-      (row: TableRow) => row.name === rowIdEdited
+      (row: TableRow) => row.id === rowIdEdited
     );
     phenotypeEdited[fieldEdited] = event.newValue;
+    console.log('onCellValueChanged', phenotypeEdited);
     this.saveChangesToCohort();
   }
 
   public saveChangesToCohort() {
     this.sortPhenotypes();
-    this.splitPhenotypesByType()
+    this.splitPhenotypesByType();
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
@@ -152,12 +188,18 @@ export class CohortTableDataService {
       sortedPhenotypes = sortedPhenotypes.concat(phenotypesOfType);
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
-    this._table_data= this.tableDataFromCohortData()
+    this._table_data = this.tableDataFromCohortData();
   }
 
   private splitPhenotypesByType() {
     const types = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
-    const type_keys = ['entry_criterion', 'inclusions', 'exclusions', 'characteristics', 'outcomes'];
+    const type_keys = [
+      'entry_criterion',
+      'inclusions',
+      'exclusions',
+      'characteristics',
+      'outcomes',
+    ];
 
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
     let i = 0;
@@ -165,28 +207,22 @@ export class CohortTableDataService {
       const phenotypesOfType = this._cohort_data.phenotypes.filter(
         (row: TableRow) => row.type === type
       );
-      if (type == 'entry'){
+      if (type == 'entry') {
         this._cohort_data.entry_criterion = phenotypesOfType[0];
-      }
-      else{
-        const type_key = type_keys[i]
+      } else {
+        const type_key = type_keys[i];
         this._cohort_data[type_key] = phenotypesOfType;
       }
       i++;
     }
   }
 
-  public addPhenotype() {
+  public addPhenotype(type: string = 'NA') {
     const newPhenotype: TableRow = {
-      id: this._cohort_data.phenotypes.length + 1,
-      type: 'NA',
+      id: this.createId(),
+      type: type,
       name: 'New phenotype',
-      phenotype: 'Codelist',
-      codelists: '',
-      categorical_filters: '',
-      relative_time_range: '',
-      date_range: '',
-      value: '',
+      class_name: 'CodelistPhenotype',
     };
     this._cohort_data.phenotypes.push(newPhenotype);
     return {
@@ -204,20 +240,22 @@ export class CohortTableDataService {
     return result;
   }
 
-  public createNewCohort() {
-    // TODO check that no phenotype named new cohort exists in directory
-    const id_ = this._cohort_data.id
+  private isNewCohort(): boolean {
+    return this._cohort_data.id.startsWith('Cohort_NEW');
+  }
+
+  public async createNewCohort() {
+    /*
+    Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
+
+    */
     this._cohort_data = {
-      id: id_,
-      name: 'Cohort_'+id_,
+      id: this.createId(),
+      name: 'NEW cohort',
       class_name: 'Cohort',
       phenotypes: [],
     };
-
-    this._cohort_name = id_
-    this._table_data = {
-      rows: [],
-      columns: this.columns,
-    };
+    this._cohort_name = this._cohort_data.name;
+    this._table_data = this.tableDataFromCohortData();
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HierarchicalLeftPanel } from '../LeftPanel/HierarchicalLeftPanel';
-import { RightPanel } from '../RightPanel/RightPanel';
-import { CohortTable } from '../RightPanel/Cohort/CohortTable';
+import { RightPanel } from './RightPanel';
+import { CohortViewer } from '../CohortViewer/CohortViewer';
 import { ThreePanelView } from './ThreePanelView/ThreePanelView';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
 
@@ -35,14 +35,15 @@ export const MainView = () => {
   };
 
   const renderView = () => {
+    console.log("RENDERING VIEW")
     switch (currentView.viewType) {
       case ViewType.Empty:
         return null;
       case ViewType.CohortDefinition:
-        console.log("CLICKED ON A COHORT NAVIGATION", currentView.data)
-        return <CohortTable data={currentView.data} />;
+        console.log('CLICKED ON A COHORT NAVIGATION', currentView.data);
+        return <CohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
-        return <CohortTable data={undefined} />;
+        return <CohortViewer data={undefined} />;
       default:
         return null;
     }
