@@ -1,0 +1,38 @@
+.editButton {
+  background: white;
+  border: none;
+  padding: 6px 7px 3px 7px;
+  cursor: pointer;
+  opacity: 0;
+  margin-top: 6px;
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+}
+.editButton:hover {
+  background: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+}
+
+.editButton:focus {
+  outline: none;
+}
+
+.editButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.editIcon {
+  width: 16px;
+  height: 16px;
+}
+
+:global(.ag-row:hover) .editButton {
+  opacity: 1;
+}

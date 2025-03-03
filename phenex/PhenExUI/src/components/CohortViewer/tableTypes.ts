@@ -26,7 +26,3 @@ export interface TableGroup {
   name: string;
   data: TableData;
 }
-
-export interface GroupedTableData {
-  groups: TableGroup[];
-}

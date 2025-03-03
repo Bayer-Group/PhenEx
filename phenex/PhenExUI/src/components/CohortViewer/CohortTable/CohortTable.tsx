@@ -1,18 +1,22 @@
 import { FC, forwardRef, ForwardedRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
-import styles from './GridComponent.module.css';
+import { RelativeTimeRangeFilterCellEditor } from './CellEditors/RelativeTimeRangeFilterCellEditor';
+import { CodelistCellEditor } from './CellEditors/CodelistCellEditor';
+import styles from './CohortTable.module.css';
 import '../../../styles/variables.css';
 import { themeQuartz } from 'ag-grid-community';
+import NameCellRenderer from './CellRenderers/NameCellRenderer';
+import CodelistCellRenderer from './CellRenderers/CodelistCellRenderer';
 import { ModuleRegistry } from '@ag-grid-community/core';
 
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
-import { TableData, TableRow } from '../Tables/tableTypes';
+import { TableData, TableRow } from '../tableTypes';
 import { ColDef, ColGroupDef } from '@ag-grid-community/core';
 
 // Register AG Grid Modules
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
-interface GridComponentProps {
+interface CohortTableProps {
   data: TableData;
   onCellValueChanged?: (event: any) => void;
 }
@@ -59,10 +63,14 @@ const TypeCellRenderer = (props: any) => {
 
 const DescriptionCellRenderer = (props: any) => {
   const type = props.value;
-  return <div style={{ textAlign: 'left', lineHeight: '20px', marginTop: '10px' }}>{type}</div>;
+  return (
+    <div style={{ textAlign: 'left', lineHeight: '1em', marginTop: '10px', fontSize: '14px' }}>
+      {type}
+    </div>
+  );
 };
 
-export const GridComponent = forwardRef<any, GridComponentProps>(
+export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, onCellValueChanged }, ref) => {
     // Process column definitions to add cell renderer for type column
     const processedColumnDefs =
@@ -79,11 +87,48 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
             return {
               ...baseCol,
               cellRenderer: TypeCellRenderer,
+              editable: true,
+              cellEditor: 'agSelectCellEditor',
+              cellEditorParams: {
+                values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
+              },
             } as ColDef<TableRow>;
           } else if (col.field === 'description') {
             return {
               ...baseCol,
               cellRenderer: DescriptionCellRenderer,
+              editable: true,
+            } as ColDef<TableRow>;
+          } else if (col.field === 'name') {
+            return {
+              ...baseCol,
+              cellRenderer: NameCellRenderer,
+              editable: true,
+            } as ColDef<TableRow>;
+          } else if (col.field === 'codelist') {
+            return {
+              ...baseCol,
+              cellRenderer: CodelistCellRenderer,
+              cellEditor: CodelistCellEditor,
+              editable: params => {
+                return (
+                  params.data.class_name === 'MeasurementPhenotype' ||
+                  params.data.class_name === 'CodelistPhenotype'
+                );
+              },
+              valueParser: params => {
+                // this is required for codelist cell editor return value type
+                // as data types returned are variable (i.e. if codelist present vs not)
+                // TODO add value validation here
+                if (
+                  params.newValue &&
+                  typeof params.newValue === 'object' &&
+                  params.newValue.class_name === 'Codelist'
+                ) {
+                  return params.newValue;
+                }
+                return params.oldValue;
+              },
             } as ColDef<TableRow>;
           }
           return baseCol as ColDef<TableRow>;
@@ -91,7 +136,7 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
         .filter(Boolean) || [];
 
     const myTheme = themeQuartz.withParams({
-      accentColor: '#FF0000',
+      accentColor: '#DDDDDD',
       borderColor: '#AFAFAF26',
       browserColorScheme: 'light',
       columnBorder: true,
@@ -113,11 +158,17 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
           rowData={data.rows}
           theme={myTheme}
           columnDefs={processedColumnDefs}
+          components={{
+            RelativeTimeRangeFilterCellEditor: RelativeTimeRangeFilterCellEditor,
+            NameCellRenderer: NameCellRenderer,
+            CodelistCellEditor: CodelistCellEditor,
+            CodelistCellRenderer: CodelistCellRenderer,
+          }}
           defaultColDef={{
             sortable: true,
             filter: true,
             resizable: true,
-            menuTabs: [ 'filterMenuTab'],
+            menuTabs: ['filterMenuTab'],
           }}
           suppressColumnVirtualisation={true}
           onCellValueChanged={onCellValueChanged}
@@ -126,12 +177,11 @@ export const GridComponent = forwardRef<any, GridComponentProps>(
           animateRows={true}
           getRowHeight={params => {
             const descriptionCol = params.api.getColumnDef('description');
-            if (!descriptionCol || !params.data.description) return 40;
-
-            const descWidth = descriptionCol.actualWidth || 500;
+            if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
+            const descWidth = descriptionCol.width || 250;
             const charPerLine = Math.floor(descWidth / 8);
-            const lines = Math.ceil(params.data.description.length / charPerLine);
-            return Math.max(40, lines * 18 + 10); // Reduced line height and padding
+            const lines = Math.ceil(params.data?.description.length / charPerLine);
+            return Math.max(48, lines * 14 + 20); // Increased minimum height
           }}
           rowClassRules={
             {

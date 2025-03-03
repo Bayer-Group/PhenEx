@@ -6,42 +6,6 @@
   position: relative;
 }
 
-.buttonsContainer {
-  display: flex;
-  gap: 8px;
-  position: absolute;
-  right: 30px;
-  /* margin-left: 0px; */
-}
-
-.addPhenotypeButton,
-.reportButton {
-  padding: 8px 16px;
-  background-color: var(--button-color-inactive);
-  color: black;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.addPhenotypeButton {
-  color: white;
-  background-color: var(--accent-color);
-}
-
-.addPhenotypeButton:hover,
-.reportButton:hover {
-  background-color: var(--accent-color-hover);
-}
-
-.topSection {
-  width: 100%;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-}
-
 .bottomSection {
   flex: 1;
   display: flex;
@@ -102,18 +66,6 @@
 }
 
 .cohortDescription .ql-editor.ql-blank::before {
-  color: #999;
-}
-.cohortNameInput {
-  border: none;
-  padding: 8px;
-  font-size: 40px;
-  outline: none;
-  margin-right: 16px;
-  font-family: 'SNPro-Bold';
-}
-
-.cohortNameInput::placeholder {
   color: #999;
 }
 

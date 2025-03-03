@@ -1,5 +1,5 @@
 :root {
-  --accent-color: #f24f13;
+  --accent-color: #AAA;
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
   --line-color: #d0d0d0ea;
@@ -12,34 +12,51 @@
   --border-radius: 8px;
   --height-table-header: 100px;
   --table-margin: 0px;
-  --phenex-blue: #11b4d9;
+  /* --phenex-blue: #11b4d9;
   --phenex-green: #babf21;
   --phenex-coral: #f24f13;
   --phenex-red: #bf1b1b;
-  --phenex-dark: #0d0d0d;
+  --phenex-dark: #0d0d0d; */
+  /* --phenex-blue: #C9D7EA;
+  --phenex-green: #E3CCBD;
+  --phenex-coral: #E6E6E6;
+  --phenex-red: #E3D8A1;
+  --phenex-dark: #E2B1BA; */
+
+  /*--phenex-blue: 	hsl(191, 85%, 46%);
+  --phenex-green: hsl(62, 71%, 44%);
+  --phenex-coral: hsl(16, 90%, 51%);
+  --phenex-red: hsl(0, 75%, 43%);
+  --phenex-dark: hsl(0, 0%, 5%); */
+
+  --phenex-blue: 	hsl(191, 40%, 80%);
+  --phenex-green: hsl(62, 40%, 80%);
+  --phenex-coral: hsl(16, 40%, 80%);
+  --phenex-red: hsl(0, 40%, 80%);
+  --phenex-dark: hsl(0, 40%, 5%); */
 }
 
 .ag-theme-quartz .rag-blue-outer {
-  background-color: #11b4d9 !important;
+  background-color: var(--phenex-blue) !important;
   color: #000;
 }
 
 .ag-theme-quartz .rag-green-outer {
-  background-color: #babf21 !important;
+  background-color: var(--phenex-green) !important;
   color: #000;
 }
 
 .ag-theme-quartz .rag-coral-outer {
-  background-color: #f24f13 !important;
+  background-color: var(--phenex-coral) !important;
   color: #000;
 }
 
 .ag-theme-quartz .rag-red-outer {
-  background-color: #bf1b1b !important;
+  background-color: var(--phenex-red) !important;
   color: #000;
 }
 
 .ag-theme-quartz .rag-dark-outer {
-  background-color: #0d0d0d !important;
+  background-color: var(--phenex-dark) !important;
   color: white;
 }
