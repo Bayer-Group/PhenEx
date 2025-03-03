@@ -1,6 +1,7 @@
 import { TableData, ColumnDefinition, TableRow } from './tableTypes';
 import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
 import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
+import { executeStudy } from '../../api/execute_cohort/route';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -165,12 +166,21 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
-  public saveChangesToCohort() {
+  public async saveChangesToCohort() {
     this.sortPhenotypes();
     this.splitPhenotypesByType();
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
+
+    // use api/route here
+    // Call the API method to execute the study
+    try {
+      const response = await executeStudy(this._cohort_data);
+      console.log('Study executed successfully:', response);
+    } catch (error) {
+      console.error('Error executing study:', error);
+    }
   }
 
   private sortPhenotypes() {

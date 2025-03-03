@@ -1,2 +1,4 @@
 phenex
 fastapi[standard]
+gunicorn
+uvicorn

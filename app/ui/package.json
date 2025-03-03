@@ -19,6 +19,7 @@
     "@emotion/styled": "^11.14.0",
     "@types/quill": "^2.0.14",
     "ag-grid-community": "^32.3.3",
+    "axios": "^1.8.1",
     "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-arborist": "^3.4.2",
