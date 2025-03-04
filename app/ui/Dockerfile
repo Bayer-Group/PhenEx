@@ -4,17 +4,17 @@ FROM node:18-slim
 # Set the working directory
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files into the container
-COPY package*.json ./
+# Copy the rest of the application code into the container
+COPY . .
+
+RUN rm -rf node_modules
+RUN rm -f package-lock.json 
 
 # Install the dependencies
 RUN npm install
 
-# Copy the rest of the application code into the container
-COPY . .
-
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 5173
 
 # Command to run the application
-CMD ["npm", "run", "dev", "--host", "0.0.0.0"]
+CMD ["npm", "run", "dev"]

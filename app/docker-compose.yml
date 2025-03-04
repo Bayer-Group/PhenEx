@@ -1,20 +1,61 @@
-version: '3.8'
-
 services:
   backend:
+    # in production mode, do not mount local files
     build:
       context: ./backend
       dockerfile: Dockerfile
     image: phenex-backend:latest
     ports:
       - "8000:8000"
-    depends_on:
-      - frontend
+    networks:
+      - phenex-network
 
   frontend:
+    # in production mode, do not mount local files
     build:
       context: ./ui
       dockerfile: Dockerfile
     image: phenex-frontend:latest
+    command: ./node_modules/.bin/vite --host 0.0.0.0
     ports:
       - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - phenex-network
+
+  backend-dev:
+    # in dev mode, mount local files and restart service while files change
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: phenex-backend:latest
+    command: fastapi run main.py --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ../phenex:/app/phenex
+    networks:
+      - phenex-network-dev
+
+  frontend-dev:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    image: phenex-frontend:latest
+    command: bash -c "npm i && ./node_modules/.bin/vite --host 0.0.0.0"
+    volumes:
+      - ./ui:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend-dev
+    networks:
+      - phenex-network-dev
+
+networks:
+  phenex-network:
+    driver: bridge
+  phenex-network-dev:
+    driver: bridge
