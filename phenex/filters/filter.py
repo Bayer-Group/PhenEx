@@ -32,7 +32,11 @@ class Filter:
         if not set(input_columns) <= set(filtered_table.columns):
             raise ValueError(f"Filter must not remove columns.")
 
-        return type(table)(filtered_table.select(input_columns))
+        filtered_table = filtered_table.select(input_columns)
+        if isinstance(table, PhenexTable):
+            return type(table)(filtered_table)
+        else:
+            return filtered_table
 
     def _filter(self, table: Table) -> Table:
         """
