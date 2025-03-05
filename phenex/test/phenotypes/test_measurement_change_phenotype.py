@@ -18,14 +18,14 @@ class MeasurementChangePhenotypeTestGenerator(PhenotypeTestGenerator):
     def define_input_tables(self):
         df = pd.DataFrame()
         N = 10
-        df["VALUE"] = \
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + \
-            [2, 4, 6, 8, 10, 6, 6, 6, 6, 6]
+        df["VALUE"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [2, 4, 6, 8, 10, 6, 6, 6, 6, 6]
         df["PERSON_ID"] = [f"P{x}" for x in range(N)] * 2
-        # change of 1, 2, 3, 4, 5, 0, -1, -2, -3, -4 
+        # change of 1, 2, 3, 4, 5, 0, -1, -2, -3, -4
         df["CODE"] = "c1"
         df["CODE_TYPE"] = "ICD10CM"
-        df["EVENT_DATE"] = [datetime.date(2022, 1, 1)] * 10 + [datetime.date(2022, 1, 1 + i) for i in range(10)]
+        df["EVENT_DATE"] = [datetime.date(2022, 1, 1)] * 10 + [
+            datetime.date(2022, 1, 1 + i) for i in range(10)
+        ]
         # days_between = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
         df.iloc[-1, 0] = None  # make a null lab value for last patient
         return [{"name": "MEASUREMENT", "df": df}]
@@ -68,7 +68,7 @@ class MeasurementChangePhenotypeTestGenerator(PhenotypeTestGenerator):
 
         c3 = {
             "name": "change_leq0",
-            "persons": ["P0","P5", "P6", "P7"],
+            "persons": ["P0", "P5", "P6", "P7"],
             "phenotype": MeasurementChangePhenotype(
                 name="change_leq0",
                 phenotype=measurement_phenotype,

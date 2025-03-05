@@ -65,31 +65,38 @@ class MeasurementChangePhenotype(Phenotype):
 
         # Create a self-join to compare each measurement with every other measurement
         import ibis
-        ibis.options.interactive = True     
+
+        ibis.options.interactive = True
         joined_table = phenotype_table_1.join(
-            phenotype_table_2, 
+            phenotype_table_2,
             [
                 phenotype_table_1.PERSON_ID == phenotype_table_2.PERSON_ID,
-                (phenotype_table_1.EVENT_DATE != phenotype_table_2.EVENT_DATE) | (phenotype_table_1.VALUE != phenotype_table_2.VALUE),
+                (phenotype_table_1.EVENT_DATE != phenotype_table_2.EVENT_DATE)
+                | (phenotype_table_1.VALUE != phenotype_table_2.VALUE),
             ],
-            lname='{name}_1',
-            rname='{name}_2'
+            lname="{name}_1",
+            rname="{name}_2",
         ).filter(_.EVENT_DATE_1 <= _.EVENT_DATE_2)
 
         # Calculate the change in value and the days apart
         days_between = joined_table.EVENT_DATE_2.delta(joined_table.EVENT_DATE_1, "day")
         value_change = joined_table.VALUE_2 - joined_table.VALUE_1
         joined_table = joined_table.mutate(
-            VALUE_CHANGE=value_change,
-            DAYS_BETWEEN=days_between
+            VALUE_CHANGE=value_change, DAYS_BETWEEN=days_between
         )
 
         # Filter to keep only those with at least min_change and within max_days_apart
-        value_filter = ValueFilter(min=self.min_change, max=self.max_change, column_name='VALUE_CHANGE')
+        value_filter = ValueFilter(
+            min=self.min_change, max=self.max_change, column_name="VALUE_CHANGE"
+        )
         filtered_table = value_filter.filter(joined_table)
 
-        time_filter = ValueFilter(min=self.min_days_between, max=self.max_days_between, column_name='DAYS_BETWEEN')
-        filtered_table =  time_filter.filter(filtered_table)
+        time_filter = ValueFilter(
+            min=self.min_days_between,
+            max=self.max_days_between,
+            column_name="DAYS_BETWEEN",
+        )
+        filtered_table = time_filter.filter(filtered_table)
 
         # Determine the return date based on the return_date attribute
         if self.return_date == "first":
@@ -103,12 +110,10 @@ class MeasurementChangePhenotype(Phenotype):
 
         # Select the required columns
         filtered_table = filtered_table.mutate(
-            PERSON_ID='PERSON_ID_1',
-            VALUE='VALUE_CHANGE',
-            BOOLEAN=True            
-        )   
+            PERSON_ID="PERSON_ID_1", VALUE="VALUE_CHANGE", BOOLEAN=True
+        )
         result_table = filtered_table.select(PHENOTYPE_TABLE_COLUMNS).distinct()
-    
+
         if self.relative_time_range is not None:
             result_table = self.relative_time_range.filter(result_table)
 
