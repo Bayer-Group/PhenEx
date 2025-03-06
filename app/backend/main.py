@@ -1,10 +1,11 @@
 from typing import Dict
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 import phenex
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization import from_dict
 from dotenv import load_dotenv
 import os, json, glob
+import logging
 
 load_dotenv()
 
@@ -20,6 +21,9 @@ if "AZURE_OPENAI_ENDPOINT" in os.environ:
 else:
     openai_client = OpenAI()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def get_phenex_context():
     # get context for LLM layer
@@ -31,8 +35,8 @@ def get_phenex_context():
     for file_path in python_files:
         with open(file_path, "r") as f:
             context += f"\n\n{file_path}:\n" + f.read() + "\n"
-    print(f"files found: {len(python_files)}")
-    print(f"context length (words): {len(context.split())}")
+    logger.info(f"LLM context files found: {len(python_files)}")
+    logger.info(f"LLM context length (words): {len(context.split())}")
     return context
 
 
@@ -62,12 +66,14 @@ app.add_middleware(
 
 @app.get("/")
 async def home():
-    print("hello there")
+    logger.info("hello there")
 
 
 @app.post("/text_to_cohort")
 async def text_to_cohort(
-    cohort_definition: str = "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies",
+    cohort_definition: str = Body(
+        "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+    ),
     current_cohort: Dict = None,
     model: str = "gpt-4o-mini",
 ):
@@ -103,7 +109,7 @@ async def text_to_cohort(
 
 @app.post("/execute_study")
 async def execute_study(request: Request):
-    print("Received request!!!!", request)
+    logger.info("Received request!!!!")
     #
     # {
     #   'mappers': str (OMOPDomains / OptumEHRDomains / ...)
@@ -121,14 +127,15 @@ async def execute_study(request: Request):
 
     try:
         input_json = await request.json()
-        print(input_json)
+        logger.info(input_json)
         # mappers = PHENEX_MAPPERS[input_json['mappers']]
         # con = SnowflakeConnector(**input_json['connection'])
         # mapped_tables = mappers.get_mapped_tables(con)
         # cohort_config = input_json['cohort']
         # c = from_dict(cohort_config)
         # c.execute(mapped_tables, n_threads=6, con=con)
-        print(input_json)
+        logger.info(input_json)
         return {"status": 200}
     except Exception as e:
+        logger.error(str(e))
         raise HTTPException(status_code=500, detail=str(e))
