@@ -38,7 +38,7 @@ export class CohortDataService {
     {
       field: 'description',
       headerName: 'Description',
-      width: 250,
+      width: 280,
       editable: true,
       cellEditor: 'agLargeTextCellEditor',
       cellEditorPopup: true,
@@ -69,7 +69,7 @@ export class CohortDataService {
     {
       field: 'domain',
       headerName: 'Domain',
-      width: 120,
+      width: 150,
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
