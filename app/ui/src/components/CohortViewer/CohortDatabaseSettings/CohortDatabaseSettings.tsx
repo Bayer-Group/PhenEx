@@ -1,6 +1,5 @@
 import { FC, useState, useEffect } from 'react';
 import styles from './CohortDatabaseSettings.module.css';
-import { FloatingActionMenu } from '../../FloatingActionMenu/FloatingActionMenu';
 import { Mapper } from '../../../types/mappers';
 import { CohortDataService } from '../CohortDataService';
 
@@ -216,11 +215,6 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           {renderConnectorFields()}
         </div>
       </div>
-
-      <FloatingActionMenu
-        buttonTitles={['Save Changes']}
-        buttonActions={[handleSaveChanges]}
-      />
     </div>
   );
 };

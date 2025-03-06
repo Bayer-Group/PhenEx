@@ -14,7 +14,6 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
       className={styles.buttonsContainer}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
       }}
     >
       {buttons.map((button, index) => (

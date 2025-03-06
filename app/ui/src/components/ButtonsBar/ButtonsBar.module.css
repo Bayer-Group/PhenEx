@@ -4,10 +4,11 @@
   padding: 4px;
   background-color: transparent;
   border-radius: 8px;
+  margin-right: 30px;
 }
 
 .button {
-  padding: 4px 16px;
+  padding:6px 16px;
   border: none;
   border-radius: 6px;
   background-color: transparent;
@@ -20,6 +21,8 @@
   border: var(--border);
   font-family: "SNPro-bold";
   -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  width: auto;
 }
 
 .button:hover {
@@ -34,4 +37,41 @@
 
 .button:focus-visible {
   outline: none;
+}
+
+.dropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 150px;
+  padding: 8px 0;
+  margin: 2px 0 0;
+  background-color: var(--background-color);
+  border: var(--border);
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  color: var(--text-color-inactive);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: "SNPro-bold";
+  transition: background-color 0.2s;
+}
+
+.dropdownItem:hover {
+  background-color: var(--button-color-hover);
 }
