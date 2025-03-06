@@ -6,6 +6,7 @@
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
   --text-color-normal: black;
+  --text-color-inactive: hsl(0, 0%, 65%);
   --background-color: #f8f9fa;
   --background-color-content: white;
   --border: 1px solid var(--line-color);

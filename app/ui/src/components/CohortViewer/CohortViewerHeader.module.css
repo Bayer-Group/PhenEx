@@ -1,0 +1,22 @@
+.topSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0px;
+  padding: 16px;
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cohortNameInput {
+  border: none;
+  padding: 8px;
+  font-size: 40px;
+  outline: none;
+  width: 100%;
+  font-family: 'SNPro-Bold';
+}
+
+.cohortNameInput::placeholder {
+  color: var(--text-color-secondary);
+}
