@@ -2,6 +2,7 @@ import { TableData, ColumnDefinition, TableRow } from './tableTypes';
 import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
 import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
 import { executeStudy } from '../../api/execute_cohort/route';
+import { MapperDomains } from '../../types/mappers'
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -151,6 +152,39 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
   }
 
+  private listeners: Array<() => void> = [];
+
+  public addListener(listener: () => void) {
+    this.listeners.push(listener);
+  }
+
+  public removeListener(listener: () => void) {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(listener => listener());
+  }
+
+  public setDatabaseSettings(databaseConfig){
+    this._cohort_data.database_config = databaseConfig;
+    console.log(databaseConfig);
+    
+    // Update domain values based on mapper type
+    const domainColumn = this.columns.find(col => col.field === 'domain');
+    if (domainColumn) {
+      domainColumn.cellEditorParams.values = MapperDomains[databaseConfig.mapper];
+    }
+    
+    // Refresh table data to reflect the updated domain values
+    this._table_data = this.tableDataFromCohortData();
+    this.saveChangesToCohort();
+    this.notifyListeners(); // Notify listeners of the change
+  }
+
   public onCellValueChanged(event: any) {
     /*
     Update phenotype data with new value from grid editor
@@ -268,4 +302,5 @@ export class CohortDataService {
     this._cohort_name = this._cohort_data.name;
     this._table_data = this.tableDataFromCohortData();
   }
+
 }

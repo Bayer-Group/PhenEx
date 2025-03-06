@@ -1,6 +1,7 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import styles from './CohortTableHeader.module.css';
 import { CohortDataService } from './CohortDataService';
+import { PhenotypeType, PhenotypeTypeNames } from '../../types/phenotype';
 
 interface CohortTableHeaderProps {
   cohortName: string;
@@ -31,7 +32,7 @@ export const CohortTableHeader: FC<CohortTableHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const phenotypeTypes = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+  const phenotypeTypes = Object.values(PhenotypeType);
 
   return (
     <div className={styles.topSection}>
@@ -53,7 +54,7 @@ export const CohortTableHeader: FC<CohortTableHeaderProps> = ({
       />
       <div className={styles.buttonsContainer}>
         <button className={styles.reportButton} onClick={() => console.log('Report clicked')}>
-          Generate report
+          Settings
         </button>
         <div className={styles.dropdownContainer} ref={dropdownRef}>
           <button
@@ -73,7 +74,7 @@ export const CohortTableHeader: FC<CohortTableHeaderProps> = ({
                     setIsDropdownOpen(false);
                   }}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {PhenotypeTypeNames[type as PhenotypeType]}
                 </button>
               ))}
             </div>
