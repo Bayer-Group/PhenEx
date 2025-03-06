@@ -5,6 +5,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: phenex-backend:latest
+    env_file: ./backend/.env
     ports:
       - "8000:8000"
     networks:
@@ -31,6 +32,7 @@ services:
       dockerfile: Dockerfile
     image: phenex-backend:latest
     command: fastapi run main.py --reload
+    env_file: ./backend/.env
     ports:
       - "8000:8000"
     volumes:
