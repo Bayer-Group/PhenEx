@@ -9,27 +9,32 @@ import os, json, glob
 load_dotenv()
 
 from openai import AzureOpenAI, OpenAI
+
 openai_client = AzureOpenAI()
-if 'AZURE_OPENAI_ENDPOINT' in os.environ:
-    openai_client = AzureOpenAI(    
-        azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT'],
-        api_key=os.environ['AZURE_OPENAI_API_KEY'],    
-        api_version=os.environ['OPENAI_API_VERSION']
+if "AZURE_OPENAI_ENDPOINT" in os.environ:
+    openai_client = AzureOpenAI(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_version=os.environ["OPENAI_API_VERSION"],
     )
 else:
     openai_client = OpenAI()
 
+
 def get_phenex_context():
     base_dir = os.path.dirname(phenex.__file__)
-    python_files = glob.glob(os.path.join(base_dir, '**/*.py'), recursive=True)
-    excluded_dirs = ['/env/', '/build/', '/app/']
-    python_files = [f for f in python_files if not any(excluded in f for excluded in excluded_dirs)]
+    python_files = glob.glob(os.path.join(base_dir, "**/*.py"), recursive=True)
+    excluded_dirs = ["/env/", "/build/", "/app/"]
+    python_files = [
+        f for f in python_files if not any(excluded in f for excluded in excluded_dirs)
+    ]
 
     context = ""
     for file_path in python_files:
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             context += f.read() + "\n"
     return context
+
 
 context = get_phenex_context()
 # from phenex import PHENEX_MAPPERS
@@ -54,14 +59,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def home():
     print("hello there")
 
 
 @app.post("/text_to_cohort")
-async def text_to_cohort(cohort_definition: str = 'Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies', current_cohort: Dict = None, model: str = 'gpt-4o-mini'):
-    prompt = f'''
+async def text_to_cohort(
+    cohort_definition: str = "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies",
+    current_cohort: Dict = None,
+    model: str = "gpt-4o-mini",
+):
+    prompt = f"""
     Consider the following library code: 
         {context}
 
@@ -75,16 +85,21 @@ async def text_to_cohort(cohort_definition: str = 'Generate a cohort of Atrial F
     Return a JSON compatible with phenex.util.serialization.from_dict.
     
     Where codelists are unknown, leave them as simply placeholders with a name and an empty codelist.
-    '''
-    messages = [        
-        {"role": "system", "content": "You are a helpful assistant."},  
-        {"role": "user", "content": prompt}    
-    ]    
-    return json.loads(openai_client.chat.completions.create(        
-        model=model,     
-        messages=messages,  
-        response_format={"type": "json_object"}, 
-    ).choices[0].message.content)
+    """
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt},
+    ]
+    return json.loads(
+        openai_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_format={"type": "json_object"},
+        )
+        .choices[0]
+        .message.content
+    )
+
 
 @app.post("/execute_study")
 async def execute_study(request: Request):
@@ -92,7 +107,7 @@ async def execute_study(request: Request):
     #
     # {
     #   'mappers': str (OMOPDomains / OptumEHRDomains / ...)
-    #   'connection': { 
+    #   'connection': {
     #        'SOURCE_DATABASE': ...
     #        'DEST_DATABASE': ...
     #        'connector_type': 'snowflake'
@@ -103,7 +118,7 @@ async def execute_study(request: Request):
     #       'description': ...
     #       ...
     #    }
-    
+
     try:
         input_json = await request.json()
         print(input_json)
@@ -117,5 +132,3 @@ async def execute_study(request: Request):
         return {"status": 200}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
