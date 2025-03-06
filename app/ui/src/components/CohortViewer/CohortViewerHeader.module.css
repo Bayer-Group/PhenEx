@@ -8,12 +8,28 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.controlsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 .cohortNameInput {
   border: none;
   padding: 8px;
   font-size: 40px;
   outline: none;
-  width: 100%;
+  width: 60%;
   font-family: 'SNPro-Bold';
 }
 

@@ -109,6 +109,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   };
 
   const clickedAddPhenotype = async (type: string) => {
+    if (currentView != CohortViewType.CohortDefinition) {
+      navigateTo(CohortViewType.CohortDefinition);
+    }
     const updatedData = dataService.addPhenotype(type);
     if (gridRef.current?.api) {
       gridRef.current.api.applyTransaction(updatedData);
@@ -129,6 +132,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           await dataService.saveChangesToCohort();
         }}
         navigateTo={navigateTo}
+        onAddPhenotype={clickedAddPhenotype}
       />
       <div className={styles.bottomSection}>
         {/* <SplitPane
