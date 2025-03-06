@@ -22,17 +22,17 @@ else:
 
 
 def get_phenex_context():
+    # get context for LLM layer
     base_dir = os.path.dirname(phenex.__file__)
-    python_files = glob.glob(os.path.join(base_dir, "**/*.py"), recursive=True)
-    excluded_dirs = ["/env/", "/build/", "/app/"]
-    python_files = [
-        f for f in python_files if not any(excluded in f for excluded in excluded_dirs)
-    ]
-
+    python_files = list(
+        set(glob.glob(os.path.join(base_dir, "**/**/*.py"), recursive=True))
+    )
     context = ""
     for file_path in python_files:
         with open(file_path, "r") as f:
-            context += f.read() + "\n"
+            context += f"\n\n{file_path}:\n" + f.read() + "\n"
+    print(f"files found: {len(python_files)}")
+    print(f"context length (words): {len(context.split())}")
     return context
 
 
