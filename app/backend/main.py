@@ -88,9 +88,15 @@ async def text_to_cohort(
     Modify the current Cohort according to the following instructions:
     {cohort_definition}
 
-    Return a JSON compatible with phenex.util.serialization.from_dict.
+    Return a JSON with the following fields:
     
-    Where codelists are unknown, leave them as simply placeholders with a name and an empty codelist.
+    {{
+        "explaination" : (str) A concise plain text explanation of the changes made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using html, e.g., <li>.
+        "cohort": (Dict) The complete dictionary definition of the resulting updated cohort compatible with phenex.util.serialization.from_dict.
+
+    }}
+    
+    Where codelists are unknown, leave them as simply placeholders with a snake_case name and set the codelist as "codelist": ["PLACEHOLDER"].
     """
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
