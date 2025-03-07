@@ -303,4 +303,12 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
   }
 
+  public updateCohortFromChat(newCohort){
+    this._cohort_data = newCohort;
+    console.log("UPDATED COHROT DATA", newCohort)
+    this.saveChangesToCohort()
+    this._table_data = this.tableDataFromCohortData();
+
+  }
+
 }
