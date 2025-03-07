@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import styles from './ChatPanel.module.css';
-import { textToCohort } from '../../api/text_to_cohort/route';
+import phenexFeather from '../../assets/phenx_feather.png';
 
 interface Message {
   id: number;
   text: string;
   isUser: boolean;
-  isHtml?: boolean;
 }
 
 interface ChatPanelProps {
@@ -15,14 +15,33 @@ interface ChatPanelProps {
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
+  const [featherOpacity, setFeatherOpacity] = useState(1);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollPosition = container.scrollTop;
+      const maxScroll = 200; // Adjust this value to control how quickly opacity changes
+      const newOpacity = Math.max(.4, 1 - scrollPosition / maxScroll);
+      setFeatherOpacity(newOpacity);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Dummy chat data
+  const [messages] = useState<Message[]>([
+    { id: 1, text: '# Hi, Alex!\n How can I help today?', isUser: false },
     { id: 2, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
     { id: 3, text: "Of course! I'd be happy to help. What would you like to know?", isUser: false },
     { id: 4, text: 'Can you explain how the phenotype definitions work?', isUser: true },
     {
       id: 5,
-      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
+      text: '# TitlePhenotype\n definitions help categorize and describe specific traits or characteristics in a standardized way.',
       isUser: false,
     },
     { id: 6, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
@@ -62,46 +81,29 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
     },
   ]);
 
-  const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputText.trim()) {
-      const userMessage: Message = {
-        id: messages.length + 1,
-        text: inputText.trim(),
-        isUser: true,
-      };
-      setMessages([...messages, userMessage]);
-      if (onTextEnter) {
-        onTextEnter(inputText.trim());
-      }
+      onTextEnter?.(inputText.trim());
       setInputText('');
-
-      try {
-        const response = await textToCohort({ cohort_definition: inputText.trim() });
-        const assistantMessage: Message = {
-          id: messages.length + 2,
-          text: response.explanation,
-          isUser: false,
-          isHtml: true,
-        };
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-      } catch (error) {
-        console.error('Error fetching cohort explanation:', error);
-      }
     }
   };
 
   return (
     <div className={styles.chatPanel}>
-      <div className={styles.messagesContainer}>
+      <img 
+        src={phenexFeather} 
+        alt="Phenex Feather" 
+        className={styles.image} 
+        style={{ opacity: featherOpacity }}
+      />
+
+      <div className={styles.messagesContainer} ref={messagesContainerRef}>
         {messages.map(message => (
           <div
             key={message.id}
-            className={`${styles.messageBubble} ${
-              message.isUser ? styles.userMessage : styles.assistantMessage
-            }`}
-            dangerouslySetInnerHTML={message.isHtml ? { __html: message.text } : undefined}
+            className={`${styles.messageBubble} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}
           >
-            {!message.isHtml && message.text}
+            <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>
         ))}
       </div>

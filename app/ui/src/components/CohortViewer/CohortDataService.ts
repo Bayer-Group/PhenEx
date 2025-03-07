@@ -38,7 +38,7 @@ export class CohortDataService {
     {
       field: 'description',
       headerName: 'Description',
-      width: 280,
+      width: 250,
       editable: true,
       cellEditor: 'agLargeTextCellEditor',
       cellEditorPopup: true,
@@ -69,7 +69,7 @@ export class CohortDataService {
     {
       field: 'domain',
       headerName: 'Domain',
-      width: 150,
+      width: 120,
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
@@ -182,7 +182,6 @@ export class CohortDataService {
     // Refresh table data to reflect the updated domain values
     this._table_data = this.tableDataFromCohortData();
     this.saveChangesToCohort();
-    this.notifyListeners(); // Notify listeners of the change
   }
 
   public onCellValueChanged(event: any) {
@@ -200,21 +199,22 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
-  public async saveChangesToCohort() {
-    this.sortPhenotypes();
-    this.splitPhenotypesByType();
+  public async saveChangesToCohort(changesToCohort:boolean=true) {
+    if (changesToCohort){
+      this.sortPhenotypes();
+      this.splitPhenotypesByType();
+    }
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
-
     // use api/route here
     // Call the API method to execute the study
-    try {
-      const response = await executeStudy(this._cohort_data);
-      console.log('Study executed successfully:', response);
-    } catch (error) {
-      console.error('Error executing study:', error);
-    }
+    // try {
+    //   const response = await executeStudy(this._cohort_data);
+    //   console.log('Study executed successfully:', response);
+    // } catch (error) {
+    //   console.error('Error executing study:', error);
+    // }
   }
 
   private sortPhenotypes() {
