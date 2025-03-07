@@ -71,7 +71,7 @@ async def home():
 
 @app.post("/text_to_cohort")
 async def text_to_cohort(
-    cohort_definition: str = Body(
+    user_request: str = Body(
         "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
     ),
     current_cohort: Dict = None,
@@ -86,7 +86,7 @@ async def text_to_cohort(
     {json.dumps(current_cohort, indent=4)}
 
     Modify the current Cohort according to the following instructions:
-    {cohort_definition}
+    {user_request}
 
     Return a JSON with the following fields:
     
@@ -102,7 +102,9 @@ async def text_to_cohort(
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": prompt},
     ]
-    return json.loads(
+
+
+    response = json.loads(
         openai_client.chat.completions.create(
             model=model,
             messages=messages,
@@ -111,6 +113,10 @@ async def text_to_cohort(
         .choices[0]
         .message.content
     )
+
+    response['cohort']['id'] = current_cohort['id']
+    return response
+
 
 
 @app.post("/execute_study")

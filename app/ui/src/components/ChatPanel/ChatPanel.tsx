@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
 import styles from './ChatPanel.module.css';
-import phenexFeather from '../../assets/phenx_feather.png';
 import { textToCohort } from '../../api/text_to_cohort/route';
+import ReactMarkdown from 'react-markdown';
+import phenexFeather from '../../assets/phenx_feather.png';
+import { CohortDataService } from '../CohortViewer/CohortDataService';
+
 
 interface Message {
   id: number;
   text: string;
   isUser: boolean;
+  isHtml?: boolean;
 }
 
 interface ChatPanelProps {
@@ -15,9 +18,11 @@ interface ChatPanelProps {
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
-  const [inputText, setInputText] = useState('');
   const [featherOpacity, setFeatherOpacity] = useState(1);
+  const [inputText, setInputText] = useState('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [dataService] = useState(() => CohortDataService.getInstance());
+
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -34,53 +39,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Dummy chat data
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
-    { id: 2, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
-    { id: 3, text: "Of course! I'd be happy to help. What would you like to know?", isUser: false },
-    { id: 4, text: 'Can you explain how the phenotype definitions work?', isUser: true },
-    {
-      id: 5,
-      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
-      isUser: false,
-    },
-    { id: 6, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
-    { id: 7, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
-    { id: 8, text: "Of course! I'd be happy to help. What would you like to know?", isUser: false },
-    { id: 9, text: 'Can you explain how the phenotype definitions work?', isUser: true },
-    {
-      id: 10,
-      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
-      isUser: false,
-    },
-    { id: 11, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
-    { id: 12, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
-    {
-      id: 13,
-      text: "Of course! I'd be happy to help. What would you like to know?",
-      isUser: false,
-    },
-    { id: 14, text: 'Can you explain how the phenotype definitions work?', isUser: true },
-    {
-      id: 15,
-      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
-      isUser: false,
-    },
-    { id: 16, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
-    { id: 17, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
-    {
-      id: 18,
-      text: "Of course! I'd be happy to help. What would you like to know?",
-      isUser: false,
-    },
-    { id: 19, text: 'Can you explain how the phenotype definitions work?', isUser: true },
-    {
-      id: 20,
-      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
-      isUser: false,
-    },
+    { id: 1, text: '# Hi, my name is Assistant.\nHow can I help you today?', isUser: false },
+    
   ]);
+
 
 
   const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -97,33 +60,37 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
       setInputText('');
 
       try {
-        const response = await textToCohort({ cohort_definition: inputText.trim() });
+        const response = await textToCohort({ user_request: inputText.trim() , current_cohort:dataService.cohort_data});
         const assistantMessage: Message = {
           id: messages.length + 2,
           text: response.explanation,
           isUser: false,
-          isHtml: true,
+          isHtml: false,
         };
         setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+        dataService.updateCohortFromChat(response.cohort)
       } catch (error) {
         console.error('Error fetching cohort explanation:', error);
       }
     }
   };
+
   return (
     <div className={styles.chatPanel}>
-      <img 
+            <img 
         src={phenexFeather} 
         alt="Phenex Feather" 
         className={styles.image} 
         style={{ opacity: featherOpacity }}
       />
-
-      <div className={styles.messagesContainer} ref={messagesContainerRef}>
+      <div className={styles.messagesContainer}>
         {messages.map(message => (
           <div
             key={message.id}
-            className={`${styles.messageBubble} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}
+            className={`${styles.messageBubble} ${
+              message.isUser ? styles.userMessage : styles.assistantMessage
+            }`}
+            dangerouslySetInnerHTML={message.isHtml ? { __html: message.text } : undefined}
           >
             <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>

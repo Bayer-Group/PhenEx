@@ -10,7 +10,6 @@ interface CodelistCellRendererProps extends ICellRendererParams {
 }
 
 const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
-  console.log(props.data, 'IN CELL RENDERER');
   // if props.data.class_name not in ['CodelistPhenotype' or 'MeasurementPhenotype']
   if (
     props.data.class_name !== 'CodelistPhenotype' &&
