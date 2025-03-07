@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import styles from './ChatPanel.module.css';
+import { textToCohort } from '../../api/text_to_cohort/route';
 
 interface Message {
   id: number;
   text: string;
   isUser: boolean;
+  isHtml?: boolean;
 }
 
 interface ChatPanelProps {
@@ -13,9 +15,7 @@ interface ChatPanelProps {
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
   const [inputText, setInputText] = useState('');
-
-  // Dummy chat data
-  const [messages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
     { id: 2, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
     { id: 3, text: "Of course! I'd be happy to help. What would you like to know?", isUser: false },
@@ -62,10 +62,31 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
     },
   ]);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputText.trim()) {
-      onTextEnter?.(inputText.trim());
+      const userMessage: Message = {
+        id: messages.length + 1,
+        text: inputText.trim(),
+        isUser: true,
+      };
+      setMessages([...messages, userMessage]);
+      if (onTextEnter) {
+        onTextEnter(inputText.trim());
+      }
       setInputText('');
+
+      try {
+        const response = await textToCohort({ cohort_definition: inputText.trim() });
+        const assistantMessage: Message = {
+          id: messages.length + 2,
+          text: response.explanation,
+          isUser: false,
+          isHtml: true,
+        };
+        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+      } catch (error) {
+        console.error('Error fetching cohort explanation:', error);
+      }
     }
   };
 
@@ -78,8 +99,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
             className={`${styles.messageBubble} ${
               message.isUser ? styles.userMessage : styles.assistantMessage
             }`}
+            dangerouslySetInnerHTML={message.isHtml ? { __html: message.text } : undefined}
           >
-            {message.id} {message.text}
+            {!message.isHtml && message.text}
           </div>
         ))}
       </div>
