@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import styles from './ChatPanel.module.css';
 import phenexFeather from '../../assets/phenx_feather.png';
+import { textToCohort } from '../../api/text_to_cohort/route';
 
 interface Message {
   id: number;
@@ -34,14 +35,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
   }, []);
 
   // Dummy chat data
-  const [messages] = useState<Message[]>([
-    { id: 1, text: '# Hi, Alex!\n How can I help today?', isUser: false },
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 1, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
     { id: 2, text: 'Hi! My name is User. I have some questions about the system.', isUser: true },
     { id: 3, text: "Of course! I'd be happy to help. What would you like to know?", isUser: false },
     { id: 4, text: 'Can you explain how the phenotype definitions work?', isUser: true },
     {
       id: 5,
-      text: '# TitlePhenotype\n definitions help categorize and describe specific traits or characteristics in a standardized way.',
+      text: 'Phenotype definitions help categorize and describe specific traits or characteristics in a standardized way.',
       isUser: false,
     },
     { id: 6, text: 'Hi, my name is Assistant. How can I help you today?', isUser: false },
@@ -81,13 +82,34 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
     },
   ]);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+
+  const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputText.trim()) {
-      onTextEnter?.(inputText.trim());
+      const userMessage: Message = {
+        id: messages.length + 1,
+        text: inputText.trim(),
+        isUser: true,
+      };
+      setMessages([...messages, userMessage]);
+      if (onTextEnter) {
+        onTextEnter(inputText.trim());
+      }
       setInputText('');
+
+      try {
+        const response = await textToCohort({ cohort_definition: inputText.trim() });
+        const assistantMessage: Message = {
+          id: messages.length + 2,
+          text: response.explanation,
+          isUser: false,
+          isHtml: true,
+        };
+        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+      } catch (error) {
+        console.error('Error fetching cohort explanation:', error);
+      }
     }
   };
-
   return (
     <div className={styles.chatPanel}>
       <img 
