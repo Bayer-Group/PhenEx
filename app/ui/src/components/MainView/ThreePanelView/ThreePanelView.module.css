@@ -77,24 +77,31 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #fff;
-  border: 1px solid #ccc;
+  background-color: transparent;
+  /* border: 1px solid #ccc; */
   display: flex;
   align-items: center;
-  bottom: 10px;
-  left: 5px;
+  bottom: 1px; /* bottom of collapse buttons!*/
+  left: 13px;
+  font-size: 18px;
+  font-family: 'SNPro-bold';
+  color: hsl(0, 0%, 40%);
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
   transition: transform 0.3s ease;
 }
 
-.rightCollapseButton {
-  left: -15px;
+.collapseButton:hover {
+  color: red;
 }
 
-.collapseButton:hover {
-  background-color: #f0f0f0;
+.collapseButton:focus {
+  outline: none;
+}
+
+.rightCollapseButton {
+  left: -25px;
 }
 
 .collapseButton.collapsed {

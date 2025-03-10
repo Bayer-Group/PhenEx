@@ -19,9 +19,10 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   }
 
   if (
-    !props.value || 
+    !props.value ||
     typeof props.value !== 'object' ||
-    !props.value.codelist || typeof props.value.codelist !== 'object' ||
+    !props.value.codelist ||
+    typeof props.value.codelist !== 'object' ||
     Object.keys(props.value.codelist).length === 0
   ) {
     return <div className={styles.missing}>Missing</div>;

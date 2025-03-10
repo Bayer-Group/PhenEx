@@ -21,26 +21,6 @@ interface CohortTableProps {
   onCellValueChanged?: (event: any) => void;
 }
 
-// const NameCellRenderer = (props: any) => {
-//   const type = props.value;
-//   const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
-//   return (
-//     <div style={{ textAlign: 'right' }}>
-//       <span
-//         style={{
-//           // display: 'inline-block',
-//           padding: '5px 8px',
-//           borderRadius: '8px',
-//           backgroundColor: 'red',
-//         }}
-//         className={colorClass}
-//       >
-//         {type}
-//       </span>
-//     </div>
-//   );
-// };
-
 const TypeCellRenderer = (props: any) => {
   const type = props.value;
   const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;

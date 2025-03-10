@@ -21,7 +21,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
 
@@ -97,7 +97,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
           className={`${styles.collapseButton} ${isLeftCollapsed ? styles.collapsed : ''}`}
           onClick={toggleLeftPanel}
         >
-          {isLeftCollapsed ? '→' : '←'}
+          {'<<'}
+          {/* {isLeftCollapsed ? '>>' : '<<'} */}
         </button>
       </div>
 
@@ -110,7 +111,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
           className={`${styles.collapseButton} ${styles.rightCollapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={toggleRightPanel}
         >
-          {isRightCollapsed ? '←' : '→'}
+          {'>>'}
         </button>
       </div>
 
@@ -123,3 +124,5 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     </div>
   );
 };
+
+//←→

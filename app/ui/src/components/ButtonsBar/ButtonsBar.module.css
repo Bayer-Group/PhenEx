@@ -8,7 +8,7 @@
 }
 
 .button {
-  padding:6px 16px;
+  padding: 4px 16px;
   border: none;
   border-radius: 6px;
   background-color: transparent;
@@ -19,14 +19,14 @@
   outline: none;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border: var(--border);
-  font-family: "SNPro-bold";
+  font-family: 'SNPro-bold';
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
   width: auto;
 }
 
 .button:hover {
-  color:black;
+  color: black;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -68,7 +68,7 @@
   color: var(--text-color-inactive);
   cursor: pointer;
   font-size: 14px;
-  font-family: "SNPro-bold";
+  font-family: 'SNPro-bold';
   transition: background-color 0.2s;
 }
 

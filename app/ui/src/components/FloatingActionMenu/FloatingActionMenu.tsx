@@ -6,7 +6,10 @@ interface FloatingActionMenuProps {
   buttonActions: (() => void)[];
 }
 
-export const FloatingActionMenu: FC<FloatingActionMenuProps> = ({ buttonTitles, buttonActions }) => {
+export const FloatingActionMenu: FC<FloatingActionMenuProps> = ({
+  buttonTitles,
+  buttonActions,
+}) => {
   return (
     <div className={styles.floatingMenu}>
       {buttonTitles.map((title, index) => (

@@ -29,11 +29,7 @@ export const ButtonsBarWithDropdowns: FC<ButtonsBarWithDropdownsProps> = ({
       {buttons.map((button, index) => {
         if (!dropdown_items[index]) {
           return (
-            <button
-              key={index}
-              className={styles.button}
-              onClick={() => actions[index]()}
-            >
+            <button key={index} className={styles.button} onClick={() => actions[index]()}>
               {button}
             </button>
           );
@@ -43,7 +39,7 @@ export const ButtonsBarWithDropdowns: FC<ButtonsBarWithDropdownsProps> = ({
               key={index}
               label={button}
               items={dropdown_items[index] || []}
-              onSelection={(item) => onDropdownSelection?.(index, item)}
+              onSelection={item => onDropdownSelection?.(index, item)}
             />
           );
         }
