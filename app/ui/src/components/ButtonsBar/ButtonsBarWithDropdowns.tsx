@@ -4,7 +4,6 @@ import { DropdownButton } from './DropdownButton';
 
 interface ButtonsBarWithDropdownsProps {
   width: string | number;
-  height: string | number;
   buttons: string[];
   actions: (() => void)[];
   dropdown_items: (string[] | null)[];
@@ -13,7 +12,6 @@ interface ButtonsBarWithDropdownsProps {
 
 export const ButtonsBarWithDropdowns: FC<ButtonsBarWithDropdownsProps> = ({
   width,
-  height,
   buttons,
   actions,
   dropdown_items,

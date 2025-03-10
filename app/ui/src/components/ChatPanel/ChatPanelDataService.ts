@@ -3,6 +3,7 @@ import { CohortDataService } from '../CohortViewer/CohortDataService';
 import { textToCohort } from '../../api/text_to_cohort/route';
 
 type MessageCallback = (messages: Message[]) => void;
+type AICompletionCallback = (success: boolean) => void;
 
 export interface Message {
   id: number;
@@ -21,6 +22,7 @@ class ChatPanelDataService {
   ];
   private lastMessageId = this.messages.length;
   private listeners: Set<MessageCallback> = new Set();
+  private aiCompletionListeners: Set<AICompletionCallback> = new Set();
   private cohortDataService = CohortDataService.getInstance();
 
   private constructor() {}
@@ -44,7 +46,6 @@ class ChatPanelDataService {
     };
     this.messages.push(newMessage);
     this.notifyListeners();
-    console.log('HERE IS THE ISSUE ADDING USER MESSAGE');
     this.sendAIRequest(text);
     return newMessage;
   }
@@ -55,6 +56,14 @@ class ChatPanelDataService {
 
   public removeMessagesUpdatedListener(callback: MessageCallback): void {
     this.listeners.delete(callback);
+  }
+
+  public onAICompletion(callback: AICompletionCallback): void {
+    this.aiCompletionListeners.add(callback);
+  }
+
+  public removeAICompletionListener(callback: AICompletionCallback): void {
+    this.aiCompletionListeners.delete(callback);
   }
 
   public clearMessages(): void {
@@ -68,6 +77,10 @@ class ChatPanelDataService {
     this.listeners.forEach(listener => listener(currentMessages));
   }
 
+  private notifyAICompletionListeners(success: boolean): void {
+    this.aiCompletionListeners.forEach(listener => listener(success));
+  }
+
   private async sendAIRequest(inputText): void {
     try {
       const response = await textToCohort({ user_request: inputText.trim() , current_cohort:this.cohortDataService.cohort_data});
@@ -79,9 +92,23 @@ class ChatPanelDataService {
       this.cohortDataService.updateCohortFromChat(response.cohort)
       this.messages.push(assistantMessage);
       this.notifyListeners();
+      this.notifyAICompletionListeners(true);
     } catch (error) {
       console.error('Error fetching cohort explanation:', error);
+      this.notifyAICompletionListeners(false);
     }
+  }
+
+  public acceptAIResult(): void {
+     
+  }
+
+  public rejectAIResult(): void { 
+
+  }
+
+  public retryAIRequest(): void { 
+
   }
 }
 

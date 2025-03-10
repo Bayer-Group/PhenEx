@@ -67,7 +67,6 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
         <Tabs width={400} height={30} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
         <ButtonsBarWithDropdowns
           width={200}
-          height={30}
           buttons={['Execute', 'New Phenotype']}
           actions={[handleExecute, handleNewPhenotype]}
           dropdown_items={[null, phenotypeTypeValues]}
