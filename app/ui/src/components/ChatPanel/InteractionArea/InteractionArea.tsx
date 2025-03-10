@@ -7,19 +7,26 @@ interface InteractionAreaProps {}
 
 export const InteractionArea: React.FC<InteractionAreaProps> = () => {
   const textBoxRef = useRef<HTMLDivElement>(null);
-  const [interactionState, setInteractionState] = useState<'empty' | 'thinking' | 'interactive'>(
+  const [interactionState, setInteractionState] = useState<'empty' | 'thinking' | 'interactive' | 'retry'>(
     'empty'
   );
-  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
 
-  // Clear timer when component unmounts
   useEffect(() => {
-    return () => {
-      if (timerId) {
-        clearTimeout(timerId);
+    const handleAICompletion = (success:boolean) => {
+      if (success){
+        setInteractionState('interactive');
+      } else{
+        setInteractionState('retry')
       }
     };
-  }, [timerId]);
+
+
+    chatPanelDataService.onAICompletion(handleAICompletion);
+
+    return () => {
+      chatPanelDataService.removeAICompletionListener(handleAICompletion);
+    };
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -36,14 +43,6 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
         if (textBoxRef.current) {
           textBoxRef.current.innerText = '';
         }
-
-        // Set a timer to change to interactive state after 3 seconds
-        const timer = setTimeout(() => {
-          setInteractionState('interactive');
-        }, 10000);
-
-        // Store timer ID for cleanup
-        setTimerId(timer);
       }
     }
   };
@@ -51,27 +50,26 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
   const handleAccept = () => {
     // Handle accept action
     setInteractionState('empty');
-    // Clear any existing timer
-    if (timerId) {
-      clearTimeout(timerId);
-      setTimerId(null);
-    }
+    chatPanelDataService.acceptAIResult()
   };
 
   const handleReject = () => {
     // Handle reject action
     setInteractionState('empty');
-    // Clear any existing timer
-    if (timerId) {
-      clearTimeout(timerId);
-      setTimerId(null);
-    }
+    chatPanelDataService.rejectAIResult()
   };
+
+  const handleRetry = () => {
+    // Handle reject action
+    setInteractionState('thinking');
+    chatPanelDataService.retryAIRequest()
+  };
+
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.topBar}>
-        <InteractionBar state={interactionState} onAccept={handleAccept} onReject={handleReject} />
+        <InteractionBar state={interactionState} onAccept={handleAccept} onReject={handleReject} onRetry={handleRetry} />
       </div>
       <div
         className={styles.textBox}

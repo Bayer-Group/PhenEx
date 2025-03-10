@@ -3,12 +3,11 @@ import styles from './ButtonsBar.module.css';
 
 interface ButtonsBarProps {
   width: string | number;
-  height: string | number;
   buttons: string[];
   actions: (() => void)[];
 }
 
-export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, actions }) => {
+export const ButtonsBar: FC<ButtonsBarProps> = ({ width, buttons, actions }) => {
   return (
     <div
       className={styles.buttonsContainer}

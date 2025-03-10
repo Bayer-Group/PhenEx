@@ -2,15 +2,16 @@ import { FC, useState, useEffect } from 'react';
 import { ButtonsBar } from '../../ButtonsBar/ButtonsBar';
 import styles from './InteractionBar.module.css';
 
-type InteractionState = 'empty' | 'thinking' | 'interactive';
+type InteractionState = 'empty' | 'thinking' | 'interactive' | 'retry';
 
 interface InteractionBarProps {
   state: InteractionState;
   onAccept?: () => void;
   onReject?: () => void;
+  onRetry?: () => void;
 }
 
-export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onReject }) => {
+export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onReject, onRetry }) => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
@@ -46,6 +47,18 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
 
   if (state === 'thinking') {
     return <span className={styles.thinkingContainer}>{dots}</span>;
+  }
+
+  if (state === 'retry') {
+    return (
+      <div className={styles.buttonContainer}>
+        <ButtonsBar
+          width="100%"
+          buttons={['Retry']}
+          actions={[onRetry || (() => {})]}
+        />
+      </div>
+    );
   }
 
   return (
