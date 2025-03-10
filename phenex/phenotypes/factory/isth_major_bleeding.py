@@ -40,7 +40,8 @@ class ISTHBleedComponents:
         return 'last'
 
 def ISTHMajorBleedingPhenotype(
-        components: ISTHBleedComponents
+        components: ISTHBleedComponents,
+        return_date : str = 'first'
 ) -> LogicPhenotype:
     critical_organ_bleed = CriticalOrganBleedPhenotype(components)
     symptomatic_bleed = SymptomaticBleedPhenotype(components)
@@ -48,7 +49,7 @@ def ISTHMajorBleedingPhenotype(
     return LogicPhenotype(
         name="isth_major_bleed",
         expression=critical_organ_bleed | symptomatic_bleed | fatal_bleed,
-        return_date="first",
+        return_date=return_date,
     )
 
 
