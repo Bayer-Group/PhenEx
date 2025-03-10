@@ -24,10 +24,7 @@ export const DropdownButton: FC<DropdownButtonProps> = ({ label, items, onSelect
 
   return (
     <div className={styles.dropdownContainer} ref={dropdownRef}>
-      <button
-        className={styles.button}
-        onClick={() => setIsOpen(!isOpen)}
-      >
+      <button className={styles.button} onClick={() => setIsOpen(!isOpen)}>
         {label}
       </button>
       {isOpen && (

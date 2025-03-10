@@ -13,18 +13,20 @@ const snowflakeDefaults = {
   account: 'default_account',
   warehouse: 'default_warehouse',
   role: 'default_role',
-  password: 'default_password'
+  password: 'default_password',
 };
 
 export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
   const dataService = CohortDataService.getInstance();
-  const [existingConfig, setExistingConfig] = useState(dataService.cohort_data.database_config || {});
+  const [existingConfig, setExistingConfig] = useState(
+    dataService.cohort_data.database_config || {}
+  );
 
   const [selectedMapper, setSelectedMapper] = useState(existingConfig.mapper || mappers[0]);
-  const [selectedConnector, setSelectedConnector] = useState(existingConfig.connector || connector_types[0]);
-  const [duckDbPath, setDuckDbPath] = useState(
-    existingConfig.config?.database_path || ''
+  const [selectedConnector, setSelectedConnector] = useState(
+    existingConfig.connector || connector_types[0]
   );
+  const [duckDbPath, setDuckDbPath] = useState(existingConfig.config?.database_path || '');
   const [snowflakeConfig, setSnowflakeConfig] = useState({
     sourceDb: existingConfig.config?.source_database || '',
     destinationDb: existingConfig.config?.destination_database || '',
@@ -32,7 +34,7 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
     account: existingConfig.config?.account || snowflakeDefaults.account,
     warehouse: existingConfig.config?.warehouse || snowflakeDefaults.warehouse,
     role: existingConfig.config?.role || snowflakeDefaults.role,
-    password: existingConfig.config?.password || snowflakeDefaults.password
+    password: existingConfig.config?.password || snowflakeDefaults.password,
   });
 
   const updateConfig = () => {
@@ -48,7 +50,7 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
       account: newConfig.config?.account || snowflakeDefaults.account,
       warehouse: newConfig.config?.warehouse || snowflakeDefaults.warehouse,
       role: newConfig.config?.role || snowflakeDefaults.role,
-      password: newConfig.config?.password || snowflakeDefaults.password
+      password: newConfig.config?.password || snowflakeDefaults.password,
     });
   };
 
@@ -73,8 +75,8 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
         className={styles.input}
         placeholder="undefined"
         value={duckDbPath}
-        onChange={(e) => setDuckDbPath(e.target.value)}
-        onKeyDown={(e) => {
+        onChange={e => setDuckDbPath(e.target.value)}
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             handleSaveChanges();
           }
@@ -93,10 +95,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.sourceDb}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, sourceDb: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, sourceDb: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -111,10 +113,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.destinationDb}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, destinationDb: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, destinationDb: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -129,10 +131,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.user}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, user: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, user: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -147,10 +149,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.account}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, account: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, account: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -165,10 +167,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.warehouse}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, warehouse: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, warehouse: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -183,10 +185,10 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.role}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, role: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, role: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -194,17 +196,17 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
           onBlur={handleSaveChanges}
         />
       </div>
-      <div className={styles.inputGroup}>
+      <div className={styles.inputGroup + ' ' + styles.lastField}>
         <label className={styles.inputLabel}>Password</label>
         <input
           type="password"
           className={styles.input}
           placeholder="undefined"
           value={snowflakeConfig.password}
-          onChange={(e) => {
-            setSnowflakeConfig({...snowflakeConfig, password: e.target.value});
+          onChange={e => {
+            setSnowflakeConfig({ ...snowflakeConfig, password: e.target.value });
           }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               handleSaveChanges();
             }
@@ -219,26 +221,26 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
     const databaseConfig = {
       mapper: key === 'mapper' ? value : selectedMapper,
       connector: key === 'connector' ? value : selectedConnector,
-      config: selectedConnector === 'duckdb' 
-        ? { database_path: key === 'database_path' ? value : duckDbPath }
-        : {
-            source_database: key === 'source_database' ? value : snowflakeConfig.sourceDb,
-            destination_database: key === 'destination_database' ? value : snowflakeConfig.destinationDb,
-            user: key === 'user' ? value : snowflakeConfig.user,
-            account: key === 'account' ? value : snowflakeConfig.account,
-            warehouse: key === 'warehouse' ? value : snowflakeConfig.warehouse,
-            role: key === 'role' ? value : snowflakeConfig.role,
-            password: key === 'password' ? value : snowflakeConfig.password
-          }
+      config:
+        selectedConnector === 'duckdb'
+          ? { database_path: key === 'database_path' ? value : duckDbPath }
+          : {
+              source_database: key === 'source_database' ? value : snowflakeConfig.sourceDb,
+              destination_database:
+                key === 'destination_database' ? value : snowflakeConfig.destinationDb,
+              user: key === 'user' ? value : snowflakeConfig.user,
+              account: key === 'account' ? value : snowflakeConfig.account,
+              warehouse: key === 'warehouse' ? value : snowflakeConfig.warehouse,
+              role: key === 'role' ? value : snowflakeConfig.role,
+              password: key === 'password' ? value : snowflakeConfig.password,
+            },
     };
-    
+
     dataService.setDatabaseSettings(databaseConfig);
   };
 
   const renderConnectorFields = () => {
-    return selectedConnector === 'duckdb' 
-      ? createDuckDbFields()
-      : createSnowflakeConnectorFields();
+    return selectedConnector === 'duckdb' ? createDuckDbFields() : createSnowflakeConnectorFields();
   };
 
   return (
@@ -248,13 +250,13 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
         <select
           className={styles.dropdown}
           value={selectedMapper}
-          onChange={(e) => {
+          onChange={e => {
             const newValue = e.target.value;
             setSelectedMapper(newValue);
             handleSaveChanges('mapper', newValue);
           }}
         >
-          {mappers.map((mapper) => (
+          {mappers.map(mapper => (
             <option key={mapper} value={mapper}>
               {mapper}
             </option>
@@ -267,21 +269,19 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
         <select
           className={styles.dropdown}
           value={selectedConnector}
-          onChange={(e) => {
+          onChange={e => {
             setSelectedConnector(e.target.value);
             handleSaveChanges('connector', e.target.value);
           }}
         >
-          {connector_types.map((type) => (
+          {connector_types.map(type => (
             <option key={type} value={type}>
               {type}
             </option>
           ))}
         </select>
 
-        <div className={styles.inputFields}>
-          {renderConnectorFields()}
-        </div>
+        <div className={styles.inputFields}>{renderConnectorFields()}</div>
       </div>
     </div>
   );

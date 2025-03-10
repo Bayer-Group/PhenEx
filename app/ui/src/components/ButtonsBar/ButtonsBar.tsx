@@ -17,11 +17,7 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
       }}
     >
       {buttons.map((button, index) => (
-        <button
-          key={index}
-          className={styles.button}
-          onClick={() => actions[index]()}
-        >
+        <button key={index} className={styles.button} onClick={() => actions[index]()}>
           {button}
         </button>
       ))}

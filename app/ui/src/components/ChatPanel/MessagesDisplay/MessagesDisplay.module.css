@@ -1,0 +1,134 @@
+.container {
+  background-color: var(--background-color);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.messagesContainer {
+  gap: 30px;
+  flex-direction: column;
+  display: flex;
+  overflow-y: auto;
+  /* position: fixed;
+  z-index: 2;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  background-color: transparent;
+  height: calc(100%);
+  overflow-x: hidden;
+  background-color: blue;
+  overflow-y:auto; */
+}
+
+.image {
+  /* position: absolute;
+  top: -50px;
+  left: -150px;
+  width: 800px;
+  transform: scaleX(-1);
+  rotate: -4deg;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none; */
+}
+
+.messageBubble {
+  max-width: 70%;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  word-wrap: break-word;
+  background-color: white;
+  color: var(--text-color);
+  border: var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.userMessage {
+  align-self: flex-end;
+  transition: all 0.2s ease-in-out;
+  margin-right: 20px;
+  border-bottom-right-radius: 0px;
+  margin-left: 80px;
+}
+
+.messageBubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.1s ease-in-out,
+    background-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+}
+
+.assistantMessage {
+  align-self: flex-start;
+  color: var(--text-color);
+  border-bottom-left-radius: 0px;
+  /* border-top-right-radius:40px; */
+  margin-left: 0px;
+  margin-right: 60px;
+}
+
+.messagesContainer > div:first-child.assistantMessage {
+  margin-top: 100px;
+}
+
+.messagesContainer > div:last-child.assistantMessage {
+  margin-bottom: 50px;
+}
+
+.messagesContainer > div:last-child.userMessage {
+  margin-bottom: 50px;
+}
+
+.messageBubble h1 {
+  font-size: 1.8em;
+  margin: 0.5em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h2 {
+  font-size: 1.5em;
+  margin: 0.4em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h3 {
+  font-size: 1.3em;
+  margin: 0.3em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h4 {
+  font-size: 1.2em;
+  margin: 0.2em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h5 {
+  font-size: 1.1em;
+  margin: 0.1em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h6 {
+  font-size: 1em;
+  margin: 0.1em 0;
+  font-family: 'SNPro-bold';
+  color: var(--text-color);
+}
+
+.messageBubble strong {
+  font-family: 'SNPro-black';
+  color: var(--text-color);
+}

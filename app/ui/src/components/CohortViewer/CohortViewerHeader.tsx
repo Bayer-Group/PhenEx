@@ -4,7 +4,7 @@ import { CohortDataService } from './CohortDataService';
 import { Tabs } from '../Tabs/Tabs';
 import { CohortViewType } from './CohortViewer';
 import { ButtonsBarWithDropdowns } from '../ButtonsBar/ButtonsBarWithDropdowns';
-import { phenotypeTypeValues } from '../../types/phenotype'
+import { phenotypeTypeValues } from '../../types/phenotype';
 
 interface CohortViewerHeaderProps {
   cohortName: string;
@@ -13,7 +13,6 @@ interface CohortViewerHeaderProps {
   onSaveChanges: () => void;
   navigateTo?: (viewType: CohortViewType) => void;
   onAddPhenotype?: (type: string) => void;
-
 }
 
 export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
@@ -25,7 +24,8 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
   onAddPhenotype,
 }) => {
   const tabs = Object.values(CohortViewType).map(value => {
-    return value.split('_')
+    return value
+      .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   });
@@ -34,8 +34,6 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
     const viewTypes = Object.values(CohortViewType);
     navigateTo(viewTypes[index]);
   };
-
-  
 
   const handleExecute = () => {
     onSaveChanges();
@@ -64,16 +62,9 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
             }
           }}
         />
-
       </div>
       <div className={styles.controlsContainer}>
-        <Tabs
-          width={400}
-          height={30}
-          tabs={tabs}
-          onTabChange={onTabChange}
-          active_tab_index = {1}
-        />
+        <Tabs width={400} height={30} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
         <ButtonsBarWithDropdowns
           width={200}
           height={30}

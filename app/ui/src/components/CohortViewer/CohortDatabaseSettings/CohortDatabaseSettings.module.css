@@ -16,7 +16,7 @@
   font-weight: 600;
   color: var(--text-color-primary);
   margin: 0;
-  font-family: "SNPro-bold";
+  font-family: 'SNPro-bold';
 }
 
 .dropdown {
@@ -52,7 +52,7 @@
 .inputLabel {
   font-size: 12px;
   color: var(--text-color-secondary);
-  font-family: "SNPro-bold";
+  font-family: 'SNPro-bold';
   margin-left: 12px;
 }
 
@@ -68,6 +68,10 @@
   border: var(--border);
 }
 
-.input[type="password"] {
+.input[type='password'] {
   font-family: monospace;
+}
+
+.lastField {
+  margin-bottom: 150px;
 }

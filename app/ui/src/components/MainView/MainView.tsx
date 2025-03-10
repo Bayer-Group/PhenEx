@@ -35,7 +35,7 @@ export const MainView = () => {
   };
 
   const renderView = () => {
-    console.log("RENDERING VIEW")
+    console.log('RENDERING VIEW');
     switch (currentView.viewType) {
       case ViewType.Empty:
         return null;
@@ -70,8 +70,8 @@ export const MainView = () => {
         split="vertical"
         initalSizeRight={300}
         initalSizeLeft={300}
-        minSizeLeft={100}
-        minSizeRight={100}
+        minSizeLeft={300}
+        minSizeRight={300}
       >
         <HierarchicalLeftPanel isVisible={true} onNavigate={navigateTo} />
         <RightPanel>{renderView()}</RightPanel>

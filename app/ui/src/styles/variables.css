@@ -1,5 +1,5 @@
 :root {
-  --accent-color: #AAA;
+  --accent-color: #aaa;
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
   --line-color: #d0d0d0ea;
@@ -30,11 +30,11 @@
   --phenex-red: hsl(0, 75%, 43%);
   --phenex-dark: hsl(0, 0%, 5%); */
 
-  --phenex-blue: 	hsl(191, 40%, 80%);
+  --phenex-blue: hsl(191, 40%, 80%);
   --phenex-green: hsl(62, 40%, 80%);
   --phenex-coral: hsl(16, 40%, 80%);
   --phenex-red: hsl(0, 40%, 80%);
-  --phenex-dark: hsl(0, 40%, 5%); */
+  --phenex-dark: hsl(0, 40%, 5%);
 }
 
 .ag-theme-quartz .rag-blue-outer {

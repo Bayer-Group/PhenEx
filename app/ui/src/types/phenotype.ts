@@ -3,7 +3,7 @@ export enum PhenotypeType {
   Inclusion = 'inclusion',
   Exclusion = 'exclusion',
   Baseline = 'baseline',
-  Outcome = 'outcome'
+  Outcome = 'outcome',
 }
 
 export const PhenotypeTypeNames: Record<PhenotypeType, string> = {
@@ -11,7 +11,7 @@ export const PhenotypeTypeNames: Record<PhenotypeType, string> = {
   [PhenotypeType.Inclusion]: 'Inclusion',
   [PhenotypeType.Exclusion]: 'Exclusion',
   [PhenotypeType.Baseline]: 'Baseline',
-  [PhenotypeType.Outcome]: 'Outcome'
+  [PhenotypeType.Outcome]: 'Outcome',
 };
 
 export const phenotypeTypeValues = Object.values(PhenotypeType);

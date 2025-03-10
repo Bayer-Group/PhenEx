@@ -2,7 +2,7 @@ import { TableData, ColumnDefinition, TableRow } from './tableTypes';
 import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
 import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
 import { executeStudy } from '../../api/execute_cohort/route';
-import { MapperDomains } from '../../types/mappers'
+import { MapperDomains } from '../../types/mappers';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -152,33 +152,16 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
   }
 
-  private listeners: Array<() => void> = [];
-
-  public addListener(listener: () => void) {
-    this.listeners.push(listener);
-  }
-
-  public removeListener(listener: () => void) {
-    const index = this.listeners.indexOf(listener);
-    if (index > -1) {
-      this.listeners.splice(index, 1);
-    }
-  }
-
-  private notifyListeners() {
-    this.listeners.forEach(listener => listener());
-  }
-
-  public setDatabaseSettings(databaseConfig){
+  public setDatabaseSettings(databaseConfig) {
     this._cohort_data.database_config = databaseConfig;
     console.log(databaseConfig);
-    
+
     // Update domain values based on mapper type
     const domainColumn = this.columns.find(col => col.field === 'domain');
     if (domainColumn) {
       domainColumn.cellEditorParams.values = MapperDomains[databaseConfig.mapper];
     }
-    
+
     // Refresh table data to reflect the updated domain values
     this._table_data = this.tableDataFromCohortData();
     this.saveChangesToCohort();
@@ -199,8 +182,8 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
-  public async saveChangesToCohort(changesToCohort:boolean=true) {
-    if (changesToCohort){
+  public async saveChangesToCohort(changesToCohort: boolean = true) {
+    if (changesToCohort) {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
@@ -269,6 +252,9 @@ export class CohortDataService {
       class_name: 'CodelistPhenotype',
     };
     this._cohort_data.phenotypes.push(newPhenotype);
+    this.sortPhenotypes();
+    console.log('addPhenotype cohort data!!! ', this._cohort_data);
+    this.notifyListeners();
     return {
       add: [newPhenotype],
       addIndex: this._cohort_data.phenotypes.length - 1,
@@ -291,7 +277,6 @@ export class CohortDataService {
   public async createNewCohort() {
     /*
     Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
-
     */
     this._cohort_data = {
       id: this.createId(),
@@ -303,12 +288,28 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
   }
 
+  private listeners: Array<() => void> = [];
+
+  public addListener(listener: () => void) {
+    this.listeners.push(listener);
+  }
+
+  public removeListener(listener: () => void) {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(listener => listener());
+  }
+
   public updateCohortFromChat(newCohort){
     this._cohort_data = newCohort;
     console.log("UPDATED COHROT DATA", newCohort)
     this.saveChangesToCohort()
     this._table_data = this.tableDataFromCohortData();
-
+    this.notifyListeners();
   }
-
 }
