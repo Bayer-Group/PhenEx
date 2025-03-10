@@ -4,19 +4,21 @@ from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
+from phenex.aggregators.aggregator import First, Last
 from ibis import _
 
 
 class MeasurementChangePhenotype(Phenotype):
     """
-    MeasurementChangePhenotype looks for changes in the value of a measurement within a certain time period.
+    MeasurementChangePhenotype looks for changes in the value of a MeasurementPhenotype within a certain time period. Returns EVENT_DATE as either the date of the first or second MeasurementPhenotype event and VALUE as the observed change in the underlying MeasurementPhenotype's VALUE.
 
     Parameters:
         name: The name of the phenotype.
         phenotype: The measurement phenotype to look for changes.
         min_change: The minimum change in the measurement value to look for.
         max_days_apart: The maximum number of days between the measurements.
-        return_date: Specifies whether to return the 'first' or 'second' event date. Default is 'second'.
+        component_date_select: Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')
+        return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
 
     Example:
         ```python
@@ -45,6 +47,7 @@ class MeasurementChangePhenotype(Phenotype):
         min_days_between: Value = GreaterThanOrEqualTo(0),
         max_days_between: Value = None,
         relative_time_range: RelativeTimeRangeFilter = None,
+        component_date_select="second",
         return_date="second",
     ):
         self.name = name
@@ -53,6 +56,7 @@ class MeasurementChangePhenotype(Phenotype):
         self.max_change = max_change
         self.min_days_between = min_days_between
         self.max_days_between = max_days_between
+        self.component_date_select = component_date_select
         self.return_date = return_date
         self.relative_time_range = relative_time_range
         self.children = [phenotype]
@@ -76,7 +80,7 @@ class MeasurementChangePhenotype(Phenotype):
             ],
             lname="{name}_1",
             rname="{name}_2",
-        ).filter(_.EVENT_DATE_1 <= _.EVENT_DATE_2)
+        ).filter(_.EVENT_DATE_1 < _.EVENT_DATE_2)
 
         # Calculate the change in value and the days apart
         days_between = joined_table.EVENT_DATE_2.delta(joined_table.EVENT_DATE_1, "day")
@@ -99,11 +103,11 @@ class MeasurementChangePhenotype(Phenotype):
         filtered_table = time_filter.filter(filtered_table)
 
         # Determine the return date based on the return_date attribute
-        if self.return_date == "first":
+        if self.component_date_select == "first":
             filtered_table = filtered_table.mutate(
                 EVENT_DATE=filtered_table.EVENT_DATE_1,
             )
-        elif self.return_date == "second":
+        elif self.component_date_select == "second":
             filtered_table = filtered_table.mutate(
                 EVENT_DATE=filtered_table.EVENT_DATE_2,
             )
@@ -116,5 +120,12 @@ class MeasurementChangePhenotype(Phenotype):
 
         if self.relative_time_range is not None:
             result_table = self.relative_time_range.filter(result_table)
+
+        # Handle the return_date attribute for each PERSON_ID using window functions
+        window = ibis.window(group_by="PERSON_ID", order_by="EVENT_DATE")
+        if self.return_date == "first":
+            result_table = First().aggegrate(result_table)
+        elif self.return_date == "last":
+            result_table = Last().aggregate(result_table)
 
         return result_table
