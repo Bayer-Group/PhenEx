@@ -66,7 +66,9 @@ def CriticalOrganBleedPhenotype(
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
 ):
     # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be either primary or secondary diagnosis position
-    categorical_filters = components.inpatient & (components.primary_diagnosis | components.secondary_diagnosis)
+    categorical_filters = components.inpatient & (
+        components.primary_diagnosis | components.secondary_diagnosis
+    )
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     return CodelistPhenotype(
@@ -85,7 +87,9 @@ def SymptomaticBleedPhenotype(
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
 ):
     # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be either primary or secondary diagnosis position
-    categorical_filters = components.inpatient & (components.primary_diagnosis | components.secondary_diagnosis)
+    categorical_filters = components.inpatient & (
+        components.primary_diagnosis | components.secondary_diagnosis
+    )
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     overt_bleed = CodelistPhenotype(
@@ -97,18 +101,24 @@ def SymptomaticBleedPhenotype(
         return_date=component_return_date(relative_time_range),
     )
 
-    return BleedVerificationPhenotype(overt_bleed, components, relative_time_range=relative_time_range)
+    return BleedVerificationPhenotype(
+        overt_bleed, components, relative_time_range=relative_time_range
+    )
+
 
 def component_return_date(relative_time_range):
+    if relative_time_range is None:
+        return "first"
     if relative_time_range.when == "after":
         return "first"
     return "last"
 
 
-def FatalBleedPhenotype(components: ISTHBleedComponents, 
-                        return_date: str = "first",
-                        relative_time_range: Optional[RelativeTimeRangeFilter] = None
-                        ):
+def FatalBleedPhenotype(
+    components: ISTHBleedComponents,
+    return_date: str = "first",
+    relative_time_range: Optional[RelativeTimeRangeFilter] = None,
+):
     death = DeathPhenotype(
         relative_time_range=relative_time_range, domain=components.death_domain
     )
@@ -122,14 +132,20 @@ def FatalBleedPhenotype(components: ISTHBleedComponents,
 
     # create required categorical filters; critical organ bleed already covers the inpatient conditions. we must only look for outpatient and primary diagnosis positions
     categorical_filters = components.outpatient & components.primary_diagnosis
-    categorical_filters = add_diagnosis_of_filter(categorical_filters, components=components)
+    categorical_filters = add_diagnosis_of_filter(
+        categorical_filters, components=components
+    )
 
+    if relative_time_range is None:
+        full_relative_time_range = relative_45_days_prior
+    else:
+        full_relative_time_range = [relative_45_days_prior, relative_time_range]
     return CodelistPhenotype(
         name="isth_fatal_bleed",
         domain=components.diagnosis_code_domain,
         codelist=components.critical_organ_bleed_codelist,
         categorical_filter=categorical_filters,
-        relative_time_range=[relative_time_range, relative_45_days_prior],
+        relative_time_range=full_relative_time_range,
         return_date=component_return_date(relative_time_range),
     )
 
@@ -142,10 +158,10 @@ def add_diagnosis_of_filter(categorical_filters, components):
 
 
 def BleedVerificationPhenotype(
-        anchor_phenotype, 
-        components: ISTHBleedComponents, 
-        relative_time_range: Optional[RelativeTimeRangeFilter] = None
-    ):
+    anchor_phenotype,
+    components: ISTHBleedComponents,
+    relative_time_range: Optional[RelativeTimeRangeFilter] = None,
+):
 
     within_two_days = RelativeTimeRangeFilter(
         when="after",
@@ -155,9 +171,9 @@ def BleedVerificationPhenotype(
     )
     if relative_time_range is not None:
         relative_time_range = [relative_time_range, within_two_days]
-    
+
     transfusion = CodelistPhenotype(
-        name="transfusion_two_days_within_"+anchor_phenotype.name,
+        name="transfusion_two_days_within_" + anchor_phenotype.name,
         codelist=components.transfusion_codelist,
         domain=components.procedure_code_domain,
         relative_time_range=relative_time_range,
