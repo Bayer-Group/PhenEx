@@ -312,4 +312,23 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
   }
+
+
+  public async executeCohort(): Promise<void> {
+    const response = await executeStudy({ 
+      cohort: this._cohort_data , 
+      database_config:this._cohort_data.database_config
+    });
+    console.log("GOT RESPONSE", response)
+    // try {
+    
+    //   const response = await executeStudy({ 
+    //     cohort: this._cohort_data , 
+    //     database_config:this._cohort_data.database_config
+    //   });
+    //   console.log("GOT RESPONSE", response)
+    // } catch (error) {
+    //   console.error('Error fetching cohort explanation:', error);
+    // }
+  }
 }

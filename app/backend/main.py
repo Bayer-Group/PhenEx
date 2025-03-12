@@ -2,7 +2,7 @@ from typing import Dict
 from fastapi import FastAPI, HTTPException, Request, Body
 import phenex
 from phenex.ibis_connect import SnowflakeConnector
-from phenex.util.serialization import from_dict
+from phenex.util.serialization.from_dict import from_dict
 from dotenv import load_dotenv
 import os, json, glob
 import logging
@@ -120,34 +120,27 @@ async def text_to_cohort(
 
 
 @app.post("/execute_study")
-async def execute_study(request: Request):
+async def execute_study(
+    cohort: Dict = None,
+    database_config: Dict = None,
+):
     logger.info("Received request!!!!")
-    #
-    # {
-    #   'mappers': str (OMOPDomains / OptumEHRDomains / ...)
-    #   'connection': {
-    #        'SOURCE_DATABASE': ...
-    #        'DEST_DATABASE': ...
-    #        'connector_type': 'snowflake'
-    #        'user': ...
-    #   }
-    #   'cohort': {
-    #       'name': ...
-    #       'description': ...
-    #       ...
-    #    }
+    print(cohort)
+    print(database_config)
+    response = {
+        'cohort': cohort
+    }
 
-    try:
-        input_json = await request.json()
-        logger.info(input_json)
-        # mappers = PHENEX_MAPPERS[input_json['mappers']]
-        # con = SnowflakeConnector(**input_json['connection'])
-        # mapped_tables = mappers.get_mapped_tables(con)
-        # cohort_config = input_json['cohort']
-        # c = from_dict(cohort_config)
-        # c.execute(mapped_tables, n_threads=6, con=con)
-        logger.info(input_json)
-        return {"status": 200}
-    except Exception as e:
-        logger.error(str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+    from phenex.ibis_connect import SnowflakeConnector
+    database_config = database_config['config']
+    con = SnowflakeConnector(
+        SNOWFLAKE_USER = database_config['user'.lower()],
+        SNOWFLAKE_ACCOUNT = database_config['account'.lower()],
+        SNOWFLAKE_WAREHOUSE = database_config['warehouse'.lower()],
+        SNOWFLAKE_ROLE = database_config['role'.lower()],
+        SNOWFLAKE_SOURCE_DATABASE = database_config['source_database'.lower()],
+        SNOWFLAKE_DEST_DATABASE = database_config['destination_database'.lower()],
+    )
+    px_cohort = from_dict(cohort)
+
+    return response

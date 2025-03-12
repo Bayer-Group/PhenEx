@@ -1,0 +1,99 @@
+.textAreaContainer {
+  width: 100%;
+  height: calc(100% - 100px);
+  padding: 0px;
+  background-color: var(--background-color);
+}
+
+.title{
+  margin-left: 30px;
+  font-family: 'SNPro-black';
+  font-size: 30px;
+  height: 20px;
+}
+
+.editor {
+  height: calc(100% - var(--border-radius));
+  background-color: transparent;
+  border-radius: 4px;
+  width: 100%;
+  border: 0px solid transparent;
+
+}
+
+/* Quill specific overrides */
+:global(.ql-toolbar) {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background-color: var(--background-color);
+  border: transparent !important;
+  opacity: 0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-left: 20px;
+  transition: opacity 0.2s ease;
+}
+
+.editor:focus-within :global(.ql-toolbar) {
+  opacity: 1;
+}
+:global(.ql-toolbar.ql-snow) {
+  border: none;
+  padding: 8px;
+}
+:global(.ql-container) {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  /* height: calc(100% - 60px) !important; */
+  background-color: var(--background-color);
+  border: transparent !important;
+  padding-left:15px;
+}
+
+/* Custom header styles for Quill editor */
+:global(.ql-editor h1) {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: "SNPro-bold";
+  margin-bottom: 0.5em;
+  color: var(--text-color-primary);
+}
+
+:global(.ql-editor h2) {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 0.4em;
+  color: var(--text-color-primary);
+}
+
+:global(.ql-editor h3) {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 0.3em;
+  color: var(--text-color-primary);
+}
+
+:global(.ql-editor h4) {
+  font-size: 1.1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+  color: var(--text-color-primary);
+}
+
+:global(.ql-editor h5) {
+  font-size: 1em;
+  font-weight: 500;
+  margin-bottom: 0.2em;
+  color: var(--text-color-primary);
+}
+
+:global(.ql-editor h6) {
+  font-size: 0.9em;
+  font-weight: 500;
+  margin-bottom: 0.1em;
+  color: var(--text-color-primary);
+}
+

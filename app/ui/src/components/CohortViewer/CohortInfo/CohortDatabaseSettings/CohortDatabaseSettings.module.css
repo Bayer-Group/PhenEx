@@ -1,8 +1,72 @@
 .container {
-  padding-left: 25px;
+  padding: 0px 30px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title{
+  font-family: 'SNPro-black';
+  font-size: 30px;
+  height: 20px;
+}
+
+.editButton {
+  background: white;
+  border: none;
+  padding: 6px 7px 3px 7px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+}
+
+.editButton:hover {
+  background: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+}
+
+.editButton:focus {
+  outline: none;
+}
+
+.editButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.editIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.displayState {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background-color: transparent;
+}
+
+.displayRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.label {
+  font-family: 'SNPro-bold';
+  color: var(--text-color-secondary);
+  min-width: 150px;
 }
 
 .section {
@@ -11,11 +75,19 @@
   gap: 0px;
 }
 
+.myTitle{
+  padding-bottom: 0px;
+  margin:0;
+  font-family: "SNPro-bold";
+  font-size:30px;
+}
+
 .sectionTitle {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-color-primary);
   margin: 0;
+  margin-left: 10px;
   font-family: 'SNPro-bold';
 }
 
@@ -73,5 +145,5 @@
 }
 
 .lastField {
-  margin-bottom: 150px;
+  margin-bottom: 40px;
 }
