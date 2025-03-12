@@ -22,7 +22,7 @@ class MeasurementChangePhenotype(Phenotype):
         return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
         return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters.
 
-    Example:
+    Example: Change of Hemoglobin of at Least 2g/dL
         ```python
         hemoglobin = MeasurementPhenotype(
             name='hemoglobin_drop',
@@ -35,7 +35,7 @@ class MeasurementChangePhenotype(Phenotype):
             phenotype=hemoglobin,
             min_change=GreaterThanOrEqualTo(2),
             max_days_apart=LessThanOrEqualTo(2),
-            component_date_select='first',
+            component_date_select='second',
             return_date='first'
         )
         ```
@@ -65,6 +65,8 @@ class MeasurementChangePhenotype(Phenotype):
         self.relative_time_range = relative_time_range
         self.return_value = return_value
         self.children = [phenotype]
+        if component_date_select not in ['first', 'second']:
+            raise ValueError(f'component_date_select = {component_date_select} not supported, must be either "first" or "second"')
         super(Phenotype, self).__init__()
 
     def _execute(self, tables) -> PhenotypeTable:
@@ -73,10 +75,6 @@ class MeasurementChangePhenotype(Phenotype):
         phenotype_table_2 = self.phenotype.table.view()
 
         # Create a self-join to compare each measurement with every other measurement
-        import ibis
-
-        ibis.options.interactive = True
-
         joined_table = phenotype_table_1.join(
             phenotype_table_2,
             [
