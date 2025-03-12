@@ -35,7 +35,8 @@ class MeasurementChangePhenotype(Phenotype):
             phenotype=hemoglobin,
             min_change=GreaterThanOrEqualTo(2),
             max_days_apart=LessThanOrEqualTo(2),
-            return_date='second'
+            component_date_select='first',
+            return_date='first'
         )
         ```
     """
@@ -50,7 +51,7 @@ class MeasurementChangePhenotype(Phenotype):
         max_days_between: Value = None,
         relative_time_range: RelativeTimeRangeFilter = None,
         component_date_select="second",
-        return_date="second",
+        return_date="first",
         return_value: Optional[ValueAggregator] = DailyMedian(),
     ):
         self.name = name
