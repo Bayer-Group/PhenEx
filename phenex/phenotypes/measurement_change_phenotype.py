@@ -20,7 +20,7 @@ class MeasurementChangePhenotype(Phenotype):
         max_days_apart: The maximum number of days between the measurements.
         component_date_select: Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')
         return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
-        return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters.
+        return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters. FIXME: return_value and return_date don't really place nicely together in this Phenotype. If you need this feature or experience breakages, reach out for support. This is a known issue but it was decided to put off fixing it.
 
     Example: Change of Hemoglobin of at Least 2g/dL
         ```python
