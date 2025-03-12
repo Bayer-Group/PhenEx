@@ -4,7 +4,7 @@ import { CohortViewerHeader } from './CohortViewerHeader';
 import { CohortDataService } from './CohortDataService';
 import { TableData } from './tableTypes';
 import { CohortTable } from './CohortTable/CohortTable';
-import { CohortDatabaseSettings } from './CohortDatabaseSettings/CohortDatabaseSettings';
+import { CohortInfo } from './CohortInfo/CohortInfo';
 
 interface CohortViewerProps {
   data?: string;
@@ -12,9 +12,8 @@ interface CohortViewerProps {
 }
 
 export enum CohortViewType {
-  Database = 'database',
+  Info = 'info',
   CohortDefinition = 'definition',
-  Characteristics = 'characteristics',
   Report = 'report',
 }
 
@@ -75,8 +74,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         );
       case CohortViewType.Characteristics:
         return <div>Characteristics View</div>;
-      case CohortViewType.Database:
-        return <CohortDatabaseSettings />;
+      case CohortViewType.Info:
+        return <CohortInfo />;
       case CohortViewType.Report:
         return <div>Report View</div>;
       default:
@@ -100,6 +99,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     }
   };
 
+  const executeCohort = async () => {
+    await dataService.executeCohort();
+  };
+
   return (
     <div className={styles.cohortTableContainer}>
       <CohortViewerHeader
@@ -111,6 +114,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         }}
         navigateTo={navigateTo}
         onAddPhenotype={clickedAddPhenotype}
+        onExecute = {executeCohort}
       />
       <div className={styles.bottomSection}>
         <div className={styles.rightPanel}>{renderView()}</div>

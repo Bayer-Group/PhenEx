@@ -13,6 +13,7 @@ interface CohortViewerHeaderProps {
   onSaveChanges: () => void;
   navigateTo?: (viewType: CohortViewType) => void;
   onAddPhenotype?: (type: string) => void;
+  onExecute: () => void;
 }
 
 export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
@@ -22,6 +23,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
   onSaveChanges,
   navigateTo,
   onAddPhenotype,
+  onExecute
 }) => {
   const tabs = Object.values(CohortViewType).map(value => {
     return value
@@ -36,7 +38,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
   };
 
   const handleExecute = () => {
-    onSaveChanges();
+    onExecute();
   };
 
   const handleNewPhenotype = () => {

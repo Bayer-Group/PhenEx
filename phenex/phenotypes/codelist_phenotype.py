@@ -108,6 +108,7 @@ class CodelistPhenotype(Phenotype):
         self.categorical_filter = categorical_filter
         self.name = name or self.codelist.name
         self.date_range = date_range
+        if return_date is None: return_date = 'first'
         self.return_date = return_date
         assert self.return_date in [
             "first",
