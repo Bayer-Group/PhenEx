@@ -4,7 +4,8 @@ from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
-from phenex.aggregators.aggregator import First, Last
+from phenex.aggregators.aggregator import First, Last, ValueAggregator, DailyMedian
+
 from ibis import _
 
 
@@ -19,6 +20,7 @@ class MeasurementChangePhenotype(Phenotype):
         max_days_apart: The maximum number of days between the measurements.
         component_date_select: Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')
         return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
+        return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters.
 
     Example:
         ```python
@@ -49,6 +51,7 @@ class MeasurementChangePhenotype(Phenotype):
         relative_time_range: RelativeTimeRangeFilter = None,
         component_date_select="second",
         return_date="second",
+        return_value: Optional[ValueAggregator] = DailyMedian(),
     ):
         self.name = name
         self.phenotype = phenotype
@@ -59,6 +62,7 @@ class MeasurementChangePhenotype(Phenotype):
         self.component_date_select = component_date_select
         self.return_date = return_date
         self.relative_time_range = relative_time_range
+        self.return_value = return_value
         self.children = [phenotype]
         super(Phenotype, self).__init__()
 
@@ -71,6 +75,7 @@ class MeasurementChangePhenotype(Phenotype):
         import ibis
 
         ibis.options.interactive = True
+
         joined_table = phenotype_table_1.join(
             phenotype_table_2,
             [
@@ -116,16 +121,23 @@ class MeasurementChangePhenotype(Phenotype):
         filtered_table = filtered_table.mutate(
             PERSON_ID="PERSON_ID_1", VALUE="VALUE_CHANGE", BOOLEAN=True
         )
-        result_table = filtered_table.select(PHENOTYPE_TABLE_COLUMNS).distinct()
 
         if self.relative_time_range is not None:
-            result_table = self.relative_time_range.filter(result_table)
+            filtered_table = self.relative_time_range.filter(filtered_table)
 
         # Handle the return_date attribute for each PERSON_ID using window functions
-        window = ibis.window(group_by="PERSON_ID", order_by="EVENT_DATE")
         if self.return_date == "first":
-            result_table = First().aggegrate(result_table)
+            filtered_table = First(reduce=True).aggregate(filtered_table)
         elif self.return_date == "last":
-            result_table = Last().aggregate(result_table)
+            filtered_table = Last(reduce=True).aggregate(filtered_table)
 
-        return result_table
+        if self.return_value is not None:
+            filtered_table = self.return_value.aggregate(filtered_table)
+
+        filtered_table = (
+            filtered_table.mutate(BOOLEAN=True)
+            .select(PHENOTYPE_TABLE_COLUMNS)
+            .distinct()
+        )
+
+        return filtered_table
