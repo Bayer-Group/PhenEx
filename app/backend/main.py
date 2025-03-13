@@ -1,5 +1,6 @@
 from typing import Dict
 from fastapi import FastAPI, HTTPException, Request, Body
+from fastapi.responses import JSONResponse
 import phenex
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
@@ -132,15 +133,27 @@ async def execute_study(
     }
 
     from phenex.ibis_connect import SnowflakeConnector
-    database_config = database_config['config']
-    con = SnowflakeConnector(
-        SNOWFLAKE_USER = database_config['user'.lower()],
-        SNOWFLAKE_ACCOUNT = database_config['account'.lower()],
-        SNOWFLAKE_WAREHOUSE = database_config['warehouse'.lower()],
-        SNOWFLAKE_ROLE = database_config['role'.lower()],
-        SNOWFLAKE_SOURCE_DATABASE = database_config['source_database'.lower()],
-        SNOWFLAKE_DEST_DATABASE = database_config['destination_database'.lower()],
-    )
-    px_cohort = from_dict(cohort)
+    print(database_config)
+    if database_config['mapper'] == 'OMOP':
+        from phenex.mappers import OMOPDomains
+        mapper = OMOPDomains
 
-    return response
+    database = database['config']
+
+    # con = SnowflakeConnector(
+    #     SNOWFLAKE_USER = database['user'],
+    #     SNOWFLAKE_ACCOUNT = database['account'],
+    #     SNOWFLAKE_WAREHOUSE = database['warehouse'],
+    #     SNOWFLAKE_ROLE = database['role'],
+    #     SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
+    #     SNOWFLAKE_DEST_DATABASE = database['destination_database'],
+    # )
+    
+    # mapped_tables = mapper.get_mapped_tables(con)
+    # px_cohort = from_dict(cohort)
+    # px_cohort.execute(mapped_tables)
+    # px_cohort.append_results()
+
+    # response = {cohort:px_cohort.to_dict()}
+
+    # return JSONResponse(content=response)
