@@ -26,12 +26,6 @@ class ISTHBleedComponents:
     procedure_code_domain: str = "PROCEDURE_OCCURRENCE_SOURCE"
     death_domain: str = "PERSON"
 
-    @property
-    def component_phenotype_date_select(self):
-        if self.when == "after":
-            return "first"
-        return "last"
-
 
 def ISTHMajorBleedingPhenotype(
     components: ISTHBleedComponents,
