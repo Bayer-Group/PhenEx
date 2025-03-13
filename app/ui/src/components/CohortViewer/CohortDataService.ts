@@ -74,7 +74,7 @@ export class CohortDataService {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
         values: [
-          'Condition Occurrence',
+          'CONDITION_OCCURRENCE_SOURCE',
           'Drug Exposure',
           'Procedure Occurrence',
           'Person',

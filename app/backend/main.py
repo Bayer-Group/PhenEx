@@ -138,22 +138,27 @@ async def execute_study(
         from phenex.mappers import OMOPDomains
         mapper = OMOPDomains
 
-    database = database['config']
+    database = database_config['config']
 
-    # con = SnowflakeConnector(
-    #     SNOWFLAKE_USER = database['user'],
-    #     SNOWFLAKE_ACCOUNT = database['account'],
-    #     SNOWFLAKE_WAREHOUSE = database['warehouse'],
-    #     SNOWFLAKE_ROLE = database['role'],
-    #     SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
-    #     SNOWFLAKE_DEST_DATABASE = database['destination_database'],
-    # )
+
+    con = SnowflakeConnector(
+        SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
+        SNOWFLAKE_DEST_DATABASE = database['destination_database'],
+    )
     
-    # mapped_tables = mapper.get_mapped_tables(con)
-    # px_cohort = from_dict(cohort)
-    # px_cohort.execute(mapped_tables)
+
+    mapped_tables = mapper.get_mapped_tables(con)
+    print("GOT MAPPED TABLES!")
+    px_cohort = from_dict(cohort)
+    px_cohort.execute(mapped_tables)
     # px_cohort.append_results()
 
-    # response = {cohort:px_cohort.to_dict()}
+    print(px_cohort.to_dict())
+
+    r = InExCounts()
+    dcounts = r.exeucte(px_cohort)
+    print(counts)
+
+    response = {cohort:px_cohort.to_dict()}
 
     # return JSONResponse(content=response)
