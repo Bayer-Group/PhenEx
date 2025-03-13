@@ -240,3 +240,7 @@ yarn-error.log*
 
 # Optional REPL history
 .node_repl_history
+
+
+*.vite
+*.virtual_documents

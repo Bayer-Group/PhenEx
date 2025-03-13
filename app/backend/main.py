@@ -34,8 +34,9 @@ def get_phenex_context():
     )
     context = ""
     for file_path in python_files:
-        with open(file_path, "r") as f:
-            context += f"\n\n{file_path}:\n" + f.read() + "\n"
+        if '/test' not in file_path:
+            with open(file_path, "r") as f:
+                context += f"\n\n{file_path}:\n" + f.read() + "\n"
     logger.info(f"LLM context files found: {len(python_files)}")
     logger.info(f"LLM context length (words): {len(context.split())}")
     return context
@@ -155,8 +156,9 @@ async def execute_study(
 
     print(px_cohort.to_dict())
 
+    from phenex.reporting import InExCounts
     r = InExCounts()
-    dcounts = r.exeucte(px_cohort)
+    counts = r.execute(px_cohort)
     print(counts)
 
     response = {cohort:px_cohort.to_dict()}
