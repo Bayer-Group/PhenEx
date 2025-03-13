@@ -17,12 +17,14 @@ class MeasurementChangePhenotype(Phenotype):
         name: The name of the phenotype.
         phenotype: The measurement phenotype to look for changes.
         min_change: The minimum change in the measurement value to look for.
+        direction: Whether the min_change / max_change are to be interpreted as an 'increase' in the value or a 'decrease' in the value. For example, min_change = GreatThan(0), max_change = LessThan(3), direction = 'decrease' looks for a decrease of the value between 0 and 3.
+        min_days_apart: The minimum number of days between the measurements. FIXME Currently unable to detect measurement changes on the same day due to lack of intraday time resolution!
         max_days_apart: The maximum number of days between the measurements.
         component_date_select: Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')
         return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
         return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters. FIXME: return_value and return_date don't really place nicely together in this Phenotype. If you need this feature or experience breakages, reach out for support. This is a known issue but it was decided to put off fixing it.
 
-    Example: Change of Hemoglobin of at Least 2g/dL
+    Example: Drop in Hemoglobin of at Least 2g/dL
         ```python
         hemoglobin = MeasurementPhenotype(
             name='hemoglobin_drop',
@@ -35,6 +37,7 @@ class MeasurementChangePhenotype(Phenotype):
             phenotype=hemoglobin,
             min_change=GreaterThanOrEqualTo(2),
             max_days_apart=LessThanOrEqualTo(2),
+            direction='decrease',
             component_date_select='second',
             return_date='first'
         )
@@ -47,6 +50,7 @@ class MeasurementChangePhenotype(Phenotype):
         phenotype: MeasurementPhenotype,
         min_change: Value = None,
         max_change: Value = None,
+        direction="increase",
         min_days_between: Value = GreaterThanOrEqualTo(0),
         max_days_between: Value = None,
         relative_time_range: RelativeTimeRangeFilter = None,
@@ -58,6 +62,7 @@ class MeasurementChangePhenotype(Phenotype):
         self.phenotype = phenotype
         self.min_change = min_change
         self.max_change = max_change
+        self.direction = direction
         self.min_days_between = min_days_between
         self.max_days_between = max_days_between
         self.component_date_select = component_date_select
@@ -65,8 +70,14 @@ class MeasurementChangePhenotype(Phenotype):
         self.relative_time_range = relative_time_range
         self.return_value = return_value
         self.children = [phenotype]
-        if component_date_select not in ['first', 'second']:
-            raise ValueError(f'component_date_select = {component_date_select} not supported, must be either "first" or "second"')
+        if self.direction not in ["increase", "decrease"]:
+            raise ValueError(
+                f"Invalid choice for direction: {direction}. Must be 'increase' or 'decrease'."
+            )
+        if component_date_select not in ["first", "second"]:
+            raise ValueError(
+                f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
+            )
         super(Phenotype, self).__init__()
 
     def _execute(self, tables) -> PhenotypeTable:
@@ -94,8 +105,15 @@ class MeasurementChangePhenotype(Phenotype):
         )
 
         # Filter to keep only those with at least min_change and within max_days_apart
+        min_change = self.min_change
+        max_change = self.max_change
+        if self.direction == "decrease" and min_change:
+            min_change = Value(operator=min_change.operator, value=-min_change.value)
+        if self.direction == "decrease" and max_change:
+            max_change = Value(operator=max_change.operator, value=-max_change.value)
+
         value_filter = ValueFilter(
-            min=self.min_change, max=self.max_change, column_name="VALUE_CHANGE"
+            min=min_change, max=max_change, column_name="VALUE_CHANGE"
         )
         filtered_table = value_filter.filter(joined_table)
 
