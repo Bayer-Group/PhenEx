@@ -28,7 +28,6 @@ class ComputationGraphPhenotype(Phenotype):
         return_date: The date to be returned for the phenotype. Can be "first", "last", or a Phenotype object.
         operate_on: The column to operate on. Can be "boolean" or "value".
         populate: The column to populate. Can be "boolean" or "value".
-        reduce: Whether to reduce the phenotype table to only include rows where the boolean column is True. This is only relevant if populate is "boolean".
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
@@ -41,8 +40,7 @@ class ComputationGraphPhenotype(Phenotype):
         name: str = None,
         aggregation_index=["PERSON_ID"],
         operate_on: str = "boolean",
-        populate: str = "value",
-        reduce: bool = False,
+        populate: str = "value"
     ):
         super(ComputationGraphPhenotype, self).__init__()
         self.expression = expression
@@ -51,7 +49,6 @@ class ComputationGraphPhenotype(Phenotype):
         self._name = name
         self.operate_on = operate_on
         self.populate = populate
-        self.reduce = reduce
         self.children = self.expression.get_leaf_phenotypes()
 
     @property
@@ -113,7 +110,7 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
         # Reduce the table to only include rows where the boolean column is True
-        if self.reduce:
+        if hasattr(joined_table, 'BOOLEAN'):
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Add a null value column if it doesn't exist, for example in the case of a LogicPhenotype
@@ -289,6 +286,5 @@ class LogicPhenotype(ComputationGraphPhenotype):
             expression=expression,
             return_date=return_date,
             operate_on="boolean",
-            populate="boolean",
-            reduce=True,
+            populate="boolean"
         )

@@ -4,7 +4,7 @@ from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
-from phenex.aggregators.aggregator import First, Last, ValueAggregator, DailyMedian
+from phenex.aggregators.vertical_aggregator import First, Last, VerticalAggregator, DailyMedian
 
 from ibis import _
 
@@ -22,7 +22,7 @@ class MeasurementChangePhenotype(Phenotype):
         max_days_apart: The maximum number of days between the measurements.
         component_date_select: Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')
         return_date: Specifies which MeasurementChangePhenotyp event to return among all events passing the filters ('first', 'last' or 'all')
-        return_value: A ValueAggregator operation describing which value to return when more than one value per person pass all the filters. FIXME: return_value and return_date don't really place nicely together in this Phenotype. If you need this feature or experience breakages, reach out for support. This is a known issue but it was decided to put off fixing it.
+        return_value: A VerticalAggregator operation describing which value to return when more than one value per person pass all the filters. FIXME: return_value and return_date don't really place nicely together in this Phenotype. If you need this feature or experience breakages, reach out for support. This is a known issue but it was decided to put off fixing it.
 
     Example: Drop in Hemoglobin of at Least 2g/dL
         ```python
@@ -56,7 +56,7 @@ class MeasurementChangePhenotype(Phenotype):
         relative_time_range: RelativeTimeRangeFilter = None,
         component_date_select="second",
         return_date="first",
-        return_value: Optional[ValueAggregator] = DailyMedian(),
+        return_value: Optional[VerticalAggregator] = DailyMedian(),
     ):
         self.name = name
         self.phenotype = phenotype
@@ -144,9 +144,9 @@ class MeasurementChangePhenotype(Phenotype):
 
         # Handle the return_date attribute for each PERSON_ID using window functions
         if self.return_date == "first":
-            filtered_table = First(reduce=True).aggregate(filtered_table)
+            filtered_table = First().aggregate(filtered_table)
         elif self.return_date == "last":
-            filtered_table = Last(reduce=True).aggregate(filtered_table)
+            filtered_table = Last().aggregate(filtered_table)
 
         if self.return_value is not None:
             filtered_table = self.return_value.aggregate(filtered_table)

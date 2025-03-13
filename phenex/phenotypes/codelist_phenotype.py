@@ -153,13 +153,13 @@ class CodelistPhenotype(Phenotype):
                 code_table = rtr.filter(code_table)
         return code_table
 
-    def _perform_date_selection(self, code_table, reduce=True):
+    def _perform_date_selection(self, code_table):
         if self.return_date is None or self.return_date == "all":
             return code_table
         if self.return_date == "first":
-            aggregator = First(reduce=reduce)
+            aggregator = First()
         elif self.return_date == "last":
-            aggregator = Last(reduce=reduce)
+            aggregator = Last()
         else:
             raise ValueError(f"Unknown return_date: {self.return_date}")
         return aggregator.aggregate(code_table)

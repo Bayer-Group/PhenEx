@@ -2,6 +2,7 @@ from typing import Union, List, Optional
 from phenex.phenotypes import CodelistPhenotype
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.aggregators.vertical_aggregator import VerticalAggregator
 
 from ibis import _
 
@@ -37,12 +38,12 @@ class MeasurementPhenotype(CodelistPhenotype):
 
 
     Parameters:
-        clean_nonphysiologicals_value_filter (str): A value filter to be applied **prior** to any filtering or aggregation. This should be used to remove nonsensical values e.g. negative blood pressures, or values outside of a physiological range that are certain to be due to measurement error. Ideally, such cleaing steps should performed upstream of apex, but have been provided due to realization of practical necessity.
-        value_aggregation (str): A string representing the aggregation operation (mean, median, min, max) to be performed on the measurement values occurring on the same day. This operation occurs **after** the cleaning value filter but **prior** to the primary value_filter. This is also considered a cleaning step to deal with duplicate entries on the same day. In general, if duplicate entries on the same day are a consideration, handling should be done upstream of apex. If not specified or set to None, no daily aggregation is performed prior to the primary value filter.
-        clean_null_values (str): A boolean indicating whether to remove null values from the measurement table. If set to True, null values are removed prior to value filtering. If set to False, null values are not removed. If not specified, null values are removed (default is true)
-        value_filter (str): A value filter to be applied to the measurement values. This filter is applied **after** the clean_nonphysiologicals_value_filter and the value_aggregation. This filter is used to identify patients with a measurement value within a value range. If not specified, no value filter is applied. For example, to identify patients with a 1. systolic blood pressure above 120 mmHg, the value_filter would be set to ValueFilter(operator='>', value=120). 2. systolic blood pressure above 120 mmHg but below 140 mmHg, the value_filter would be set to ValueFilter(operator='>', value=120) & ValueFilter(operator='<', value=140)
-        return_value (str): A string representing if a value should be returned, and if so, what, if any, aggregation should be performed. Any aggregation operations occurs **after** the value_filter, and thus do not influence the filtering of patients. Possible options are "daily_mean", "daily_median", "daily_min", "daily_max", "daily_sum", "mean", "median", "min", "max", and "all". If not specified, no values are returned. If a "daily" aggregation is specified, return_date must also be specified in order to specify which on which date the aggregation should be performed.
-        further_value_filter_phenotype (str): If the input to the current MeasurementPhenotype is the output of a previous MeasurementPhenotype, set this parameter to the previous MeasurementPhenotype.
+        clean_nonphysiologicals_value_filter: A ValueFilter to be applied **prior** to any filtering or aggregation. This should be used to remove nonsensical values e.g. negative blood pressures, or values outside of a physiological range that are certain to be due to measurement error. Ideally, such cleaing steps should performed upstream of apex, but have been provided due to realization of practical necessity.
+        value_aggregation: A VerticalAggregator operation to be performed on the measurement values occurring on the same day. This operation occurs **after** the cleaning value filter but **prior** to the primary value_filter. This is also considered a cleaning step to deal with duplicate entries on the same day. In general, if duplicate entries on the same day are a consideration, handling should be done upstream of apex. If not specified or set to None, no daily aggregation is performed prior to the primary value filter.
+        clean_null_values: A boolean indicating whether to remove null values from the measurement table. If set to True, null values are removed prior to value filtering. If set to False, null values are not removed. If not specified, null values are removed (default is true)
+        value_filter: A value filter to be applied to the measurement values. This filter is applied **after** the clean_nonphysiologicals_value_filter and the value_aggregation. This filter is used to identify patients with a measurement value within a value range. If not specified, no value filter is applied. For example, to identify patients with a 1. systolic blood pressure above 120 mmHg, the value_filter would be set to ValueFilter(operator='>', value=120). 2. systolic blood pressure above 120 mmHg but below 140 mmHg, the value_filter would be set to ValueFilter(operator='>', value=120) & ValueFilter(operator='<', value=140)
+        return_value: A VerticalAggregator representing if a value should be returned, and if so, what, if any, aggregation should be performed. Any aggregation operations occurs **after** the value_filter, and thus do not influence the filtering of patients. Possible options are "daily_mean", "daily_median", "daily_min", "daily_max", "daily_sum", "mean", "median", "min", "max", and "all". If not specified, no values are returned. If a "daily" aggregation is specified, return_date must also be specified in order to specify on which date the aggregation should be performed.
+        further_value_filter_phenotype: If the input to the current MeasurementPhenotype is the output of a previous MeasurementPhenotype, set this parameter to the previous MeasurementPhenotype.
     """
 
     def __init__(
@@ -50,8 +51,8 @@ class MeasurementPhenotype(CodelistPhenotype):
         value_filter: Optional["ValueFilter"] = None,
         clean_nonphysiologicals_value_filter: Optional["ValueFilter"] = None,
         clean_null_values: Optional[bool] = True,
-        value_aggregation: Optional[str] = None,
-        return_value: Optional[str] = None,
+        value_aggregation: Optional[VerticalAggregator] = None,
+        return_value: Optional[VerticalAggregator] = None,
         further_value_filter_phenotype: Optional["MeasurementPhenotype"] = None,
         **kwargs,
     ):
@@ -80,7 +81,7 @@ class MeasurementPhenotype(CodelistPhenotype):
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table)
         code_table = self._perform_time_filtering(code_table)
-        code_table = self._perform_date_selection(code_table, reduce=False)
+        code_table = self._perform_date_selection(code_table)
         code_table = self._perform_nonphysiological_value_filtering(code_table)
         code_table = self._perform_value_aggregation(code_table)
         code_table = self._perform_value_filtering(code_table)
