@@ -50,6 +50,7 @@ def ISTHMajorBleedPhenotype(
 
     This is a database agnostic implementation. Database specific components are specified by various ISTHBleedComponents.
 
+
     Parameters:
         components: Database specific definitions of codelists, categorical filters, and domains. See documentation for ISTHBleedComponents for more details.
         name: Optional override of default name 'isth_major_bleed'.
@@ -132,6 +133,7 @@ def SymptomaticBleedPhenotype(
     """
     # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be either primary or secondary diagnosis position
     categorical_filters = components.inpatient & components.primary_diagnosis
+
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     overt_bleed = CodelistPhenotype(
@@ -214,6 +216,7 @@ def BleedVerificationPhenotype(
         anchor_phenotype: Specify whether to return the date of the first, last or all bleed events
         relative_time_range: Optional specificiation of a relative time range in which to observe bleeds. For example, 'any_time_post_index' could be constructed and passed to the ISTH bleed.
     """
+
     within_two_days = RelativeTimeRangeFilter(
         when="after",
         min_days=GreaterThanOrEqualTo(-2),
