@@ -131,7 +131,7 @@ def SymptomaticBleedPhenotype(
         return_date: Specify whether to return the date of the first, last or all bleed events
         relative_time_range: Optional specificiation of a relative time range in which to observe bleeds. For example, 'any_time_post_index' could be constructed and passed to the ISTH bleed.
     """
-    # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be either primary or secondary diagnosis position
+    # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be the primary diagnosis position
     categorical_filters = components.inpatient & components.primary_diagnosis
 
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
