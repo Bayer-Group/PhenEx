@@ -26,7 +26,9 @@ def test_resolve_remove_punctuation():
 
 def test_resolve_use_code_type_false_remove_punctuation():
     codelist = Codelist({"ICD-9": ["427.31"], "ICD-10": ["I48.0", "I48.1"]})
-    resolved = codelist.resolve(use_code_type=False, remove_punctuation=True).resolved_codelist
+    resolved = codelist.resolve(
+        use_code_type=False, remove_punctuation=True
+    ).resolved_codelist
     expected = {None: ["42731", "I480", "I481"]}
     assert list(resolved.keys()) == [None]
     assert set(resolved[None]) == set(expected[None])

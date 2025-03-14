@@ -28,7 +28,9 @@ class CodelistFilter(Filter):
             if not isinstance(self.codelist, Codelist):
                 raise ValueError("Codelist must be an instance of Codelist")
             return [
-                (ct, c) for ct, codes in self.codelist.resolved_codelist.items() for c in codes
+                (ct, c)
+                for ct, codes in self.codelist.resolved_codelist.items()
+                for c in codes
             ]
         return []
 

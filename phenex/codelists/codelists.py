@@ -134,11 +134,11 @@ class Codelist:
     """
 
     def __init__(
-        self, 
-        codelist: Union[str, List, Dict[str, List]], 
+        self,
+        codelist: Union[str, List, Dict[str, List]],
         name: Optional[str] = None,
         use_code_type: Optional[bool] = True,
-        remove_punctuation: Optional[bool] = False
+        remove_punctuation: Optional[bool] = False,
     ) -> None:
         self.name = name
         if isinstance(codelist, dict):
@@ -156,7 +156,7 @@ class Codelist:
             self.use_code_type = False
         else:
             self.use_code_type = use_code_type
-        
+
         self.remove_punctuation = remove_punctuation
 
         self.fuzzy_match = False
@@ -181,8 +181,13 @@ class Codelist:
         Returns:
             Codelist instance with the resolved codelist.
         """
-        return Codelist(self.codelist, name=self.name, use_code_type=use_code_type, remove_punctuation=remove_punctuation)
-    
+        return Codelist(
+            self.codelist,
+            name=self.name,
+            use_code_type=use_code_type,
+            remove_punctuation=remove_punctuation,
+        )
+
     @property
     def resolved_codelist(self):
         resolved_codelist = {}
@@ -199,8 +204,6 @@ class Codelist:
                     set(resolved_codelist[None]) | set(codes)
                 )
         return resolved_codelist
-
-
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":
