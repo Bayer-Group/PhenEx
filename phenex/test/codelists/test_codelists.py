@@ -1,4 +1,6 @@
 import pytest
+from deepdiff import DeepDiff
+
 from phenex.codelists.codelists import Codelist
 
 
@@ -38,3 +40,17 @@ def test_resolve_empty_codelist():
     codelist = Codelist({})
     resolved = codelist.resolve().resolved_codelist
     assert list(resolved.keys()) == []
+
+
+def test_codelist_union():
+    codelist1 = Codelist({"ICD-9": ["a"], "ICD-10": ["a","b"]})
+    codelist2 = Codelist({"ICD-9": ["b"], "ICD-10": ["c","d"], "ICD10PCS": ["d"]})
+    codelist = codelist1 + codelist2
+    resolved = codelist.resolved_codelist
+    expected = {'ICD-9':["a", "b"], "ICD-10":["a", "b", "c", "d"], "ICD10PCS":["d"]}
+    diff = DeepDiff(resolved, expected, ignore_order=True)
+    assert diff == {}
+
+
+if __name__ == "__main__":
+    test_codelist_union()
