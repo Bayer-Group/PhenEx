@@ -4,8 +4,9 @@ import ibis
 from phenex.test.cohort_test_generator import CohortTestGenerator
 from phenex.codelists import Codelist
 from phenex.phenotypes import Cohort, CodelistPhenotype
-from phenex.phenotypes.factory.isth_major_bleeding import (
-    ISTHMajorBleedingPhenotype,
+
+from phenex.phenotypes.factory.isth_major_bleed import (
+    ISTHMajorBleedPhenotype,
     ISTHBleedComponents,
     FatalBleedPhenotype,
     SymptomaticBleedPhenotype,
@@ -75,7 +76,7 @@ def get_ISTH_components():
 
 class ISTHTestGenerator(CohortTestGenerator):
     def define_isth_phenotype(self, entry):
-        return ISTHMajorBleedingPhenotype(
+        return ISTHMajorBleedPhenotype(
             return_date="first",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after", anchor_phenotype=entry
