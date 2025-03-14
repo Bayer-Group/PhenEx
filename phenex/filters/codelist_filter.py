@@ -28,7 +28,9 @@ class CodelistFilter(Filter):
             if not isinstance(self.codelist, Codelist):
                 raise ValueError("Codelist must be an instance of Codelist")
             return [
-                (ct, c) for ct, codes in self.codelist.codelist.items() for c in codes
+                (ct, c)
+                for ct, codes in self.codelist.resolved_codelist.items()
+                for c in codes
             ]
         return []
 
@@ -43,7 +45,7 @@ class CodelistFilter(Filter):
 
     def _filter_fuzzy_codelist(self, code_table):
         filter_condition = False
-        for code_type, codelist in self.codelist.codelist.items():
+        for code_type, codelist in self.codelist.resolved_codelist.items():
             codelist = [str(code) for code in codelist]
             if self.codelist.use_code_type:
                 filter_condition = filter_condition | (
