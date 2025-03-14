@@ -32,9 +32,10 @@ class CohortTestGenerator:
     def run_tests(self, path="phenex/test/cohort", verbose=False):
         self.verbose = verbose
         self.cohort = self.define_cohort()
-        self.mapped_tables = self.define_mapped_tables()
 
         self._create_artifact_directory(self.cohort.name, path)
+        self.mapped_tables = self.define_mapped_tables()
+
         self._generate_output_artifacts()
         self._run_tests()
 
@@ -106,6 +107,7 @@ class CohortTestGenerator:
             "cohort": path_cohort,
             "expected": os.path.join(path_cohort, "expected"),
             "result": os.path.join(path_cohort, "result"),
+            "input": os.path.join(path_cohort, "input"),
         }
         for _path in self.dirpaths.values():
             if not os.path.exists(_path):
