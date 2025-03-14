@@ -383,6 +383,28 @@ class Codelist:
     def to_dict(self):
         return to_dict(self)
 
+    def __add__(self, other):
+        codetypes = list(set(list(self.codelist.keys()) + list(other.codelist.keys())))
+        new_codelist = {}
+        for codetype in codetypes:
+            new_codelist[codetype] = list(
+                set(self.codelist.get(codetype, []) + other.codelist.get(codetype, []))
+            )
+        if self.remove_punctuation != other.remove_punctuation:
+            raise ValueError(
+                "Cannot add codelists with different remove_punctuation settings."
+            )
+        if self.use_code_type != other.use_code_type:
+            raise ValueError(
+                "Cannot add codelists with different use_code_type settings."
+            )
+
+        return Codelist(
+            new_codelist,
+            remove_punctuation=self.remove_punctuation,
+            use_code_type=self.use_code_type,
+        )
+
 
 class LocalCSVCodelistFactory:
     """
