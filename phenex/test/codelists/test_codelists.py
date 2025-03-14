@@ -43,11 +43,11 @@ def test_resolve_empty_codelist():
 
 
 def test_codelist_union():
-    codelist1 = Codelist({"ICD-9": ["a"], "ICD-10": ["a","b"]})
-    codelist2 = Codelist({"ICD-9": ["b"], "ICD-10": ["c","d"], "ICD10PCS": ["d"]})
+    codelist1 = Codelist({"ICD-9": ["a"], "ICD-10": ["a", "b"]})
+    codelist2 = Codelist({"ICD-9": ["b"], "ICD-10": ["c", "d"], "ICD10PCS": ["d"]})
     codelist = codelist1 + codelist2
     resolved = codelist.resolved_codelist
-    expected = {'ICD-9':["a", "b"], "ICD-10":["a", "b", "c", "d"], "ICD10PCS":["d"]}
+    expected = {"ICD-9": ["a", "b"], "ICD-10": ["a", "b", "c", "d"], "ICD10PCS": ["d"]}
     diff = DeepDiff(resolved, expected, ignore_order=True)
     assert diff == {}
 
