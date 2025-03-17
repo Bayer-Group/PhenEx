@@ -153,7 +153,6 @@ class Min(ValueAggregator):
 
 class DailyValueAggregator(ValueAggregator):
     def __init__(self, aggregation_index=["PERSON_ID", "EVENT_DATE"], **kwargs):
-
         super(DailyValueAggregator, self).__init__(
             aggregation_index=aggregation_index, **kwargs
         )

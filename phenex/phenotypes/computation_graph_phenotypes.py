@@ -252,7 +252,6 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         name: str = None,
         **kwargs,
     ):
-
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,

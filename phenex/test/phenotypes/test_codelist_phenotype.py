@@ -790,7 +790,6 @@ class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
         return [{"name": "CONDITION_OCCURRENCE", "df": df}]
 
     def define_phenotype_tests(self):
-
         fuzzy_codelist_no_type = Codelist(["A%", "B%"], name="fuzzy_no_type")
         fuzzy_codelist_no_type_begin_end = Codelist(
             ["%78%"], name="fuzzy_codelist_no_type_begin_end"

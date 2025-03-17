@@ -35,7 +35,6 @@ class CodelistFilter(Filter):
         return []
 
     def _filter(self, code_table: CodeTable) -> CodeTable:
-
         assert is_phenex_code_table(code_table)
 
         if self.codelist.fuzzy_match:
@@ -61,7 +60,6 @@ class CodelistFilter(Filter):
         return filtered_table
 
     def _filter_literal_codelist(self, code_table):
-
         # Generate the codelist table as an Ibis literal set
         codelist_df = pd.DataFrame(
             self.codelist_as_tuples, columns=["code_type", "code"]

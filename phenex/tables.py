@@ -120,7 +120,6 @@ class PhenexTable:
         return type(self)(self.table.mutate(*args, **kwargs), name=self.NAME_TABLE)
 
     def _find_path(self, other):
-
         start_name = self.__class__.__name__
         end_name = other.__class__.__name__
         # first see if direct connection
@@ -153,7 +152,6 @@ class PhenexTable:
 
 
 class PhenexPersonTable(PhenexTable):
-
     NAME_TABLE = "PERSON"
     JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
     KNOWN_FIELDS = [
@@ -168,7 +166,6 @@ class PhenexPersonTable(PhenexTable):
 
 
 class EventTable(PhenexTable):
-
     NAME_TABLE = "EVENT"
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE"]
     DEFAULT_MAPPING = {
@@ -178,7 +175,6 @@ class EventTable(PhenexTable):
 
 
 class CodeTable(PhenexTable):
-
     NAME_TABLE = "CODE"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
@@ -193,7 +189,6 @@ class CodeTable(PhenexTable):
 
 
 class PhenexVisitDetailTable(PhenexTable):
-
     NAME_TABLE = "VISIT_DETAIL"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
@@ -213,7 +208,6 @@ class PhenexVisitDetailTable(PhenexTable):
 
 
 class PhenexIndexTable(PhenexTable):
-
     NAME_TABLE = "INDEX"
     JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
     KNOWN_FIELDS = [

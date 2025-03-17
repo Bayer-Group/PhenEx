@@ -35,6 +35,15 @@ export class CohortDataService {
       },
     },
     {
+      field: 'count',
+      headerName: 'N',
+      width: 50,
+      editable: false,
+      wrapText: true,
+      pinned: 'left',
+
+    },
+    {
       field: 'description',
       headerName: 'Description',
       width: 250,
@@ -347,21 +356,48 @@ export class CohortDataService {
   }
 
   public async executeCohort(): Promise<void> {
-    const response = await executeStudy({
-      cohort: this._cohort_data,
-      database_config: this._cohort_data.database_config,
-    });
-    console.log('GOT RESPONSE', response);
-    // try {
+    try {
 
-    //   const response = await executeStudy({
-    //     cohort: this._cohort_data ,
-    //     database_config:this._cohort_data.database_config
-    //   });
-    //   console.log("GOT RESPONSE", response)
-    // } catch (error) {
-    //   console.error('Error fetching cohort explanation:', error);
-    // }
+      const response = await executeStudy({
+        cohort: this._cohort_data ,
+        database_config:this._cohort_data.database_config
+      });
+      console.log("GOT RESPONSE", response)
+      this._cohort_data = response.cohort
+      this.preparePhenexCohortForUI()
+      this.saveChangesToCohort()
+      console.log("THIS IS COHOR DATA", this._cohort_data)
+      this._table_data = this.tableDataFromCohortData()
+      this.notifyListeners()
+    } catch (error) {
+      console.error('Error fetching cohort explanation:', error);
+    }
+  }
+
+
+  private appendTypeKeyToPhenotypes(phenotypes: Array<Record<string, any>>, settype: string) {
+    for (let i = 0; i < phenotypes.length; i++) {
+      phenotypes[i].type = settype;
+    }
+  }
+
+  private preparePhenexCohortForUI() {
+    this._cohort_data.entry_criterion.type = 'entry';
+    this.appendTypeKeyToPhenotypes(this._cohort_data.inclusions, 'inclusion');
+    this.appendTypeKeyToPhenotypes(this._cohort_data.exclusions, 'exclusion');
+    this.appendTypeKeyToPhenotypes(this._cohort_data.characteristics, 'baseline');
+    this.appendTypeKeyToPhenotypes(this._cohort_data.outcomes, 'outcome');
+
+    this._cohort_data.phenotypes = [this._cohort_data.entry_criterion].concat(
+      this._cohort_data.inclusions,
+      this._cohort_data.exclusions,
+      this._cohort_data.characteristics,
+      this._cohort_data.outcomes
+    );
+  }
+
+  public createPhenotypesArrayFromTypes(){
+    this._cohort_data.phenotypes = this._cohort_data.e
   }
 
   deleteCohort() {

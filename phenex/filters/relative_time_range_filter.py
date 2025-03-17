@@ -54,7 +54,6 @@ class RelativeTimeRangeFilter(Filter):
         super(RelativeTimeRangeFilter, self).__init__()
 
     def _filter(self, table: EventTable):
-
         if self.anchor_phenotype is not None:
             if self.anchor_phenotype.table is None:
                 raise ValueError(

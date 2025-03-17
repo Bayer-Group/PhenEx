@@ -147,7 +147,6 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
         return tables
 
     def define_phenotype_tests(self):
-
         entry = CodelistPhenotype(
             name="entry",
             codelist=Codelist(name="c1", codelist={"ICD10": ["c1"]}),

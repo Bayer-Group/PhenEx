@@ -34,7 +34,7 @@ def get_phenex_context():
     )
     context = ""
     for file_path in python_files:
-        if '/test' not in file_path:
+        if "/test" not in file_path:
             with open(file_path, "r") as f:
                 context += f"\n\n{file_path}:\n" + f.read() + "\n"
     logger.info(f"LLM context files found: {len(python_files)}")
@@ -105,7 +105,6 @@ async def text_to_cohort(
         {"role": "user", "content": prompt},
     ]
 
-
     response = json.loads(
         openai_client.chat.completions.create(
             model=model,
@@ -116,9 +115,8 @@ async def text_to_cohort(
         .message.content
     )
 
-    response['cohort']['id'] = current_cohort['id']
+    response["cohort"]["id"] = current_cohort["id"]
     return response
-
 
 
 @app.post("/execute_study")
@@ -129,38 +127,33 @@ async def execute_study(
     logger.info("Received request!!!!")
     print(cohort)
     print(database_config)
-    response = {
-        'cohort': cohort
-    }
+    response = {"cohort": cohort}
 
     from phenex.ibis_connect import SnowflakeConnector
+
     print(database_config)
-    if database_config['mapper'] == 'OMOP':
+    if database_config["mapper"] == "OMOP":
         from phenex.mappers import OMOPDomains
+
         mapper = OMOPDomains
 
-    database = database_config['config']
-
+    database = database_config["config"]
 
     con = SnowflakeConnector(
-        SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
-        SNOWFLAKE_DEST_DATABASE = database['destination_database'],
+        SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
+        SNOWFLAKE_DEST_DATABASE=database["destination_database"],
     )
-    
 
     mapped_tables = mapper.get_mapped_tables(con)
     print("GOT MAPPED TABLES!")
     px_cohort = from_dict(cohort)
     px_cohort.execute(mapped_tables)
     # px_cohort.append_results()
-
+    px_cohort.append_counts()
     print(px_cohort.to_dict())
 
-    from phenex.reporting import InExCounts
-    r = InExCounts()
-    counts = r.execute(px_cohort)
-    print(counts)
+    print("AFTER EXECUTIPN")
+    print(px_cohort.to_dict())
+    response = {"cohort": px_cohort.to_dict()}
 
-    response = {cohort:px_cohort.to_dict()}
-
-    # return JSONResponse(content=response)
+    return JSONResponse(content=response)
