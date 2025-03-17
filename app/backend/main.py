@@ -93,7 +93,7 @@ async def text_to_cohort(
     Return a JSON with the following fields:
     
     {{
-        "explaination" : (str) A concise plain text explanation of the changes made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review).
+        "explanation" : (str) A concise plain text explanation of the changes made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review).
         "cohort": (Dict) The complete dictionary definition of the resulting updated cohort compatible with phenex.util.serialization.from_dict.
 
     }}
