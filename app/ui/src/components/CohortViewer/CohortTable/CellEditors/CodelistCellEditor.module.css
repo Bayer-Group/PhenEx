@@ -117,3 +117,31 @@ label {
   color: #999;
   font-style: italic;
 }
+
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chin {
+  display: flex;
+  gap: 16px;
+  padding: 8px;
+  border-top: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}

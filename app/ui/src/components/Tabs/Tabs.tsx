@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import styles from './Tabs.module.css';
 
 interface TabsProps {
@@ -11,6 +11,10 @@ interface TabsProps {
 
 export const Tabs: FC<TabsProps> = ({ width, height, tabs, active_tab_index = 0, onTabChange }) => {
   const [activeTab, setActiveTab] = useState(active_tab_index);
+
+  useEffect(() => {
+    setActiveTab(active_tab_index);
+  }, [active_tab_index]);
 
   const handleTabClick = (index: number) => {
     setActiveTab(index);

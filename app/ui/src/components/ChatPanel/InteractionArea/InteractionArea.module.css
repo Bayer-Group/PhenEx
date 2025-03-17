@@ -1,31 +1,64 @@
+:root {
+  --interaction_area_background_color: white;
+}
 .topBar {
-  height: 40px;
+  height: 20px;
 }
 
-.textBox {
-  background-color: white;
-  color: black;
-  /* this is 100% - 2* padding -whatever margin you want*/
-  min-height: 50px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 10px;
-  /* width: calc(100% - 40px); */
-  margin-top: 10px;
-  margin-bottom: 40px;
-  margin-right: 20px;
-  outline: none;
+.wrapper {
+  width: calc(100% - 40px - 15px);
+  height: calc(100% - 26px);
+  /* padding: 0.8rem 1rem; */
+  border-radius: 10px;
+  /* word-wrap: break-word; */
+  background-color: var(--interaction_area_background_color);
+  /* color: var(--text-color); */
+  border: var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  padding: 5px 20px;
+  /* font-size: 16px; */
   border: solid 3px transparent;
   background:
-    linear-gradient(var(--background-color), var(--background-color)) padding-box,
+    linear-gradient(
+        var(--interaction_area_background_color),
+        var(--interaction_area_background_color)
+      )
+      padding-box,
     linear-gradient(to right, var(--phenex-coral), var(--phenex-red), var(--phenex-blue)) border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';
   font-size: 16px;
 }
 
+.wrapper:hover {
+  color: black;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.textBox {
+  /* background-color: white; */
+  color: black;
+  /* this is 100% - 2* padding -whatever margin you want*/
+  min-height: 50px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0px;
+  font-size: 22px;
+  /* width: calc(100% - 40px); */
+
+  margin: 10px 0px 40px 0px;
+  outline: none;
+  /* border: solid 3px transparent;
+  background:
+    linear-gradient(var(--interaction_area_background_color), var(--interaction_area_background_color)) padding-box,
+    linear-gradient(to right, var(--phenex-coral), var(--phenex-red), var(--phenex-blue)) border-box;
+  border-radius: 8px;
+  font-family: 'SNPro-regular';
+  font-size: 16px; */
+}
+
 .textBox:focus {
-  border: solid 3px transparent;
+  /* border: solid 3px transparent; */
 }
 
 .input {

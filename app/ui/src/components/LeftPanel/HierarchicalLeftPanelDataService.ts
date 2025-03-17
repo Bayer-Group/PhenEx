@@ -64,7 +64,7 @@ export class HierarchicalLeftPanelDataService {
 
     cohortsNode?.children?.push({
       id: 'add_cohort',
-      name: 'Create new cohort',
+      name: 'New cohort',
       viewInfo: { viewType: ViewType.NewCohort, data: '' },
     });
     if (cohorts && cohorts.length > 0) {

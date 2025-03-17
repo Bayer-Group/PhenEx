@@ -1,4 +1,4 @@
-.editButton {
+.editButton, .deleteButton {
   background: white;
   border: none;
   padding: 6px 7px 3px 7px;
@@ -11,19 +11,27 @@
     box-shadow 0.2s ease-in-out;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border: var(--border);
+  position: absolute;
+  right: 34px;
 }
-.editButton:hover {
+
+.deleteButton {
+  right: -3px;
+  opacity: 0;
+}
+
+.editButton:hover,  .deleteButton:hover{
   background: var(--button-color-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--border);
 }
 
-.editButton:focus {
+.editButton:focus, .deleteButton:focus{
   outline: none;
 }
 
-.editButton:focus-visible {
+.editButton:focus-visible, .deleteButton:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-color);
 }
@@ -33,6 +41,10 @@
   height: 16px;
 }
 
-:global(.ag-row:hover) .editButton {
+:global(.ag-row:hover) .editButton{
+  opacity: 1;
+}
+
+:global(.ag-row:hover) .deleteButton{
   opacity: 1;
 }

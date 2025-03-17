@@ -11,9 +11,15 @@
   flex-direction: column;
 }
 
+.title {
+  font-family: 'SNPro-bold';
+  font-size: 30px;
+}
+
 .header {
   padding-left: 40px;
   height: 150px;
+  padding-top: 5px;
   /* display: flex;
   flex-direction: column;
   justify-content: center;
@@ -59,9 +65,15 @@
 }
 
 .image {
-  width: 700px;
   position: absolute;
-  bottom: -390px;
-  left: -280px;
+
+  /* width: 400px;
+  top: -150px;
+  left: 0px;
+  opacity: 1;
+  pointer-events:none;
+  z-index: -1000;
+  transform: rotate(-90deg); */
   opacity: 0;
+  pointer-events: none;
 }

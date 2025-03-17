@@ -15,3 +15,6 @@ export const PhenotypeTypeNames: Record<PhenotypeType, string> = {
 };
 
 export const phenotypeTypeValues = Object.values(PhenotypeType);
+export const phenotypeAddableTypeValues = Object.values(PhenotypeType).filter(
+  type => type !== PhenotypeType.Entry
+);

@@ -5,14 +5,6 @@
   position: relative;
 }
 
-.panel {
-  /* transition: width 0.3s ease; */
-}
-
-.container[data-dragging='true'] .panel {
-  /* background-color: var(--accent-color); */
-}
-
 .leftPanel {
   background-color: var(--background-color);
 }
@@ -20,6 +12,7 @@
 .centerPanel {
   flex: 1;
   background-color: var(--background-color);
+  min-width: 700px;
 }
 
 .rightPanel {
@@ -44,15 +37,14 @@
   background-color: var(--border-color);
   transition: background-color 0.2s ease;
 }
-
 .divider:hover .dividerLine {
   background-color: var(--accent-color);
 }
-
+/*
 .container[data-dragging='true'] .dividerLine {
   background-color: var(--accent-color);
   width: 2px;
-}
+} */
 
 .collapseButton {
   position: absolute;
@@ -68,10 +60,6 @@
   overflow: hidden;
 }
 
-/* .divider:hover {
-  background-color: var(--accent-color);
-} */
-
 .collapseButton {
   position: absolute;
   width: 24px;
@@ -81,27 +69,47 @@
   /* border: 1px solid #ccc; */
   display: flex;
   align-items: center;
-  bottom: 1px; /* bottom of collapse buttons!*/
   left: 13px;
-  font-size: 18px;
+  font-size: 22px;
   font-family: 'SNPro-bold';
-  color: hsl(0, 0%, 40%);
+  color: hsl(0, 0%, 60%);
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
   transition: transform 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+  background-color: white;
+  color: var(--phenex-red);
 }
 
 .collapseButton:hover {
-  color: red;
+  transition: transform 0.3s ease;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .collapseButton:focus {
   outline: none;
 }
 
+.leftCollapseButton {
+  left: 4px;
+  top: 23px;
+  width: 40px;
+  height: 40px;
+  bottom: 1px; /* bottom of collapse buttons!*/
+  border: var(--border);
+}
 .rightCollapseButton {
-  left: -25px;
+  left: -80px;
+  bottom: 40px;
+  width: 50px;
+  height: 50px;
+  border: var(--border);
+  background-color: white;
+  color: var(--phenex-red);
+  border: 2px solid var(--phenex-red);
 }
 
 .collapseButton.collapsed {

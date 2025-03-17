@@ -145,4 +145,15 @@ export class PhenexDirectoryParserService {
     );
     return cohort;
   }
+
+  async deleteCohort(cohortId: string): Promise<void> {
+    const files = await this.parseDirectory();
+    for (const file of files) {
+      if (file === `cohort_${cohortId}.json`) {
+        await this.directoryService.deleteFile(file);
+        this.notifyListeners();
+        break;
+      }
+    }
+  }
 }

@@ -2,7 +2,7 @@
   --accent-color: #aaa;
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
-  --line-color: #d0d0d0ea;
+  --line-color: hsl(0, 0%, 88%);
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
   --text-color-normal: black;

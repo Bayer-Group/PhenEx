@@ -5,12 +5,23 @@ import { TabbedCellEditor, TabConfig, TabbedCellEditorProps } from './TabbedCell
 
 interface CodelistCellEditorProps extends TabbedCellEditorProps {
   options?: string[];
-  onManualEntriesChange?: (entries: { [key: string]: string[] }) => void;
 }
 
 export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedValue, setSelectedValue] = useState('');
+  const [useCodeType, setUseCodeType] = useState(() => {
+    if (props.value && typeof props.value === 'object') {
+      return props.value.use_code_type ?? true;
+    }
+    return true;
+  });
+  const [removePunctuation, setRemovePunctuation] = useState(() => {
+    if (props.value && typeof props.value === 'object') {
+      return props.value.remove_punctuation ?? false;
+    }
+    return false;
+  });
   const [manualEntries, setManualEntries] = useState(() => {
     if (!props.value) {
       return [{ codeType: '', codes: '' }];
@@ -42,11 +53,16 @@ export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
       },
       {} as { [key: string]: string[] }
     );
-
+    console.log('CURRENT STATE', useCodeType, removePunctuation);
     if (props.onValueChange) {
-      props.onValueChange({ class_name: 'Codelist', codelist: formattedEntries });
+      props.onValueChange({
+        class_name: 'Codelist',
+        codelist: formattedEntries,
+        use_code_type: useCodeType,
+        remove_punctuation: removePunctuation,
+      });
     }
-  }, [manualEntries]);
+  }, [manualEntries, useCodeType, removePunctuation]);
 
   const handleOptionClick = (option: string) => {
     setSelectedValue(option);
@@ -159,7 +175,29 @@ export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
     },
   ];
 
-  return <TabbedCellEditor {...props} tabs={tabs} />;
+  return (
+    <div className={styles.editorContainer}>
+      <TabbedCellEditor {...props} tabs={tabs} />
+      <div className={styles.chin}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={useCodeType}
+            onChange={e => setUseCodeType(e.target.checked)}
+          />
+          use_code_type
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={removePunctuation}
+            onChange={e => setRemovePunctuation(e.target.checked)}
+          />
+          remove_punctuation
+        </label>
+      </div>
+    </div>
+  );
 };
 
 CodelistCellEditor.displayName = 'CodelistCellEditor';

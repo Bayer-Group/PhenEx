@@ -17,23 +17,22 @@ export class CohortDataService {
 
   private columns: ColumnDefinition[] = [
     {
+      field: 'name',
+      headerName: 'Name',
+      width: 200,
+      pinned: 'left',
+      editable: true,
+    },
+    {
       field: 'type',
       headerName: 'Type',
-      width: 120,
+      width: 80,
       pinned: 'left',
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
         values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
       },
-    },
-    {
-      field: 'name',
-      headerName: 'Name',
-      width: 200,
-      pinned: 'left',
-      editable: true,
-      cellRenderer: 'NameCellRenderer',
     },
     {
       field: 'description',
@@ -136,9 +135,16 @@ export class CohortDataService {
     return this._table_data;
   }
 
+  private _currentFilter: string[] = [];
   public tableDataFromCohortData(): TableData {
+    let filteredPhenotypes = this._cohort_data.phenotypes || [];
+    if (this._currentFilter.length > 0) {
+      filteredPhenotypes = filteredPhenotypes.filter((phenotype: TableRow) => 
+        this._currentFilter.includes(phenotype.type)
+      );
+    }
     return {
-      rows: this._cohort_data.phenotypes,
+      rows: filteredPhenotypes,
       columns: this.columns,
     };
   }
@@ -149,7 +155,12 @@ export class CohortDataService {
     if (!this._cohort_data.id) {
       this._cohort_data.id = this.createId();
     }
+    // Ensure phenotypes array exists
+    if (!this._cohort_data.phenotypes) {
+      this._cohort_data.phenotypes = [];
+    }
     this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners(); // Notify listeners after loading data
   }
 
   public setDatabaseSettings(databaseConfig) {
@@ -253,14 +264,27 @@ export class CohortDataService {
     };
     this._cohort_data.phenotypes.push(newPhenotype);
     this.sortPhenotypes();
+    this._table_data = this.tableDataFromCohortData();
     console.log('addPhenotype cohort data!!! ', this._cohort_data);
     this.notifyListeners();
-    return {
-      add: [newPhenotype],
-      addIndex: this._cohort_data.phenotypes.length - 1,
-    };
+
   }
 
+  public deletePhenotype(id: string) {
+    const phenotypeIndex = this._cohort_data.phenotypes.findIndex(
+      (phenotype: TableRow) => phenotype.id === id
+    );
+    if (phenotypeIndex !== -1) {
+      this._cohort_data.phenotypes.splice(phenotypeIndex, 1);
+      this.saveChangesToCohort();
+      this._table_data = this.tableDataFromCohortData();
+      this.notifyListeners();
+      return {
+        remove: [id],
+      };
+    }
+    return null;
+  }
   private createId(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
@@ -282,10 +306,19 @@ export class CohortDataService {
       id: this.createId(),
       name: 'NEW cohort',
       class_name: 'Cohort',
-      phenotypes: [],
+      phenotypes: [
+        {
+          id: this.createId(),
+          type: 'entry',
+          name: 'Entry criterion',
+          class_name: 'CodelistPhenotype',
+        },
+      ],
+      database_config: {},
     };
     this._cohort_name = this._cohort_data.name;
     this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners(); // Notify listeners after initialization
   }
 
   private listeners: Array<() => void> = [];
@@ -305,30 +338,44 @@ export class CohortDataService {
     this.listeners.forEach(listener => listener());
   }
 
-  public updateCohortFromChat(newCohort){
+  public updateCohortFromChat(newCohort) {
     this._cohort_data = newCohort;
-    console.log("UPDATED COHROT DATA", newCohort)
-    this.saveChangesToCohort()
+    console.log('UPDATED COHROT DATA', newCohort);
+    this.saveChangesToCohort();
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
   }
 
-
   public async executeCohort(): Promise<void> {
-    const response = await executeStudy({ 
-      cohort: this._cohort_data , 
-      database_config:this._cohort_data.database_config
+    const response = await executeStudy({
+      cohort: this._cohort_data,
+      database_config: this._cohort_data.database_config,
     });
-    console.log("GOT RESPONSE", response)
+    console.log('GOT RESPONSE', response);
     // try {
-    
-    //   const response = await executeStudy({ 
-    //     cohort: this._cohort_data , 
+
+    //   const response = await executeStudy({
+    //     cohort: this._cohort_data ,
     //     database_config:this._cohort_data.database_config
     //   });
     //   console.log("GOT RESPONSE", response)
     // } catch (error) {
     //   console.error('Error fetching cohort explanation:', error);
     // }
+  }
+
+  deleteCohort() {
+    if (this._cohort_data.id) {
+      this._parser.deleteCohort(this._cohort_data.id);
+      this._cohort_data = {};
+      this._cohort_name = '';
+      this._table_data = { rows: [], columns: this.columns };
+      this.notifyListeners();
+    }
+  }
+  public filterType(type: string | string[]): void {
+    this._currentFilter = Array.isArray(type) ? type : [type];
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
   }
 }

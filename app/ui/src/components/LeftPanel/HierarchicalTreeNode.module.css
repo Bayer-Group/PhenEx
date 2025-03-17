@@ -6,16 +6,30 @@
   user-select: none;
   border-radius: var(--border-radius);
   font-size: 24px;
+  transition: all 0.2s ease-in-out;
+  overflow: visible;
+  margin: 8px 10px;
+  border: 1px solid transparent;
 }
 
 .node:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  /* background-color: white; */
+  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
+  border: var(--border);
+  /* transform: translateY(-1px); */
 }
 
 .selected {
   border: var(--border);
   background-color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+.selected:hover {
+  border: var(--border);
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .arrow {
@@ -43,21 +57,34 @@
   text-overflow: ellipsis;
 }
 
-.addCohortNode.nodeName {
-  font-size: 18px;
-  color: red;
-  font: 'SNPro-bold';
+.addCohortNode .nodeName {
+  font-size: 16px;
+  color: var(--text-color-inactive) !important;
+  font: 'SNPro-regular';
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: -30px;
+  transition: all 0.2s ease-in-out;
 }
 
 .addCohortNode {
   height: 20px;
-  background-color: var(--button-color-inactive);
+  margin: 10px 85px 0px 40px;
+  background-color: white;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
 }
 
 .addCohortNode:hover {
-  background-color: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* background-color: var(--phenex-red); */
+}
+
+.addCohortNode:hover .nodeName {
+  color: black !important;
 }

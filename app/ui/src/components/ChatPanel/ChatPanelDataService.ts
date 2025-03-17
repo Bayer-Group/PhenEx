@@ -16,7 +16,7 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 1,
-      text: 'Hi\n ### I use **PhenEx** to help you generate evidence using Real World Data.\n\n\nI can help you build cohorts of patients with a similar condition, characterize them at the timepoint of interest, and assess clinical endpoints.\n\nAsk me more if you have questions!',
+      text: '# Hi,\n ### I use **PhenEx** to help you generate evidence using Real World Data.\n\n\n### Ask me anything!',
       isUser: false,
     },
   ];
@@ -83,13 +83,16 @@ class ChatPanelDataService {
 
   private async sendAIRequest(inputText): void {
     try {
-      const response = await textToCohort({ user_request: inputText.trim() , current_cohort:this.cohortDataService.cohort_data});
+      const response = await textToCohort({
+        user_request: inputText.trim(),
+        current_cohort: this.cohortDataService.cohort_data,
+      });
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
         text: response.explanation,
         isUser: false,
       };
-      this.cohortDataService.updateCohortFromChat(response.cohort)
+      this.cohortDataService.updateCohortFromChat(response.cohort);
       this.messages.push(assistantMessage);
       this.notifyListeners();
       this.notifyAICompletionListeners(true);
@@ -99,17 +102,11 @@ class ChatPanelDataService {
     }
   }
 
-  public acceptAIResult(): void {
-     
-  }
+  public acceptAIResult(): void {}
 
-  public rejectAIResult(): void { 
+  public rejectAIResult(): void {}
 
-  }
-
-  public retryAIRequest(): void { 
-
-  }
+  public retryAIRequest(): void {}
 }
 
 export const chatPanelDataService = ChatPanelDataService.getInstance();

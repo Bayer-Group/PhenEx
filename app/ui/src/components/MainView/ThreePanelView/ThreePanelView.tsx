@@ -63,6 +63,24 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Command+B for left panel
+      if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleLeftPanel();
+      }
+      // Option+Command+B for right panel
+      if (e.metaKey && e.altKey && e.key.toLowerCase() === '∫') {
+        e.preventDefault();
+        toggleRightPanel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  React.useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
@@ -74,12 +92,11 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   }, [isDragging]);
 
   const toggleLeftPanel = () => {
-    setIsLeftCollapsed(!isLeftCollapsed);
+    setIsLeftCollapsed(prevState => !prevState);
   };
 
   const toggleRightPanel = () => {
-    console.log('TOGGLING RIGHT PANEL', rightWidth);
-    setIsRightCollapsed(!isRightCollapsed);
+    setIsRightCollapsed(prevState => !prevState);
   };
 
   return (
@@ -94,7 +111,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       <div className={styles.divider} onMouseDown={handleMouseDown('left')}>
         <div className={styles.dividerLine} />
         <button
-          className={`${styles.collapseButton} ${isLeftCollapsed ? styles.collapsed : ''}`}
+          className={`${styles.collapseButton} ${styles.leftCollapseButton} ${isLeftCollapsed ? styles.collapsed : ''}`}
           onClick={toggleLeftPanel}
         >
           {'<<'}

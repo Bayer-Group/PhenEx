@@ -1,0 +1,47 @@
+.cohortTableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.topSection {
+  padding: 0px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.controlsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-left: 30px;
+  margin-right: 30px;
+}
+
+.bottomSection {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.viewContainer {
+  padding: 20px;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.viewContainer h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text-color);
+  font-size: 1.5rem;
+}
+
+.viewContainer p {
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}

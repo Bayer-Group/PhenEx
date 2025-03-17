@@ -1,7 +1,7 @@
 .codelistContainer {
   display: inline-flex;
   flex-direction: column;
-  margin-top: -10px;
+  margin-top: 5px;
   padding-bottom: 0px;
   max-width: 100%;
 }

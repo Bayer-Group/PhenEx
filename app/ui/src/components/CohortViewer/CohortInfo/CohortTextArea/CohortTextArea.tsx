@@ -25,19 +25,19 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
       const editorContainer = document.createElement('div');
       editorRef.current.appendChild(toolbarContainer);
       editorRef.current.appendChild(editorContainer);
-      
+
       quillInstance = new Quill(editorContainer, {
         theme: 'snow',
         placeholder: 'Enter cohort description...',
         modules: {
           toolbar: [
             ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'indent': '-1'}, { 'indent': '+1' }],
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            [{ 'color': [] }, { 'background': [] }],
-          ]
-        }
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            [{ indent: '-1' }, { indent: '+1' }],
+            [{ header: [1, 2, 3, 4, 5, 6, false] }],
+            [{ color: [] }, { background: [] }],
+          ],
+        },
       });
 
       quillRef.current = quillInstance;

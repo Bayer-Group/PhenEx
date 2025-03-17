@@ -6,7 +6,13 @@ import styles from './CohortTable.module.css';
 import '../../../styles/variables.css';
 import { themeQuartz } from 'ag-grid-community';
 import NameCellRenderer from './CellRenderers/NameCellRenderer';
+import TypeCellRenderer from './CellRenderers/TypeCellRenderer';
+import DescriptionCellRenderer from './CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from './CellRenderers/CodelistCellRenderer';
+import DomainCellRenderer from './CellRenderers/DomainCellRenderer';
+
+import RelativeTimeRangeCellRenderer from './CellRenderers/RelativeTimeRangeCellRenderer';
+
 import { ModuleRegistry } from '@ag-grid-community/core';
 
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
@@ -20,35 +26,6 @@ interface CohortTableProps {
   data: TableData;
   onCellValueChanged?: (event: any) => void;
 }
-
-const TypeCellRenderer = (props: any) => {
-  const type = props.value;
-  const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
-  return (
-    <div style={{ textAlign: 'right' }}>
-      <span
-        style={{
-          // display: 'inline-block',
-          padding: '5px 8px',
-          borderRadius: '8px',
-          backgroundColor: 'red',
-        }}
-        className={colorClass}
-      >
-        {type}
-      </span>
-    </div>
-  );
-};
-
-const DescriptionCellRenderer = (props: any) => {
-  const type = props.value;
-  return (
-    <div style={{ textAlign: 'left', lineHeight: '1em', marginTop: '10px', fontSize: '14px' }}>
-      {type}
-    </div>
-  );
-};
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, onCellValueChanged }, ref) => {
@@ -79,10 +56,29 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               cellRenderer: DescriptionCellRenderer,
               editable: true,
             } as ColDef<TableRow>;
+          } else if (col.field === 'relative_time_range') {
+            return {
+              ...baseCol,
+              cellRenderer: RelativeTimeRangeCellRenderer,
+              editable: params => {
+                console.log("CHECKING EDITABLE", params.data)
+                return (
+                  params.data.type !== 'entry' && 
+                  (params.data.class_name === 'MeasurementPhenotype' ||
+                  params.data.class_name === 'CodelistPhenotype')
+                );
+              },
+            } as ColDef<TableRow>;
           } else if (col.field === 'name') {
             return {
               ...baseCol,
               cellRenderer: NameCellRenderer,
+              editable: true,
+            } as ColDef<TableRow>;
+          } else if (col.field === 'domain') {
+            return {
+              ...baseCol,
+              cellRenderer: DomainCellRenderer,
               editable: true,
             } as ColDef<TableRow>;
           } else if (col.field === 'codelist') {
@@ -137,7 +133,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           ref={ref}
           rowData={data.rows}
           theme={myTheme}
-          columnDefs={processedColumnDefs}
+          columnDefs={processedColumnDefs.length > 0 ? processedColumnDefs : []} // Ensure non-null column definitions
           components={{
             RelativeTimeRangeFilterCellEditor: RelativeTimeRangeFilterCellEditor,
             NameCellRenderer: NameCellRenderer,
@@ -149,6 +145,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             filter: true,
             resizable: true,
             menuTabs: ['filterMenuTab'],
+            suppressHeaderMenuButton: true, // Disable header menu button until columns are properly initialized
           }}
           suppressColumnVirtualisation={true}
           onCellValueChanged={onCellValueChanged}
@@ -156,12 +153,34 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // editType="fullRow"
           animateRows={true}
           getRowHeight={params => {
+            
+            // Calculate height of CODELISTS
+            let current_max_height = 48;
+            if (params.data?.class_name == 'CodelistPhenotype' && params.data.codelist?.codelist) {
+              const numEntries = Object.keys(params.data.codelist.codelist).length;
+              const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
+              current_max_height = Math.max(current_max_height, codelist_phenotype_height);
+            }
+  
+            // Calculate height of RELATIVE TIME RANGES
+            if (params.data?.relative_time_range) {
+              console.log("TIME RANGE PHENOTYPE", params.data);
+              const numEntries = params.data.relative_time_range.length;
+              const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of codelist entries
+              console.log("TIME RANGE PHENOTYPE HEIGHT CALCULATEd", time_range_phenotype_height, 'numenries', numEntries, params.data.relative_time_range)
+              current_max_height = Math.max(current_max_height, time_range_phenotype_height);
+            }
+
+            if (!params.data?.description) {
+              return current_max_height;
+            }
+
             const descriptionCol = params.api.getColumnDef('description');
             if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
             const descWidth = descriptionCol.width || 250;
             const charPerLine = Math.floor(descWidth / 8);
             const lines = Math.ceil(params.data?.description.length / charPerLine);
-            return Math.max(48, lines * 14 + 20); // Increased minimum height
+            return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
           }}
           rowClassRules={
             {

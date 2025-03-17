@@ -1,38 +1,40 @@
 import React from 'react';
-import { ICellRendererParams } from 'ag-grid-community';
 import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
+import deleteIcon from '../../../../assets/icons/delete.svg';
 import styles from './NameCellRenderer.module.css';
+import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import { CohortDataService } from '../../CohortDataService';
 
-interface NameCellRendererProps extends ICellRendererParams {
-  value: string;
-}
-
-const NameCellRenderer: React.FC<NameCellRendererProps> = props => {
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    width: '100%',
-    height: '100%',
-    padding: '0',
-    position: 'relative',
-  };
+const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
+  const dataService = CohortDataService.getInstance();
 
   return (
-    <div style={containerStyle}>
+    <PhenexCellRenderer {...props}>
       <span>{props.value}</span>
-      <button
-        className={styles.editButton}
-        onClick={() =>
-          props.api.startEditingCell({
-            rowIndex: props.rowIndex,
-            colKey: props.column.getColId(),
-          })
-        }
-      >
-        <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />
-      </button>
-    </div>
+      <div>
+        <button
+          className={styles.editButton}
+          onClick={() =>
+            props.api.startEditingCell({
+              rowIndex: props.rowIndex,
+              colKey: props.column.getColId(),
+            })
+          }
+        >
+          <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />
+        </button>
+        <button
+          className={styles.deleteButton}
+          onClick={() => {
+            if (props.data?.id) {
+              dataService.deletePhenotype(props.data.id);
+            }
+          }}
+        >
+          <img src={deleteIcon} className={styles.editIcon} alt="Delete" />
+        </button>
+      </div>
+    </PhenexCellRenderer>
   );
 };
 

@@ -10,7 +10,7 @@
   padding: 4px 16px;
   border: none;
   border-radius: 6px;
-  background-color: transparent;
+  background-color: white;
   color: var(--text-color-inactive);
   cursor: pointer;
   font-size: 14px;
@@ -32,6 +32,7 @@
   background-color: white;
   color: var(--text-color-normal);
   transform: translateY(-1px);
+  border: 1px solid black;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 

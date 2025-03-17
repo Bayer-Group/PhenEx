@@ -88,6 +88,20 @@ export class DirectoryReaderWriterService {
     this.notifyListeners();
   }
 
+  async deleteFile(fileName: string) {
+    if (!this.directoryHandle) {
+      throw new Error('No directory selected');
+    }
+
+    try {
+      await this.directoryHandle.removeEntry(fileName);
+      this.notifyListeners();
+    } catch (error) {
+      console.error(`Error deleting file ${fileName}:`, error);
+      throw error;
+    }
+  }
+
   async readFile(fileName: string): Promise<string> {
     if (!this.directoryHandle) {
       throw new Error('No directory selected');

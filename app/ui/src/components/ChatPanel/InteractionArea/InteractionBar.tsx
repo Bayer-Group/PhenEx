@@ -27,6 +27,15 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
               return '..';
             case '..':
               return '...';
+            case '...':
+              return '....';
+            case '....':
+              return '.....';
+            case '.....':
+              return '......';
+            case '......':
+              return '.......';
+
             default:
               return '';
           }
@@ -52,11 +61,7 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
   if (state === 'retry') {
     return (
       <div className={styles.buttonContainer}>
-        <ButtonsBar
-          width="100%"
-          buttons={['Retry']}
-          actions={[onRetry || (() => {})]}
-        />
+        <ButtonsBar width="100%" buttons={['Retry']} actions={[onRetry || (() => {})]} />
       </div>
     );
   }

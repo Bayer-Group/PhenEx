@@ -1,0 +1,51 @@
+.filtersContainer {
+  width: 100%;
+  text-wrap: wrap;
+  gap: 3px;
+  line-height: 11px;
+  font-size: 11px;
+  font-family: 'SNPro-regular';
+}
+
+.filterRow {
+  margin-top: 3px;
+  background-color: var(--background-color);
+  border-radius: 3px;
+  padding: 5px 10px;
+}
+/* 
+.filtersContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterText {
+  font-size: 11px;
+  color: #333;
+} */
+
+.timeValue {
+  color: #2c5282;
+  padding: 0px 3px;
+}
+
+.reference {
+  font-style: italic;
+}
+
+.operator{
+  font-family: "SNPro-bold";
+}
+
+.when{
+  font-family: "SNPro-bold";
+}
+.min{
+}

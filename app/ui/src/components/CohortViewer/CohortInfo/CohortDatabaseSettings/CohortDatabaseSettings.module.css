@@ -1,8 +1,8 @@
 .container {
-  padding: 0px 30px;
+  padding: 0px 0px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0px;
 }
 
 .headerContainer {
@@ -12,10 +12,11 @@
   margin-bottom: 16px;
 }
 
-.title{
-  font-family: 'SNPro-black';
-  font-size: 30px;
+.title {
+  font-family: 'SNPro-bold';
+  font-size: 18px;
   height: 20px;
+  margin-left: 20px;
 }
 
 .editButton {
@@ -23,9 +24,12 @@
   border: none;
   padding: 6px 7px 3px 7px;
   cursor: pointer;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border: var(--border);
+  margin-right: 10px;
 }
 
 .editButton:hover {
@@ -75,11 +79,11 @@
   gap: 0px;
 }
 
-.myTitle{
+.myTitle {
   padding-bottom: 0px;
-  margin:0;
-  font-family: "SNPro-bold";
-  font-size:30px;
+  margin: 0;
+  font-family: 'SNPro-bold';
+  font-size: 30px;
 }
 
 .sectionTitle {

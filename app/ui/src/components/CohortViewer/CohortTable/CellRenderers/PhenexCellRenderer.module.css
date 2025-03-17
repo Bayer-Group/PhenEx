@@ -1,0 +1,31 @@
+:global(.ag-cell) {
+  overflow: visible !important;
+}
+
+.addToChatButton {
+  position: absolute;
+  right: -80px;
+  bottom: 5px;
+  background: white;
+  border: 2px solid var(--phenex-red);
+  padding: 6px 12px;
+  color: var(--phenex-red);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1000;
+  font-family: 'SNPro-regular';
+  font-size: 12px;
+  padding: 2px 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.addToChatButton:hover {
+  background: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+:global(.ag-cell:hover) .addToChatButton {
+  opacity: 1;
+}
