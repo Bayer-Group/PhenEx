@@ -101,14 +101,15 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        super(CodelistPhenotype, self).__init__()
+        super(CodelistPhenotype, self).__init__(**kwargs)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
         self.categorical_filter = categorical_filter
         self.name = name or self.codelist.name
         self.date_range = date_range
-        if return_date is None: return_date = 'first'
+        if return_date is None:
+            return_date = "first"
         self.return_date = return_date
         assert self.return_date in [
             "first",

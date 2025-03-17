@@ -55,8 +55,9 @@ class Cohort(Phenotype):
         exclusions: Optional[List[Phenotype]] = None,
         characteristics: Optional[List[Phenotype]] = None,
         outcomes: Optional[List[Phenotype]] = None,
+        **kwargs,
     ):
-        super(Cohort, self).__init__()
+        super(Cohort, self).__init__(**kwargs)
         self.name = name
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []

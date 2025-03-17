@@ -29,12 +29,13 @@ class Phenotype:
         4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
     """
 
-    def __init__(self):
+    def __init__(self, count = None, **kwargs):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )
         self._namespaced_table = None
         self.children = []  # List[Phenotype]
+        self.count = None
         self._check_for_children()
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -178,6 +179,12 @@ class Phenotype:
 
     def to_dict(self):
         return to_dict(self)
+
+    def append_counts(self):
+        if self.table is not None:
+            self.count = int(self.table.select('PERSON_ID').distinct().count().to_pandas())
+\        for child in self.children:
+            child.append_counts()
 
 
 from typing import Dict, Union
