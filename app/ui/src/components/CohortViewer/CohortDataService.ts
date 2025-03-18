@@ -37,9 +37,9 @@ export class CohortDataService {
     {
       field: 'count',
       headerName: 'N',
-      width: 50,
+      width: 80,
       editable: false,
-      wrapText: true,
+      wrapText: false,
       pinned: 'left',
 
     },
@@ -218,6 +218,7 @@ export class CohortDataService {
     // } catch (error) {
     //   console.error('Error executing study:', error);
     // }
+    this.notifyListeners()
   }
 
   private sortPhenotypes() {
@@ -344,6 +345,7 @@ export class CohortDataService {
   }
 
   private notifyListeners() {
+    console.log("DAT ASERVIC IS NOTIFYIN")
     this.listeners.forEach(listener => listener());
   }
 

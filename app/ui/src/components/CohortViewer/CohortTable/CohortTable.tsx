@@ -1,4 +1,4 @@
-import { FC, forwardRef, ForwardedRef } from 'react';
+import { FC, forwardRef, ForwardedRef, useEffect } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { RelativeTimeRangeFilterCellEditor } from './CellEditors/RelativeTimeRangeFilterCellEditor';
 import { CodelistCellEditor } from './CellEditors/CodelistCellEditor';
@@ -10,6 +10,7 @@ import TypeCellRenderer from './CellRenderers/TypeCellRenderer';
 import DescriptionCellRenderer from './CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from './CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from './CellRenderers/DomainCellRenderer';
+import CountCellRenderer from './CellRenderers/CountCellRenderer';
 
 import RelativeTimeRangeCellRenderer from './CellRenderers/RelativeTimeRangeCellRenderer';
 
@@ -56,7 +57,12 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               cellRenderer: DescriptionCellRenderer,
               editable: true,
             } as ColDef<TableRow>;
-          } else if (col.field === 'relative_time_range') {
+          } else if (col.field === 'count') {
+            return {
+              ...baseCol,
+              cellRenderer: CountCellRenderer,
+            } as ColDef<TableRow>;
+          }else if (col.field === 'relative_time_range') {
             return {
               ...baseCol,
               cellRenderer: RelativeTimeRangeCellRenderer,

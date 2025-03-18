@@ -1,0 +1,16 @@
+.countValue {
+  font-size: 11px;
+  color: #333;
+  padding: 2px 5px;
+  background-color: var(--background-color);
+  border-radius:4px;
+  line-height: 12px;
+  margin-top:10px;
+  margin-left:-13px;
+}
+
+.missing {
+  color: #ff4d4f;
+  font-size: 12px;
+  font-style: italic;
+}

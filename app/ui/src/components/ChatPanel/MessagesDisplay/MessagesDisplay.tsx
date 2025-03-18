@@ -29,6 +29,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
   useEffect(() => {
     setMessages(chatPanelDataService.getMessages());
     const handleMessagesUpdated = (updatedMessages: Message[]) => {
+      console.log("UPDAGED MESSAGES", updatedMessages)
       setMessages(updatedMessages);
     };
 

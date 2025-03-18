@@ -3,6 +3,7 @@ import styles from './CohortViewerHeader.module.css';
 import { CohortDataService } from './CohortDataService';
 import { Tabs } from '../Tabs/Tabs';
 import { CohortViewType } from './CohortViewer';
+import { CohortIssuesDisplay } from './CohortIssuesDisplay/CohortIssuesDisplay';
 
 interface CohortViewerHeaderProps {
   onCohortNameChange: (newValue: string) => void;
@@ -72,6 +73,8 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
       <div className={styles.controlsContainer}>
         <Tabs width={400} height={30} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
       </div>
+      <CohortIssuesDisplay />
+
     </div>
   );
 };

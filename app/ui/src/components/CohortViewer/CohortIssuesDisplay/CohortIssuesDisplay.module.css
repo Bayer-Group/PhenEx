@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 200px;
+  padding: 8px;
+  gap: 4px;
+  position: absolute;
+  right:0px;
+  top:0px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusDot.red {
+  background-color: #ff4d4f;
+}
+
+.statusDot.green {
+  background-color: #52c41a;
+}
+
+.text {
+  font-size: 14px;
+  color: var(--text-color);
+}
