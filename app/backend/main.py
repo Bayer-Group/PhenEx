@@ -1,12 +1,13 @@
 from typing import Dict
-from fastapi import FastAPI, HTTPException, Request, Body
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Body
+from fastapi.responses import JSONResponse, StreamingResponse
 import phenex
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
 from dotenv import load_dotenv
 import os, json, glob
 import logging
+import ast
 
 load_dotenv()
 
@@ -34,12 +35,14 @@ def get_phenex_context():
     )
     context = ""
     for file_path in python_files:
-        if "/test" not in file_path:
+        if '/test' not in file_path:
             with open(file_path, "r") as f:
-                context += f"\n\n{file_path}:\n" + f.read() + "\n"
+                context += f.read()
+    # logger.info(f"{context[:100000]}")
     logger.info(f"LLM context files found: {len(python_files)}")
     logger.info(f"LLM context length (words): {len(context.split())}")
     return context
+
 
 
 context = get_phenex_context()
@@ -71,8 +74,8 @@ async def home():
     logger.info("hello there")
 
 
-@app.post("/text_to_cohort")
-async def text_to_cohort(
+@app.post("/plan_update_cohort")
+async def plan_update_cohort(
     user_request: str = Body(
         "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
     ),
@@ -90,10 +93,69 @@ async def text_to_cohort(
     Modify the current Cohort according to the following instructions:
     {user_request}
 
+    Respond with a VERY BRIEF (not more than 100 words) plain text (no code, no python, no json, just plain language) explanation of the changes to be made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review).
+    """
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt},
+    ]
+
+    completion = openai_client.chat.completions.create(
+        model=model,
+        stream=True,
+        messages=messages
+    )
+
+    def stream_response():
+        for chunk in completion:
+            if len(chunk.choices):
+                current_response = chunk.choices[0].delta.content
+                if current_response is not None:
+                    # yield 'chunk '
+                    yield current_response
+
+    return StreamingResponse(stream_response(), media_type="text/plain")
+
+
+    #
+    # user_id, cohort_id, phenotype_id, definition, status
+    # xyz, abc, 123, {..}, not_executed
+
+    # validate_cohort(modified_cohort)
+    # update_cohort(cohort_id, modified_cohort)
+    # return
+
+@app.post("/text_to_cohort")
+async def text_to_cohort(
+    user_request: str = Body(
+        "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+    ),
+    plan: str = Body(None),
+    current_cohort: Dict = None,
+    model: str = "gpt-4o-mini",
+):
+    prompt = f"""
+    Consider the following library code: 
+        {context}
+
+    Consider the currently defined cohort (which is possibly empty):
+
+    {json.dumps(current_cohort, indent=4)}
+
+    The user has requested you to modify the current Cohort according to the following instructions:
+    {user_request}
+    """
+
+    if plan:
+        prompt += """
+    You have determined the following changes must be made in order to complete the user's instructions:
+    {plan}
+    """
+
+    prompt += """
     Return a JSON with the following fields:
     
     {{
-        "explanation" : (str) A concise plain text explanation of the changes made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review).
         "cohort": (Dict) The complete dictionary definition of the resulting updated cohort compatible with phenex.util.serialization.from_dict.
 
     }}
@@ -115,8 +177,18 @@ async def text_to_cohort(
         .message.content
     )
 
-    response["cohort"]["id"] = current_cohort["id"]
-    return response
+    response['cohort']['id'] = current_cohort['id']
+    try: 
+        from_dict(response["cohort"])
+        return {
+            "status": "update_succeeded",
+            "cohort": response["cohort"]
+        }
+    except:
+        return  {
+            "status": "update_failed",
+            "cohort": current_cohort
+        }
 
 
 @app.post("/execute_study")
@@ -127,33 +199,38 @@ async def execute_study(
     logger.info("Received request!!!!")
     print(cohort)
     print(database_config)
-    response = {"cohort": cohort}
+    response = {
+        'cohort': cohort
+    }
 
     from phenex.ibis_connect import SnowflakeConnector
-
     print(database_config)
-    if database_config["mapper"] == "OMOP":
+    if database_config['mapper'] == 'OMOP':
         from phenex.mappers import OMOPDomains
-
         mapper = OMOPDomains
 
-    database = database_config["config"]
+    database = database_config['config']
+
 
     con = SnowflakeConnector(
-        SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
-        SNOWFLAKE_DEST_DATABASE=database["destination_database"],
+        SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
+        SNOWFLAKE_DEST_DATABASE = database['destination_database'],
     )
+    
 
     mapped_tables = mapper.get_mapped_tables(con)
     print("GOT MAPPED TABLES!")
     px_cohort = from_dict(cohort)
     px_cohort.execute(mapped_tables)
     # px_cohort.append_results()
-    px_cohort.append_counts()
+
     print(px_cohort.to_dict())
 
-    print("AFTER EXECUTIPN")
-    print(px_cohort.to_dict())
-    response = {"cohort": px_cohort.to_dict()}
+    from phenex.reporting import InExCounts
+    r = InExCounts()
+    counts = r.execute(px_cohort)
+    print(counts)
 
-    return JSONResponse(content=response)
+    response = {cohort:px_cohort.to_dict()}
+
+    # return JSONResponse(content=response)

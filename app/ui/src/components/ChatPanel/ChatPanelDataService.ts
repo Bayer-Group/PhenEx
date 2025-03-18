@@ -1,6 +1,6 @@
 import { CohortDataService } from '../CohortViewer/CohortDataService';
 
-import { textToCohort } from '../../api/text_to_cohort/route';
+import { textToCohort, planUpdateCohort } from '../../api/text_to_cohort/route';
 
 type MessageCallback = (messages: Message[]) => void;
 type AICompletionCallback = (success: boolean) => void;
@@ -24,7 +24,6 @@ class ChatPanelDataService {
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
   private cohortDataService = CohortDataService.getInstance();
-
   private constructor() {}
 
   public static getInstance(): ChatPanelDataService {
@@ -81,23 +80,55 @@ class ChatPanelDataService {
     this.aiCompletionListeners.forEach(listener => listener(success));
   }
 
-  private async sendAIRequest(inputText): void {
+  private async sendAIRequest(inputText: string): Promise<void> {
+    console.log('sendAIRequest called with inputText:', inputText);
     try {
-      const response = await textToCohort({
+      const stream = await planUpdateCohort({
         user_request: inputText.trim(),
         current_cohort: this.cohortDataService.cohort_data,
       });
+
+      console.log('Stream received from planUpdateCohort');
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
-        text: response.explanation,
+        text: '',
         isUser: false,
       };
-      this.cohortDataService.updateCohortFromChat(response.cohort);
       this.messages.push(assistantMessage);
       this.notifyListeners();
-      this.notifyAICompletionListeners(true);
+      console.log('Assistant message initialized:', assistantMessage);
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log('Stream reading completed');
+          break;
+        }
+
+        console.log('Stream chunk received:', value);
+        assistantMessage.text += decoder.decode(value, { stream: true });
+        console.log('Updated assistant message text:', assistantMessage.text);
+        this.notifyListeners(); // Update the UI in real-time
+      }
+
+      console.log('Finalizing assistant response');
+      const response = await textToCohort({
+        user_request: inputText.trim(),
+        plan: this.messages[this.messages.length - 1].text,
+        current_cohort: this.cohortDataService.cohort_data,
+      });
+      console.log('Response from textToCohort:', response);
+      if (response.status === "update_succeeded") {
+        this.cohortDataService.updateCohortFromChat(response.cohort);
+        this.notifyListeners();
+        this.notifyAICompletionListeners(true);
+      }
+      console.log('AI request completed successfully');
     } catch (error) {
-      console.error('Error fetching cohort explanation:', error);
+      console.error('Error in sendAIRequest:', error);
       this.notifyAICompletionListeners(false);
     }
   }
