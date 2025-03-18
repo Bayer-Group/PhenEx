@@ -49,7 +49,7 @@ class CodelistFilter(Filter):
             if self.codelist.use_code_type:
                 filter_condition = filter_condition | (
                     (code_table.CODE_TYPE == code_type)
-                    & (code_table.CODE.like(codelist))
+                    & (code_table.CODE.cast("str").like(codelist))
                 )
             else:
                 filter_condition = filter_condition | code_table.CODE.cast("str").like(
