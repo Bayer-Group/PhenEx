@@ -11,6 +11,7 @@ import DescriptionCellRenderer from './CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from './CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from './CellRenderers/DomainCellRenderer';
 import CountCellRenderer from './CellRenderers/CountCellRenderer';
+import DateRangeCellRenderer from './CellRenderers/DateRangeCellRenderer';
 
 import RelativeTimeRangeCellRenderer from './CellRenderers/RelativeTimeRangeCellRenderer';
 
@@ -81,7 +82,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               cellRenderer: NameCellRenderer,
               editable: true,
             } as ColDef<TableRow>;
-          } else if (col.field === 'domain') {
+          } else if (col.field === 'date_range') {
+            return {
+              ...baseCol,
+              cellRenderer: DateRangeCellRenderer,
+              editable: false,
+            } as ColDef<TableRow>;
+          }else if (col.field === 'domain') {
             return {
               ...baseCol,
               cellRenderer: DomainCellRenderer,
