@@ -224,13 +224,15 @@ async def execute_study(
     px_cohort.execute(mapped_tables)
     # px_cohort.append_results()
 
-    print(px_cohort.to_dict())
+    px_cohort.append_counts()
+    response = {'cohort':px_cohort.to_dict()}
 
-    from phenex.reporting import InExCounts
-    r = InExCounts()
-    counts = r.execute(px_cohort)
-    print(counts)
+    return JSONResponse(content=response)
 
-    response = {cohort:px_cohort.to_dict()}
+    # from phenex.reporting import InExCounts
+    # r = InExCounts()
+    # counts = r.execute(px_cohort)
+    # print(counts)
+
 
     # return JSONResponse(content=response)

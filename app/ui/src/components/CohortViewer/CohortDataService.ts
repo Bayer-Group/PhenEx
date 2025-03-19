@@ -83,6 +83,7 @@ export class CohortDataService {
       cellEditorParams: {
         values: [
           'CONDITION_OCCURRENCE_SOURCE',
+          'CONDITION_OCCURRENCE',
           'Drug Exposure',
           'Procedure Occurrence',
           'Person',
