@@ -184,7 +184,9 @@ class Phenotype:
     def append_counts(self):
         if self.table is not None:
             self.count = int(self.table.select('PERSON_ID').distinct().count().to_pandas())
+            print(self.name,self.count)
         for child in self.children:
+            print(child.name)
             child.append_counts()
 
 

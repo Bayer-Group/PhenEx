@@ -199,9 +199,6 @@ async def execute_study(
     logger.info("Received request!!!!")
     print(cohort)
     print(database_config)
-    response = {
-        'cohort': cohort
-    }
 
     from phenex.ibis_connect import SnowflakeConnector
     print(database_config)
@@ -226,11 +223,17 @@ async def execute_study(
     mapped_tables = mapper.get_mapped_tables(con)
     print("GOT MAPPED TABLES!")
     px_cohort = from_dict(cohort)
-    px_cohort.execute(mapped_tables)
+    # px_cohort.characteristics = []
+    px_cohort.execute(mapped_tables, con=con, write_subset_tables=True, n_threads = 6)
     # px_cohort.append_results()
 
+    print("FINISHED EXECUTING")
     px_cohort.append_counts()
-    response = {'cohort':px_cohort.to_dict()}
+    print("FINISHED APPENDING COUNTS")
+    executed_cohort_dict = px_cohort.to_dict()
+    executed_cohort_dict['database_config'] = database_config
+
+    response = {'cohort':executed_cohort_dict}
 
     return JSONResponse(content=response)
 

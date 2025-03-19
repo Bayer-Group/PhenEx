@@ -3,7 +3,6 @@ import os
 import ibis
 from ibis.backends import BaseBackend
 
-
 # Snowflake connection function
 def _check_env_vars(*vars: str) -> None:
     """
@@ -277,14 +276,23 @@ class SnowflakeConnector:
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
         if not database in self.dest_connection.list_databases():
             self.dest_connection.create_database(name=database, catalog=catalog)
+        try:
+            return self.dest_connection.create_table(
+                name=name_table,
+                database=database,
+                obj=table,
+                overwrite=overwrite,
+                schema=table.schema(),
+            )
+        except:
+            print(name_table)
+            # TODO do proper error handling see if 
+            # from snowflake.connector.errors import ProgrammingError
+            # except ProgrammingError as e:
+            #   if "already exists" in str(e):
 
-        return self.dest_connection.create_table(
-            name=name_table,
-            database=database,
-            obj=table,
-            overwrite=overwrite,
-            schema=table.schema(),
-        )
+
+            return self.get_dest_table(name_table)
 
     def drop_table(self, name_table):
         """
