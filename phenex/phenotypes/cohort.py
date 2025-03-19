@@ -195,15 +195,15 @@ class Cohort(Phenotype):
         if self.characteristics:
             logger.debug("Computing characteristics ...")
             self._compute_characteristics_table(n_threads)
-            if con:
-                logger.debug("Writing characteristics table ...")
-                self.characteristics_table = con.create_table(
-                    self.characteristics_table,
-                    f"{self.name}__characteristics",
-                    overwrite=overwrite,
-                )
+            # if con:
+            #     logger.debug("Writing characteristics table ...")
+            #     self.characteristics_table = con.create_table(
+            #         self.characteristics_table,
+            #         f"{self.name}__characteristics",
+            #         overwrite=overwrite,
+            #     )
             logger.debug("Characteristics computed.")
-            _ = self.table1
+            # _ = self.table1
 
         if self.outcomes:
             logger.debug("Computing outcomes ...")
@@ -320,12 +320,12 @@ class Cohort(Phenotype):
             ]
             for future in futures:
                 future.result()
-        self.characteristics_table = hstack(
-            self.characteristics,
-            join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
-        )
+        # self.characteristics_table = hstack(
+        #     self.characteristics,
+        #     join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
+        # )
         logger.debug("Characteristics table computed")
-        return self.characteristics_table
+        # return self.characteristics_table
 
     def _compute_outcomes_table(self, n_threads: int) -> Table:
         logger.debug("Computing outcomes table")
