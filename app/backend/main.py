@@ -217,7 +217,15 @@ async def text_to_cohort(
 
     }}
     
-    Where codelists are unknown, leave them as simply placeholders with a snake_case name and set the codelist as "codelist": ["PLACEHOLDER"].
+    Where codelists are unknown, leave them as simply placeholders with a snake_case name and set the codelist as:
+
+    "codelist": {
+        'class_name': 'Codelist',
+        'codelist': ['PLACEHOLDER'],
+        'name': 'PLACEHOLDER'
+    }
+
+    Make sure all phenotypes have up to date and accurate "description" fields.
     """
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
