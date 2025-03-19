@@ -209,6 +209,11 @@ async def execute_study(
         from phenex.mappers import OMOPDomains
         mapper = OMOPDomains
 
+    elif database_config['mapper'] == 'Vera':
+        from phenex.mappers import VeraDomains
+        mapper = VeraDomains
+
+
     database = database_config['config']
 
 
