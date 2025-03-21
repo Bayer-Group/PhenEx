@@ -7,7 +7,6 @@ from phenex.util.serialization.from_dict import from_dict
 from dotenv import load_dotenv
 import os, json, glob
 import logging
-import ast
 
 load_dotenv()
 
@@ -35,10 +34,15 @@ def get_phenex_context():
     )
     context = ""
     for file_path in python_files:
-        if '/test' not in file_path:
+        exclude_paths = ['/aggregators', '/filters', '/test/', '/reporting/', 'ibis_connect.py', 'sim.py', 'tables.py', 'logging.py', '__init__.py']
+        if not any([x in file_path for x in exclude_paths]):
             with open(file_path, "r") as f:
-                context += f.read()
+                new_context = context  + f"\n\n### File {file_path}:\n" + f.read()
+                logger.info(f'{file_path}: {len(new_context.split('\n')) - len(context.split('\n'))}')
+                context = new_context
+
     # logger.info(f"{context[:100000]}")
+    logger.info(context)
     logger.info(f"LLM context files found: {len(python_files)}")
     logger.info(f"LLM context length (words): {len(context.split())}")
     return context
@@ -74,17 +78,70 @@ async def home():
     logger.info("hello there")
 
 
-@app.post("/plan_update_cohort")
-async def plan_update_cohort(
+def get_cohort_path(cohort_id, provisional=False):
+    if provisional:
+        return f"cohort_{cohort_id}.provisional.json"
+    else:
+        return f"cohort_{cohort_id}.json"
+
+@app.get("/cohort")
+async def get_cohort(cohort_id: str, provisional: bool = False):
+    cohort_path = get_cohort_path(cohort_id, provisional)
+    with open(cohort_path, "r") as f:
+        return json.load(f)
+
+@app.post("/cohort")
+async def update_cohort(cohort_id: str, cohort: Dict = Body(...), provisional: bool = False):
+    cohort_path = get_cohort_path(cohort_id, provisional)
+    try:
+        with open(cohort_path, "w") as f:
+            json.dump(cohort, f, indent=4)
+        return {"status": "success", "message": "Cohort updated successfully."}
+    except Exception as e:
+        logger.error(f"Failed to update cohort: {e}")
+        return {"status": "error", "message": "Failed to update cohort."}
+
+@app.post("/cohort/accept_changes")
+async def accept_changes(cohort_id: str):
+    provisional_path = get_cohort_path(cohort_id, provisional=True)
+    final_path = get_cohort_path(cohort_id, provisional=False)
+    if os.path.exists(provisional_path):
+        os.replace(provisional_path, final_path)
+        return {"status": "success", "message": "Provisional changes accepted."}
+    else:
+        return {"status": "error", "message": "Provisional cohort not found."}
+
+@app.post("/cohort/reject_changes")
+async def reject_changes(cohort_id: str):
+    provisional_path = get_cohort_path(cohort_id, provisional=True)
+    if os.path.exists(provisional_path):
+        os.remove(provisional_path)
+        return {"status": "success", "message": "Provisional changes rejected."}
+    else:
+        return {"status": "error", "message": "Provisional cohort not found."}
+
+
+@app.post("/text_to_cohort")
+async def text_to_cohort(
+    cohort_id: str,
     user_request: str = Body(
         "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
     ),
-    current_cohort: Dict = None,
     model: str = "gpt-4o-mini",
 ):
-    prompt = f"""
+    current_cohort = get_cohort(cohort_id)
+
+    system_prompt = f"""
     Consider the following library code: 
         {context}
+
+    Your task is to create or modify a cohort according to the user instructions given below. 
+    
+    In performing your task, you may use any tools at your disposal to give as complete an accurate an answer as possible.
+     
+    Include in your response VERY BRIEF plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing.
+
+    You may think. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside <thinking> </thinking> tags. The content inside these tags will be removed before your answer is displayed to the user but may help you plan your tasks.     
 
     Consider the currently defined cohort (which is possibly empty):
 
@@ -93,7 +150,7 @@ async def plan_update_cohort(
     Modify the current Cohort according to the following instructions:
     {user_request}
 
-    Respond with a VERY BRIEF (not more than 100 words) plain text (no code, no python, no json, just plain language) explanation of the changes to be made. In the explanation, indicate any points of ambiguity (if any) that require attention from the user as a bulleted list at the end (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review).
+
     """
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -166,7 +223,7 @@ async def text_to_cohort(
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": prompt},
     ]
-
+    logger.info(prompt)
     response = json.loads(
         openai_client.chat.completions.create(
             model=model,
@@ -179,7 +236,7 @@ async def text_to_cohort(
 
     response['cohort']['id'] = current_cohort['id']
     try: 
-        from_dict(response["cohort"])
+        # from_dict(response["cohort"])
         return {
             "status": "update_succeeded",
             "cohort": response["cohort"]
@@ -197,20 +254,20 @@ async def execute_study(
     database_config: Dict = None,
 ):
     logger.info("Received request!!!!")
-    print(cohort)
-    print(database_config)
+    # print(cohort)
+    # print(database_config)
     response = {
         'cohort': cohort
     }
 
-    from phenex.ibis_connect import SnowflakeConnector
     print(database_config)
     if database_config['mapper'] == 'OMOP':
         from phenex.mappers import OMOPDomains
         mapper = OMOPDomains
 
     database = database_config['config']
-
+    logger.info('ENVIRON')
+    logger.info(os.environ)
 
     con = SnowflakeConnector(
         SNOWFLAKE_SOURCE_DATABASE = database['source_database'],

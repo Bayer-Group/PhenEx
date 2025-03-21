@@ -52,6 +52,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
         date_range: DateRangeFilter = None,
         relative_time_range: RelativeTimeRangeFilter = None,
         return_date="first",
+        description: str = None
     ):
         self.name = name
         self.date_range = date_range
@@ -60,6 +61,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
         self.n_occurrences = n_occurrences
         self.phenotype = phenotype
         self.children = [phenotype]
+        self.description = description
         super(MultipleOccurrencesPhenotype, self).__init__()
 
     def _execute(self, tables) -> PhenotypeTable:

@@ -4,22 +4,6 @@ import ibis
 from ibis.backends import BaseBackend
 
 
-# Snowflake connection function
-def _check_env_vars(*vars: str) -> None:
-    """
-    Check if the required environment variables are set.
-
-    Args:
-        *vars: Variable length argument list of environment variable names.
-
-    Raises:
-        EnvironmentError: If any of the required environment variables are missing.
-    """
-    missing_vars = [var for var in vars if os.getenv(var) is None]
-    if missing_vars:
-        raise EnvironmentError(
-            f"Missing required environment variables: {', '.join(missing_vars)}. Add to .env file or set in the environment."
-        )
 
 
 class SnowflakeConnector:
@@ -72,6 +56,9 @@ class SnowflakeConnector:
         SNOWFLAKE_DEST_DATABASE: Optional[str] = None,
     ):
         self.SNOWFLAKE_USER = SNOWFLAKE_USER or os.environ.get("SNOWFLAKE_USER")
+        import logging
+        logging.info(SNOWFLAKE_USER)
+        logging.info(os.environ.get("SNOWFLAKE_USER"))
         self.SNOWFLAKE_ACCOUNT = SNOWFLAKE_ACCOUNT or os.environ.get(
             "SNOWFLAKE_ACCOUNT"
         )
@@ -338,7 +325,9 @@ class DuckDBConnector:
         Args:
             DUCKDB_PATH (str, optional): Path to the DuckDB database file. Defaults to ":memory".
         """
-        self.DUCKDB_PATH = DUCKDB_PATH
+        self.DUCKDB_PATH = DUCKDB_PATH or os.getenv("DUCKDB_PATH")
+        required_vars = ["DUCKDB_PATH"]
+        self._check_env_vars(*required_vars)
 
     def connect(self) -> BaseBackend:
         """
@@ -347,8 +336,13 @@ class DuckDBConnector:
         Returns:
             BaseBackend: Ibis backend connection to the DuckDB database.
         """
-        required_vars = ["DUCKDB_PATH"]
-        _check_env_vars(*required_vars)
         return ibis.connect(
-            backend="duckdb", path=self.DUCKDB_PATH or os.getenv("DUCKDB_PATH")
+            backend="duckdb", path=self.DUCKDB_PATH 
         )
+
+    def _check_env_vars(self, required_vars: List[str]):
+        for var in required_vars:
+            if not getattr(self, var):
+                raise ValueError(
+                    f"Missing required variable: {var}. Set in the environment or pass through __init__()."
+                )
