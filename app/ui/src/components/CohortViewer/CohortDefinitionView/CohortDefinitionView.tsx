@@ -29,7 +29,22 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
 
   const refreshGrid = () => {
     if (currentView === CohortDefinitionViewType.Cohort && gridRef.current?.api) {
-      gridRef.current?.api!.setGridOption('rowData', dataService.table_data['rows']);
+      const api = gridRef.current.api;
+      // Store current scroll position
+      // const horizontalScroll = api.getHorizontalPixelRange();
+      const firstRow = api.getFirstDisplayedRow();
+      const lastRow = api.getLastDisplayedRow();
+      
+      // Update grid data
+      api.setGridOption('rowData', dataService.table_data['rows']);
+      
+      // Restore scroll position after data update
+      requestAnimationFrame(() => {
+        api.ensureIndexVisible(firstRow, 'top');
+        api.ensureIndexVisible(lastRow, 'bottom');
+
+        // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
+      });
     }
   };
 

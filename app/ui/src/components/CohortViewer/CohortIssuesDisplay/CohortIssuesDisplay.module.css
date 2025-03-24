@@ -8,6 +8,9 @@
   position: absolute;
   right:0px;
   top:0px;
+  max-height: 400px;
+  /* max-height: 400px; */
+  /* overflow-y: auto; */
 }
 
 .row {

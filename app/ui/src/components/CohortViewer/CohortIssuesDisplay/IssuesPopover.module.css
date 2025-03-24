@@ -4,12 +4,14 @@
   right: 20px;
   background: white;
   border: 2px solid var(--phenex-red);
-  border-radius: var(--border-radius);
+  border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   padding: 12px;
   min-width: 300px;
   max-width: 500px;
   z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .section {

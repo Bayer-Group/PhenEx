@@ -184,7 +184,6 @@ export class CohortDataService {
     }
 
     // Refresh table data to reflect the updated domain values
-    this._table_data = this.tableDataFromCohortData();
     this.saveChangesToCohort();
   }
 
@@ -211,6 +210,8 @@ export class CohortDataService {
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
     // use api/route here
     // Call the API method to execute the study
     // try {
@@ -219,7 +220,6 @@ export class CohortDataService {
     // } catch (error) {
     //   console.error('Error executing study:', error);
     // }
-    this.notifyListeners()
   }
 
   private sortPhenotypes() {
@@ -275,9 +275,8 @@ export class CohortDataService {
     };
     this._cohort_data.phenotypes.push(newPhenotype);
     this.sortPhenotypes();
-    this._table_data = this.tableDataFromCohortData();
+    this.saveChangesToCohort()
     console.log('addPhenotype cohort data!!! ', this._cohort_data);
-    this.notifyListeners();
 
   }
 
@@ -288,8 +287,6 @@ export class CohortDataService {
     if (phenotypeIndex !== -1) {
       this._cohort_data.phenotypes.splice(phenotypeIndex, 1);
       this.saveChangesToCohort();
-      this._table_data = this.tableDataFromCohortData();
-      this.notifyListeners();
       return {
         remove: [id],
       };
@@ -354,8 +351,6 @@ export class CohortDataService {
     this._cohort_data = newCohort;
     console.log('UPDATED COHROT DATA', newCohort);
     this.saveChangesToCohort();
-    this._table_data = this.tableDataFromCohortData();
-    this.notifyListeners();
   }
 
   public async executeCohort(): Promise<void> {
@@ -369,9 +364,6 @@ export class CohortDataService {
       this._cohort_data = response.cohort
       this.preparePhenexCohortForUI()
       this.saveChangesToCohort()
-      console.log("THIS IS COHOR DATA", this._cohort_data)
-      this._table_data = this.tableDataFromCohortData()
-      this.notifyListeners()
     } catch (error) {
       console.error('Error fetching cohort explanation:', error);
     }

@@ -10,6 +10,8 @@ interface AccordianTabbedInfoDisplayViewProps {
 enum InfoTabType {
   Info = 'i',
   Variables = 'Constants',
+  Database = 'Database',
+
 }
 
 export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
@@ -22,6 +24,9 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   const tabs = Object.values(InfoTabType).map(value => value.charAt(0) + value.slice(1));
 
   const onTabChange = (index: number) => {
+    if (!isOpen) {
+      setIsOpen(true);
+    }
     const tabTypes = Object.values(InfoTabType);
     setCurrentTab(tabTypes[index]);
   };
@@ -59,10 +64,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
         >
           {'>>'}
         </button>
-      </div>
-      {isOpen && (
-        <div className={styles.content}>
-          <div className={styles.tabsContainer}>
+        <div className={styles.tabsContainer}>
             <Tabs
               width={200}
               height={30}
@@ -71,6 +73,9 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
               active_tab_index={Object.values(InfoTabType).indexOf(currentTab)}
             />
           </div>
+      </div>
+      {isOpen && (
+        <div className={styles.content}>
           <div className={styles.contentArea}>{renderContent()}</div>
         </div>
       )}
