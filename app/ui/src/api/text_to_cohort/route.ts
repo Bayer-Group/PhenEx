@@ -1,23 +1,55 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = 'http://localhost:8000';
 
-export const textToCohort = async (data: any) => {
+export const getCohort = async (cohort_id: string, provisional: boolean) => {
   try {
-    console.log('Sending request to textToCohort with data:', data);
-    const response = await axios.post(`${BASE_URL}/text_to_cohort`, data);
-    console.log('Received response from textToCohort:', response.data);
+    console.log('Sending request to getCohort with cohort_id:', cohort_id, 'and provisional:', provisional);
+    const response = await axios.get(`${BASE_URL}/cohort`, {
+      params: { cohort_id, provisional },
+    });
+    console.log('Received response from getCohort:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in textToCohort:', error);
+    console.error('Error in getCohort:', error);
     throw error;
   }
 };
 
-export const planUpdateCohort = async (data: any) => {
+
+export const acceptChanges = async (cohort_id: string) => {
+  try {
+    console.log('Sending request to acceptChanges with cohort_id:', cohort_id);
+    const response = await axios.get(`${BASE_URL}/cohort/accept_changes`, {
+      params: { cohort_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in acceptChanges:', error);
+    throw error;
+  }
+};
+
+
+export const rejectChanges = async (cohort_id: string) => {
+  try {
+    console.log('Sending request to rejectChanges with cohort_id:', cohort_id);
+    const response = await axios.get(`${BASE_URL}/cohort/reject_changes`, {
+      params: { cohort_id },
+    });
+    console.log('Received response from rejectChanges:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in rejectChanges:', error);
+    throw error;
+  }
+};
+
+
+export const textToCohort = async (data: any) => {
   try {
     console.log('Sending request to planUpdateCohort with data:', data);
-    const response = await fetch(`${BASE_URL}/plan_update_cohort`, {
+    const response = await fetch(`${BASE_URL}/text_to_cohort`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

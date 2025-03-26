@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 import phenex
@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from utils import CohortUtils
 import os, json, glob
 import logging
+import copy
 
 load_dotenv()
 
@@ -74,7 +75,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins. Replace with specific origins if needed.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -124,6 +125,7 @@ async def get_cohort(cohort_id: str, provisional: bool = False):
     with open(cohort_path, "r") as f:
         return json.load(f)
 
+
 @app.post("/cohort")
 async def update_cohort(cohort_id: str, cohort: Dict = Body(...), provisional: bool = False):
     """
@@ -147,7 +149,7 @@ async def update_cohort(cohort_id: str, cohort: Dict = Body(...), provisional: b
         return {"status": "error", "message": "Failed to update cohort."}
 
 
-@app.post("/cohort/accept_changes")
+@app.get("/cohort/accept_changes")
 async def accept_changes(cohort_id: str):
     """
     Accept changes made to a provisional cohort.
@@ -162,12 +164,9 @@ async def accept_changes(cohort_id: str):
     final_path = get_cohort_path(cohort_id, provisional=False)
     if os.path.exists(provisional_path):
         os.replace(provisional_path, final_path)
-        return {"status": "success", "message": "Provisional changes accepted."}
-    else:
-        return {"status": "error", "message": "Provisional cohort not found."}
+        return await get_cohort(cohort_id, provisional=False)
 
-
-@app.post("/cohort/reject_changes")
+@app.get("/cohort/reject_changes")
 async def reject_changes(cohort_id: str):
     """
     Reject changes made to a provisional cohort.
@@ -181,34 +180,38 @@ async def reject_changes(cohort_id: str):
     provisional_path = get_cohort_path(cohort_id, provisional=True)
     if os.path.exists(provisional_path):
         os.remove(provisional_path)
-        return {"status": "success", "message": "Provisional changes rejected."}
-    else:
-        return {"status": "error", "message": "Provisional cohort not found."}
-
+        return await get_cohort(cohort_id, provisional=False)
 
 @app.post("/text_to_cohort")
 async def text_to_cohort(
-    cohort_id: str,
+    cohort_id: Optional[str] = None,
+    model: Optional[str] = "gpt-4o-mini",
+    current_cohort: Dict = Body(None),
     user_request: str = Body(
         "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
     ),
-    model: str = "gpt-4o-mini",
     return_updated_cohort: bool = False
 ):
     """
     Generate or modify a cohort based on user instructions.
 
     Args:
-        cohort_id (str): The ID of the cohort to modify.
-        phenotype_id (str): The phenotype ID associated with the cohort.
-        user_request (str): Instructions for modifying the cohort.
+        cohort_id (str): The ID of the cohort to modify. Optional, in case you want to read the cohort from the backend database.
         model (str): The model to use for processing the request.
+
+    Body:
+        current_cohort (Dict): The current cohort definition. In case frontend is managnig cohort state.
+        user_request (str): Instructions for modifying the cohort.
 
     Returns:
         StreamingResponse: A stream of the response text.
     """
-    current_cohort = await get_cohort(cohort_id)
-    # literally just return phenotype
+    if cohort_id is not None:
+        current_cohort = await get_cohort(cohort_id)
+    else:
+        cohort_id = current_cohort["id"]
+        await update_cohort(cohort_id, current_cohort)
+
     try:
         del current_cohort["entry_criterion"]
         del current_cohort["inclusions"]
@@ -327,6 +330,7 @@ async def text_to_cohort(
         await update_cohort(cohort_id, new_cohort, provisional = True)
         if return_updated_cohort:
             yield json.dumps(new_cohort, indent=4)
+        logger.info(f'Updated cohort: {json.dumps(new_cohort, indent=4)}')
 
     return StreamingResponse(stream_response(), media_type="text/plain")
 
