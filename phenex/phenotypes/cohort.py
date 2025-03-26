@@ -55,8 +55,9 @@ class Cohort(Phenotype):
         exclusions: Optional[List[Phenotype]] = None,
         characteristics: Optional[List[Phenotype]] = None,
         outcomes: Optional[List[Phenotype]] = None,
+        **kwargs,
     ):
-        super(Cohort, self).__init__()
+        super(Cohort, self).__init__(**kwargs)
         self.name = name
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []
@@ -193,7 +194,9 @@ class Cohort(Phenotype):
 
         if self.characteristics:
             logger.debug("Computing characteristics ...")
-            self._compute_characteristics_table(n_threads)
+            self._compute_characteristics_table(
+                n_threads=n_threads, con=con, overwrite=False
+            )
             if con:
                 logger.debug("Writing characteristics table ...")
                 self.characteristics_table = con.create_table(
@@ -302,7 +305,9 @@ class Cohort(Phenotype):
         logger.debug("Inex table computed")
         return inex_table
 
-    def _compute_characteristics_table(self, n_threads: int) -> Table:
+    def _compute_characteristics_table(
+        self, n_threads: int, con=None, overwrite=False
+    ) -> Table:
         logger.debug("Computing characteristics table")
         """
         Retrieves and joins all characteristic tables.
@@ -319,12 +324,40 @@ class Cohort(Phenotype):
             ]
             for future in futures:
                 future.result()
+
+        self._write_phenotypes(
+            self.characteristics,
+            "characteristics",
+            con=con,
+            overwrite=overwrite,
+            n_threads=n_threads,
+        )
+
         self.characteristics_table = hstack(
             self.characteristics,
             join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
         )
         logger.debug("Characteristics table computed")
         return self.characteristics_table
+
+    def _write_phenotypes(
+        self, phenotypes, type, con=None, overwrite=True, n_threads=1
+    ):
+        if con is not None:
+            logger.debug(f"Writing {type} phenotypes ...")
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                futures = []
+                for i, phenotype in enumerate(phenotypes):
+                    futures.append(
+                        executor.submit(
+                            con.create_table,
+                            phenotype.table,
+                            f"{self.name}__{type}_{phenotype.name if phenotype.name is not None else str(i)}",
+                            overwrite,
+                        )
+                    )
+                for future, phenotype in zip(futures, phenotypes):
+                    phenotype.table = future.result()
 
     def _compute_outcomes_table(self, n_threads: int) -> Table:
         logger.debug("Computing outcomes table")
