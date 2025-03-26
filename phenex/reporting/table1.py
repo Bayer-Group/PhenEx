@@ -24,9 +24,9 @@ class Table1(Reporter):
             .count()
             .execute()
         )
-        logger.debug("Starting with value columns for table1")
-        self.df_booleans = self._report_boolean_columns()
         logger.debug("Starting with boolean columns for table1")
+        self.df_booleans = self._report_boolean_columns()
+        logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
 
         # add percentage column
