@@ -101,7 +101,7 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        super(CodelistPhenotype, self).__init__()
+        super(CodelistPhenotype, self).__init__(**kwargs)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
