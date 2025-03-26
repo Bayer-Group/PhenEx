@@ -1,10 +1,10 @@
 from typing import Dict, Union
+from datetime import date
 from ibis.expr.types.relations import Table
 import ibis
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
-from datetime import date
 
 
 class ComputationGraphPhenotype(Phenotype):

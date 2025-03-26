@@ -1,4 +1,5 @@
 from typing import Union, List, Dict
+from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_range_filter import DateRangeFilter
@@ -42,7 +43,7 @@ class CategoricalPhenotype(Phenotype):
         table = tables[self.categorical_filter.domain]
         table = self.categorical_filter._filter(table)
         return table.mutate(
-            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null()
+            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null(date)
         )
 
 
