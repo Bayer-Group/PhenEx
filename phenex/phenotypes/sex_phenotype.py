@@ -22,12 +22,13 @@ class SexPhenotype(Phenotype):
         name: str = "sex",
         allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
+        **kwargs
     ):
         self.name = name
         self.allowed_values = allowed_values
         self.domain = domain
         self.children = []
-        super(SexPhenotype, self).__init__()
+        super(SexPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
