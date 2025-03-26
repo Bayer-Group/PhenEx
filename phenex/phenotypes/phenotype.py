@@ -27,14 +27,18 @@ class Phenotype:
         2. Within `__init__()`, define `self.children` - a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and executed recursively.
         3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Phenotype and returning the appropriate PhenotypeTable.
         4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
+
+    Parameters:
+        description: A plain text description of the phenotype.
     """
 
-    def __init__(self):
+    def __init__(self, description: str = None):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )
         self._namespaced_table = None
         self.children = []  # List[Phenotype]
+        self.description = description
         self._check_for_children()
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
