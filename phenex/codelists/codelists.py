@@ -18,6 +18,8 @@ class Codelist:
     Parameters:
         name: Descriptive name of codelist
         codelist: User can enter codelists as either a string, a list of strings or a dictionary keyed by code type. In first two cases, the class will convert the input to a dictionary with a single key None. All consumers of the Codelist instance can then assume the codelist in that format.
+        use_code_type: User can define whether code type should be used or not.
+        remove_punctuation: User can define whether punctuation should be removed from codes or not.
 
     Methods:
         from_yaml: Load a codelist from a YAML file.
@@ -132,7 +134,11 @@ class Codelist:
     """
 
     def __init__(
-        self, codelist: Union[str, List, Dict[str, List]], name: Optional[str] = None
+        self,
+        codelist: Union[str, List, Dict[str, List]],
+        name: Optional[str] = None,
+        use_code_type: Optional[bool] = True,
+        remove_punctuation: Optional[bool] = False,
     ) -> None:
         self.name = name
         if isinstance(codelist, dict):
@@ -142,14 +148,16 @@ class Codelist:
         elif isinstance(codelist, str):
             if name is None:
                 self.name = codelist
-            self.codelist = {None: [codelist]}
+            self._codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
         if list(self.codelist.keys()) == [None]:
             self.use_code_type = False
         else:
-            self.use_code_type = True
+            self.use_code_type = use_code_type
+
+        self.remove_punctuation = remove_punctuation
 
         self.fuzzy_match = False
         for code_type, codelist in self.codelist.items():
@@ -173,12 +181,21 @@ class Codelist:
         Returns:
             Codelist instance with the resolved codelist.
         """
+        return Codelist(
+            self.codelist,
+            name=self.name,
+            use_code_type=use_code_type,
+            remove_punctuation=remove_punctuation,
+        )
+
+    @property
+    def resolved_codelist(self):
         resolved_codelist = {}
 
         for code_type, codes in self.codelist.items():
-            if remove_punctuation:
+            if self.remove_punctuation:
                 codes = [code.replace(".", "") for code in codes]
-            if use_code_type:
+            if self.use_code_type:
                 resolved_codelist[code_type] = codes
             else:
                 if None not in resolved_codelist:
@@ -186,8 +203,7 @@ class Codelist:
                 resolved_codelist[None] = list(
                     set(resolved_codelist[None]) | set(codes)
                 )
-
-        return Codelist(resolved_codelist, name=self.name)
+        return resolved_codelist
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":
@@ -366,6 +382,28 @@ class Codelist:
 
     def to_dict(self):
         return to_dict(self)
+
+    def __add__(self, other):
+        codetypes = list(set(list(self.codelist.keys()) + list(other.codelist.keys())))
+        new_codelist = {}
+        for codetype in codetypes:
+            new_codelist[codetype] = list(
+                set(self.codelist.get(codetype, []) + other.codelist.get(codetype, []))
+            )
+        if self.remove_punctuation != other.remove_punctuation:
+            raise ValueError(
+                "Cannot add codelists with different remove_punctuation settings."
+            )
+        if self.use_code_type != other.use_code_type:
+            raise ValueError(
+                "Cannot add codelists with different use_code_type settings."
+            )
+
+        return Codelist(
+            new_codelist,
+            remove_punctuation=self.remove_punctuation,
+            use_code_type=self.use_code_type,
+        )
 
 
 class LocalCSVCodelistFactory:
