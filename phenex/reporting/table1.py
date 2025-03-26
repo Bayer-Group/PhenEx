@@ -1,6 +1,9 @@
 import pandas as pd
 
-from .reporter import Reporter
+from phenex.reporting.reporter import Reporter
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 class Table1(Reporter):
@@ -21,46 +24,47 @@ class Table1(Reporter):
             .count()
             .execute()
         )
-
+        logger.debug("Starting with boolean columns for table1")
         self.df_booleans = self._report_boolean_columns()
+        logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
 
         # add percentage column
         if self.df_booleans is not None and self.df_values is not None:
             self.df = pd.concat([self.df_booleans, self.df_values])
         else:
-            self.df = self.df_booleans or self.df_values
+            self.df = (
+                self.df_booleans if self.df_booleans is not None else self.df_values
+            )
         self.df["%"] = 100 * self.df["N"] / self.N
 
         # reorder columns so N and % are first
         first_cols = ["N", "%"]
         column_order = first_cols + [x for x in self.df.columns if x not in first_cols]
         self.df = self.df[column_order]
+        logger.debug("Finished creating table1")
         return self.df
 
-    def _phenotype_column_is_of_value_type(self, name_column):
-        """
-        Return
-        """
-        if "_VALUE" in name_column:
-            value_col = name_column
-        elif "_BOOLEAN" in name_column:
-            value_col = name_column.replace("_BOOLEAN", "_VALUE")
-        else:
-            value_col = f"{name_column}_VALUE"
-        column_dtype = self.cohort.characteristics_table[value_col].type()
-        if column_dtype.is_integer() or column_dtype.is_floating():
-            return True
-        return False
+    def _get_boolean_characteristics(self):
+        return [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ not in ["MeasurementPhenotype", "AgePhenotype"]
+        ]
+
+    def _get_value_characteristics(self):
+        return [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ not in ["MeasurementPhenotype", "AgePhenotype"]
+        ]
 
     def _report_boolean_columns(self):
         table = self.cohort.characteristics_table
-        # get list of all phenotype boolean columns
-        boolean_columns = [col for col in table.columns if col.endswith("_BOOLEAN")]
-        # remove value columns (these are reported in the value section)
-        boolean_columns = [
-            x for x in boolean_columns if not self._phenotype_column_is_of_value_type(x)
-        ]
+        # get list of all boolean columns
+        boolean_phenotypes = self._get_boolean_characteristics()
+        boolean_columns = list(set([f"{x.name}_BOOLEAN" for x in boolean_phenotypes]))
+        logger.debug(f"Found {len(boolean_columns)} : {boolean_columns}")
         if len(boolean_columns) == 0:
             return None
 
@@ -68,8 +72,10 @@ class Table1(Reporter):
         true_counts = [
             table[col].sum().name(col.split("_BOOLEAN")[0]) for col in boolean_columns
         ]
+
         # perform actual sum operations and convert to pandas
         result_table = table.aggregate(true_counts).to_pandas()
+
         # transpose to create proper table format (each row should be a phenotype)
         df_t1 = result_table.T
         # name count column 'N'
@@ -82,11 +88,10 @@ class Table1(Reporter):
 
     def _report_value_columns(self):
         table = self.cohort.characteristics_table
-        # Assuming 'table' is your Ibis table and 'value_columns' is already defined
-        value_columns = [col for col in table.columns if col.endswith("_VALUE")]
-        value_columns = [
-            x for x in value_columns if self._phenotype_column_is_of_value_type(x)
-        ]
+        # get value columns
+        value_phenotypes = self._get_value_characteristics()
+        value_columns = [f"{x.name}_VALUE" for x in value_phenotypes]
+        logger.debug(f"Found {len(value_columns)} : {value_columns}")
 
         if len(value_columns) == 0:
             return None
