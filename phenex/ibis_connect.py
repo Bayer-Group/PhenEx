@@ -278,13 +278,21 @@ class SnowflakeConnector:
         if not database in self.dest_connection.list_databases():
             self.dest_connection.create_database(name=database, catalog=catalog)
 
-        return self.dest_connection.create_table(
-            name=name_table,
-            database=database,
-            obj=table,
-            overwrite=overwrite,
-            schema=table.schema(),
-        )
+        try:
+            return self.dest_connection.create_table(
+                name=name_table,
+                database=database,
+                obj=table,
+                overwrite=overwrite,
+                schema=table.schema(),
+            )
+        except:
+            print(name_table)
+            # TODO do proper error handling see if
+            # from snowflake.connector.errors import ProgrammingError
+            # except ProgrammingError as e:
+            #   if "already exists" in str(e):
+            return self.get_dest_table(name_table)
 
     def drop_table(self, name_table):
         """
