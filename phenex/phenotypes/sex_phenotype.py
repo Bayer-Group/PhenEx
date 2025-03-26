@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Union
+from datetime import date
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
@@ -38,4 +39,4 @@ class SexPhenotype(Phenotype):
             )
             person_table = sex_filter._filter(person_table)
 
-        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE=ibis.null())
+        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE=ibis.null(date))
