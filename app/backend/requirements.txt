@@ -3,3 +3,4 @@ fastapi[standard]
 gunicorn
 uvicorn
 openai
+deepdiff

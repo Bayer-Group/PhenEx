@@ -9,11 +9,13 @@ from dotenv import load_dotenv
 from utils import CohortUtils
 import os, json, glob
 import logging
-import copy
+from deepdiff import DeepDiff
 
 load_dotenv()
 
 from openai import AzureOpenAI, OpenAI
+
+COHORTS_DIR = "/data/cohorts"
 
 openai_client = AzureOpenAI()
 if "AZURE_OPENAI_ENDPOINT" in os.environ:
@@ -84,9 +86,9 @@ app.add_middleware(
 
 def get_cohort_path(cohort_id, provisional=False):
     if provisional:
-        return f"cohorts/cohort_{cohort_id}.provisional.json"
+        return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.provisional.json")
     else:
-        return f"cohorts/cohort_{cohort_id}.json"
+        return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.json")
 
 
 @app.get("/cohorts")
@@ -97,10 +99,9 @@ async def get_all_cohorts():
     Returns:
         dict: A list of cohort IDs.
     """
-    cohorts_dir = "cohorts"
     try:
         cohort_files = [
-            f for f in os.listdir(cohorts_dir) if f.endswith(".json") and not f.endswith(".provisional.json")
+            f for f in os.listdir(COHORTS_DIR) if f.endswith(".json") and not f.endswith(".provisional.json")
         ]
         cohorts = [os.path.splitext(f)[0].replace("cohort_", "") for f in cohort_files]
         return {"cohorts": cohorts}
@@ -149,6 +150,26 @@ async def update_cohort(cohort_id: str, cohort: Dict = Body(...), provisional: b
         return {"status": "error", "message": "Failed to update cohort."}
 
 
+@app.delete("/cohort")
+async def delete_cohort(cohort_id: str):
+    """
+    Delete a cohort by its ID.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+        provisional (bool): Whether to retrieve the provisional version of the cohort.
+
+    Returns:
+        dict: The cohort data.
+    """
+    cohort_path = get_cohort_path(cohort_id)
+    if os.path.exists(cohort_path):
+        os.remove(cohort_path)
+    else:
+        logger.error(f"Failed to retrieve cohorts: {e}")
+        raise HTTPException(status_code=404, detail=f"Failed to find cohort {cohort_id}.")
+
+
 @app.get("/cohort/accept_changes")
 async def accept_changes(cohort_id: str):
     """
@@ -166,6 +187,7 @@ async def accept_changes(cohort_id: str):
         os.replace(provisional_path, final_path)
         return await get_cohort(cohort_id, provisional=False)
 
+
 @app.get("/cohort/reject_changes")
 async def reject_changes(cohort_id: str):
     """
@@ -181,6 +203,41 @@ async def reject_changes(cohort_id: str):
     if os.path.exists(provisional_path):
         os.remove(provisional_path)
         return await get_cohort(cohort_id, provisional=False)
+
+
+@app.get("/cohort/get_changes")
+async def get_changes(cohort_id: str):
+    """
+    Get differences between the provisional and final versions of a cohort.
+
+    Args:
+        cohort_id (str): The ID of the cohort to finalize.
+
+    Returns:
+        dict: Dictionary of fields of changed phenotypes.
+    """
+    provisional_path = get_cohort_path(cohort_id, provisional=True)
+    final_path = get_cohort_path(cohort_id, provisional=False)
+    logger.info(f"Provisional path: {provisional_path}")
+    logger.info(f"Final path: {final_path}")
+    if not os.path.exists(provisional_path):
+        logger.info(f"No differences")
+        return {}
+    if not os.path.exists(final_path):
+        raise HTTPException(status_code=404, detail="Final cohort not found.")
+
+    with open(provisional_path, "r") as provisional_file:
+        provisional_cohort = json.load(provisional_file)
+
+
+    with open(final_path, "r") as final_file:
+        final_cohort = json.load(final_file)
+    logger.info(final_cohort)
+    logger.info(provisional_cohort)
+    diff = DeepDiff(provisional_cohort, final_cohort, ignore_order=True)
+    logger.info(f"Calculated differences: {diff}")
+    return diff
+
 
 @app.post("/text_to_cohort")
 async def text_to_cohort(
@@ -228,14 +285,14 @@ async def text_to_cohort(
 
     Your task is to create or modify a cohort according to the user instructions given below. 
     
-    In performing your task, you may use any tools at your disposal to give as complete an accurate an answer as possible.
+    In performing your task, you may use any tools at your disposal to complete the task as well as possible.
      
     Include in your response three types of ouptut: 
         1) output intended for display to user, 
         2) thinking output used only by you, and 
         3) a final answer in valid JSON format
      
-    1) Text displayed to the user must consist of VERY BRIEF plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
+    1) Text displayed to the user must consist of VERY BRIEF plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
 
     2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside <thinking> </thinking> tags. The content inside these tags will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <thinking> tags to plan that out. Or you may use <thinking> tags to explain what parameters you are going to fill in to the output JSON.
 
@@ -261,6 +318,7 @@ async def text_to_cohort(
     - Only include the phenotypes that need updating
     - The text within the <JSON> </JSON> tags must be valid JSON; therefore comments are not allowed in this text. Any comments you wish to make to the user must be made with (1) type output
     - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
+    - Make sure to choose the appropriate domain for each phenotype for the given data source
     """
 
     user_prompt = f"""     
