@@ -354,7 +354,12 @@ export class CohortDataService {
   public updateCohortFromChat(newCohort) {
     this._cohort_data = newCohort;
     console.log('UPDATED COHROT DATA', newCohort);
-    this.saveChangesToCohort();
+    this.sortPhenotypes();
+    this.splitPhenotypesByType();
+    this._cohort_data.name = this._cohort_name;
+    this._table_data = this.tableDataFromCohortData();
+    console.log('UPDATED COHROT DATA', this._table_data);
+    this.notifyListeners();
   }
 
   public async executeCohort(): Promise<void> {

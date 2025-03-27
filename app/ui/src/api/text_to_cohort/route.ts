@@ -16,10 +16,10 @@ export const getCohorts = async () => {
 };
 
 
-export const getCohort = async (cohort_id: string) => {
+export const getCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
     console.log('Sending request to getCohorts with data:');
-    const response = await axios.get(`${BASE_URL}/cohort?cohort_id=${cohort_id}`);
+    const response = await axios.get(`${BASE_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`);
     console.log('Received response from getCohorts:', response.data);
     return response.data;
   } catch (error) {
