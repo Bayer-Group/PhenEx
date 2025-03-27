@@ -18,6 +18,7 @@
 import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
 import { ViewType } from '../MainView/MainView';
 import { TreeNodeData } from './HierarchicalTreeNode';
+import { getCohorts } from '../../api/text_to_cohort/route';
 
 type ChangeListener = () => void;
 
@@ -46,8 +47,8 @@ export class HierarchicalLeftPanelDataService {
     });
   }
 
-  private async updateTreeData() {
-    const cohorts = await this.parser.getCohortNames();
+  public async updateTreeData() {
+    const cohorts = await getCohorts();
 
     this.treeData = [
       { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },
@@ -69,10 +70,10 @@ export class HierarchicalLeftPanelDataService {
     });
     if (cohorts && cohorts.length > 0) {
       if (cohortsNode?.children) {
-        cohorts.forEach((cohort, index) => {
+        cohorts.forEach((cohort) => {
           cohortsNode.children?.push({
-            id: `${index + 1}`,
-            name: cohort,
+            id: cohort.id,
+            name: cohort.name,
             viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
           });
         });

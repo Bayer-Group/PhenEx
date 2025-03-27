@@ -38,6 +38,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
       const newTreeData = dataService.current.getTreeData();
       setTreeData(newTreeData);
       setOpenState(getCollapsedStates(newTreeData));
+      dataService.current.updateTreeData();
     };
 
     // Initial setup
