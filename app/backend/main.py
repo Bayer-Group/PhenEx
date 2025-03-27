@@ -103,8 +103,13 @@ async def get_all_cohorts():
         cohort_files = [
             f for f in os.listdir(COHORTS_DIR) if f.endswith(".json") and not f.endswith(".provisional.json")
         ]
-        cohorts = [os.path.splitext(f)[0].replace("cohort_", "") for f in cohort_files]
-        return {"cohorts": cohorts}
+        cohorts = []
+        for cohort_file in cohort_files:
+            with open(os.path.join(COHORTS_DIR, cohort_file), "r") as f:
+                cohort = json.load(f)
+                cohort_id, cohort_name = cohort["id"], cohort["name"]
+                cohorts.append({"id": cohort_id, "name": cohort_name})
+        return cohorts
     except Exception as e:
         logger.error(f"Failed to retrieve cohorts: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve cohorts.")
