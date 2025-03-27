@@ -3,6 +3,7 @@ import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryPars
 import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
 import { executeStudy } from '../../api/execute_cohort/route';
 import { MapperDomains } from '../../types/mappers';
+import { getCohort } from '../../api/text_to_cohort/route';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -165,19 +166,25 @@ export class CohortDataService {
     };
   }
 
-  public async loadCohortData(cohortName: string): Promise<void> {
-    this._cohort_name = cohortName;
-    this._cohort_data = await this._parser.fetchCohortData(cohortName);
-    if (!this._cohort_data.id) {
-      this._cohort_data.id = this.createId();
+  public async loadCohortData(cohortIdentifiers: string): Promise<void> {
+    console.log('LOADING COHORT DATA', cohortIdentifiers);
+    try {
+      const cohortResponse = await getCohort(cohortIdentifiers.id);
+      this._cohort_data = cohortResponse;
+      this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
+      if (!this._cohort_data.id) {
+        this._cohort_data.id = this.createId();
+      }
+      // Ensure phenotypes array exists
+      if (!this._cohort_data.phenotypes) {
+        this._cohort_data.phenotypes = [];
+      }
+      this._table_data = this.tableDataFromCohortData();
+      this.notifyListeners(); // Notify listeners after loading data
+      console.log(this._table_data);
+    } catch (error) {
+      console.error('Error loading cohort data:', error);
     }
-    // Ensure phenotypes array exists
-    if (!this._cohort_data.phenotypes) {
-      this._cohort_data.phenotypes = [];
-    }
-    this._table_data = this.tableDataFromCohortData();
-    this.notifyListeners(); // Notify listeners after loading data
-    console.log(this._table_data);
   }
 
   public setDatabaseSettings(databaseConfig) {

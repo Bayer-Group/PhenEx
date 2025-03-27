@@ -27,6 +27,7 @@ export class HierarchicalLeftPanelDataService {
   private changeListeners: ChangeListener[] = [];
   private treeData: TreeNodeData[] = [];
   private parser: PhenexDirectoryParserService;
+  private cachedCohorts: any = null; // Cache for cohorts data
 
   private constructor() {
     this.parser = PhenexDirectoryParserService.getInstance();
@@ -48,7 +49,9 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async updateTreeData() {
-    const cohorts = await getCohorts();
+    if (!this.cachedCohorts) {
+      this.cachedCohorts = await getCohorts(); // Fetch cohorts only once
+    }
 
     this.treeData = [
       { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },
@@ -68,9 +71,10 @@ export class HierarchicalLeftPanelDataService {
       name: 'New cohort',
       viewInfo: { viewType: ViewType.NewCohort, data: '' },
     });
-    if (cohorts && cohorts.length > 0) {
+
+    if (this.cachedCohorts && this.cachedCohorts.length > 0) {
       if (cohortsNode?.children) {
-        cohorts.forEach((cohort) => {
+        this.cachedCohorts.forEach((cohort) => {
           cohortsNode.children?.push({
             id: cohort.id,
             name: cohort.name,

@@ -16,6 +16,19 @@ export const getCohorts = async () => {
 };
 
 
+export const getCohort = async (cohort_id: string) => {
+  try {
+    console.log('Sending request to getCohorts with data:');
+    const response = await axios.get(`${BASE_URL}/cohort?cohort_id=${cohort_id}`);
+    console.log('Received response from getCohorts:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in getCohorts:', error);
+    throw error;
+  }
+};
+
+
 export const textToCohort = async (data: any) => {
   try {
     console.log('Sending request to textToCohort with data:', data);
