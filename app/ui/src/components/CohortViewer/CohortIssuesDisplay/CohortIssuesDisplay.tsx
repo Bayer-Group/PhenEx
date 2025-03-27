@@ -15,13 +15,12 @@ export const CohortIssuesDisplay: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const issuesService = CohortIssuesService.getInstance();
 
-
   useEffect(() => {
     // Add listener for data service updates
     const listener = () => {
-      issuesService.validateCohort()
-      setIssues(issuesService.issues)
-      console.log(issues)
+      issuesService.validateCohort();
+      setIssues(issuesService.issues);
+      console.log(issues);
     };
     dataService.addListener(listener);
 
@@ -35,9 +34,11 @@ export const CohortIssuesDisplay: React.FC = () => {
   const hasIssues = phenotypesWithIssues > 0;
 
   return (
-    <div className={styles.container}
-         onMouseEnter={() => hasIssues && setShowPopover(true)}
-         onMouseLeave={() => setShowPopover(false)}>
+    <div
+      className={styles.container}
+      onMouseEnter={() => hasIssues && setShowPopover(true)}
+      onMouseLeave={() => setShowPopover(false)}
+    >
       <div className={styles.row}>
         <div className={`${styles.statusDot} ${hasIssues ? styles.red : styles.green}`} />
         <span className={styles.text}>
@@ -46,9 +47,7 @@ export const CohortIssuesDisplay: React.FC = () => {
             : 'No issues found'}
         </span>
       </div>
-      {showPopover && hasIssues && (
-        <IssuesPopover issues={issues} />
-      )}
+      {showPopover && hasIssues && <IssuesPopover issues={issues} />}
     </div>
   );
 };

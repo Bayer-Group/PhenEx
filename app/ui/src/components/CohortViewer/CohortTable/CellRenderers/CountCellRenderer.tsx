@@ -12,9 +12,7 @@ const CountCellRenderer: React.FC<CountCellRendererProps> = props => {
 
   const formattedNumber = new Intl.NumberFormat('en-US').format(props.value);
 
-  return (
-      <span className={styles.countValue}>{formattedNumber}</span>
-  );
+  return <span className={styles.countValue}>{formattedNumber}</span>;
 };
 
 export default CountCellRenderer;

@@ -8,14 +8,17 @@ interface IssuesPopoverProps {
 }
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
-  const groupedIssues = issues.reduce((acc, issue) => {
-    const type = issue.type as PhenotypeType;
-    if (!acc[type]) {
-      acc[type] = [];
-    }
-    acc[type].push(issue);
-    return acc;
-  }, {} as { [key in PhenotypeType]: CohortIssue[] });
+  const groupedIssues = issues.reduce(
+    (acc, issue) => {
+      const type = issue.type as PhenotypeType;
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(issue);
+      return acc;
+    },
+    {} as { [key in PhenotypeType]: CohortIssue[] }
+  );
 
   return (
     <div className={styles.popover}>
@@ -27,7 +30,9 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
               <div className={styles.phenotypeId}>{issue.phenotype_name}</div>
               <ul className={styles.issuesList}>
                 {issue.issues.map((issueText, i) => (
-                  <li key={i} className={styles.issueItem}>{issueText}</li>
+                  <li key={i} className={styles.issueItem}>
+                    {issueText}
+                  </li>
                 ))}
               </ul>
             </div>

@@ -41,7 +41,6 @@ export class CohortDataService {
       editable: false,
       wrapText: false,
       pinned: 'left',
-
     },
     {
       field: 'description',
@@ -99,7 +98,14 @@ export class CohortDataService {
       cellEditor: 'CodelistCellEditor',
       cellEditorPopup: true,
     },
-    { field: 'categorical_filter', headerName: 'Categorical filters', width: 200, editable: true },
+    {
+      field: 'categorical_filter',
+      headerName: 'Categorical filters',
+      width: 200,
+      editable: true,
+      cellEditor: 'CategoricalFilterCellEditor',
+      cellEditorPopup: true,
+    },
     {
       field: 'relative_time_range',
       headerName: 'Relative time ranges',
@@ -149,7 +155,7 @@ export class CohortDataService {
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
-      filteredPhenotypes = filteredPhenotypes.filter((phenotype: TableRow) => 
+      filteredPhenotypes = filteredPhenotypes.filter((phenotype: TableRow) =>
         this._currentFilter.includes(phenotype.type)
       );
     }
@@ -171,6 +177,7 @@ export class CohortDataService {
     }
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners(); // Notify listeners after loading data
+    console.log(this._table_data);
   }
 
   public setDatabaseSettings(databaseConfig) {
@@ -184,7 +191,6 @@ export class CohortDataService {
     }
 
     // Refresh table data to reflect the updated domain values
-    this._table_data = this.tableDataFromCohortData();
     this.saveChangesToCohort();
   }
 
@@ -211,15 +217,8 @@ export class CohortDataService {
     const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
     writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
-    // use api/route here
-    // Call the API method to execute the study
-    // try {
-    //   const response = await executeStudy(this._cohort_data);
-    //   console.log('Study executed successfully:', response);
-    // } catch (error) {
-    //   console.error('Error executing study:', error);
-    // }
-    this.notifyListeners()
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
   }
 
   private sortPhenotypes() {
@@ -275,10 +274,8 @@ export class CohortDataService {
     };
     this._cohort_data.phenotypes.push(newPhenotype);
     this.sortPhenotypes();
-    this._table_data = this.tableDataFromCohortData();
+    this.saveChangesToCohort();
     console.log('addPhenotype cohort data!!! ', this._cohort_data);
-    this.notifyListeners();
-
   }
 
   public deletePhenotype(id: string) {
@@ -288,8 +285,6 @@ export class CohortDataService {
     if (phenotypeIndex !== -1) {
       this._cohort_data.phenotypes.splice(phenotypeIndex, 1);
       this.saveChangesToCohort();
-      this._table_data = this.tableDataFromCohortData();
-      this.notifyListeners();
       return {
         remove: [id],
       };
@@ -346,7 +341,7 @@ export class CohortDataService {
   }
 
   private notifyListeners() {
-    console.log("DAT ASERVIC IS NOTIFYIN")
+    console.log('DAT ASERVIC IS NOTIFYIN');
     this.listeners.forEach(listener => listener());
   }
 
@@ -354,29 +349,22 @@ export class CohortDataService {
     this._cohort_data = newCohort;
     console.log('UPDATED COHROT DATA', newCohort);
     this.saveChangesToCohort();
-    this._table_data = this.tableDataFromCohortData();
-    this.notifyListeners();
   }
 
   public async executeCohort(): Promise<void> {
     try {
-
       const response = await executeStudy({
-        cohort: this._cohort_data ,
-        database_config:this._cohort_data.database_config
+        cohort: this._cohort_data,
+        database_config: this._cohort_data.database_config,
       });
-      console.log("GOT RESPONSE", response)
-      this._cohort_data = response.cohort
-      this.preparePhenexCohortForUI()
-      this.saveChangesToCohort()
-      console.log("THIS IS COHOR DATA", this._cohort_data)
-      this._table_data = this.tableDataFromCohortData()
-      this.notifyListeners()
+      console.log('GOT RESPONSE', response);
+      this._cohort_data = response.cohort;
+      this.preparePhenexCohortForUI();
+      this.saveChangesToCohort();
     } catch (error) {
       console.error('Error fetching cohort explanation:', error);
     }
   }
-
 
   private appendTypeKeyToPhenotypes(phenotypes: Array<Record<string, any>>, settype: string) {
     for (let i = 0; i < phenotypes.length; i++) {
@@ -399,8 +387,8 @@ export class CohortDataService {
     );
   }
 
-  public createPhenotypesArrayFromTypes(){
-    this._cohort_data.phenotypes = this._cohort_data.e
+  public createPhenotypesArrayFromTypes() {
+    this._cohort_data.phenotypes = this._cohort_data.e;
   }
 
   deleteCohort() {

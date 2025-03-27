@@ -71,10 +71,9 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
         />
       </div>
       <div className={styles.controlsContainer}>
-        <Tabs width={400} height={30} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
+        <Tabs width={400} height={25} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
       </div>
       <CohortIssuesDisplay />
-
     </div>
   );
 };

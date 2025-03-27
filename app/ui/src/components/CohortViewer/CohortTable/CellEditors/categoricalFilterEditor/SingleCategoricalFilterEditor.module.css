@@ -1,0 +1,306 @@
+:root {
+  --font-size-item: 14px;
+  --font-size-filler: 10px;
+  --border-radius-item: 3px;
+  --padding-item: 2px 4px;
+}
+
+.categoricalFilterContainer {
+  cursor: pointer;
+  background-color: var(--background-color);
+  border-radius: 10px;
+  color: #666;
+  font-size: 18px;
+  border: 2px solid var(--line-color);
+  position: relative;
+  padding: 10px 10px 10px;
+  min-height: 40px;
+  display: block;
+}
+
+.categoricalFilterContainer:hover,
+.logicalButtons button:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.categoricalFilterContainer:hover{
+  border-color: var(--phenex-red);
+}
+
+.fullCategoricalFilter:hover > .categoricalFilterContainer,
+.fullCategoricalFilter:hover > .logicalButtons button{
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.categoricalFilterContainer:hover > .logicalButtons,
+.fullCategoricalFilter:hover > .logicalButtons,
+.logicalButtons:hover {
+  opacity: 1;
+}
+
+.singleFilterBoxContent {
+  position: relative;
+  width: 100%;
+}
+
+.notEmptyFilter {
+  cursor: pointer;
+  border-radius: 10px;
+  /* display: inline-block; */
+  color: #666;
+  font-size: 18px;
+  background-color: var(--background-color);
+  /* padding: 10px 10px; */
+  border: var(--border);
+}
+
+.singleFilter {
+  position: relative;
+  font-size: 10px;
+}
+
+.emptyFilter:hover {
+  background-color: #e0e0e0;
+}
+
+/* this is the box around an entire editing categorical filter, including the constants checkbox and fieldsbox and done button*/
+.editorBox {
+  background-color: var(--background-color);
+  border: 3px solid var(--phenex-red);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  position: relative;
+
+}
+
+/* this is the box around categorical filter fields (columname, allowed values, etc)*/
+.fieldsBox {
+  padding: 0px;
+}
+
+.field {
+  margin-bottom: 5px;
+}
+
+.fieldColumnName input{
+  background-color: var(--categorical-filter-color-column-name);
+}
+
+.field label {
+  margin-bottom: 100px;
+  color: #333;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: calc(100% - 16px);
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: "SNPro-bold";
+  outline: none;
+}
+
+
+.field select {
+  width: 100%;
+  background-color: var(--categorical-filter-color-domain);
+}
+
+.field textarea {
+  min-height: 30px;
+  resize: vertical;
+  background-color: var(--categorical-filter-color-allowed-values);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  /* box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1); */
+  border-color: var(--phenex-red) !important;
+  border-width: 2px;
+
+}
+
+.doneButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 60px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.doneButton:hover {
+  background-color: #45a049;
+}
+
+.buttonContainer {
+  background-color: green;
+}
+
+.deleteButton {
+  position: absolute;
+  padding: 2px 7px;
+  right: -5px;
+  margin-top: -14px;
+  opacity: 0;
+  background: #f5f5f5;
+  font-family: 'SNPro-black';
+  border: var(--border);
+  width: 26px;
+  height: 26px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  color: var(--phenex-red);
+  outline: none;
+}
+
+.categoricalFilterContainer:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: red;
+  outline: none;
+  border: var(--border);
+}
+
+.deleteButton:focus {
+  outline: none;
+}
+
+.deleteButton:focus-visible {
+  outline: none;
+}
+
+.singleFilter:hover .deleteButton {
+  display: flex;
+}
+
+.checkboxField {
+  margin-bottom: 20px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Filter value component styles */
+.filterValue {
+  /* display: inline-flex; */
+  /* align-items: center; */
+  gap: 8px;
+  padding: 4px 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin: 4px;
+  font-size: var(--font-size-item);
+}
+
+.columnName {
+  font-weight: bold;
+  color: #333;
+  font-size: var(--font-size-item);
+  background-color: var(--phenex-green);
+  padding: var(--padding-item);
+  /* padding: 4px 8px; */
+  border-radius: var(--border-radius-item);
+  /* margin-right:3px; */
+}
+
+.allowedValues {
+  font-size: var(--font-size-item);
+
+  color: #666;
+  /* padding: 2px 10px; */
+}
+
+.domain {
+  /* position: absolute; */
+  font-size: var(--font-size-filler);
+  margin-left: 10px;
+}
+
+.footer {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 30px;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  /* padding: 5px 8px 0px 20px; */
+  font-size: var(--font-size-filler);
+  margin-bottom: 10px;
+}
+
+.body {
+  /* padding:10px;
+  margin-top:5px; */
+}
+
+.filler {
+  font-size: var(--font-size-filler);
+}
+
+.fullCategoricalFilter {
+  position: relative;
+  margin-bottom:0px;
+}
+
+.logicalButtons {
+  position: absolute;
+  opacity: 0;
+  display: flex;
+  flex-direction: row;
+  margin-top: 0px;
+  right: 0px;
+  margin-left: auto;
+  right: 0;
+  gap: 10px;
+  height: 30px;
+  margin-top:-10px;
+  transition: opacity 0.3s ease;
+  font-size: 12px;
+  height: 25px;
+  z-index: 1000;
+  background-color: transparent;
+}
+
+
+.logicalButtons button {
+  padding: 4px 8px;
+  background-color: #f5f5f5;
+  border: var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-color-inactive);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.logicalButtons button:hover {
+  color:black;
+}

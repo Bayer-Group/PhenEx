@@ -1,13 +1,13 @@
 .tabsContainer {
   display: flex;
   gap: 8px;
-  padding: 4px;
+  padding: 2px;
   background-color: transparent;
   border-radius: 8px;
 }
 
 .tab {
-  padding: 4px 16px;
+  padding: 2px 16px;
   border: none;
   border-radius: 6px;
   background-color: white;

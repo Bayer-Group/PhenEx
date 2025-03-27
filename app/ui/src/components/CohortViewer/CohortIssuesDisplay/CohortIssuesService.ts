@@ -36,7 +36,7 @@ export class CohortIssuesService {
   private validatePhenotype(phenotype: any): string[] {
     const missingParams: string[] = [];
     const className = phenotype.class_name;
-    
+
     if (!className || !this.classDefinitions[className]) {
       return ['Invalid or missing class_name'];
     }
@@ -47,8 +47,11 @@ export class CohortIssuesService {
 
     for (const paramName of requiredParams) {
       const paramValue = phenotype[paramName];
-      if (paramValue === null || paramValue === undefined || 
-          (Array.isArray(paramValue) && paramValue.length === 0)) {
+      if (
+        paramValue === null ||
+        paramValue === undefined ||
+        (Array.isArray(paramValue) && paramValue.length === 0)
+      ) {
         missingParams.push(`${paramName}`);
       }
     }
@@ -63,16 +66,15 @@ export class CohortIssuesService {
 
     // Validate entry criterion
     if (cohortData.entry_criterion) {
-      console.log("LOOKING AT ENTRy CRITERION", cohortData.entry_criterion)
+      console.log('LOOKING AT ENTRy CRITERION', cohortData.entry_criterion);
       const issues = this.validatePhenotype(cohortData.entry_criterion);
-      console.log("ISSUES ARE", issues)
+      console.log('ISSUES ARE', issues);
       if (issues.length > 0) {
         this.issues.push({
           id: cohortData.entry_criterion.id,
           issues: issues,
-          phenotype_name:cohortData.entry_criterion.name,
-          type:cohortData.entry_criterion.type
-
+          phenotype_name: cohortData.entry_criterion.name,
+          type: cohortData.entry_criterion.type,
         });
         this.issueCount += issues.length;
       }
@@ -83,7 +85,7 @@ export class CohortIssuesService {
       { data: cohortData.inclusions || [], name: 'inclusion' },
       { data: cohortData.exclusions || [], name: 'exclusion' },
       { data: cohortData.characteristics || [], name: 'characteristics' },
-      { data: cohortData.outcomes || [], name: 'outcomes' }
+      { data: cohortData.outcomes || [], name: 'outcomes' },
     ];
 
     for (const { data, name } of phenotypeArrays) {
@@ -93,8 +95,8 @@ export class CohortIssuesService {
           this.issues.push({
             id: phenotype.id,
             issues: issues,
-            phenotype_name:phenotype.name,
-            type:phenotype.type
+            phenotype_name: phenotype.name,
+            type: phenotype.type,
           });
           this.issueCount += issues.length;
         }
@@ -104,7 +106,7 @@ export class CohortIssuesService {
     console.log(`Found ${this.issueCount} issues:`, this.issues);
     return {
       issueCount: this.issueCount,
-      issues: this.issues
+      issues: this.issues,
     };
   }
 }

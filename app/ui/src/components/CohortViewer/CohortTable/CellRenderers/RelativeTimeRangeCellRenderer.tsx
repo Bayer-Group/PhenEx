@@ -39,14 +39,12 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     return (
       <>
         <span className={`${styles.timeValue} ${styles.min}`}>
-          <span className={`${styles.operator} ${styles.min}`}>
-            {filter.min_days.operator} </span>
-            {filter.min_days.value}
+          <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
+          {filter.min_days.value}
         </span>
         <span className={`${styles.timeValue} ${styles.max}`}>
-          <span className={`${styles.operator} ${styles.max}`}>
-           {filter.max_days.operator} </span>
-            {filter.max_days.value}
+          <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
+          {filter.max_days.value}
         </span>
         days <span className={styles.when}>{filter.when}</span>
         <span className={styles.reference}> {reference} </span>
@@ -55,8 +53,8 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
   };
 
   let filters: RelativeTimeRangeFilter[] = props.value || [];
-  if (props.data.type == 'entry'){
-    return <div>not applicable</div>
+  if (props.data.type == 'entry') {
+    return <div>not applicable</div>;
   }
   return (
     <PhenexCellRenderer {...props}>

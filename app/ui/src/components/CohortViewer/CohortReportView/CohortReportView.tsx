@@ -58,7 +58,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
         <div className={styles.controlsContainer}>
           <Tabs
             width={400}
-            height={30}
+            height={25}
             tabs={tabs}
             onTabChange={onTabChange}
             active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}

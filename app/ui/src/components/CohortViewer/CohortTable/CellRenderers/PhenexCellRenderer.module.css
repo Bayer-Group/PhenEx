@@ -4,8 +4,8 @@
 
 .addToChatButton {
   position: absolute;
-  right: -80px;
-  bottom: 5px;
+  right: -10px;
+  bottom: 0px;
   background: white;
   border: 2px solid var(--phenex-red);
   padding: 6px 12px;

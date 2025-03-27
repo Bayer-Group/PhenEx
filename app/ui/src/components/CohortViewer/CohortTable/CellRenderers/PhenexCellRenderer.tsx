@@ -20,7 +20,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   return (
     <div style={containerStyle}>
       {props.children}
-      <button className={styles.addToChatButton}>Add to chat</button>
+      {/* <button className={styles.addToChatButton}>+ chat</button> */}
     </div>
   );
 };

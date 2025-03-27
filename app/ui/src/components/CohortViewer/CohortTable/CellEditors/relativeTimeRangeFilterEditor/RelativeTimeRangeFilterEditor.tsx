@@ -19,18 +19,18 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
         min_days: {
           class_name: 'Value',
           operator: filter.min_days?.operator || '>',
-          value: filter.min_days?.value ?? 0
+          value: filter.min_days?.value ?? 0,
         },
         max_days: {
           class_name: 'Value',
           operator: filter.max_days?.operator || '<',
-          value: filter.max_days?.value ?? 365
+          value: filter.max_days?.value ?? 365,
         },
         when: filter.when || 'before',
         useConstant: filter.useConstant ?? false,
         useIndexDate: filter.useIndexDate ?? true,
         anchor_phenotype: filter.anchor_phenotype ?? null,
-        constant: filter.constant
+        constant: filter.constant,
       }));
     }
     return [
@@ -41,8 +41,8 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
         when: 'before',
         useConstant: false,
         useIndexDate: true,
-        anchor_phenotype: null
-      }
+        anchor_phenotype: null,
+      },
     ];
   });
 
@@ -71,7 +71,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
       useConstant: updates.useConstant ?? newFilters[index].useConstant ?? false,
       constant: updates.constant || newFilters[index].constant,
       useIndexDate: updates.useIndexDate ?? newFilters[index].useIndexDate ?? true,
-      anchor_phenotype: updates.anchor_phenotype ?? newFilters[index].anchor_phenotype ?? null
+      anchor_phenotype: updates.anchor_phenotype ?? newFilters[index].anchor_phenotype ?? null,
     };
     setFilters(newFilters);
   };
@@ -91,25 +91,27 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
   };
 
   const deleteFilter = (index: number) => {
-    const newFilters = filters.filter((_, i) => i !== index).map(filter => ({
-      ...filter,
-      class_name: 'RelativeTimeRangeFilter',
-      min_days: {
-        class_name: 'Value',
-        operator: filter.min_days?.operator || '>',
-        value: filter.min_days?.value ?? 0
-      },
-      max_days: {
-        class_name: 'Value',
-        operator: filter.max_days?.operator || '<',
-        value: filter.max_days?.value ?? 365
-      },
-      when: filter.when || 'before',
-      useConstant: filter.useConstant ?? false,
-      useIndexDate: filter.useIndexDate ?? true,
-      anchor_phenotype: filter.anchor_phenotype ?? null,
-      constant: filter.constant
-    }));
+    const newFilters = filters
+      .filter((_, i) => i !== index)
+      .map(filter => ({
+        ...filter,
+        class_name: 'RelativeTimeRangeFilter',
+        min_days: {
+          class_name: 'Value',
+          operator: filter.min_days?.operator || '>',
+          value: filter.min_days?.value ?? 0,
+        },
+        max_days: {
+          class_name: 'Value',
+          operator: filter.max_days?.operator || '<',
+          value: filter.max_days?.value ?? 365,
+        },
+        when: filter.when || 'before',
+        useConstant: filter.useConstant ?? false,
+        useIndexDate: filter.useIndexDate ?? true,
+        anchor_phenotype: filter.anchor_phenotype ?? null,
+        constant: filter.constant,
+      }));
     setFilters(newFilters);
   };
 
@@ -130,7 +132,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
             }}
           >
             <img src={deleteIcon} alt="Delete filter" width="16" height="16" />
