@@ -3,7 +3,7 @@ import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryPars
 import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
 import { executeStudy } from '../../api/execute_cohort/route';
 import { MapperDomains } from '../../types/mappers';
-import { getCohort } from '../../api/text_to_cohort/route';
+import { getCohort, updateCohort, deleteCohort } from '../../api/text_to_cohort/route';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -221,9 +221,8 @@ export class CohortDataService {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
-    const writer = DirectoryReaderWriterService.getInstance();
     this._cohort_data.name = this._cohort_name;
-    writer.writeFile('cohort_' + this._cohort_data.id + '.json', JSON.stringify(this._cohort_data));
+    await updateCohort(this._cohort_data.id, this._cohort_data);
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
   }
@@ -398,9 +397,9 @@ export class CohortDataService {
     this._cohort_data.phenotypes = this._cohort_data.e;
   }
 
-  deleteCohort() {
+  async deleteCohort() {
     if (this._cohort_data.id) {
-      this._parser.deleteCohort(this._cohort_data.id);
+      await deleteCohort(this._cohort_data.id);
       this._cohort_data = {};
       this._cohort_name = '';
       this._table_data = { rows: [], columns: this.columns };

@@ -171,8 +171,10 @@ async def delete_cohort(cohort_id: str):
     if os.path.exists(cohort_path):
         os.remove(cohort_path)
     else:
-        logger.error(f"Failed to retrieve cohorts: {e}")
+        logger.error(f"Failed to retrieve cohort {cohort_id}")
         raise HTTPException(status_code=404, detail=f"Failed to find cohort {cohort_id}.")
+    
+    return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
 
 
 @app.get("/cohort/accept_changes")
