@@ -5,6 +5,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: phenex-backend:latest
+    # mount your local disk to save cohorts
+    volumes:
+      - ${HOME}/data/phenex/cohorts:/data/cohorts
     env_file: ./backend/.env
     ports:
       - "8000:8000"
@@ -31,11 +34,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: phenex-backend:latest
+    # mount your local disk to save cohorts
     command: fastapi run main.py --reload
     env_file: ./backend/.env
     ports:
       - "8000:8000"
     volumes:
+      - ${HOME}/data/phenex/cohorts:/data/cohorts
       - ./backend:/app
       - ../phenex:/app/phenex
     networks:
