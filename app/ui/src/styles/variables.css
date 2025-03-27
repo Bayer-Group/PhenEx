@@ -35,6 +35,11 @@
   --phenex-coral: hsl(16, 40%, 80%);
   --phenex-red: hsl(0, 40%, 80%);
   --phenex-dark: hsl(0, 40%, 5%);
+
+  --categorical-filter-color-domain: hsl(252, 40%, 95%);
+  --categorical-filter-color-allowed-values: hsl(16, 40%, 95%);
+  --categorical-filter-color-column-name: hsl(62, 40%, 95%);
+
 }
 
 .ag-theme-quartz .rag-blue-outer {

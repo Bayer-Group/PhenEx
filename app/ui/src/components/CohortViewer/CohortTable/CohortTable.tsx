@@ -1,6 +1,8 @@
 import { FC, forwardRef, ForwardedRef, useEffect } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { RelativeTimeRangeFilterCellEditor } from './CellEditors/RelativeTimeRangeFilterCellEditor';
+import { CategoricalFilterCellEditor } from './CellEditors/CategoricalFilterCellEditor';
+
 import { CodelistCellEditor } from './CellEditors/CodelistCellEditor';
 import styles from './CohortTable.module.css';
 import '../../../styles/variables.css';
@@ -11,7 +13,7 @@ import DescriptionCellRenderer from './CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from './CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from './CellRenderers/DomainCellRenderer';
 import CountCellRenderer from './CellRenderers/CountCellRenderer';
-import DateRangeCellRenderer from './CellRenderers/DateRangeCellRenderer';
+import CategoricalFilterCellRenderer from './CellRenderers/CategoricalFilterCellRenderer';
 
 import RelativeTimeRangeCellRenderer from './CellRenderers/RelativeTimeRangeCellRenderer';
 
@@ -63,16 +65,21 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               ...baseCol,
               cellRenderer: CountCellRenderer,
             } as ColDef<TableRow>;
-          }else if (col.field === 'relative_time_range') {
+          } else if (col.field === 'categorical_filter') {
+            return {
+              ...baseCol,
+              cellRenderer: CategoricalFilterCellRenderer,
+            } as ColDef<TableRow>;
+          } else if (col.field === 'relative_time_range') {
             return {
               ...baseCol,
               cellRenderer: RelativeTimeRangeCellRenderer,
               editable: params => {
-                console.log("CHECKING EDITABLE", params.data)
+                console.log('CHECKING EDITABLE', params.data);
                 return (
-                  params.data.type !== 'entry' && 
+                  params.data.type !== 'entry' &&
                   (params.data.class_name === 'MeasurementPhenotype' ||
-                  params.data.class_name === 'CodelistPhenotype')
+                    params.data.class_name === 'CodelistPhenotype')
                 );
               },
             } as ColDef<TableRow>;
@@ -82,13 +89,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               cellRenderer: NameCellRenderer,
               editable: true,
             } as ColDef<TableRow>;
-          } else if (col.field === 'date_range') {
-            return {
-              ...baseCol,
-              cellRenderer: DateRangeCellRenderer,
-              editable: false,
-            } as ColDef<TableRow>;
-          }else if (col.field === 'domain') {
+          } else if (col.field === 'domain') {
             return {
               ...baseCol,
               cellRenderer: DomainCellRenderer,
@@ -152,6 +153,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             NameCellRenderer: NameCellRenderer,
             CodelistCellEditor: CodelistCellEditor,
             CodelistCellRenderer: CodelistCellRenderer,
+            CategoricalFilterCellEditor: CategoricalFilterCellEditor,
           }}
           defaultColDef={{
             sortable: true,
@@ -166,7 +168,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // editType="fullRow"
           animateRows={true}
           getRowHeight={params => {
-            
             // Calculate height of CODELISTS
             let current_max_height = 48;
             if (params.data?.class_name == 'CodelistPhenotype' && params.data.codelist?.codelist) {
@@ -174,7 +175,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
               current_max_height = Math.max(current_max_height, codelist_phenotype_height);
             }
-  
+
             // Calculate height of RELATIVE TIME RANGES
             if (params.data?.relative_time_range) {
               const numEntries = params.data.relative_time_range.length;

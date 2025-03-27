@@ -1,0 +1,62 @@
+:global(.ag-popup-editor) {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+:global(.ag-popup-child) {
+  border-radius: 10px !important;
+}
+
+.header {
+  font-size: 12px;
+  font-family : "SNPro-bold";
+  margin-bottom: 0px;
+  padding-bottom: 8px;
+  padding:8px;
+  margin-right:70px;
+}
+
+.container > * {
+  background-color: transparent;
+}
+.container{
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 100%;
+  padding: 0px;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  padding-bottom:10px;
+}
+
+.filler {
+  font-family : "SNPro-regular";
+
+  font-size: 10px;
+}
+
+.doneButton {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 60px;
+  position: absolute;
+  top: 10px;
+  height:24px;
+  right: 10px;
+  padding: 2px 0;
+  text-align: center;
+}
+
+.doneButton:hover {
+  background-color: #45a049;
+}
+

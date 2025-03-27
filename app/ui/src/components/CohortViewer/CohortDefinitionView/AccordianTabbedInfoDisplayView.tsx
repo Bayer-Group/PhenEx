@@ -11,7 +11,6 @@ enum InfoTabType {
   Info = 'i',
   Variables = 'Constants',
   Database = 'Database',
-
 }
 
 export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
@@ -65,14 +64,14 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
           {'>>'}
         </button>
         <div className={styles.tabsContainer}>
-            <Tabs
-              width={200}
-              height={30}
-              tabs={tabs}
-              onTabChange={onTabChange}
-              active_tab_index={Object.values(InfoTabType).indexOf(currentTab)}
-            />
-          </div>
+          <Tabs
+            width={200}
+            height={25}
+            tabs={tabs}
+            onTabChange={onTabChange}
+            active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+          />
+        </div>
       </div>
       {isOpen && (
         <div className={styles.content}>

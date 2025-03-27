@@ -6,7 +6,6 @@
   overflow: hidden;
   background-color: white;
   transition: border-color 0.3s ease;
-
 }
 
 .accordianContainer.opened {
@@ -17,12 +16,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 10px 3px 60px;
+  padding: 5px 10px 3px 60px;
 }
 
 .header h2 {
   margin: 0;
-  padding-top:0px;
+  padding-top: 10px;
   font-size: 18px;
   font-weight: 500;
 }
@@ -33,7 +32,7 @@ strong {
 
 .toggleButton {
   position: absolute;
-  padding: 10px 0px;
+  padding: 0px 0px;
   height: 40px;
   width: 40px;
   border: var(--border);
@@ -44,7 +43,7 @@ strong {
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
-  margin-top: 0px;
+  margin-top: 8px;
   border: 2px solid var(--phenex-red);
 }
 
@@ -81,7 +80,6 @@ strong {
   font-size: 16px;
   max-height: 200px;
   overflow-y: auto;
-
 }
 
 .infoContent ol {

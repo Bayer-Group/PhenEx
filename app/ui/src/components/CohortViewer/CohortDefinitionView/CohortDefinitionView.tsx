@@ -34,10 +34,10 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
       // const horizontalScroll = api.getHorizontalPixelRange();
       const firstRow = api.getFirstDisplayedRow();
       const lastRow = api.getLastDisplayedRow();
-      
+
       // Update grid data
       api.setGridOption('rowData', dataService.table_data['rows']);
-      
+
       // Restore scroll position after data update
       requestAnimationFrame(() => {
         api.ensureIndexVisible(firstRow, 'top');
@@ -82,6 +82,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   }, [currentView]);
 
   const onCellValueChanged = async (event: any) => {
+    console.log('CELL VALUE CHANGED', event.newValue, event.oldValue);
     if (event.newValue !== event.oldValue) {
       dataService.onCellValueChanged(event);
       setTableData(dataService.table_data);
@@ -105,8 +106,8 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
             infoContent={
               <>
                 <p>
-                  Here you can specify which patients you are interested in including in your study.
-                  Do this with <strong>electronic phenotypes</strong> that define:
+                  Specify which patients you are interested in including in your study with{' '}
+                  <strong>electronic phenotypes</strong> that define:
                 </p>
                 <ol>
                   <li>
@@ -122,9 +123,10 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
                   </li>
                 </ol>
                 <p>
-                  Each row in the following table is a single phenotype (entry, inclusion or
-                  exclusion criteria). Click New Phenotype above to add new phenotypes! Then edit
-                  parameters within the table.
+                  Each row in the following table is a single electronic phenotype (entry, inclusion
+                  or exclusion criteria). Click{' '}
+                  <span className={styles.inTextButton}>New Phenotype</span> above to add new
+                  phenotypes! Then edit parameters within the table.
                 </p>
                 <p>
                   If you have a text description of your cohort, try asking our AI to generate the
@@ -191,7 +193,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
         <div className={styles.controlsContainer}>
           <Tabs
             width={400}
-            height={30}
+            height={25}
             tabs={tabs}
             onTabChange={onTabChange}
             active_tab_index={Object.values(CohortDefinitionViewType).indexOf(currentView)}

@@ -1,6 +1,6 @@
 import { CohortDataService } from '../CohortViewer/CohortDataService';
 
-import { textToCohort, getCohort, acceptChanges, rejectChanges } from '../../api/text_to_cohort/route';
+import { textToCohort, planUpdateCohort } from '../../api/text_to_cohort/route';
 
 type MessageCallback = (messages: Message[]) => void;
 type AICompletionCallback = (success: boolean) => void;
@@ -83,12 +83,12 @@ class ChatPanelDataService {
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
     try {
-      const stream = await textToCohort({
+      const stream = await planUpdateCohort({
         user_request: inputText.trim(),
         current_cohort: this.cohortDataService.cohort_data,
       });
 
-      console.log('Stream received from textToCohort');
+      console.log('Stream received from planUpdateCohort');
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
         text: '',
@@ -115,14 +115,17 @@ class ChatPanelDataService {
       }
 
       console.log('Finalizing assistant response');
-      const response = await getCohort(
-        this.cohortDataService.cohort_data.id,
-        true,
-      );
+      const response = await textToCohort({
+        user_request: inputText.trim(),
+        plan: this.messages[this.messages.length - 1].text,
+        current_cohort: this.cohortDataService.cohort_data,
+      });
       console.log('Response from textToCohort:', response);
-      this.cohortDataService.updateCohortFromChat(response);
-      this.notifyListeners();
-      this.notifyAICompletionListeners(true);
+      if (response.status === 'update_succeeded') {
+        this.cohortDataService.updateCohortFromChat(response.cohort);
+        this.notifyListeners();
+        this.notifyAICompletionListeners(true);
+      }
       console.log('AI request completed successfully');
     } catch (error) {
       console.error('Error in sendAIRequest:', error);
@@ -130,27 +133,9 @@ class ChatPanelDataService {
     }
   }
 
-  public async acceptAIResult(): Promise<void> {
-    try {
-      const response = await acceptChanges(this.cohortDataService.cohort_data.id);
-      this.cohortDataService.updateCohortFromChat(response);
-      this.notifyListeners();
-      console.log('AI result accepted successfully');
-    } catch (error) {
-      console.error('Error in acceptAIResult:', error);
-    }
-  }
+  public acceptAIResult(): void {}
 
-  public async rejectAIResult(): Promise<void> {
-    try {
-      const response = await rejectChanges(this.cohortDataService.cohort_data.id);
-      this.cohortDataService.updateCohortFromChat(response);
-      this.notifyListeners();
-      console.log('AI result rejected successfully');
-    } catch (error) {
-      console.error('Error in rejectAIResult:', error);
-    }
-  }
+  public rejectAIResult(): void {}
 
   public retryAIRequest(): void {}
 }

@@ -10,9 +10,9 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <PhenexCellRenderer {...props}>
-      <span>{props.value}</span>
+      <span className={styles.label}>{props.value}</span>
       <div>
-        <button
+        {/* <button
           className={styles.editButton}
           onClick={() =>
             props.api.startEditingCell({
@@ -22,7 +22,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
           }
         >
           <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />
-        </button>
+        </button> */}
         <button
           className={styles.deleteButton}
           onClick={() => {

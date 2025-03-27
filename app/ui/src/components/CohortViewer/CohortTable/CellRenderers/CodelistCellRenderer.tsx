@@ -29,8 +29,11 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
     typeof props.value.codelist !== 'object' ||
     Object.keys(props.value.codelist).length === 0
   ) {
-    return <PhenexCellRenderer {...props}><div className={styles.missing}>Missing</div></PhenexCellRenderer>;
-
+    return (
+      <PhenexCellRenderer {...props}>
+        <div className={styles.missing}>Missing</div>
+      </PhenexCellRenderer>
+    );
   }
 
   const codelistContent = (
