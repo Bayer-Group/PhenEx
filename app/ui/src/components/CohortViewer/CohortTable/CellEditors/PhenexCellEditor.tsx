@@ -30,8 +30,77 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     props.api.stopEditing();
   };
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.nativeEvent.stopImmediatePropagation();
+      e.preventDefault();
+      e.stopPropagation();
+
+      const focusableElements = Array.from(
+        e.currentTarget.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(el => {
+        const style = window.getComputedStyle(el as Element);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+      });
+
+      if (focusableElements.length === 0) return;
+
+      const currentFocusIndex = focusableElements.indexOf(document.activeElement as Element);
+      const nextIndex = e.shiftKey
+        ? currentFocusIndex > 0
+          ? currentFocusIndex - 1
+          : focusableElements.length - 1
+        : currentFocusIndex < focusableElements.length - 1
+          ? currentFocusIndex + 1
+          : 0;
+
+      (focusableElements[nextIndex] as HTMLElement).focus();
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const focusableElements = Array.from(
+      container.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(el => {
+      const style = window.getComputedStyle(el as Element);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+
+    if (focusableElements.length > 0) {
+      (focusableElements[0] as HTMLElement).focus();
+    }
+  }, []);
+
   return (
-    <div className={styles.container}>
+    <div
+      ref={containerRef}
+      className={styles.container}
+      onKeyDown={e => {
+        if (e.key === 'Tab') {
+          e.nativeEvent.stopImmediatePropagation();
+          e.preventDefault();
+          e.stopPropagation();
+          handleKeyDown(e);
+        }
+      }}
+      onKeyDownCapture={e => {
+        if (e.key === 'Tab') {
+          e.nativeEvent.stopImmediatePropagation();
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+      tabIndex={-1}
+    >
       <div className={styles.header}>
         <span className={styles.filler}>Edit</span>{' '}
         {props.column?.getColDef().headerName || 'Editor'}{' '}
@@ -40,7 +109,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           Done
         </button>
       </div>
-      {props.children}
+      <div className={styles.content}>{props.children}</div>
     </div>
   );
 });

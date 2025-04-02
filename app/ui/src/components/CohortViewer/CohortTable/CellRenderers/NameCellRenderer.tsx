@@ -3,7 +3,7 @@ import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
 import deleteIcon from '../../../../assets/icons/delete.svg';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-import { CohortDataService } from '../../CohortDataService';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const dataService = CohortDataService.getInstance();

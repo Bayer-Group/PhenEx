@@ -4,6 +4,7 @@ import { RightPanel } from './RightPanel';
 import { CohortViewer } from '../CohortViewer/CohortViewer';
 import { ThreePanelView } from './ThreePanelView/ThreePanelView';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
+import { SplashPage } from './SplashPage/SplashPage';
 
 import styles from './MainView.module.css';
 
@@ -38,7 +39,7 @@ export const MainView = () => {
     console.log('RENDERING VIEW');
     switch (currentView.viewType) {
       case ViewType.Empty:
-        return null;
+        return <SplashPage />;
       case ViewType.CohortDefinition:
         console.log('CLICKED ON A COHORT NAVIGATION', currentView.data);
         return <CohortViewer data={currentView.data} />;

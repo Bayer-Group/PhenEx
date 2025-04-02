@@ -3,27 +3,36 @@
   border-radius: var(--border-radius);
   margin-bottom: 1rem;
   margin: 5px 20px;
-  overflow: hidden;
+  /* overflow: hidden; */
   background-color: white;
   transition: border-color 0.3s ease;
+  user-select: none;
+  transition: 0.3s ease;
 }
 
 .accordianContainer.opened {
-  border-color: var(--phenex-red);
+  border-color: var(--color-accent);
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 10px 3px 60px;
+  /* justify-content: space-between; */
+  /* align-items: center; */
+  /* padding: 5px 10px 3px 60px; */
 }
 
 .header h2 {
   margin: 0;
-  padding-top: 10px;
-  font-size: 18px;
+  padding-top: 13px;
+  font-size: 22px;
   font-weight: 500;
+  margin-left: 60px;
+  transition: 0.3s ease;
+}
+
+.header.closed h2 {
+  padding-top: 2px;
+  margin-left: 0px;
 }
 
 strong {
@@ -39,12 +48,18 @@ strong {
   border-radius: 25px;
   font-size: 16px;
   font-family: 'SNPro-bold';
-  color: var(--phenex-red);
+  color: var(--color-accent);
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
   margin-top: 8px;
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
+  opacity: 1;
+  transition: 0.3s ease;
+}
+
+.toggleButton.closed {
+  opacity: 0;
 }
 
 .toggleButton:hover {
@@ -53,6 +68,9 @@ strong {
   transform: rotate(-90deg);
   outline: none;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
+  border: 2px solid var(--color-accent);
 }
 
 .toggleButton.closed {
@@ -69,10 +87,15 @@ strong {
 }
 
 .tabsContainer {
-  position: absolute;
+  position: relative !important;
   margin-bottom: 0px;
-  right: 80px;
-  margin-top: 0px;
+  margin-top: 15px;
+  margin-left: 20px;
+  transition: 0.3s ease;
+}
+
+.tabsContainer.closed {
+  margin-top: 2px;
 }
 
 .contentArea {

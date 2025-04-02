@@ -7,9 +7,9 @@
   right: -10px;
   bottom: 0px;
   background: white;
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
   padding: 6px 12px;
-  color: var(--phenex-red);
+  color: var(--color-accent);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s ease-in-out;

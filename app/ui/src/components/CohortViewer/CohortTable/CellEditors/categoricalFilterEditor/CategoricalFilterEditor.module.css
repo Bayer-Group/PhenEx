@@ -1,8 +1,8 @@
 .container {
   padding: 16px;
   min-height: 100px;
-  max-height: 500px;
-  overflow-y: auto;
+  /* max-height: 500px;
+  overflow-y: auto; */
   background-color: white;
   border-radius: var(--border-radius);
 }
@@ -10,12 +10,10 @@
 .filters {
   display: flex;
   flex-direction: column;
-  gap: 0px;
 }
 
 .filterRow {
   display: flex;
-  gap: 0px;
 }
 
 .filterRow input,
@@ -86,7 +84,7 @@
   font-size: 12px;
   z-index: 1000;
   position: relative;
-  padding-top:0px;
+  padding-top: 0px;
 }
 
 .filterContainer:hover > .logicalButtons,
@@ -130,17 +128,17 @@
   border-radius: 12px;
   padding: 7px 7px 30px 7px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .logicalBorderedArea:hover:not(:has(*:hover)) {
-  border-color:var(--phenex-red);
+  border-color: var(--color-accent);
 }
 
-.logicalBorderedArea:hover{
+.logicalBorderedArea:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
 
 .logicalLogicalButtons {
   margin-top: -10px;

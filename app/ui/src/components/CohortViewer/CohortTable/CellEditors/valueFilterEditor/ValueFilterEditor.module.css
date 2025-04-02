@@ -1,0 +1,135 @@
+.container {
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.filterSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterSection label {
+  min-width: 70px;
+}
+
+.input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 80px;
+  box-sizing: border-box;
+}
+
+.select {
+  width: 60px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: #bbb;
+}
+
+.filterRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.filterRow:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* .removeButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 20px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+} */
+
+.removeButton:hover {
+  color: var(--color-accent);
+}
+
+.addButton {
+  padding: 8px 16px;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  border-color: #bbb;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+
+
+.deleteButton {
+  position: absolute;
+  padding: 2px 7px;
+  right: -10px;
+  margin-top: -25px;
+  background: #f5f5f5;
+  font-family: 'SNPro-black';
+  border: 2px solid var(--color-accent);
+  width: 26px;
+  height: 26px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  color: var(--color-accent);
+  outline: none;
+  opacity: 0;
+}
+
+.filterRow:hover .deleteButton {
+  opacity: 1;
+  
+}
+
+.deleteButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: white;
+  background: var(--color-accent);
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.deleteButton:focus {
+  outline: none;
+}
+
+.deleteButton:focus-visible {
+  outline: none;
+}

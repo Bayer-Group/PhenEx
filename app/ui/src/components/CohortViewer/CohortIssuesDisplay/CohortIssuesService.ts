@@ -1,4 +1,4 @@
-import { CohortDataService } from '../CohortDataService';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
 
 interface IssueEntry {
   id: string;
@@ -25,6 +25,9 @@ export class CohortIssuesService {
   }
 
   private async loadClassDefinitions() {
+    if (this.classDefinitions) {
+      return;
+    }
     try {
       const response = await fetch('/src/assets/class_definitions.json');
       this.classDefinitions = await response.json();
@@ -33,10 +36,13 @@ export class CohortIssuesService {
     }
   }
 
-  private validatePhenotype(phenotype: any): string[] {
+  private async validatePhenotype(phenotype: any): string[] {
     const missingParams: string[] = [];
     const className = phenotype.class_name;
-
+    await this.loadClassDefinitions();
+    console.log('HELLO', className);
+    console.log(this.classDefinitions);
+    console.log(this.classDefinitions[className]);
     if (!className || !this.classDefinitions[className]) {
       return ['Invalid or missing class_name'];
     }

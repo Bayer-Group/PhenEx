@@ -53,10 +53,10 @@
   opacity: 1;
 }
 
-.label{
+.label {
   text-wrap: wrap;
   line-height: 14px;
-  font-size:14px;
-  padding:10px;
+  font-size: 14px;
+  padding: 10px;
   font-weight: bold;
 }

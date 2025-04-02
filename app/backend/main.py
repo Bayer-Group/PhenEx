@@ -299,7 +299,7 @@ async def text_to_cohort(
         2) thinking output used only by you, and 
         3) a final answer in valid JSON format
      
-    1) Text displayed to the user must consist of VERY BRIEF plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
+    1) Text displayed to the user must consist of VERY BRIEF, concise plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
 
     2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside <thinking> </thinking> tags. The content inside these tags will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <thinking> tags to plan that out. Or you may use <thinking> tags to explain what parameters you are going to fill in to the output JSON.
 
@@ -326,6 +326,7 @@ async def text_to_cohort(
     - The text within the <JSON> </JSON> tags must be valid JSON; therefore comments are not allowed in this text. Any comments you wish to make to the user must be made with (1) type output
     - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
     - Make sure to choose the appropriate domain for each phenotype for the given data source
+    - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
     """
 
     user_prompt = f"""     

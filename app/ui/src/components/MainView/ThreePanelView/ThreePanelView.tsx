@@ -23,9 +23,15 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [wasDragging, setWasDragging] = useState(false);
+
   const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
 
   const handleMouseDown = (divider: 'left' | 'right') => (e: React.MouseEvent) => {
+    // Check if the click target is a collapse button
+    if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
+      return;
+    }
     setIsDragging(true);
     setActiveDivider(divider);
     const container = document.getElementById('three-panel-container');
@@ -36,6 +42,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || !activeDivider) return;
+    setWasDragging(true);
 
     const container = document.getElementById('three-panel-container');
     if (!container) return;
@@ -60,6 +67,10 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     if (container) {
       container.dataset.dragging = 'false';
     }
+    // Add a small delay before resetting wasDragging to ensure click handler checks it first
+    setTimeout(() => {
+      setWasDragging(false);
+    }, 50);
   };
 
   React.useEffect(() => {
@@ -92,11 +103,15 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   }, [isDragging]);
 
   const toggleLeftPanel = () => {
-    setIsLeftCollapsed(prevState => !prevState);
+    if (!wasDragging) {
+      setIsLeftCollapsed(prevState => !prevState);
+    }
   };
 
   const toggleRightPanel = () => {
-    setIsRightCollapsed(prevState => !prevState);
+    if (!wasDragging) {
+      setIsRightCollapsed(prevState => !prevState);
+    }
   };
 
   return (
@@ -108,11 +123,19 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         {children[0]}
       </div>
 
-      <div className={styles.divider} onMouseDown={handleMouseDown('left')}>
+      <div
+        className={styles.divider}
+        onMouseDown={handleMouseDown('left')}
+        onClick={toggleLeftPanel}
+      >
+        <div
+          className={`${styles.leftDividerPadding} ${isLeftCollapsed ? styles.leftDividercollapsed : ''}`}
+        ></div>
+
         <div className={styles.dividerLine} />
+
         <button
-          className={`${styles.collapseButton} ${styles.leftCollapseButton} ${isLeftCollapsed ? styles.collapsed : ''}`}
-          onClick={toggleLeftPanel}
+          className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         >
           {'<<'}
           {/* {isLeftCollapsed ? '>>' : '<<'} */}
@@ -120,13 +143,20 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       </div>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
-
-      <div className={styles.divider} onMouseDown={handleMouseDown('right')}>
-        <div className={styles.dividerLine} />
+      <div
+        className={styles.divider}
+        onMouseDown={handleMouseDown('right')}
+        onClick={toggleRightPanel}
+      >
+        <div
+          className={`${styles.dividerLine} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
+        />
+        <div
+          className={`${styles.rightDividerPadding} ${isRightCollapsed ? styles.collapsed : ''}`}
+        ></div>
 
         <button
-          className={`${styles.collapseButton} ${styles.rightCollapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
-          onClick={toggleRightPanel}
+          className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
         >
           {'>>'}
         </button>

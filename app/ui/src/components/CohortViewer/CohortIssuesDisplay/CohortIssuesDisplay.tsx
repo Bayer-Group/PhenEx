@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CohortIssuesService } from './CohortIssuesService';
-import { CohortDataService } from '../CohortDataService';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { IssuesPopover } from './IssuesPopover';
 import styles from './CohortIssuesDisplay.module.css';
 

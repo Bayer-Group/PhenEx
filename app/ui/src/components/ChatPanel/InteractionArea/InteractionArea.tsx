@@ -65,7 +65,7 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
   };
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.interactionArea}>
       <div className={styles.topBar}>
         <InteractionBar
           state={interactionState}
@@ -74,12 +74,14 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
           onRetry={handleRetry}
         />
       </div>
-      <div
-        className={styles.textBox}
-        contentEditable="true"
-        ref={textBoxRef}
-        onKeyDown={handleKeyDown}
-      ></div>
+      <div className={styles.wrapper}>
+        <div
+          className={styles.textBox}
+          contentEditable="true"
+          ref={textBoxRef}
+          onKeyDown={handleKeyDown}
+        ></div>
+      </div>
     </div>
   );
 };

@@ -6,7 +6,6 @@ const TypeCellRenderer = (props: any) => {
       <span
         style={{
           // display: 'inline-block',
-          marginLeft: '-10px',
           padding: '2px 5px',
           borderRadius: '4px',
           backgroundColor: 'red',

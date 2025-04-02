@@ -1,6 +1,11 @@
-import { CohortDataService } from '../CohortViewer/CohortDataService';
+import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
-import { textToCohort, getCohort, acceptChanges, rejectChanges } from '../../api/text_to_cohort/route';
+import {
+  textToCohort,
+  getCohort,
+  acceptChanges,
+  rejectChanges,
+} from '../../api/text_to_cohort/route';
 
 type MessageCallback = (messages: Message[]) => void;
 type AICompletionCallback = (success: boolean) => void;
@@ -16,7 +21,7 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 1,
-      text: '# Hi,\n ### I use **PhenEx** to help you generate evidence using Real World Data.\n\n\n### Ask me anything!',
+      text: 'PhenEx AI can help you **create cohorts from text**. You can get help : \n1. creating an entire cohort from scratch - just enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. Modifying an existing cohort, by ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];
@@ -115,10 +120,7 @@ class ChatPanelDataService {
       }
 
       console.log('Finalizing assistant response');
-      const response = await getCohort(
-        this.cohortDataService.cohort_data.id,
-        true,
-      );
+      const response = await getCohort(this.cohortDataService.cohort_data.id, true);
       console.log('Response from textToCohort:', response);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();

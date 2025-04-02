@@ -9,7 +9,7 @@
 
 .filterRow {
   margin-top: 3px;
-  background-color: var(--background-color);
+  background-color: var(--item-color-default);
   border-radius: 3px;
   padding: 5px 10px;
 }

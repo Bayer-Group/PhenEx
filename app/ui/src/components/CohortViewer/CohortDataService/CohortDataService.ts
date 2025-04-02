@@ -1,9 +1,9 @@
-import { TableData, ColumnDefinition, TableRow } from './tableTypes';
-import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
-import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
-import { executeStudy } from '../../api/execute_cohort/route';
-import { MapperDomains } from '../../types/mappers';
-import { getCohort, updateCohort, deleteCohort } from '../../api/text_to_cohort/route';
+import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
+import { executeStudy } from '../../../api/execute_cohort/route';
+import { MapperDomains } from '../../../types/mappers';
+import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
+import { defaultColumns } from './CohortColumnDefinitions';
+import { createID } from '../../../types/createID';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -14,113 +14,8 @@ export class CohortDataService {
     rows: [],
     columns: [],
   };
-  private _parser = PhenexDirectoryParserService.getInstance();
 
-  private columns: ColumnDefinition[] = [
-    {
-      field: 'name',
-      headerName: 'Name',
-      width: 200,
-      pinned: 'left',
-      editable: true,
-    },
-    {
-      field: 'type',
-      headerName: 'Type',
-      width: 80,
-      pinned: 'left',
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
-      },
-    },
-    {
-      field: 'count',
-      headerName: 'N',
-      width: 80,
-      editable: false,
-      wrapText: false,
-      pinned: 'left',
-    },
-    {
-      field: 'description',
-      headerName: 'Description',
-      width: 250,
-      editable: true,
-      cellEditor: 'agLargeTextCellEditor',
-      cellEditorPopup: true,
-      wrapText: true,
-      cellEditorParams: {
-        maxLength: 2000,
-      },
-    },
-    {
-      field: 'class_name',
-      headerName: 'Phenotype',
-      width: 200,
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: [
-          'CodelistPhenotype',
-          'MeasurementPhenotype',
-          'ContinuousCoveragePhenotype',
-          'AgePhenotype',
-          'DeathPhenotype',
-          'LogicPhenotype',
-          'ScorePhenotype',
-          'ArithmeticPhenotype',
-        ],
-      },
-    },
-    {
-      field: 'domain',
-      headerName: 'Domain',
-      width: 120,
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: [
-          'CONDITION_OCCURRENCE_SOURCE',
-          'CONDITION_OCCURRENCE',
-          'Drug Exposure',
-          'Procedure Occurrence',
-          'Person',
-          'Observation',
-        ],
-      },
-    },
-    {
-      field: 'codelist',
-      headerName: 'Codelists',
-      width: 200,
-      editable: true,
-      cellEditor: 'CodelistCellEditor',
-      cellEditorPopup: true,
-    },
-    {
-      field: 'categorical_filter',
-      headerName: 'Categorical filters',
-      width: 200,
-      editable: true,
-      cellEditor: 'CategoricalFilterCellEditor',
-      cellEditorPopup: true,
-    },
-    {
-      field: 'relative_time_range',
-      headerName: 'Relative time ranges',
-      width: 200,
-      editable: true,
-      cellEditor: 'RelativeTimeRangeFilterCellEditor',
-      cellEditorPopup: true,
-      cellEditorParams: {
-        maxLength: 2000,
-      },
-    },
-    { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
-    { field: 'value', headerName: 'Value', width: 150, editable: true },
-  ];
+  private columns: ColumnDefinition[] = defaultColumns;
 
   private constructor() {}
 
@@ -153,6 +48,7 @@ export class CohortDataService {
   }
 
   private _currentFilter: string[] = [];
+
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
@@ -173,7 +69,7 @@ export class CohortDataService {
       this._cohort_data = cohortResponse;
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
-        this._cohort_data.id = this.createId();
+        this._cohort_data.id = createID();
       }
       // Ensure phenotypes array exists
       if (!this._cohort_data.phenotypes) {
@@ -273,7 +169,7 @@ export class CohortDataService {
 
   public addPhenotype(type: string = 'NA') {
     const newPhenotype: TableRow = {
-      id: this.createId(),
+      id: createID(),
       type: type,
       name: 'New phenotype',
       class_name: 'CodelistPhenotype',
@@ -297,17 +193,11 @@ export class CohortDataService {
     }
     return null;
   }
-  private createId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 10; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
 
-  private isNewCohort(): boolean {
-    return this._cohort_data.id.startsWith('Cohort_NEW');
+  private isNewCohort: boolean = false;
+
+  public isNewCohortCreation(): boolean {
+    return this.isNewCohort;
   }
 
   public async createNewCohort() {
@@ -315,12 +205,12 @@ export class CohortDataService {
     Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
     */
     this._cohort_data = {
-      id: this.createId(),
-      name: 'NEW cohort',
+      id: createID(),
+      name: 'Name your cohort...',
       class_name: 'Cohort',
       phenotypes: [
         {
-          id: this.createId(),
+          id: createID(),
           type: 'entry',
           name: 'Entry criterion',
           class_name: 'CodelistPhenotype',
@@ -330,7 +220,9 @@ export class CohortDataService {
     };
     this._cohort_name = this._cohort_data.name;
     this._table_data = this.tableDataFromCohortData();
+    this.isNewCohort = true;
     this.notifyListeners(); // Notify listeners after initialization
+    this.isNewCohort = false;
   }
 
   private listeners: Array<() => void> = [];

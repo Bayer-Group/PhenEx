@@ -9,6 +9,8 @@
   right: 0px;
   top: 0px;
   max-height: 400px;
+  user-select: none;
+
   /* max-height: 400px; */
   /* overflow-y: auto; */
 }

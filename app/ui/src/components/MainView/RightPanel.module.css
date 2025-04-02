@@ -13,19 +13,18 @@
 }
 
 .rightPanelCard {
-  margin-top: 10px;
-  margin-left: 1px;
-  margin-right: 1px;
   background-color: white;
-  height: calc(100% - 20px); /* asf bottom of cohrot view card to bottom!*/
-  border-radius: 10px 10px 10px 10px;
-  border: var(--border);
+  height: calc(100%); /* asf bottom of cohrot view card to bottom!*/
+  border-radius: 0px 0px 0px 0px;
+  /* border-left: var(--line-color);
+  border-right: var(--line-color); */
   overflow: hidden;
-  box-shadow: 0 1px 2px hsl(0, 0, 80%);
-  transition: all 0.2s ease-in-out;
+  border: 0px !important;
+  /* box-shadow: 0 1px 2px hsl(0, 0, 80%);
+  transition: all 0.2s ease-in-out; */
 }
 
 .rightPanelCard:hover {
   /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px hsl(0, 0, 80%);
+  /* box-shadow: 0 4px 8px hsl(100, 100, 0%); */
 }

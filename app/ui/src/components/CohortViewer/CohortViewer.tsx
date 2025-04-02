@@ -1,7 +1,7 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import styles from './CohortViewer.module.css';
 import { CohortViewerHeader } from './CohortViewerHeader';
-import { CohortDataService } from './CohortDataService';
+import { CohortDataService } from './CohortDataService/CohortDataService';
 import { TableData } from './tableTypes';
 import { CohortTable } from './CohortTable/CohortTable';
 import { CohortInfo } from './CohortInfo/CohortInfo';

@@ -1,7 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import styles from './CohortDatabaseSettings.module.css';
 import { Mapper } from '../../../../types/mappers';
-import { CohortDataService } from '../../CohortDataService';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
 import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
@@ -39,7 +39,6 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
     role: existingConfig.config?.role || snowflakeDefaults.role,
     password: existingConfig.config?.password || snowflakeDefaults.password,
   });
-  const [isEditing, setIsEditing] = useState(false);
 
   const updateConfig = () => {
     const newConfig = dataService.cohort_data.database_config || {};
@@ -104,97 +103,47 @@ export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
     );
   };
 
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const renderDisplayState = () => (
-    <div className={styles.displayState}>
-      <div className={styles.displayRow}>
-        <span className={styles.label}>Mapper:</span>
-        <span>{selectedMapper}</span>
-      </div>
-      <div className={styles.displayRow}>
-        <span className={styles.label}>Connector:</span>
-        <span>{selectedConnector}</span>
-      </div>
-      {selectedConnector === 'duckdb' ? (
-        <div className={styles.displayRow}>
-          <span className={styles.label}>Database Path:</span>
-          <span>{duckDbPath || 'undefined'}</span>
-        </div>
-      ) : (
-        <>
-          <div className={styles.displayRow}>
-            <span className={styles.label}>Source Database:</span>
-            <span>{snowflakeConfig.sourceDb || 'undefined'}</span>
-          </div>
-          <div className={styles.displayRow}>
-            <span className={styles.label}>Destination Database:</span>
-            <span>{snowflakeConfig.destinationDb || 'undefined'}</span>
-          </div>
-        </>
-      )}
-    </div>
-  );
-
   return (
     <div className={styles.container}>
       <div className={styles.section}>
-        <div className={styles.headerContainer}>
-          <h2 className={styles.title}>Database Settings</h2>
-          <button className={styles.editButton} onClick={toggleEdit}>
-            {isEditing ? (
-              'Done'
-            ) : (
-              <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />
-            )}
-          </button>
-        </div>
-        {isEditing ? (
-          <div>
-            <div className={styles.inputFields}>
-              <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>Mapper</label>
-                <select
-                  className={styles.dropdown}
-                  value={selectedMapper}
-                  onChange={e => {
-                    const newValue = e.target.value;
-                    setSelectedMapper(newValue);
-                    handleSaveChanges('mapper', newValue);
-                  }}
-                >
-                  {mappers.map(mapper => (
-                    <option key={mapper} value={mapper}>
-                      {mapper}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>Connector</label>
-                <select
-                  className={styles.dropdown}
-                  value={selectedConnector}
-                  onChange={e => {
-                    setSelectedConnector(e.target.value);
-                    handleSaveChanges('connector', e.target.value);
-                  }}
-                >
-                  {connector_types.map(type => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {renderConnectorFields()}
-            </div>
+        <div className={styles.inputFields}>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Mapper</label>
+            <select
+              className={styles.dropdown}
+              value={selectedMapper}
+              onChange={e => {
+                const newValue = e.target.value;
+                setSelectedMapper(newValue);
+                handleSaveChanges('mapper', newValue);
+              }}
+            >
+              {mappers.map(mapper => (
+                <option key={mapper} value={mapper}>
+                  {mapper}
+                </option>
+              ))}
+            </select>
           </div>
-        ) : (
-          renderDisplayState()
-        )}
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Connector</label>
+            <select
+              className={styles.dropdown}
+              value={selectedConnector}
+              onChange={e => {
+                setSelectedConnector(e.target.value);
+                handleSaveChanges('connector', e.target.value);
+              }}
+            >
+              {connector_types.map(type => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+          {renderConnectorFields()}
+        </div>
       </div>
     </div>
   );
