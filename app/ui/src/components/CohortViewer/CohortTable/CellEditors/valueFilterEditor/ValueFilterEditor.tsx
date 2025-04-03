@@ -37,10 +37,11 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
       class_name: 'ValueFilter',
       min: updates.min !== undefined ? updates.min : newFilters[index].min,
       max: updates.max !== undefined ? updates.max : newFilters[index].max,
-      column_name: updates.column_name !== undefined ? updates.column_name : newFilters[index].column_name,
+      column_name:
+        updates.column_name !== undefined ? updates.column_name : newFilters[index].column_name,
     };
     setFilters(newFilters);
-    
+
     if (newFilters.length === 1) {
       onValueChange?.(newFilters[0]);
     } else if (newFilters.length === 2) {
@@ -62,7 +63,7 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
     };
     const newFilters = [...filters, newFilter];
     setFilters(newFilters);
-    
+
     if (newFilters.length === 1) {
       onValueChange?.(newFilter);
     } else if (newFilters.length === 2) {
@@ -77,7 +78,7 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
   const removeFilter = (index: number) => {
     const updatedFilters = filters.filter((_, i) => i !== index);
     setFilters(updatedFilters);
-    
+
     if (updatedFilters.length === 0) {
       onValueChange?.(null);
     } else if (updatedFilters.length === 1) {
@@ -108,7 +109,11 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
               value={filter.min?.operator || '>='}
               onChange={e =>
                 updateFilter(index, {
-                  min: { class_name: 'Value', operator: e.target.value as '>' | '>=', value: filter.min?.value || '' },
+                  min: {
+                    class_name: 'Value',
+                    operator: e.target.value as '>' | '>=',
+                    value: filter.min?.value || '',
+                  },
                 })
               }
               className={styles.select}
@@ -121,7 +126,11 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
               value={filter.min?.value || ''}
               onChange={e =>
                 updateFilter(index, {
-                  min: { class_name: 'Value', operator: filter.min?.operator || '>=', value: e.target.value },
+                  min: {
+                    class_name: 'Value',
+                    operator: filter.min?.operator || '>=',
+                    value: e.target.value,
+                  },
                 })
               }
               className={styles.input}

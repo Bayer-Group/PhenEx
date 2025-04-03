@@ -2,7 +2,7 @@
   margin-top: 5px;
   display: flex;
   text-wrap: wrap;
-  background-color: var(--background-color);
+  /* background-color: var(--background-color); */
   line-height: 11px;
   font-size: 11px;
   padding: 2px 4px;

@@ -46,10 +46,7 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   const formatFilter = (value: ValueFilter | AndFilter): JSX.Element[] => {
     if (value.class_name === 'AndFilter') {
-      return [
-        formatValueFilter(value.filter1),
-        formatValueFilter(value.filter2)
-      ];
+      return [formatValueFilter(value.filter1), formatValueFilter(value.filter2)];
     }
     return [formatValueFilter(value)];
   };
@@ -58,7 +55,6 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   if (!filterPhenotypes.includes(props.data.class_name) || !props.value || props.value === null) {
     return <div></div>;
   }
-
 
   const filters = formatFilter(props.value);
 

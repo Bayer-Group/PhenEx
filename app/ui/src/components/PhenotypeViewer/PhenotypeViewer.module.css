@@ -1,0 +1,28 @@
+.container {
+  background-color: white;
+  width: 100%;
+  height: 100%;
+  padding: 0px;
+  color: black;
+}
+
+.header {
+  margin-top: 38px;
+  margin-left: 20px;
+  margin-right: 10px;
+}
+.header.h2 {
+  background-color: red;
+}
+
+.info {
+  margin-top: 0px;
+}
+
+.gridContainer {
+  margin-top: 20px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100%;
+}

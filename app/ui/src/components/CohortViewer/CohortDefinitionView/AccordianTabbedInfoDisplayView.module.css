@@ -11,7 +11,7 @@
 }
 
 .accordianContainer.opened {
-  border-color: var(--color-accent);
+  border-color: var(--phenex-red);
 }
 
 .header {
@@ -48,12 +48,12 @@ strong {
   border-radius: 25px;
   font-size: 16px;
   font-family: 'SNPro-bold';
-  color: var(--color-accent);
+  color: var(--phenex-red);
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
   margin-top: 8px;
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--phenex-red);
   opacity: 1;
   transition: 0.3s ease;
 }
@@ -68,9 +68,9 @@ strong {
   transform: rotate(-90deg);
   outline: none;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: var(--color-accent);
+  background-color: var(--phenex-red);
   color: white;
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--phenex-red);
 }
 
 .toggleButton.closed {

@@ -6,10 +6,10 @@
 
 .content {
   padding: 2rem;
-  padding-top: 200px;
+  padding-top: 100px;
   position: relative;
   z-index: 2;
-  margin-left:250px;
+  margin-right: 280px;
 }
 
 .content h1 {
@@ -46,8 +46,8 @@
 .logo {
   position: absolute;
   width: 800px;
-  left: -250px;
-  bottom:-20px;
+  right: -250px;
+  top: -50px;
   z-index: 1;
   pointer-events: none;
   /* transform: rotate(-40deg); */

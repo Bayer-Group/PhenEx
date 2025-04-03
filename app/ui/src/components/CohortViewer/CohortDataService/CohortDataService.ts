@@ -4,12 +4,14 @@ import { MapperDomains } from '../../../types/mappers';
 import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
+import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
   private static instance: CohortDataService;
-  private _cohort_name: string = '';
+  public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
+  public issues_service: CohortIssuesService;
   private _table_data: TableData = {
     rows: [],
     columns: [],
@@ -17,7 +19,10 @@ export class CohortDataService {
 
   private columns: ColumnDefinition[] = defaultColumns;
 
-  private constructor() {}
+  private constructor() {
+    this.issues_service = new CohortIssuesService();
+    this.issues_service.setDataService(this);
+  }
 
   public static getInstance(): CohortDataService {
     if (!CohortDataService.instance) {
@@ -31,7 +36,7 @@ export class CohortDataService {
   }
 
   public set cohort_name(value: string) {
-    console.log('setting cohort name IN DATRA SERVICE', value);
+    console.log('setting cohort name IN DATRA SERVICE', value, this.cohort_data.name);
     this._cohort_name = value;
   }
 
@@ -67,6 +72,8 @@ export class CohortDataService {
     try {
       const cohortResponse = await getCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
+      await this.issues_service.validateCohort();
+      this.sortPhenotypes()
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
         this._cohort_data.id = createID();
@@ -75,6 +82,7 @@ export class CohortDataService {
       if (!this._cohort_data.phenotypes) {
         this._cohort_data.phenotypes = [];
       }
+
       this._table_data = this.tableDataFromCohortData();
       this.notifyListeners(); // Notify listeners after loading data
       console.log(this._table_data);
@@ -117,9 +125,15 @@ export class CohortDataService {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
+
+    console.log('COHORT NAME', this._cohort_name, this._cohort_data.name);
+    if (this._cohort_data.name != this._cohort_name) {
+      this.notifyNameChangeListeners();
+    }
     this._cohort_data.name = this._cohort_name;
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this._table_data = this.tableDataFromCohortData();
+    this.issues_service.validateCohort();
     this.notifyListeners();
   }
 
@@ -243,12 +257,28 @@ export class CohortDataService {
     this.listeners.forEach(listener => listener());
   }
 
+  private nameChangeListeners: Array<() => void> = [];
+
+  public addNameChangeListener(listener: () => void) {
+    this.nameChangeListeners.push(listener);
+  }
+  public removeNameChangeListener(listener: () => void) {
+    const index = this.nameChangeListeners.indexOf(listener);
+    if (index > -1) {
+      this.nameChangeListeners.splice(index, 1);
+    }
+  }
+
+  private notifyNameChangeListeners() {
+    this.nameChangeListeners.forEach(listener => listener());
+  }
+
   public updateCohortFromChat(newCohort) {
     this._cohort_data = newCohort;
     console.log('UPDATED COHROT DATA', newCohort);
     this.sortPhenotypes();
     this.splitPhenotypesByType();
-    this._cohort_data.name = this._cohort_name;
+    // this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     console.log('UPDATED COHROT DATA', this._table_data);
     this.notifyListeners();

@@ -158,7 +158,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         <button
           className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
         >
-          {'>>'}
+          {'AI'}
         </button>
       </div>
 

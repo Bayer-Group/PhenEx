@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { CohortIssuesService } from './CohortIssuesService';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { IssuesPopover } from './IssuesPopover';
 import styles from './CohortIssuesDisplay.module.css';
@@ -13,14 +12,14 @@ export const CohortIssuesDisplay: React.FC = () => {
   const [issues, setIssues] = useState<CohortIssue[]>([]);
   const [showPopover, setShowPopover] = useState(false);
   const [dataService] = useState(() => CohortDataService.getInstance());
-  const issuesService = CohortIssuesService.getInstance();
+  const issuesService = dataService.issues_service;
 
   useEffect(() => {
     // Add listener for data service updates
     const listener = () => {
       issuesService.validateCohort();
       setIssues(issuesService.issues);
-      console.log(issues);
+      console.log('COHROT ISSUES DISPLAY', issues);
     };
     dataService.addListener(listener);
 

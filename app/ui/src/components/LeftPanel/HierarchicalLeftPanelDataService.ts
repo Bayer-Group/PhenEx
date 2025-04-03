@@ -25,11 +25,17 @@ export class HierarchicalLeftPanelDataService {
   private changeListeners: ChangeListener[] = [];
   private treeData: TreeNodeData[] = [];
   private dataService = CohortsDataService.getInstance();
+
   private cachedCohortNamesAndIds = null;
 
   private constructor() {
     this.treeData = [];
     this.updateTreeData();
+
+    this.dataService.addListener(() => {
+      // When cohort data changes, refresh the cohort names and IDs
+      this.updateTreeData();
+    });
   }
 
   static getInstance(): HierarchicalLeftPanelDataService {

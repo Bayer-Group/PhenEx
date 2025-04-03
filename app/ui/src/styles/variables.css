@@ -40,7 +40,7 @@
 
   --phenex-dark: hsl(0, 40%, 5%);
 
-  --color-accent:  hsl(0, 90%, 80%);
+  --color-accent: hsl(0, 90%, 80%);
   /* --color-accent:  var(--phenex-red); */
 
   --categorical-filter-color-domain: hsl(252, 40%, 95%);

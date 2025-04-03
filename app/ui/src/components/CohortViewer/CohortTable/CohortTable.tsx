@@ -21,94 +21,6 @@ interface CohortTableProps {
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, onCellValueChanged }, ref) => {
-    // Process column definitions to add cell renderer for type column
-    // const processedColumnDefs =
-    //   (data.columns ?? [])
-    //     .map((col): ColDef<TableRow> | ColGroupDef<TableRow> => {
-    //       if (!col) return {} as ColDef<TableRow>;
-    //       const baseCol = {
-    //         ...col,
-    //         suppressHeaderMenuButton: false,
-    //         sortable: true,
-    //         filter: true,
-    //       };
-    //       if (col.field === 'description') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: DescriptionCellRenderer,
-    //           editable: true,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'class_name') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: PhenotypeCellRenderer,
-    //           editable: true,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'count') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: CountCellRenderer,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'categorical_filter') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: CategoricalFilterCellRenderer,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'relative_time_range') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: RelativeTimeRangeCellRenderer,
-    //           editable: params => {
-    //             console.log('CHECKING EDITABLE', params.data);
-    //             return (
-    //               params.data.type !== 'entry' &&
-    //               (params.data.class_name === 'MeasurementPhenotype' ||
-    //                 params.data.class_name === 'CodelistPhenotype')
-    //             );
-    //           },
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'name') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: NameCellRenderer,
-    //           editable: true,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'domain') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: DomainCellRenderer,
-    //           editable: true,
-    //         } as ColDef<TableRow>;
-    //       } else if (col.field === 'codelist') {
-    //         return {
-    //           ...baseCol,
-    //           cellRenderer: CodelistCellRenderer,
-    //           cellEditor: CodelistCellEditor,
-    //           editable: params => {
-    //             return (
-    //               params.data.class_name === 'MeasurementPhenotype' ||
-    //               params.data.class_name === 'CodelistPhenotype'
-    //             );
-    //           },
-    //           valueParser: params => {
-    //             // this is required for codelist cell editor return value type
-    //             // as data types returned are variable (i.e. if codelist present vs not)
-    //             // TODO add value validation here
-    //             if (
-    //               params.newValue &&
-    //               typeof params.newValue === 'object' &&
-    //               params.newValue.class_name === 'Codelist'
-    //             ) {
-    //               return params.newValue;
-    //             }
-    //             return params.oldValue;
-    //           },
-    //         } as ColDef<TableRow>;
-    //       }
-    //       return baseCol as ColDef<TableRow>;
-    //     })
-    //     .filter(Boolean) || [];
-
     const myTheme = themeQuartz.withParams({
       accentColor: '#DDDDDD',
       borderColor: '#AFAFAF26',
@@ -124,10 +36,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     });
 
     return (
-      <div
-        className={`ag-theme-quartz ${styles.gridContainer}`}
-        style={{ height: '100%', width: '100%' }}
-      >
+      <div className={`ag-theme-quartz ${styles.gridContainer}`}>
         <AgGridReact
           ref={ref}
           rowData={data.rows}

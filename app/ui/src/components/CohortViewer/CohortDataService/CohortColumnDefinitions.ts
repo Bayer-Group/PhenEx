@@ -9,7 +9,6 @@ import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/Categori
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
 import ValueFilterCellRenderer from '../CohortTable/CellRenderers/ValueFilterCellRenderer';
 
-
 import { CodelistCellEditor } from '../CohortTable/CellEditors/CodelistCellEditor';
 import { RelativeTimeRangeFilterCellEditor } from '../CohortTable/CellEditors/RelativeTimeRangeFilterCellEditor';
 import { CategoricalFilterCellEditor } from '../CohortTable/CellEditors/CategoricalFilterCellEditor';
@@ -149,7 +148,7 @@ export const defaultColumns = [
     editable: true,
     cellEditorPopup: true,
     cellEditor: ValueFilterCellEditor,
-    cellRenderer: ValueFilterCellRenderer
+    cellRenderer: ValueFilterCellRenderer,
   },
   {
     field: 'categorical_filter',

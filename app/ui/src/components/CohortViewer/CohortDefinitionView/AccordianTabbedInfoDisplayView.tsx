@@ -3,6 +3,7 @@ import styles from './AccordianTabbedInfoDisplayView.module.css';
 import { Tabs } from '../../Tabs/Tabs';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortDatabaseSettings } from '../CohortInfo/CohortDatabaseSettings/CohortDatabaseSettings';
+import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 interface AccordianTabbedInfoDisplayViewProps {
   title: string;
@@ -13,6 +14,7 @@ enum InfoTabType {
   Info = 'i',
   Variables = 'Constants',
   Database = 'Database',
+  Codelists = 'Codelists',
 }
 
 export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
@@ -42,10 +44,19 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
 
   const tabs = Object.values(InfoTabType).map(value => value.charAt(0) + value.slice(1));
 
+  const showCodelists = () => {
+    console.log('SH?OWING CODELISTS');
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('codelists');
+    // TODO: Implement logic to show codelists
+  };
+
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
-
+    if (index == 3) {
+      showCodelists();
+    }
     if (!isOpen) {
       setIsOpen(true);
       setCurrentTab(tabTypes[index]);

@@ -21,7 +21,7 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 1,
-      text: 'PhenEx AI can help you **create cohorts from text**. You can get help : \n1. creating an entire cohort from scratch - just enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. Modifying an existing cohort, by ask for help on a single aspect of your study.',
+      text: 'PhenEx AI can help you **create cohorts from text**.\n1. Create an entire cohort from scratch - just enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. Modify an existing cohort, by ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];

@@ -22,7 +22,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
   useEffect(() => {
     const updateCohortName = () => {
       if (dataService.cohort_data?.name) {
-        setCohortName(dataService.cohort_data.name);
+        setCohortName(dataService._cohort_name);
       }
     };
 
@@ -61,7 +61,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
             setCohortName(newValue);
             onCohortNameChange(newValue);
             dataService.cohort_name = newValue;
-            dataService.cohort_data.name = newValue;
+            // dataService.cohort_data.name = newValue;
           }}
           onKeyDown={async e => {
             if (e.key === 'Enter') {

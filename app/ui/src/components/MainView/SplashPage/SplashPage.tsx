@@ -5,10 +5,9 @@ import phenexLogo from '../../../assets/phenx_feather.png';
 export const SplashPage = () => {
   return (
     <div className={styles.container}>
-      <div className={`${styles.label} ${styles.topLeft}`}>Select a cohort</div>
+      <div className={`${styles.label} ${styles.topLeft}`}>Select cohort</div>
       <img src={phenexLogo} alt="PhenEx Logo" className={styles.logo} />
       <div className={styles.content}>
-
         <h1>Welcome to PhenEx</h1>
         <p>
           PhenEx allows you to define the medical content of an observational study using Real World
@@ -23,7 +22,7 @@ export const SplashPage = () => {
           code.
         </p>
       </div>
-      <div className={`${styles.label} ${styles.bottomRight}`}>Ask AI</div>
+      <div className={`${styles.label} ${styles.bottomRight}`}>Ask</div>
     </div>
   );
 };

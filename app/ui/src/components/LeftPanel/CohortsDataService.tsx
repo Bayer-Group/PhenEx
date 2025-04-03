@@ -1,19 +1,28 @@
 import { createID } from '../../types/createID';
 import { getCohorts } from '../../api/text_to_cohort/route';
+import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
 export class CohortsDataService {
   private static instance: CohortsDataService;
   private _cohortNamesAndIds = null;
+  private cohortDataService: CohortDataService;
 
   public async cohortNamesAndIds() {
     if (this._cohortNamesAndIds === null) {
       this._cohortNamesAndIds = await getCohorts();
     }
-    console.log('cohortNamesAndIds', this._cohortNamesAndIds);
     return this._cohortNamesAndIds;
   }
 
-  private constructor() {}
+  private constructor() {
+    this.cohortDataService = CohortDataService.getInstance();
+    this.cohortDataService.addNameChangeListener(() => {
+      // When cohort data changes, refresh the cohort names and IDs
+      this._cohortNamesAndIds = null;
+      this.cohortNamesAndIds();
+      this.notifyListeners();
+    });
+  }
 
   public static getInstance(): CohortsDataService {
     if (!CohortsDataService.instance) {
@@ -28,7 +37,7 @@ export class CohortsDataService {
     */
     const newCohortData = {
       id: createID(),
-      name: 'Name your cohort...',
+      name: 'New Cohort',
       class_name: 'Cohort',
       phenotypes: [
         {
@@ -57,7 +66,6 @@ export class CohortsDataService {
   }
 
   private notifyListeners() {
-    console.log('DAT ASERVIC IS NOTIFYIN');
     this.listeners.forEach(listener => listener());
   }
 

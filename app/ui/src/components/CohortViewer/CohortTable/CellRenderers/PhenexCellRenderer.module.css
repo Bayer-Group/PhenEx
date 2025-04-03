@@ -29,3 +29,34 @@
 :global(.ag-cell:hover) .addToChatButton {
   opacity: 1;
 }
+
+.missing {
+  background-color: red;
+}
+
+.container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  position: relative;
+}
+
+.missing {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-accent);
+  opacity: 0.8;
+}
+
+/* .container {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  position: relative;
+} */

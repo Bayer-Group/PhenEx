@@ -18,7 +18,6 @@ export const ValueFilterCellEditor = forwardRef((props: ValueFilterCellEditorPro
     },
   }));
 
-
   const filterPhenotypes = ['MeasurementPhenotype', 'AgePhenotype'];
   if (!filterPhenotypes.includes(props.data.class_name)) {
     return <div></div>;

@@ -93,8 +93,6 @@
   background-color: #f5f5f5;
 }
 
-
-
 .deleteButton {
   position: absolute;
   padding: 2px 7px;
@@ -114,7 +112,6 @@
 
 .filterRow:hover .deleteButton {
   opacity: 1;
-  
 }
 
 .deleteButton:hover {
