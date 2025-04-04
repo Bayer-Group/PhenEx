@@ -144,7 +144,7 @@ async def query_rag(request: QueryRequest):
             query=request.query,
             index=phenex_rag_index,
             document_map=phenex_document_map,
-            model=model,
+            model=embeddings_model,
             top_k=request.top_k
         )
         return {"results": results}
