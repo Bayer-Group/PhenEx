@@ -72,7 +72,7 @@ export class CohortDataService {
     try {
       const cohortResponse = await getCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
-      await this.issues_service.validateCohort();
+      this.issues_service.validateCohort();
       this.sortPhenotypes()
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {

@@ -66,6 +66,7 @@ export class TwoPanelCohortViewerService {
 export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) => {
   const service = TwoPanelCohortViewerService.getInstance();
   const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void }>(null);
+  service.setPanelRef(panelRef);
   const [viewType, setViewType] = useState<CohortViewType>(service.currentViewType);
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
 
@@ -81,9 +82,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   }, [service]);
   service.setData(data);
 
-  React.useEffect(() => {
-    service.setPanelRef(panelRef);
-  }, []);
 
   return (
     <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={500}>

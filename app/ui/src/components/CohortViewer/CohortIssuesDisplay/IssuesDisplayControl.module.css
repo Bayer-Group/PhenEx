@@ -1,0 +1,14 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 250px;
+  gap: 4px;
+  position: absolute;
+  right: 20px;
+  top: 13px;
+  user-select: none;
+  /* max-height: 400px; */
+  /* overflow-y: auto; */
+}
+

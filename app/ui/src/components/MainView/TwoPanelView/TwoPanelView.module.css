@@ -21,7 +21,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
-  border-left: var(--border);
+  border-left: 2px solid var(--color-accent);
 }
 
 .divider.collapsed {
@@ -86,7 +86,7 @@
   top: 40px;
   transition: transform 0.3s ease;
   box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
-  border: var(--border);
+  border: 2px solid var(--color-accent);
   background-color: white;
   color: var(--color-accent);
   user-select: none;

@@ -17,6 +17,7 @@ export class CohortIssuesService {
   // }
 
   public setDataService(dataService: CohortDataService) {
+
     this.dataService = dataService;
     this.dataService.addListener(() => {
       this.validateCohort();
@@ -46,7 +47,6 @@ export class CohortIssuesService {
   private validatePhenotype(phenotype: any): string[] {
     const missingParams: string[] = [];
     const className = phenotype.class_name;
-    console.log('VALIDATING PHENOTYPE', phenotype);
     if (!this.classDefinitions) {
       return ['Class definitions not loaded yet'];
     }
@@ -71,14 +71,14 @@ export class CohortIssuesService {
         paramValue === 'missing' ||
         (Array.isArray(paramValue) && paramValue.length === 0)
       ) {
-        missingParams.push(`${paramName} (empty)`);
+        missingParams.push(`${paramName}`);
         phenotype[paramName] = 'missing';
       }
     }
     return missingParams;
   }
 
-  public async validateCohort() {
+  public validateCohort() {
     this.issues = [];
     this.issueCount = 0;
     const cohortData = this.dataService.cohort_data;
@@ -92,6 +92,7 @@ export class CohortIssuesService {
           issues: issues,
           phenotype_name: this.dataService.cohort_data.entry_criterion.name,
           type: this.dataService.cohort_data.entry_criterion.type,
+          phenotype: this.dataService.cohort_data.entry_criterion,
         });
         this.issueCount += issues.length;
       }
@@ -114,6 +115,7 @@ export class CohortIssuesService {
             issues: issues,
             phenotype_name: phenotype.name,
             type: phenotype.type,
+            phenotype: phenotype,
           });
           this.issueCount += issues.length;
         }

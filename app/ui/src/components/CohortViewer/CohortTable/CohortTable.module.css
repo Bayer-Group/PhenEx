@@ -5,7 +5,7 @@
 }
 
 /* Type cell colors */
-:global(.rag-dark-outer) {
+/* :global(.rag-dark-outer) {
   background-color: #4a4a4a;
   color: white;
 }
@@ -28,4 +28,4 @@
 :global(.rag-red-outer) {
   background-color: #f44336;
   color: white;
-}
+} */

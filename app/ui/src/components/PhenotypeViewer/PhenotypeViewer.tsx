@@ -1,47 +1,41 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
-import classDefinitions from '../../assets/class_definitions.json';
-import { themeQuartz } from 'ag-grid-community';
-
-interface Phenotype {
-  name: string;
-  description?: string;
-  id?: string;
-  class_name?: string;
-  [key: string]: any;
-}
+import { PhenotypeDataService, Phenotype } from '../../services/PhenotypeDataService';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
 }
 
-interface ParamRow {
-  parameter: string;
-  value: string;
-}
-
 export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
-  const [rowData, setRowData] = useState<ParamRow[]>([]);
+  const dataService = useRef(PhenotypeDataService.getInstance()).current;
+  const gridRef = useRef<any>(null);
 
-  const columnDefs = useMemo(
-    () => [
-      { field: 'parameter', headerName: 'Parameter', sortable: true, filter: true },
-      { field: 'value', headerName: 'Value', sortable: true, filter: true },
-    ],
-    []
-  );
+  const refreshGrid = () => {
+    console.log("refesh the phenotyppppp", dataService.getRowData())
+    if (gridRef.current?.api) {
+      const api = gridRef.current.api;
+      const firstRow = api.getFirstDisplayedRow();
+      const lastRow = api.getLastDisplayedRow();
+
+      api.setGridOption('rowData', dataService.rowData);
+
+      requestAnimationFrame(() => {
+        api.ensureIndexVisible(firstRow, 'top');
+        api.ensureIndexVisible(lastRow, 'bottom');
+      });
+    }
+  };
 
   useEffect(() => {
-    if (data?.class_name && classDefinitions[data.class_name]) {
-      const paramDefinitions = classDefinitions[data.class_name];
-      const rows = paramDefinitions.map(paramDef => ({
-        parameter: paramDef.param,
-        value: data[paramDef.param]?.toString() || paramDef.default?.toString() || 'Not set',
-      }));
-      setRowData(rows);
-    }
-  }, [data]);
+    const listener = () => refreshGrid();
+    dataService.addListener(listener);
+    dataService.setData(data);
+
+    return () => {
+      dataService.removeListener(listener);
+    };
+  }, [data, dataService]);
 
   if (!data) {
     return (
@@ -51,45 +45,18 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
-  const myTheme = themeQuartz.withParams({
-    accentColor: '#DDDDDD',
-    borderColor: '#AFAFAF26',
-    browserColorScheme: 'light',
-    columnBorder: true,
-    headerFontSize: 11,
-    headerRowBorder: true,
-    cellHorizontalPadding: 10,
-    headerBackgroundColor: 'var(--background-color-content, #FFFFFF)',
-    rowBorder: true,
-    spacing: 8,
-    wrapperBorder: false,
-  });
-
-  const formatType = () => {
-    if (data.type == 'entry') {
-      return 'Entry Criterion in Pacific AF ECA';
-    } else if (data.type == 'inclusion') {
-      return 'Inclusion Criterion in Pacific AF ECA';
-    } else if (data.type == 'exclusion') {
-      return 'Inclusion Criterion in Pacific AF ECA';
-    } else if (data.type == 'baseline') {
-      return 'Baseline Characteristics in Pacific AF ECA';
-    } else if (data.type == 'outcome') {
-      return 'Outcome in Pacific AF ECA';
-    }
-  };
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>{data.name}</h2>
-        <div className={styles.info}>{formatType()}</div>
+        <div className={styles.info}>{dataService.formatType()}</div>
       </div>
       <div className={`${styles.gridContainer}`}>
         <AgGridReact
-          rowData={rowData}
-          columnDefs={columnDefs}
-          theme={myTheme}
+          rowData={dataService.rowData}
+          columnDefs={dataService.getColumnDefs()}
+          ref={gridRef}
+          theme={dataService.getTheme()}
           animateRows={true}
           defaultColDef={{
             flex: 1,
