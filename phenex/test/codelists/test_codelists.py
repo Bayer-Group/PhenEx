@@ -1,7 +1,10 @@
+from collections import UserList
+from unittest.mock import MagicMock
 import pytest
 from deepdiff import DeepDiff
 
-from phenex.codelists.codelists import Codelist
+
+from phenex.codelists.codelists import Codelist, MedConBCodelist
 
 
 def test_resolve_use_code_type_true():
@@ -50,6 +53,53 @@ def test_codelist_union():
     expected = {"ICD-9": ["a", "b"], "ICD-10": ["a", "b", "c", "d"], "ICD10PCS": ["d"]}
     diff = DeepDiff(resolved, expected, ignore_order=True)
     assert diff == {}
+
+
+class MedConbCodeset:
+    ontology: str
+    codes: list[tuple[str, str]]  # code, description
+
+
+class MedConbCodesets(UserList["MedConbCodeset"]): ...
+
+
+class MedConbCodelist:
+    codesets: "MedConbCodesets"
+
+
+class TestMedConBCodelist:
+    def test_serialization(self):
+        medconb_client = MagicMock()
+
+        mock_codelist = MedConbCodelist()
+        mock_codelist.codesets = MedConbCodesets()
+        mock_codelist.codesets.append(MedConbCodeset())
+        mock_codelist.codesets[0].ontology = "ICD-9"
+        mock_codelist.codesets[0].codes = [("427.31", "Atrial fibrillation")]
+        mock_codelist.codesets.append(MedConbCodeset())
+        mock_codelist.codesets[1].ontology = "ICD-10"
+        mock_codelist.codesets[1].codes = [
+            ("I48.0", "Paroxysmal atrial fibrillation"),
+            ("I48.1", "Persistent atrial fibrillation"),
+        ]
+
+        medconb_client.get_codelist.return_value = mock_codelist
+
+        want = {
+            "class_name": "MedConBCodelist",
+            "id": "some-mock-id",
+            "name": "codelist_name",
+            "use_code_type": True,
+            "remove_punctuation": False,
+        }
+
+        codelist = MedConBCodelist(
+            "some-mock-id", "codelist_name", medconb_client=medconb_client
+        )
+
+        got = codelist.to_dict()
+
+        assert got == want
 
 
 if __name__ == "__main__":

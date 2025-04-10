@@ -141,6 +141,12 @@ class Codelist:
         remove_punctuation: Optional[bool] = False,
     ) -> None:
         self.name = name
+
+        # resolve here because it is needed immediately.
+        # should only be resolved on execution.
+        # -> refactoring needed.
+        self._resolve()
+
         if isinstance(codelist, dict):
             self.codelist = codelist
         elif isinstance(codelist, list):
@@ -167,6 +173,8 @@ class Codelist:
                     warnings.warn(
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
+
+    def _resolve(self): ...
 
     def resolve(
         self, use_code_type: bool = True, remove_punctuation: bool = False
@@ -447,3 +455,43 @@ class LocalCSVCodelistFactory:
             return Codelist(name=name, codelist=code_dict)
         except:
             raise ValueError("Could not find the codelist with the given name.")
+
+
+class MedConBCodelist(Codelist):
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        # These parameters below shouldn't be here, but are required for
+        # the parent class and we don't want to touch that atm.
+        use_code_type: bool = True,
+        remove_punctuation: bool = False,
+        # this also shouldn't be here, but be injected during runtime
+        medconb_client=None,
+    ):
+        self.id = id
+        self.medconb_client = medconb_client
+        # the empty dict is a placeholder, will be fulfilled during
+        # resolve.
+        # -> refactor!
+        super().__init__({}, name, use_code_type, remove_punctuation)
+
+    def _resolve(self):
+        """
+        Resolve the codelist by querying MedConB.
+        """
+        medconb_codelist = self.medconb_client.get_codelist(codelist_id=self.id)
+
+        self.codelist = {}
+        for codeset in medconb_codelist.codesets:
+            self.codelist[codeset.ontology] = [c[0] for c in codeset.codes]
+
+    def to_dict(self):
+        return {
+            "class_name": self.__class__.__name__,
+            "id": self.id,
+            "name": self.name,
+            "use_code_type": self.use_code_type,
+            "remove_punctuation": self.remove_punctuation,
+            "medconb_client": None,
+        }
