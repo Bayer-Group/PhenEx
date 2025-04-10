@@ -142,11 +142,6 @@ class Codelist:
     ) -> None:
         self.name = name
 
-        # resolve here because it is needed immediately.
-        # should only be resolved on execution.
-        # -> refactoring needed.
-        self._resolve()
-
         if isinstance(codelist, dict):
             self.codelist = codelist
         elif isinstance(codelist, list):
@@ -157,6 +152,11 @@ class Codelist:
             self._codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
+
+        # resolve here because it is needed immediately.
+        # should only be resolved on execution.
+        # -> refactoring needed.
+        self._resolve()
 
         if list(self.codelist.keys()) == [None]:
             self.use_code_type = False
@@ -464,7 +464,6 @@ class MedConBCodelist(Codelist):
         name: str,
         # These parameters below shouldn't be here, but are required for
         # the parent class and we don't want to touch that atm.
-        use_code_type: bool = True,
         remove_punctuation: bool = False,
         # this also shouldn't be here, but be injected during runtime
         medconb_client=None,
@@ -474,7 +473,12 @@ class MedConBCodelist(Codelist):
         # the empty dict is a placeholder, will be fulfilled during
         # resolve.
         # -> refactor!
-        super().__init__({}, name, use_code_type, remove_punctuation)
+        super().__init__(
+            codelist={},
+            name=name,
+            use_code_type=True,
+            remove_punctuation=remove_punctuation,
+        )
 
     def _resolve(self):
         """
@@ -491,7 +495,5 @@ class MedConBCodelist(Codelist):
             "class_name": self.__class__.__name__,
             "id": self.id,
             "name": self.name,
-            "use_code_type": self.use_code_type,
             "remove_punctuation": self.remove_punctuation,
-            "medconb_client": None,
         }

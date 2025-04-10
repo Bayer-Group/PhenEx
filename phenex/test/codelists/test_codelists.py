@@ -89,7 +89,6 @@ class TestMedConBCodelist:
             "class_name": "MedConBCodelist",
             "id": "some-mock-id",
             "name": "codelist_name",
-            "use_code_type": True,
             "remove_punctuation": False,
         }
 
@@ -98,6 +97,38 @@ class TestMedConBCodelist:
         )
 
         got = codelist.to_dict()
+
+        assert got == want
+
+    def test_populates(self):
+        medconb_client = MagicMock()
+
+        mock_codelist = MedConbCodelist()
+        mock_codelist.codesets = MedConbCodesets()
+        mock_codelist.codesets.append(MedConbCodeset())
+        mock_codelist.codesets[0].ontology = "ICD-9"
+        mock_codelist.codesets[0].codes = [("427.31", "Atrial fibrillation")]
+        mock_codelist.codesets.append(MedConbCodeset())
+        mock_codelist.codesets[1].ontology = "ICD-10"
+        mock_codelist.codesets[1].codes = [
+            ("I48.0", "Paroxysmal atrial fibrillation"),
+            ("I48.1", "Persistent atrial fibrillation"),
+        ]
+
+        medconb_client.get_codelist.return_value = mock_codelist
+
+        want = {
+            "ICD-9": ["427.31"],
+            "ICD-10": [
+                "I48.0",
+                "I48.1",
+            ],
+        }
+
+        codelist = MedConBCodelist(
+            "some-mock-id", "codelist_name", medconb_client=medconb_client
+        )
+        got = codelist.codelist
 
         assert got == want
 
