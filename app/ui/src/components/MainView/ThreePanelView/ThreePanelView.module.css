@@ -21,7 +21,6 @@
 
 .divider {
   width: 15px;
-  /* background-color: blue; */
   background-color: var(--background-color);
   cursor: col-resize;
   position: relative;
@@ -33,26 +32,21 @@
 .dividerLine {
   height: 100%;
   pointer-events: none;
-  width: 1px;
+  width: 0px;
   background-color: var(--border-color);
   transition: background-color 0.2s ease;
+  z-index: 1000;
 }
-.divider:hover .dividerLine {
-  background-color: var(--accent-color);
-}
-/*
-.container[data-dragging='true'] .dividerLine {
-  background-color: var(--accent-color);
-  width: 2px;
-} */
 
-.collapseButton {
-  position: absolute;
-  padding: 4px;
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  z-index: 1;
+.divider:hover .dividerLine {
+  background-color: var(--color-accent);
+  width: 3px;
+}
+
+.divider:hover .dividerLine.right.collapsed {
+  width: 3px;
+  pointer-events: none;
+  cursor: default;
 }
 
 .collapsed {
@@ -62,11 +56,16 @@
 
 .collapseButton {
   position: absolute;
+  padding: 4px;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  z-index: 1;
+  position: absolute;
   width: 24px;
   height: 24px;
   border-radius: 50%;
   background-color: transparent;
-  /* border: 1px solid #ccc; */
   display: flex;
   align-items: center;
   left: 13px;
@@ -80,39 +79,82 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border: var(--border);
   background-color: white;
-  color: var(--phenex-red);
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.collapseButton.left:hover {
+  border: 1px solid var(--color-accent);
 }
 
 .collapseButton:hover {
   transition: transform 0.3s ease;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
+  outline: none;
+  border: none;
+  /* border: 1px solid var(--color-accent); */
+}
+
+.collapseButton.collapsed.left:hover {
+  transition: transform 0.3s ease;
+  transform: translateY(-1px);
+  box-shadow: 10 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
 }
 
 .collapseButton:focus {
   outline: none;
 }
 
-.leftCollapseButton {
-  left: 4px;
-  top: 23px;
+.collapseButton.left {
+  left: -12px;
+  top: 25px;
   width: 40px;
   height: 40px;
   bottom: 1px; /* bottom of collapse buttons!*/
   border: var(--border);
+  /* transition: all 0.3s ease; */
 }
-.rightCollapseButton {
+
+.collapseButton.left.collapsed {
+  left: 12px;
+  top: 12px;
+  border: 1px solid transparent;
+  box-shadow: none;
+  font-family: 'SNPro-black';
+}
+
+.collapseButton.right {
+  font-family: 'SNPro-black';
+
+  font-size: 30px;
+  padding-left: 2px;
+}
+/* 
+.leftCollapseButton.collapsed:hover {
+  background-color: var(--color-accent);
+  color: white;
+  outline: none;
+  border: none;
+} */
+
+.collapseButton.right {
   left: -80px;
   bottom: 40px;
   width: 50px;
   height: 50px;
   border: var(--border);
-  background-color: white;
-  color: var(--phenex-red);
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
 }
 
-.collapseButton.collapsed {
+.collapseButton.right.collapsed {
+}
+
+.collapseButton.left.collapsed {
   transform: rotate(180deg);
 }
 
@@ -120,4 +162,41 @@
   width: 0 !important;
   padding: 0;
   margin: 0;
+}
+
+.rightDividerPadding {
+  width: 9px;
+  height: 100%;
+  background-color: white;
+  margin-left: -12px;
+  pointer-events: none;
+  position: absolute;
+  border-right: var(--border);
+}
+
+.divider:hover .collapseButton.left {
+  border-color: var(--color-accent);
+}
+
+.leftDividerPadding {
+  width: 8px;
+  height: 100%;
+  background-color: white;
+  pointer-events: none;
+  z-index: 100;
+  position: absolute;
+  margin-left: 10px;
+  transition: all 0.3s ease;
+  border-left: var(--border);
+}
+
+.leftDividerPadding.leftDividercollapsed {
+  background-color: white;
+  margin-left: 0px;
+  width: 16px;
+}
+
+.rightDividerPadding.collapsed {
+  background-color: white;
+  width: 100px;
 }

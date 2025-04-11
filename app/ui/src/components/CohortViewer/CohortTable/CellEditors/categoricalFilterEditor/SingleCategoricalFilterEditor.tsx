@@ -48,7 +48,9 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
   createLogicalFilter,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [useConstant, setUseConstant] = useState(() => value?.constant !== null);
+  const [useConstant, setUseConstant] = useState(
+    () => value?.constant !== null && value?.constant !== undefined
+  );
   const [values, setValues] = useState(() => {
     if (value) {
       return value;
@@ -67,7 +69,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
 
   const handleValueChange = (event, field: string, value: string) => {
     event.stopPropagation();
-    console.log("STOPPED PROPAGATION")
+    console.log('STOPPED PROPAGATION');
     if (field === 'allowed_values') {
       newValues.allowed_values = [value];
       // .split(',')
@@ -185,6 +187,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
       </div>
     );
   };
+
   const renderEmptyFilter = () => {
     return renderSingleFilterBox(<span>Click to add a categorical filter</span>);
   };
@@ -218,8 +221,15 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
   };
 
   const renderEditingState = () => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+
     return (
-      <div className={styles.editorBox}>
+      <div className={styles.editorBox} onKeyDown={handleKeyDown} tabIndex={-1}>
         <div className={styles.checkboxField}>
           <label className={styles.checkboxLabel}>
             <input
@@ -248,7 +258,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
           <input
             type="text"
             value={values.column_name}
-            onChange={e =>  handleValueChange(e, 'column_name', e.target.value)}
+            onChange={e => handleValueChange(e, 'column_name', e.target.value)}
             placeholder="Enter column name"
           />
         </div>
@@ -262,7 +272,10 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
         </div>
         <div className={styles.field}>
           <label>Domain:</label>
-          <select value={values.domain} onChange={e => handleValueChange(e, 'domain', e.target.value)}>
+          <select
+            value={values.domain}
+            onChange={e => handleValueChange(e, 'domain', e.target.value)}
+          >
             <option value="">Select Domain</option>
             {MOCK_DOMAINS.map(domain => (
               <option key={domain} value={domain}>

@@ -9,7 +9,7 @@
 }
 
 .accordianContainer.opened {
-  border-color: var(--phenex-red);
+  border-color: var(--color-accent);
 }
 
 .header {
@@ -38,12 +38,12 @@ strong {
   border-radius: 25px;
   font-size: 16px;
   font-family: 'SNPro-bold';
-  color: var(--phenex-red);
+  color: var(--color-accent);
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
   margin-top: 0px;
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
 }
 
 .toggleButton:hover {

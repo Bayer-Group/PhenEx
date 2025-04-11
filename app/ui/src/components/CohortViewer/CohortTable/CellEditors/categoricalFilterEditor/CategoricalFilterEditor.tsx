@@ -46,11 +46,19 @@ export const CategoricalFilterEditor: React.FC<CategoricalFilterEditorProps> = (
     const traverseAndUpdate = (filterNode: FilterType): FilterType => {
       if (filterNode.class_name === 'AndFilter' || filterNode.class_name === 'OrFilter') {
         if (filterNode.filter1.id === filterToDelete.id) {
-          console.log('PARENT IS LOGICAL AND ELETEING CHILD 1', filterNode.filter1.column_name, filterToDelete.column_name);
+          console.log(
+            'PARENT IS LOGICAL AND ELETEING CHILD 1',
+            filterNode.filter1.column_name,
+            filterToDelete.column_name
+          );
           return filterNode.filter2;
         }
         if (filterNode.filter2.id === filterToDelete.id) {
-          console.log('PARENT IS LOGICAL AND ELETEING CHILD 2', filterNode.filter2.column_name, filterToDelete.column_name);
+          console.log(
+            'PARENT IS LOGICAL AND ELETEING CHILD 2',
+            filterNode.filter2.column_name,
+            filterToDelete.column_name
+          );
           return filterNode.filter1;
         }
         return {
@@ -58,22 +66,20 @@ export const CategoricalFilterEditor: React.FC<CategoricalFilterEditorProps> = (
           filter1: traverseAndUpdate(filterNode.filter1),
           filter2: traverseAndUpdate(filterNode.filter2),
         };
-      }
-      else if (filterNode.id === filterToDelete.id) {
+      } else if (filterNode.id === filterToDelete.id) {
         console.log('DELTING SINGLE NODE', filterNode.column_name, filterToDelete.column_name);
         return {
           ...createEmptyFilter(),
-          id: Math.random().toString(36)
+          id: Math.random().toString(36),
         };
-      }
-      else{
-        console.log("NOT TARGET FILTER", filterNode.column_name)
+      } else {
+        console.log('NOT TARGET FILTER', filterNode.column_name);
       }
       return filterNode;
     };
-    console.log("STARING DELETION OF FULL FILTER",filter);
+    console.log('STARING DELETION OF FULL FILTER', filter);
     const updatedFilter = traverseAndUpdate(filter);
-    console.log("AFTER DELETION OF FULL FILTER",updatedFilter);
+    console.log('AFTER DELETION OF FULL FILTER', updatedFilter);
     setFilter(updatedFilter);
   };
 

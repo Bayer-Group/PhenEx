@@ -1,9 +1,9 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { ICellEditorParams } from '@ag-grid-community/core';
+import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { RelativeTimeRangeFilterEditor } from './relativeTimeRangeFilterEditor/RelativeTimeRangeFilterEditor';
 import { TimeRangeFilter } from './relativeTimeRangeFilterEditor/types';
 
-interface RelativeTimeRangeFilterCellEditorProps extends ICellEditorParams {
+interface RelativeTimeRangeFilterCellEditorProps extends PhenexCellEditorProps {
   value?: TimeRangeFilter[];
   onValueChange?: (value: any) => void;
 }
@@ -18,8 +18,11 @@ export const RelativeTimeRangeFilterCellEditor = forwardRef(
         return true;
       },
     }));
-
-    return <RelativeTimeRangeFilterEditor {...props} />;
+    return (
+      <PhenexCellEditor {...props} ref={ref}>
+        <RelativeTimeRangeFilterEditor {...props} />
+      </PhenexCellEditor>
+    );
   }
 );
 

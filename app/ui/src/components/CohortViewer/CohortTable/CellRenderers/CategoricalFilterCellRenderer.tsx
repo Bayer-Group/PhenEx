@@ -4,7 +4,7 @@ import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRendere
 import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categoricalFilterEditor/types';
 
 const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  const renderFilter = (filter: FilterType | null | undefined, isRoot:boolean): JSX.Element => {
+  const renderFilter = (filter: FilterType | null | undefined, isRoot: boolean): JSX.Element => {
     if (!filter) {
       return <div className={styles.filterText}></div>;
     }
@@ -24,13 +24,13 @@ const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props =
     if ('filter1' in filter && 'filter2' in filter) {
       return (
         <>
-          <span className={styles.punctuation}>{isRoot?'':'('}</span>
+          <span className={styles.punctuation}>{isRoot ? '' : '('}</span>
           {renderFilter(filter.filter1, false)}
           <span className={styles.logicalOperator}>
             {filter.class_name === 'OrFilter' ? '|' : '&'}
           </span>
           {renderFilter(filter.filter2, false)}
-          <span className={styles.punctuation}>{isRoot?'':')'}</span>
+          <span className={styles.punctuation}>{isRoot ? '' : ')'}</span>
         </>
       );
     }

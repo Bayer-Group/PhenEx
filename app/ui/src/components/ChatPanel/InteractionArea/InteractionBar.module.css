@@ -2,12 +2,13 @@
   color: black;
   font-size: 50px;
   height: 30px;
-  top: -35px;
+  top: -30px;
   position: relative;
-  left: 20px;
+  left: 10px;
   /* overflow: hidden; */
 }
 
 .buttonContainer {
-  margin-top: 10px;
+  margin-top: 0px;
+  height: 40px;
 }

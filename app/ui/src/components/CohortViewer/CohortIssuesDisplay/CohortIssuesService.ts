@@ -1,4 +1,4 @@
-import { CohortDataService } from '../CohortDataService';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
 
 interface IssueEntry {
   id: string;
@@ -12,19 +12,30 @@ export class CohortIssuesService {
   private issues: IssueEntry[] = [];
   private classDefinitions: Record<string, any>;
 
-  private constructor() {
-    this.dataService = CohortDataService.getInstance();
-    this.loadClassDefinitions();
+  // private constructor() {
+
+  // }
+
+  public setDataService(dataService: CohortDataService) {
+
+    this.dataService = dataService;
+    this.dataService.addListener(() => {
+      this.validateCohort();
+    });
+    this.loadClassDefinitions().then(() => {});
   }
 
-  public static getInstance(): CohortIssuesService {
-    if (!CohortIssuesService.instance) {
-      CohortIssuesService.instance = new CohortIssuesService();
-    }
-    return CohortIssuesService.instance;
-  }
+  // public static getInstance(): CohortIssuesService {
+  //   if (!CohortIssuesService.instance) {
+  //     CohortIssuesService.instance = new CohortIssuesService();
+  //   }
+  //   return CohortIssuesService.instance;
+  // }
 
   private async loadClassDefinitions() {
+    if (this.classDefinitions) {
+      return;
+    }
     try {
       const response = await fetch('/src/assets/class_definitions.json');
       this.classDefinitions = await response.json();
@@ -36,7 +47,9 @@ export class CohortIssuesService {
   private validatePhenotype(phenotype: any): string[] {
     const missingParams: string[] = [];
     const className = phenotype.class_name;
-
+    if (!this.classDefinitions) {
+      return ['Class definitions not loaded yet'];
+    }
     if (!className || !this.classDefinitions[className]) {
       return ['Invalid or missing class_name'];
     }
@@ -46,16 +59,22 @@ export class CohortIssuesService {
       .map((param: any) => param.param);
 
     for (const paramName of requiredParams) {
+      if (!(paramName in phenotype)) {
+        missingParams.push(`${paramName} (missing)`);
+        phenotype[paramName] = 'missing';
+        continue;
+      }
       const paramValue = phenotype[paramName];
       if (
         paramValue === null ||
         paramValue === undefined ||
+        paramValue === 'missing' ||
         (Array.isArray(paramValue) && paramValue.length === 0)
       ) {
         missingParams.push(`${paramName}`);
+        phenotype[paramName] = 'missing';
       }
     }
-
     return missingParams;
   }
 
@@ -65,16 +84,15 @@ export class CohortIssuesService {
     const cohortData = this.dataService.cohort_data;
 
     // Validate entry criterion
-    if (cohortData.entry_criterion) {
-      console.log('LOOKING AT ENTRy CRITERION', cohortData.entry_criterion);
-      const issues = this.validatePhenotype(cohortData.entry_criterion);
-      console.log('ISSUES ARE', issues);
+    if (this.dataService.cohort_data.entry_criterion) {
+      const issues = this.validatePhenotype(this.dataService.cohort_data.entry_criterion);
       if (issues.length > 0) {
         this.issues.push({
-          id: cohortData.entry_criterion.id,
+          id: this.dataService.cohort_data.entry_criterion.id,
           issues: issues,
-          phenotype_name: cohortData.entry_criterion.name,
-          type: cohortData.entry_criterion.type,
+          phenotype_name: this.dataService.cohort_data.entry_criterion.name,
+          type: this.dataService.cohort_data.entry_criterion.type,
+          phenotype: this.dataService.cohort_data.entry_criterion,
         });
         this.issueCount += issues.length;
       }
@@ -82,10 +100,10 @@ export class CohortIssuesService {
 
     // Validate arrays of phenotypes
     const phenotypeArrays = [
-      { data: cohortData.inclusions || [], name: 'inclusion' },
-      { data: cohortData.exclusions || [], name: 'exclusion' },
-      { data: cohortData.characteristics || [], name: 'characteristics' },
-      { data: cohortData.outcomes || [], name: 'outcomes' },
+      { data: this.dataService.cohort_data.inclusions || [], name: 'inclusion' },
+      { data: this.dataService.cohort_data.exclusions || [], name: 'exclusion' },
+      { data: this.dataService.cohort_data.characteristics || [], name: 'characteristics' },
+      { data: this.dataService.cohort_data.outcomes || [], name: 'outcomes' },
     ];
 
     for (const { data, name } of phenotypeArrays) {
@@ -97,13 +115,13 @@ export class CohortIssuesService {
             issues: issues,
             phenotype_name: phenotype.name,
             type: phenotype.type,
+            phenotype: phenotype,
           });
           this.issueCount += issues.length;
         }
       }
     }
 
-    console.log(`Found ${this.issueCount} issues:`, this.issues);
     return {
       issueCount: this.issueCount,
       issues: this.issues,

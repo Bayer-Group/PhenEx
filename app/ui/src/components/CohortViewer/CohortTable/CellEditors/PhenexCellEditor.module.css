@@ -12,30 +12,35 @@
 
 .header {
   font-size: 12px;
-  font-family : "SNPro-bold";
+  font-family: 'SNPro-bold';
   margin-bottom: 0px;
   padding-bottom: 8px;
-  padding:8px;
-  margin-right:70px;
+  padding: 8px;
+  margin-right: 70px;
 }
 
 .container > * {
   background-color: transparent;
 }
-.container{
+.container {
   display: flex;
   flex-direction: column;
   width: 300px;
-  height: 100%;
+  height: 500px;
   padding: 0px;
   background-color: white;
   border: var(--border);
   border-radius: 10px;
-  padding-bottom:10px;
+  padding-bottom: 10px;
+}
+
+.content {
+  overflow-y: auto;
+  height: 100%;
 }
 
 .filler {
-  font-family : "SNPro-regular";
+  font-family: 'SNPro-regular';
 
   font-size: 10px;
 }
@@ -49,8 +54,8 @@
   font-size: 14px;
   width: 60px;
   position: absolute;
-  top: 10px;
-  height:24px;
+  top: 8px;
+  height: 20px;
   right: 10px;
   padding: 2px 0;
   text-align: center;
@@ -59,4 +64,3 @@
 .doneButton:hover {
   background-color: #45a049;
 }
-

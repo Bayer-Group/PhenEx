@@ -1,6 +1,11 @@
-import { CohortDataService } from '../CohortViewer/CohortDataService';
+import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
-import { textToCohort, getCohort, acceptChanges, rejectChanges } from '../../api/text_to_cohort/route';
+import {
+  textToCohort,
+  getCohort,
+  acceptChanges,
+  rejectChanges,
+} from '../../api/text_to_cohort/route';
 
 type MessageCallback = (messages: Message[]) => void;
 type AICompletionCallback = (success: boolean) => void;
@@ -16,7 +21,7 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 1,
-      text: '# Hi,\n ### I use **PhenEx** to help you generate evidence using Real World Data.\n\n\n### Ask me anything!',
+      text: 'PhenEx AI can help you **create cohorts from text**.\n1. Create an entire cohort from scratch - just enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. Modify an existing cohort, by ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];
@@ -80,6 +85,35 @@ class ChatPanelDataService {
     this.aiCompletionListeners.forEach(listener => listener(success));
   }
 
+  private buffer: string = '';
+  private isInThinkingBlock: boolean = false;
+
+  private processMessageText(chunk: string): string {
+    this.buffer += chunk;
+    let result = '';
+    let currentIndex = 0;
+    while (true) {
+      if (this.isInThinkingBlock) {
+        const endIndex = this.buffer.indexOf('-->', currentIndex);
+        if (endIndex === -1) break;
+        currentIndex = endIndex + '-->'.length;
+        this.isInThinkingBlock = false;
+      } else {
+        const startIndex = this.buffer.indexOf('<!-- THINKING:', currentIndex);
+        if (startIndex === -1) {
+          result += this.buffer.slice(currentIndex);
+          this.buffer = '';
+          break;
+        }
+        result += this.buffer.slice(currentIndex, startIndex);
+        currentIndex = startIndex + '<!-- THINKING:'.length;
+        this.isInThinkingBlock = true;
+      }
+    }
+  
+    return result;
+  }
+  
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
     try {
@@ -87,7 +121,7 @@ class ChatPanelDataService {
         user_request: inputText.trim(),
         current_cohort: this.cohortDataService.cohort_data,
       });
-
+  
       console.log('Stream received from textToCohort');
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
@@ -97,28 +131,28 @@ class ChatPanelDataService {
       this.messages.push(assistantMessage);
       this.notifyListeners();
       console.log('Assistant message initialized:', assistantMessage);
-
+  
       const reader = stream.getReader();
       const decoder = new TextDecoder();
-
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
           console.log('Stream reading completed');
           break;
         }
-
+  
         console.log('Stream chunk received:', value);
-        assistantMessage.text += decoder.decode(value, { stream: true });
-        console.log('Updated assistant message text:', assistantMessage.text);
-        this.notifyListeners(); // Update the UI in real-time
+        const decodedChunk = decoder.decode(value, { stream: true });
+        const processedText = this.processMessageText(decodedChunk);
+        if (processedText) {
+          assistantMessage.text += processedText;
+          this.notifyListeners();
+        }
       }
 
       console.log('Finalizing assistant response');
-      const response = await getCohort(
-        this.cohortDataService.cohort_data.id,
-        true,
-      );
+      const response = await getCohort(this.cohortDataService.cohort_data.id, true);
       console.log('Response from textToCohort:', response);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();

@@ -18,7 +18,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   return (
-    <div style={containerStyle}>
+    <div className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''}`}>
       {props.children}
       {/* <button className={styles.addToChatButton}>+ chat</button> */}
     </div>

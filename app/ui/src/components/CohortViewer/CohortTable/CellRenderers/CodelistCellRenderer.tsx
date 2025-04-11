@@ -31,7 +31,7 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   ) {
     return (
       <PhenexCellRenderer {...props}>
-        <div className={styles.missing}>Missing</div>
+        <div className={styles.missing}></div>
       </PhenexCellRenderer>
     );
   }

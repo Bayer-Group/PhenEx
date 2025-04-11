@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 import styles from './CohortReportView.module.css';
-import { CohortDataService } from '../CohortDataService';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TableData } from '../tableTypes';
 import { CohortTable } from '../CohortTable/CohortTable';
 import { Tabs } from '../../Tabs/Tabs';

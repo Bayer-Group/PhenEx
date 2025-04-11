@@ -1,128 +1,28 @@
-import { TableData, ColumnDefinition, TableRow } from './tableTypes';
-import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
-import { DirectoryReaderWriterService } from '../LeftPanel/DirectoryReaderWriterService';
-import { executeStudy } from '../../api/execute_cohort/route';
-import { MapperDomains } from '../../types/mappers';
-import { getCohort, updateCohort, deleteCohort } from '../../api/text_to_cohort/route';
+import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
+import { executeStudy } from '../../../api/execute_cohort/route';
+import { MapperDomains } from '../../../types/mappers';
+import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
+import { defaultColumns } from './CohortColumnDefinitions';
+import { createID } from '../../../types/createID';
+import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
   private static instance: CohortDataService;
-  private _cohort_name: string = '';
+  public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
+  public issues_service: CohortIssuesService;
   private _table_data: TableData = {
     rows: [],
     columns: [],
   };
-  private _parser = PhenexDirectoryParserService.getInstance();
 
-  private columns: ColumnDefinition[] = [
-    {
-      field: 'name',
-      headerName: 'Name',
-      width: 200,
-      pinned: 'left',
-      editable: true,
-    },
-    {
-      field: 'type',
-      headerName: 'Type',
-      width: 80,
-      pinned: 'left',
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
-      },
-    },
-    {
-      field: 'count',
-      headerName: 'N',
-      width: 80,
-      editable: false,
-      wrapText: false,
-      pinned: 'left',
-    },
-    {
-      field: 'description',
-      headerName: 'Description',
-      width: 250,
-      editable: true,
-      cellEditor: 'agLargeTextCellEditor',
-      cellEditorPopup: true,
-      wrapText: true,
-      cellEditorParams: {
-        maxLength: 2000,
-      },
-    },
-    {
-      field: 'class_name',
-      headerName: 'Phenotype',
-      width: 200,
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: [
-          'CodelistPhenotype',
-          'MeasurementPhenotype',
-          'ContinuousCoveragePhenotype',
-          'AgePhenotype',
-          'DeathPhenotype',
-          'LogicPhenotype',
-          'ScorePhenotype',
-          'ArithmeticPhenotype',
-        ],
-      },
-    },
-    {
-      field: 'domain',
-      headerName: 'Domain',
-      width: 120,
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: [
-          'CONDITION_OCCURRENCE_SOURCE',
-          'CONDITION_OCCURRENCE',
-          'Drug Exposure',
-          'Procedure Occurrence',
-          'Person',
-          'Observation',
-        ],
-      },
-    },
-    {
-      field: 'codelist',
-      headerName: 'Codelists',
-      width: 200,
-      editable: true,
-      cellEditor: 'CodelistCellEditor',
-      cellEditorPopup: true,
-    },
-    {
-      field: 'categorical_filter',
-      headerName: 'Categorical filters',
-      width: 200,
-      editable: true,
-      cellEditor: 'CategoricalFilterCellEditor',
-      cellEditorPopup: true,
-    },
-    {
-      field: 'relative_time_range',
-      headerName: 'Relative time ranges',
-      width: 200,
-      editable: true,
-      cellEditor: 'RelativeTimeRangeFilterCellEditor',
-      cellEditorPopup: true,
-      cellEditorParams: {
-        maxLength: 2000,
-      },
-    },
-    { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
-    { field: 'value', headerName: 'Value', width: 150, editable: true },
-  ];
+  private columns: ColumnDefinition[] = defaultColumns;
 
-  private constructor() {}
+  private constructor() {
+    this.issues_service = new CohortIssuesService();
+    this.issues_service.setDataService(this);
+  }
 
   public static getInstance(): CohortDataService {
     if (!CohortDataService.instance) {
@@ -136,7 +36,7 @@ export class CohortDataService {
   }
 
   public set cohort_name(value: string) {
-    console.log('setting cohort name IN DATRA SERVICE', value);
+    console.log('setting cohort name IN DATRA SERVICE', value, this.cohort_data.name);
     this._cohort_name = value;
   }
 
@@ -153,6 +53,7 @@ export class CohortDataService {
   }
 
   private _currentFilter: string[] = [];
+
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
@@ -171,14 +72,17 @@ export class CohortDataService {
     try {
       const cohortResponse = await getCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
+      this.issues_service.validateCohort();
+      this.sortPhenotypes()
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
-        this._cohort_data.id = this.createId();
+        this._cohort_data.id = createID();
       }
       // Ensure phenotypes array exists
       if (!this._cohort_data.phenotypes) {
         this._cohort_data.phenotypes = [];
       }
+
       this._table_data = this.tableDataFromCohortData();
       this.notifyListeners(); // Notify listeners after loading data
       console.log(this._table_data);
@@ -221,9 +125,15 @@ export class CohortDataService {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
+
+    console.log('COHORT NAME', this._cohort_name, this._cohort_data.name);
+    if (this._cohort_data.name != this._cohort_name) {
+      this.notifyNameChangeListeners();
+    }
     this._cohort_data.name = this._cohort_name;
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this._table_data = this.tableDataFromCohortData();
+    this.issues_service.validateCohort();
     this.notifyListeners();
   }
 
@@ -273,7 +183,7 @@ export class CohortDataService {
 
   public addPhenotype(type: string = 'NA') {
     const newPhenotype: TableRow = {
-      id: this.createId(),
+      id: createID(),
       type: type,
       name: 'New phenotype',
       class_name: 'CodelistPhenotype',
@@ -297,17 +207,11 @@ export class CohortDataService {
     }
     return null;
   }
-  private createId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 10; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
 
-  private isNewCohort(): boolean {
-    return this._cohort_data.id.startsWith('Cohort_NEW');
+  private isNewCohort: boolean = false;
+
+  public isNewCohortCreation(): boolean {
+    return this.isNewCohort;
   }
 
   public async createNewCohort() {
@@ -315,12 +219,12 @@ export class CohortDataService {
     Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
     */
     this._cohort_data = {
-      id: this.createId(),
-      name: 'NEW cohort',
+      id: createID(),
+      name: 'Name your cohort...',
       class_name: 'Cohort',
       phenotypes: [
         {
-          id: this.createId(),
+          id: createID(),
           type: 'entry',
           name: 'Entry criterion',
           class_name: 'CodelistPhenotype',
@@ -330,7 +234,9 @@ export class CohortDataService {
     };
     this._cohort_name = this._cohort_data.name;
     this._table_data = this.tableDataFromCohortData();
+    this.isNewCohort = true;
     this.notifyListeners(); // Notify listeners after initialization
+    this.isNewCohort = false;
   }
 
   private listeners: Array<() => void> = [];
@@ -351,12 +257,28 @@ export class CohortDataService {
     this.listeners.forEach(listener => listener());
   }
 
+  private nameChangeListeners: Array<() => void> = [];
+
+  public addNameChangeListener(listener: () => void) {
+    this.nameChangeListeners.push(listener);
+  }
+  public removeNameChangeListener(listener: () => void) {
+    const index = this.nameChangeListeners.indexOf(listener);
+    if (index > -1) {
+      this.nameChangeListeners.splice(index, 1);
+    }
+  }
+
+  private notifyNameChangeListeners() {
+    this.nameChangeListeners.forEach(listener => listener());
+  }
+
   public updateCohortFromChat(newCohort) {
     this._cohort_data = newCohort;
     console.log('UPDATED COHROT DATA', newCohort);
     this.sortPhenotypes();
     this.splitPhenotypesByType();
-    this._cohort_data.name = this._cohort_name;
+    // this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     console.log('UPDATED COHROT DATA', this._table_data);
     this.notifyListeners();

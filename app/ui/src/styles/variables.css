@@ -5,8 +5,10 @@
   --line-color: hsl(0, 0%, 88%);
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
+  --item-color-default: #ebebebea;
+  --item-radius: 4px;
   --text-color-normal: black;
-  --text-color-inactive: hsl(0, 0%, 65%);
+  --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;
   --background-color-content: white;
   --border: 1px solid var(--line-color);
@@ -34,35 +36,39 @@
   --phenex-green: hsl(62, 40%, 80%);
   --phenex-coral: hsl(16, 40%, 80%);
   --phenex-red: hsl(0, 40%, 80%);
+  --phenex-red-active: hsl(0, 90%, 80%);
+
   --phenex-dark: hsl(0, 40%, 5%);
+
+  --color-accent: hsl(0, 90%, 80%);
+  /* --color-accent:  var(--phenex-red); */
 
   --categorical-filter-color-domain: hsl(252, 40%, 95%);
   --categorical-filter-color-allowed-values: hsl(16, 40%, 95%);
   --categorical-filter-color-column-name: hsl(62, 40%, 95%);
-
 }
 
-.ag-theme-quartz .rag-blue-outer {
+.rag-blue-outer {
   background-color: var(--phenex-blue) !important;
-  color: #000;
+  color: #000 !important;
 }
 
-.ag-theme-quartz .rag-green-outer {
+.rag-green-outer {
   background-color: var(--phenex-green) !important;
-  color: #000;
+  color: #000 !important;
 }
 
-.ag-theme-quartz .rag-coral-outer {
+.rag-coral-outer {
   background-color: var(--phenex-coral) !important;
-  color: #000;
+  color: #000 !important;
 }
 
-.ag-theme-quartz .rag-red-outer {
-  background-color: var(--phenex-red) !important;
-  color: #000;
+.rag-red-outer {
+  background-color: var(--color-accent) !important;
+  color: #000 !important;
 }
 
-.ag-theme-quartz .rag-dark-outer {
+.rag-dark-outer {
   background-color: var(--phenex-dark) !important;
-  color: white;
+  color: white !important;
 }

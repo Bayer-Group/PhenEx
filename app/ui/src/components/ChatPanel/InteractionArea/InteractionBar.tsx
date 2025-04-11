@@ -27,14 +27,6 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
               return '..';
             case '..':
               return '...';
-            case '...':
-              return '....';
-            case '....':
-              return '.....';
-            case '.....':
-              return '......';
-            case '......':
-              return '.......';
 
             default:
               return '';
@@ -70,7 +62,7 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
     <div className={styles.buttonContainer}>
       <ButtonsBar
         width="100%"
-        height={40}
+        height={30}
         buttons={['accept', 'reject']}
         actions={[onAccept || (() => {}), onReject || (() => {})]}
       />

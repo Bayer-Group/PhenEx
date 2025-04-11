@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8000';
 
-
 export const getCohorts = async () => {
   try {
     console.log('Sending request to getCohorts with data:');
@@ -15,11 +14,12 @@ export const getCohorts = async () => {
   }
 };
 
-
 export const getCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
     console.log('Sending request to getCohorts with data:');
-    const response = await axios.get(`${BASE_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`);
+    const response = await axios.get(
+      `${BASE_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`
+    );
     console.log('Received response from getCohorts:', response.data);
     return response.data;
   } catch (error) {
@@ -27,7 +27,6 @@ export const getCohort = async (cohort_id: string, provisional: boolean = false)
     throw error;
   }
 };
-
 
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
@@ -53,7 +52,6 @@ export const deleteCohort = async (cohort_id: string) => {
   }
 };
 
-
 export const acceptChanges = async (cohort_id: string) => {
   try {
     console.log('Sending request to acceptChanges with cohort_id:', cohort_id);
@@ -66,7 +64,6 @@ export const acceptChanges = async (cohort_id: string) => {
     throw error;
   }
 };
-
 
 export const rejectChanges = async (cohort_id: string) => {
   try {
@@ -81,7 +78,6 @@ export const rejectChanges = async (cohort_id: string) => {
     throw error;
   }
 };
-
 
 export const textToCohort = async (data: any) => {
   try {

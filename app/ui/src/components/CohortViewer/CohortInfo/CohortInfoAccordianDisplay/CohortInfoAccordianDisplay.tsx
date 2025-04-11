@@ -3,7 +3,7 @@ import styles from './CohortInfoAccordianDisplay.module.css';
 import { Tabs } from '../../../Tabs/Tabs';
 import { CohortDatabaseSettings } from '../CohortDatabaseSettings/CohortDatabaseSettings';
 import deleteIcon from '../../../../assets/icons/delete.svg';
-import { CohortDataService } from '../../CohortDataService';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
 interface CohortInfoAccordianDisplayViewProps {
   title: string;

@@ -1,21 +1,43 @@
+
+:root {
+  --issue_popover_margin: 12px;
+  --issue_popover_radius: 20px;
+}
 .popover {
   position: absolute;
-  top: 100%;
-  right: 20px;
-  background: white;
-  border: 2px solid var(--phenex-red);
-  border-radius: 20px;
+  right: 0px;
+  top: 50px;
+  background: var(--background-color);
+  border: 1px solid var(--line-color);
+  border-radius: var(--issue_popover_radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 12px;
+  padding: 0px;
   min-width: 300px;
   max-width: 500px;
   z-index: 1000;
   max-height: 400px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+.header {
+  position: sticky;
+  top: 0;
+  background: var(--background-color);
+  z-index: 1;
+  padding: 20px 10px 12px 20px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding:20px 15px 30px 10px;
+}
+
+
 .section {
-  margin-bottom: 16px;
 }
 
 .section:last-child {
@@ -25,29 +47,74 @@
 .sectionTitle {
   font-size: 14px;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0 2 8px 0;
   color: #333;
 }
 
 .phenotypeSection {
-  margin-bottom: 12px;
+  position: relative;
+  margin-bottom: 4px;
   padding-left: 8px;
+  background-color: transparent;
+  border-radius: var(--border-radius);
+  padding: 4px 8px;
+  border: transparent solid 1px;
+}
+
+.phenotypeSection:hover{
+  color:var(--color-accent);
+  border-color: var(--line-color);
+}
+/* 
+.phenotypeSection:hover .phenotypeType{
+  background-color: var(--color-accent);
+} */
+
+.phenotypeSection.selected {
+  background-color: white;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}
+
+
+.phenotypeSection.selected:hover{
+  color: black;
 }
 
 .phenotypeId {
   font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
+  color: #black;
+  margin-bottom: 0px;
+  margin-right: 50px;
+  font-family: "SNPro-bold";
+  font-size:18px;
+  line-height: 1.2;
 }
 
 .issuesList {
   margin: 0;
-  padding-left: 20px;
+  margin-top:0px;
+  padding-left: 3px;
+  width:calc(100% - 50px);
+  font-size: 10px;
 }
 
 .issueItem {
   font-size: 12px;
   color: #333;
   margin-bottom: 2px;
-  line-height: 1.4;
+  line-height: 1;
+}
+
+.phenotypeType{
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  font-size: 8px;
+  padding: 2px 6px;
+  
+  border-radius: 4px;
+  background-color: gray;
+  color: var(--text-color-secondary);
 }

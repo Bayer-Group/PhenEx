@@ -1,0 +1,18 @@
+.container {
+  margin-top: 5px;
+  display: flex;
+  text-wrap: wrap;
+  background-color: var(--background-color);
+  line-height: 11px;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+.domainPart {
+  background-color: #f5f5f5;
+  padding: 2px 2px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}

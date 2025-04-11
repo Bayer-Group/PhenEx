@@ -15,24 +15,27 @@
  * tree data structure across the application.
  */
 
-import { PhenexDirectoryParserService } from '../../services/PhenexDirectoryParserService';
 import { ViewType } from '../MainView/MainView';
 import { TreeNodeData } from './HierarchicalTreeNode';
-import { getCohorts } from '../../api/text_to_cohort/route';
-
+import { CohortsDataService } from './CohortsDataService';
 type ChangeListener = () => void;
 
 export class HierarchicalLeftPanelDataService {
   private static instance: HierarchicalLeftPanelDataService;
   private changeListeners: ChangeListener[] = [];
   private treeData: TreeNodeData[] = [];
-  private parser: PhenexDirectoryParserService;
-  private cachedCohorts: any = null; // Cache for cohorts data
+  private dataService = CohortsDataService.getInstance();
+
+  private cachedCohortNamesAndIds = null;
 
   private constructor() {
-    this.parser = PhenexDirectoryParserService.getInstance();
-    this.setupDirectoryListener();
     this.treeData = [];
+    this.updateTreeData();
+
+    this.dataService.addListener(() => {
+      // When cohort data changes, refresh the cohort names and IDs
+      this.updateTreeData();
+    });
   }
 
   static getInstance(): HierarchicalLeftPanelDataService {
@@ -42,39 +45,25 @@ export class HierarchicalLeftPanelDataService {
     return HierarchicalLeftPanelDataService.instance;
   }
 
-  private setupDirectoryListener() {
-    this.parser.addListener(() => {
-      this.updateTreeData();
-    });
-  }
-
   public async updateTreeData() {
-    if (!this.cachedCohorts) {
-      this.cachedCohorts = await getCohorts(); // Fetch cohorts only once
-    }
+    this.cachedCohortNamesAndIds = await this.dataService.cohortNamesAndIds();
+    console.log(this.cachedCohortNamesAndIds, 'ARE THE LOADED CohorTS HERE');
 
     this.treeData = [
-      { id: 'allphenotypes', name: 'Phenotypes', viewInfo: { viewType: ViewType.Phenotypes } },
-      { id: 'databases', name: 'Databases', viewInfo: { viewType: ViewType.Databases } },
       {
         id: 'cohorts',
         name: 'Cohorts',
         collapsed: false,
+        // viewInfo: { viewType: ViewType.NewCohort, data: '' },
         children: [],
       },
     ];
 
     const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
 
-    cohortsNode?.children?.push({
-      id: 'add_cohort',
-      name: 'New cohort',
-      viewInfo: { viewType: ViewType.NewCohort, data: '' },
-    });
-
-    if (this.cachedCohorts && this.cachedCohorts.length > 0) {
+    if (this.cachedCohortNamesAndIds && this.cachedCohortNamesAndIds.length > 0) {
       if (cohortsNode?.children) {
-        this.cachedCohorts.forEach((cohort) => {
+        this.cachedCohortNamesAndIds.forEach(cohort => {
           cohortsNode.children?.push({
             id: cohort.id,
             name: cohort.name,
@@ -83,7 +72,6 @@ export class HierarchicalLeftPanelDataService {
         });
       }
     }
-
     this.notifyListeners();
   }
 
@@ -104,5 +92,23 @@ export class HierarchicalLeftPanelDataService {
 
   getTreeData(): TreeNodeData[] {
     return this.treeData;
+  }
+
+  public async addNewCohort() {
+    const response = await this.dataService.createNewCohort();
+    console.log(response);
+
+    const newCohort: TreeNodeData = {
+      id: 'new-cohort',
+      name: 'New Cohort',
+      viewInfo: { viewType: ViewType.NewCohort, data: '' },
+    };
+    const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
+    if (cohortsNode && cohortsNode.children) {
+      console.log('ADDING NEW CZOHORT');
+      cohortsNode.children.push(newCohort);
+    }
+    console.log(this.treeData);
+    this.notifyListeners();
   }
 }

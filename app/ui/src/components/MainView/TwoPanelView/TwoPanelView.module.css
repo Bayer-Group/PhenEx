@@ -1,0 +1,122 @@
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.leftPanel {
+}
+
+.rightPanel {
+  background-color: white;
+}
+
+.divider {
+  width: 15px;
+  background-color: white;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
+  border-left: 2px solid var(--color-accent);
+}
+
+.divider.collapsed {
+  width: 0;
+  border: none;
+}
+
+.divider:hover {
+  border-color: var(--color-accent);
+}
+
+.dividerLine {
+  height: 100%;
+  pointer-events: none;
+  width: 4px;
+  background-color: red;
+  z-index: 1000;
+  width: 100px;
+  left: 0px;
+}
+
+.divider:hover .dividerLine {
+  background-color: red;
+  width: 3px;
+}
+
+.divider:hover .dividerLine.right.collapsed {
+  width: 3px;
+  pointer-events: none;
+  cursor: default;
+}
+
+.divider:hover .collapseButton {
+  border-color: var(--color-accent);
+}
+
+.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.collapseButton {
+  position: absolute;
+  padding: 4px;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  left: -20px;
+  font-size: 22px;
+  font-family: 'SNPro-bold';
+  color: hsl(0, 0%, 60%);
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  top: 40px;
+  transition: transform 0.3s ease;
+  box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--color-accent);
+  background-color: white;
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.collapseButton:hover {
+  transition: transform 0.3s ease;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
+  outline: none;
+  border: none;
+}
+
+.collapseButton.collapsed {
+  transform: rotate(180deg);
+}
+
+.panel.collapsed {
+  width: 0 !important;
+  padding: 0;
+  margin: 0;
+}
+
+[data-dragging='true'] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+[data-dragging='true'] * {
+  user-select: none;
+}

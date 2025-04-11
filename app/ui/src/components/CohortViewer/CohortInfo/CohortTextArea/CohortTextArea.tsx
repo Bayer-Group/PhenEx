@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import styles from './CohortTextArea.module.css';
-import { CohortDataService } from '../../CohortDataService';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 

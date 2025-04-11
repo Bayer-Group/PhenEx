@@ -4,6 +4,8 @@ import { RightPanel } from './RightPanel';
 import { CohortViewer } from '../CohortViewer/CohortViewer';
 import { ThreePanelView } from './ThreePanelView/ThreePanelView';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
+import { SplashPage } from './SplashPage/SplashPage';
+import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 import styles from './MainView.module.css';
 
@@ -38,10 +40,12 @@ export const MainView = () => {
     console.log('RENDERING VIEW');
     switch (currentView.viewType) {
       case ViewType.Empty:
-        return null;
+        return <SplashPage />;
       case ViewType.CohortDefinition:
         console.log('CLICKED ON A COHORT NAVIGATION', currentView.data);
-        return <CohortViewer data={currentView.data} />;
+        // Temporarily commenting out CohortViewer
+        // return <CohortViewer data={currentView.data} />;
+        return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
         return <CohortViewer data={undefined} />;
       default:

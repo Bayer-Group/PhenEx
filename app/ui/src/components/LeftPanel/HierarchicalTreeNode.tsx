@@ -13,9 +13,10 @@ export interface TreeNodeData {
 
 interface NodeProps extends NodeRendererProps<TreeNodeData> {
   onNavigate: (viewInfo: ViewInfo) => void;
+  onClickAdd?: () => void;
 }
 
-export const Node: FC<NodeProps> = ({ node, onNavigate, style, dragHandle }) => {
+export const Node: FC<NodeProps> = ({ node, onNavigate, onClickAdd, style, dragHandle }) => {
   const handleClick = (e: React.MouseEvent) => {
     if (node.data.children) {
       node.toggle();
@@ -24,6 +25,33 @@ export const Node: FC<NodeProps> = ({ node, onNavigate, style, dragHandle }) => 
     }
     node.focus();
   };
+
+  const clickedOnAddButton = (e: React.MouseEvent) => {
+    // onNavigate(node.data.viewInfo);
+    console.log('CLICKED ADD BUTTON IN NODE', node.data.name);
+    onClickAdd(node.data.name);
+  };
+
+  if (node.data.id === 'cohorts') {
+    return (
+      <div className={`${styles.headerNode}`} style={style} {...dragHandle}>
+        <div className={styles.arrow}>
+          {node.data.children && (
+            <span
+              className={styles.caret}
+              style={{ transform: node.isOpen ? 'rotate(90deg)' : 'none' }}
+            >
+              ▶
+            </span>
+          )}
+        </div>
+        <span className={styles.nodeName}>{node.data.name}</span>
+        <button className={styles.addButton} onClick={clickedOnAddButton}>
+          Create cohort
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

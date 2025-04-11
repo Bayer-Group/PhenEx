@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
+import ast
 import phenex
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
@@ -10,6 +11,7 @@ from utils import CohortUtils
 import os, json, glob
 import logging
 from deepdiff import DeepDiff
+from rag import router as rag_router, query_faiss_index  # Import the router from rag.py
 
 load_dotenv()
 
@@ -30,41 +32,6 @@ else:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-def get_phenex_context():
-    # get context for LLM layer
-    base_dir = os.path.dirname(phenex.__file__)
-    python_files = list(
-        set(glob.glob(os.path.join(base_dir, "**/**/*.py"), recursive=True))
-    )
-    context = ""
-    for file_path in python_files:
-        exclude_paths = ['/aggregators', '/filters', '/test/', '/reporting/', 'ibis_connect.py', 'sim.py', 'tables.py', 'logging.py', '__init__.py']
-        if not any([x in file_path for x in exclude_paths]):
-            with open(file_path, "r") as f:
-                new_context = context  + f"\n\n### File {file_path}:\n" + f.read()
-                logger.info(f'{file_path}: {len(new_context.split('\n')) - len(context.split('\n'))}')
-                context = new_context
-
-    context += "EXAMPLE COHORT DEFINITIONS IN JSON FORMAT:\n\n"
-
-    for j, example in enumerate(EXAMPLES):
-        context += f"\n\nEXAMPLE {j+1}:\n"
-        context += json.dumps(example, indent=4)
-
-    # logger.info(f"{context[:100000]}")
-    logger.info(context)
-    logger.info(f"LLM context files found: {len(python_files)}")
-    logger.info(f"LLM context length (words): {len(context.split())}")
-    return context
-
-
-
-context = get_phenex_context()
-# from phenex import PHENEX_MAPPERS
-# from phenex_projects.mappers import PHENEX_PROJECTS_MAPPERS
-# PHENEX_MAPPERS.update(PHENEX_PROJECTS_MAPPERS)
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -82,6 +49,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include the router from rag.py
+app.include_router(rag_router, prefix="/rag")
 
 
 def get_cohort_path(cohort_id, provisional=False):
@@ -264,7 +234,7 @@ async def text_to_cohort(
         model (str): The model to use for processing the request.
 
     Body:
-        current_cohort (Dict): The current cohort definition. In case frontend is managnig cohort state.
+        current_cohort (Dict): The current cohort definition. In case frontend is managing cohort state.
         user_request (str): Instructions for modifying the cohort.
 
     Returns:
@@ -282,9 +252,24 @@ async def text_to_cohort(
         del current_cohort["exclusions"]
         del current_cohort["characteristics"]
         del current_cohort["outcomes"]
-        # del current_cohort["database_config"]
     except KeyError:
         pass
+
+    # Perform RAG search to get the context
+    logger.info(f"Retrieving context for user request: {user_request}")
+    query = user_request
+    top_k = 10
+    try:
+        results = query_faiss_index(
+            query=query,
+            top_k=top_k
+        )
+        context = "\n\n".join(results)
+    except Exception as e:
+        logger.error(f"Error during RAG search: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve context for the request.")
+
+    logger.info(f"Context retrieved: {len(context.split())} words")
 
     system_prompt = f"""
     Consider the following library code: 
@@ -294,14 +279,18 @@ async def text_to_cohort(
     
     In performing your task, you may use any tools at your disposal to complete the task as well as possible.
      
-    Include in your response three types of ouptut: 
+    Include in your response three types of output: 
         1) output intended for display to user, 
         2) thinking output used only by you, and 
         3) a final answer in valid JSON format
      
-    1) Text displayed to the user must consist of VERY BRIEF plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
+    1) Text displayed to the user must consist of VERY BRIEF, concise plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
 
-    2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside <thinking> </thinking> tags. The content inside these tags will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <thinking> tags to plan that out. Or you may use <thinking> tags to explain what parameters you are going to fill in to the output JSON.
+    2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside markdown comments labelled "THINKING", as below:
+    
+<!-- THINKING: (your thoughts here) -->
+
+    THINKING will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <!-- THINKING: (your thoughts here) --> to plan that out. Or you may use <!-- THINKING: (your thoughts here) --> to explain what parameters you are going to fill in to the output JSON.
 
     3) At the end of your response, create a JSON with the phenotypes of the cohort that need to be updated. Write this json inside the tags <JSON> </JSON>. You only need to include the phenotypes that need updating. Phenotypes that are unchanged may be omitted. Thus, your response will conclude with the following structure:
 
@@ -320,12 +309,14 @@ async def text_to_cohort(
 
     Additional guidelines:
 
-    - When adding a new phenotype, give the phenotype a good description.
-    - Do not modify the description of existing phenotypes unless explicity asked to do so by the user.
-    - Only include the phenotypes that need updating
+    - When adding a new phenotype to the cohort, ALWAYS give the phenotype a good description.
+    - When modifying an existing phenotype in the cohort, UPDATE the phenotype description only if necessary.
+    - Do NOT modify the description of existing phenotypes if you are not changing any thing else in the phenotype UNLESS explicitly asked to do so by the user.
+    - Only include the phenotypes that need updating in your response
     - The text within the <JSON> </JSON> tags must be valid JSON; therefore comments are not allowed in this text. Any comments you wish to make to the user must be made with (1) type output
     - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
     - Make sure to choose the appropriate domain for each phenotype for the given data source
+    - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
     """
 
     user_prompt = f"""     
@@ -359,12 +350,6 @@ async def text_to_cohort(
         inside_json = False
         trailing_buffer = ""  # To handle split tags
         json_buffer = ""
-        # for chunk in completion:
-        #     if len(chunk.choices):
-        #         current_response = chunk.choices[0].delta.content
-        #         if current_response is not None:
-        #             yield current_response
-                
         for chunk in completion:
             if len(chunk.choices):
                 current_response = chunk.choices[0].delta.content
@@ -384,7 +369,6 @@ async def text_to_cohort(
                     elif not inside_json:
                         yield current_response[:-10]  # Yield response excluding trailing buffer
 
-
         parsed_json = json_buffer.replace("</JSON>", "")
         logger.info(f'Parsed JSON: {parsed_json}')
         new_phenotypes = json.loads(json_buffer.replace("</JSON>", ""))
@@ -392,7 +376,7 @@ async def text_to_cohort(
 
         c = CohortUtils()
         new_cohort = c.convert_phenotypes_to_structure(c.update_cohort(current_cohort, new_phenotypes))
-        await update_cohort(cohort_id, new_cohort, provisional = True)
+        await update_cohort(cohort_id, new_cohort, provisional=True)
         if return_updated_cohort:
             yield json.dumps(new_cohort, indent=4)
         logger.info(f'Updated cohort: {json.dumps(new_cohort, indent=4)}')

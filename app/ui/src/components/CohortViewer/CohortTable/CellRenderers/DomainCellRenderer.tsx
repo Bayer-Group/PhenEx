@@ -7,13 +7,17 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     return value.split('_').join(' ');
   };
 
+  const renderDomain = (value: string): string => {
+    return (<div className={styles.domainContainer}>{props.value ? formatDomain(props.value) : null}</div>);
+  };
+
   const noDomainPhenotypes = ['ScorePhenotype', 'ArithmeticPhenotype', 'LogicPhenotype'];
   if (noDomainPhenotypes.includes(props.data.class_name)) {
     return <div></div>;
   }
   return (
     <PhenexCellRenderer {...props}>
-      <div className={styles.domainContainer}>{props.value ? formatDomain(props.value) : null}</div>
+      {props.value === 'missing' ? '' : renderDomain(props.value)}
     </PhenexCellRenderer>
   );
 };

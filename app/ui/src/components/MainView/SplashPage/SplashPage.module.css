@@ -1,0 +1,54 @@
+.container {
+  height: 100%;
+  width: 100%;
+  user-select: none;
+}
+
+.content {
+  padding: 2rem;
+  padding-top: 100px;
+  position: relative;
+  z-index: 2;
+  margin-right: 280px;
+}
+
+.content h1 {
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.content p {
+  color: var(--text-color-secondary);
+  z-index: 10;
+}
+
+.topLeft {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  height: 200px;
+  font-size: 24px;
+}
+
+.bottomRight {
+  position: absolute;
+  bottom: 26px;
+  right: 100px;
+  font-size: 50px;
+}
+
+.label {
+  /* color: var(--color-accent); */
+  font-family: 'SNPro-black';
+  z-index: 100;
+}
+
+.logo {
+  position: absolute;
+  width: 800px;
+  right: -250px;
+  top: -50px;
+  z-index: 1;
+  pointer-events: none;
+  /* transform: rotate(-40deg); */
+}

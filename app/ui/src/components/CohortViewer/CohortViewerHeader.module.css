@@ -6,7 +6,7 @@
   padding: 16px;
   background-color: transparent;
   border-bottom: 1px solid var(--border-color);
-  height: 53px;
+  height: 55px;
 }
 
 .controlsContainer {
@@ -15,7 +15,7 @@
   align-items: center;
   width: 100%;
   gap: 16px;
-  margin-left: 20px;
+  margin-left: 5px;
 }
 
 .headerContent {

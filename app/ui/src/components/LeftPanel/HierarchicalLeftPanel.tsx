@@ -38,7 +38,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
       const newTreeData = dataService.current.getTreeData();
       setTreeData(newTreeData);
       setOpenState(getCollapsedStates(newTreeData));
-      dataService.current.updateTreeData();
     };
 
     // Initial setup
@@ -64,8 +63,21 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
   }, []);
 
   const renderNode = (props: NodeRendererProps<TreeNodeData>) => (
-    <Node {...props} onNavigate={onNavigate} />
+    <Node {...props} onNavigate={onNavigate} onClickAdd={onClickAdd} />
   );
+
+  const myOnNavigate = (viewInfo: ViewInfo) => {
+    onNavigate(viewInfo);
+    dataService.current.setSelectedViewInfo(viewInfo);
+  };
+
+  const onClickAdd = (name: str) => {
+    if (name === 'Cohorts') {
+      console.log('CREATING NEW COHORT');
+      dataService.current.addNewCohort();
+    }
+    console.log('CLICKED ADD', name);
+  };
 
   return (
     <LeftPanel isVisible={isVisible}>
@@ -74,7 +86,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
           data={treeData}
           width={'calc(100% - 20px)'}
           height={treeHeight}
-          indent={24}
+          indent={15}
           rowHeight={36}
           paddingTop={0}
           paddingBottom={32}
