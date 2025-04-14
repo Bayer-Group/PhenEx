@@ -418,7 +418,7 @@ class LocalCSVCodelistFactory:
     """
     LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
 
-    To use, create an instance of the class and then call the `create_codelist` method with the name of the codelist you want to create; this codelist name must be an entry in the name_code_type_column.
+    To use, create an instance of the class and then call the `get_codelist` method with the name of the codelist you want to retrieve; this codelist name must be an entry in the name_codelist_column.
     """
 
     def __init__(
@@ -458,10 +458,16 @@ class LocalCSVCodelistFactory:
                 f"The following required columns are missing in the CSV: {', '.join(missing_columns)}"
             )
 
-    def get_codelists(self) -> Codelist:
+    def get_codelists(self) -> List[str]:
+        """
+        Get a list of all codelists in the supplied CSV.
+        """
         return self.df[self.name_codelist_column].unique().tolist()
 
     def get_codelist(self, name: str) -> Codelist:
+        """
+        Retrieve a single codelist by name.
+        """
         try:
             df_codelist = self.df[self.df[self.name_codelist_column] == name]
             code_dict = (
@@ -472,6 +478,44 @@ class LocalCSVCodelistFactory:
             return Codelist(name=name, codelist=code_dict)
         except:
             raise ValueError("Could not find the codelist with the given name.")
+
+
+class LocalCSVCodelist(Codelist):
+    def __init__(
+        self,
+        name: str,
+        # These parameters below shouldn't be here, but are required for
+        # the parent class and we don't want to touch that atm.
+        remove_punctuation: bool = False,
+        csv_factory: LocalCSVCodelistFactory = None,
+    ):
+        self.name = name
+        self.csv_factory = csv_factory
+        if not self.csv_factory:
+            raise ValueError("csv_factory must be provided.")
+        # the empty dict is a placeholder, will be fulfilled during
+        # resolve.
+        # -> refactor!
+        super().__init__(
+            codelist={},
+            name=name,
+            use_code_type=True,
+            remove_punctuation=remove_punctuation,
+        )
+
+    def _resolve(self):
+        """
+        Resolve the codelist by querying the LocalCSVCodelistFactory.
+        """
+        codelist = self.csv_factory.get_codelist(self.name)
+        self.codelist = codelist.codelist
+
+    def to_dict(self):
+        return {
+            "class_name": self.__class__.__name__,
+            "name": self.name,
+            "remove_punctuation": self.remove_punctuation,
+        }
 
 
 class MedConBCodelist(Codelist):
