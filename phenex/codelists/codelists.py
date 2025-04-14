@@ -444,6 +444,15 @@ class LocalCSVCodelistFactory:
         except:
             raise ValueError("Could not read the file at the given path.")
 
+        # Check if the required columns exist in the DataFrame
+        required_columns = [name_code_column, name_codelist_column, name_code_type_column]
+        missing_columns = [col for col in required_columns if col not in self.df.columns]
+        if missing_columns:
+            raise ValueError(f"The following required columns are missing in the CSV: {', '.join(missing_columns)}")
+
+    def get_codelists(self) -> Codelist:
+        return self.df[self.name_codelist_column].unique().tolist()
+            
     def get_codelist(self, name: str) -> Codelist:
         try:
             df_codelist = self.df[self.df[self.name_codelist_column] == name]
