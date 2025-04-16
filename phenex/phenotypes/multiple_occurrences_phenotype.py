@@ -25,7 +25,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
         codelist = Codelist(name="example_codelist", codes=[...])
 
         date_range = DateFilter(
-            min=After("2020-01-01"), 
+            min=After("2020-01-01"),
             max=Before("2020-12-31")
         )
         phenotype = CodelistPhenotype(
