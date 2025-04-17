@@ -1,5 +1,5 @@
-from typing import Optional
-from .date import Date
+from typing import Optional, Union
+from .date import Date, After, AfterOrOn, Before, BeforeOrOn
 from .value_filter import ValueFilter
 
 
@@ -7,16 +7,16 @@ class DateFilter(ValueFilter):
     """
     DateFilter is a specialized ValueFilter for handling date-based filtering.
 
-    Attributes:
-        min (Optional[Date]): The minimum date condition.
-        max (Optional[Date]): The maximum date condition.
-        column_name (str): The name of the column to apply the filter on. Defaults to "EVENT_DATE".
+    Parameters:
+        min: The minimum date condition. Recommended to pass either After or AfterOrOn.
+        max: The maximum date condition. Recommended to pass either Before or BeforeOrOn.
+        column_name: The name of the column to apply the filter on. Defaults to "EVENT_DATE".
     """
 
     def __init__(
         self,
-        min: Optional[Date] = None,
-        max: Optional[Date] = None,
+        min: Optional[Union[Date, After, AfterOrOn]] = None,
+        max: Optional[Union[Date, Before, BeforeOrOn]] = None,
         column_name: str = "EVENT_DATE",
         **kwargs,
     ):
