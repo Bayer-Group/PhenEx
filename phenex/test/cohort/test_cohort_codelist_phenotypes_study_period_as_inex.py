@@ -11,12 +11,7 @@ from phenex.phenotypes import (
     ContinuousCoveragePhenotype,
     SexPhenotype,
 )
-from phenex.filters import (
-    DateRangeFilter,
-    RelativeTimeRangeFilter,
-    GreaterThanOrEqualTo,
-    GreaterThan,
-)
+from phenex.filters import *
 from phenex.test.cohort.test_mappings import (
     PersonTableForTests,
     DrugExposureTableForTests,
@@ -127,9 +122,9 @@ class SimpleCohortWithExclusionAndStudyPeriodTestGenerator(
     """
 
     def define_cohort(self):
-        study_period = DateRangeFilter(
-            min_date=datetime.date(2015, 1, 1),
-            max_date=datetime.date(2020, 12, 31),
+        study_period = DateFilter(
+            min=AfterOrOn(datetime.date(2015, 1, 1)),
+            max=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(
@@ -192,9 +187,9 @@ class SimpleCohortWithExclusionPostIndexTestGenerator(
     """
 
     def define_cohort(self):
-        study_period = DateRangeFilter(
-            min_date=datetime.date(2015, 1, 1),
-            max_date=datetime.date(2020, 12, 31),
+        study_period = DateFilter(
+            min=AfterOrOn(datetime.date(2015, 1, 1)),
+            max=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(

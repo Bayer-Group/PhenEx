@@ -3,7 +3,7 @@ import pandas as pd
 
 from phenex.phenotypes.sex_phenotype import SexPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator

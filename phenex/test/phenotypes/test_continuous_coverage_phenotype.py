@@ -4,7 +4,7 @@ import pandas as pd
 from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import LocalCSVCodelistFactory, Codelist
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator

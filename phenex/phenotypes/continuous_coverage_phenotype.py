@@ -7,7 +7,7 @@ from phenex.filters.relative_time_range_filter import (
     verify_relative_time_range_filter_input,
     RelativeTimeRangeFilter,
 )
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable

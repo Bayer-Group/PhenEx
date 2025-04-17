@@ -5,7 +5,7 @@ from phenex.filters import (
     LessThan,
     GreaterThan,
     GreaterThanOrEqualTo,
-    DateRangeFilter,
+    DateFilter,
 )
 from phenex.codelists import *
 from phenex.phenotypes import *
@@ -39,9 +39,9 @@ def test_SexPhenotype():
 
 
 def test_MultipleOccurrencesPhenotype():
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2015, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min=AfterOrOn(datetime.date(2015, 1, 1)),
+        max=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
     phenotype = CodelistPhenotype(
         name="example_phenotype",
@@ -176,10 +176,8 @@ def dump_load_assertion(obj):
     path = os.path.join(PATH_ARTIFACTS, obj.name + ".json")
     with open(path, "w") as f:
         pxjson.dump(obj, f, indent=4)
-
     with open(path, "r") as f:
         deserialized_obj = pxjson.load(f)
-
     assert deserialized_obj == obj
 
 
@@ -201,9 +199,9 @@ def create_cohort():
         domain="PROCEDURE_OCCURRENCE",
     )
 
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2015, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min=AfterOrOn(datetime.date(2015, 1, 1)),
+        max=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
