@@ -12,7 +12,6 @@ class Date(Value):
         value (Union[date, str]): The date value, which can be a `date` object or a string in 'YYYY-MM-DD' format.
         date_format (str): The format to use for parsing date strings (default is 'YYYY-MM-DD').
     """
-
     def __init__(
         self, operator: str, value: Union[date, str], date_format="YYYY-MM-DD"
     ):
@@ -23,19 +22,19 @@ class Date(Value):
 
 class Before(Date):
     def __init__(self, value: Union[date, str], **kwargs):
-        super(Before, self).__init__("<", value, **kwargs)
+        super(Before, self).__init__("<", value)
 
 
 class BeforeOrOn(Date):
     def __init__(self, value: Union[date, str], **kwargs):
-        super(BeforeOrOn, self).__init__("<=", value, **kwargs)
+        super(BeforeOrOn, self).__init__("<=", value)
 
 
 class After(Date):
     def __init__(self, value: Union[date, str], **kwargs):
-        super(After, self).__init__(">", value, **kwargs)
+        super(After, self).__init__(">", value)
 
 
 class AfterOrOn(Date):
     def __init__(self, value: Union[date, str], **kwargs):
-        super(AfterOrOn, self).__init__(">=", value, **kwargs)
+        super(AfterOrOn, self).__init__(">=", value)

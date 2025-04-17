@@ -176,10 +176,8 @@ def dump_load_assertion(obj):
     path = os.path.join(PATH_ARTIFACTS, obj.name + ".json")
     with open(path, "w") as f:
         pxjson.dump(obj, f, indent=4)
-
     with open(path, "r") as f:
         deserialized_obj = pxjson.load(f)
-
     assert deserialized_obj == obj
 
 
