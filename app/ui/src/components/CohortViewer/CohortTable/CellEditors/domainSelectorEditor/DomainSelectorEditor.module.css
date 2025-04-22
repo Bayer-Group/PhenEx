@@ -1,0 +1,47 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.domainSection {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 4px 30px 8px 8px;
+  background-color: transparent;
+  border-radius: var(--border-radius);
+  border: transparent solid 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.domainSection:hover {
+  border-color: var(--line-color);
+}
+
+.domainSection.selected {
+  background-color: white;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}
+
+.domainSection.selected:hover {
+  color: black;
+}
+
+.domainName {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.domainInfo {
+  font-size: 0.9em;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}

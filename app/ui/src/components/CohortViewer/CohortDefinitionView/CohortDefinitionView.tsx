@@ -5,7 +5,7 @@ import { TableData } from '../tableTypes';
 import { CohortTable } from '../CohortTable/CohortTable';
 import { Tabs } from '../../Tabs/Tabs';
 import { ButtonsBarWithDropdowns } from '../../ButtonsBar/ButtonsBarWithDropdowns';
-import { phenotypeAddableTypeValues } from '../../../types/phenotype';
+import { phenotypeAddableTypeValues } from '../../PhenotypeViewer/phenotype';
 import { AccordianTabbedInfoDisplayView } from './AccordianTabbedInfoDisplayView';
 
 interface CohortDefinitionViewProps {
@@ -20,7 +20,6 @@ enum CohortDefinitionViewType {
 }
 
 export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) => {
-  const [tableData, setTableData] = useState<TableData | null>(null);
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
@@ -28,7 +27,9 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   );
 
   const refreshGrid = () => {
+    console.log('REFRESHING GRID before', gridRef.current?.api);
     if (currentView === CohortDefinitionViewType.Cohort && gridRef.current?.api) {
+      console.log('REFRESHING GRID after', gridRef.current?.api);
       const api = gridRef.current.api;
       // Store current scroll position
       // const horizontalScroll = api.getHorizontalPixelRange();
@@ -40,7 +41,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
 
       // Restore scroll position after data update
       requestAnimationFrame(() => {
-        api.ensureIndexVisible(firstRow, 'top');
+        // api.ensureIndexVisible(firstRow, 'top');
         api.ensureIndexVisible(lastRow, 'bottom');
 
         // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
@@ -48,32 +49,24 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     }
   };
 
-  useEffect(() => {
-    switch (currentView) {
-      case CohortDefinitionViewType.Cohort:
-        dataService.filterType(['entry', 'inclusion', 'exclusion']);
-        break;
-      case CohortDefinitionViewType.Baseline:
-        dataService.filterType('baseline');
-        break;
-      case CohortDefinitionViewType.Outcomes:
-        dataService.filterType('outcome');
-        break;
-    }
-  }, [currentView, dataService]);
+
 
   useEffect(() => {
     // Add listener for data service updates
     const listener = () => {
-      setTableData(dataService.table_data);
       refreshGrid();
     };
     dataService.addListener(listener);
+    
+    // Initial data load
+    refreshGrid();
 
     return () => {
       dataService.removeListener(listener);
     };
   }, [dataService]);
+
+
 
   useEffect(() => {
     if (currentView === CohortDefinitionViewType.Cohort) {
@@ -85,7 +78,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     console.log('CELL VALUE CHANGED', event.newValue, event.oldValue);
     if (event.newValue !== event.oldValue) {
       dataService.onCellValueChanged(event);
-      setTableData(dataService.table_data);
+      // setTableData(dataService.table_data);
     }
   };
 
@@ -184,7 +177,34 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
 
   const onTabChange = (index: number) => {
     const viewTypes = Object.values(CohortDefinitionViewType);
-    setCurrentView(viewTypes[index]);
+    const newView = viewTypes[index];
+    
+    // First update the data filter
+    switch (newView) {
+      case CohortDefinitionViewType.Cohort:
+        dataService.filterType(['entry', 'inclusion', 'exclusion']);
+        break;
+      case CohortDefinitionViewType.Baseline:
+        dataService.filterType('baseline');
+        break;
+      case CohortDefinitionViewType.Outcomes:
+        dataService.filterType('outcome');
+        break;
+    }
+    
+    // Then update the view and refresh grid
+    setCurrentView(newView);
+    refreshGrid();
+  };
+
+  const determineTabIndex = (): number => {
+    return currentView === CohortDefinitionViewType.Cohort
+      ? 0
+      : currentView === CohortDefinitionViewType.Baseline
+      ? 1
+      : currentView === CohortDefinitionViewType.Outcomes
+      ? 2
+      : 0; // Default to the first tab if the currentView is not recognized or undefined
   };
 
   return (
@@ -196,7 +216,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
             height={25}
             tabs={tabs}
             onTabChange={onTabChange}
-            active_tab_index={Object.values(CohortDefinitionViewType).indexOf(currentView)}
+            active_tab_index={determineTabIndex()}
           />
           <ButtonsBarWithDropdowns
             width={200}

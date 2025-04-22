@@ -26,10 +26,6 @@ export const Tabs: FC<TabsProps> = ({ width, height, tabs, active_tab_index = 0,
   return (
     <div
       className={styles.tabsContainer}
-      style={{
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
-      }}
     >
       {tabs.map((tab, index) => (
         <button

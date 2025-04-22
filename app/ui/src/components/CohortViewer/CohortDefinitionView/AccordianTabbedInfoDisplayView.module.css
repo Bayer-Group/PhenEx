@@ -1,24 +1,38 @@
 .accordianContainer {
   border: 2px solid white;
-  border-radius: var(--border-radius);
+  border-radius: 15px;
   margin-bottom: 1rem;
   margin: 5px 20px;
-  /* overflow: hidden; */
   background-color: white;
-  transition: border-color 0.3s ease;
   user-select: none;
-  transition: 0.3s ease;
+  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  overflow: hidden;
 }
 
 .accordianContainer.opened {
-  border-color: var(--phenex-red);
+  max-height: 2000px;
+  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+}
+
+.contentArea {
+   padding: 0px 10px 0px 0px;
+   font-size: 16px;
+   max-height: 0;
+   overflow: hidden;
+   transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+ }
+
+.accordianContainer.opened .contentArea {
+   max-height: 2000px;
+   transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+ }
+
+.accordianContainer.opened {
+  border-color: var(--color-accent);
 }
 
 .header {
   display: flex;
-  /* justify-content: space-between; */
-  /* align-items: center; */
-  /* padding: 5px 10px 3px 60px; */
 }
 
 .header h2 {
@@ -48,12 +62,12 @@ strong {
   border-radius: 25px;
   font-size: 16px;
   font-family: 'SNPro-bold';
-  color: var(--phenex-red);
+  color: var(--color-accent);
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
   margin-top: 8px;
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
   opacity: 1;
   transition: 0.3s ease;
 }
@@ -68,9 +82,9 @@ strong {
   transform: rotate(-90deg);
   outline: none;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: var(--phenex-red);
+  background-color: var(--color-accent);
   color: white;
-  border: 2px solid var(--phenex-red);
+  border: 2px solid var(--color-accent);
 }
 
 .toggleButton.closed {
@@ -83,7 +97,19 @@ strong {
   outline: none;
 }
 .content {
-  padding: 15px 0px 0px 15px;
+  padding: 5px 0px 0px 0px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+}
+
+.accordianContainer.opened .content {
+  max-height: 2000px;
+  transition: max-height 1s ease-in-out;
+}
+
+.contentArea {
+  padding: 20px;
 }
 
 .tabsContainer {
@@ -99,12 +125,15 @@ strong {
 }
 
 .contentArea {
-  padding: 0px 10px 20px 10px;
+  padding: 0px 10px 0px 0px;
   font-size: 16px;
-  max-height: 200px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
+.infoContent{
+  padding: 10px 0px 20px 20px;
+}
 .infoContent ol {
   margin: 1rem 0;
   padding-left: 2rem;

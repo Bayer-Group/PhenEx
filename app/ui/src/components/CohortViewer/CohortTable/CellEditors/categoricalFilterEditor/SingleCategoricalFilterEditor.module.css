@@ -13,11 +13,12 @@
   font-size: 18px;
   border: 2px solid var(--line-color);
   position: relative;
-  padding: 10px 10px 10px;
+  padding: 0px 0px 0px 10px;
   min-height: 40px;
   display: block;
   transition: all 0.3s ease;
 }
+
 
 .categoricalFilterContainer:hover,
 .logicalButtons button:hover {
@@ -273,25 +274,23 @@
   opacity: 0;
   display: flex;
   flex-direction: row;
-  margin-top: 0px;
   right: 0px;
   margin-left: auto;
-  right: 0;
+  right: 10px;
   gap: 10px;
-  height: 30px;
+  height: 20px;
   margin-top: -10px;
   transition: opacity 0.3s ease;
   font-size: 12px;
-  height: 25px;
   z-index: 1000;
   background-color: transparent;
 }
 
 .logicalButtons button {
-  padding: 4px 8px;
+  padding: 1px 4px;
   background-color: #f5f5f5;
   border: var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   color: var(--text-color-inactive);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -299,5 +298,6 @@
 }
 
 .logicalButtons button:hover {
-  color: black;
+  background-color: var(--color-accent);
+  color:white;
 }

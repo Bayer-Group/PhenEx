@@ -13,6 +13,8 @@ import { CodelistCellEditor } from '../CohortTable/CellEditors/CodelistCellEdito
 import { RelativeTimeRangeFilterCellEditor } from '../CohortTable/CellEditors/RelativeTimeRangeFilterCellEditor';
 import { CategoricalFilterCellEditor } from '../CohortTable/CellEditors/CategoricalFilterCellEditor';
 import { ValueFilterCellEditor } from '../CohortTable/CellEditors/ValueFilterCellEditor';
+import { PhenotypeSelectorCellEditor } from '../CohortTable/CellEditors/PhenotypeSelectorCellEditor';
+import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelectorCellEditor';
 
 export const defaultColumns = [
   {
@@ -62,7 +64,7 @@ export const defaultColumns = [
     width: 100,
     editable: true,
     cellRenderer: PhenotypeCellRenderer,
-    cellEditor: 'agSelectCellEditor',
+    cellEditor: PhenotypeSelectorCellEditor,
     cellEditorParams: {
       values: [
         'CodelistPhenotype',
@@ -75,6 +77,7 @@ export const defaultColumns = [
         'ArithmeticPhenotype',
       ],
     },
+    cellEditorPopup: true,
   },
   {
     field: 'domain',
@@ -82,7 +85,9 @@ export const defaultColumns = [
     width: 120,
     editable: true,
     cellRenderer: DomainCellRenderer,
-    cellEditor: 'agSelectCellEditor',
+    cellEditor: DomainSelectorCellEditor,
+    cellEditorPopup: true,
+
     cellEditorParams: {
       values: [
         'CONDITION_OCCURRENCE_SOURCE',
@@ -133,6 +138,12 @@ export const defaultColumns = [
           params.data.class_name === 'CodelistPhenotype')
       );
     },
+    valueParser: params => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
     cellEditor: RelativeTimeRangeFilterCellEditor,
     cellRenderer: RelativeTimeRangeCellRenderer,
     cellEditorPopup: true,
@@ -142,11 +153,17 @@ export const defaultColumns = [
   },
   // { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
   {
-    field: 'value',
+    field: 'value_filter',
     headerName: 'Value filters',
     width: 150,
     editable: true,
     cellEditorPopup: true,
+    valueParser: params => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
     cellEditor: ValueFilterCellEditor,
     cellRenderer: ValueFilterCellRenderer,
   },
@@ -155,6 +172,12 @@ export const defaultColumns = [
     headerName: 'Categorical filters',
     width: 400,
     editable: true,
+    valueParser: params => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
     cellRenderer: CategoricalFilterCellRenderer,
     cellEditor: CategoricalFilterCellEditor,
     cellEditorPopup: true,

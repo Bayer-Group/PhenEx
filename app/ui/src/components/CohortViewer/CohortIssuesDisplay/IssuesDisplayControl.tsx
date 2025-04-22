@@ -17,13 +17,13 @@ export const IssuesDisplayControl: React.FC = () => {
 
   useEffect(() => {
     const listener = () => {
-      issuesService.validateCohort();
+      // issuesService.validateCohort();
       setIssues(issuesService.issues);
     };
-    dataService.addListener(listener);
+    issuesService.addListener(listener);
 
     return () => {
-      dataService.removeListener(listener);
+      issuesService.removeListener(listener);
     };
   }, [dataService]);
 
@@ -32,14 +32,13 @@ export const IssuesDisplayControl: React.FC = () => {
   };
 
   return (
-    <div
-      className={styles.container}
-      onClick={handleClick}
-    >
-      <div className={styles.issuesButton}>
-      <CohortIssuesDisplay issues={issues} selected={showPopover} />
+    <div className={`${styles.container} ${showPopover?styles.showingPopover:''}`} onClick={handleClick}>
+      <div className={styles.popover}>
+        {showPopover && <IssuesPopover issues={issues} />}
       </div>
-      {showPopover && <IssuesPopover issues={issues} />}
+      <div className={styles.issuesButton}>
+        <CohortIssuesDisplay issues={issues} selected={showPopover} />
+      </div>
     </div>
   );
 };

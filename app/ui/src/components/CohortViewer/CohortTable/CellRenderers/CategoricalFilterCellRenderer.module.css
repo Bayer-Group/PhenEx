@@ -1,7 +1,7 @@
 :root {
   --padding-lr: 10px;
   --padding-tb: 4px;
-  --background-color-cf: #f5f5f5;
+  --background-color-cf: var(--item-color-default);
 }
 
 .fullText {
@@ -50,7 +50,7 @@
   height: 10px;
   display: flex;
   align-items: center;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  border-radius: var(--item-radius) var(--item-radius) 0 0;
   padding: var(--padding-tb) var(--padding-lr) 0 var(--padding-lr);
 }
 
@@ -63,7 +63,7 @@
   margin: 0px;
   display: flex;
   align-items: center;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-radius: 0 0 var(--item-radius) var(--item-radius);
 }
 
 .unit {

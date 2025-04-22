@@ -3,10 +3,10 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0px;
-  padding: 16px;
+  padding-top: 4px;
   background-color: transparent;
   border-bottom: 1px solid var(--border-color);
-  height: 55px;
+  height: 72px;
 }
 
 .controlsContainer {
@@ -15,15 +15,18 @@
   align-items: center;
   width: 100%;
   gap: 16px;
-  margin-left: 5px;
+  margin-left: 20px;
 }
 
 .headerContent {
-  display: flex;
+  /* display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-bottom: 5px;
+  margin-bottom: 5px; */
+  width:100%;
+  margin-bottom:3px;
+
 }
 
 .cohortNameInput {

@@ -1,5 +1,6 @@
 .tabsContainer {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 2px;
   background-color: transparent;

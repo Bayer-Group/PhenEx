@@ -7,7 +7,7 @@ interface CountCellRendererProps extends PhenexCellRendererProps {
 
 const CountCellRenderer: React.FC<CountCellRendererProps> = props => {
   if (!props.value || isNaN(props.value)) {
-    return <span className={styles.countValue}>NA</span>;
+    return <></>;
   }
 
   const formattedNumber = new Intl.NumberFormat('en-US').format(props.value);

@@ -2,25 +2,32 @@
   background-color: transparent !important;
   border: none !important;
   padding: 0 !important;
-  border-radius: 10px !important;
+  border-radius: 0px 10px 10px 10px !important;
   overflow: hidden !important;
 }
 
 :global(.ag-popup-child) {
-  border-radius: 10px !important;
+  border-radius: 0px 10px 10px 10px !important;
 }
 
 .header {
-  font-size: 12px;
-  font-family: 'SNPro-bold';
+  font-size: 16px;
+  font-family: 'SNPro-regular';
   margin-bottom: 0px;
   padding-bottom: 8px;
-  padding: 8px;
-  margin-right: 70px;
+  padding: 8px;  
+  line-height: 18px;
+  padding-right: 80px;
+  overflow: hidden;
+  text-wrap: wrap;
+  min-height: 30px;
+  background-color: transparent !important;
+  /* border-bottom: 2px solid var(--color-accent); */
 }
 
 .container > * {
   background-color: transparent;
+
 }
 .container {
   display: flex;
@@ -29,38 +36,63 @@
   height: 500px;
   padding: 0px;
   background-color: white;
-  border: var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--line-color);
+  border-radius: 0px 10px 10px 10px;
   padding-bottom: 10px;
+  position: relative;
+  background-color: var(--background-color);
+
 }
 
 .content {
   overflow-y: auto;
   height: 100%;
+  border-top: 2px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
+
 }
 
 .filler {
-  font-family: 'SNPro-regular';
-
-  font-size: 10px;
+  font-family: 'SNPro-bold';
+  font-size: 18px;
 }
 
 .doneButton {
-  background-color: #4caf50;
-  color: white;
+  background-color: transparent;
+  color:black;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   width: 60px;
   position: absolute;
+  font-family: "SNPro-bold";
   top: 8px;
-  height: 20px;
+  height: 25px;
   right: 10px;
   padding: 2px 0;
   text-align: center;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid var(--color-accent);
 }
 
 .doneButton:hover {
-  background-color: #45a049;
+  color: white;
+  background-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--color-accent);
+
+}
+
+.doneButton:focus {
+  outline: none;
+  border: 2px solid var(--color-accent);
+
+}
+
+.doneButton:focus-visible {
+  outline: none;
+  border: 2px solid var(--color-accent);
+
 }

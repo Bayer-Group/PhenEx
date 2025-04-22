@@ -4,17 +4,21 @@ import { Tabs } from '../../Tabs/Tabs';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortDatabaseSettings } from '../CohortInfo/CohortDatabaseSettings/CohortDatabaseSettings';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
-
+import { ConstantsTable } from './ConstantsTable'
 interface AccordianTabbedInfoDisplayViewProps {
   title: string;
   infoContent?: string;
 }
 
+import { CodelistsInfoDisplay } from './CodelistsInfoDisplay/CodelistsInfoDisplay';
+
 enum InfoTabType {
   Info = 'i',
-  Variables = 'Constants',
+  Constants = 'Constants',
   Database = 'Database',
   Codelists = 'Codelists',
+  Visibility = 'Visibility',
+
 }
 
 export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
@@ -56,6 +60,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     const currentTabIndex = tabTypes.indexOf(currentTab);
     if (index == 3) {
       showCodelists();
+      setCurrentTab(tabTypes[index]);
     }
     if (!isOpen) {
       setIsOpen(true);
@@ -71,21 +76,14 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     switch (currentTab) {
       case InfoTabType.Info:
         return <div className={styles.infoContent}>{infoContent}</div>;
-      case InfoTabType.Variables:
+      case InfoTabType.Constants:
         return (
-          <div className={styles.variablesContent}>
-            <div className={styles.variableGroup}>
-              <label>Baseline Period (days):</label>
-              <input type="number" defaultValue={365} />
-            </div>
-            <div className={styles.variableGroup}>
-              <label>Follow-up Period (days):</label>
-              <input type="number" defaultValue={730} />
-            </div>
-          </div>
+          <ConstantsTable/>
         );
       case InfoTabType.Database:
         return <CohortDatabaseSettings />;
+      case InfoTabType.Codelists:
+        return <CodelistsInfoDisplay />;
       default:
         return null;
     }
@@ -112,11 +110,9 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
           />
         </div>
       </div>
-      {isOpen && (
-        <div className={styles.content}>
-          <div className={styles.contentArea}>{renderContent()}</div>
-        </div>
-      )}
+      <div className={styles.content}>
+        <div className={styles.contentArea}>{renderContent()}</div>
+      </div>
     </div>
   );
 };

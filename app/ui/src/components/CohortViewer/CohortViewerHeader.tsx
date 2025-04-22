@@ -4,6 +4,7 @@ import { CohortDataService } from './CohortDataService/CohortDataService';
 import { Tabs } from '../Tabs/Tabs';
 import { CohortViewType } from './CohortViewer';
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
+import { EditableTextField } from '../EditableTextField/EditableTextField';
 
 interface CohortViewerHeaderProps {
   onCohortNameChange: (newValue: string) => void;
@@ -51,23 +52,16 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
   return (
     <div className={styles.topSection}>
       <div className={styles.headerContent}>
-        <input
-          type="text"
-          className={styles.cohortNameInput}
-          placeholder="Name your cohort..."
+        <EditableTextField
           value={cohortName}
-          onChange={e => {
-            const newValue = e.target.value;
+          placeholder="Name your cohort..."
+          className={styles.cohortNameInput}
+          onChange={(newValue) => {
             setCohortName(newValue);
             onCohortNameChange(newValue);
             dataService.cohort_name = newValue;
-            // dataService.cohort_data.name = newValue;
           }}
-          onKeyDown={async e => {
-            if (e.key === 'Enter') {
-              onSaveChanges();
-            }
-          }}
+          onSaveChanges={onSaveChanges}
         />
       </div>
       <div className={styles.controlsContainer}>

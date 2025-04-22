@@ -1,0 +1,48 @@
+.container {
+  position: relative;
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0px;
+  isolation: isolate;
+}
+
+.focused {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0px 8px;
+  width: 100%;
+  border-radius: var(--border-radius);
+  z-index:10;
+  text-wrap: wrap;
+}
+
+.saveIndicator {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+  font-size: 10px;
+  color: #666;
+  pointer-events: auto;
+  padding: 4px 8px;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.saveText {
+  color: #4CAF50;
+  cursor: pointer;
+}
+
+.saveText:hover {
+  text-decoration: underline;
+  z-index: 10000;
+}

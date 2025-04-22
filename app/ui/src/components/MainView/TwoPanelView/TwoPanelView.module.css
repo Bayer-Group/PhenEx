@@ -6,7 +6,21 @@
 }
 
 .leftPanel {
+  transition: width 0.2s ease, opacity 0.2s ease;
 }
+
+.rightPanel {
+  transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+.rightPanel.collapsed {
+  opacity: 0;
+}
+
+.leftPanel.collapsed {
+  opacity: 0;
+}
+
 
 .rightPanel {
   background-color: white;
@@ -21,7 +35,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
-  border-left: 2px solid var(--color-accent);
+  border-left: 2px solid var(--line-color);
 }
 
 .divider.collapsed {
@@ -84,7 +98,7 @@
   cursor: pointer;
   z-index: 1000;
   top: 40px;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
   box-shadow: -4px 0 5px rgba(0, 0, 0, 0.05);
   border: 2px solid var(--color-accent);
   background-color: white;
@@ -93,7 +107,7 @@
 }
 
 .collapseButton:hover {
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   background-color: var(--color-accent);
@@ -110,6 +124,7 @@
   width: 0 !important;
   padding: 0;
   margin: 0;
+  opacity: 0;
 }
 
 [data-dragging='true'] {

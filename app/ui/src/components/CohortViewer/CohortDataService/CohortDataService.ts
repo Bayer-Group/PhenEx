@@ -5,6 +5,7 @@ import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_coho
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
+import { ConstantsDataService } from './ConstantsDataService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -12,6 +13,7 @@ export class CohortDataService {
   public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
   public issues_service: CohortIssuesService;
+  public constants_service: ConstantsDataService;
   private _table_data: TableData = {
     rows: [],
     columns: [],
@@ -22,6 +24,8 @@ export class CohortDataService {
   private constructor() {
     this.issues_service = new CohortIssuesService();
     this.issues_service.setDataService(this);
+    this.constants_service = new ConstantsDataService();
+    this.constants_service.setCohortDataService(this);
   }
 
   public static getInstance(): CohortDataService {
@@ -73,7 +77,7 @@ export class CohortDataService {
       const cohortResponse = await getCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
-      this.sortPhenotypes()
+      this.sortPhenotypes();
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
         this._cohort_data.id = createID();
@@ -117,10 +121,11 @@ export class CohortDataService {
     );
     phenotypeEdited[fieldEdited] = event.newValue;
     console.log('onCellValueChanged', phenotypeEdited);
-    this.saveChangesToCohort();
+    this.saveChangesToCohort(true,false);
   }
 
-  public async saveChangesToCohort(changesToCohort: boolean = true) {
+  public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid:boolean = true) {
+    console.log("SAHVE  COHORT",changesToCohort, refreshGrid)
     if (changesToCohort) {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
@@ -131,10 +136,15 @@ export class CohortDataService {
       this.notifyNameChangeListeners();
     }
     this._cohort_data.name = this._cohort_name;
-    await updateCohort(this._cohort_data.id, this._cohort_data);
     this._table_data = this.tableDataFromCohortData();
+    await updateCohort(this._cohort_data.id, this._cohort_data);
+    console.log("ABOUT TO UPDATE issues_service")
     this.issues_service.validateCohort();
-    this.notifyListeners();
+    console.log("SAVED CohorT NOW", this._cohort_data)
+    if (refreshGrid) {
+      console.log("And table data...", this._table_data);
+      this.notifyListeners();
+    }
   }
 
   private sortPhenotypes() {
@@ -189,8 +199,7 @@ export class CohortDataService {
       class_name: 'CodelistPhenotype',
     };
     this._cohort_data.phenotypes.push(newPhenotype);
-    this.sortPhenotypes();
-    this.saveChangesToCohort();
+    this.saveChangesToCohort(true, true);
     console.log('addPhenotype cohort data!!! ', this._cohort_data);
   }
 
@@ -251,6 +260,7 @@ export class CohortDataService {
       this.listeners.splice(index, 1);
     }
   }
+  
 
   private notifyListeners() {
     console.log('DAT ASERVIC IS NOTIFYIN');

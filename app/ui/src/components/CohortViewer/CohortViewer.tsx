@@ -6,6 +6,8 @@ import { TableData } from './tableTypes';
 import { CohortTable } from './CohortTable/CohortTable';
 import { CohortInfo } from './CohortInfo/CohortInfo';
 import { CohortDefinitionView } from './CohortDefinitionView/CohortDefinitionView';
+import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { CohortReportView } from './CohortReportView/CohortReportView';
 
 interface CohortViewerProps {
   data?: string;
@@ -19,7 +21,6 @@ export enum CohortViewType {
 }
 
 export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
-  const [tableData, setTableData] = useState<TableData | null>(null);
   const [cohortName, setCohortName] = useState(data ?? '');
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
@@ -35,6 +36,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       setCohortName(dataService.cohort_name);
     };
     loadData();
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.hideExtraContent();
+
   }, [data]);
 
   const navigateTo = (viewType: CohortViewType) => {
@@ -44,11 +48,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const renderView = () => {
     switch (currentView) {
       case CohortViewType.CohortDefinition:
-        return <CohortDefinitionView />;
+        return <CohortDefinitionView data={data} />;
       case CohortViewType.Info:
         return <CohortInfo />;
       case CohortViewType.Report:
-        return <div>Report View</div>;
+        return <CohortReportView data={data} />;
       default:
         return null;
     }

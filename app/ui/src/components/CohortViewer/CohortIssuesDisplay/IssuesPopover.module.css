@@ -1,31 +1,33 @@
-
 :root {
-  --issue_popover_margin: 12px;
+  --issue_popover_margin: -12px;
   --issue_popover_radius: 20px;
 }
 .popover {
   position: absolute;
-  right: 0px;
-  top: 50px;
+  right: var(--issue_popover_margin);
+  top: var(--issue_popover_margin);
   background: var(--background-color);
-  border: 1px solid var(--line-color);
-  border-radius: var(--issue_popover_radius);
+  border: 2px solid var(--line-color);
+  border-radius: 20px 20px 20px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   padding: 0px;
-  min-width: 300px;
-  max-width: 500px;
-  z-index: 1000;
-  max-height: 400px;
+  width: 300px;
+  /* z-index: 2; */
+  max-height: calc(100vh - 50px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+.popover.noIssues{
+  border-color: var(--phenex-green);
+}
+
+
 .header {
   position: sticky;
   top: 0;
   background: var(--background-color);
-  z-index: 1;
   padding: 20px 10px 12px 20px;
   border-bottom: 1px solid var(--line-color);
 }
@@ -33,9 +35,9 @@
 .body {
   flex: 1;
   overflow-y: auto;
-  padding:20px 15px 30px 10px;
+  padding: 20px 15px 30px 10px;
+  margin-top: 65px;
 }
-
 
 .section {
 }
@@ -61,8 +63,8 @@
   border: transparent solid 1px;
 }
 
-.phenotypeSection:hover{
-  color:var(--color-accent);
+.phenotypeSection:hover {
+  color: var(--color-accent);
   border-color: var(--line-color);
 }
 /* 
@@ -77,26 +79,24 @@
   border: 1px solid var(--color-accent);
 }
 
-
-.phenotypeSection.selected:hover{
+.phenotypeSection.selected:hover {
   color: black;
 }
 
 .phenotypeId {
-  font-size: 12px;
-  color: #black;
+  color: black;
   margin-bottom: 0px;
   margin-right: 50px;
-  font-family: "SNPro-bold";
-  font-size:18px;
+  font-family: 'SNPro-bold';
+  font-size: 18px;
   line-height: 1.2;
 }
 
 .issuesList {
   margin: 0;
-  margin-top:0px;
+  margin-top: 0px;
   padding-left: 3px;
-  width:calc(100% - 50px);
+  width: calc(100% - 50px);
   font-size: 10px;
 }
 
@@ -107,13 +107,13 @@
   line-height: 1;
 }
 
-.phenotypeType{
+.phenotypeType {
   position: absolute;
   top: 7px;
   right: 8px;
   font-size: 8px;
   padding: 2px 6px;
-  
+
   border-radius: 4px;
   background-color: gray;
   color: var(--text-color-secondary);

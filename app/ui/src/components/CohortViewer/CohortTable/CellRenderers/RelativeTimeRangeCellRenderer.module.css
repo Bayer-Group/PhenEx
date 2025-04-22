@@ -1,17 +1,32 @@
 .filtersContainer {
-  width: 100%;
-  text-wrap: wrap;
+  /* width: 100%; */
   gap: 3px;
   line-height: 11px;
   font-size: 11px;
   font-family: 'SNPro-regular';
+  padding-top: var(--item-margin-top) !important;
+
 }
 
-.filterRow {
-  margin-top: 3px;
-  background-color: var(--item-color-default);
-  border-radius: 3px;
+.filterRow{
+  padding: 8px !important;
+}
+
+.filterRowSpan {
+  background-color: var(--item-color-default) !important;
+  border-radius: var(--item-radius);
   padding: 5px 10px;
+  line-height: 10px;
+  border-radius: var(--item-radius);
+  border: var(--item-border-default);
+  transition: var(--item-transition);
+}
+
+.filterRowSpan:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--item-border-hover);
+
 }
 /* 
 .filtersContainer {

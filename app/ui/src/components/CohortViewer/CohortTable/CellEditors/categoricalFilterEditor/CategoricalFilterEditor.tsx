@@ -196,7 +196,10 @@ export const CategoricalFilterEditor: React.FC<CategoricalFilterEditorProps> = (
                   >
                     {currentFilter.class_name === 'AndFilter' ? 'AND' : 'OR'}
                   </div>
-                  {renderFilter(currentFilter.filter2)}
+                  <div className = {currentFilter.filter2.class_name === 'CategoricalFilter'? styles.lastCategoricalFilter:''}
+                  >
+                    {renderFilter(currentFilter.filter2)}
+                  </div>
                 </div>
               </div>
               <div className={`${styles.logicalButtons} ${styles.logicalLogicalButtons}`}>

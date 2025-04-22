@@ -4,12 +4,13 @@ import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRendere
 
 const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatPhenotype = (value: string): string => {
+    console.log("VALUE IS: ", value, props);
     return value.replace('Phenotype', '');
   };
 
   return (
     <PhenexCellRenderer {...props}>
-      <div className={styles.container}>{props.value ? formatPhenotype(props.value) : null}</div>
+      <span className={styles.container}>{props.value ? formatPhenotype(props.value) : null}</span>
     </PhenexCellRenderer>
   );
 };

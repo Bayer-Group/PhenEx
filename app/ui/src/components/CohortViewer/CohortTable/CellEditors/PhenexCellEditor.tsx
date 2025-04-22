@@ -20,10 +20,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   }));
 
   const handleValueChange = (value: any) => {
-    if (JSON.stringify(value) !== JSON.stringify(currentValue)) {
-      setCurrentValue(value);
-      props.onValueChange?.(value);
-    }
+    setCurrentValue(value);
+    props.onValueChange?.(value);
   };
 
   const handleDone = () => {
@@ -80,6 +78,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
   }, []);
 
+  const titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
   return (
     <div
       ref={containerRef}
@@ -102,14 +101,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       tabIndex={-1}
     >
       <div className={styles.header}>
-        <span className={styles.filler}>Edit</span>{' '}
-        {props.column?.getColDef().headerName || 'Editor'}{' '}
-        <span className={styles.filler}>for</span> {props.data.name}
+        <span className={styles.filler}>editing</span>{' '}
+        {titleText}{' '}
+        <span className={styles.filler}>in</span> {props.data.name}
         <button className={styles.doneButton} onClick={handleDone}>
           Done
         </button>
       </div>
-      <div className={styles.content}>{props.children}</div>
+      <div className={styles.content}>
+        {React.Children.map(props.children, child =>
+          React.isValidElement(child)
+            ? React.cloneElement(child, {
+                ...props,
+                onValueChange: handleValueChange
+              })
+            : child
+        )}
+      </div>
     </div>
   );
 });

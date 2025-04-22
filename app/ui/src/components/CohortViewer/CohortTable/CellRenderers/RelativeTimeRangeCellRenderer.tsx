@@ -27,7 +27,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
   const formatTimeRange = (filter: RelativeTimeRangeFilter): JSX.Element => {
     if (filter.useConstant && filter.constant) {
       return (
-        <span className={styles.filterText}>
+        <span className={styles.filterRowSpan}>
           {filter.constant === 'one_year_pre_index' ? 'One Year Pre-Index' : 'Any Time Post-Index'}
         </span>
       );
@@ -37,7 +37,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
       ? 'index date'
       : filter.anchor_phenotype || 'unknown phenotype';
     return (
-      <>
+      <span className={styles.filterRowSpan}>
         <span className={`${styles.timeValue} ${styles.min}`}>
           <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
           {filter.min_days.value}
@@ -48,7 +48,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
         </span>
         days <span className={styles.when}>{filter.when}</span>
         <span className={styles.reference}> {reference} </span>
-      </>
+      </span>
     );
   };
 
@@ -61,7 +61,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
       <div className={styles.filtersContainer}>
         {filters.map((filter, index) => (
           <div key={index} className={styles.filterRow}>
-            {formatTimeRange(filter)}
+            {formatTimeRange(filter)}<br/>
           </div>
         ))}
       </div>

@@ -10,12 +10,8 @@ interface CategoricalFilterCellEditorProps extends PhenexCellEditorProps {
 export const CategoricalFilterCellEditor = forwardRef<any, CategoricalFilterCellEditorProps>(
   (props, ref) => {
     const handleValueChange = (value: FilterType) => {
-      if (typeof value === 'object' && value.status !== null && value.status !== 'empty') {
-        props.onValueChange?.(value);
-      } else {
-        // return null if only a single unedited categorical filter
-        props.onValueChange?.(null);
-      }
+      console.log("CATEGORICAL HANDLING VALUE CHANGE", props.onValueChange)
+      props.onValueChange?.(value);
     };
 
     return (

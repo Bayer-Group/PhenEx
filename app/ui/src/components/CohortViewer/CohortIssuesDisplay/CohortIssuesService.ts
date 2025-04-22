@@ -11,13 +11,13 @@ export class CohortIssuesService {
   private issueCount: number = 0;
   private issues: IssueEntry[] = [];
   private classDefinitions: Record<string, any>;
+  private listeners: Array<() => void> = [];
 
   // private constructor() {
 
   // }
 
   public setDataService(dataService: CohortDataService) {
-
     this.dataService = dataService;
     this.dataService.addListener(() => {
       this.validateCohort();
@@ -81,50 +81,40 @@ export class CohortIssuesService {
   public validateCohort() {
     this.issues = [];
     this.issueCount = 0;
-    const cohortData = this.dataService.cohort_data;
 
-    // Validate entry criterion
-    if (this.dataService.cohort_data.entry_criterion) {
-      const issues = this.validatePhenotype(this.dataService.cohort_data.entry_criterion);
+    for (const phenotype of this.dataService.cohort_data.phenotypes || []) {
+      const issues = this.validatePhenotype(phenotype);
       if (issues.length > 0) {
         this.issues.push({
-          id: this.dataService.cohort_data.entry_criterion.id,
+          id: phenotype.id,
           issues: issues,
-          phenotype_name: this.dataService.cohort_data.entry_criterion.name,
-          type: this.dataService.cohort_data.entry_criterion.type,
-          phenotype: this.dataService.cohort_data.entry_criterion,
+          phenotype_name: phenotype.name,
+          type: phenotype.type,
+          phenotype: phenotype,
         });
         this.issueCount += issues.length;
       }
     }
-
-    // Validate arrays of phenotypes
-    const phenotypeArrays = [
-      { data: this.dataService.cohort_data.inclusions || [], name: 'inclusion' },
-      { data: this.dataService.cohort_data.exclusions || [], name: 'exclusion' },
-      { data: this.dataService.cohort_data.characteristics || [], name: 'characteristics' },
-      { data: this.dataService.cohort_data.outcomes || [], name: 'outcomes' },
-    ];
-
-    for (const { data, name } of phenotypeArrays) {
-      for (const phenotype of data) {
-        const issues = this.validatePhenotype(phenotype);
-        if (issues.length > 0) {
-          this.issues.push({
-            id: phenotype.id,
-            issues: issues,
-            phenotype_name: phenotype.name,
-            type: phenotype.type,
-            phenotype: phenotype,
-          });
-          this.issueCount += issues.length;
-        }
-      }
-    }
-
+    console.log('VALIDATION ISSUES', this.issues);
+    this.notifyListeners();
     return {
       issueCount: this.issueCount,
       issues: this.issues,
     };
+  }
+
+  public addListener(listener: () => void) {
+    this.listeners.push(listener);
+  }
+
+  public removeListener(listener: () => void) {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(listener => listener());
   }
 }

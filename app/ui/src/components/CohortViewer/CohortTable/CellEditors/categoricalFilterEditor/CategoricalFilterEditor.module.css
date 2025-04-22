@@ -52,9 +52,8 @@
   /* border: 3px solid blue; */
 }
 
-.filters {
-  display: flex;
-  gap: 0px;
+.lastCategoricalFilter{
+  margin-bottom: 10px;
 }
 
 .logicalOperator {
@@ -63,28 +62,36 @@
   padding-bottom: 10px;
   border-radius: 4px;
   cursor: pointer;
-  color: var(--button-color-inactive);
+  color: black;
   font-size: 20px;
   font-family: 'SNPro-bold';
   transition: 0.3s ease;
 }
 
+
 .logicalOperator:hover {
-  color: black;
+  color: var(--color-accent);
+}
+
+.logicalBorderedArea:has(> .filters > .logicalOperator:hover) {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .logicalButtons {
   opacity: 0;
   display: flex;
   flex-direction: row;
-  right: 0;
+  right: 10px;
+
   margin-left: auto;
   gap: 10px;
   transition: opacity 0.3s ease;
-  font-size: 12px;
+  font-size: 10px;
   z-index: 1000;
   position: relative;
-  padding-top: 0px;
+  padding-top: 5px;
 }
 
 .filterContainer:hover > .logicalButtons,
@@ -92,6 +99,7 @@
 .logicalButtons:hover {
   opacity: 1;
 }
+
 
 .logicalButtons:hover + .logicalBorderedArea,
 .logicalButtons:hover ~ .logicalBorderedArea,
@@ -101,32 +109,30 @@
 }
 
 .logicalButtons button {
-  padding: 4px 8px;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.logicalButtons button {
+  padding: 0px 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border: var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
   background: #f5f5f5;
   cursor: pointer;
   color: var(--text-color-inactive);
 }
 
+.logicalButtons:hover > .logicalBorderedArea{
+  background-color: red;
+}
+
 .logicalButtons button:hover {
-  color: black;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color:white;
 }
 
 .logicalBorderedArea {
   border: 2px solid var(--line-color);
   border-radius: 12px;
-  padding: 7px 7px 30px 7px;
+  padding: 7px 7px 7px 7px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -142,7 +148,7 @@
 
 .logicalLogicalButtons {
   margin-top: -10px;
-  height: 18px;
+  height: 12px;
   font-size: 8px;
   background-color: transparent;
   padding-right: 5px;

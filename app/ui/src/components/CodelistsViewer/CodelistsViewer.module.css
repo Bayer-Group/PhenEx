@@ -1,7 +1,80 @@
-.container {
-  background-color: blue;
+.gridContainer {
   width: 100%;
   height: 100%;
+}
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
-  color: white;
+}
+
+.contentContainer {
+  flex: 1;
+  margin-top: 20px;
+}
+
+.allCodelistsView {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.codelistsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.codelistCard {
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+}
+
+.codeType {
+  margin-bottom: 16px;
+}
+
+.codeType h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-color);
+}
+
+.codeType ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.codeType li {
+  padding: 4px 0;
+  color: var(--text-color-secondary);
+}
+
+.fileView {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.codeGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.codeRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 12px;
+  background-color: white;
+  border: 1px solid var(--line-color);
+  border-radius: 6px;
+}
+
+.codeRow span {
+  color: var(--text-color);
 }

@@ -2,9 +2,8 @@ import { FC, useState } from 'react';
 import styles from './CohortReportView.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TableData } from '../tableTypes';
-import { CohortTable } from '../CohortTable/CohortTable';
 import { Tabs } from '../../Tabs/Tabs';
-
+import { ReportCard } from './ReportCard';  
 interface CohortReportViewProps {
   data?: string;
 }
@@ -16,32 +15,9 @@ enum CohortReportViewType {
 }
 
 export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
-  const [tableData, setTableData] = useState<TableData | null>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortReportViewType>(CohortReportViewType.Cohort);
 
-  const renderView = () => {
-    switch (currentView) {
-      case CohortReportViewType.Cohort:
-        return <CohortTable data={dataService.table_data} onCellValueChanged={() => {}} />;
-      case CohortReportViewType.Baseline:
-        return (
-          <div className={styles.viewContainer}>
-            <h2>Baseline Characteristics</h2>
-            <p>View baseline characteristics for your cohort here.</p>
-          </div>
-        );
-      case CohortReportViewType.Outcomes:
-        return (
-          <div className={styles.viewContainer}>
-            <h2>Outcomes Report</h2>
-            <p>View outcome measures for your cohort here.</p>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
 
   const tabs = Object.values(CohortReportViewType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
@@ -49,11 +25,38 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
 
   const onTabChange = (index: number) => {
     const viewTypes = Object.values(CohortReportViewType);
-    setCurrentView(viewTypes[index]);
+    const selectedView = viewTypes[index];
+    setCurrentView(selectedView);
+    document.getElementById(selectedView)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  const renderViewContent = () => {
+    switch (currentView) {
+      case CohortReportViewType.Cohort:
+        return (
+          <>
+            <ReportCard title={'Attrition Table'} />
+            <ReportCard title={'Upset Plot'} />
+          </>
+        );
+      case CohortReportViewType.Baseline:
+        return (
+          <>
+            <ReportCard title={'Age'} />
+            <ReportCard title={'Sex'} />
+            <ReportCard title={'Ethnicity'} />
+            <ReportCard title={'Baseline Characteristics'} />
+          </>
+        );
+      case CohortReportViewType.Outcomes:
+        return <ReportCard title={'Outcomes'} />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className={styles.cohortTableContainer}>
+    <div className={styles.container}>
       <div className={styles.topSection}>
         <div className={styles.controlsContainer}>
           <Tabs
@@ -65,7 +68,11 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
           />
         </div>
       </div>
-      <div className={styles.bottomSection}>{renderView()}</div>
+      <div className={styles.bottomSection}>
+        <div className={styles.viewContainer}>
+          {renderViewContent()}
+        </div>
+      </div>
     </div>
   );
 };

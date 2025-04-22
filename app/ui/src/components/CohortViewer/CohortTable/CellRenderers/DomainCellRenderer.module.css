@@ -1,12 +1,23 @@
 .domainContainer {
-  margin-top: 5px;
-  display: flex;
-  text-wrap: wrap;
-  /* background-color: var(--background-color); */
+  margin-top: var(--item-margin-top);
+  background-color: var(--item-color-default);
   line-height: 11px;
   font-size: 11px;
   padding: 2px 4px;
+
+
+  border-radius: var(--item-radius);
+  border: var(--item-border-default);
+  /* transition: var(--item-transition); */
 }
+
+.domainContainer:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--item-border-hover);
+
+}
+
 
 .domainPart {
   background-color: #f5f5f5;

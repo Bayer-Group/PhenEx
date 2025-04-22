@@ -21,7 +21,7 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 1,
-      text: 'PhenEx AI can help you **create cohorts from text**.\n1. Create an entire cohort from scratch - just enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. Modify an existing cohort, by ask for help on a single aspect of your study.',
+      text: '# Create cohorts with PhenEx AI\n1. **Create an entire cohort from scratch** - enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort**, by ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];
@@ -110,10 +110,10 @@ class ChatPanelDataService {
         this.isInThinkingBlock = true;
       }
     }
-  
+
     return result;
   }
-  
+
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
     try {
@@ -121,7 +121,7 @@ class ChatPanelDataService {
         user_request: inputText.trim(),
         current_cohort: this.cohortDataService.cohort_data,
       });
-  
+
       console.log('Stream received from textToCohort');
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
@@ -131,17 +131,17 @@ class ChatPanelDataService {
       this.messages.push(assistantMessage);
       this.notifyListeners();
       console.log('Assistant message initialized:', assistantMessage);
-  
+
       const reader = stream.getReader();
       const decoder = new TextDecoder();
-  
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
           console.log('Stream reading completed');
           break;
         }
-  
+
         console.log('Stream chunk received:', value);
         const decodedChunk = decoder.decode(value, { stream: true });
         const processedText = this.processMessageText(decodedChunk);

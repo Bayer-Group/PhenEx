@@ -46,6 +46,11 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
+  public hideExtraContent = () => {
+    this.panelRef?.current?.collapseRightPanel(true);
+    this.notifyListeners();
+  };
+
   public getExtraData(): any {
     return this.extraData;
   }
@@ -82,9 +87,8 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   }, [service]);
   service.setData(data);
 
-
   return (
-    <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={500}>
+    <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={400}>
       <CohortViewer data={service.getData()} />
       {viewType === 'phenotype' ? <PhenotypeViewer data={extraData} /> : <CodelistsViewer />}
     </TwoPanelView>

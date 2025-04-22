@@ -8,7 +8,9 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   const renderDomain = (value: string): string => {
-    return (<div className={styles.domainContainer}>{props.value ? formatDomain(props.value) : null}</div>);
+    return (
+      <span className={styles.domainContainer}>{props.value ? formatDomain(props.value) : null}</span>
+    );
   };
 
   const noDomainPhenotypes = ['ScorePhenotype', 'ArithmeticPhenotype', 'LogicPhenotype'];

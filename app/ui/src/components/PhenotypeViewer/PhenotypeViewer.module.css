@@ -4,15 +4,20 @@
   height: 100%;
   padding: 0px;
   color: black;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
-  margin-top: 38px;
+  margin-top: 10px;
   margin-left: 20px;
   margin-right: 10px;
+  flex-shrink: 0;
 }
-.header.h2 {
-  background-color: red;
+.phenotypeNameInput {
+  font-size:30px;
+  font-family: "SNPro-bold";
+  width:100%;
 }
 
 .info {
@@ -22,7 +27,25 @@
 .gridContainer {
   margin-top: 20px;
   width: 100%;
-  border-radius: 4px;
+  flex: 1;
   overflow: hidden;
-  height: 100%;
+}
+
+.phenotypeType {
+  font-size: 20px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: gray;
+  color: var(--text-color-secondary);
+}
+
+
+.description{
+ width:100%;
+ min-height: 50px;
+ max-height: 1000px;
+ resize: none;
+ border: none;
+ font-family: "SNPro-regular";
+ font-size:12px;
 }

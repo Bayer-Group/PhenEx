@@ -1,0 +1,39 @@
+.reportCard {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  max-height: 500px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.reportCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.reportCardTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.infoButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 18px;
+}
+
+.reportCardBody {
+  padding: 0px;
+  flex-grow: 1;
+  overflow: hidden;
+  height: 0;
+}

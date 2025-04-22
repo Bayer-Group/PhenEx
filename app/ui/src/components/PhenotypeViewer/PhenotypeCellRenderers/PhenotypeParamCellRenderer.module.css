@@ -1,0 +1,58 @@
+
+.label {
+  text-wrap: wrap;
+  line-height: 1 !important;
+  font-size: 14px;
+  /* padding: 4px 0; */
+  font-weight: bold;
+  /* padding:0px;
+  margin:0px;
+  line-height: 1; */
+}
+
+.container {
+  padding: 0px;
+  margin: 0px;
+  line-height: 1;
+  padding-top: 10px;
+}
+
+
+.infoButton {
+  background: white;
+  border: none;
+  padding: 0px 7px 0px 7px;
+  cursor: pointer;
+  opacity: 0;
+  margin-top: 0px;
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+  position: absolute;
+  right: 5px;
+  border-radius: 50%;
+  top: 2px;
+}
+
+.infoButton:hover {
+  background: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+}
+
+.infoButton:focus {
+  outline: none;
+}
+
+.infoButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+:global(.ag-row:hover) .infoButton {
+  opacity: 1;
+}

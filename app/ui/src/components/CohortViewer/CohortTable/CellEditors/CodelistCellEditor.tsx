@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './CodelistCellEditor.module.css';
 import { TabbedCellEditor, TabConfig, TabbedCellEditorProps } from './TabbedCellEditor';
+import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 
-interface CodelistCellEditorProps extends TabbedCellEditorProps {
+interface CodelistCellEditorProps extends TabbedCellEditorProps, PhenexCellEditorProps {
   options?: string[];
 }
 
@@ -53,8 +54,8 @@ export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
       },
       {} as { [key: string]: string[] }
     );
-    console.log('CURRENT STATE', useCodeType, removePunctuation);
     if (props.onValueChange) {
+      console.log("CALLING ON VALUe CHANGE")
       props.onValueChange({
         class_name: 'Codelist',
         codelist: formattedEntries,
@@ -176,6 +177,8 @@ export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
   ];
 
   return (
+    <PhenexCellEditor {...props}>
+
     <div className={styles.editorContainer}>
       <TabbedCellEditor {...props} tabs={tabs} />
       <div className={styles.chin}>
@@ -197,6 +200,7 @@ export const CodelistCellEditor = (props: CodelistCellEditorProps) => {
         </label>
       </div>
     </div>
+    </PhenexCellEditor>
   );
 };
 
