@@ -1,3 +1,4 @@
+from datetime import date
 from ibis.expr.types.relations import Table
 import ibis
 from phenex.util.serialization.to_dict import to_dict
@@ -127,7 +128,7 @@ class ValueAggregator:
         # Apply the distinct reduction if required
         if self.reduce:
             input_table = input_table.select(selected_columns).distinct()
-            input_table = input_table.mutate(EVENT_DATE=ibis.null())
+            input_table = input_table.mutate(EVENT_DATE=ibis.null(date))
             return input_table
         else:
             return input_table.select(selected_columns)

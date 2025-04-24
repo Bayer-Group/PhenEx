@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Union
+from datetime import date
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
@@ -21,12 +22,13 @@ class SexPhenotype(Phenotype):
         name: str = "sex",
         allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
+        **kwargs
     ):
         self.name = name
         self.allowed_values = allowed_values
         self.domain = domain
         self.children = []
-        super(SexPhenotype, self).__init__()
+        super(SexPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
@@ -38,4 +40,4 @@ class SexPhenotype(Phenotype):
             )
             person_table = sex_filter._filter(person_table)
 
-        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE=ibis.null())
+        return person_table.mutate(VALUE=person_table.SEX, EVENT_DATE=ibis.null(date))

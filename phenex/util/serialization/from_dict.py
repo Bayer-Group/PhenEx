@@ -25,6 +25,8 @@ def from_dict(data: dict):
     init_args = {}
     kwargs = {}
     for param in all_params:
+        if param == "kwargs":
+            continue
         if param != "self":
             value = data.get(param)
             param_type = all_params[param].annotation

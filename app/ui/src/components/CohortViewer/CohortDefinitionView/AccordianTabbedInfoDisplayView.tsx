@@ -10,7 +10,7 @@ interface AccordianTabbedInfoDisplayViewProps {
   infoContent?: string;
 }
 
-import { CodelistsInfoDisplay } from './CodelistsInfoDisplay/CodelistsInfoDisplay';
+import { CodelistsInfoDisplay } from '../../CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
   Info = 'i',

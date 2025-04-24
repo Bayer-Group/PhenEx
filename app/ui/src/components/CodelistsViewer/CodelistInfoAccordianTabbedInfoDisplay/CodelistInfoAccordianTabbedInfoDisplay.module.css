@@ -1,0 +1,120 @@
+.accordianContainer {
+  border: 2px solid white;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+  margin: 5px 5px;
+  background-color: white;
+  user-select: none;
+  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+}
+
+.header h2 {
+  margin: 0;
+  padding-top: 13px;
+  font-size: 22px;
+  font-weight: 500;
+  margin-left: 60px;
+  transition: 0.3s ease;
+}
+
+.header.closed h2 {
+  padding-top: 2px;
+  margin-left: 5px;
+}
+
+.toggleButton {
+  position: absolute;
+  padding: 0px 0px;
+  height: 40px;
+  width: 40px;
+  border: var(--border);
+  border-radius: 25px;
+  font-size: 16px;
+  font-family: 'SNPro-bold';
+  color: var(--color-accent);
+  transform: rotate(-90deg);
+  left: 15px;
+  background-color: white;
+  margin-top: 8px;
+  border: 2px solid var(--color-accent);
+  opacity: 1;
+  transition: 0.3s ease;
+}
+
+.toggleButton:hover {
+  transition: transform 0.3s ease;
+  transform: translateY(-24px);
+  transform: rotate(-90deg);
+  outline: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
+  border: 2px solid var(--color-accent);
+}
+
+.toggleButton.closed {
+  transform: translateY(-24px);
+  transform: rotate(90deg);
+  border: var(--border);
+  opacity: 0;
+
+}
+
+.toggleButton:focus {
+  outline: none;
+  
+}
+
+.accordianContainer.opened {
+  border-color: var(--color-accent);
+}
+
+.tabsContainer {
+  position: relative !important;
+  margin-bottom: 0px;
+  margin-top: 15px;
+  margin-left: 10px;
+  transition: 0.3s ease;
+}
+
+.tabsContainer.closed {
+  margin-top: 2px;
+  margin-left:0px;
+}
+
+.content {
+  padding: 5px 0px 0px 0px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+}
+
+.accordianContainer.opened .content {
+  max-height: 2000px;
+  transition: max-height 1s ease-in-out;
+}
+
+.contentArea {
+  padding: 0px 10px 0px 0px;
+  font-size: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.infoContent {
+  padding: 10px 0px 20px 20px;
+}
+
+.infoContent ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+strong {
+  font-family: 'SNPro-bold';
+}

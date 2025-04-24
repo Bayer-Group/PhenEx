@@ -58,6 +58,9 @@ def to_dict(obj) -> dict:
                 _dict[param] = {"__datetime__": value.isoformat()}
             else:
                 _dict[param] = value
+
+    _dict.pop("kwargs", None)
+
     return _dict
 
 

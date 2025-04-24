@@ -45,6 +45,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
         anchor_phenotype: Optional[Phenotype] = None,
+        **kwargs
     ):
         """
         Parameters:
@@ -73,7 +74,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         )
         ```
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.name = name
         self.domain = domain
         verify_relative_time_range_filter_input(min_days, max_days, when)

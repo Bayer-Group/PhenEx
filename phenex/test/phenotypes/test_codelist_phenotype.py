@@ -768,6 +768,128 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(
         return test_infos
 
 
+class CodelistPhenotypeCategoricalFilterIsNullTestGenerator(PhenotypeTestGenerator):
+    name_space = "clpt_categorical_filter_isnull"
+
+    def define_input_tables(self):
+        def add_flag(df, flag_name, flag_values):
+            dfs = []
+            for flag in flag_values:
+                _df = df.copy()
+                _df[flag_name] = flag
+                dfs.append(_df)
+            return pd.concat(dfs)
+
+        df = pd.DataFrame()
+        df["PERSON_ID"] = ["p1"]
+        df["CODE"] = ["c1"]
+        df["CODE_TYPE"] = ["ICD10CM"]
+        df["EVENT_DATE"] = datetime.datetime.strptime("10-10-2021", "%m-%d-%Y")
+        df = add_flag(df, "x", ["x1", "x2"])
+        df = add_flag(df, "y", ["y1", "y2"])
+        df = add_flag(df, "z", [None, "z2"])
+        df["PERSON_ID"] = [f"P{i}" for i in range(df.shape[0])]
+        df.iloc[0, 4] = None  # Set a single x1 to null!
+
+        self.df = df
+
+        return [{"name": "condition_occurrence", "df": df, "column_types": {}}]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        c1 = {
+            "name": "isnull",
+            "persons": [f"P{i}" for i in range(4)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    column_name="z", operator="isnull"
+                ),
+            ),
+        }
+
+        c2 = {
+            "name": "isnotnull",
+            "persons": [f"P{i}" for i in range(4, 8)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    column_name="z", operator="notnull"
+                ),
+            ),
+        }
+
+        c3 = {
+            "name": "notin_no_nulls",
+            "persons": [f"P{i}" for i in [0, 1, 4, 5]],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    column_name="y", operator="notin", allowed_values=["y2"]
+                ),
+            ),
+        }
+
+        # this is the test to prove that "notin" removes null columns!
+        c4 = {
+            "name": "notin_with_null",
+            "persons": [f"P{i}" for i in [2, 4, 6]],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(
+                    column_name="x", operator="notin", allowed_values=["x2"]
+                ),
+            ),
+        }
+
+        c5 = {
+            "name": "two_categorical_filter_or",
+            "persons": [f"P{i}" for i in range(4)] + [f"P{i}" for i in range(6, 8)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(column_name="z", operator="isnull")
+                | CategoricalFilter(allowed_values=["y2"], column_name="y"),
+            ),
+        }
+
+        c6 = {
+            "name": "two_categorical_filter_and",
+            "persons": [f"P{i}" for i in range(2, 4)],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=CategoricalFilter(column_name="z", operator="isnull")
+                & CategoricalFilter(allowed_values=["y2"], column_name="y"),
+            ),
+        }
+
+        c7 = {
+            "name": "not_is_null",
+            "persons": [f"P{i}" for i in range(4, self.df.shape[0])],
+            "phenotype": CodelistPhenotype(
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="condition_occurrence",
+                categorical_filter=~CategoricalFilter(
+                    column_name="z", operator="isnull"
+                ),
+            ),
+        }
+
+        test_infos = [c1, c2, c3, c4, c5, c6, c7]
+        for test_info in test_infos:
+            test_info["phenotype"].name = test_info["name"]
+
+        return test_infos
+
+
 class CodelistPhenotypeFuzzyMatchTestGenerator(PhenotypeTestGenerator):
     name_space = "clpt_fuzzy_match"
 
@@ -970,7 +1092,13 @@ def test_categorical_filter_phenotype():
     tg.run_tests()
 
 
+def test_categorical_filter_is_null_phenotype():
+    tg = CodelistPhenotypeCategoricalFilterIsNullTestGenerator()
+    tg.run_tests()
+
+
 if __name__ == "__main__":
+    test_categorical_filter_is_null_phenotype()
     test_categorical_filter_logic()
     test_categorical_filter_logic_autojoin()
     test_categorical_filter_phenotype()
