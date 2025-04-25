@@ -12,7 +12,7 @@ from phenex.phenotypes import (
     SexPhenotype,
 )
 from phenex.filters import (
-    DateRangeFilter,
+    DateFilter,
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,
     GreaterThan,
