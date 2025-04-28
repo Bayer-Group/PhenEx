@@ -95,11 +95,11 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
       case CohortDefinitionViewType.Cohort:
         return (
           <AccordianTabbedInfoDisplayView
-            title="Cohort Definition"
+            title="Cohort"
             infoContent={
               <>
                 <p>
-                  Specify which patients you are interested in including in your study with{' '}
+                  Define your cohort here using{' '}
                   <strong>electronic phenotypes</strong> that define:
                 </p>
                 <ol>
@@ -132,7 +132,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
       case CohortDefinitionViewType.Baseline:
         return (
           <AccordianTabbedInfoDisplayView
-            title="Baseline Characteristics"
+            title="Baseline"
             infoContent={
               <>
                 <p>

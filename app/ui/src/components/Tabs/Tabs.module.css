@@ -1,17 +1,17 @@
 .tabsContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px 6px;
   padding: 2px;
   background-color: transparent;
   border-radius: 8px;
 }
 
 .tab {
-  padding: 2px 16px;
+  padding: 2px 10px;
   border: none;
   border-radius: 6px;
-  background-color: white;
+  background-color: transparent;
   color: var(--text-color-inactive);
   cursor: pointer;
   font-size: 14px;
@@ -22,22 +22,22 @@
   font-family: 'SNPro-bold';
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  height: 23px;
 }
 
 .tab:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  color: white;
-  background-color: var(--color-accent);
+  color: var(--color-accent);
+  /* background-color: var(--color-accent); */
   border: 1px solid var(--color-accent);
 }
 
 .tab.active {
   background-color: white;
-  color: white;
+  color: black;
   transform: translateY(-1px);
   border: 1px solid var(--color-accent);
-  background-color: var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 

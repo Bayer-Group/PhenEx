@@ -45,6 +45,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
         anchor_phenotype: Optional[Phenotype] = None,
+        relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
         """
@@ -77,6 +78,15 @@ class ContinuousCoveragePhenotype(Phenotype):
         super().__init__(**kwargs)
         self.name = name
         self.domain = domain
+        if relative_time_range is not None:
+            if isinstance(relative_time_range, list):
+                relative_time_range = relative_time_range[0]
+            if min_days is not None or max_days is not None:
+                raise ValueError("Set filtering for continuous coverage either with a value_filter or directly with min_days and max_days, not both.")
+            min_days = relative_time_range.min_days
+            max_days = relative_time_range.max_days
+            when = relative_time_range.when
+        print("GOING IN HERE", relative_time_range)
         verify_relative_time_range_filter_input(min_days, max_days, when)
         self.min_days = min_days
         self.max_days = max_days

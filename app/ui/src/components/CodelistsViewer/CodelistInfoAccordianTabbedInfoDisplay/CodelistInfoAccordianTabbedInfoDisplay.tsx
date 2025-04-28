@@ -2,6 +2,8 @@ import { FC, useState } from 'react';
 import styles from './CodelistInfoAccordianTabbedInfoDisplay.module.css';
 import { Tabs } from '../../Tabs/Tabs';
 import { CodelistColumnMapping } from '../CodelistsInfoDisplay/CodelistColumnMapping';
+import { CodelistFileContent } from '../CodelistsInfoDisplay/CodelistFileContent';
+
 interface CodelistInfoAccordianTabbedInfoDisplayProps {
   title: string;
   infoContent?: string;
@@ -39,7 +41,7 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTab
   const renderContent = () => {
     switch (currentTab) {
       case InfoTabType.Info:
-        return <div className={styles.infoContent}></div>;
+        return <CodelistFileContent />;
       case InfoTabType.Mapping:
         return <CodelistColumnMapping />;
       case InfoTabType.Edit:
@@ -60,7 +62,7 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTab
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>>'}
+          {'>'}
         </button>
       </div>
       <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>

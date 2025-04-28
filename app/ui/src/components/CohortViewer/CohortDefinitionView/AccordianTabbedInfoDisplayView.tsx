@@ -98,7 +98,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>>'}
+          {'>'}
         </button>
         <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
           <Tabs

@@ -9,14 +9,23 @@ import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianT
 export const CodelistsViewer: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [activeTab, setActiveTab] = useState(0);
-  const [gridData, setGridData] = useState<{ columnDefs: any[], rowData: any[] }>({
-    columnDefs: [],
-    rowData: []
-  });
+  const [gridData, setGridData] = useState<{ columnDefs: any[], rowData: any[] }>({columnDefs: [], rowData: []});
+  const [tabs, setTabs] = useState<string[]>(['All Codelists']);
 
-  // Create tabs array with 'All Codelists' and filenames
-  const tabs = ['All Codelists', ...dataService.codelists_service.files.map(file => file.filename)];
 
+  useEffect(() => {
+    const handleFilenamesChange = () => {
+      // setGridData(dataService.codelists_service.prepareAllCodelistsData());
+      console.log(dataService.codelists_service._filenames, "HANDLE FiLENAMES")
+      setTabs(['All Codelists', ...(dataService.codelists_service._filenames || [])]);
+    };
+
+    handleFilenamesChange();
+    dataService.codelists_service.addListener(handleFilenamesChange);
+    return () => {
+      dataService.codelists_service.removeListener(handleFilenamesChange);
+    };
+  }, [dataService]);
 
   const handleTabChange = (index: number) => {
     setActiveTab(index);
@@ -57,11 +66,13 @@ export const CodelistsViewer: React.FC = () => {
             onTabChange={handleTabChange}
           />
         </div>
-        <div className={styles.contentContainer}>
-          {activeTab !== 0 && (
-            <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
-          )}
-          <div className={styles.gridContainer} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
+        <div className={styles.bottomSection}>
+          <div className = {styles.infoBox}>
+            {activeTab !== 0 && (
+              <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
+            )}
+          </div>
+          <div className={styles.tableBox} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
             <AgGridReact
               rowData={gridData.rowData}
               columnDefs={gridData.columnDefs}

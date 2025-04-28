@@ -48,7 +48,7 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
-  padding: 0px 0px 5px 0px;
+  padding: 0px 0px 0px 0px;
   /* border: 3px solid blue; */
 }
 
@@ -83,15 +83,14 @@
   opacity: 0;
   display: flex;
   flex-direction: row;
-  right: 10px;
-
+  right: 0px;
+  margin-top: 0px !important;
   margin-left: auto;
   gap: 10px;
   transition: opacity 0.3s ease;
   font-size: 10px;
   z-index: 1000;
   position: relative;
-  padding-top: 5px;
 }
 
 .filterContainer:hover > .logicalButtons,
@@ -130,9 +129,9 @@
 }
 
 .logicalBorderedArea {
-  border: 2px solid var(--line-color);
+  border: 1px solid var(--line-color);
   border-radius: 12px;
-  padding: 7px 7px 7px 7px;
+  padding: 7px 7px 8px 7px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -152,6 +151,8 @@
   font-size: 8px;
   background-color: transparent;
   padding-right: 5px;
+  padding-top: 4px;
+
   transition: all 0.3s ease;
   /* margin-bottom: 10px; */
 }

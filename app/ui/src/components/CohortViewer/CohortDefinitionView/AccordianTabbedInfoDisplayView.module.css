@@ -1,17 +1,30 @@
+:root{
+  --accordian_container_border_width:1px;
+
+}
 .accordianContainer {
-  border: 2px solid white;
+  border: var(--accordian_container_border_width) solid transparent;
   border-radius: 15px;
   margin-bottom: 1rem;
-  margin: 5px 20px;
-  background-color: white;
   user-select: none;
   transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
   overflow: hidden;
+  margin-bottom: 0px !important;
+  margin-top: 4px!important;
+  margin-left: 12px;
+  max-width:800px;
+  margin-right:30px;
+  background-color: var(--background-color);
 }
 
 .accordianContainer.opened {
   max-height: 2000px;
   transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px !important;
+  margin-top: 20px!important;
+  background-color: white;
+
 }
 
 .contentArea {
@@ -39,14 +52,18 @@
   margin: 0;
   padding-top: 13px;
   font-size: 22px;
-  font-weight: 500;
-  margin-left: 60px;
+  font-family: "IBMPlexSans-bold";
+  margin-left: 80px;
   transition: 0.3s ease;
+  margin-top:-1.5px;
+  margin-left: 80px !important;
+
 }
 
 .header.closed h2 {
-  padding-top: 2px;
-  margin-left: 0px;
+  padding-top: 0px;
+  margin-left:-0px !important;
+
 }
 
 strong {
@@ -58,16 +75,16 @@ strong {
   padding: 0px 0px;
   height: 40px;
   width: 40px;
-  border: var(--border);
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 22px;
   font-family: 'SNPro-bold';
-  color: var(--color-accent);
+  color: black;
   transform: rotate(-90deg);
   left: 30px;
   background-color: white;
   margin-top: 8px;
-  border: 2px solid var(--color-accent);
+  border: var(--accordian_container_border_width) solid var(--line-color);
+
   opacity: 1;
   transition: 0.3s ease;
 }
@@ -77,14 +94,13 @@ strong {
 }
 
 .toggleButton:hover {
-  transition: transform 0.3s ease;
-  transform: translateY(-24px);
-  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+  /* transform: translateY(-1px); */
+  transform: rotate(-90deg) translateX(1px);
   outline: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: var(--color-accent);
-  color: white;
-  border: 2px solid var(--color-accent);
+  box-shadow: -2px 0px 4px rgba(0, 0, 0, 0.1);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .toggleButton.closed {

@@ -4,6 +4,7 @@
   height: 100%;
   width: 100%;
   min-width: 0;
+  background-color: transparent;
 }
 
 .topSection {
@@ -66,5 +67,4 @@
 
 .tableBox {
   flex: 1;
-  color: white;
 }

@@ -19,6 +19,7 @@ class CodelistFilter(Filter):
 
     def __init__(self, codelist: Codelist, name=None):
         self.codelist = codelist
+        print(codelist, "IN CODELISTFILTER")
         self.name = name or self.codelist.name
         self.codelist_as_tuples = self._convert_codelist_to_tuples()
         super(CodelistFilter, self).__init__()

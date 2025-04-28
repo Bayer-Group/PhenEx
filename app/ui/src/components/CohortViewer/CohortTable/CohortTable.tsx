@@ -25,13 +25,15 @@ export const CohortTable = forwardRef<any, CohortTableProps>(({ data, onCellValu
     borderColor: 'var(--line-color-grid)',
     browserColorScheme: 'light',
     columnBorder: true,
-    headerFontSize: 11,
+    headerFontSize: 14,
+    headerFontWeight: 'bold',
     headerRowBorder: true,
     cellHorizontalPadding: 10,
-    headerBackgroundColor: 'var(--background-color-content, #FFFFFF)',
+    headerBackgroundColor: 'var(--background-color, red)',
     rowBorder: true,
     spacing: 8,
     wrapperBorder: false,
+    backgroundColor: 'var(--background-color)',
   });
 
   const onGridReady = () => {

@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.filterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.singleExpressionContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+}
+
+.phenotypeSelect {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.logicalButton {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.logicalButton:hover {
+  background-color: #e0e0e0;
+}
+
+.deleteButton {
+  padding: 4px 8px;
+  border: 1px solid #ff4444;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #ff4444;
+  cursor: pointer;
+}
+
+.deleteButton:hover {
+  background-color: #ff4444;
+  color: #fff;
+}
+
+.logicalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logicalBorderedArea {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logicalOperator {
+  text-align: center;
+  padding: 4px;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+}
+
+.lastLogicalExpression {
+  margin-bottom: 0;
+}

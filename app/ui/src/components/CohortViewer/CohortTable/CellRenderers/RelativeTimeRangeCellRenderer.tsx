@@ -38,14 +38,18 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
       : filter.anchor_phenotype || 'unknown phenotype';
     return (
       <span className={styles.filterRowSpan}>
-        <span className={`${styles.timeValue} ${styles.min}`}>
-          <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
-          {filter.min_days.value}
-        </span>
-        <span className={`${styles.timeValue} ${styles.max}`}>
-          <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
-          {filter.max_days.value}
-        </span>
+        {filter.min_days && (
+          <span className={`${styles.timeValue} ${styles.min}`}>
+            <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
+            {filter.min_days.value}
+          </span>
+        )}
+        {filter.max_days && (
+          <span className={`${styles.timeValue} ${styles.max}`}>
+            <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
+            {filter.max_days.value}
+          </span>
+        )}
         days <span className={styles.when}>{filter.when}</span>
         <span className={styles.reference}> {reference} </span>
       </span>

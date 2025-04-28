@@ -7,6 +7,8 @@ import { ValueFilterCellEditor } from '../../CohortViewer/CohortTable/CellEditor
 import { PhenotypeSelectorCellEditor } from '../../CohortViewer/CohortTable/CellEditors/PhenotypeSelectorCellEditor';
 
 import {DomainSelectorCellEditor} from '../../CohortViewer/CohortTable/CellEditors/DomainSelectorCellEditor';
+import {LogicalExpressionCellEditor} from '../../CohortViewer/CohortTable/CellEditors/LogicalExpressionCellEditor';
+import {DescriptionCellEditor} from '../../CohortViewer/CohortTable/CellEditors/DescriptionCellEditor';
 
 export interface PhenexPhenotypeCellEditorProps extends ICellEditorParams {
   value?: any;
@@ -20,6 +22,8 @@ const classNameToEditorMapping = {
   value_filter: ValueFilterCellEditor,
   class_name: PhenotypeSelectorCellEditor,
   domain: DomainSelectorCellEditor,
+  expression: LogicalExpressionCellEditor,
+  description: DescriptionCellEditor
 }
 
 

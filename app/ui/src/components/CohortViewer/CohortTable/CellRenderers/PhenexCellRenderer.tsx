@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
 import styles from './PhenexCellRenderer.module.css';
 
@@ -17,8 +17,10 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     position: 'relative',
   };
 
+  console.log("IS SELECTED", props.node.isSelected());
+
   return (
-    <div className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''}`}>
+    <div className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''} ${props.node.isSelected() ? styles.selected : ''}`}>
       {props.children}
     </div>
   );

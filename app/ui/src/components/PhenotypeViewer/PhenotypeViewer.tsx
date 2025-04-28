@@ -3,6 +3,7 @@ import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
 import { EditableTextField } from '../EditableTextField/EditableTextField';
+import { PhenotypeAccordianInfo } from './PhenotypeAccordianInfo/PhenotypeAccordianInfo';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -110,42 +111,38 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-      <EditableTextField
-          value={phenotypeName}
-          placeholder="Name your cohort..."
-          className={styles.phenotypeNameInput}
-          onChange={(newValue) => {
-            setPhenotypeName(newValue)
-          }}
-          onSaveChanges={onSaveNameChanges}
-        />
-        <div className={styles.info}>{renderType()}</div>
-        <textarea
-          className={styles.description}
-          value={data?.description || ''}
-          onChange={(e) => {
-            if (dataService.currentPhenotype) {
-              dataService.currentPhenotype.description = e.target.value;
-              dataService.valueChanged({parameter: 'description', value: e.target.value}, e.target.value);
-            }
-          }}
-          placeholder="Enter description..."
-        />
+        <div className={styles.title}>
+          <EditableTextField
+              value={phenotypeName}
+              placeholder="Name your cohort..."
+              className={styles.phenotypeNameInput}
+              onChange={(newValue) => {
+                setPhenotypeName(newValue)
+              }}
+              onSaveChanges={onSaveNameChanges}
+            />
+           
+        </div>
       </div>
-      <div className={`${styles.gridContainer}`}>
-        <AgGridReact
-          rowData={dataService.rowData}
-          columnDefs={dataService.getColumnDefs()}
-          ref={gridRef}
-          theme={dataService.getTheme()}
-          onCellValueChanged={onCellValueChanged}
-          animateRows={true}
-          defaultColDef={{
-            flex: 1,
-            minWidth: 100,
-            resizable: true,
-          }}
-        />
+      <div className={styles.bottomSection}>
+        <div className = {styles.infoBox}>
+          <PhenotypeAccordianInfo />
+        </div>
+        <div className={`${styles.tableBox}`}>
+          <AgGridReact
+            rowData={dataService.rowData}
+            columnDefs={dataService.getColumnDefs()}
+            ref={gridRef}
+            theme={dataService.getTheme()}
+            onCellValueChanged={onCellValueChanged}
+            animateRows={true}
+            defaultColDef={{
+              flex: 1,
+              minWidth: 100,
+              resizable: true,
+            }}
+          />
+        </div>
       </div>
     </div>
   );

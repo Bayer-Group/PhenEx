@@ -414,6 +414,26 @@ class Codelist:
         )
 
 
+class CompositeCodelist(Codelist):
+    """
+    CompositeCodelist is a class that allows us to conveniently work with medical codes used in RWD analyses. A CompositeCodelist represents a
+    """
+    def __init__(self, 
+        codelists: List[Codelist],
+        name: Optional[str] = None,
+        use_code_type: Optional[bool] = True,
+        remove_punctuation: Optional[bool] = False,
+        **kwargs,
+    ) -> None:
+        self.codelists = codelists
+        super().__init__(
+            codelist= sum(self.codelists[1:],self.codelists[0]).codelist,
+            name=name,
+            use_code_type=use_code_type,
+            remove_punctuation=remove_punctuation,  
+        )
+
+
 class LocalCSVCodelistFactory:
     """
     LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.

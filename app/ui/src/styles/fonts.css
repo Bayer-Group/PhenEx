@@ -13,6 +13,27 @@
 }
 
 @font-face {
+  font-family: 'IBMPlexSans-regular';
+  src: url('../assets/fonts/IBMPlexSans-Regular.ttf') format('opentype'); 
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'IBMPlexSans-bold';
+  src: url('../assets/fonts/IBMPlexSans-Bold.ttf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'IBMPlexSans-italic';
+  src: url('../assets/fonts/IBMPlexSans-Italic.ttf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
   font-family: 'SNPro-black';
   src: url('../assets/fonts/SNPro-Black.otf') format('opentype');
   font-weight: 900;

@@ -1,12 +1,31 @@
+:root{
+  --accordian_container_border_width:1px;
+}
+
 .accordianContainer {
-  border: 2px solid white;
+  border: var(--accordian_container_border_width) solid transparent;
   border-radius: 15px;
   margin-bottom: 1rem;
-  margin: 5px 5px;
-  background-color: white;
+  margin: 5px 20px;
+  background-color: transparent;
   user-select: none;
   transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
   overflow: hidden;
+  margin-bottom: 0px !important;
+  margin-top: 4px!important;
+  margin-left: 0px;
+  max-width: 800px;
+  margin-right: 0px;
+}
+
+.accordianContainer.opened {
+  max-height: 2000px;
+  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px !important;
+  margin-top: 20px!important;
+  border-color: var(--color-accent);
+  background-color: white;
 }
 
 .header {
@@ -17,14 +36,14 @@
   margin: 0;
   padding-top: 13px;
   font-size: 22px;
-  font-weight: 500;
-  margin-left: 60px;
+  font-family: "IBMPlexSans-bold";
+  margin-left: 80px;
   transition: 0.3s ease;
 }
 
 .header.closed h2 {
   padding-top: 2px;
-  margin-left: 5px;
+  margin-left: 10px;
 }
 
 .toggleButton {
@@ -32,29 +51,26 @@
   padding: 0px 0px;
   height: 40px;
   width: 40px;
-  border: var(--border);
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 22px;
   font-family: 'SNPro-bold';
-  color: var(--color-accent);
+  color: black;
   transform: rotate(-90deg);
-  left: 15px;
+  left: 10px;
   background-color: white;
   margin-top: 8px;
-  border: 2px solid var(--color-accent);
+  border: var(--accordian_container_border_width) solid transparent;
   opacity: 1;
   transition: 0.3s ease;
 }
 
 .toggleButton:hover {
-  transition: transform 0.3s ease;
-  transform: translateY(-24px);
-  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg) translateX(1px);
   outline: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: var(--color-accent);
-  color: white;
-  border: 2px solid var(--color-accent);
+  box-shadow: -2px 0px 4px rgba(0, 0, 0, 0.1);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .toggleButton.closed {
@@ -62,29 +78,10 @@
   transform: rotate(90deg);
   border: var(--border);
   opacity: 0;
-
 }
 
 .toggleButton:focus {
   outline: none;
-  
-}
-
-.accordianContainer.opened {
-  border-color: var(--color-accent);
-}
-
-.tabsContainer {
-  position: relative !important;
-  margin-bottom: 0px;
-  margin-top: 15px;
-  margin-left: 10px;
-  transition: 0.3s ease;
-}
-
-.tabsContainer.closed {
-  margin-top: 2px;
-  margin-left:0px;
 }
 
 .content {
@@ -100,10 +97,24 @@
 }
 
 .contentArea {
-  padding: 0px 10px 0px 0px;
+  padding: 20px;
   font-size: 16px;
   max-height: 500px;
   overflow-y: auto;
+}
+
+.tabsContainer {
+  position: relative !important;
+  margin-bottom: 0px;
+  margin-top: 15px;
+  margin-left: 20px;
+  transition: 0.3s ease;
+}
+
+.tabsContainer.closed {
+  margin-top: 2px;
+  margin-left: 0px;
+
 }
 
 .infoContent {

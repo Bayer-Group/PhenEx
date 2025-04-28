@@ -44,13 +44,15 @@ export class PhenotypeDataService {
   public getTheme() {
     return themeQuartz.withParams({
       accentColor: '#DDDDDD',
-      borderColor: '#AFAFAF26',
+      borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: true,
-      headerFontSize: 11,
+      headerFontSize: 14,
+      headerFontWeight: 'bold',
       headerRowBorder: true,
       cellHorizontalPadding: 10,
-      headerBackgroundColor: 'var(--background-color-content, #FFFFFF)',
+      headerBackgroundColor: 'var(--background-color, #FFFFFF)',
+      backgroundColor: 'var(--background-color)',
       rowBorder: true,
       spacing: 8,
       wrapperBorder: false,
@@ -93,7 +95,7 @@ export class PhenotypeDataService {
       const requiredParams = paramDefinitions.filter(paramDef => paramDef.required);
       const nonRequiredParams = paramDefinitions.filter(paramDef => !paramDef.required);
       console.log("THIS IS THE PHENOTYPE", this.currentPhenotype)
-      const sharedParams = ['class_name'].map(param => ({
+      const sharedParams = [ 'type', 'class_name','description'].map(param => ({
         parameter: param,
         value: this.currentPhenotype![param] || 'Not set',
         ...this.currentPhenotype

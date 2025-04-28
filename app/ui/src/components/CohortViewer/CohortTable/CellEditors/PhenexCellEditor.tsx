@@ -100,11 +100,13 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       }}
       tabIndex={-1}
     >
-      <div className={styles.header}>
-        <span className={styles.filler}>editing</span>{' '}
-        {titleText}{' '}
-        <span className={styles.filler}>in</span> {props.data.name}
-        <button className={styles.doneButton} onClick={handleDone}>
+      <div className={styles.header} onClick={handleDone}>
+        <span className={styles.topLine}>
+          <span className={styles.filler}>editing</span><span className={styles.actionText}>{titleText}</span>
+        </span>
+        <br></br>
+        <span className={styles.phenotypeName}>{props.data.name}</span>
+        <button className={styles.doneButton} >
           Done
         </button>
       </div>

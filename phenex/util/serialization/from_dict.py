@@ -16,7 +16,7 @@ def from_dict(data: dict):
     """
     # logger.debug(f"Decoding data: {data}")
 
-    class_name = data.pop("class_name")
+    class_name = data["class_name"]#data.pop("class_name")
     # logger.debug(f"Class name: {class_name}")
     cls = globals()[class_name]
     all_params = get_phenex_init_params(cls)

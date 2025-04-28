@@ -16,12 +16,12 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
     if (value && Array.isArray(value)) {
       return value.map(filter => ({
         class_name: 'RelativeTimeRangeFilter',
-        min_days: {
+        min_days: filter.min_days === null ? null : {
           class_name: 'Value',
           operator: filter.min_days?.operator || '>',
           value: filter.min_days?.value ?? 0,
         },
-        max_days: {
+        max_days: filter.max_days === null ? null : {
           class_name: 'Value',
           operator: filter.max_days?.operator || '<',
           value: filter.max_days?.value ?? 365,
@@ -49,6 +49,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
   useEffect(() => {
     if (onValueChange && filters !== value) {
       onValueChange(filters);
+      console.log("ON vALUE CHANGE", filters)
     }
   }, [filters]);
 
@@ -58,12 +59,12 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
       ...newFilters[index],
       ...updates,
       class_name: 'RelativeTimeRangeFilter',
-      min_days: {
+      min_days: updates.min_days === null ? null : {
         ...newFilters[index].min_days,
         class_name: 'Value',
         ...(updates.min_days || {}),
       },
-      max_days: {
+      max_days: updates.max_days === null ? null : {
         ...newFilters[index].max_days,
         class_name: 'Value',
         ...(updates.max_days || {}),
@@ -73,6 +74,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
       useIndexDate: updates.useIndexDate ?? newFilters[index].useIndexDate ?? true,
       anchor_phenotype: updates.anchor_phenotype ?? newFilters[index].anchor_phenotype ?? null,
     };
+    console.log("UPDATED FILTER", newFilters)
     setFilters(newFilters);
   };
 
@@ -151,7 +153,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
           {filter.useConstant ? (
             <div className={styles.filterSection}>
               <select
-                value={filter.constant}
+                value={filter.constant || 'one_year_pre_index'}
                 onChange={e =>
                   updateFilter(index, { constant: e.target.value as TimeRangeFilter['constant'] })
                 }
@@ -166,54 +168,83 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
               <div className={styles.filterSection}>
                 <label>Min Days:</label>
                 <select
-                  value={filter.min_days.operator}
-                  onChange={e =>
-                    updateFilter(index, {
-                      min_days: { ...filter.min_days, operator: e.target.value as '>' | '>=' },
-                    })
-                  }
+                  value={filter.min_days?.operator || 'not set'}
+                  onChange={e => {
+                    const operator = e.target.value;
+                    console.log("SETTING MIN DAYS")
+                    if (operator === 'not set') {
+                      console.log("SETTINT TO NULL")
+                      updateFilter(index, { min_days: null });
+                    } else {
+                      updateFilter(index, {
+                        min_days: { 
+                          class_name: 'Value',
+                          operator: operator as '>' | '>=',
+                          value: filter.min_days?.value ?? 0
+                        },
+                      }
+                    );
+                    }
+                    console.log("AND AFTER SETTTING", filter)
+
+                  }}
                   className={styles.select}
                 >
+                  <option value="not set">Not Set</option>
                   <option value=">">&gt;</option>
                   <option value=">=">&gt;=</option>
                 </select>
-                <input
-                  type="number"
-                  value={filter.min_days.value}
-                  onChange={e =>
-                    updateFilter(index, {
-                      min_days: { ...filter.min_days, value: e.target.value },
-                    })
-                  }
-                  className={styles.input}
-                  placeholder="0"
-                />
+                {filter.min_days && (
+                  <input
+                    type="number"
+                    value={filter.min_days.value}
+                    onChange={e =>
+                      updateFilter(index, {
+                        min_days: { ...filter.min_days, value: parseInt(e.target.value) || 0 },
+                      })
+                    }
+                    className={styles.input}
+                    placeholder="0"
+                  />
+                )}
               </div>
 
               <div className={styles.filterSection}>
                 <label>Max Days:</label>
                 <select
-                  value={filter.max_days.operator}
-                  onChange={e =>
-                    updateFilter(index, {
-                      max_days: { ...filter.max_days, operator: e.target.value as '<' | '<=' },
-                    })
-                  }
+                  value={filter.max_days?.operator || 'not set'}
+                  onChange={e => {
+                    const operator = e.target.value;
+                    if (operator === 'not set') {
+                      updateFilter(index, { max_days: null });
+                    } else {
+                      updateFilter(index, {
+                        max_days: { 
+                          class_name: 'Value',
+                          operator: operator as '<' | '<=',
+                          value: filter.max_days?.value ?? 365
+                        },
+                      });
+                    }
+                  }}
                   className={styles.select}
                 >
+                  <option value="not set">Not Set</option>
                   <option value="<">&lt;</option>
                   <option value="<=">&lt;=</option>
                 </select>
-                <input
-                  type="number"
-                  value={filter.max_days.value}
-                  onChange={e =>
-                    updateFilter(index, {
-                      max_days: { ...filter.max_days, value: e.target.value },
-                    })
-                  }
-                  className={styles.input}
-                />
+                {filter.max_days && (
+                  <input
+                    type="number"
+                    value={filter.max_days.value}
+                    onChange={e =>
+                      updateFilter(index, {
+                        max_days: { ...filter.max_days, value: parseInt(e.target.value) || 365 },
+                      })
+                    }
+                    className={styles.input}
+                  />
+                )}
               </div>
 
               <div className={styles.filterSection}>

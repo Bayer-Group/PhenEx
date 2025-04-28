@@ -50,7 +50,7 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 2 8px 0;
-  color: #333;
+  /* color: #333; */
 }
 
 .phenotypeSection {
@@ -84,7 +84,7 @@
 }
 
 .phenotypeId {
-  color: black;
+  /* color: black; */
   margin-bottom: 0px;
   margin-right: 50px;
   font-family: 'SNPro-bold';

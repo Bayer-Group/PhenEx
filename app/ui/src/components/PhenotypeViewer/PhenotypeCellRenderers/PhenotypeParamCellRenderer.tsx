@@ -9,7 +9,6 @@ export const PhenotypeParamCellRenderer: React.FC<PhenotypeParamCellRendererProp
     console.log('Edit button clicked for row with ID:', props.data);
   };
 
-  console.log("IS IS THE PHENOTYPE RENDERING", props.data)
   return (
     <div className={styles.container}>
       <span className={styles.label}>{props.value?.split('_').join(' ')}</span>

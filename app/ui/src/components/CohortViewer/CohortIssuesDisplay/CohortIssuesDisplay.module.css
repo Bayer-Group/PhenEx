@@ -1,30 +1,46 @@
 .row {
   /* display: flex; */
-  background-color: white;
+  background-color: rgba(255,255,255,.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   font-family: 'SNPro-bold';
   /* padding: 0px 20px; */
-  border-radius: 30px;
-  border: 2px solid var(--color-accent);
+  border-radius: 10px;
+  border: var(--border);
   height:52px;
-  width:180px;
-  transition: all 0.3s ease-in-out;
+  width:190px;
+  /* transition: all 0.3s ease-in-out; */
   position: relative;
   z-index: 1;
 }
 
 .row.hasIssues{
-  border-color:var(--color-accent);
+  /* border-color:var(--color-accent); */
 }
 
 .row.noIssues{
   border-color:transparent;
 }
 
+.issuesText{
+  font-size:18px;
+  font-family: "SNPro-black";
+}
+
+.row.selected .issuesText {
+  font-size:38px;
+  font-family: "SNPro-bold";
+}
 .row:hover {
   border-color: var(--color-accent);
-  transform: translateY(-1px);
+  color: var(--color-accent);
+
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--color-accent);
+  transition: translateY 0.3s ease-in-out;
+  transition: border 0.3s ease-in-out;
+
+  /* border: 2px solid var(--color-accent); */
 }
 
 .row.noIssues:hover{
@@ -37,7 +53,7 @@
   border-radius: 50%;
   position: absolute;
   top:12px;
-  left:12px;
+  right:10px;
 }
 
 .row.noIssues .statusDot.green{
@@ -55,7 +71,6 @@
 }
 
 .statusDot.selected {
-  background-color: white !important;
 }
 
 .text {
@@ -64,14 +79,23 @@
 }
 
 .row.selected {
-  border-color: var(--color-accent);
+  border-color: transparent;
+  /* transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+
   /* transform: translateY(-1px); */
-  background-color: var(--color-accent);
-  color: white;
+  background-color: var(--background-color);
+  color: black;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
   /* transform: translateY(-1px); */
   width:270px;
   z-index: 2;
+  /* transition: all 0.3s ease-in-out; */
+
+}
+
+.row.selected:hover {
+ box-shadow: none;
 }
 
 .row.noIssues.selected {
@@ -81,11 +105,22 @@
 }
 
 .labelMain{
-  margin-left:45px;
+  margin-left:0px;
   height: 20px;
   position: absolute;
-  top:0px;
-  font-size: 22px;
+  top:8px;
+  font-size: 14px;
+  line-height: 20px;
+  width: calc(100% - 45px);
+  text-wrap: wrap;
+  text-align: right;
+  transition: all 0.3s ease-in-out;
+}
+
+.row.selected .labelMain{
+  text-align: left;
+  transition: all 0.3s ease-in-out;
+
 }
 
 .labelNoIssues{
@@ -98,12 +133,15 @@
 }
 
 .labelMain .number {
-  font-size:24px !important;
+}
+
+.number.phenotypeIssues {
+  margin-left: 5px;
 }
 
 .labelSecondary{
   font-size:12px;
-  margin-left:47px;
+  margin-left:20px;
   height: 15px;
   position: absolute;
   top:30px;

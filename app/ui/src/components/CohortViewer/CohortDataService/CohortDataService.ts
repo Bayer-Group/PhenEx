@@ -1,6 +1,5 @@
 import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
 import { executeStudy } from '../../../api/execute_cohort/route';
-import { MapperDomains } from '../../../types/mappers';
 import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
@@ -29,6 +28,8 @@ export class CohortDataService {
     this.constants_service = new ConstantsDataService();
     this.constants_service.setCohortDataService(this);
     this.codelists_service = new CodelistDataService();
+    this.codelists_service.setCohortDataService(this);
+
   }
 
   public static getInstance(): CohortDataService {
@@ -105,7 +106,7 @@ export class CohortDataService {
     // Update domain values based on mapper type
     const domainColumn = this.columns.find(col => col.field === 'domain');
     if (domainColumn) {
-      domainColumn.cellEditorParams.values = MapperDomains[databaseConfig.mapper];
+      // domainColumn.cellEditorParams.values = MapperDomains[databaseConfig.mapper];
     }
 
     // Refresh table data to reflect the updated domain values

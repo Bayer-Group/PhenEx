@@ -1,11 +1,39 @@
 :global(.ag-cell) {
   /* overflow: visible !important; */
+  transition: background-color 0.2s ease;
+  /* border-radius: 4px; */
+
 }
 
+:global(.ag-cell:hover) {
+  background-color: var(--color-accent-hover);
+}
+
+:global(.ag-header-cell:hover) {
+  color: var(--color-accent);
+}
+
+:global(.ag-header-cell) {
+  border-bottom: var(--border);
+}
+
+
+:global(.ag-cell-focus), :global(.ag-cell-range-selected) {
+  background-color: transparent !important;
+  border-color: var(--color-accent) !important;
+  border-radius: 10px;
+}
 
 .missing {
   background-color: red;
 }
+
+:global(.ag-cell) .missing {
+  /* overflow: visible !important; */
+  transition: background-color 0.2s ease;
+  background-color: var(--color-accent);
+}
+
 
 .container {
   display: flex;
@@ -15,6 +43,10 @@
   height: 100%;
   padding: 0;
   position: relative;
+}
+
+.selected {
+  background-color:red;
 }
 
 .missing {

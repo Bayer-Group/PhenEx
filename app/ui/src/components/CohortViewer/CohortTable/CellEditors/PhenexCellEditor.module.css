@@ -2,12 +2,13 @@
   background-color: transparent !important;
   border: none !important;
   padding: 0 !important;
-  border-radius: 0px 10px 10px 10px !important;
-  overflow: hidden !important;
+  border-radius: 4px 10px 10px 10px !important;
+  box-shadow: none!important;
+
 }
 
 :global(.ag-popup-child) {
-  border-radius: 0px 10px 10px 10px !important;
+  border-radius: 4px 10px 10px 10px !important;
 }
 
 .header {
@@ -16,8 +17,8 @@
   margin-bottom: 0px;
   padding-bottom: 8px;
   padding: 8px;  
-  line-height: 18px;
-  padding-right: 80px;
+  /* line-height: 18px; */
+  padding-right: 20px;
   overflow: hidden;
   text-wrap: wrap;
   min-height: 30px;
@@ -25,9 +26,18 @@
   /* border-bottom: 2px solid var(--color-accent); */
 }
 
+.topLine{
+  line-height: 20px;
+}
+
 .container > * {
   background-color: transparent;
 
+}
+
+.phenotypeName{
+  font-family: "IBMPlexSans-bold";
+  font-size: 20px;
 }
 .container {
   display: flex;
@@ -35,26 +45,36 @@
   width: 300px;
   height: 500px;
   padding: 0px;
-  background-color: white;
+  background-color: var(--background-color);
   border: 1px solid var(--line-color);
-  border-radius: 0px 10px 10px 10px;
+  border-radius: 4px 10px 10px 10px;
   padding-bottom: 10px;
   position: relative;
-  background-color: var(--background-color);
-
+  margin-bottom: 20px !important;
+  margin-right: 20px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* background-color: var(--background-color); */
+  /* background-color: rgba(255,255,255,.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); */
 }
 
 .content {
   overflow-y: auto;
   height: 100%;
   border-top: 2px solid var(--color-accent);
-  border-bottom: 2px solid var(--color-accent);
 
 }
 
 .filler {
-  font-family: 'SNPro-bold';
-  font-size: 18px;
+  font-family: 'SNPro-black';
+  font-size: 14px;
+}
+
+.actionText{
+  padding-left:5px;
+  font-size: 14px;
+  font-family: "SNPro-bold";
 }
 
 .doneButton {
