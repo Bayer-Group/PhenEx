@@ -181,17 +181,19 @@ class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerat
         return test_infos
 
 
-
-class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGenerator):
+class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(
+    PhenotypeTestGenerator
+):
     name_space = "clpt_timerangefilter_fhours"
     date_format = "%m-%d-%Y %H:%M:%S"
     date_type = datetime.datetime
+
     def define_input_tables(self):
         min_days = datetime.timedelta(hours=6)
         max_days = datetime.timedelta(hours=12)
         one_day = datetime.timedelta(hours=1)
-        index_date = datetime.datetime(2022, 1, 1, 0, 0) 
-               
+        index_date = datetime.datetime(2022, 1, 1, 0, 0)
+
         event_dates = [
             index_date - min_days - one_day,  # P0
             index_date - min_days,  # P1
@@ -227,14 +229,15 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
         t1 = {
             "name": "max_days_leq_180",
             "relative_time_range": RelativeTimeRangeFilter(
-                max_days=LessThanOrEqualTo(12),
-                unit="hour"
+                max_days=LessThanOrEqualTo(12), unit="hour"
             ),
             "persons": ["P0", "P1", "P2", "P4", "P5", "P6", "P7"],
         }
         t2 = {
             "name": "max_days_lt_180",
-            "relative_time_range": RelativeTimeRangeFilter(max_days=LessThan(12), unit="hour"),
+            "relative_time_range": RelativeTimeRangeFilter(
+                max_days=LessThan(12), unit="hour"
+            ),
             "persons": ["P0", "P1", "P2", "P5", "P6", "P7"],
         }
         t3 = {
@@ -242,7 +245,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
             "relative_time_range": RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(6),
                 max_days=LessThanOrEqualTo(12),
-                unit="hour"
+                unit="hour",
             ),
             "persons": ["P0", "P1", "P4", "P5"],
         }
@@ -269,7 +272,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
                 min_days=GreaterThan(6),
                 max_days=LessThanOrEqualTo(12),
                 when="after",
-                unit="hour"
+                unit="hour",
             ),
             "persons": ["P9", "P13", "P14"],
         }
@@ -277,8 +280,10 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
         t6 = {
             "name": "range_min_gn90_max_g90",
             "relative_time_range": RelativeTimeRangeFilter(
-                min_days=GreaterThan(-6), max_days=LessThan(6), when="after", unit="hour"
-
+                min_days=GreaterThan(-6),
+                max_days=LessThan(6),
+                when="after",
+                unit="hour",
             ),
             "persons": ["P2", "P6", "P7", "P8", "P11"],
         }
@@ -289,7 +294,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
                 min_days=GreaterThan(-6),
                 max_days=LessThanOrEqualTo(12),
                 when="after",
-                unit="hour"
+                unit="hour",
             ),
             "persons": ["P2", "P6", "P7", "P8", "P9", "P10", "P11", "P13", "P14"],
         }
@@ -307,7 +312,8 @@ class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGe
             )
 
         return test_infos
-    
+
+
 class CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator(
     PhenotypeTestGenerator
 ):
@@ -1208,9 +1214,10 @@ def test_relative_time_range_filter():
     tg = CodelistPhenotypeRelativeTimeRangeFilterTestGenerator()
     tg.run_tests()
 
+
 def test_relative_time_range_filter_hours():
     tg = CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator()
-    tg.run_tests() 
+    tg.run_tests()
 
 
 def test_codelist_phenotype():

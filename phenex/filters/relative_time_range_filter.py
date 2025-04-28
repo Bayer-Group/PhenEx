@@ -101,7 +101,7 @@ class RelativeTimeRangeFilter(Filter):
         return table
 
 
-def verify_relative_time_range_filter_input(min_days, max_days, when, unit = "day"):
+def verify_relative_time_range_filter_input(min_days, max_days, when, unit="day"):
     if min_days is not None:
         assert min_days.operator in [
             ">",
@@ -116,8 +116,15 @@ def verify_relative_time_range_filter_input(min_days, max_days, when, unit = "da
         assert (
             min_days.value <= max_days.value
         ), f"min_days must be less than or equal to max_days"
-    assert unit in ["year", "month", "week", "day", "hour", "minute", "second"], \
-        f"Invalid unit '{unit}'. Allowed units are: year, month, week, day, hour, minute, second."
+    assert unit in [
+        "year",
+        "month",
+        "week",
+        "day",
+        "hour",
+        "minute",
+        "second",
+    ], f"Invalid unit '{unit}'. Allowed units are: year, month, week, day, hour, minute, second."
     assert when in [
         "before",
         "after",
