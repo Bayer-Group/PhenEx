@@ -43,13 +43,15 @@ class RelativeTimeRangeFilter(Filter):
         min_days: Optional[Value] = GreaterThanOrEqualTo(0),
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
+        unit: Optional[str] = "day",
         anchor_phenotype: "Phenotype" = None,
     ):
-        verify_relative_time_range_filter_input(min_days, max_days, when)
+        verify_relative_time_range_filter_input(min_days, max_days, unit, when)
 
         self.min_days = min_days
         self.max_days = max_days
         self.when = when
+        self.unit = unit
         self.anchor_phenotype = anchor_phenotype
         super(RelativeTimeRangeFilter, self).__init__()
 
@@ -71,7 +73,7 @@ class RelativeTimeRangeFilter(Filter):
             ), f"INDEX_DATE column not found in table {table}"
             reference_column = table.INDEX_DATE
 
-        DAYS_FROM_ANCHOR = reference_column.delta(table.EVENT_DATE, "day")
+        DAYS_FROM_ANCHOR = reference_column.delta(table.EVENT_DATE, self.unit)
         if self.when == "after":
             DAYS_FROM_ANCHOR = -DAYS_FROM_ANCHOR
 
@@ -99,7 +101,7 @@ class RelativeTimeRangeFilter(Filter):
         return table
 
 
-def verify_relative_time_range_filter_input(min_days, max_days, when):
+def verify_relative_time_range_filter_input(min_days, max_days, unit, when):
     if min_days is not None:
         assert min_days.operator in [
             ">",
@@ -114,6 +116,8 @@ def verify_relative_time_range_filter_input(min_days, max_days, when):
         assert (
             min_days.value <= max_days.value
         ), f"min_days must be less than or equal to max_days"
+    assert unit in ["year", "month", "week", "day", "hour", "minute", "second"], \
+        f"Invalid unit '{unit}'. Allowed units are: year, month, week, day, hour, minute, second."
     assert when in [
         "before",
         "after",
