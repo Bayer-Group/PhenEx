@@ -1,17 +1,23 @@
-from typing import Optional
+from typing import Optional, Union
 from phenex.filters.filter import Filter
 from phenex.tables import PhenexTable
-from phenex.filters.value import Value
+from phenex.filters.value import (
+    Value,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+    LessThan,
+    LessThanOrEqualTo,
+)
 
 
 class ValueFilter(Filter):
     """
     ValueFilter filters events in an PhenexTable based on a specified value range.
 
-    Attributes:
-        min (Optional[Value]): Minimum value required to pass through the filter.
-        max (Optional[Value]): Maximum value required to pass through the filter.
-        column_name (Optional[str]): The column name to which the value range should be applied. Default to VALUE, which is the default name of the value column in PhenotypeTable's.
+    Parameters:
+        min: Minimum value required to pass through the filter.
+        max: Maximum value required to pass through the filter.
+        column_name: The column name to which the value range should be applied. Default to VALUE, which is the default name of the value column in PhenotypeTable's.
 
     Methods:
         filter: Filters the given PhenexTable based on the range of values specified by the min and max attributes. See Filter.
@@ -19,8 +25,8 @@ class ValueFilter(Filter):
 
     def __init__(
         self,
-        min: Optional[Value] = None,
-        max: Optional[Value] = None,
+        min: Optional[Union[Value, GreaterThan, GreaterThanOrEqualTo]] = None,
+        max: Optional[Union[Value, LessThan, LessThanOrEqualTo]] = None,
         column_name: Optional[str] = "VALUE",
     ):
         if min is not None:

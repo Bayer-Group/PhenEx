@@ -2,7 +2,7 @@ from typing import Union, List, Dict
 from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -75,7 +75,7 @@ class HospitalizationPhenotype(Phenotype):
         column_name: str,
         allowed_values: List[str],
         name=None,
-        date_range: DateRangeFilter = None,
+        date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
