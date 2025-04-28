@@ -43,10 +43,10 @@ class RelativeTimeRangeFilter(Filter):
         min_days: Optional[Value] = GreaterThanOrEqualTo(0),
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
-        unit: Optional[str] = "day",
         anchor_phenotype: "Phenotype" = None,
+        unit: Optional[str] = "day",
     ):
-        verify_relative_time_range_filter_input(min_days, max_days, unit, when)
+        verify_relative_time_range_filter_input(min_days, max_days, when, unit)
 
         self.min_days = min_days
         self.max_days = max_days
@@ -101,7 +101,7 @@ class RelativeTimeRangeFilter(Filter):
         return table
 
 
-def verify_relative_time_range_filter_input(min_days, max_days, unit, when):
+def verify_relative_time_range_filter_input(min_days, max_days, when, unit = "day"):
     if min_days is not None:
         assert min_days.operator in [
             ">",
