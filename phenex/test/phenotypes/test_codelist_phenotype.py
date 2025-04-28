@@ -181,6 +181,133 @@ class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerat
         return test_infos
 
 
+
+class CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator(PhenotypeTestGenerator):
+    name_space = "clpt_timerangefilter_fhours"
+    date_format = "%m-%d-%Y %H:%M:%S"
+    date_type = datetime.datetime
+    def define_input_tables(self):
+        min_days = datetime.timedelta(hours=6)
+        max_days = datetime.timedelta(hours=12)
+        one_day = datetime.timedelta(hours=1)
+        index_date = datetime.datetime(2022, 1, 1, 0, 0) 
+               
+        event_dates = [
+            index_date - min_days - one_day,  # P0
+            index_date - min_days,  # P1
+            index_date - min_days + one_day,  # P2
+            index_date - max_days - one_day,  # P3
+            index_date - max_days,  # P4
+            index_date - max_days + one_day,  # P5
+            index_date - one_day,  # P6
+            index_date,  # P7
+            index_date + one_day,  # P8
+            index_date + min_days + one_day,  # P9
+            index_date + min_days,  # P10
+            index_date + min_days - one_day,  # P11
+            index_date + max_days + one_day,  # P12
+            index_date + max_days,  # P13
+            index_date + max_days - one_day,  # P14
+        ]
+        N = len(event_dates)
+
+        df = pd.DataFrame.from_dict(
+            {
+                "CODE": ["c1"] * N,
+                "PERSON_ID": [f"P{x}" for x in list(range(N))],
+                "CODE_TYPE": ["ICD10CM"] * N,
+                "INDEX_DATE": [index_date] * N,
+                "EVENT_DATE": event_dates,
+            }
+        )
+
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "max_days_leq_180",
+            "relative_time_range": RelativeTimeRangeFilter(
+                max_days=LessThanOrEqualTo(12),
+                unit="hour"
+            ),
+            "persons": ["P0", "P1", "P2", "P4", "P5", "P6", "P7"],
+        }
+        t2 = {
+            "name": "max_days_lt_180",
+            "relative_time_range": RelativeTimeRangeFilter(max_days=LessThan(12), unit="hour"),
+            "persons": ["P0", "P1", "P2", "P5", "P6", "P7"],
+        }
+        t3 = {
+            "name": "min_days_geq_90_max_days_leq_180",
+            "relative_time_range": RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(6),
+                max_days=LessThanOrEqualTo(12),
+                unit="hour"
+            ),
+            "persons": ["P0", "P1", "P4", "P5"],
+        }
+
+        t4 = {
+            "name": "after_max_days_leq_180",
+            "relative_time_range": RelativeTimeRangeFilter(
+                max_days=LessThanOrEqualTo(12), when="after", unit="hour"
+            ),
+            "persons": [
+                "P7",
+                "P8",
+                "P9",
+                "P10",
+                "P11",
+                "P13",
+                "P14",
+            ],  # P12 is maxdays + 1day, so outside of range
+        }
+
+        t5 = {
+            "name": "after_max_days_g_90_max_days_leq_180",
+            "relative_time_range": RelativeTimeRangeFilter(
+                min_days=GreaterThan(6),
+                max_days=LessThanOrEqualTo(12),
+                when="after",
+                unit="hour"
+            ),
+            "persons": ["P9", "P13", "P14"],
+        }
+
+        t6 = {
+            "name": "range_min_gn90_max_g90",
+            "relative_time_range": RelativeTimeRangeFilter(
+                min_days=GreaterThan(-6), max_days=LessThan(6), when="after", unit="hour"
+
+            ),
+            "persons": ["P2", "P6", "P7", "P8", "P11"],
+        }
+
+        t7 = {
+            "name": "range_min_gn90_max_ge180",
+            "relative_time_range": RelativeTimeRangeFilter(
+                min_days=GreaterThan(-6),
+                max_days=LessThanOrEqualTo(12),
+                when="after",
+                unit="hour"
+            ),
+            "persons": ["P2", "P6", "P7", "P8", "P9", "P10", "P11", "P13", "P14"],
+        }
+
+        test_infos = [t1, t2, t3, t4, t5, t6, t7]
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+        for test_info in test_infos:
+            test_info["phenotype"] = CodelistPhenotype(
+                name=test_info["name"],
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="CONDITION_OCCURRENCE",
+                relative_time_range=test_info["relative_time_range"],
+            )
+
+        return test_infos
+    
 class CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator(
     PhenotypeTestGenerator
 ):
@@ -1081,6 +1208,10 @@ def test_relative_time_range_filter():
     tg = CodelistPhenotypeRelativeTimeRangeFilterTestGenerator()
     tg.run_tests()
 
+def test_relative_time_range_filter_hours():
+    tg = CodelistPhenotypeRelativeTimeRangeFilterHoursTestGenerator()
+    tg.run_tests() 
+
 
 def test_codelist_phenotype():
     tg = CodelistPhenotypeTestGenerator()
@@ -1103,6 +1234,7 @@ if __name__ == "__main__":
     test_categorical_filter_logic_autojoin()
     test_categorical_filter_phenotype()
     test_relative_time_range_filter()
+    test_relative_time_range_filter_hours()
     test_anchor_phenotype()
     test_return_date()
     test_fuzzy_match()

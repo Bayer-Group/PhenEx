@@ -21,6 +21,7 @@ class PhenotypeTestGenerator:
 
     name_space = ""
     date_format = "%m-%d-%Y"
+    date_type = datetime.date
     test_values = False
     value_datatype = float
     test_date = False
@@ -76,7 +77,7 @@ class PhenotypeTestGenerator:
             schema = {}
             for col in input_info["df"].columns:
                 if "date" in col.lower():
-                    schema[col] = datetime.date
+                    schema[col] = self.date_type
                 elif "value" in col.lower():
                     schema[col] = float
                 else:
