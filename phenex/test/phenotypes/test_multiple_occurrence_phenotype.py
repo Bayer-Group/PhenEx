@@ -4,7 +4,7 @@
 # from datetime import date
 # from phenex.phenotypes.multiple_occurrences_phenotype import MultipleOccurrencePhenotype
 # from phenex.phenotypes.phenotype import Phenotype
-# from phenex.filters.date_range_filter import DateRangeFilter
+# from phenex.filters.date_filter import DateFilter
 # from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 # from phenex.phenotypes.test.mock_phenotype import MockPhenotype
 
@@ -82,7 +82,7 @@
 # def test_multiple_occurrences_with_date_range(setup_tables, setup_phenotype):
 #     tables = setup_tables
 #     phenotype = setup_phenotype
-#     date_range = DateRangeFilter(start_date="2020-01-01", end_date="2020-12-31")
+#     date_range = DateFilter(start_date="2020-01-01", end_date="2020-12-31")
 #     multiple_occurrences = MultipleOccurrencePhenotype(
 #         name="test_multiple_occurrences",
 #         phenotype=phenotype,

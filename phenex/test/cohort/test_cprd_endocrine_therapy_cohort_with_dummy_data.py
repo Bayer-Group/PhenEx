@@ -11,12 +11,7 @@ from phenex.phenotypes import (
     ContinuousCoveragePhenotype,
     SexPhenotype,
 )
-from phenex.filters import (
-    DateRangeFilter,
-    RelativeTimeRangeFilter,
-    GreaterThanOrEqualTo,
-    GreaterThan,
-)
+from phenex.filters import *
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
 from phenex.test.cohort.test_mappings import (
     PersonTableForTests,
@@ -43,9 +38,9 @@ def create_cohort():
     EXCLUSION CRITERIA
     Any prescription for tamoxifen or AIs before the BC diagnosis date (prevalent users)
     """
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2010, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min=AfterOrOn(datetime.date(2010, 1, 1)),
+        max=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
