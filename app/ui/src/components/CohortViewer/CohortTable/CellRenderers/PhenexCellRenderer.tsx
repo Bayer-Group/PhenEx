@@ -20,7 +20,17 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   console.log("IS SELECTED", props.node.isSelected());
 
   return (
-    <div className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''} ${props.node.isSelected() ? styles.selected : ''}`}>
+    <div 
+      className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''} ${props.node.isSelected() ? styles.selected : ''}`}
+      onClick={() => {
+        if (props.value === 'missing') {
+          props.api?.startEditingCell({
+            rowIndex: props.node.rowIndex,
+            colKey: props.column.getColId()
+          });
+        }
+      }}
+    >
       {props.children}
     </div>
   );

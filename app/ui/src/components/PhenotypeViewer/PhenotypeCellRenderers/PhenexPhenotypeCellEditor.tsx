@@ -9,6 +9,7 @@ import { PhenotypeSelectorCellEditor } from '../../CohortViewer/CohortTable/Cell
 import {DomainSelectorCellEditor} from '../../CohortViewer/CohortTable/CellEditors/DomainSelectorCellEditor';
 import {LogicalExpressionCellEditor} from '../../CohortViewer/CohortTable/CellEditors/LogicalExpressionCellEditor';
 import {DescriptionCellEditor} from '../../CohortViewer/CohortTable/CellEditors/DescriptionCellEditor';
+import { TypeSelectorCellEditor } from '../../CohortViewer/CohortTable/CellEditors/TypeSelectorCellEditor';
 
 export interface PhenexPhenotypeCellEditorProps extends ICellEditorParams {
   value?: any;
@@ -23,7 +24,8 @@ const classNameToEditorMapping = {
   class_name: PhenotypeSelectorCellEditor,
   domain: DomainSelectorCellEditor,
   expression: LogicalExpressionCellEditor,
-  description: DescriptionCellEditor
+  description: DescriptionCellEditor,
+  type: TypeSelectorCellEditor
 }
 
 

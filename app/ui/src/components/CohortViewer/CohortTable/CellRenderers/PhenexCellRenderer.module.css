@@ -22,6 +22,7 @@
   background-color: transparent !important;
   border-color: var(--color-accent) !important;
   border-radius: 10px;
+
 }
 
 .missing {
@@ -32,6 +33,12 @@
   /* overflow: visible !important; */
   transition: background-color 0.2s ease;
   background-color: var(--color-accent);
+  border-radius: 10px;
+
+  margin: 4px 4px;
+  width:calc(100% - 8px);
+  height:calc(100% - 8px);
+
 }
 
 

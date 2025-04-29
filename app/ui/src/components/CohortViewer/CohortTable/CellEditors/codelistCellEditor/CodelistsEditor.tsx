@@ -36,6 +36,7 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
 
   return (
     <div className={styles.container}>
+
       {Array.isArray(codelists) ? (
         codelists.map((value, index) => (
           <div key={index} className={styles.editorWrapper}>
@@ -55,7 +56,7 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
           />
         </div>
       )}
-      <button className={styles.addButton} onClick={addNewCodelist}>Add Codelist</button>
+            <button className={styles.addButton} onClick={addNewCodelist}>Add Codelist</button>
     </div>
   );
 };

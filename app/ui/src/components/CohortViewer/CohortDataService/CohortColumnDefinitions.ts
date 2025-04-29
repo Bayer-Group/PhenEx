@@ -15,6 +15,7 @@ import { CategoricalFilterCellEditor } from '../CohortTable/CellEditors/Categori
 import { ValueFilterCellEditor } from '../CohortTable/CellEditors/ValueFilterCellEditor';
 import { PhenotypeSelectorCellEditor } from '../CohortTable/CellEditors/PhenotypeSelectorCellEditor';
 import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelectorCellEditor';
+import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
 
 export const defaultColumns = [
   {
@@ -31,11 +32,12 @@ export const defaultColumns = [
     width: 80,
     pinned: 'left',
     editable: true,
-    cellEditor: 'agSelectCellEditor',
+    cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
       values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
     },
     cellRenderer: TypeCellRenderer,
+    cellEditorPopup: true,
   },
   {
     field: 'count',

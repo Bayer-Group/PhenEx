@@ -43,7 +43,14 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
       {Object.entries(codelist).map(([codeType, codes], codeIndex) => (
-        <div key={codeIndex} className={styles.codeBlock}>
+        <div key={codeIndex} className={styles.codeBlock} className={styles.codeBlock} 
+        onClick={() => {
+            props.api?.startEditingCell({
+              rowIndex: props.node.rowIndex,
+              colKey: props.column.getColId()
+            });
+        }}
+        >
           <div className={styles.codes}>
             {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
               <span key={i} className={styles.code}>
@@ -64,7 +71,14 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
 
   const renderFileCodelist = (value: any, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
-      <div className={styles.codeBlock}>
+      <div className={styles.codeBlock} 
+        onClick={() => {
+            props.api?.startEditingCell({
+              rowIndex: props.node.rowIndex,
+              colKey: props.column.getColId()
+            });
+        }}
+        >
         <div className={styles.codes}>
           <span className={styles.code}>{value.codelist_name}</span>
         </div>
