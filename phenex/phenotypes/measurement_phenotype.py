@@ -88,7 +88,7 @@ class MeasurementPhenotype(CodelistPhenotype):
 
     def _perform_nonphysiological_value_filtering(self, code_table):
         if self.clean_nonphysiologicals_value_filter is not None:
-            code_table = self.clean_nonphysiologicals_value_filter.execute(code_table)
+            code_table = self.clean_nonphysiologicals_value_filter.filter(code_table)
         return code_table
 
     def _perform_value_aggregation(self, code_table):
