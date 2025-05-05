@@ -149,7 +149,7 @@ class Codelist:
         elif isinstance(codelist, str):
             if name is None:
                 self.name = codelist
-            self._codelist = {None: [codelist]}
+            self.codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
