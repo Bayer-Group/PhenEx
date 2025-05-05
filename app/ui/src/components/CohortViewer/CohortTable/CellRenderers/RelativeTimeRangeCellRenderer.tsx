@@ -64,13 +64,18 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     <PhenexCellRenderer {...props}>
       <div className={styles.filtersContainer}>
         {filters.map((filter, index) => (
-          <div key={index} className={styles.filterRow} onClick={() => {
+          <div
+            key={index}
+            className={styles.filterRow}
+            onClick={() => {
               props.api?.startEditingCell({
                 rowIndex: props.node.rowIndex,
-                colKey: props.column.getColId()
+                colKey: props.column.getColId(),
               });
-          }}>
-            {formatTimeRange(filter)}<br/>
+            }}
+          >
+            {formatTimeRange(filter)}
+            <br />
           </div>
         ))}
       </div>

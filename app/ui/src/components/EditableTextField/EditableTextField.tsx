@@ -33,18 +33,26 @@ export const EditableTextField: FC<EditableTextFieldProps> = ({
         className={styles.input}
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
         // onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         onBlur={() => handleSave()}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             handleSave();
           }
         }}
       />
       {isFocused && (
-        <div className={styles.saveIndicator} onClick={(e) => { console.log("CLICKING SAVE HERE"); e.preventDefault(); e.stopPropagation(); handleSave(); }}>
+        <div
+          className={styles.saveIndicator}
+          onClick={e => {
+            console.log('CLICKING SAVE HERE');
+            e.preventDefault();
+            e.stopPropagation();
+            handleSave();
+          }}
+        >
           press enter to <span className={styles.saveText}>save</span>
         </div>
       )}

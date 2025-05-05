@@ -8,7 +8,7 @@ export interface DomainSelectorEditorProps {
   onValueChange?: (value: any) => void;
 }
 
-export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = (props) => {
+export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props => {
   const [cohortDataService] = useState(() => CohortDataService.getInstance());
   const [selectedDomain, setSelectedDomain] = useState<string | null>(props.value || null);
   const [domains, setDomains] = useState<DomainInfo[]>([]);
@@ -18,13 +18,11 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = (props)
     const _mappers = cohortDataService.cohort_data.database_config?.mapper;
     setMapper(_mappers);
 
-    if (_mappers){
+    if (_mappers) {
       setDomains(MapperDomains[_mappers]);
-
     }
 
-    console.log("SETTING DOMAINS TO TO : ", domains, mapper)
-
+    console.log('SETTING DOMAINS TO TO : ', domains, mapper);
   }, [cohortDataService.cohort_data.database_config?.mapper]);
 
   const handleDomainSelect = (domainName: string) => {
@@ -35,10 +33,13 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = (props)
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <p className={styles.headerText}>Using {mapper} mappers. Configure in Database<br></br> Current selection : {selectedDomain} </p>
+        <p className={styles.headerText}>
+          Using {mapper} mappers. Configure in Database<br></br> Current selection :{' '}
+          {selectedDomain}{' '}
+        </p>
       </div>
-      <div className = {styles.content}>
-        {domains.map((domain) => (
+      <div className={styles.content}>
+        {domains.map(domain => (
           <div
             key={domain.name}
             className={`${styles.domainSection} ${selectedDomain === domain.name ? styles.selected : ''}`}
@@ -49,6 +50,6 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = (props)
           </div>
         ))}
       </div>
-     </div>
+    </div>
   );
 };

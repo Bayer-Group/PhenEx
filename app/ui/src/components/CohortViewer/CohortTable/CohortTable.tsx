@@ -19,52 +19,54 @@ interface CohortTableProps {
   onCellValueChanged?: (event: any) => void;
 }
 
-export const CohortTable = forwardRef<any, CohortTableProps>(({ data, onCellValueChanged }, ref) => {
-  const myTheme = themeQuartz.withParams({
-    accentColor: '#FF00000',
-    borderColor: 'var(--line-color-grid)',
-    browserColorScheme: 'light',
-    columnBorder: true,
-    headerFontSize: 14,
-    headerFontWeight: 'bold',
-    headerRowBorder: true,
-    cellHorizontalPadding: 10,
-    headerBackgroundColor: 'var(--background-color, red)',
-    rowBorder: true,
-    spacing: 8,
-    wrapperBorder: false,
-    backgroundColor: 'var(--background-color)',
-  });
+export const CohortTable = forwardRef<any, CohortTableProps>(
+  ({ data, onCellValueChanged }, ref) => {
+    const myTheme = themeQuartz.withParams({
+      accentColor: '#FF00000',
+      borderColor: 'var(--line-color-grid)',
+      browserColorScheme: 'light',
+      columnBorder: true,
+      headerFontSize: 14,
+      headerFontWeight: 'bold',
+      headerRowBorder: true,
+      cellHorizontalPadding: 10,
+      headerBackgroundColor: 'var(--background-color, red)',
+      rowBorder: true,
+      spacing: 8,
+      wrapperBorder: false,
+      backgroundColor: 'var(--background-color)',
+    });
 
-  const onGridReady = () => {
-    ref.current?.api?.resetRowHeights();
-  };
+    const onGridReady = () => {
+      ref.current?.api?.resetRowHeights();
+    };
 
-  useEffect(() => {
-    if (ref.current?.api) {
-      ref.current.api.resetRowHeights();
-    }
-  }, [data]);
+    useEffect(() => {
+      if (ref.current?.api) {
+        ref.current.api.resetRowHeights();
+      }
+    }, [data]);
 
-  return (
-    <div className={`ag-theme-quartz ${styles.gridContainer}`}>
-      <AgGridReact
-        ref={ref}
-        rowData={data.rows}
-        theme={myTheme}
-        onGridReady={onGridReady}
-        columnDefs={data.columns.length > 0 ? data.columns : []}
-        defaultColDef={{
-          sortable: true,
-          filter: true,
-          resizable: true,
-          menuTabs: ['filterMenuTab'],
-          suppressHeaderMenuButton: true,
-        }}
-        suppressColumnVirtualisation={true}
-        onCellValueChanged={onCellValueChanged}
-        loadThemeGoogleFonts={true}
-        animateRows={true}
+    return (
+      <div className={`ag-theme-quartz ${styles.gridContainer}`}>
+        <AgGridReact
+          ref={ref}
+          rowData={data.rows}
+          theme={myTheme}
+          onGridReady={onGridReady}
+          columnDefs={data.columns.length > 0 ? data.columns : []}
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+            resizable: true,
+            menuTabs: ['filterMenuTab'],
+            suppressHeaderMenuButton: true,
+          }}
+          suppressColumnVirtualisation={true}
+          onCellValueChanged={onCellValueChanged}
+          loadThemeGoogleFonts={true}
+          animateRows={false}
+          animateColumns={false}
           getRowHeight={params => {
             // Calculate height of CODELISTS
             let current_max_height = 48;

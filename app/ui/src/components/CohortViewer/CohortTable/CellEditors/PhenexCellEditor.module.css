@@ -3,8 +3,8 @@
   border: none !important;
   padding: 0 !important;
   border-radius: 4px 10px 10px 10px !important;
-  box-shadow: none!important;
-
+  box-shadow: none !important;
+  transform: translateY(calc(-100% + 40px));
 }
 
 :global(.ag-popup-child) {
@@ -16,27 +16,38 @@
   font-family: 'SNPro-regular';
   margin-bottom: 0px;
   padding-bottom: 8px;
-  padding: 8px;  
+  padding: 8px;
   /* line-height: 18px; */
   padding-right: 20px;
+  margin: 10px;
   overflow: hidden;
   text-wrap: wrap;
-  min-height: 30px;
-  background-color: transparent !important;
+  min-height: 50px;
+  background-color: white;
+  border-radius: 12px;
+  border: 1px solid var(--color-accent);
+  box-shadow: var(--box_shadow_selected_no_hover);
+  background-color: white !important;
+  transition:
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
   /* border-bottom: 2px solid var(--color-accent); */
 }
+.header:hover {
+  box-shadow: var(--box_shadow_selected_hover);
+  transform: translateY(-1px);
+}
 
-.topLine{
+.topLine {
   line-height: 20px;
 }
 
 .container > * {
   background-color: transparent;
-
 }
 
-.phenotypeName{
-  font-family: "IBMPlexSans-bold";
+.phenotypeName {
+  font-family: 'IBMPlexSans-bold';
   font-size: 20px;
 }
 .container {
@@ -45,25 +56,21 @@
   width: 300px;
   height: 500px;
   padding: 0px;
-  background-color: var(--background-color);
   border: 1px solid var(--line-color);
-  border-radius: 4px 10px 10px 10px;
+  border-radius: var(--issue_popover_radius);
   padding-bottom: 10px;
   position: relative;
   margin-bottom: 20px !important;
   margin-right: 20px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /* background-color: var(--background-color); */
-  /* background-color: rgba(255,255,255,.5);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px); */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--background_color_translucent);
 }
 
 .content {
   overflow-y: auto;
   height: 100%;
-  border-top: 2px solid var(--color-accent);
-
 }
 
 .filler {
@@ -71,22 +78,22 @@
   font-size: 14px;
 }
 
-.actionText{
-  padding-left:5px;
+.actionText {
+  padding-left: 5px;
   font-size: 14px;
-  font-family: "SNPro-bold";
+  font-family: 'IBMPlexSans-bold';
 }
 
 .doneButton {
   background-color: transparent;
-  color:black;
+  color: black;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   width: 60px;
   position: absolute;
-  font-family: "SNPro-bold";
+  font-family: 'SNPro-bold';
   top: 8px;
   height: 25px;
   right: 10px;
@@ -102,17 +109,14 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 2px solid var(--color-accent);
-
 }
 
 .doneButton:focus {
   outline: none;
   border: 2px solid var(--color-accent);
-
 }
 
 .doneButton:focus-visible {
   outline: none;
   border: 2px solid var(--color-accent);
-
 }

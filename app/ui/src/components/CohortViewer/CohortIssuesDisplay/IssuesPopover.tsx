@@ -14,7 +14,6 @@ interface IssuesPopoverProps {
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  console.log('issues', issues);
   const groupedIssues = issues.reduce(
     (acc, issue) => {
       const type = issue.type as PhenotypeType;
@@ -27,7 +26,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
     {} as { [key in PhenotypeType]: CohortIssue[] }
   );
   return (
-    <div className={`${styles.popover} ${(issues.length===0)?styles.noIssues:''}`}>
+    <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       {/* <div className = {styles.header}>
         <CohortIssuesDisplay issues={issues}/>
       </div> */}
@@ -40,7 +39,6 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
                 className={`${styles.phenotypeSection} ${selectedId === issue.phenotype.id ? styles.selected : ''}`}
                 onClick={event => {
                   event.stopPropagation();
-                  console.log('CLIDKED ON ', issue.phenotype.id);
                   setSelectedId(issue.phenotype.id);
                   const cohortViewer = TwoPanelCohortViewerService.getInstance();
                   cohortViewer.displayExtraContent('phenotype', issue.phenotype);

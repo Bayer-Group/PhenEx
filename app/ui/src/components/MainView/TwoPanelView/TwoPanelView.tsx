@@ -115,8 +115,7 @@ export const TwoPanelView = React.forwardRef<
       <div
         className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
         onMouseDown={handleMouseDown}
-      >
-      </div>
+      ></div>
       <div
         className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
         style={{ width: isRightCollapsed ? 0 : rightWidth }}
@@ -128,10 +127,8 @@ export const TwoPanelView = React.forwardRef<
         >
           {/* {'×'} */}
           {'>>'}
-
         </button>
       </div>
-     
     </div>
   );
 });

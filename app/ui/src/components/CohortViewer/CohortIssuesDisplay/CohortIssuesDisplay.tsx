@@ -22,24 +22,26 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const renderLabel = () => {
     return (
       <p>
-
         <span className={styles.labelMain}>
-          <span className={styles.issuesText}>Issues</span><br></br>
+          <span className={styles.issuesText}>Issues</span>
+          <br></br>
           <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
           in
-           <span className={`${styles.number} ${styles.phenotypeIssues}`}>{phenotypesWithIssues}</span> phenotypes
-          </span>
+          <span className={`${styles.number} ${styles.phenotypeIssues}`}>
+            {phenotypesWithIssues}
+          </span>{' '}
+          phenotypes
+        </span>
       </p>
-
-    )
-  }
+    );
+  };
 
   return (
-    <div className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}>
+    <div
+      className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}
+    >
       <span className={styles.text}>
-        {hasIssues
-          ? renderLabel()
-          : <span className={styles.labelNoIssues}>0 issues</span>}
+        {hasIssues ? renderLabel() : <span className={styles.labelNoIssues}></span>}
       </span>
       <div
         className={`${styles.statusDot} ${hasIssues ? styles.red : styles.green} ${selected ? styles.selected : ''}`}

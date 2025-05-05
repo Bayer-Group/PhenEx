@@ -29,7 +29,6 @@ export class CohortDataService {
     this.constants_service.setCohortDataService(this);
     this.codelists_service = new CodelistDataService();
     this.codelists_service.setCohortDataService(this);
-
   }
 
   public static getInstance(): CohortDataService {
@@ -60,7 +59,7 @@ export class CohortDataService {
     return this._table_data;
   }
 
-  private _currentFilter: string[] = [];
+  private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
 
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
@@ -76,7 +75,6 @@ export class CohortDataService {
   }
 
   public async loadCohortData(cohortIdentifiers: string): Promise<void> {
-    console.log('LOADING COHORT DATA', cohortIdentifiers);
     try {
       const cohortResponse = await getCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
@@ -125,11 +123,11 @@ export class CohortDataService {
     );
     phenotypeEdited[fieldEdited] = event.newValue;
     console.log('onCellValueChanged', phenotypeEdited);
-    this.saveChangesToCohort(true,false);
+    this.saveChangesToCohort(true, false);
   }
 
-  public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid:boolean = true) {
-    console.log("SAHVE  COHORT",changesToCohort, refreshGrid)
+  public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid: boolean = true) {
+    console.log('SAHVE  COHORT', changesToCohort, refreshGrid);
     if (changesToCohort) {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
@@ -142,11 +140,11 @@ export class CohortDataService {
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     await updateCohort(this._cohort_data.id, this._cohort_data);
-    console.log("ABOUT TO UPDATE issues_service")
+    console.log('ABOUT TO UPDATE issues_service');
     this.issues_service.validateCohort();
-    console.log("SAVED CohorT NOW", this._cohort_data)
+    console.log('SAVED CohorT NOW', this._cohort_data);
     if (refreshGrid) {
-      console.log("And table data...", this._table_data);
+      console.log('And table data...', this._table_data);
       this.notifyListeners();
     }
   }
@@ -155,7 +153,7 @@ export class CohortDataService {
     /*
     Sort phenotypes by type. # TODO sort phenotypes by index in type
     */
-    const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'NA'];
+    const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
 
     let sortedPhenotypes: TableRow[] = [];
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
@@ -195,16 +193,19 @@ export class CohortDataService {
     }
   }
 
-  public addPhenotype(type: string = 'NA') {
+  public addPhenotype(type: string = 'NA', parentPhenotypeId: string|null = null) {
     const newPhenotype: TableRow = {
       id: createID(),
       type: type,
       name: 'New phenotype',
       class_name: 'CodelistPhenotype',
     };
+    if (parentPhenotypeId){
+      newPhenotype.parentIds = [parentPhenotypeId]
+    }
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
-    console.log('addPhenotype cohort data!!! ', this._cohort_data);
+    console.log('addPhenotype cohort data!!! ', type, parentPhenotypeId, this._cohort_data);
   }
 
   public deletePhenotype(id: string) {
@@ -264,7 +265,6 @@ export class CohortDataService {
       this.listeners.splice(index, 1);
     }
   }
-  
 
   private notifyListeners() {
     console.log('DAT ASERVIC IS NOTIFYIN');
@@ -333,11 +333,6 @@ export class CohortDataService {
       this._cohort_data.outcomes
     );
   }
-
-  public createPhenotypesArrayFromTypes() {
-    this._cohort_data.phenotypes = this._cohort_data.e;
-  }
-
   async deleteCohort() {
     if (this._cohort_data.id) {
       await deleteCohort(this._cohort_data.id);
@@ -347,9 +342,23 @@ export class CohortDataService {
       this.notifyListeners();
     }
   }
+
   public filterType(type: string | string[]): void {
     this._currentFilter = Array.isArray(type) ? type : [type];
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
+  }
+
+  public tableDataForComponentPhenotype(parentPhenotype): TableData {
+    let filteredPhenotypes = this._cohort_data.phenotypes || [];
+    if (this._currentFilter.length > 0) {
+      filteredPhenotypes = filteredPhenotypes.filter((phenotype: TableRow) =>
+        phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
+      );
+    }
+    return {
+      rows: filteredPhenotypes,
+      columns: this.columns,
+    };
   }
 }

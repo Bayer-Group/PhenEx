@@ -2,7 +2,6 @@
   /* overflow: visible !important; */
   transition: background-color 0.2s ease;
   /* border-radius: 4px; */
-
 }
 
 :global(.ag-cell:hover) {
@@ -17,12 +16,11 @@
   border-bottom: var(--border);
 }
 
-
-:global(.ag-cell-focus), :global(.ag-cell-range-selected) {
+:global(.ag-cell-focus),
+:global(.ag-cell-range-selected) {
   background-color: transparent !important;
   border-color: var(--color-accent) !important;
   border-radius: 10px;
-
 }
 
 .missing {
@@ -36,11 +34,9 @@
   border-radius: 10px;
 
   margin: 4px 4px;
-  width:calc(100% - 8px);
-  height:calc(100% - 8px);
-
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
 }
-
 
 .container {
   display: flex;
@@ -50,10 +46,15 @@
   height: 100%;
   padding: 0;
   position: relative;
+  font-size: 100px;
+}
+
+.containerStyle {
+  font-size: 12px;
 }
 
 .selected {
-  background-color:red;
+  background-color: red;
 }
 
 .missing {

@@ -1,5 +1,8 @@
 import React from 'react';
-import { PhenexCellRenderer, PhenexCellRendererProps } from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+import {
+  PhenexCellRenderer,
+  PhenexCellRendererProps,
+} from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 
 export interface PhenexPhenotypeCellRendererProps extends PhenexCellRendererProps {}
 
@@ -13,24 +16,22 @@ import LogicalExpressionCellRenderer from '../../CohortViewer/CohortTable/CellRe
 import TypeCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/TypeCellRenderer';
 import DescriptionCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/DescriptionCellRenderer';
 
-
 const classNameToRendererMapping = {
   relative_time_range: RelativeTimeRangeCellRenderer,
   categorical_filter: CategoricalFilterCellRenderer,
   codelist: CodelistCellRenderer,
-  class_name: PhenotypeCellRenderer, 
+  class_name: PhenotypeCellRenderer,
   domain: DomainCellRenderer,
   value_filter: ValueFilterCellRenderer,
   expression: LogicalExpressionCellRenderer,
   type: TypeCellRenderer,
-  description: DescriptionCellRenderer
-}
+  description: DescriptionCellRenderer,
+};
 
 export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererProps> = props => {
-
   if (props.data?.parameter in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.parameter];
-    return <Renderer {...props} />;
+    return <Renderer {...props} fontSize={'12px'} />;
   }
   return <div>{props.data.value}</div>;
 };

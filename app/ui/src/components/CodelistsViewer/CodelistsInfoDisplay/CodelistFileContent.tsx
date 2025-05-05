@@ -40,7 +40,7 @@ export const CodelistFileContent: React.FC = () => {
         field: 'n_codes',
         resizable: true,
         minWidth: 120,
-      }
+      },
     ];
   };
 
@@ -58,7 +58,9 @@ export const CodelistFileContent: React.FC = () => {
     // Calculate code counts for each codelist
     return uniqueCodelistNames.map(codelistName => {
       // Get indices where this codelist name appears
-      const indices = data[codelistColumn].map((name, idx) => name === codelistName ? idx : -1).filter(idx => idx !== -1);
+      const indices = data[codelistColumn]
+        .map((name, idx) => (name === codelistName ? idx : -1))
+        .filter(idx => idx !== -1);
 
       // Get codes and their types for these indices
       const codesByType = indices.reduce((acc, idx) => {
@@ -70,12 +72,14 @@ export const CodelistFileContent: React.FC = () => {
       }, {});
 
       // Calculate total unique codes
-      const totalCodes = Object.values(codesByType)
-        .reduce((sum, codes: Set<string>) => sum + codes.size, 0);
+      const totalCodes = Object.values(codesByType).reduce(
+        (sum, codes: Set<string>) => sum + codes.size,
+        0
+      );
 
       return {
         codelist_name: codelistName,
-        n_codes: totalCodes
+        n_codes: totalCodes,
       };
     });
   };

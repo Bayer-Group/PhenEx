@@ -14,17 +14,33 @@ interface CohortDefinitionViewProps {
 }
 
 enum CohortDefinitionViewType {
-  Cohort = 'cohort',
-  Baseline = 'baseline',
+  Cohort = 'cohort definition',
+  Baseline = 'baseline characteristics',
   Outcomes = 'outcomes',
 }
 
 export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) => {
   const gridRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
     CohortDefinitionViewType.Cohort
   );
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setIsNarrow(entry.contentRect.width < 500);
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   const refreshGrid = () => {
     console.log('REFRESHING GRID before', gridRef.current?.api);
@@ -49,15 +65,13 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     }
   };
 
-
-
   useEffect(() => {
     // Add listener for data service updates
     const listener = () => {
       refreshGrid();
     };
     dataService.addListener(listener);
-    
+
     // Initial data load
     refreshGrid();
 
@@ -65,8 +79,6 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
       dataService.removeListener(listener);
     };
   }, [dataService]);
-
-
 
   useEffect(() => {
     if (currentView === CohortDefinitionViewType.Cohort) {
@@ -82,14 +94,6 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     }
   };
 
-  const clickedAddPhenotype = async (type: string) => {
-    dataService.addPhenotype(type);
-  };
-
-  const executeCohort = async () => {
-    await dataService.executeCohort();
-  };
-
   const renderView = () => {
     switch (currentView) {
       case CohortDefinitionViewType.Cohort:
@@ -99,8 +103,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
             infoContent={
               <>
                 <p>
-                  Define your cohort here using{' '}
-                  <strong>electronic phenotypes</strong> that define:
+                  Define your cohort here using <strong>electronic phenotypes</strong> that define:
                 </p>
                 <ol>
                   <li>
@@ -178,7 +181,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   const onTabChange = (index: number) => {
     const viewTypes = Object.values(CohortDefinitionViewType);
     const newView = viewTypes[index];
-    
+
     // First update the data filter
     switch (newView) {
       case CohortDefinitionViewType.Cohort:
@@ -191,7 +194,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
         dataService.filterType('outcome');
         break;
     }
-    
+
     // Then update the view and refresh grid
     setCurrentView(newView);
     refreshGrid();
@@ -201,14 +204,14 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     return currentView === CohortDefinitionViewType.Cohort
       ? 0
       : currentView === CohortDefinitionViewType.Baseline
-      ? 1
-      : currentView === CohortDefinitionViewType.Outcomes
-      ? 2
-      : 0; // Default to the first tab if the currentView is not recognized or undefined
+        ? 1
+        : currentView === CohortDefinitionViewType.Outcomes
+          ? 2
+          : 0; // Default to the first tab if the currentView is not recognized or undefined
   };
 
   return (
-    <div className={styles.cohortTableContainer}>
+    <div ref={containerRef} className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
         <div className={styles.controlsContainer}>
           <Tabs
@@ -217,17 +220,6 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
             tabs={tabs}
             onTabChange={onTabChange}
             active_tab_index={determineTabIndex()}
-          />
-          <ButtonsBarWithDropdowns
-            width={200}
-            buttons={['Execute', 'New Phenotype']}
-            actions={[executeCohort, () => {}]}
-            dropdown_items={[null, phenotypeAddableTypeValues]}
-            onDropdownSelection={(buttonIndex, selectedItem) => {
-              if (buttonIndex === 1) {
-                clickedAddPhenotype(selectedItem);
-              }
-            }}
           />
         </div>
       </div>

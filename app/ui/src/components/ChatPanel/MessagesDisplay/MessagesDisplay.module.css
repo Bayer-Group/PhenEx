@@ -5,7 +5,7 @@
 }
 
 .messagesContainer {
-  gap: 10px;
+  gap: 5px;
   flex-direction: column;
   display: flex;
   overflow-y: auto;
@@ -49,29 +49,26 @@
   transition: all 0.2s ease-in-out;
   margin-right: 10px;
   border-top-right-radius: 0px;
-  margin-left: 20px;
-  padding-left: 20px !important;
+  /* margin-left: 20px; */
+  padding-left: 15px !important;
   padding-right: 10px !important;
   background-color: white;
   color: var(--text-color);
   border: var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-
 }
 
-.userContainer{
+.userContainer {
   background-color: red;
-  margin-top:-50px;
-  width:30px;
-  height:30px;
+  margin-top: -50px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   position: absolute;
-
 }
-.userMessage .userContainer{
+.userMessage .userContainer {
   /* margin-right:-20px; */
   background-color: blue;
-  
 }
 .userMessage:hover {
   transform: translateY(-1px);
@@ -83,7 +80,7 @@
 }
 
 .assistantMessage {
-  padding-left: 20px !important;
+  padding-left: 5px !important;
   padding-right: 10px !important;
   align-self: flex-start;
   color: var(--text-color);
@@ -98,7 +95,7 @@
 }
 
 .messagesContainer > div:last-child.assistantMessage {
-  margin-bottom: 50px;
+  margin-bottom: 0px;
 }
 
 .messagesContainer > div:last-child.userMessage {
@@ -107,15 +104,14 @@
 
 .messageBubble {
   font-family: 'IBMPlexSans-regular';
-  font-size:12px;
+  font-size: 12px;
 }
 
 .messageBubble h1 {
   font-size: 22px;
   font-family: 'SNPro-bold';
-  line-height:22px;
+  line-height: 22px;
   color: var(--text-color);
-  margin: 0px;
 }
 
 .messageBubble h2 {

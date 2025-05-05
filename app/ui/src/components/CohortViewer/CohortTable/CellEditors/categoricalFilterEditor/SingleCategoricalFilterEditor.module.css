@@ -19,7 +19,6 @@
   transition: all 0.3s ease;
 }
 
-
 .categoricalFilterContainer:hover,
 .logicalButtons button:hover {
   transform: translateY(-1px);
@@ -299,5 +298,5 @@
 
 .logicalButtons button:hover {
   background-color: var(--color-accent);
-  color:white;
+  color: white;
 }

@@ -29,22 +29,18 @@ export const LogicalExpressionEditor: React.FC<LogicalExpressionEditorProps> = (
 
   const [editingSingleFilter, setEditingSingleFilter] = useState(false);
 
+  useEffect(() => {
+    if (value && JSON.stringify(filter) !== JSON.stringify(value)) {
+      // setFilter(value);
+      onValueChange?.(value);
+    }
+  }, [value]);
 
-useEffect(() => {
-  if (value && JSON.stringify(filter) !== JSON.stringify(value)) {
-    // setFilter(value);
-    onValueChange?.(value);
-
-  }
-}, [value]);
-
-
-
-useEffect(() => {
-  if (JSON.stringify(filter) !== JSON.stringify(value)) {
-    onValueChange?.(filter);
-  }
-}, [filter]);
+  useEffect(() => {
+    if (JSON.stringify(filter) !== JSON.stringify(value)) {
+      onValueChange?.(filter);
+    }
+  }, [filter]);
 
   const deleteLogicalExpression = (filterToDelete: FilterType) => {
     const traverseAndUpdate = (filterNode: FilterType): FilterType => {
@@ -189,26 +185,25 @@ useEffect(() => {
                 >
                   {renderFilter(currentFilter.filter2)}
                 </div>
-                </div>
-
               </div>
-              <div className={`${styles.logicalButtons} ${styles.logicalLogicalButtons}`}>
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    createLogicalFilter('AndFilter', currentFilter);
-                  }}
-                >
-                  AND
-                </button>
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    createLogicalFilter('OrFilter', currentFilter);
-                  }}
-                >
-                  OR
-                </button>
+            </div>
+            <div className={`${styles.logicalButtons} ${styles.logicalLogicalButtons}`}>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  createLogicalFilter('AndFilter', currentFilter);
+                }}
+              >
+                AND
+              </button>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  createLogicalFilter('OrFilter', currentFilter);
+                }}
+              >
+                OR
+              </button>
             </div>
           </div>
         );

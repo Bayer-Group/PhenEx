@@ -3,19 +3,33 @@
   display: flex;
   flex-direction: column;
   padding: 0px;
-  padding-top:60px;
+  padding-top: 60px;
 }
 
 .header {
-  margin-top: 10px;
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-right: 8px;
   flex-shrink: 0;
+  background-color: white !important;
+  border-radius: 15px;
+  border: 1px solid;
+  /* border: 1px solid var(--color-accent_2); */
+  box-shadow: var(--box_shadow);
+  overflow: hidden;
+  max-width: 800px;
 }
+.title{
+  padding-left:5px;
+  padding-right:5px;
+  padding-top: 15px;
+  z-index: 1000;
+  margin-bottom:15px;
+}
+
 .phenotypeNameInput {
-  font-size:30px;
-  font-family: "IBMPlexSans-bold";
-  width:100%;
+  font-size: 30px;
+  font-family: 'IBMPlexSans-bold';
 }
 
 .info {
@@ -37,25 +51,78 @@
   color: var(--text-color-secondary);
 }
 
-
-.description{
- width:100%;
- min-height: 50px;
- max-height: 1000px;
- resize: none;
- border: none;
- font-family: "SNPro-regular";
- font-size:12px;
+.description {
+  width: 100%;
+  min-height: 50px;
+  max-height: 1000px;
+  resize: none;
+  border: none;
+  font-family: 'SNPro-regular';
+  font-size: 12px;
 }
 
 .bottomSection {
-  height: 100%;
+  height: calc(50%);
   width: 100%;
   display: flex;
   flex-direction: column;
 }
-.tableBox {
+
+
+.paramsContainer {
+  height: 400px;
+}
+
+.componentsContainer {
   flex: 1;
+}
+
+
+.componentsTitleDiv{
+  margin-top:20px;
+  font-family: "IBMPlexSans-bold";
+  line-height:14px;
+  padding:0px;
+  margin-left:10px;
+}
+
+.components_title{
 
 }
 
+.components_phenotype_name{
+  font-size:12px;
+}
+
+.addButton {
+  padding: 2px 4px;
+  color: var(--text-color-inactive);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
+  font-family: 'SNPro-bold';
+  pointer-events: all;
+  /* display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none; */
+  /* width: 80px; */
+  position: absolute;
+  right: 5px;
+  margin-top: -13px;
+  font-family: 'SNPro-bold';
+  font-size: 12px;
+  color: var(--text-color-inactive);
+  border: 1px solid var(--line-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--background_color_translucent);
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  background-color: var(--color-accent);
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}

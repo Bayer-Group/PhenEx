@@ -3,7 +3,7 @@ import styles from './CohortReportView.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TableData } from '../tableTypes';
 import { Tabs } from '../../Tabs/Tabs';
-import { ReportCard } from './ReportCard';  
+import { ReportCard } from './ReportCard';
 interface CohortReportViewProps {
   data?: string;
 }
@@ -17,7 +17,6 @@ enum CohortReportViewType {
 export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortReportViewType>(CohortReportViewType.Cohort);
-
 
   const tabs = Object.values(CohortReportViewType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
@@ -69,9 +68,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
         </div>
       </div>
       <div className={styles.bottomSection}>
-        <div className={styles.viewContainer}>
-          {renderViewContent()}
-        </div>
+        <div className={styles.viewContainer}>{renderViewContent()}</div>
       </div>
     </div>
   );

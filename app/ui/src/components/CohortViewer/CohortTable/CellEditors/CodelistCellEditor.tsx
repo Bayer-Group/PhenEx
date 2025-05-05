@@ -33,7 +33,7 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
     }
   };
 
-CodelistCellEditor.displayName = 'CodelistCellEditor';
+  CodelistCellEditor.displayName = 'CodelistCellEditor';
 
   return (
     <PhenexCellEditor {...props} ref={ref}>
@@ -43,7 +43,7 @@ CodelistCellEditor.displayName = 'CodelistCellEditor';
         onValueChange={handleValueChange}
         className={styles.editorContainer}
       />
-        {/* <div className={styles.chin}>
+      {/* <div className={styles.chin}>
           <label className={styles.checkboxLabel}>
             <input
               type="checkbox"

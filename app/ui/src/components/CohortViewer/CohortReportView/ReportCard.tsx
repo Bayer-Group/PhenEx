@@ -17,11 +17,7 @@ export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick }) => {
       <div className={styles.reportCardHeader}>
         <h3 className={styles.reportCardTitle}>{title}</h3>
         {onInfoClick && (
-          <button
-            className={styles.infoButton}
-            onClick={onInfoClick}
-            aria-label="More information"
-          >
+          <button className={styles.infoButton} onClick={onInfoClick} aria-label="More information">
             ℹ️
           </button>
         )}

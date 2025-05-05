@@ -10,7 +10,7 @@
   max-height: 300px;
 }
 
-.tabContent{
+.tabContent {
   width: 50px;
 }
 
@@ -32,7 +32,7 @@
   flex: 0 0 45px;
 }
 
-.codeTypeInput{
+.codeTypeInput {
   font-size: 10px !important;
   width: 45px;
 }
@@ -48,7 +48,7 @@
   min-height: 60px;
   resize: vertical;
   font-family: inherit;
-  width:100px;
+  width: 100px;
 }
 
 .addButton {

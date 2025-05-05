@@ -32,10 +32,11 @@ export const IssuesDisplayControl: React.FC = () => {
   };
 
   return (
-    <div className={`${styles.container} ${showPopover?styles.showingPopover:''}`} onClick={handleClick}>
-      <div className={styles.popover}>
-        {showPopover && <IssuesPopover issues={issues} />}
-      </div>
+    <div
+      className={`${styles.container} ${showPopover ? styles.showingPopover : ''}`}
+      onClick={handleClick}
+    >
+      <div className={styles.popover}>{showPopover && <IssuesPopover issues={issues} />}</div>
       <div className={styles.issuesButton}>
         <CohortIssuesDisplay issues={issues} selected={showPopover} />
       </div>

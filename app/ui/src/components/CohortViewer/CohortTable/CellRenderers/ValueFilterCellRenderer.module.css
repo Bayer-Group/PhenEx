@@ -14,10 +14,9 @@
   padding: 5px 10px;
   background-color: var(--item-color-default);
   border-radius: var(--item-radius);
-
 }
 
-.filterRow:hover{
+.filterRow:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

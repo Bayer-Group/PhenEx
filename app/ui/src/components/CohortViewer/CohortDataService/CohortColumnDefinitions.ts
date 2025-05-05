@@ -138,8 +138,7 @@ export const defaultColumns = [
         params.data.type !== 'entry' &&
         (params.data.class_name === 'MeasurementPhenotype' ||
           params.data.class_name === 'CodelistPhenotype' ||
-          params.data.class_name === 'ContinuousCoveragePhenotype'
-        )
+          params.data.class_name === 'ContinuousCoveragePhenotype')
       );
     },
     valueParser: params => {

@@ -79,16 +79,15 @@
   background-color: transparent;
   color: black;
   user-select: none;
-  transition: all 0.2s ease;
-
+  /* transition: all 0.2s ease; */
 }
 
-.arrow{
-  margin-left:-3px;
+.arrow {
+  margin-left: -3px;
 }
 
 .collapseButton:hover {
-  transition: transform 0.2s ease;
+  /* transition: transform 0.2s ease; */
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   color: var(--color-accent);
@@ -98,8 +97,6 @@
   border: 1px solid var(--color-accent) !important;
 }
 
-
-
 .collapseButton:focus {
   outline: none;
 }
@@ -107,11 +104,10 @@
 .collapseButton.left {
   left: -45px;
   top: 4px;
-  font-family: "SNPro-black";
+  font-family: 'SNPro-black';
   width: 40px;
   height: 40px;
   bottom: 1px;
-
 }
 
 .collapseButton.left:hover {
@@ -154,7 +150,9 @@
   /* transform: rotate(180deg); */
   transition: none;
 }
-
+.collapseButton.left {
+  transform: none !important;
+}
 
 .panel.collapsed {
   width: 0 !important;
@@ -170,6 +168,7 @@
   pointer-events: none;
   position: absolute;
   border-right: var(--border);
+  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1);
 }
 
 .divider:hover .collapseButton.left {
@@ -186,6 +185,8 @@
   margin-left: 10px;
   transition: all 0.2s ease;
   border-left: var(--border);
+  box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.3);
+
 }
 
 .leftDividerPadding.leftDividercollapsed {
@@ -200,7 +201,10 @@
 }
 
 .panel {
-  transition: max-width 0.2s ease, width 0.2s ease, opacity 0.2s ease;
+  transition:
+    max-width 0.2s ease,
+    width 0.2s ease,
+    opacity 0.2s ease;
   overflow: hidden;
   opacity: 1;
 }
@@ -223,6 +227,9 @@
 }
 
 .divider {
-  transition: all 0.2s ease, width 0.2s ease, opacity 0.2s ease;
+  transition:
+    all 0.2s ease,
+    width 0.2s ease,
+    opacity 0.2s ease;
   opacity: 1;
 }

@@ -21,18 +21,15 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   ) {
     return <div className={styles.notApplicable}>na</div>;
   }
-  console.log(props.value, "INSIDE CODELIST RENDER")
-  if (Array.isArray(props.value) ||
-      props.value.codelist_type){
+  if (Array.isArray(props.value) || (props.value?.codelist_type)) {
     // if the codelist is an array, it's a list of codelists; we do want to render
-   } else if (
+  } else if (
     !props.value ||
     typeof props.value !== 'object' ||
     !props.value.codelist ||
     typeof props.value.codelist !== 'object' ||
     Object.keys(props.value.codelist).length === 0
   ) {
-    console.log("NOT RENDERING", props.value)
     return (
       <PhenexCellRenderer {...props}>
         <div className={styles.missing}></div>
@@ -43,13 +40,16 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
       {Object.entries(codelist).map(([codeType, codes], codeIndex) => (
-        <div key={codeIndex} className={styles.codeBlock} className={styles.codeBlock} 
-        onClick={() => {
+        <div
+          key={codeIndex}
+          className={styles.codeBlock}
+          className={styles.codeBlock}
+          onClick={() => {
             props.api?.startEditingCell({
               rowIndex: props.node.rowIndex,
-              colKey: props.column.getColId()
+              colKey: props.column.getColId(),
             });
-        }}
+          }}
         >
           <div className={styles.codes}>
             {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
@@ -71,28 +71,25 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
 
   const renderFileCodelist = (value: any, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
-      <div className={styles.codeBlock} 
+      <div
+        className={styles.codeBlock}
         onClick={() => {
-            props.api?.startEditingCell({
-              rowIndex: props.node.rowIndex,
-              colKey: props.column.getColId()
-            });
+          props.api?.startEditingCell({
+            rowIndex: props.node.rowIndex,
+            colKey: props.column.getColId(),
+          });
         }}
-        >
+      >
         <div className={styles.codes}>
           <span className={styles.code}>{value.codelist_name}</span>
         </div>
-        <div className={styles.codeType}>
-          {value.file_name}
-        </div>
+        <div className={styles.codeType}>{value.file_name}</div>
       </div>
     </div>
   );
 
   const renderSingleCodelist = (value: any, index: number = 0) => {
-    console.log("RENDERING SINGLE CODELIST", value)
     if (value.codelist_type === 'from file') {
-      console.log("RENDERING FILE CODELIST")
       return renderFileCodelist(value, index);
     }
     return renderManualCodelist(value.codelist, index);

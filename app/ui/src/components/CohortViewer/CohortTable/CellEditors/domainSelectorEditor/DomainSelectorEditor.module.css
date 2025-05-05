@@ -7,26 +7,26 @@
   overflow-y: hidden;
 }
 
-.header{
+.header {
   font-size: 12px;
   padding: 0px 0px 0px 10px;
-  margin:0px;
+  margin: 0px;
   border-bottom: var(--border);
 }
 
-.content{
-    flex: 1;
-    display: flex;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
-    overflow-y: auto;
-    height: 100%;
-  padding-right:20px;
+.content {
+  flex: 1;
+  display: flex;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+  height: 100%;
+  padding-right: 20px;
 }
-  
+
 .domainSection {
   position: relative;
   margin-bottom: 4px;

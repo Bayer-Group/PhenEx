@@ -88,13 +88,13 @@ export class ConstantsDataService {
   public tableData: TableData = {
     rows: [],
     columns: this.columns,
-  }
+  };
   constructor() {}
 
   public setCohortDataService(dataService: any) {
     this.cohortDataService = dataService;
     this.createDefaultConstants();
-    this.tableData = this.tableDataFromConstants()
+    this.tableData = this.tableDataFromConstants();
   }
 
   private createDefaultConstants() {
@@ -156,7 +156,8 @@ export class ConstantsDataService {
       borderColor: '#AFAFAF26',
       browserColorScheme: 'light',
       columnBorder: true,
-      headerFontSize: 11,
+      headerFontSize: 14,
+      headerFontWeight: 'bold',
       headerRowBorder: true,
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'var(--background-color-content, #FFFFFF)',

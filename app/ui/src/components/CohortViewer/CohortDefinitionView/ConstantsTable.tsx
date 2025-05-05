@@ -31,20 +31,22 @@ export const ConstantsTable: React.FC = () => {
   }, [dataService]);
 
   return (
-    console.log("CONSTANTS DATA",dataService.constants_service.tableData),
-    <div style={{ width: '100%', height: '400px' }}>
-      <AgGridReact
-        rowData={dataService.constants_service.tableData.rows}
-        columnDefs={dataService.constants_service.tableData.columns}
-        ref={gridRef}
-        theme={dataService.constants_service.getTheme()}
-        animateRows={true}
-        defaultColDef={{
-          flex: 1,
-          minWidth: 100,
-          resizable: true,
-        }}
-      />
-    </div>
+    console.log('CONSTANTS DATA', dataService.constants_service.tableData),
+    (
+      <div style={{ width: '100%', height: '400px' }}>
+        <AgGridReact
+          rowData={dataService.constants_service.tableData.rows}
+          columnDefs={dataService.constants_service.tableData.columns}
+          ref={gridRef}
+          theme={dataService.constants_service.getTheme()}
+          animateRows={true}
+          defaultColDef={{
+            flex: 1,
+            minWidth: 100,
+            resizable: true,
+          }}
+        />
+      </div>
+    )
   );
 };

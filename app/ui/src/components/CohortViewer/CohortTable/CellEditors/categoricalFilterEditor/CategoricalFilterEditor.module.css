@@ -52,7 +52,7 @@
   /* border: 3px solid blue; */
 }
 
-.lastCategoricalFilter{
+.lastCategoricalFilter {
   margin-bottom: 10px;
 }
 
@@ -67,7 +67,6 @@
   font-family: 'SNPro-bold';
   transition: 0.3s ease;
 }
-
 
 .logicalOperator:hover {
   color: var(--color-accent);
@@ -99,7 +98,6 @@
   opacity: 1;
 }
 
-
 .logicalButtons:hover + .logicalBorderedArea,
 .logicalButtons:hover ~ .logicalBorderedArea,
 .logicalContainer:hover > .logicalBorderedArea {
@@ -117,7 +115,7 @@
   color: var(--text-color-inactive);
 }
 
-.logicalButtons:hover > .logicalBorderedArea{
+.logicalButtons:hover > .logicalBorderedArea {
   background-color: red;
 }
 
@@ -125,7 +123,7 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   background-color: var(--color-accent);
-  color:white;
+  color: white;
 }
 
 .logicalBorderedArea {

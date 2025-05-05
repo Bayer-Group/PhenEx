@@ -9,10 +9,13 @@ interface CodelistsEditorProps {
 }
 
 export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], options, onValueChange }) => {
-  const [codelists, setCodelists] = useState(value);
+  const [codelists, setCodelists] = useState(() => {
+    console.log('Initial codelists value:', value);
+    return Array.isArray(value) ? [...value] : [];
+  });
 
   const handleValueChange = (index: number, newValue: any) => {
-    console.log('CodelistsEditor handleValueChange', index, newValue);
+    console.log('CodelistsEditor handleValueChange triggered', index, newValue);
     if (Array.isArray(codelists)) {
       const updatedCodelists = [...codelists];
       updatedCodelists[index] = newValue;
@@ -36,7 +39,6 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
 
   return (
     <div className={styles.container}>
-
       {Array.isArray(codelists) ? (
         codelists.map((value, index) => (
           <div key={index} className={styles.editorWrapper}>
@@ -56,7 +58,8 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
           />
         </div>
       )}
-            <button className={styles.addButton} onClick={addNewCodelist}>Add Codelist</button>
+        <button className={styles.addButton} onClick={addNewCodelist}>Add Codelist</button>
+
     </div>
   );
 };

@@ -7,21 +7,19 @@ const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     return value.replace('Phenotype', '');
   };
 
-
   return (
     <PhenexCellRenderer {...props}>
-      <span 
+      <span
         className={styles.container}
-        
-        onClick={() => props.api?.startEditingCell({
-          rowIndex: props.node.rowIndex,
-          colKey: props.column.getColId()
-        })}
-
+        onClick={() =>
+          props.api?.startEditingCell({
+            rowIndex: props.node.rowIndex,
+            colKey: props.column.getColId(),
+          })
+        }
       >
         {props.value ? formatPhenotype(props.value) : null}
       </span>
-
     </PhenexCellRenderer>
   );
 };

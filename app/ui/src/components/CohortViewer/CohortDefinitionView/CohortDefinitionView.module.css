@@ -13,12 +13,24 @@
 }
 
 .controlsContainer {
-  display: flex;
+  /* display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: center; */
   gap: 16px;
   margin-left: 20px;
   margin-right: 30px;
+}
+
+.actionControls {
+  position: absolute;
+  right: 30px;
+  top: 14px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hidden {
+  opacity: 0;
 }
 
 .viewContainer {

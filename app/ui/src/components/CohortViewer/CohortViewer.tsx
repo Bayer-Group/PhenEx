@@ -38,7 +38,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     loadData();
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.hideExtraContent();
-
   }, [data]);
 
   const navigateTo = (viewType: CohortViewType) => {

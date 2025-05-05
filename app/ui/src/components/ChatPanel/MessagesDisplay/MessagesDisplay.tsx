@@ -104,6 +104,3 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
     </div>
   );
 };
-
-
-

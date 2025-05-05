@@ -5,10 +5,9 @@
   font-size: 11px;
   font-family: 'SNPro-regular';
   padding-top: var(--item-margin-top) !important;
-
 }
 
-.filterRow{
+.filterRow {
   padding: 8px !important;
 }
 
@@ -26,7 +25,6 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--item-border-hover);
-
 }
 /* 
 .filtersContainer {

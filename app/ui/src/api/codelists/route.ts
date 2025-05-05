@@ -16,7 +16,7 @@ export const getCodelistFilenamesForCohort = async (cohort_id: string) => {
   }
 };
 
-export const getCodelistFileForCohort = async (cohort_id: string, file_id:string) => {
+export const getCodelistFileForCohort = async (cohort_id: string, file_id: string) => {
   try {
     console.log('Sending request to getCodelistFileForCohort with data:', cohort_id, file_id);
     const response = await axios.get(
@@ -30,11 +30,12 @@ export const getCodelistFileForCohort = async (cohort_id: string, file_id:string
   }
 };
 
-export const uploadCodelistFileToCohort = async (cohort_id: string, file:any) => {
+export const uploadCodelistFileToCohort = async (cohort_id: string, file: any) => {
   try {
     console.log('Sending request to uploadCodelistFileToCohort with data:');
     const response = await axios.post(
-      `${BASE_URL}/upload_codelist_file_to_cohort?cohort_id=${cohort_id}`,file
+      `${BASE_URL}/upload_codelist_file_to_cohort?cohort_id=${cohort_id}`,
+      file
     );
     console.log('Received response from getCohorts:', response.data);
     return response.data;

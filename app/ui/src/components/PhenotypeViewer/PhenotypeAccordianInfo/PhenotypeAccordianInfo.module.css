@@ -1,5 +1,5 @@
-:root{
-  --accordian_container_border_width:1px;
+:root {
+  --accordian_container_border_width: 1px;
 }
 
 .accordianContainer {
@@ -9,10 +9,12 @@
   margin: 5px 20px;
   background-color: var(--background-color);
   user-select: none;
-  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  transition:
+    max-height 0.3s ease-in-out,
+    height 0.3s ease-in-out;
   overflow: hidden;
   margin-bottom: 0px !important;
-  margin-top: 4px!important;
+  margin-top: 4px !important;
   margin-left: 10px;
   max-width: 800px;
   margin-right: 30px;
@@ -22,10 +24,12 @@
   background-color: white;
 
   max-height: 2000px;
-  transition: max-height 0.3s ease-in-out, height 0.3s ease-in-out;
+  transition:
+    max-height 0.3s ease-in-out,
+    height 0.3s ease-in-out;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px !important;
-  margin-top: 20px!important;
+  margin-top: 20px !important;
   border-color: var(--color-accent);
 }
 
@@ -38,7 +42,7 @@
   margin: 0;
   padding-top: 13px;
   font-size: 22px;
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
   margin-left: 80px;
   transition: 0.3s ease;
 }
@@ -116,7 +120,6 @@
 .tabsContainer.closed {
   margin-top: 2px;
   margin-left: 0px;
-
 }
 
 .infoContent {

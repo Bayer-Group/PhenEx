@@ -56,7 +56,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
           value={cohortName}
           placeholder="Name your cohort..."
           className={styles.cohortNameInput}
-          onChange={(newValue) => {
+          onChange={newValue => {
             setCohortName(newValue);
             onCohortNameChange(newValue);
             dataService.cohort_name = newValue;
@@ -64,9 +64,9 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
           onSaveChanges={onSaveChanges}
         />
       </div>
-      <div className={styles.controlsContainer}>
+      {/* <div className={styles.controlsContainer}>
         <Tabs width={400} height={25} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
-      </div>
+      </div> */}
       <IssuesDisplayControl />
     </div>
   );

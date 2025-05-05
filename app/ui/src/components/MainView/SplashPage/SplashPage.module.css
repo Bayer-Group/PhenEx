@@ -11,11 +11,13 @@
   position: relative;
   z-index: 2;
   margin-right: 280px;
+  font-family: "IBMPlexSans-Regular";
 }
 
 .content h1 {
   margin-bottom: 1rem;
   color: var(--text-color);
+  font-family: "SNPro-bold";
 }
 
 .content p {
@@ -25,7 +27,7 @@
 
 .topLeft {
   position: absolute;
-  top: 30px;
+  top:9px;
   left: 40px;
   height: 200px;
   font-size: 24px;
@@ -33,14 +35,14 @@
 
 .bottomRight {
   position: absolute;
-  bottom: 26px;
-  right: 100px;
+  bottom:4px;
+  right: 80px;
   font-size: 50px;
 }
 
 .label {
   /* color: var(--color-accent); */
-  font-family: 'SNPro-black';
+  font-family: 'SNPro-bold';
   z-index: 100;
 }
 

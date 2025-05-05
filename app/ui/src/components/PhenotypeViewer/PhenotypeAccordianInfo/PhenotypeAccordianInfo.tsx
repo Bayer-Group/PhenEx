@@ -10,10 +10,8 @@ interface PhenotypeAccordianInfoProps {
 }
 
 enum InfoTabType {
-  Info = 'Info',
-  Mapping = 'Mapping',
-  Edit = 'Edit',
-  Visibility = 'Visibility'
+  Info = 'i',
+  Components = 'Components',
 }
 
 export const PhenotypeAccordianInfo: FC<PhenotypeAccordianInfoProps> = ({
@@ -41,9 +39,9 @@ export const PhenotypeAccordianInfo: FC<PhenotypeAccordianInfoProps> = ({
   const renderContent = () => {
     switch (currentTab) {
       case InfoTabType.Info:
-        return <div></div>
+        return <div></div>;
       case InfoTabType.Mapping:
-        return <div></div>
+        return <div></div>;
       case InfoTabType.Edit:
         return <div className={styles.editContent}></div>;
       case InfoTabType.Visibility:
@@ -66,14 +64,14 @@ export const PhenotypeAccordianInfo: FC<PhenotypeAccordianInfoProps> = ({
         </button>
       </div>
       <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
-          <Tabs
-            width={200}
-            height={25}
-            tabs={tabs}
-            onTabChange={onTabChange}
-            active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-          />
-        </div>
+        <Tabs
+          width={200}
+          height={25}
+          tabs={tabs}
+          onTabChange={onTabChange}
+          active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+        />
+      </div>
 
       <div className={styles.content}>
         <div className={styles.contentArea}>{renderContent()}</div>

@@ -16,16 +16,22 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
     if (value && Array.isArray(value)) {
       return value.map(filter => ({
         class_name: 'RelativeTimeRangeFilter',
-        min_days: filter.min_days === null ? null : {
-          class_name: 'Value',
-          operator: filter.min_days?.operator || '>',
-          value: filter.min_days?.value ?? 0,
-        },
-        max_days: filter.max_days === null ? null : {
-          class_name: 'Value',
-          operator: filter.max_days?.operator || '<',
-          value: filter.max_days?.value ?? 365,
-        },
+        min_days:
+          filter.min_days === null
+            ? null
+            : {
+                class_name: 'Value',
+                operator: filter.min_days?.operator || '>',
+                value: filter.min_days?.value ?? 0,
+              },
+        max_days:
+          filter.max_days === null
+            ? null
+            : {
+                class_name: 'Value',
+                operator: filter.max_days?.operator || '<',
+                value: filter.max_days?.value ?? 365,
+              },
         when: filter.when || 'before',
         useConstant: filter.useConstant ?? false,
         useIndexDate: filter.useIndexDate ?? true,
@@ -49,7 +55,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
   useEffect(() => {
     if (onValueChange && filters !== value) {
       onValueChange(filters);
-      console.log("ON vALUE CHANGE", filters)
+      console.log('ON vALUE CHANGE', filters);
     }
   }, [filters]);
 
@@ -59,22 +65,28 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
       ...newFilters[index],
       ...updates,
       class_name: 'RelativeTimeRangeFilter',
-      min_days: updates.min_days === null ? null : {
-        ...newFilters[index].min_days,
-        class_name: 'Value',
-        ...(updates.min_days || {}),
-      },
-      max_days: updates.max_days === null ? null : {
-        ...newFilters[index].max_days,
-        class_name: 'Value',
-        ...(updates.max_days || {}),
-      },
+      min_days:
+        updates.min_days === null
+          ? null
+          : {
+              ...newFilters[index].min_days,
+              class_name: 'Value',
+              ...(updates.min_days || {}),
+            },
+      max_days:
+        updates.max_days === null
+          ? null
+          : {
+              ...newFilters[index].max_days,
+              class_name: 'Value',
+              ...(updates.max_days || {}),
+            },
       useConstant: updates.useConstant ?? newFilters[index].useConstant ?? false,
       constant: updates.constant || newFilters[index].constant,
       useIndexDate: updates.useIndexDate ?? newFilters[index].useIndexDate ?? true,
       anchor_phenotype: updates.anchor_phenotype ?? newFilters[index].anchor_phenotype ?? null,
     };
-    console.log("UPDATED FILTER", newFilters)
+    console.log('UPDATED FILTER', newFilters);
     setFilters(newFilters);
   };
 
@@ -171,22 +183,20 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
                   value={filter.min_days?.operator || 'not set'}
                   onChange={e => {
                     const operator = e.target.value;
-                    console.log("SETTING MIN DAYS")
+                    console.log('SETTING MIN DAYS');
                     if (operator === 'not set') {
-                      console.log("SETTINT TO NULL")
+                      console.log('SETTINT TO NULL');
                       updateFilter(index, { min_days: null });
                     } else {
                       updateFilter(index, {
-                        min_days: { 
+                        min_days: {
                           class_name: 'Value',
                           operator: operator as '>' | '>=',
-                          value: filter.min_days?.value ?? 0
+                          value: filter.min_days?.value ?? 0,
                         },
-                      }
-                    );
+                      });
                     }
-                    console.log("AND AFTER SETTTING", filter)
-
+                    console.log('AND AFTER SETTTING', filter);
                   }}
                   className={styles.select}
                 >
@@ -219,10 +229,10 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
                       updateFilter(index, { max_days: null });
                     } else {
                       updateFilter(index, {
-                        max_days: { 
+                        max_days: {
                           class_name: 'Value',
                           operator: operator as '<' | '<=',
-                          value: filter.max_days?.value ?? 365
+                          value: filter.max_days?.value ?? 365,
                         },
                       });
                     }

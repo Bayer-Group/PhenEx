@@ -9,14 +9,16 @@ import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianT
 export const CodelistsViewer: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [activeTab, setActiveTab] = useState(0);
-  const [gridData, setGridData] = useState<{ columnDefs: any[], rowData: any[] }>({columnDefs: [], rowData: []});
+  const [gridData, setGridData] = useState<{ columnDefs: any[]; rowData: any[] }>({
+    columnDefs: [],
+    rowData: [],
+  });
   const [tabs, setTabs] = useState<string[]>(['All Codelists']);
-
 
   useEffect(() => {
     const handleFilenamesChange = () => {
       // setGridData(dataService.codelists_service.prepareAllCodelistsData());
-      console.log(dataService.codelists_service._filenames, "HANDLE FiLENAMES")
+      console.log(dataService.codelists_service._filenames, 'HANDLE FiLENAMES');
       setTabs(['All Codelists', ...(dataService.codelists_service._filenames || [])]);
     };
 
@@ -30,7 +32,11 @@ export const CodelistsViewer: React.FC = () => {
   const handleTabChange = (index: number) => {
     setActiveTab(index);
     dataService.codelists_service.setActiveFile(index);
-    setGridData(index === 0 ? dataService.codelists_service.prepareAllCodelistsData() : dataService.codelists_service.prepareFileData(index));
+    setGridData(
+      index === 0
+        ? dataService.codelists_service.prepareAllCodelistsData()
+        : dataService.codelists_service.prepareFileData(index)
+    );
   };
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export const CodelistsViewer: React.FC = () => {
   const handleFileDrop = (files: FileList) => {
     Array.from(files).forEach(file => {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = e => {
         try {
           const content = e.target?.result as string;
           dataService.codelists_service.addFile({ filename: file.name, contents: content });
@@ -67,10 +73,8 @@ export const CodelistsViewer: React.FC = () => {
           />
         </div>
         <div className={styles.bottomSection}>
-          <div className = {styles.infoBox}>
-            {activeTab !== 0 && (
-              <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
-            )}
+          <div className={styles.infoBox}>
+            {activeTab !== 0 && <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />}
           </div>
           <div className={styles.tableBox} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
             <AgGridReact
@@ -79,7 +83,7 @@ export const CodelistsViewer: React.FC = () => {
               defaultColDef={{
                 sortable: true,
                 filter: true,
-                resizable: true
+                resizable: true,
               }}
               animateRows={true}
               theme={dataService.codelists_service.getTheme()}

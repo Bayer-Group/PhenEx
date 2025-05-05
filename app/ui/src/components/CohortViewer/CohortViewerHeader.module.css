@@ -6,7 +6,7 @@
   padding-top: 4px;
   background-color: transparent;
   border-bottom: 1px solid var(--border-color);
-  height: 74px;
+  height: 40px;
 }
 
 .controlsContainer {
@@ -24,9 +24,8 @@
   align-items: center;
   width: 100%;
   margin-bottom: 5px; */
-  width:100%;
-  margin-bottom:3px;
-
+  width: 100%;
+  margin-bottom: 3px;
 }
 
 .cohortNameInput {

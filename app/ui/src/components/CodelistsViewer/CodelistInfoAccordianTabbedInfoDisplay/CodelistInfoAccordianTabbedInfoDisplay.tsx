@@ -13,13 +13,12 @@ enum InfoTabType {
   Info = 'Info',
   Mapping = 'Mapping',
   Edit = 'Edit',
-  Visibility = 'Visibility'
+  Visibility = 'Visibility',
 }
 
-export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTabbedInfoDisplayProps> = ({
-  title,
-  infoContent,
-}) => {
+export const CodelistInfoAccordianTabbedInfoDisplay: FC<
+  CodelistInfoAccordianTabbedInfoDisplayProps
+> = ({ title, infoContent }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
 
@@ -66,14 +65,14 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTab
         </button>
       </div>
       <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
-          <Tabs
-            width={200}
-            height={25}
-            tabs={tabs}
-            onTabChange={onTabChange}
-            active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-          />
-        </div>
+        <Tabs
+          width={200}
+          height={25}
+          tabs={tabs}
+          onTabChange={onTabChange}
+          active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+        />
+      </div>
 
       <div className={styles.content}>
         <div className={styles.contentArea}>{renderContent()}</div>

@@ -12,8 +12,6 @@ const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props =
       return <div className={styles.filterText}></div>;
     }
 
-
-
     if (filter.class_name === 'LogicalExpression') {
       const categoricalFilter = filter as BaseCategoricalFilter;
       return (
@@ -21,7 +19,6 @@ const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props =
           <div className={styles.unit}>
             <div className={styles.top}>{categoricalFilter.phenotype_name}</div>
             <div className={styles.bottom}></div>
-
           </div>
         </>
       );

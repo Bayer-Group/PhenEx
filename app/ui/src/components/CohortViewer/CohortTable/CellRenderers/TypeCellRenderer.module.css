@@ -1,15 +1,14 @@
 .block {
   padding: 2px 5px;
   border-radius: 4px;
-  font-size: 12px;
-
 }
 
-.block:hover{
+.block:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .container {
   text-align: left;
+  font-size: inherit;
 }

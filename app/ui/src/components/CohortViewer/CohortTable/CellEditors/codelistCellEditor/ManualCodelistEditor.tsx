@@ -7,7 +7,10 @@ interface ManualCodelistEditorProps {
   onValueChange?: (value: any) => void;
 }
 
-export const ManualCodelistEditor: React.FC<ManualCodelistEditorProps> = ({ value, onValueChange }) => {
+export const ManualCodelistEditor: React.FC<ManualCodelistEditorProps> = ({
+  value,
+  onValueChange,
+}) => {
   const [useCodeType, setUseCodeType] = useState(() => {
     if (value && typeof value === 'object') {
       return value.use_code_type ?? true;
@@ -35,7 +38,7 @@ export const ManualCodelistEditor: React.FC<ManualCodelistEditorProps> = ({ valu
     return [{ codeType: '', codes: '' }];
   });
 
-  const formatEntries = useCallback((entries) => {
+  const formatEntries = useCallback(entries => {
     return entries.reduce(
       (acc, entry) => {
         if (entry.codeType && entry.codes) {
@@ -50,17 +53,15 @@ export const ManualCodelistEditor: React.FC<ManualCodelistEditorProps> = ({ valu
     );
   }, []);
 
-  const formattedValue = useMemo(() => ({
-    class_name: 'Codelist',
-    codelist: formatEntries(manualEntries),
-    use_code_type: useCodeType,
-    remove_punctuation: removePunctuation,
-  }), [
-    JSON.stringify(manualEntries),
-    useCodeType,
-    removePunctuation,
-    formatEntries
-  ]);
+  const formattedValue = useMemo(
+    () => ({
+      class_name: 'Codelist',
+      codelist: formatEntries(manualEntries),
+      use_code_type: useCodeType,
+      remove_punctuation: removePunctuation,
+    }),
+    [JSON.stringify(manualEntries), useCodeType, removePunctuation, formatEntries]
+  );
 
   const prevFormattedValue = useRef(formattedValue);
   useEffect(() => {
@@ -72,7 +73,7 @@ export const ManualCodelistEditor: React.FC<ManualCodelistEditorProps> = ({ valu
 
   const handleManualEntryChange = (newEntries: typeof manualEntries) => {
     setManualEntries(newEntries);
-    console.log("MANUAL CODELIST : ", newEntries)
+    console.log('MANUAL CODELIST : ', newEntries);
     if (onValueChange) {
       onValueChange(formattedValue);
     }

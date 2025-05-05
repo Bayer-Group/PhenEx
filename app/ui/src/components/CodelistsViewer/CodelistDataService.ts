@@ -1,5 +1,9 @@
 import { themeQuartz } from 'ag-grid-community';
-import { getCodelistFilenamesForCohort, getCodelistFileForCohort, uploadCodelistFileToCohort } from '../../api/codelists/route';
+import {
+  getCodelistFilenamesForCohort,
+  getCodelistFileForCohort,
+  uploadCodelistFileToCohort,
+} from '../../api/codelists/route';
 import { createID } from '../../types/createID';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
@@ -33,37 +37,36 @@ export class CodelistDataService {
       class_name: 'Codelist',
       codelist: {
         'ICD-9': ['427.31'],
-        'ICD-10': ['I48.0', 'I48.1', 'I48.2', 'I48.91']
-      }
+        'ICD-10': ['I48.0', 'I48.1', 'I48.2', 'I48.91'],
+      },
     },
     {
       class_name: 'Codelist',
       codelist: {
         'ICD-9': ['250.00'],
-        'ICD-10': ['E11.9']
-      }
+        'ICD-10': ['E11.9'],
+      },
     },
     {
       class_name: 'Codelist',
       codelist: {
         'ICD-9': ['401.9'],
-        'ICD-10': ['I10']
-      }
-    }
+        'ICD-10': ['I10'],
+      },
+    },
   ];
 
-  constructor() {
-
-    
-  }
+  constructor() {}
 
   public async setFilenamesForCohort() {
     const oldFilenames = this._filenames;
     const filenames = await getCodelistFilenamesForCohort(this.cohortDataService.cohort_data.id);
     this._filenames = filenames.map(fileinfo => fileinfo.filename);
-    this.files = await Promise.all(filenames.map(fileinfo => 
-      getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
-    ));
+    this.files = await Promise.all(
+      filenames.map(fileinfo =>
+        getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
+      )
+    );
     this.notifyListeners();
   }
 
@@ -77,7 +80,6 @@ export class CodelistDataService {
 
   private notifyListeners() {
     this.listeners.forEach(listener => listener());
-
   }
 
   public async setCohortDataService(dataService: CohortDataService) {
@@ -105,22 +107,22 @@ export class CodelistDataService {
     const csvData = this.parseCSVContents(file.contents);
     const newFile: CodelistFile = {
       filename: file.filename,
-      id:createID(),
+      id: createID(),
       code_column: 'code',
       code_type_column: 'code_type',
       codelist_column: 'codelist',
-      contents: csvData
+      contents: csvData,
     };
     this.files.push(newFile);
     this._filenames.push(newFile.filename);
     this.notifyListeners();
-    uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, newFile)
+    uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, newFile);
   }
 
   private parseCSVContents(contents: string): any {
     const lines = contents.split('\n');
     const headers = this.parseCSVLine(lines[0]);
-    
+
     const data: { [key: string]: string[] } = {};
     headers.forEach(header => {
       data[header] = [];
@@ -128,7 +130,7 @@ export class CodelistDataService {
 
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
-      
+
       const values = this.parseCSVLine(lines[i]);
       headers.forEach((header, index) => {
         data[header].push(values[index] || '');
@@ -137,7 +139,7 @@ export class CodelistDataService {
 
     return {
       headers,
-      data
+      data,
     };
   }
 
@@ -230,18 +232,16 @@ export class CodelistDataService {
       spacing: 3,
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
-
     });
   }
 
   public prepareAllCodelistsData() {
-
-    const allHeaders = ['codelist', 'code', 'code_type', 'source']
+    const allHeaders = ['codelist', 'code', 'code_type', 'source'];
 
     const columnDefs = allHeaders.map(header => ({
       field: header,
       headerName: header.charAt(0).toUpperCase() + header.slice(1).replace(/_/g, ' '),
-      width: 100
+      width: 100,
     }));
 
     const rowData = this.files.flatMap(file => {
@@ -260,28 +260,31 @@ export class CodelistDataService {
     });
 
     return { columnDefs, rowData };
-  };
+  }
 
-  public prepareFileData(fileIndex: number){
+  public prepareFileData(fileIndex: number) {
     const file = this.files[fileIndex - 1];
     const columnDefs = file.contents.headers.map(header => ({
       field: header,
       headerName: header,
-      width: 100
+      width: 100,
     }));
 
-    const rowData = Array.from({ length: file.contents.data[file.contents.headers[0]].length }, (_, index) => {
-      const row: { [key: string]: string } = {};
-      file.contents.headers.forEach(header => {
-        row[header] = file.contents.data[header][index];
-      });
-      return row;
-    });
+    const rowData = Array.from(
+      { length: file.contents.data[file.contents.headers[0]].length },
+      (_, index) => {
+        const row: { [key: string]: string } = {};
+        file.contents.headers.forEach(header => {
+          row[header] = file.contents.data[header][index];
+        });
+        return row;
+      }
+    );
 
     return { columnDefs, rowData };
-  };
+  }
 
-  public setActiveFile(fileIndex: number){
+  public setActiveFile(fileIndex: number) {
     if (fileIndex === 0) {
       this.activeFile = null;
       return;
@@ -289,34 +292,33 @@ export class CodelistDataService {
     this.activeFile = this.files[fileIndex - 1];
   }
 
-  public saveChangesToActiveFile(){
-    console.log("saveChangesToActiveFile", this.activeFile);
+  public saveChangesToActiveFile() {
+    console.log('saveChangesToActiveFile', this.activeFile);
     uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, this.activeFile);
   }
 
-  public getColumnsForFile(filename: string){
+  public getColumnsForFile(filename: string) {
     const file = this.files.find(file => file.filename === filename);
     if (!file) return [];
     return file.contents.headers;
   }
 
-  public getFileIdForName(filename: string){
+  public getFileIdForName(filename: string) {
     const file = this.files.find(file => file.filename === filename);
     if (!file) return null;
     return file.id;
   }
 
-  public getCodelistsForFileInColumn(filename: string, column: string){
+  public getCodelistsForFileInColumn(filename: string, column: string) {
     const file = this.files.find(file => file.filename === filename);
     if (!file) return [];
     const uniqueCodelistNames = Array.from(new Set(file.contents.data[column]));
     return uniqueCodelistNames;
   }
 
-  public getDefaultColumnForFile(filename: string, column: string){
+  public getDefaultColumnForFile(filename: string, column: string) {
     const file = this.files.find(file => file.filename === filename);
     if (!file) return null;
     return file[column];
   }
-
 }

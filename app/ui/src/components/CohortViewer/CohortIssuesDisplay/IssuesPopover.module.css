@@ -1,16 +1,18 @@
 :root {
   --issue_popover_margin: -12px;
-  --issue_popover_radius: 20px;
+  --issue_popover_radius: 10px;
+  --background_color_translucent: rgba(248, 249, 250, 0.8);
 }
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
   top: var(--issue_popover_margin);
-  background: var(--background-color);
+  background-color: var(--background_color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 2px solid var(--line-color);
-  border-radius: 20px 20px 20px 20px;
+  border-radius: var(--issue_popover_radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 0px;
   width: 300px;
   /* z-index: 2; */
   max-height: calc(100vh - 50px);
@@ -19,10 +21,9 @@
   overflow: hidden;
 }
 
-.popover.noIssues{
+.popover.noIssues {
   border-color: var(--phenex-green);
 }
-
 
 .header {
   position: sticky;
