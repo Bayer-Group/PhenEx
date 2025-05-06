@@ -243,7 +243,14 @@ class MeasurementTable(PhenexTable):
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
-    KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID", "VALUE"]
+    KNOWN_FIELDS = [
+        "PERSON_ID",
+        "EVENT_DATE",
+        "CODE",
+        "CODE_TYPE",
+        "VISIT_DETAIL_ID",
+        "VALUE",
+    ]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "EVENT_DATE",

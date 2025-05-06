@@ -51,7 +51,19 @@ class MeasurementPhenotype(CodelistPhenotype):
         value_filter: Optional["ValueFilter"] = None,
         clean_nonphysiologicals_value_filter: Optional["ValueFilter"] = None,
         clean_null_values: Optional[bool] = True,
-        value_aggregation: Optional[Union["ValueAggregator","DailyMedian", "DailyMean", "DailyMin", "DailyMax", "DailyValueAggregator", "Min", "Max", "Mean"]] = None,
+        value_aggregation: Optional[
+            Union[
+                "ValueAggregator",
+                "DailyMedian",
+                "DailyMean",
+                "DailyMin",
+                "DailyMax",
+                "DailyValueAggregator",
+                "Min",
+                "Max",
+                "Mean",
+            ]
+        ] = None,
         further_value_filter_phenotype: Optional["MeasurementPhenotype"] = None,
         **kwargs,
     ):
