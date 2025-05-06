@@ -67,19 +67,19 @@ class ArithmeticPhenotypeArithmeticPhenotypeTestGenerator(PhenotypeTestGenerator
         c1 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c1"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         c2 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c2"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         c3 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c3"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         arithmetic1 = {
