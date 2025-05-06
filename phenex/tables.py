@@ -237,7 +237,7 @@ class PhenexObservationPeriodTable(PhenexTable):
     }
 
 
-class MeasurementTable(Table):
+class MeasurementTable(PhenexTable):
     NAME_TABLE = "MEASUREMENT"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
