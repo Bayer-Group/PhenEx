@@ -2,6 +2,9 @@ from typing import Union, List, Optional
 from phenex.phenotypes import CodelistPhenotype
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 from ibis import _
 
@@ -90,12 +93,19 @@ class MeasurementPhenotype(CodelistPhenotype):
         # perform value and dateaggregation
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table)
+        code_table = self._perform_null_value_filtering(code_table)
+        code_table = self._perform_nonphysiological_value_filtering(code_table)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table, reduce=False)
-        code_table = self._perform_nonphysiological_value_filtering(code_table)
         code_table = self._perform_value_aggregation(code_table)
         code_table = self._perform_value_filtering(code_table)
         return select_phenotype_columns(code_table)
+
+    def _perform_null_value_filtering(self, code_table):
+        if self.clean_null_values and self.value_filter:
+            logger.debug(f"Applying null filtering for {self.name}")
+            code_table = code_table[code_table[self.value_filter.column_name].notnull()]
+        return code_table
 
     def _perform_nonphysiological_value_filtering(self, code_table):
         if self.clean_nonphysiologicals_value_filter is not None:
