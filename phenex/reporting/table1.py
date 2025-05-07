@@ -56,7 +56,7 @@ class Table1(Reporter):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ not in ["MeasurementPhenotype", "AgePhenotype"]
+            if type(x).__name__ in ["MeasurementPhenotype", "AgePhenotype"]
         ]
 
     def _report_boolean_columns(self):
@@ -68,10 +68,16 @@ class Table1(Reporter):
         if len(boolean_columns) == 0:
             return None
 
+        def get_counts_for_column(col):
+            return (
+                table.select(["PERSON_ID", col])
+                .distinct()[col]
+                .sum()
+                .name(col.split("_BOOLEAN")[0])
+            )
+
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
-        true_counts = [
-            table[col].sum().name(col.split("_BOOLEAN")[0]) for col in boolean_columns
-        ]
+        true_counts = [get_counts_for_column(col) for col in boolean_columns]
 
         # perform actual sum operations and convert to pandas
         result_table = table.aggregate(true_counts).to_pandas()
@@ -100,13 +106,14 @@ class Table1(Reporter):
         dfs = []
         for col in value_columns:
             name = col.split("_VALUE")[0]
+            _table = table.select(["PERSON_ID", col]).distinct()
             d = {
-                "N": table[col].count().execute(),
-                "mean": table[col].mean().execute(),
-                "std": table[col].std().execute(),
-                "median": table[col].median().execute(),
-                "min": table[col].min().execute(),
-                "max": table[col].max().execute(),
+                "N": _table[col].count().execute(),
+                "mean": _table[col].mean().execute(),
+                "std": _table[col].std().execute(),
+                "median": _table[col].median().execute(),
+                "min": _table[col].min().execute(),
+                "max": _table[col].max().execute(),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(name)

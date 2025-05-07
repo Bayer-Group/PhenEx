@@ -237,9 +237,26 @@ class PhenexObservationPeriodTable(PhenexTable):
     }
 
 
-class MeasurementTable(Table):
-    # These datatpyes are just used for type hinting
-    pass
+class MeasurementTable(PhenexTable):
+    NAME_TABLE = "MEASUREMENT"
+    RELATIONSHIPS = {
+        "PhenexPersonTable": ["PERSON_ID"],
+        "PhenexVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+    }
+    KNOWN_FIELDS = [
+        "PERSON_ID",
+        "EVENT_DATE",
+        "CODE",
+        "CODE_TYPE",
+        "VISIT_DETAIL_ID",
+        "VALUE",
+    ]
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "CODE": "CODE",
+        "VALUE": "VALUE",
+    }
 
 
 class PhenotypeTable(PhenexTable):
