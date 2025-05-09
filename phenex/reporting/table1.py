@@ -69,23 +69,13 @@ class Table1(Reporter):
             return None
 
         def get_counts_for_column(col):
-            return (
-                table.select(["PERSON_ID", col])
-                .distinct()[col]
-                .sum()
-                .name(col.split("_BOOLEAN")[0])
-            )
+            return table.select(["PERSON_ID", col]).distinct()[col].sum().execute()
 
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
-        true_counts = [get_counts_for_column(col) for col in boolean_columns]
+        df_t1 = pd.DataFrame()
+        df_t1["N"] = [get_counts_for_column(col) for col in boolean_columns]
+        df_t1.index = [x.replace("_BOOLEAN", "") for x in boolean_columns]
 
-        # perform actual sum operations and convert to pandas
-        result_table = table.aggregate(true_counts).to_pandas()
-
-        # transpose to create proper table format (each row should be a phenotype)
-        df_t1 = result_table.T
-        # name count column 'N'
-        df_t1.columns = ["N"]
         # add the full cohort size as the first row
         df_n = pd.DataFrame({"N": [self.N]}, index=["cohort"])
         # concat population size
