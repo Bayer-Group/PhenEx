@@ -26,7 +26,7 @@
 }
 
 .tab:hover {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   color: var(--color-accent);
   /* background-color: var(--color-accent); */
@@ -36,7 +36,7 @@
 .tab.active {
   background-color: white;
   color: black;
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   border: 1px solid var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

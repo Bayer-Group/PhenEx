@@ -56,7 +56,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     );
   };
 
-  let filters: RelativeTimeRangeFilter[] = props.value || [];
+  let filters: RelativeTimeRangeFilter[] = Array.isArray(props.value) ? props.value : [];
   if (props.data.type == 'entry') {
     return <div>not applicable</div>;
   }

@@ -152,16 +152,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         tabIndex={-1}
       >
         <div className={styles.header} onClick={handleDone}>
-          <span className={styles.phenotypeName}>{props.data.name}</span>
-          <br></br>
-
           <span className={styles.topLine}>
             <span className={styles.filler}>editing</span>
             <span className={styles.actionText}>{titleText}</span>
           </span>
-          {/* <button className={styles.doneButton} >
+          <br></br>
+          <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+
+          <span className={styles.phenotypeName}>{props.data.name}</span>
+
+  
+          <span className={styles.doneButton} >
           Done
-        </button> */}
+          </span>
         </div>
         <div className={styles.content}>
           {React.Children.map(props.children, child =>

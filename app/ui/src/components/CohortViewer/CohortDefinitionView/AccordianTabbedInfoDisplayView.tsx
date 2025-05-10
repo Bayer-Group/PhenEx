@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AccordianTabbedInfoDisplayView.module.css';
 import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
@@ -21,7 +21,6 @@ enum InfoTabType {
   Visibility = 'Visibility',
   Execute = 'Execute',
   Report = 'Report',
-
   Info = 'i',
 }
 
@@ -32,11 +31,12 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
+  const customizableDropdownButtonRef = useRef(null);
 
   useEffect(() => {
     const updateAccordionState = () => {
       if (dataService.isNewCohortCreation()) {
-        setCurrentTab(Object.values(InfoTabType)[0]);
+        setCurrentTab(InfoTabType.Info);
 
         setIsOpen(true);
       }
@@ -117,11 +117,21 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   const executeCohort = async () => {
     await dataService.executeCohort();
   };
+  const clickedOnHeader = () => {
+    console.log("CLICKED ON HEDAER", customizableDropdownButtonRef);
+    customizableDropdownButtonRef.current?.closeDropdown();
+  };
 
   const renderPhenotypeSelection = () => {
     return (
       <div className={styles.phenotypeSelection}>
-        <div className={styles.phenotypeSelectionHeader}>New phenotype</div>
+        <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>New phenotype
+
+
+          <span className={styles.phenotypeSelectionHeaderButton}>
+            Close
+          </span>
+        </div>
         <TypeSelectorEditor onValueChange={handlePhenotypeSelection} />
       </div>
     );
@@ -145,6 +155,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
             dropdown_items={{ 0: renderPhenotypeSelection() }}
             onTabChange={onTabChange}
             active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+            customizableDropdownButtonRef={customizableDropdownButtonRef}
           />
         </div>
       </div>

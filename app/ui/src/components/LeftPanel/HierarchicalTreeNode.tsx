@@ -27,8 +27,6 @@ export const Node: FC<NodeProps> = ({ node, onNavigate, onClickAdd, style, dragH
   };
 
   const clickedOnAddButton = (e: React.MouseEvent) => {
-    // onNavigate(node.data.viewInfo);
-    console.log('CLICKED ADD BUTTON IN NODE', node.data.name);
     onClickAdd(node.data.name);
   };
 

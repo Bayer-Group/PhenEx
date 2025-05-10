@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import { FC, useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import styles from './CustomizableDropdownButton.module.css';
 import buttonStyles from './ButtonsBar.module.css';
 
@@ -7,15 +7,17 @@ import { Portal } from '../common/Portal';
 interface CustomizableDropdownButtonProps {
   label: string;
   content: React.ReactNode;
-}
+  customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;}
 
-export const CustomizableDropdownButton: FC<CustomizableDropdownButtonProps> = ({
-  label,
-  content,
-}) => {
+export const CustomizableDropdownButton = forwardRef<{ closeDropdown: () => void }, CustomizableDropdownButtonProps>(({ label, content }, customizableDropdownButtonRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  console.log("THIS IS THE REF CREATED", customizableDropdownButtonRef)
+  useImperativeHandle(customizableDropdownButtonRef, () => ({
+    closeDropdown: () => setIsOpen(false),
+  }));
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,4 +54,4 @@ export const CustomizableDropdownButton: FC<CustomizableDropdownButtonProps> = (
       )}
     </div>
   );
-};
+});

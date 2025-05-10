@@ -45,7 +45,7 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
             className={`${styles.domainSection} ${selectedDomain === domain.name ? styles.selected : ''}`}
             onClick={() => handleDomainSelect(domain.name)}
           >
-            <div className={styles.domainName}>{domain.name.replace('Domain', '')}</div>
+            <div className={styles.domainName}>{domain.name.replace(/_/g, ' ')}</div>
             <p className={styles.domainInfo}>{domain.info}</p>
           </div>
         ))}

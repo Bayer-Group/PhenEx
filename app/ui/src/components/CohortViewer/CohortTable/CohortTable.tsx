@@ -1,5 +1,27 @@
-import { FC, forwardRef, ForwardedRef, useEffect, useRef } from 'react';
+import { FC, forwardRef, ForwardedRef, useEffect, useRef, Component } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Grid Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Something went wrong with the grid. Please try refreshing the page.</div>;
+    }
+    return this.props.children;
+  }
+}
 
 import styles from './CohortTable.module.css';
 import '../../../styles/variables.css';
@@ -49,7 +71,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
-        <AgGridReact
+        <ErrorBoundary>
+          <AgGridReact
           ref={ref}
           rowData={data.rows}
           theme={myTheme}
@@ -99,7 +122,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               // 'rag-dark-outer': (params) => params.data.type === 'entry',
             }
           }
-        />
+          />
+        </ErrorBoundary>
       </div>
     );
   }

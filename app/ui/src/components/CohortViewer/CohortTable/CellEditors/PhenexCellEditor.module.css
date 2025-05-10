@@ -12,12 +12,11 @@
 }
 
 .header {
+  cursor: pointer;
   font-size: 16px;
   font-family: 'SNPro-regular';
   margin-bottom: 0px;
-  padding-bottom: 8px;
   padding: 8px;
-  /* line-height: 18px; */
   padding-right: 20px;
   margin: 10px;
   overflow: hidden;
@@ -31,7 +30,9 @@
   transition:
     box-shadow 0.2s ease-in-out,
     transform 0.2s ease-in-out;
-  /* border-bottom: 2px solid var(--color-accent); */
+  position: relative;
+  padding-bottom: 10px;
+  padding-left:15px;
 }
 .header:hover {
   box-shadow: var(--box_shadow_selected_hover);
@@ -49,11 +50,12 @@
 .phenotypeName {
   font-family: 'IBMPlexSans-bold';
   font-size: 20px;
+  padding-left:5px;
 }
 .container {
   display: flex;
   flex-direction: column;
-  width: 300px;
+  width: 350px;
   height: 500px;
   padding: 0px;
   border: 1px solid var(--line-color);
@@ -74,49 +76,51 @@
 }
 
 .filler {
-  font-family: 'SNPro-black';
-  font-size: 14px;
+  font-family: 'SNPro-bold';
+  font-size: 16px;
 }
 
 .actionText {
   padding-left: 5px;
-  font-size: 14px;
+  font-size: 18px;
   font-family: 'IBMPlexSans-bold';
+  padding-right:10px;
+
 }
 
 .doneButton {
   background-color: transparent;
-  color: black;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  color: var(--phenex-red-active);
   font-size: 14px;
   width: 60px;
   position: absolute;
   font-family: 'SNPro-bold';
-  top: 8px;
-  height: 25px;
-  right: 10px;
-  padding: 2px 0;
-  text-align: center;
-  transition: all 0.2s ease-in-out;
-  border: 2px solid var(--color-accent);
+  top: 4px;
+  right: -15px;
 }
 
+.header:hover .doneButton {
+  color: red!important;
+}
+
+/*
 .doneButton:hover {
   color: white;
   background-color: var(--color-accent);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--color-accent);
 }
 
 .doneButton:focus {
   outline: none;
-  border: 2px solid var(--color-accent);
+  border: none;
+
 }
 
 .doneButton:focus-visible {
   outline: none;
-  border: 2px solid var(--color-accent);
+  border: none;
+} */
+
+
+.bottomLabel{
+  padding-left:10px;
 }

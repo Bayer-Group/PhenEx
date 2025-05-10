@@ -54,14 +54,15 @@
 }
 
 .domainName {
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
+  font-family: "SNPro-Bold";
+  text-wrap: wrap;
+  font-size:16px;
+  line-height:16px;
+  margin:0px;
 }
 
 .domainInfo {
-  font-size: 0.9em;
-  color: #666;
-  margin: 0;
-  line-height: 1.4;
+  font-family: "SNPro-Regular";
+  font-size:10px;
+  margin:0px;
 }

@@ -299,7 +299,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
         </div>
       ))}
       <button onClick={addNewFilter} className={styles.addButton}>
-        Click to add a Time Range Filter
+        New time range filter
       </button>
     </div>
   );
