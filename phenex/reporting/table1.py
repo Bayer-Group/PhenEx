@@ -17,6 +17,10 @@ class Table1(Reporter):
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
+        if len(self.cohort.characteristics) == 0:
+            self.df = pd.DataFrame()
+            logger.info(f"No baseline characteristics defined for {cohort.name}, therefore no table 1 generated")
+            return self.df
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
             .select("PERSON_ID")
