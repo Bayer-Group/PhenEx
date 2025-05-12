@@ -16,6 +16,8 @@ import { ValueFilterCellEditor } from '../CohortTable/CellEditors/ValueFilterCel
 import { PhenotypeSelectorCellEditor } from '../CohortTable/CellEditors/PhenotypeSelectorCellEditor';
 import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelectorCellEditor';
 import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
+import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
+
 
 export const defaultColumns = [
   {
@@ -52,12 +54,8 @@ export const defaultColumns = [
     headerName: 'Description',
     width: 250,
     editable: true,
-    cellEditor: 'agLargeTextCellEditor',
+    cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    wrapText: true,
-    cellEditorParams: {
-      maxLength: 2000,
-    },
     cellRenderer: DescriptionCellRenderer,
   },
   {

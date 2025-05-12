@@ -6,6 +6,7 @@ import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
 import { ConstantsDataService } from './ConstantsDataService';
 import { CodelistDataService } from '../../CodelistsViewer/CodelistDataService';
+import { ReportDataService } from '../CohortReportView/ReportDataService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -15,6 +16,8 @@ export class CohortDataService {
   public issues_service: CohortIssuesService;
   public constants_service: ConstantsDataService;
   public codelists_service: CodelistDataService;
+  public report_service: ReportDataService;
+
   private _table_data: TableData = {
     rows: [],
     columns: [],
@@ -29,6 +32,8 @@ export class CohortDataService {
     this.constants_service.setCohortDataService(this);
     this.codelists_service = new CodelistDataService();
     this.codelists_service.setCohortDataService(this);
+    this.report_service = new ReportDataService();
+    this.report_service.setCohortDataService(this);
   }
 
   public static getInstance(): CohortDataService {

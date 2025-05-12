@@ -1,17 +1,18 @@
 .textarea {
-  width: 100%;
-  min-height: 100px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  resize: vertical;
-  font-family: inherit;
+  margin-left: 10px;
+  margin-right: 10px;
+  width: calc(100% - 30px);
+  height:calc(100% - 20px);
+  /* padding: 8px; */
+  border: none;
+  font-family: "IBMPlexSans-regular";
   font-size: 14px;
+  resize: none;
   line-height: 1.5;
+  background-color: transparent;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #2684ff;
-  box-shadow: 0 0 0 1px #2684ff;
+  border:none;
 }

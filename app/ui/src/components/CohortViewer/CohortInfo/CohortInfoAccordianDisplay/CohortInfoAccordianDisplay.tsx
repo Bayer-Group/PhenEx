@@ -76,7 +76,7 @@ export const CohortInfoAccordianDisplayView: FC<CohortInfoAccordianDisplayViewPr
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>>'}
+          {'>'}
         </button>
       </div>
       {isOpen && (

@@ -14,6 +14,7 @@ interface CohortDefinitionViewProps {
 }
 
 enum CohortDefinitionViewType {
+  // All='all',
   Cohort = 'cohort definition',
   Baseline = 'baseline characteristics',
   Outcomes = 'outcomes',
@@ -92,6 +93,11 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
       dataService.onCellValueChanged(event);
       // setTableData(dataService.table_data);
     }
+
+    if (['description', 'class_name'].includes(event.colDef.field)) {
+      refreshGrid();
+    }
+
   };
 
   const renderView = () => {

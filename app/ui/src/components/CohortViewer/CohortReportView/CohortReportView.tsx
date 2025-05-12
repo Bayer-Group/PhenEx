@@ -34,21 +34,21 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
       case CohortReportViewType.Cohort:
         return (
           <>
-            <ReportCard title={'Attrition Table'} />
-            <ReportCard title={'Upset Plot'} />
+          
+            <ReportCard title={'Attrition Table'} dataService={dataService.report_service} />
           </>
         );
-      case CohortReportViewType.Baseline:
-        return (
-          <>
-            <ReportCard title={'Age'} />
-            <ReportCard title={'Sex'} />
-            <ReportCard title={'Ethnicity'} />
-            <ReportCard title={'Baseline Characteristics'} />
-          </>
-        );
-      case CohortReportViewType.Outcomes:
-        return <ReportCard title={'Outcomes'} />;
+      // case CohortReportViewType.Baseline:
+      //   return (
+      //     <>
+      //       <ReportCard title={'Age'} />
+      //       <ReportCard title={'Sex'} />
+      //       <ReportCard title={'Ethnicity'} />
+      //       <ReportCard title={'Baseline Characteristics'} />
+      //     </>
+      //   );
+      // case CohortReportViewType.Outcomes:
+      //   return <ReportCard title={'Outcomes'} />;
       default:
         return null;
     }
@@ -56,7 +56,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.topSection}>
+      {/* <div className={styles.topSection}>
         <div className={styles.controlsContainer}>
           <Tabs
             width={400}
@@ -66,10 +66,10 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
             active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
           />
         </div>
-      </div>
-      <div className={styles.bottomSection}>
+      </div> */}
+      {/* <div className={styles.bottomSection}> */}
         <div className={styles.viewContainer}>{renderViewContent()}</div>
-      </div>
+      {/* </div> */}
     </div>
   );
 };

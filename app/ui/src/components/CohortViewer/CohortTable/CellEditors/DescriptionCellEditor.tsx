@@ -14,16 +14,36 @@ export const DescriptionCellEditor = forwardRef<any, DescriptionCellEditorProps>
 
     return (
       <PhenexCellEditor {...props} ref={ref}>
-        <textarea
-          className={styles.textarea}
-          value={props.value || ''}
-          onChange={handleValueChange}
-          placeholder="Enter description..."
-          rows={4}
-        />
+        <DescriptionEditor {...props} onValueChange={handleValueChange} />
       </PhenexCellEditor>
     );
   }
 );
 
 DescriptionCellEditor.displayName = 'DescriptionCellEditor';
+
+export interface DescriptionEditorProps {
+  value?: any;
+  onValueChange?: (value: any) => void;
+}
+export const DescriptionEditor: React.FC<DescriptionEditorProps> = props => {
+  const [localValue, setLocalValue] = React.useState(typeof props.value === 'string' ? props.value : '');
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setLocalValue(e.target.value);
+  };
+
+  const handleBlur = () => {
+    props.onValueChange?.(localValue);
+  };
+
+  return (
+    <textarea
+      className={styles.textarea}
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      placeholder="Enter description..."
+    />
+  );
+};

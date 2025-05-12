@@ -7,7 +7,7 @@
   user-select: none;
   border-radius: var(--border-radius);
   font-size: 24px;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   overflow: visible;
   margin: 8px 10px;
   border: 1px solid transparent;

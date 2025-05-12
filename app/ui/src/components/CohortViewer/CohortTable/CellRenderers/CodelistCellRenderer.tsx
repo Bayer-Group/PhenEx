@@ -43,7 +43,6 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
         <div
           key={codeIndex}
           className={styles.codeBlock}
-          className={styles.codeBlock}
           onClick={() => {
             props.api?.startEditingCell({
               rowIndex: props.node.rowIndex,

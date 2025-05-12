@@ -44,7 +44,7 @@
   font-size: 22px;
   font-family: 'IBMPlexSans-bold';
   margin-left: 80px;
-  transition: 0.3s ease;
+  transition: 0.2s ease;
 }
 
 .header.closed h2 {
@@ -67,7 +67,7 @@
   margin-top: 8px;
   border: var(--accordian_container_border_width) solid var(--line-color);
   opacity: 1;
-  transition: 0.3s ease;
+  transition: 0.2s ease;
 }
 
 .toggleButton:hover {
@@ -114,7 +114,7 @@
   margin-bottom: 0px;
   margin-top: 0px;
   margin-left: 60px;
-  transition: 0.3s ease;
+  transition: 0.2s ease;
 }
 
 .tabsContainer.closed {

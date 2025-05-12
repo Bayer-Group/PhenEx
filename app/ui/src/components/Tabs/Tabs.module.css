@@ -30,11 +30,13 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   color: var(--color-accent);
   /* background-color: var(--color-accent); */
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--line-color);
+  background-color: var(--color-accent-hover) !important;
+
 }
 
 .tab.active {
-  background-color: white;
+  background-color: var(--color-accent-hover) !important;
   color: black;
   /* transform: translateY(-1px); */
   border: 1px solid var(--color-accent);

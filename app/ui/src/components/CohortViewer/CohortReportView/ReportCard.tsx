@@ -7,10 +7,10 @@ import styles from './ReportCard.module.css';
 interface ReportCardProps {
   title: string;
   onInfoClick?: () => void;
+  dataService: ReportDataService;
 }
 
-export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick }) => {
-  const dataService = ReportDataService.getInstance();
+export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick, dataService}) => {
 
   return (
     <div className={styles.reportCard}>
