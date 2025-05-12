@@ -428,9 +428,27 @@ async def execute_study(
     px_cohort.execute(mapped_tables)
     px_cohort.append_counts()
 
-    append_count_to_cohort(px_cohort, cohort)
+    path_cohort = get_path_cohort_files(cohort['id'])
 
-    response = {'cohort':cohort}
+    px_cohort.table1.to_csv(os.path.join(path_cohort, 'table1.csv'))
+
+    from phenex.reporting import Waterfall
+    r = Waterfall()
+    df_waterfall = r.execute(px_cohort)
+    df_waterfall.to_csv(os.path.join(path_cohort, 'waterfall.csv'),index=False)
+
+
+
+    append_count_to_cohort(px_cohort, cohort)
+    
+    from json import loads, dumps
+    cohort['table1'] = loads(px_cohort.table1.to_json(orient="split"))
+    cohort['waterfall'] = loads(df_waterfall.to_json(orient="split"))
+
+
+    response = {
+        'cohort':cohort,
+    }
 
     with open('./executed_cohort.json', 'w') as f:
         json.dump(px_cohort.to_dict(), f, indent=4)
