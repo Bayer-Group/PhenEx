@@ -123,8 +123,8 @@ class SimpleCohortWithExclusionAndStudyPeriodTestGenerator(
 
     def define_cohort(self):
         study_period = DateFilter(
-            min=AfterOrOn(datetime.date(2015, 1, 1)),
-            max=BeforeOrOn(datetime.date(2020, 12, 31)),
+            min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+            max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(
@@ -188,8 +188,8 @@ class SimpleCohortWithExclusionPostIndexTestGenerator(
 
     def define_cohort(self):
         study_period = DateFilter(
-            min=AfterOrOn(datetime.date(2015, 1, 1)),
-            max=BeforeOrOn(datetime.date(2020, 12, 31)),
+            min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+            max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(

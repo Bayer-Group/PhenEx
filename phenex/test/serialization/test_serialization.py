@@ -40,8 +40,8 @@ def test_SexPhenotype():
 
 def test_MultipleOccurrencesPhenotype():
     study_period = DateFilter(
-        min=AfterOrOn(datetime.date(2015, 1, 1)),
-        max=BeforeOrOn(datetime.date(2020, 12, 31)),
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
     phenotype = CodelistPhenotype(
         name="example_phenotype",
@@ -200,8 +200,8 @@ def create_cohort():
     )
 
     study_period = DateFilter(
-        min=AfterOrOn(datetime.date(2015, 1, 1)),
-        max=BeforeOrOn(datetime.date(2020, 12, 31)),
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(

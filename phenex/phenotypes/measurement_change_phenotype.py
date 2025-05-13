@@ -114,13 +114,13 @@ class MeasurementChangePhenotype(Phenotype):
             max_change = Value(operator=max_change.operator, value=-max_change.value)
 
         value_filter = ValueFilter(
-            min=min_change, max=max_change, column_name="VALUE_CHANGE"
+            min_value=min_change, max_value=max_change, column_name="VALUE_CHANGE"
         )
         filtered_table = value_filter.filter(joined_table)
 
         time_filter = ValueFilter(
-            min=self.min_days_between,
-            max=self.max_days_between,
+            min_value=self.min_days_between,
+            max_value=self.max_days_between,
             column_name="DAYS_BETWEEN",
         )
         filtered_table = time_filter.filter(filtered_table)

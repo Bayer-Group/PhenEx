@@ -1,8 +1,6 @@
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_filter import DateFilter
-from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 
 from ibis import _
@@ -25,8 +23,8 @@ class MultipleOccurrencesPhenotype(Phenotype):
         codelist = Codelist(name="example_codelist", codes=[...])
 
         date_range = DateFilter(
-            min=After("2020-01-01"),
-            max=Before("2020-12-31")
+            min_date=After("2020-01-01"),
+            max_date=Before("2020-12-31")
         )
         phenotype = CodelistPhenotype(
             name="example_phenotype",
