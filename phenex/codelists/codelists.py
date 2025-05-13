@@ -169,42 +169,54 @@ class Codelist:
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
 
-    def resolve(
-        self, use_code_type: bool = True, remove_punctuation: bool = False
+        self._resolved_codelist = None
+
+    def copy(
+        self,
+        name: Optional[str] = None,
+        use_code_type: bool = True,
+        remove_punctuation: bool = False,
     ) -> "Codelist":
         """
-        Resolve the codelist based on the provided arguments.
+        Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
 
         Parameters:
+            name: Name for newly created code list if different from the old one.
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
 
         Returns:
-            Codelist instance with the resolved codelist.
+            Codelist instance with the updated resolution options.
         """
         return Codelist(
             self.codelist,
-            name=self.name,
+            name=name or self.name,
             use_code_type=use_code_type,
             remove_punctuation=remove_punctuation,
         )
 
     @property
     def resolved_codelist(self):
-        resolved_codelist = {}
+        """
+        Retrieve the actual codelists used for filtering after processing for punctuation and code type options (see __init__()).
+        """
+        if self._resolved_codelist is None:
+            resolved_codelist = {}
 
-        for code_type, codes in self.codelist.items():
-            if self.remove_punctuation:
-                codes = [code.replace(".", "") for code in codes]
-            if self.use_code_type:
-                resolved_codelist[code_type] = codes
-            else:
-                if None not in resolved_codelist:
-                    resolved_codelist[None] = []
-                resolved_codelist[None] = list(
-                    set(resolved_codelist[None]) | set(codes)
-                )
-        return resolved_codelist
+            for code_type, codes in self.codelist.items():
+                if self.remove_punctuation:
+                    codes = [code.replace(".", "") for code in codes]
+                if self.use_code_type:
+                    resolved_codelist[code_type] = codes
+                else:
+                    if None not in resolved_codelist:
+                        resolved_codelist[None] = []
+                    resolved_codelist[None] = list(
+                        set(resolved_codelist[None]) | set(codes)
+                    )
+            self._resolved_codelist = resolved_codelist
+
+        return self._resolved_codelist
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":
@@ -501,7 +513,6 @@ class MedConBCodelistFactory:
         id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
     )
     ```
-
     """
 
     def __init__(
@@ -518,6 +529,9 @@ class MedConBCodelistFactory:
         return Codelist.from_medconb(medconb_codelist)
 
     def get_codelists(self):
+        """
+        Returns a list of all available codelist IDs.
+        """
         return sum(
             [c.items for c in self.medconb_client.get_workspace().collections], []
         )
