@@ -3,7 +3,11 @@ from .date import Date, After, AfterOrOn, Before, BeforeOrOn
 from .value_filter import ValueFilter
 
 
-class DateFilter(ValueFilter):
+def DateFilter(
+    min_date: Optional[Union[Date, After, AfterOrOn]] = None,
+    max_date: Optional[Union[Date, Before, BeforeOrOn]] = None,
+    column_name: str = "EVENT_DATE",
+):
     """
     DateFilter is a specialized ValueFilter for handling date-based filtering.
 
@@ -12,13 +16,5 @@ class DateFilter(ValueFilter):
         max_date: The maximum date condition. Recommended to pass either Before or BeforeOrOn.
         column_name: The name of the column to apply the filter on. Defaults to "EVENT_DATE".
     """
-
-    def __init__(
-        self,
-        min_date: Optional[Union[Date, After, AfterOrOn]] = None,
-        max_date: Optional[Union[Date, Before, BeforeOrOn]] = None,
-        column_name: str = "EVENT_DATE",
-    ):
-        super(DateFilter, self).__init__(
-            min_value=min_date, max_value=max_date, column_name=column_name
-        )
+    # For some reason, implementing DateFilter as a subclass of ValueFilter messes up the serialization. So instead we implement DateFilter as a function that looks like a class and just returns a ValueFilter instance.
+    return ValueFilter(min_value=min_date, max_value=max_date, column_name=column_name)
