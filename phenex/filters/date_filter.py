@@ -1,6 +1,62 @@
 from typing import Optional, Union
+from datetime import date, datetime
 from .date import Date, After, AfterOrOn, Before, BeforeOrOn
 from .value_filter import ValueFilter
+from .value import Value
+
+
+class Date(Value):
+    """
+    The Date class is a specialized Value class for handling date comparisons.
+
+    Attributes:
+        operator (str): The comparison operator, one of '>', '>=', '<', '<=', '='.
+        value (Union[date, str]): The date value, which can be a `date` object or a string in 'YYYY-MM-DD' format.
+        date_format (str): The format to use for parsing date strings (default is 'YYYY-MM-DD').
+    """
+
+    def __init__(
+        self, operator: str, value: Union[date, str], date_format="YYYY-MM-DD"
+    ):
+        if isinstance(value, str):
+            value = datetime.strptime(value, date_format).date()
+        super(Date, self).__init__(operator, value)
+
+
+class Before(Date):
+    """
+    Represents a threshold where a date must be strictly before the specified value.
+    """
+
+    def __init__(self, value: Union[date, str], **kwargs):
+        super(Before, self).__init__("<", value)
+
+
+class BeforeOrOn(Date):
+    """
+    Represents a threshold where a date must be on or before the specified value.
+    """
+
+    def __init__(self, value: Union[date, str], **kwargs):
+        super(BeforeOrOn, self).__init__("<=", value)
+
+
+class After(Date):
+    """
+    Represents a threshold where a date must be strictly after the specified value.
+    """
+
+    def __init__(self, value: Union[date, str], **kwargs):
+        super(After, self).__init__(">", value)
+
+
+class AfterOrOn(Date):
+    """
+    Represents a threshold where a date must be on or after the specified value.
+    """
+
+    def __init__(self, value: Union[date, str], **kwargs):
+        super(AfterOrOn, self).__init__(">=", value)
 
 
 def DateFilter(
