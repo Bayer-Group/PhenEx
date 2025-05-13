@@ -223,13 +223,13 @@ def create_cohort():
 
     pt2 = CodelistPhenotype(
         return_date="first",
-        codelist=Codelist(["d1"]).resolve(use_code_type=False),
+        codelist=Codelist(["d1"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
     )
 
     pt3 = CodelistPhenotype(
         name="prior_et_usage",
-        codelist=Codelist(["e4"]).resolve(use_code_type=False),
+        codelist=Codelist(["e4"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
         relative_time_range=RelativeTimeRangeFilter(
             when="before", min_days=GreaterThanOrEqualTo(0)

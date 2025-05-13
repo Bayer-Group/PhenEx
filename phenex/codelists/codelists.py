@@ -153,11 +153,6 @@ class Codelist:
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
-        # resolve here because it is needed immediately.
-        # should only be resolved on execution.
-        # -> refactoring needed.
-        self._resolve()
-
         if list(self.codelist.keys()) == [None]:
             self.use_code_type = False
         else:
@@ -174,44 +169,54 @@ class Codelist:
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
 
-    def _resolve(self): ...
+        self._resolved_codelist = None
 
-    def resolve(
-        self, use_code_type: bool = True, remove_punctuation: bool = False
+    def copy(
+        self,
+        name: Optional[str] = None,
+        use_code_type: bool = True,
+        remove_punctuation: bool = False,
     ) -> "Codelist":
         """
-        Resolve the codelist based on the provided arguments.
+        Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
 
         Parameters:
+            name: Name for newly created code list if different from the old one.
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
 
         Returns:
-            Codelist instance with the resolved codelist.
+            Codelist instance with the updated resolution options.
         """
         return Codelist(
             self.codelist,
-            name=self.name,
+            name=name or self.name,
             use_code_type=use_code_type,
             remove_punctuation=remove_punctuation,
         )
 
     @property
     def resolved_codelist(self):
-        resolved_codelist = {}
+        """
+        Retrieve the actual codelists used for filtering after processing for punctuation and code type options (see __init__()).
+        """
+        if self._resolved_codelist is None:
+            resolved_codelist = {}
 
-        for code_type, codes in self.codelist.items():
-            if self.remove_punctuation:
-                codes = [code.replace(".", "") for code in codes]
-            if self.use_code_type:
-                resolved_codelist[code_type] = codes
-            else:
-                if None not in resolved_codelist:
-                    resolved_codelist[None] = []
-                resolved_codelist[None] = list(
-                    set(resolved_codelist[None]) | set(codes)
-                )
-        return resolved_codelist
+            for code_type, codes in self.codelist.items():
+                if self.remove_punctuation:
+                    codes = [code.replace(".", "") for code in codes]
+                if self.use_code_type:
+                    resolved_codelist[code_type] = codes
+                else:
+                    if None not in resolved_codelist:
+                        resolved_codelist[None] = []
+                    resolved_codelist[None] = list(
+                        set(resolved_codelist[None]) | set(codes)
+                    )
+            self._resolved_codelist = resolved_codelist
+
+        return self._resolved_codelist
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":
@@ -289,8 +294,6 @@ class Codelist:
              | ICD-10    | I48.91 | atrial_fibrillation|
              ```
 
-
-
          Parameters:
              path: Path to the Excel file.
              sheet_name: An optional label for the sheet to read from. If defined, the codelist will be taken from that sheet. If no sheet_name is defined, the first sheet is taken.
@@ -357,6 +360,20 @@ class Codelist:
     def from_medconb(cls, codelist):
         """
         Converts a MedConB style Codelist into a PhenEx style codelist.
+
+        Example:
+
+        ```python
+        from medconb_client import Client
+        endpoint = "https://api.medconb.example.com/graphql/"
+        token = get_token()
+        client = Client(endpoint, token)
+
+        medconb_codelist = client.get_codelist(
+            codelist_id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
+        )
+        phenex_codelist = Codelist.from_medconb(medconb_codelist)
+        ```
         """
         phenex_codelist = {}
         for codeset in codelist.codesets:
@@ -480,81 +497,41 @@ class LocalCSVCodelistFactory:
             raise ValueError("Could not find the codelist with the given name.")
 
 
-class LocalCSVCodelist(Codelist):
+class MedConBCodelistFactory:
+    """
+    Retrieve Codelists for use in Phenex from MedConB.
+
+    Example:
+    ```python
+    from medconb_client import Client
+    endpoint = "https://api.medconb.example.com/graphql/"
+    token = get_token()
+    client = Client(endpoint, token)
+    medconb_factory = MedConBCodelistFactory(client)
+
+    phenex_codelist = medconb_factory.get_codelist(
+        id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
+    )
+    ```
+    """
+
     def __init__(
         self,
-        name: str,
-        # These parameters below shouldn't be here, but are required for
-        # the parent class and we don't want to touch that atm.
-        remove_punctuation: bool = False,
-        csv_factory: LocalCSVCodelistFactory = None,
+        medconb_client,
     ):
-        self.name = name
-        self.csv_factory = csv_factory
-        if not self.csv_factory:
-            raise ValueError("csv_factory must be provided.")
-        # the empty dict is a placeholder, will be fulfilled during
-        # resolve.
-        # -> refactor!
-        super().__init__(
-            codelist={},
-            name=name,
-            use_code_type=True,
-            remove_punctuation=remove_punctuation,
-        )
-
-    def _resolve(self):
-        """
-        Resolve the codelist by querying the LocalCSVCodelistFactory.
-        """
-        codelist = self.csv_factory.get_codelist(self.name)
-        self.codelist = codelist.codelist
-
-    def to_dict(self):
-        return {
-            "class_name": self.__class__.__name__,
-            "name": self.name,
-            "remove_punctuation": self.remove_punctuation,
-        }
-
-
-class MedConBCodelist(Codelist):
-    def __init__(
-        self,
-        id: str,
-        name: str,
-        # These parameters below shouldn't be here, but are required for
-        # the parent class and we don't want to touch that atm.
-        remove_punctuation: bool = False,
-        # this also shouldn't be here, but be injected during runtime
-        medconb_client=None,
-    ):
-        self.id = id
         self.medconb_client = medconb_client
-        # the empty dict is a placeholder, will be fulfilled during
-        # resolve.
-        # -> refactor!
-        super().__init__(
-            codelist={},
-            name=name,
-            use_code_type=True,
-            remove_punctuation=remove_punctuation,
+
+    def get_codelist(self, id: str):
+        """
+        Resolve the codelist by querying the MedConB client.
+        """
+        medconb_codelist = self.medconb_client.get_codelist(codelist_id=id)
+        return Codelist.from_medconb(medconb_codelist)
+
+    def get_codelists(self):
+        """
+        Returns a list of all available codelist IDs.
+        """
+        return sum(
+            [c.items for c in self.medconb_client.get_workspace().collections], []
         )
-
-    def _resolve(self):
-        """
-        Resolve the codelist by querying MedConB.
-        """
-        medconb_codelist = self.medconb_client.get_codelist(codelist_id=self.id)
-
-        self.codelist = {}
-        for codeset in medconb_codelist.codesets:
-            self.codelist[codeset.ontology] = [c[0] for c in codeset.codes]
-
-    def to_dict(self):
-        return {
-            "class_name": self.__class__.__name__,
-            "id": self.id,
-            "name": self.name,
-            "remove_punctuation": self.remove_punctuation,
-        }
