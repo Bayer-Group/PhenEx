@@ -39,8 +39,8 @@ def create_cohort():
     Any prescription for tamoxifen or AIs before the BC diagnosis date (prevalent users)
     """
     study_period = DateFilter(
-        min=AfterOrOn(datetime.date(2010, 1, 1)),
-        max=BeforeOrOn(datetime.date(2020, 12, 31)),
+        min_date=AfterOrOn(datetime.date(2010, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
