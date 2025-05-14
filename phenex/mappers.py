@@ -73,15 +73,24 @@ class OMOPPersonTable(PhenexPersonTable):
     DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID", "DATE_OF_BIRTH": "BIRTH_DATETIME"}
     JOIN_KEYS = {
         "OMOPConditionOccurenceTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID"],
     }
 
 
-class OMOPVisitDetailTable(PhenexVisitDetailTable):
-    NAME_TABLE = "VISIT_DETAIL"
-    JOIN_KEYS = {
+class OMOPVisitOccurrenceTable(PhenexTable):
+    NAME_TABLE = "VISIT_OCCURRENCE"
+    RELATIONSHIPS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPConditionOccurenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPConditionOccurenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
+        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
+    }
+
+
+class OMOPVisitDetailTable(PhenexTable):
+    NAME_TABLE = "VISIT_DETAIL"
+    RELATIONSHIPS = {
+        "OMOPPersonTable": ["PERSON_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
 
 
@@ -89,10 +98,10 @@ class OMOPConditionOccurenceTable(CodeTable):
     NAME_TABLE = "CONDITION_OCCURRENCE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": [
+        "OMOPVisitOccurrenceTable": [
             "PERSON_ID",
-            "VISIT_DETAIL_ID",
-        ],  # I changed this from EVENT_DATE
+            "VISIT_OCCURRENCE_ID",
+        ],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -100,6 +109,41 @@ class OMOPConditionOccurenceTable(CodeTable):
         "CODE": "CONDITION_CONCEPT_ID",
     }
 
+class OMOPObservationTable(MeasurementTable):
+    NAME_TABLE = "OBSERVATION"
+    JOIN_KEYS = {
+        "OMOPPersonTable": ["PERSON_ID"],
+        "OMOPVisitOccurrenceTable": [
+            "PERSON_ID",
+            "VISIT_OCCURRENCE_ID",
+        ],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "OBSERVATION_DATE",
+        "CODE": "OBSERVATION_TYPE_CONCEPT_ID",
+        "VALUE": "VALUE_AS_NUMBER",
+    }
+
+class OMOPMeasurementTable(MeasurementTable):
+    NAME_TABLE = "MEASUREMENT"
+    JOIN_KEYS = {
+        "OMOPPersonTable": ["PERSON_ID"],
+        "OMOPVisitOccurrenceTable": [
+            "PERSON_ID",
+            "VISIT_OCCURRENCE_ID",
+        ], 
+        "OMOPVisitDetailTable": [
+            "PERSON_ID",
+            "VISIT_DETAIL_ID",
+        ], 
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "MEASUREMENT_DATE",
+        "CODE": "MEASUREMENT_TYPE_CONCEPT_ID",
+        "VALUE": "VALUE_AS_NUMBER",
+    }
 
 class OMOPDeathTable(PhenexTable):
     NAME_TABLE = "DEATH"
@@ -112,7 +156,7 @@ class OMOPProcedureOccurrenceTable(CodeTable):
     NAME_TABLE = "PROCEDURE_OCCURRENCE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -125,7 +169,7 @@ class OMOPDrugExposureTable(CodeTable):
     NAME_TABLE = "DRUG_EXPOSURE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -138,7 +182,7 @@ class OMOPConditionOccurrenceSourceTable(CodeTable):
     NAME_TABLE = "CONDITION_OCCURRENCE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -151,7 +195,7 @@ class OMOPProcedureOccurrenceSourceTable(CodeTable):
     NAME_TABLE = "PROCEDURE_OCCURRENCE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -164,7 +208,7 @@ class OMOPDrugExposureSourceTable(CodeTable):
     NAME_TABLE = "DRUG_EXPOSURE"
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -177,7 +221,7 @@ class OMOPPersonTableSource(PhenexPersonTable):
     NAME_TABLE = "PERSON"
     JOIN_KEYS = {
         "OMOPConditionOccurenceTable": ["PERSON_ID"],
-        "OMOPVisitDetailTable": ["PERSON_ID"],
+        "OMOPVisitOccurrenceTable": ["PERSON_ID"],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -210,6 +254,7 @@ class OMOPConceptTable(PhenexTable):
 #
 OMOPs = {
     "PERSON": OMOPPersonTable,
+    "VISIT_OCCURRENCE": OMOPVisitOccurrenceTable,
     "VISIT_DETAIL": OMOPVisitDetailTable,
     "CONDITION_OCCURRENCE": OMOPConditionOccurenceTable,
     "DEATH": OMOPDeathTable,
@@ -220,5 +265,8 @@ OMOPs = {
     "DRUG_EXPOSURE_SOURCE": OMOPDrugExposureSourceTable,
     "PERSON_SOURCE": OMOPPersonTableSource,
     "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
+    "OBSERVATION": OMOPObservationTable,
+    "MEASUREMENT": OMOPMeasurementTable,
+
 }
 OMOPDomains = DomainsDictionary(OMOPs)
