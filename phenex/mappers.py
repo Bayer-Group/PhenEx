@@ -109,6 +109,7 @@ class OMOPConditionOccurenceTable(CodeTable):
         "CODE": "CONDITION_CONCEPT_ID",
     }
 
+
 class OMOPObservationTable(MeasurementTable):
     NAME_TABLE = "OBSERVATION"
     JOIN_KEYS = {
@@ -125,6 +126,7 @@ class OMOPObservationTable(MeasurementTable):
         "VALUE": "VALUE_AS_NUMBER",
     }
 
+
 class OMOPMeasurementTable(MeasurementTable):
     NAME_TABLE = "MEASUREMENT"
     JOIN_KEYS = {
@@ -132,11 +134,11 @@ class OMOPMeasurementTable(MeasurementTable):
         "OMOPVisitOccurrenceTable": [
             "PERSON_ID",
             "VISIT_OCCURRENCE_ID",
-        ], 
+        ],
         "OMOPVisitDetailTable": [
             "PERSON_ID",
             "VISIT_DETAIL_ID",
-        ], 
+        ],
     }
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -144,6 +146,7 @@ class OMOPMeasurementTable(MeasurementTable):
         "CODE": "MEASUREMENT_TYPE_CONCEPT_ID",
         "VALUE": "VALUE_AS_NUMBER",
     }
+
 
 class OMOPDeathTable(PhenexTable):
     NAME_TABLE = "DEATH"
@@ -267,6 +270,5 @@ OMOPs = {
     "OBSERVATION_PERIOD": OMOPObservationPeriodTable,
     "OBSERVATION": OMOPObservationTable,
     "MEASUREMENT": OMOPMeasurementTable,
-
 }
 OMOPDomains = DomainsDictionary(OMOPs)

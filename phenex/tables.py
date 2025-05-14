@@ -155,7 +155,10 @@ class PhenexTable:
 class PhenexPersonTable(PhenexTable):
 
     NAME_TABLE = "PERSON"
-    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitOccurrenceTable": ["PERSON_ID"]}
+    JOIN_KEYS = {
+        "CodeTable": ["PERSON_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID"],
+    }
     KNOWN_FIELDS = [
         "PERSON_ID",
         "DATE_OF_BIRTH",
@@ -213,7 +216,10 @@ class PhenexVisitOccurrenceTable(PhenexTable):
 
 class PhenexIndexTable(PhenexTable):
     NAME_TABLE = "INDEX"
-    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitOccurrenceTable": ["PERSON_ID"]}
+    JOIN_KEYS = {
+        "CodeTable": ["PERSON_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID"],
+    }
     KNOWN_FIELDS = [
         "PERSON_ID",
         "INDEX_DATE",
