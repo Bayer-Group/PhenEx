@@ -75,7 +75,12 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+        # in order to ensure table is created in the same backend (destination vs source), check of subset index tables exist. If no __INDEX table exists we use the source database PERSON table; this will result in the phenotype table being created in the source database rather than the destination database, which may cause errors.
+        index_table = (
+            tables["__INDEX"] if "__INDEX" in tables.keys() else tables["PERSON"]
+        )
+        index_table = index_table.select("PERSON_ID")
+        joined_table = hstack(self.children, index_table)
 
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
