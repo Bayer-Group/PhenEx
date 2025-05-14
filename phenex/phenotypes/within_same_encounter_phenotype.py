@@ -61,6 +61,9 @@ class WithinSameEncounterPhenotype(Phenotype):
     ):
         super(WithinSameEncounterPhenotype, self).__init__(**kwargs)
         self.name = name
+        if (anchor_phenotype.__class__.__name__ not in ['CodelistPhenotype', 'MeasurementPhenotype']) or (phenotype.__class__.__name__ not in ['CodelistPhenotype', 'MeasurementPhenotype']):
+            raise ValueError("Both anchor_phenotype and phenotype must be of type CodelistPhenotype or MeasurementPhenotype")
+            
         self.anchor_phenotype = anchor_phenotype
         self.phenotype = phenotype
         self.column_name = column_name
