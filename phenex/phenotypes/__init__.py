@@ -13,6 +13,7 @@ from .computation_graph_phenotypes import (
     ArithmeticPhenotype,
     LogicPhenotype,
 )
+from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
 from .cohort import Cohort
 
 # from .age_phenotype import AgePhenotype
