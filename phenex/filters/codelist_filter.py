@@ -71,9 +71,9 @@ class CodelistFilter(Filter):
         code_column = code_table.CODE
         if self.codelist.use_code_type:
             code_type_column = code_table.CODE_TYPE
-            join_condition = (code_column.cast("str") == codelist_table.code.cast("str")) & (
-                code_type_column == codelist_table.code_type
-            )
+            join_condition = (
+                code_column.cast("str") == codelist_table.code.cast("str")
+            ) & (code_type_column == codelist_table.code_type)
         else:
             join_condition = code_column.cast("str") == codelist_table.code.cast("str")
 

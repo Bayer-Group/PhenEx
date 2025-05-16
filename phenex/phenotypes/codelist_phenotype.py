@@ -41,8 +41,8 @@ class CodelistPhenotype(Phenotype):
 
         af_codelist = Codelist([313217]) # list of concept ids
         date_range = DateFilter(
-            min=After("2020-01-01"),
-            max=Before("2020-12-31")
+            min_date=After("2020-01-01"),
+            max_date=Before("2020-12-31")
             )
 
         inpatient = CategoricalFilter(

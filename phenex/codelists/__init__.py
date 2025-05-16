@@ -1,1 +1,1 @@
-from .codelists import Codelist, LocalCSVCodelistFactory, CompositeCodelist
+from .codelists import Codelist, LocalCSVCodelistFactory, MedConBCodelistFactory, CompositeCodelist

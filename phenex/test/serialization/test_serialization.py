@@ -40,8 +40,8 @@ def test_SexPhenotype():
 
 def test_MultipleOccurrencesPhenotype():
     study_period = DateFilter(
-        min=AfterOrOn(datetime.date(2015, 1, 1)),
-        max=BeforeOrOn(datetime.date(2020, 12, 31)),
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
     phenotype = CodelistPhenotype(
         name="example_phenotype",
@@ -200,8 +200,8 @@ def create_cohort():
     )
 
     study_period = DateFilter(
-        min=AfterOrOn(datetime.date(2015, 1, 1)),
-        max=BeforeOrOn(datetime.date(2020, 12, 31)),
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
@@ -223,13 +223,13 @@ def create_cohort():
 
     pt2 = CodelistPhenotype(
         return_date="first",
-        codelist=Codelist(["d1"]).resolve(use_code_type=False),
+        codelist=Codelist(["d1"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
     )
 
     pt3 = CodelistPhenotype(
         name="prior_et_usage",
-        codelist=Codelist(["e4"]).resolve(use_code_type=False),
+        codelist=Codelist(["e4"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
         relative_time_range=RelativeTimeRangeFilter(
             when="before", min_days=GreaterThanOrEqualTo(0)

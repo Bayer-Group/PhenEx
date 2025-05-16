@@ -153,7 +153,10 @@ class PhenexTable:
 
 class PhenexPersonTable(PhenexTable):
     NAME_TABLE = "PERSON"
-    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
+    JOIN_KEYS = {
+        "CodeTable": ["PERSON_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID"],
+    }
     KNOWN_FIELDS = [
         "PERSON_ID",
         "DATE_OF_BIRTH",
@@ -178,7 +181,7 @@ class CodeTable(PhenexTable):
     NAME_TABLE = "CODE"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
-        "PhenexVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
@@ -188,28 +191,31 @@ class CodeTable(PhenexTable):
     }
 
 
-class PhenexVisitDetailTable(PhenexTable):
-    NAME_TABLE = "VISIT_DETAIL"
+class PhenexVisitOccurrenceTable(PhenexTable):
+    NAME_TABLE = "VISIT_OCCURRENCE"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
-        "CodeTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "CodeTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     KNOWN_FIELDS = [
         "PERSON_ID",
-        "VISIT_DETAIL_ID",
-        "VISIT_DETAIL_SOURCE_VALUE",
+        "VISIT_OCCURRENCE_ID",
+        "VISIT_OCCURRENCE_SOURCE_VALUE",
     ]
 
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
-        "VISIT_DETAIL_ID": "VISIT_DETAIL_ID",
-        "VISIT_DETAIL_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
+        "VISIT_OCCURRENCE_ID": "VISIT_DETAIL_ID",
+        "VISIT_OCCURRENCE_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
     }
 
 
 class PhenexIndexTable(PhenexTable):
     NAME_TABLE = "INDEX"
-    JOIN_KEYS = {"CodeTable": ["PERSON_ID"], "PhenexVisitDetailTable": ["PERSON_ID"]}
+    JOIN_KEYS = {
+        "CodeTable": ["PERSON_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID"],
+    }
     KNOWN_FIELDS = [
         "PERSON_ID",
         "INDEX_DATE",
@@ -235,7 +241,7 @@ class MeasurementTable(PhenexTable):
     NAME_TABLE = "MEASUREMENT"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
-        "PhenexVisitDetailTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
+        "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
     KNOWN_FIELDS = [
         "PERSON_ID",

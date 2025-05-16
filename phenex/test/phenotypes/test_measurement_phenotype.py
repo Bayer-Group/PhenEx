@@ -46,7 +46,7 @@ class MeasurementPhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
                 name="leq5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThanOrEqualTo(5)),
+                value_filter=ValueFilter(max_value=LessThanOrEqualTo(5)),
                 return_date="all",
             ),
         }
@@ -58,7 +58,7 @@ class MeasurementPhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
                 name="l5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThan(5)),
+                value_filter=ValueFilter(max_value=LessThan(5)),
                 return_date="all",
             ),
         }
@@ -98,7 +98,7 @@ class MeasurementPhenotypeReturnAllValueFilterTestGenerator(PhenotypeTestGenerat
                 name="leq5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThanOrEqualTo(5)),
+                value_filter=ValueFilter(max_value=LessThanOrEqualTo(5)),
                 return_date="all",
             ),
         }
@@ -111,7 +111,7 @@ class MeasurementPhenotypeReturnAllValueFilterTestGenerator(PhenotypeTestGenerat
                 name="l5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThan(5)),
+                value_filter=ValueFilter(max_value=LessThan(5)),
                 return_date="all",
             ),
         }
