@@ -13,11 +13,11 @@ def create_ex1_dummy_measurement_mapped_tables():
     one_day = datetime.timedelta(days=1)
 
     df_measurement["VALUE_AS_NUMBER"] = [
-        120,  # single_preindex_norm_SBP'
-        120,  # single_postindex_norm_SBP'
-        160,  # single_preindex_path_SBP'
-        160,  # single_postindex_path_SBP'
-        80,  # single_preindex_noSBP
+        120,  
+        120,  
+        160,  
+        160,  
+        80
     ]
 
     df_measurement["MEASUREMENT_TYPE_CONCEPT_ID"] = ["SBP", "SBP", "SBP", "SBP", "DBP"]
