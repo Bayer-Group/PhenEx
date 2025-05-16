@@ -82,9 +82,16 @@ class MeasurementPhenotype(CodelistPhenotype):
         self.value_aggregation = value_aggregation
         self.further_value_filter_phenotype = further_value_filter_phenotype
 
-        if self.return_date != 'all':
-            if self.value_aggregation.__class__.__name__ in ['Mean', 'Median','Max', 'Min']:
-                raise ValueError(f"{self.name}: you have selected an aggregation of the entire time period while selecting a single date selection of {self.return_date}. Select a daily aggregator (DailyMean, DailyMedian, DailyMin, DailyMax) if selecting a specific return date.")
+        if self.return_date != "all":
+            if self.value_aggregation.__class__.__name__ in [
+                "Mean",
+                "Median",
+                "Max",
+                "Min",
+            ]:
+                raise ValueError(
+                    f"{self.name}: you have selected an aggregation of the entire time period while selecting a single date selection of {self.return_date}. Select a daily aggregator (DailyMean, DailyMedian, DailyMin, DailyMax) if selecting a specific return date."
+                )
 
         if self.further_value_filter_phenotype is not None:
             self.children.append(self.further_value_filter_phenotype)
