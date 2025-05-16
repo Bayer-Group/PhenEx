@@ -12,13 +12,7 @@ def create_ex1_dummy_measurement_mapped_tables():
     index_date = datetime.date(2020, 1, 1)
     one_day = datetime.timedelta(days=1)
 
-    df_measurement["VALUE_AS_NUMBER"] = [
-        120,  
-        120,  
-        160,  
-        160,  
-        80
-    ]
+    df_measurement["VALUE_AS_NUMBER"] = [120, 120, 160, 160, 80]
 
     df_measurement["MEASUREMENT_TYPE_CONCEPT_ID"] = ["SBP", "SBP", "SBP", "SBP", "DBP"]
 
