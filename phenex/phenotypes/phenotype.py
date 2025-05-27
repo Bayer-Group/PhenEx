@@ -1,11 +1,13 @@
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 from ibis.expr.types.relations import Table
 from deepdiff import DeepDiff
 from phenex.tables import (
     PhenotypeTable,
+    PhenexTable,
     PHENOTYPE_TABLE_COLUMNS,
     is_phenex_phenotype_table,
 )
+from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import to_dict
 
@@ -29,17 +31,41 @@ class Phenotype:
         4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
 
     Parameters:
+        name: The name of the phenotype.
         description: A plain text description of the phenotype.
+        value_filter: Phenotypes return (PERSON_ID, DATE, VALUE) triplets. Use a value_filter to constrain the rows returned based on their VALUE field (e.g. for AgePhenotype the returned VALUE is the person's age at the specified DATE and the value_filter constrains the returned person ages.) Check the documentation of the given Phenotype to know what VALUE is returned. Some Phenotypes return NULL for VALUE.
+        date_range: Phenotypes return (PERSON_ID, DATE, VALUE) triplets. Use a DateFilter to constrain the rows returned based on their DATE field (e.g. for CodelistPhenotype the returned DATE is the date of the code occurrence.) Check the documentation of the given Phenotype for the interpretation of its DATE column.
+        relative_time_range_filter: A filter to constrain the phenotype based on time ranges relative to other events or phenotypes (e.g. one year before some other event).
     """
 
-    def __init__(self, description: str = None):
+    def __init__(self,
+        # name: str = None,
+        description: str = None,
+        value_filter: Optional[ValueFilter] = None,
+        date_range: Optional[DateFilter] = None,
+        relative_time_range_filter: Optional[RelativeTimeRangeFilter] = None
+        ):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )
         self._namespaced_table = None
         self.children = []  # List[Phenotype]
+        # self.name = name or self.__class__.__name__
         self.description = description
+        self.value_filter = value_filter
+        self.date_range = date_range
+        # self.relative_time_range_filter = relative_time_range_filter
         self._check_for_children()
+
+    def _perform_value_filtering(self, table: PhenexTable):
+        if self.value_filter is not None:
+            table = self.value_filter.filter(table)
+        return table
+
+    def _perform_date_filtering(self, table: PhenexTable):
+        if self.date_range is not None:
+            table = self.date_range.filter(table)
+        return table
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
@@ -64,6 +90,8 @@ class Phenotype:
                 )
 
         table = self._execute(tables).mutate(BOOLEAN=True)
+        table = self._perform_value_filtering(table)
+        table = self._perform_date_filtering(table)
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(

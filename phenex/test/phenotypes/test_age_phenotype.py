@@ -9,7 +9,7 @@ from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_3variables,
 )
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
-from phenex.filters.value import Value
+from phenex.filters import Value, ValueFilter
 
 from phenex.mappers import *
 
@@ -44,7 +44,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(18, self.n_persons))
         ge_18 = {
             "name": "age_ge18",
-            "min_age": Value(value=18, operator=">="),
+            "value_filter": ValueFilter(min_value=Value(value=18, operator=">=")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -52,7 +52,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(19, self.n_persons))
         g_18 = {
             "name": "age_g18",
-            "min_age": Value(value=18, operator=">"),
+            "value_filter": ValueFilter(min_value=Value(value=18, operator=">")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -60,8 +60,10 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(18, 46))
         ge_18_le_45 = {
             "name": "age_ge_18_le_45",
-            "min_age": Value(value=18, operator=">="),
-            "max_age": Value(value=45, operator="<="),
+            "value_filter": ValueFilter(
+                min_value=Value(value=18, operator=">="),
+                max_value=Value(value=45, operator="<="),
+            ),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -69,8 +71,10 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(19, 46))
         g_18_le_45 = {
             "name": "age_g_18_le_45",
-            "min_age": Value(value=18, operator=">"),
-            "max_age": Value(value=45, operator="<="),
+            "value_filter": ValueFilter(
+                min_value=Value(value=18, operator=">"),
+                max_value=Value(value=45, operator="<="),
+            ),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -78,8 +82,10 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(18, 45))
         ge_18_l_45 = {
             "name": "age_ge_18_l_45",
-            "min_age": Value(value=18, operator=">="),
-            "max_age": Value(value=45, operator="<"),
+            "value_filter": ValueFilter(
+                min_value=Value(value=18, operator=">="),
+                max_value=Value(value=45, operator="<"),
+            ),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -87,8 +93,10 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(19, 45))
         g_18_l_45 = {
             "name": "age_g_18_l_45",
-            "min_age": Value(value=18, operator=">"),
-            "max_age": Value(value=45, operator="<"),
+            "value_filter": ValueFilter(
+                min_value=Value(value=18, operator=">"),
+                max_value=Value(value=45, operator="<"),
+            ),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -96,7 +104,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(0, 19))
         le_18 = {
             "name": "age_le_18",
-            "max_age": Value(value=18, operator="<="),
+            "value_filter": ValueFilter(max_value=Value(value=18, operator="<=")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -104,7 +112,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(0, 18))
         l_18 = {
             "name": "age_l_18",
-            "max_age": Value(value=18, operator="<"),
+            "value_filter": ValueFilter(max_value=Value(value=18, operator="<")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -112,7 +120,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(45, self.n_persons))
         ge_45 = {
             "name": "age_ge_45",
-            "min_age": Value(value=45, operator=">="),
+            "value_filter": ValueFilter(min_value=Value(value=45, operator=">=")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -120,7 +128,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         ages_matching = list(range(46, self.n_persons))
         g_45 = {
             "name": "age_g_45",
-            "min_age": Value(value=45, operator=">"),
+            "value_filter": ValueFilter(min_value=Value(value=45, operator=">")),
             "persons": [f"P{x}" for x in ages_matching],
             "values": ages_matching,
         }
@@ -148,8 +156,7 @@ class AgePhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = AgePhenotype(
                 name=test_info["name"],
-                min_age=test_info.get("min_age"),
-                max_age=test_info.get("max_age"),
+                value_filter=test_info.get("value_filter"),
             )
 
         return test_infos

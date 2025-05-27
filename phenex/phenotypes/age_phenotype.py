@@ -6,7 +6,7 @@ from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.value import Value
 from phenex.tables import PhenotypeTable, is_phenex_person_table
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -14,15 +14,15 @@ logger = create_logger(__name__)
 
 class AgePhenotype(Phenotype):
     """
-    AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
-    based on their date of birth and an optional anchor phenotype. The age is computed in years and can
-    be filtered within a specified range.
+    AgePhenotype computes and filters by the age of a person at a given reference date. AgePhenotype requires an anchor phenotype (to define the reference date), typically the entry criterion. The returned Phenotype has the following interpretation:
+
+    DATE: Date of anchor phenotype (date at which the age is computed)
+    VALUE: Age (in years) at the given date
 
     Parameters:
         name: Name of the phenotype, default is 'age'.
-        min_age: Minimum age for filtering, in years.
-        max_age: Maximum age for filtering, in years.
-        anchor_phenotype: An optional anchor phenotype to calculate relative age.
+        value_filter: Restrict the returned persons based on age
+        anchor_phenotype: An optional anchor phenotype to calculate relative age. If anchor_phenotype is not provided, will compute age at the index date.
         domain: Domain of the phenotype, default is 'PERSON'.
 
     Attributes:
@@ -42,8 +42,10 @@ class AgePhenotype(Phenotype):
         )
 
         age_phenotype = AgePhenotype(
-            min_age=Value('>=', 18),
-            max_age=Value('<=', 65),
+            value_filter=ValueFilter(
+                min_value=GreaterThan(18),
+                max_value=LessThan(65)
+                ),
             anchor_phenotype=af_phenotype
         )
 
@@ -59,30 +61,14 @@ class AgePhenotype(Phenotype):
     def __init__(
         self,
         name: str = "age",
-        min_age: Optional[Value] = None,
-        max_age: Optional[Value] = None,
+        value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
         domain: str = "PERSON",
         **kwargs,
     ):
         self.name = name
-        self.min_age = min_age
-        self.max_age = max_age
         self.domain = domain
         self.anchor_phenotype = anchor_phenotype
-        if self.min_age is not None:
-            min_days = Value(
-                self.min_age.operator, self.min_age.value * self.DAYS_IN_YEAR
-            )
-        else:
-            min_days = None
-        if self.max_age is not None:
-            max_days = Value(
-                self.max_age.operator, self.max_age.value * self.DAYS_IN_YEAR
-            )
-        else:
-            max_days = None
-
         self.time_range_filter = RelativeTimeRangeFilter(
             anchor_phenotype=anchor_phenotype
         )
@@ -139,28 +125,6 @@ class AgePhenotype(Phenotype):
         YEARS_FROM_ANCHOR = (
             reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
         ).floor()
-        table = table.mutate(YEARS_FROM_ANCHOR=YEARS_FROM_ANCHOR)
+        table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
 
-        conditions = []
-        # Fix this, this logic needs to be abstracted to a ValueFilter
-        if self.min_age is not None:
-            if self.min_age.operator == ">":
-                conditions.append(table.YEARS_FROM_ANCHOR > self.min_age.value)
-            elif self.min_age.operator == ">=":
-                conditions.append(table.YEARS_FROM_ANCHOR >= self.min_age.value)
-            else:
-                raise ValueError("Operator for min days be > or >=")
-        if self.max_age is not None:
-            if self.max_age.operator == "<":
-                conditions.append(table.YEARS_FROM_ANCHOR < self.max_age.value)
-            elif self.max_age.operator == "<=":
-                conditions.append(table.YEARS_FROM_ANCHOR <= self.max_age.value)
-            else:
-                raise ValueError("Operator for max days be < or <=")
-        if conditions:
-            table = table.filter(conditions)
-        person_table = table
-
-        person_table = person_table.mutate(VALUE=person_table.YEARS_FROM_ANCHOR)
-
-        return person_table
+        return table

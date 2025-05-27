@@ -192,7 +192,11 @@ class ScorePhenotype(ComputationGraphPhenotype):
     # Create component phenotypes individually
     hypertension = Phenotype(Codelist('hypertension'))
     hf = Phenotype(Codelist('chf'))
-    age_gt_45 = AgePhenotype(min_age=GreaterThan(45))
+    age_gt_45 = AgePhenotype(
+        value_filter=ValueFilter(
+            min_value=GreaterThan(45)
+            )
+        )
 
     # Create the ScorePhenotype that defines a score which is 2*age + 1 if
     # hypertension or chf are present, respectively. Notice that the boolean
