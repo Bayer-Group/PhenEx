@@ -19,7 +19,7 @@ class CodelistPhenotype(Phenotype):
         codelist: The codelist used for filtering.
         name: The name of the phenotype. Optional. If not passed, name will be derived from the name of the codelist.
         date_range: A date range filter to apply.
-        relative_time_range: A relative time range filter or a list of filters to apply.
+        relative_time_range: A relative time range filter or a list of filters to apply. If a list of filters is passed, then the filters are combined with AND logic so that all filters must simultaneously evaluate to True for events to get through. If your intent is to look at event at different time scales, make multiple CodelistPhenotypes with only a single relative_time_range filter (e.g. death at 30 days and death at 90 days post-index).
         return_date: Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
         categorical_filter: Additional categorical filters to apply.
 
@@ -71,8 +71,8 @@ class CodelistPhenotype(Phenotype):
         af_phenotype = (...) # take from above example
 
         oneyear_preindex = RelativeTimeRangeFilter(
-            min_days=Value('>', 0), # exclude index date
-            max_days=Value('<', 365),
+            min_days=GreaterThan(0), # exclude index date
+            max_days=LessThan(365),
             anchor_phenotype=af_phenotype # use af phenotype above as reference date
             )
 
@@ -86,6 +86,27 @@ class CodelistPhenotype(Phenotype):
         )
         mi = mi_phenotype.execute(mapped_tables)
         mi.head()
+        ```
+
+    Example: Multiple relative_time_range_filter's
+        ```python
+        # dialysis after hospitalization due to CKD but before index date
+        dialysis = CodelistPhenotype(
+            domain='MEDICATION',
+            codelist=dialysis_codelist,
+            name='dialysis_outcome',
+            relative_time_range=[
+                RelativeTimeRangeFilter(
+                    min_days=GreaterThan(0),
+                    when='after',
+                    anchor_phenotype=ckd_hospitalization
+                    ),
+                RelativeTimeRangeFilter(
+                    min_days=GreaterThan(0),
+                    when='before',
+                    anchor_phenotype=index_date)
+                ,
+            ])
         ```
     """
 

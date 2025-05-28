@@ -38,13 +38,14 @@ class Phenotype:
         relative_time_range_filter: A filter to constrain the phenotype based on time ranges relative to other events or phenotypes (e.g. one year before some other event).
     """
 
-    def __init__(self,
+    def __init__(
+        self,
         # name: str = None,
         description: str = None,
         value_filter: Optional[ValueFilter] = None,
         date_range: Optional[DateFilter] = None,
-        relative_time_range_filter: Optional[RelativeTimeRangeFilter] = None
-        ):
+        relative_time_range_filter: Optional[RelativeTimeRangeFilter] = None,
+    ):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )

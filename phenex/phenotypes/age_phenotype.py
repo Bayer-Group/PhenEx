@@ -60,52 +60,52 @@ class AgePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str = "age",
+        name: Optional[str] = "age",
         value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
-        domain: str = "PERSON",
+        domain: Optional[str] = "PERSON",
         **kwargs,
     ):
+        super(AgePhenotype, self).__init__(value_filter=value_filter, **kwargs)
         self.name = name
         self.domain = domain
-        self.anchor_phenotype = anchor_phenotype
-        self.time_range_filter = RelativeTimeRangeFilter(
-            anchor_phenotype=anchor_phenotype
-        )
 
         # Set children to the dependent PHENOTYPES
+        self.anchor_phenotype = anchor_phenotype
         if anchor_phenotype is not None:
             self.children = [anchor_phenotype]
         else:
             self.children = []
 
-        super(AgePhenotype, self).__init__(**kwargs)
+    def _get_date_of_birth(self, table):
+        assert is_phenex_person_table(table)
 
-    def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
-        person_table = tables[self.domain]
-        assert is_phenex_person_table(person_table)
-
-        if "YEAR_OF_BIRTH" in person_table.columns:
-            if "DATE_OF_BIRTH" in person_table.columns:
+        if "YEAR_OF_BIRTH" in table.columns:
+            if "DATE_OF_BIRTH" in table.columns:
                 logger.debug(
                     "Year of birth and date of birth is present, taking date of birth where possible otherwise setting date of birth to june 6th"
                 )
                 date_of_birth = ibis.coalesce(
-                    ibis.date(person_table.DATE_OF_BIRTH),
-                    ibis.date(person_table.YEAR_OF_BIRTH, 6, 1),
+                    ibis.date(table.DATE_OF_BIRTH),
+                    ibis.date(table.YEAR_OF_BIRTH, 6, 1),
                 )
             else:
                 logger.debug(
                     "Only year of birth is present in person table, setting birth date to june 6th"
                 )
-                date_of_birth = ibis.date(person_table.YEAR_OF_BIRTH, 6, 1)
+                date_of_birth = ibis.date(table.YEAR_OF_BIRTH, 6, 1)
         else:
             logger.debug("Year of birth not present, taking date of birth")
-            date_of_birth = ibis.date(person_table.DATE_OF_BIRTH)
-        person_table = person_table.mutate(EVENT_DATE=date_of_birth)
+            date_of_birth = ibis.date(table.DATE_OF_BIRTH)
 
-        # Apply the time range filter
-        table = person_table
+        return date_of_birth
+
+    def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+
+        table = tables[self.domain]
+        date_of_birth = self._get_date_of_birth(table)
+        table = table.mutate(DATE_OF_BIRTH=date_of_birth)
+
         if self.anchor_phenotype is not None:
             if self.anchor_phenotype.table is None:
                 raise ValueError(
@@ -123,8 +123,12 @@ class AgePhenotype(Phenotype):
             reference_column = table.INDEX_DATE
 
         YEARS_FROM_ANCHOR = (
-            reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
+            reference_column.delta(table.DATE_OF_BIRTH, "day") / self.DAYS_IN_YEAR
         ).floor()
+
+        # Define VALUE and EVENT_DATE; Parent class handles final filtering
+        # and processing
         table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
+        table = table.mutate(EVENT_DATE=reference_column)
 
         return table

@@ -67,7 +67,10 @@ def define_inclusion_exclusion_criteria(entry):
         min_days=GreaterThanOrEqualTo(365), anchor_phenotype=entry
     )
 
-    age_18 = AgePhenotype(value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)), anchor_phenotype=entry)
+    age_18 = AgePhenotype(
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)),
+        anchor_phenotype=entry,
+    )
 
     sex = SexPhenotype(allowed_values=[2])
 
