@@ -47,7 +47,7 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
         )
 
         cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
         )
 
         return Cohort(
@@ -169,7 +169,7 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
         )
 
         cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
         )
 
         e4 = CodelistPhenotype(
@@ -325,7 +325,7 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
         )
 
         cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
         )
         agege18 = AgePhenotype(
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
@@ -452,7 +452,7 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
         )
 
         cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
         )
         agel18 = AgePhenotype(ValueFilter(max_value=LessThan(18)))
 
@@ -579,7 +579,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         )
 
         cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
         )
         agege18 = AgePhenotype(
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))

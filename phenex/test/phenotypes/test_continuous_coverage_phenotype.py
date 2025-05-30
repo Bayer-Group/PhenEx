@@ -3,9 +3,8 @@ import pandas as pd
 
 from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.codelists import LocalCSVCodelistFactory, Codelist
-from phenex.filters.date_filter import DateFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.codelists import Codelist
+from phenex.filters import ValueFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -53,8 +52,10 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         df_observation_period["start_from_end"] = [
             x - y for x, y in zip(end_dates, start_dates)
         ]
-        df_observation_period["start_from_index"] = [index_date - x for x in end_dates]
-        df_observation_period["end_from_index"] = [index_date - x for x in start_dates]
+        df_observation_period["start_from_index"] = [
+            index_date - x for x in start_dates
+        ]
+        df_observation_period["end_from_index"] = [x - index_date for x in end_dates]
 
         self.df_input = df_observation_period
         input_info_observation_period = {
@@ -80,7 +81,9 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                min_days=test_info.get("coverage_period_min"),
+                value_filter=ValueFilter(
+                    min_value=test_info.get("coverage_period_min")
+                ),
             )
 
         return test_infos
@@ -101,7 +104,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "OBSERVATION_PERIOD_END_DATE"
+                    "INDEX_DATE"
                 ].values
             ),
         }
@@ -113,7 +116,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "OBSERVATION_PERIOD_END_DATE"
+                    "INDEX_DATE"
                 ].values
             ),
         }
@@ -122,7 +125,9 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                min_days=test_info.get("coverage_period_min"),
+                value_filter=ValueFilter(
+                    min_value=test_info.get("coverage_period_min")
+                ),
                 when="after",
             )
 
@@ -156,7 +161,7 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
 
         cc1 = ContinuousCoveragePhenotype(
             name="cc_prior_entry",
-            min_days=GreaterThanOrEqualTo(90),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(90)),
             when="before",
             anchor_phenotype=entry,
         )
