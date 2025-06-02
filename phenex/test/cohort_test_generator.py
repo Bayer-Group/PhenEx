@@ -35,6 +35,7 @@ class CohortTestGenerator:
         self.mapped_tables = self.define_mapped_tables()
 
         self._create_artifact_directory(self.cohort.name, path)
+        self._write_mapped_tables()
         self._generate_output_artifacts()
         self._run_tests()
 
@@ -59,6 +60,12 @@ class CohortTestGenerator:
             filename = test_name + ".csv"
             path = os.path.join(self.dirpaths["expected"], filename)
             df.to_csv(path, index=False, date_format=self.date_format)
+    
+    def _write_mapped_tables(self):
+        for domain, table in self.mapped_tables.items():
+            path = os.path.join(self.dirpaths['mapped_tables'],f"{domain}.csv")
+            table.to_pandas().to_csv(path,index=False)
+
 
     def _run_tests(self):
         self.cohort.execute(self.mapped_tables)
@@ -106,6 +113,7 @@ class CohortTestGenerator:
             "cohort": path_cohort,
             "expected": os.path.join(path_cohort, "expected"),
             "result": os.path.join(path_cohort, "result"),
+            "mapped_tables": os.path.join(path_cohort, "mapped_tables"),
         }
         for _path in self.dirpaths.values():
             if not os.path.exists(_path):
