@@ -1,7 +1,8 @@
 from typing import Union, List, Dict
+from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -31,18 +32,19 @@ class CategoricalPhenotype(Phenotype):
         domain: str = None,
         allowed_values: List = None,
         column_name: str = None,
+        **kwargs,
     ):
         self.name = name
         self.categorical_filter = CategoricalFilter(
             allowed_values=allowed_values, domain=domain, column_name=column_name
         )
-        super(CategoricalPhenotype, self).__init__()
+        super(CategoricalPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
         table = tables[self.categorical_filter.domain]
         table = self.categorical_filter._filter(table)
         return table.mutate(
-            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null()
+            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null(date)
         )
 
 
@@ -73,7 +75,7 @@ class HospitalizationPhenotype(Phenotype):
         column_name: str,
         allowed_values: List[str],
         name=None,
-        date_range: DateRangeFilter = None,
+        date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,

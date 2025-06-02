@@ -7,7 +7,7 @@ from phenex.filters.relative_time_range_filter import (
     verify_relative_time_range_filter_input,
     RelativeTimeRangeFilter,
 )
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -45,6 +45,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
         anchor_phenotype: Optional[Phenotype] = None,
+        **kwargs
     ):
         """
         Parameters:
@@ -73,7 +74,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         )
         ```
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.name = name
         self.domain = domain
         verify_relative_time_range_filter_input(min_days, max_days, when)

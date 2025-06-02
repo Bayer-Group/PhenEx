@@ -1,10 +1,10 @@
 from typing import Dict, Union
+from datetime import date
 from ibis.expr.types.relations import Table
 import ibis
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
-from datetime import date
 
 
 class ComputationGraphPhenotype(Phenotype):
@@ -43,8 +43,9 @@ class ComputationGraphPhenotype(Phenotype):
         operate_on: str = "boolean",
         populate: str = "value",
         reduce: bool = False,
+        **kwargs,
     ):
-        super(ComputationGraphPhenotype, self).__init__()
+        super(ComputationGraphPhenotype, self).__init__(**kwargs)
         self.expression = expression
         self.return_date = return_date
         self.aggregation_index = aggregation_index

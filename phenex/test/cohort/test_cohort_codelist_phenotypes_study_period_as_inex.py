@@ -11,12 +11,7 @@ from phenex.phenotypes import (
     ContinuousCoveragePhenotype,
     SexPhenotype,
 )
-from phenex.filters import (
-    DateRangeFilter,
-    RelativeTimeRangeFilter,
-    GreaterThanOrEqualTo,
-    GreaterThan,
-)
+from phenex.filters import *
 from phenex.test.cohort.test_mappings import (
     PersonTableForTests,
     DrugExposureTableForTests,
@@ -31,13 +26,13 @@ class SimpleCohortWithExclusionTestGenerator(CohortTestGenerator):
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -127,21 +122,21 @@ class SimpleCohortWithExclusionAndStudyPeriodTestGenerator(
     """
 
     def define_cohort(self):
-        study_period = DateRangeFilter(
-            min_date=datetime.date(2015, 1, 1),
-            max_date=datetime.date(2020, 12, 31),
+        study_period = DateFilter(
+            min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+            max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             date_range=study_period,
         )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -192,21 +187,21 @@ class SimpleCohortWithExclusionPostIndexTestGenerator(
     """
 
     def define_cohort(self):
-        study_period = DateRangeFilter(
-            min_date=datetime.date(2015, 1, 1),
-            max_date=datetime.date(2020, 12, 31),
+        study_period = DateFilter(
+            min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+            max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
         )
 
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             date_range=study_period,
         )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -249,13 +244,13 @@ class SimpleCohortWithInclusionTestGenerator(SimpleCohortWithExclusionTestGenera
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         i1 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e1"]).resolve(use_code_type=False),
+            codelist=Codelist(["e1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -272,13 +267,13 @@ class SimpleCohortWithInclusionAndExclusionTestGenerator(CohortTestGenerator):
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         i1 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["i1"]).resolve(use_code_type=False),
+            codelist=Codelist(["i1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -287,7 +282,7 @@ class SimpleCohortWithInclusionAndExclusionTestGenerator(CohortTestGenerator):
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -388,13 +383,13 @@ class SimpleCohortWithInclusionAndExclusionSeparateTablesTestGenerator(
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         i1 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["i1"]).resolve(use_code_type=False),
+            codelist=Codelist(["i1"]).copy(use_code_type=False),
             domain="CONDITION_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -403,7 +398,7 @@ class SimpleCohortWithInclusionAndExclusionSeparateTablesTestGenerator(
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -514,13 +509,13 @@ class SimpleCohortWithContinuousCoverageInclusionTestGenerator(
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         i1 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["i1"]).resolve(use_code_type=False),
+            codelist=Codelist(["i1"]).copy(use_code_type=False),
             domain="CONDITION_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -529,7 +524,7 @@ class SimpleCohortWithContinuousCoverageInclusionTestGenerator(
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)

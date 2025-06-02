@@ -8,7 +8,7 @@ from phenex.phenotypes import (
 )
 
 from phenex.codelists import LocalCSVCodelistFactory
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_3variables,
@@ -67,19 +67,19 @@ class ArithmeticPhenotypeArithmeticPhenotypeTestGenerator(PhenotypeTestGenerator
         c1 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c1"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         c2 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c2"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         c3 = MeasurementPhenotype(
             codelist=codelist_factory.get_codelist("c3"),
             domain="measurement",
-            return_value=Mean(),
+            value_aggregation=Mean(),
         )
 
         arithmetic1 = {

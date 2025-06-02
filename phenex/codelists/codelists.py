@@ -141,6 +141,7 @@ class Codelist:
         remove_punctuation: Optional[bool] = False,
     ) -> None:
         self.name = name
+
         if isinstance(codelist, dict):
             self.codelist = codelist
         elif isinstance(codelist, list):
@@ -148,7 +149,7 @@ class Codelist:
         elif isinstance(codelist, str):
             if name is None:
                 self.name = codelist
-            self._codelist = {None: [codelist]}
+            self.codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
@@ -168,42 +169,54 @@ class Codelist:
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
 
-    def resolve(
-        self, use_code_type: bool = True, remove_punctuation: bool = False
+        self._resolved_codelist = None
+
+    def copy(
+        self,
+        name: Optional[str] = None,
+        use_code_type: bool = True,
+        remove_punctuation: bool = False,
     ) -> "Codelist":
         """
-        Resolve the codelist based on the provided arguments.
+        Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
 
         Parameters:
+            name: Name for newly created code list if different from the old one.
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
 
         Returns:
-            Codelist instance with the resolved codelist.
+            Codelist instance with the updated resolution options.
         """
         return Codelist(
             self.codelist,
-            name=self.name,
+            name=name or self.name,
             use_code_type=use_code_type,
             remove_punctuation=remove_punctuation,
         )
 
     @property
     def resolved_codelist(self):
-        resolved_codelist = {}
+        """
+        Retrieve the actual codelists used for filtering after processing for punctuation and code type options (see __init__()).
+        """
+        if self._resolved_codelist is None:
+            resolved_codelist = {}
 
-        for code_type, codes in self.codelist.items():
-            if self.remove_punctuation:
-                codes = [code.replace(".", "") for code in codes]
-            if self.use_code_type:
-                resolved_codelist[code_type] = codes
-            else:
-                if None not in resolved_codelist:
-                    resolved_codelist[None] = []
-                resolved_codelist[None] = list(
-                    set(resolved_codelist[None]) | set(codes)
-                )
-        return resolved_codelist
+            for code_type, codes in self.codelist.items():
+                if self.remove_punctuation:
+                    codes = [code.replace(".", "") for code in codes]
+                if self.use_code_type:
+                    resolved_codelist[code_type] = codes
+                else:
+                    if None not in resolved_codelist:
+                        resolved_codelist[None] = []
+                    resolved_codelist[None] = list(
+                        set(resolved_codelist[None]) | set(codes)
+                    )
+            self._resolved_codelist = resolved_codelist
+
+        return self._resolved_codelist
 
     @classmethod
     def from_yaml(cls, path: str) -> "Codelist":
@@ -281,8 +294,6 @@ class Codelist:
              | ICD-10    | I48.91 | atrial_fibrillation|
              ```
 
-
-
          Parameters:
              path: Path to the Excel file.
              sheet_name: An optional label for the sheet to read from. If defined, the codelist will be taken from that sheet. If no sheet_name is defined, the first sheet is taken.
@@ -349,6 +360,20 @@ class Codelist:
     def from_medconb(cls, codelist):
         """
         Converts a MedConB style Codelist into a PhenEx style codelist.
+
+        Example:
+
+        ```python
+        from medconb_client import Client
+        endpoint = "https://api.medconb.example.com/graphql/"
+        token = get_token()
+        client = Client(endpoint, token)
+
+        medconb_codelist = client.get_codelist(
+            codelist_id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
+        )
+        phenex_codelist = Codelist.from_medconb(medconb_codelist)
+        ```
         """
         phenex_codelist = {}
         for codeset in codelist.codesets:
@@ -410,7 +435,7 @@ class LocalCSVCodelistFactory:
     """
     LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
 
-    To use, create an instance of the class and then call the `create_codelist` method with the name of the codelist you want to create; this codelist name must be an entry in the name_code_type_column.
+    To use, create an instance of the class and then call the `get_codelist` method with the name of the codelist you want to retrieve; this codelist name must be an entry in the name_codelist_column.
     """
 
     def __init__(
@@ -436,7 +461,30 @@ class LocalCSVCodelistFactory:
         except:
             raise ValueError("Could not read the file at the given path.")
 
+        # Check if the required columns exist in the DataFrame
+        required_columns = [
+            name_code_column,
+            name_codelist_column,
+            name_code_type_column,
+        ]
+        missing_columns = [
+            col for col in required_columns if col not in self.df.columns
+        ]
+        if missing_columns:
+            raise ValueError(
+                f"The following required columns are missing in the CSV: {', '.join(missing_columns)}"
+            )
+
+    def get_codelists(self) -> List[str]:
+        """
+        Get a list of all codelists in the supplied CSV.
+        """
+        return self.df[self.name_codelist_column].unique().tolist()
+
     def get_codelist(self, name: str) -> Codelist:
+        """
+        Retrieve a single codelist by name.
+        """
         try:
             df_codelist = self.df[self.df[self.name_codelist_column] == name]
             code_dict = (
@@ -447,3 +495,43 @@ class LocalCSVCodelistFactory:
             return Codelist(name=name, codelist=code_dict)
         except:
             raise ValueError("Could not find the codelist with the given name.")
+
+
+class MedConBCodelistFactory:
+    """
+    Retrieve Codelists for use in Phenex from MedConB.
+
+    Example:
+    ```python
+    from medconb_client import Client
+    endpoint = "https://api.medconb.example.com/graphql/"
+    token = get_token()
+    client = Client(endpoint, token)
+    medconb_factory = MedConBCodelistFactory(client)
+
+    phenex_codelist = medconb_factory.get_codelist(
+        id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
+    )
+    ```
+    """
+
+    def __init__(
+        self,
+        medconb_client,
+    ):
+        self.medconb_client = medconb_client
+
+    def get_codelist(self, id: str):
+        """
+        Resolve the codelist by querying the MedConB client.
+        """
+        medconb_codelist = self.medconb_client.get_codelist(codelist_id=id)
+        return Codelist.from_medconb(medconb_codelist)
+
+    def get_codelists(self):
+        """
+        Returns a list of all available codelist IDs.
+        """
+        return sum(
+            [c.items for c in self.medconb_client.get_workspace().collections], []
+        )

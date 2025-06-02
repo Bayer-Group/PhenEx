@@ -1,8 +1,6 @@
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.date_range_filter import DateRangeFilter
-from phenex.codelists import Codelist
+from phenex.filters.date_filter import DateFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 
 from ibis import _
@@ -24,7 +22,10 @@ class MultipleOccurrencesPhenotype(Phenotype):
         ```python
         codelist = Codelist(name="example_codelist", codes=[...])
 
-        date_range = DateRangeFilter(min_date="2020-01-01", max_date="2020-12-31")
+        date_range = DateFilter(
+            min_date=After("2020-01-01"),
+            max_date=Before("2020-12-31")
+        )
         phenotype = CodelistPhenotype(
             name="example_phenotype",
             domain="CONDITION_OCCURRENCE",
@@ -49,9 +50,10 @@ class MultipleOccurrencesPhenotype(Phenotype):
         name: str,
         phenotype: Phenotype,
         n_occurrences: int = 2,
-        date_range: DateRangeFilter = None,
+        date_range: DateFilter = None,
         relative_time_range: RelativeTimeRangeFilter = None,
         return_date="first",
+        **kwargs
     ):
         self.name = name
         self.date_range = date_range
@@ -60,7 +62,7 @@ class MultipleOccurrencesPhenotype(Phenotype):
         self.n_occurrences = n_occurrences
         self.phenotype = phenotype
         self.children = [phenotype]
-        super(MultipleOccurrencesPhenotype, self).__init__()
+        super(MultipleOccurrencesPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table

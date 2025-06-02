@@ -10,6 +10,7 @@ class CategoricalFilter(Filter):
         column_name (str): The name of the column to filter by.
         allowed_values (List[Union[str, int]]): The list of allowed values for the column.
         domain (Optional[str]): The domain to which the filter applies.
+        operator (Optional[str]): The operator used for filtering. Options are "isin", "notin", "isnull", "notnull". Default is "isin". Be aware that "notin" removes null values! Thus "notin" can better be described 'has a value and and is not in'
 
     Methods:
         filter(table: PhenexTable) -> PhenexTable:
@@ -59,21 +60,57 @@ class CategoricalFilter(Filter):
         # Example 4: Applying multiple filters in combination
         inpatient_primary_position = inpatient_filter & primary_diagnosis_filter
         ```
+
+        ```
+        # Example 5: Filter for not null status
+        primary_diagnosis_filter = CategoricalFilter(
+            column_name="DIAGNOSIS_STATUS",
+            operator="notnull",
+            domain="DIAGNOSIS"
+        )
+        ```
+
+        ```
+        # Example 6: Filter for diagnosis status. Notice that this will remove null rows! Only patients with a value in the diagnosis_status that is NOT history_of will remain.
+        primary_diagnosis_filter = CategoricalFilter(
+            column_name="DIAGNOSIS_STATUS",
+            operator="notin",
+            allowed_values=["HISTORY_OF"],
+            domain="DIAGNOSIS"
+        )
+        ```
     """
 
     def __init__(
         self,
         column_name: str,
-        allowed_values: List[Union[str, int]],
+        allowed_values: Optional[List[Union[str, int]]] = None,
         domain: Optional[str] = None,
+        operator: Optional[str] = "isin",
     ):
         self.column_name = column_name
         self.allowed_values = allowed_values
         self.domain = domain
+        self.operator = operator
+        if operator not in ["isin", "notin", "isnull", "notnull"]:
+            raise ValueError(
+                f"Invalid operator '{operator}'. Must be one of: 'isin', 'notin', 'isnull', 'notnull'."
+            )
+        if operator in ["isnull", "notnull"] and allowed_values is not None:
+            raise ValueError(
+                f"Allowed values should be None for operator '{operator}'."
+            )
         super(CategoricalFilter, self).__init__()
 
     def _filter(self, table: "PhenexTable"):
-        return table.filter(table[self.column_name].isin(self.allowed_values))
+        if self.operator == "isin":
+            return table.filter(table[self.column_name].isin(self.allowed_values))
+        if self.operator == "notin":
+            return table.filter(~table[self.column_name].isin(self.allowed_values))
+        if self.operator == "isnull":
+            return table.filter(table[self.column_name].isnull())
+        if self.operator == "notnull":
+            return table.filter(~table[self.column_name].isnull())
 
     def autojoin_filter(
         self, table: "PhenexTable", tables: Optional[Dict[str, "PhenexTable"]] = None
@@ -85,4 +122,4 @@ class CategoricalFilter(Filter):
                 )
             table = table.join(tables[self.domain], domains=tables)
             # TODO downselect to original columns
-        return table.filter(table[self.column_name].isin(self.allowed_values))
+        return self._filter(table)

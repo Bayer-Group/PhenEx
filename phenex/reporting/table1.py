@@ -1,6 +1,9 @@
 import pandas as pd
 
-from .reporter import Reporter
+from phenex.reporting.reporter import Reporter
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 class Table1(Reporter):
@@ -21,59 +24,58 @@ class Table1(Reporter):
             .count()
             .execute()
         )
-
+        logger.debug("Starting with boolean columns for table1")
         self.df_booleans = self._report_boolean_columns()
+        logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
 
         # add percentage column
         if self.df_booleans is not None and self.df_values is not None:
             self.df = pd.concat([self.df_booleans, self.df_values])
         else:
-            self.df = self.df_booleans or self.df_values
+            self.df = (
+                self.df_booleans if self.df_booleans is not None else self.df_values
+            )
         self.df["%"] = 100 * self.df["N"] / self.N
 
         # reorder columns so N and % are first
         first_cols = ["N", "%"]
         column_order = first_cols + [x for x in self.df.columns if x not in first_cols]
         self.df = self.df[column_order]
+        logger.debug("Finished creating table1")
         return self.df
 
-    def _phenotype_column_is_of_value_type(self, name_column):
-        """
-        Return
-        """
-        if "_VALUE" in name_column:
-            value_col = name_column
-        elif "_BOOLEAN" in name_column:
-            value_col = name_column.replace("_BOOLEAN", "_VALUE")
-        else:
-            value_col = f"{name_column}_VALUE"
-        column_dtype = self.cohort.characteristics_table[value_col].type()
-        if column_dtype.is_integer() or column_dtype.is_floating():
-            return True
-        return False
+    def _get_boolean_characteristics(self):
+        return [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ not in ["MeasurementPhenotype", "AgePhenotype"]
+        ]
+
+    def _get_value_characteristics(self):
+        return [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ in ["MeasurementPhenotype", "AgePhenotype"]
+        ]
 
     def _report_boolean_columns(self):
         table = self.cohort.characteristics_table
-        # get list of all phenotype boolean columns
-        boolean_columns = [col for col in table.columns if col.endswith("_BOOLEAN")]
-        # remove value columns (these are reported in the value section)
-        boolean_columns = [
-            x for x in boolean_columns if not self._phenotype_column_is_of_value_type(x)
-        ]
+        # get list of all boolean columns
+        boolean_phenotypes = self._get_boolean_characteristics()
+        boolean_columns = list(set([f"{x.name}_BOOLEAN" for x in boolean_phenotypes]))
+        logger.debug(f"Found {len(boolean_columns)} : {boolean_columns}")
         if len(boolean_columns) == 0:
             return None
 
+        def get_counts_for_column(col):
+            return table.select(["PERSON_ID", col]).distinct()[col].sum().execute()
+
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
-        true_counts = [
-            table[col].sum().name(col.split("_BOOLEAN")[0]) for col in boolean_columns
-        ]
-        # perform actual sum operations and convert to pandas
-        result_table = table.aggregate(true_counts).to_pandas()
-        # transpose to create proper table format (each row should be a phenotype)
-        df_t1 = result_table.T
-        # name count column 'N'
-        df_t1.columns = ["N"]
+        df_t1 = pd.DataFrame()
+        df_t1["N"] = [get_counts_for_column(col) for col in boolean_columns]
+        df_t1.index = [x.replace("_BOOLEAN", "") for x in boolean_columns]
+
         # add the full cohort size as the first row
         df_n = pd.DataFrame({"N": [self.N]}, index=["cohort"])
         # concat population size
@@ -82,11 +84,10 @@ class Table1(Reporter):
 
     def _report_value_columns(self):
         table = self.cohort.characteristics_table
-        # Assuming 'table' is your Ibis table and 'value_columns' is already defined
-        value_columns = [col for col in table.columns if col.endswith("_VALUE")]
-        value_columns = [
-            x for x in value_columns if self._phenotype_column_is_of_value_type(x)
-        ]
+        # get value columns
+        value_phenotypes = self._get_value_characteristics()
+        value_columns = [f"{x.name}_VALUE" for x in value_phenotypes]
+        logger.debug(f"Found {len(value_columns)} : {value_columns}")
 
         if len(value_columns) == 0:
             return None
@@ -95,13 +96,14 @@ class Table1(Reporter):
         dfs = []
         for col in value_columns:
             name = col.split("_VALUE")[0]
+            _table = table.select(["PERSON_ID", col]).distinct()
             d = {
-                "N": table[col].count().execute(),
-                "mean": table[col].mean().execute(),
-                "std": table[col].std().execute(),
-                "median": table[col].median().execute(),
-                "min": table[col].min().execute(),
-                "max": table[col].max().execute(),
+                "N": _table[col].count().execute(),
+                "mean": _table[col].mean().execute(),
+                "std": _table[col].std().execute(),
+                "median": _table[col].median().execute(),
+                "min": _table[col].min().execute(),
+                "max": _table[col].max().execute(),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(name)

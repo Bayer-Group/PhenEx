@@ -21,6 +21,7 @@ nav:
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - ContinuousCoveragePhenotype: api/phenotypes/continuous_coverage_phenotype.md
+          - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
@@ -30,7 +31,7 @@ nav:
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
-          - DateRangeFilter: api/filters/date_range_filter.md
+          - DateFilter: api/filters/date_filter.md
           - RelativeTimeRangeFilter: api/filters/relative_time_range_filter.md
           - CodelistFilter: api/filters/codelist_filter.md
           - CategoricalFilter: api/filters/categorical_filter.md

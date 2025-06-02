@@ -57,6 +57,7 @@ class MeasurementChangePhenotype(Phenotype):
         component_date_select="second",
         return_date="first",
         return_value: Optional[ValueAggregator] = DailyMedian(),
+        **kwargs,
     ):
         self.name = name
         self.phenotype = phenotype
@@ -78,7 +79,7 @@ class MeasurementChangePhenotype(Phenotype):
             raise ValueError(
                 f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
             )
-        super(Phenotype, self).__init__()
+        super(Phenotype, self).__init__(**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table
@@ -113,13 +114,13 @@ class MeasurementChangePhenotype(Phenotype):
             max_change = Value(operator=max_change.operator, value=-max_change.value)
 
         value_filter = ValueFilter(
-            min=min_change, max=max_change, column_name="VALUE_CHANGE"
+            min_value=min_change, max_value=max_change, column_name="VALUE_CHANGE"
         )
         filtered_table = value_filter.filter(joined_table)
 
         time_filter = ValueFilter(
-            min=self.min_days_between,
-            max=self.max_days_between,
+            min_value=self.min_days_between,
+            max_value=self.max_days_between,
             column_name="DAYS_BETWEEN",
         )
         filtered_table = time_filter.filter(filtered_table)

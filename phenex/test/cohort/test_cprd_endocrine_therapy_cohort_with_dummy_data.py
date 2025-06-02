@@ -11,12 +11,7 @@ from phenex.phenotypes import (
     ContinuousCoveragePhenotype,
     SexPhenotype,
 )
-from phenex.filters import (
-    DateRangeFilter,
-    RelativeTimeRangeFilter,
-    GreaterThanOrEqualTo,
-    GreaterThan,
-)
+from phenex.filters import *
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
 from phenex.test.cohort.test_mappings import (
     PersonTableForTests,
@@ -43,14 +38,14 @@ def create_cohort():
     EXCLUSION CRITERIA
     Any prescription for tamoxifen or AIs before the BC diagnosis date (prevalent users)
     """
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2010, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min_date=AfterOrOn(datetime.date(2010, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
         return_date="first",
-        codelist=Codelist(["d1"]).resolve(use_code_type=False),
+        codelist=Codelist(["d1"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
         date_range=study_period,
     )
@@ -85,7 +80,7 @@ def define_inclusion_exclusion_criteria(entry):
 
     breast_cancer = CodelistPhenotype(
         name="breast_cancer",
-        codelist=Codelist(["b1"]).resolve(use_code_type=False),
+        codelist=Codelist(["b1"]).copy(use_code_type=False),
         domain="CONDITION_OCCURRENCE",
         return_date="first",
         relative_time_range=RelativeTimeRangeFilter(
@@ -97,7 +92,7 @@ def define_inclusion_exclusion_criteria(entry):
 
     tamoxifen = CodelistPhenotype(
         name="prior_et_usage",
-        codelist=Codelist(["d4", "d5", "d6"]).resolve(use_code_type=False),
+        codelist=Codelist(["d4", "d5", "d6"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
         relative_time_range=RelativeTimeRangeFilter(
             anchor_phenotype=breast_cancer,

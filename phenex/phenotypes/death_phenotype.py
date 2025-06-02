@@ -27,6 +27,7 @@ class DeathPhenotype(Phenotype):
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
+        **kwargs
     ):
         self.name = name
         self.domain = domain
@@ -38,7 +39,7 @@ class DeathPhenotype(Phenotype):
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
                     self.children.append(rtr.anchor_phenotype)
-        super(DeathPhenotype, self).__init__()
+        super(DeathPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]

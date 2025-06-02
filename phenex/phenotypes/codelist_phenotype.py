@@ -2,7 +2,7 @@ from typing import Union, List, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -33,16 +33,17 @@ class CodelistPhenotype(Phenotype):
         from phenex.phenotypes import CodelistPhenotype
         from phenex.codelists import Codelist
         from phenex.mappers import OMOPDomains
-        from phenex.filters import DateRangeFilter, CategoricalFilter, Value
+        from phenex.filters import DateFilter, CategoricalFilter, Value
         from phenex.ibis_connect import SnowflakeConnector
 
         con = SnowflakeConnector() # requires some configuration
         mapped_tables = OMOPDomains.get_mapped_tables(con)
 
         af_codelist = Codelist([313217]) # list of concept ids
-        date_range = DateRangeFilter(
-            min_date="2020-01-01",
-            max_date="2020-12-31")
+        date_range = DateFilter(
+            min_date=After("2020-01-01"),
+            max_date=Before("2020-12-31")
+            )
 
         inpatient = CategoricalFilter(
             column_name='VISIT_DETAIL_CONCEPT_ID',
@@ -93,7 +94,7 @@ class CodelistPhenotype(Phenotype):
         domain: str,
         codelist: Codelist,
         name: Optional[str] = None,
-        date_range: DateRangeFilter = None,
+        date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
@@ -101,7 +102,7 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        super(CodelistPhenotype, self).__init__()
+        super(CodelistPhenotype, self).__init__(**kwargs)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
