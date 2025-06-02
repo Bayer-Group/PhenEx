@@ -60,12 +60,11 @@ class CohortTestGenerator:
             filename = test_name + ".csv"
             path = os.path.join(self.dirpaths["expected"], filename)
             df.to_csv(path, index=False, date_format=self.date_format)
-    
+
     def _write_mapped_tables(self):
         for domain, table in self.mapped_tables.items():
-            path = os.path.join(self.dirpaths['mapped_tables'],f"{domain}.csv")
-            table.to_pandas().to_csv(path,index=False)
-
+            path = os.path.join(self.dirpaths["mapped_tables"], f"{domain}.csv")
+            table.to_pandas().to_csv(path, index=False)
 
     def _run_tests(self):
         self.cohort.execute(self.mapped_tables)

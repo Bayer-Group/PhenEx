@@ -454,7 +454,7 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
         cc = ContinuousCoveragePhenotype(
             min_days=GreaterThanOrEqualTo(365),
         )
-        agel18 = AgePhenotype(ValueFilter(max_value=LessThan(18)))
+        agel18 = AgePhenotype(value_filter=ValueFilter(max_value=LessThan(18)))
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
