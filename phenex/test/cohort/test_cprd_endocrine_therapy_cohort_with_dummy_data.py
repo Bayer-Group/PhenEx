@@ -64,10 +64,14 @@ def create_cohort():
 
 def define_inclusion_exclusion_criteria(entry):
     continuous_coverage = ContinuousCoveragePhenotype(
-        min_days=GreaterThanOrEqualTo(365), anchor_phenotype=entry
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365)),
+        anchor_phenotype=entry,
     )
 
-    age_18 = AgePhenotype(min_age=GreaterThanOrEqualTo(18), anchor_phenotype=entry)
+    age_18 = AgePhenotype(
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)),
+        anchor_phenotype=entry,
+    )
 
     sex = SexPhenotype(allowed_values=[2])
 

@@ -5,6 +5,26 @@ import ibis
 from phenex.tables import PhenexTable
 
 
+def attach_anchor_and_get_reference_date(table, anchor_phenotype=None):
+    if anchor_phenotype is not None:
+        if anchor_phenotype.table is None:
+            raise ValueError(
+                f"Dependent Phenotype {anchor_phenotype.name} must be executed before this node can run!"
+            )
+        else:
+            anchor_table = anchor_phenotype.table
+            reference_column = anchor_table.EVENT_DATE
+            # Note that joins can change column names if the tables have name collisions!
+            table = table.join(anchor_table, "PERSON_ID")
+    else:
+        assert (
+            "INDEX_DATE" in table.columns
+        ), f"INDEX_DATE column not found in table {table}"
+        reference_column = table.INDEX_DATE
+
+    return table, reference_column
+
+
 def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
     """
     Horizontally stacks multiple PhenotypeTable objects into a single table. The PERSON_ID columns are used to join the tables together. The resulting table will have three columns per phenotype: BOOLEAN, EVENT_DATE, and VALUE. The columns will be contain the phenotype name as a prefix.
