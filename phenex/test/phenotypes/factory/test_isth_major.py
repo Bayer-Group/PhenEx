@@ -201,9 +201,10 @@ class ISTHTestGenerator(CohortTestGenerator):
         patids_overt = self.get_correct_symptommatic_bleed_patients()
         patids_critical_organs = self.get_correct_critical_organ_bleed_patients()
         patids_total = list(set(patids_critical_organs + patids_overt + patids_death))
-        print(f"N fatal bleed:{len(patids_death)}\novert:\t{len(patids_overt)}\norgan :\t {len(patids_critical_organs)}\ntotal :\t{len(patids_total)}")
+        print(
+            f"N fatal bleed:{len(patids_death)}\novert:\t{len(patids_overt)}\norgan :\t {len(patids_critical_organs)}\ntotal :\t{len(patids_total)}"
+        )
         return patids_total
-
 
     def define_mapped_tables(self):
         self.con = ibis.duckdb.connect()
