@@ -22,7 +22,10 @@ def check_equality(
     )
     found_not_expected = full_results[full_results["DUMMY_expected"].isnull()]
     expected_not_found = full_results[full_results["DUMMY_result"].isnull()]
-    found_in_both = full_results[(~full_results["DUMMY_expected"].isnull())&(~full_results["DUMMY_result"].isnull())]
+    found_in_both = full_results[
+        (~full_results["DUMMY_expected"].isnull())
+        & (~full_results["DUMMY_result"].isnull())
+    ]
 
     logger.debug(f"{test_name} : {len(found_in_both)} found in both")
     logger.debug(f"{test_name} : {len(found_not_expected)} in result not in expected")
