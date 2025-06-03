@@ -211,7 +211,8 @@ class ISTHTestGenerator(CohortTestGenerator):
         df_allvalues = self.generate_dummy_input_data()
 
         df_allvalues.to_csv(
-            os.path.join(self.dirpaths["input"], "df_all_values.csv"), index=False
+            os.path.join(self.dirpaths["mapped_tables"], "df_all_values.csv"),
+            index=False,
         )
         # create dummy person table
         df_person = pd.DataFrame(df_allvalues[["PATID"]])
@@ -293,21 +294,6 @@ class ISTHTestGenerator(CohortTestGenerator):
                 df_procedure_occurrence,
                 schema=schema_procedure_occurrence,
             )
-        )
-
-        df_person.to_csv(
-            os.path.join(self.dirpaths["input"], "df_person.csv"), index=False
-        )
-        df_death.to_csv(
-            os.path.join(self.dirpaths["input"], "df_death.csv"), index=False
-        )
-        df_condition_occurrence.to_csv(
-            os.path.join(self.dirpaths["input"], "df_condition_occurrence.csv"),
-            index=False,
-        )
-        df_procedure_occurrence.to_csv(
-            os.path.join(self.dirpaths["input"], "df_procedure_occurrence.csv"),
-            index=False,
         )
 
         return {
