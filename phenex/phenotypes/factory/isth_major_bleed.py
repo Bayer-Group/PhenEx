@@ -32,8 +32,8 @@ class ISTHBleedComponents:
 
     inpatient: CategoricalFilter
     outpatient: CategoricalFilter
-    primary_diagnosis: CategoricalFilter = None
-    secondary_diagnosis: CategoricalFilter = None
+    primary_diagnosis: CategoricalFilter
+    secondary_diagnosis: CategoricalFilter
     diagnosis_of: CategoricalFilter = None
 
     diagnosis_code_domain: str = "CONDITION_OCCURRENCE_SOURCE"
@@ -100,11 +100,9 @@ def CriticalOrganBleedPhenotype(
         relative_time_range: Optional specificiation of a relative time range in which to observe bleeds. For example, 'any_time_post_index' could be constructed and passed to the ISTH bleed.
     """
     # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be either primary or secondary diagnosis position
-    categorical_filters = None
-    if components.primary_diagnosis is not None and components.primary_diagnosis is not None:
-        categorical_filters = components.inpatient & (
-            components.primary_diagnosis | components.secondary_diagnosis
-        )
+    categorical_filters = components.inpatient & (
+        components.primary_diagnosis | components.secondary_diagnosis
+    )
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     return CodelistPhenotype(
@@ -136,9 +134,7 @@ def SymptomaticBleedPhenotype(
         relative_time_range: Optional specificiation of a relative time range in which to observe bleeds. For example, 'any_time_post_index' could be constructed and passed to the ISTH bleed.
     """
     # create required categorical filters; critical organ bleed occurs only in the inpatient position and can be the primary diagnosis position
-    categorical_filters = None
-    if components.primary_diagnosis is not None and components.primary_diagnosis is not None:
-        categorical_filters = components.inpatient & components.primary_diagnosis
+    categorical_filters = components.inpatient & components.primary_diagnosis
 
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
@@ -246,10 +242,7 @@ def BleedVerificationPhenotype(
 def add_diagnosis_of_filter(categorical_filters, components):
     # if a 'diagnosis_of' (as opposed to 'history_of', etc) categorical filter is provided, add it to the list of conditions
     if components.diagnosis_of is not None:
-        if categorical_filters is not None:
-            categorical_filters = categorical_filters & components.diagnosis_of
-        else:
-            categorical_filters = components.diagnosis_of
+        categorical_filters = categorical_filters & components.diagnosis_of
     return categorical_filters
 
 
