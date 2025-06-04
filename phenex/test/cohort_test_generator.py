@@ -35,7 +35,6 @@ class CohortTestGenerator:
 
         self._create_artifact_directory(self.cohort.name, path)
         self.mapped_tables = self.define_mapped_tables()
-
         self._write_mapped_tables()
         self._generate_output_artifacts()
         self._run_tests()
