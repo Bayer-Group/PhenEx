@@ -28,20 +28,29 @@ class Table1(Reporter):
         self.df_booleans = self._report_boolean_columns()
         logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
+        logger.debug("Starting with categorical columns for table1")
+        self.df_categoricals = self._report_categorical_columns()
 
         # add percentage column
-        if self.df_booleans is not None and self.df_values is not None:
-            self.df = pd.concat([self.df_booleans, self.df_values])
+        dfs = [
+            df
+            for df in [self.df_booleans, self.df_values, self.df_categoricals]
+            if df is not None
+        ]
+        if len(dfs) > 1:
+            self.df = pd.concat(dfs)
+        elif len(dfs) == 1:
+            self.df = dfs[0]
         else:
-            self.df = (
-                self.df_booleans if self.df_booleans is not None else self.df_values
-            )
-        self.df["%"] = 100 * self.df["N"] / self.N
-
-        # reorder columns so N and % are first
-        first_cols = ["N", "%"]
-        column_order = first_cols + [x for x in self.df.columns if x not in first_cols]
-        self.df = self.df[column_order]
+            self.df = None
+        if self.df is not None:
+            self.df["%"] = 100 * self.df["N"] / self.N
+            # reorder columns so N and % are first
+            first_cols = ["N", "%"]
+            column_order = first_cols + [
+                x for x in self.df.columns if x not in first_cols
+            ]
+            self.df = self.df[column_order]
         logger.debug("Finished creating table1")
         return self.df
 
@@ -57,6 +66,13 @@ class Table1(Reporter):
             x
             for x in self.cohort.characteristics
             if type(x).__name__ in ["MeasurementPhenotype", "AgePhenotype"]
+        ]
+
+    def _get_categorical_characteristics(self):
+        return [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ in ["CategoricalPhenotype", "SexPhenotype"]
         ]
 
     def _report_boolean_columns(self):
@@ -107,6 +123,38 @@ class Table1(Reporter):
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(name)
+        if len(dfs) == 1:
+            df = dfs[0]
+        else:
+            df = pd.concat(dfs)
+        df.index = names
+        return df
+
+    def _report_categorical_columns(self):
+        table = self.cohort.characteristics_table
+        categorical_phenotypes = self._get_categorical_characteristics()
+        categorical_columns = [
+            f"{x.name}_VALUE"
+            for x in categorical_phenotypes
+            if f"{x.name}_VALUE" in table.columns
+        ]
+        if len(categorical_columns) == 0:
+            return None
+        dfs = []
+        names = []
+        for col in categorical_columns:
+            name = col.replace("_VALUE", "")
+            # Get counts for each category
+            cat_counts = (
+                table.select(["PERSON_ID", col])
+                .distinct()
+                .groupby(col)
+                .agg(N=(col, "count"))
+                .execute()
+            )
+            cat_counts.index = [f"{name}={v}" for v in cat_counts.index]
+            dfs.append(cat_counts)
+            names.extend(cat_counts.index)
         if len(dfs) == 1:
             df = dfs[0]
         else:
