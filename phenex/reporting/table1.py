@@ -161,7 +161,7 @@ class Table1(Reporter):
                 .execute()
             )
             cat_counts.index = [f"{name}={v}" for v in cat_counts[col]]
-            dfs.append(cat_counts)
+            dfs.append(cat_counts["N"])
             names.extend(cat_counts.index)
         if len(dfs) == 1:
             df = dfs[0]
