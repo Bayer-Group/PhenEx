@@ -26,6 +26,8 @@ nav:
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
+          - Factory:
+            - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
