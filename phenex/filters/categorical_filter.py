@@ -103,15 +103,14 @@ class CategoricalFilter(Filter):
         super(CategoricalFilter, self).__init__()
 
     def _filter(self, table: "PhenexTable"):
-        if self.allowed_values:
-            if self.operator == "isin":
-                table = table.filter(table[self.column_name].isin(self.allowed_values))
-            if self.operator == "notin":
+        if self.operator == "isin" and self.allowed_values:
+            table = table.filter(table[self.column_name].isin(self.allowed_values))
+        if self.operator == "notin" and self.allowed_values:
                 table = table.filter(~table[self.column_name].isin(self.allowed_values))
-            if self.operator == "isnull":
-                table = table.filter(table[self.column_name].isnull())
-            if self.operator == "notnull":
-                table = table.filter(~table[self.column_name].isnull())
+        if self.operator == "isnull":
+            table = table.filter(table[self.column_name].isnull())
+        if self.operator == "notnull":
+            table = table.filter(~table[self.column_name].isnull())
         return table
 
     def autojoin_filter(

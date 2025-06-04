@@ -11,6 +11,23 @@ class SexPhenotype(CategoricalPhenotype):
         domain: Domain of the phenotype, default is 'PERSON'.
         allowed_values: List of allowed values for the categorical variable.
         column_name: Name of the column containing the required categorical variable. Default is 'SEX'.
+
+    Examples:
+
+    Example: Return the recorded sex of all patients.
+    ```python
+    from phenex.phenotypes import SexPhenotype
+    sex = SexPhenotype()    
+    ```
+
+    Example: Extract all male patients from the database.
+    ```python
+    from phenex.phenotypes import SexPhenotype
+    sex = SexPhenotype(
+        allowed_values=['M'], 
+        column_name='GENDER_SOURCE_VALUE'
+        )    
+    ```
     """
 
     def __init__(
