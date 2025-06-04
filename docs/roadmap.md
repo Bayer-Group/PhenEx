@@ -8,19 +8,19 @@ Welcome to the PhenEx Roadmap! This page outlines our upcoming features and enha
 
 **Description**: Export all codelists used in a cohort, rather than on a phenotype-by phenotype level. This increases reproducibility of studies, as all codes used are logged.
 
-**Timeline**: Q1 2025
+**Timeline**: Q3 2025
 
 ### Multi-Index date support
 
 **Description**: currently we only support single index dates for cohorts, and test inclusion/exclusion criteria for only one index date. We plan to support multi-index dates and final index date selection methods.
 
-**Timeline**: Q2 2025
+**Timeline**: Q4 2025
 
 ### Code Frequency Readouts
 
 **Description**: Users will be able to click on a value to filter the view based on code frequency. This feature aims to provide more interactive data exploration.
 
-**Timeline**: Q2 2025
+**Timeline**: Q3 2025
 
 ### Multithreading in Cohort Execution
 
@@ -34,25 +34,25 @@ Welcome to the PhenEx Roadmap! This page outlines our upcoming features and enha
 
 **Description**: Currently attrition tables and baseline characteristic tables (Table 1) are provided. Exporting full cohort description in plain text text (generated from PhenEx cohort description) with all used codes (see cohort code lists) and corresponding figures to microsoft word or web viewer.
 
-**Timeline**: Q2 2025
+**Timeline**: Q3 2025
 
 ### Web app
 
 **Description**: Provide a user interface for non Python users. Ability to view and edit all phenotypes in a cohort.
 
-**Timeline**: MVP Q2 2025
+**Timeline**: MVP Q3 2025
 
 ### Large Language Model integration
 
 **Description**: use LLMs to write PhenEx cohort descriptions from plain text cohort descriptions. Planned to feed directly into web app
 
-**Timeline**: Q2 2025
+**Timeline**: Q4 2025
 
 ### Enhanced Documentation and Tutorials
 
 **Description**: Expand our documentation and tutorial offerings to include more use cases and examples.
 
-**Timeline**: Q1 2025
+**Timeline**: Q3 2025
 
 ### Community Contributions
 
