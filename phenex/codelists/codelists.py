@@ -426,6 +426,33 @@ class Codelist:
 
         return Codelist(
             new_codelist,
+            name=f"({self.name}_union_{other.name})",
+            remove_punctuation=self.remove_punctuation,
+            use_code_type=self.use_code_type,
+        )
+
+    def __sub__(self, other):
+        codetypes = list(self.codelist.keys())
+        new_codelist = {}
+        for codetype in codetypes:
+            new_codelist[codetype] = [
+                x
+                for x in self.codelist.get(codetype, [])
+                if x not in other.codelist.get(codetype, [])
+            ]
+
+        if self.remove_punctuation != other.remove_punctuation:
+            raise ValueError(
+                "Cannot add codelists with different remove_punctuation settings."
+            )
+        if self.use_code_type != other.use_code_type:
+            raise ValueError(
+                "Cannot add codelists with different use_code_type settings."
+            )
+
+        return Codelist(
+            new_codelist,
+            name=f"{self.name}_excluding_{other.name}",
             remove_punctuation=self.remove_punctuation,
             use_code_type=self.use_code_type,
         )

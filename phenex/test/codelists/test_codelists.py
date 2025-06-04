@@ -55,5 +55,15 @@ def test_codelist_union():
     assert diff == {}
 
 
+def test_codelist_difference():
+    codelist1 = Codelist({"ICD-9": ["a", "b"], "ICD-10": ["a", "b", "c"]})
+    codelist2 = Codelist({"ICD-9": ["b", "c"], "ICD-10": ["c", "d"], "ICD10PCS": ["d"]})
+    codelist = codelist1 - codelist2
+    resolved = codelist.resolved_codelist
+    expected = {"ICD-9": ["a"], "ICD-10": ["a", "b"]}
+    diff = DeepDiff(resolved, expected, ignore_order=True)
+    assert diff == {}
+
+
 if __name__ == "__main__":
     test_codelist_union()
