@@ -323,7 +323,7 @@ class Codelist:
 
         code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
 
-        if codelist_name is None:
+        if codelist_name is not None:
             name = codelist_name
         elif sheet_name is not None:
             name = sheet_name
