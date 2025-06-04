@@ -106,7 +106,7 @@ class CategoricalFilter(Filter):
         if self.operator == "isin" and self.allowed_values:
             table = table.filter(table[self.column_name].isin(self.allowed_values))
         if self.operator == "notin" and self.allowed_values:
-                table = table.filter(~table[self.column_name].isin(self.allowed_values))
+            table = table.filter(~table[self.column_name].isin(self.allowed_values))
         if self.operator == "isnull":
             table = table.filter(table[self.column_name].isnull())
         if self.operator == "notnull":

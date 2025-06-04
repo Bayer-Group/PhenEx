@@ -17,16 +17,16 @@ class SexPhenotype(CategoricalPhenotype):
     Example: Return the recorded sex of all patients.
     ```python
     from phenex.phenotypes import SexPhenotype
-    sex = SexPhenotype()    
+    sex = SexPhenotype()
     ```
 
     Example: Extract all male patients from the database.
     ```python
     from phenex.phenotypes import SexPhenotype
     sex = SexPhenotype(
-        allowed_values=['M'], 
+        allowed_values=['M'],
         column_name='GENDER_SOURCE_VALUE'
-        )    
+        )
     ```
     """
 
