@@ -2,6 +2,7 @@ import pandas as pd
 
 from phenex.reporting.reporter import Reporter
 from phenex.util import create_logger
+from ibis import _
 
 logger = create_logger(__name__)
 
@@ -24,12 +25,12 @@ class Table1(Reporter):
             .count()
             .execute()
         )
+        logger.debug("Starting with categorical columns for table1")
+        self.df_categoricals = self._report_categorical_columns()
         logger.debug("Starting with boolean columns for table1")
         self.df_booleans = self._report_boolean_columns()
         logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
-        logger.debug("Starting with categorical columns for table1")
-        self.df_categoricals = self._report_categorical_columns()
 
         # add percentage column
         dfs = [
@@ -58,7 +59,13 @@ class Table1(Reporter):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ not in ["MeasurementPhenotype", "AgePhenotype"]
+            if type(x).__name__
+            not in [
+                "MeasurementPhenotype",
+                "AgePhenotype",
+                "CategoricalPhenotype",
+                "SexPhenotype",
+            ]
         ]
 
     def _get_value_characteristics(self):
@@ -138,6 +145,7 @@ class Table1(Reporter):
             for x in categorical_phenotypes
             if f"{x.name}_VALUE" in table.columns
         ]
+        logger.debug(f"Found {len(categorical_columns)} : {categorical_columns}")
         if len(categorical_columns) == 0:
             return None
         dfs = []
@@ -148,11 +156,11 @@ class Table1(Reporter):
             cat_counts = (
                 table.select(["PERSON_ID", col])
                 .distinct()
-                .groupby(col)
-                .agg(N=(col, "count"))
+                .group_by(col)
+                .aggregate(N=_.count())
                 .execute()
             )
-            cat_counts.index = [f"{name}={v}" for v in cat_counts.index]
+            cat_counts.index = [f"{name}={v}" for v in cat_counts[col]]
             dfs.append(cat_counts)
             names.extend(cat_counts.index)
         if len(dfs) == 1:
