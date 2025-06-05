@@ -447,7 +447,7 @@ class Codelist:
             )
         if self.use_code_type != other.use_code_type:
             raise ValueError(
-                "Cannot add codelists with non-matching use_code_type settings."
+                "Cannot create difference of codelists with non-matching use_code_type settings."
             )
 
         return Codelist(
