@@ -13,17 +13,13 @@ import ibis
 
 class CategoricalPhenotype(Phenotype):
     """
-    CategoricalPhenotype is a class that represents a sex-based phenotype. It is able to identify the sex of individuals and filter them based on identified sex.
+    CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity.
 
-    Attributes:
-        name (str): Name of the phenotype, default is 'sex'.
-        allowed_values (List[str]): List of allowed values for the sex column.
-        domain (str): Domain of the phenotype, default is 'PERSON'.
-        children (list): List of dependent phenotypes.
-
-    Methods:
-        _execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the filtered individuals.
+    Parameters:
+        name: Name of the phenotype.
+        domain: Domain of the phenotype.
+        allowed_values: List of allowed values for the categorical variable. If not passed, all values are returned.
+        column_name: Name of the column containing the required categorical variable.
     """
 
     def __init__(
