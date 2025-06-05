@@ -323,7 +323,7 @@ class Codelist:
 
         code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
 
-        if codelist_name is None:
+        if codelist_name is not None:
             name = codelist_name
         elif sheet_name is not None:
             name = sheet_name
@@ -417,15 +417,42 @@ class Codelist:
             )
         if self.remove_punctuation != other.remove_punctuation:
             raise ValueError(
-                "Cannot add codelists with different remove_punctuation settings."
+                "Cannot add codelists with non-matching remove_punctuation settings."
             )
         if self.use_code_type != other.use_code_type:
             raise ValueError(
-                "Cannot add codelists with different use_code_type settings."
+                "Cannot add codelists with non-matching use_code_type settings."
             )
 
         return Codelist(
             new_codelist,
+            name=f"({self.name}_union_{other.name})",
+            remove_punctuation=self.remove_punctuation,
+            use_code_type=self.use_code_type,
+        )
+
+    def __sub__(self, other):
+        codetypes = list(self.codelist.keys())
+        new_codelist = {}
+        for codetype in codetypes:
+            new_codelist[codetype] = [
+                x
+                for x in self.codelist.get(codetype, [])
+                if x not in other.codelist.get(codetype, [])
+            ]
+
+        if self.remove_punctuation != other.remove_punctuation:
+            raise ValueError(
+                "Cannot create difference of codelists with non-matching remove_punctuation settings."
+            )
+        if self.use_code_type != other.use_code_type:
+            raise ValueError(
+                "Cannot create difference of codelists with non-matching use_code_type settings."
+            )
+
+        return Codelist(
+            new_codelist,
+            name=f"{self.name}_excluding_{other.name}",
             remove_punctuation=self.remove_punctuation,
             use_code_type=self.use_code_type,
         )
