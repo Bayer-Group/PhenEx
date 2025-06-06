@@ -65,5 +65,15 @@ def test_codelist_difference():
     assert diff == {}
 
 
+def test_codelist_deletion():
+    codelist1 = Codelist({"ICD-9-CM": ["a", "b"], "ICD-10-CM": ["a", "b", "c"]}).copy(
+        rename_code_type={"ICD-9-CM": "ICD9CM", "ICD-10-CM": "ICD10CM"}
+    )
+    resolved = codelist1.resolved_codelist
+    expected = {"ICD9CM": ["a", "b"], "ICD10CM": ["a", "b", "c"]}
+    diff = DeepDiff(resolved, expected, ignore_order=True)
+    assert diff == {}
+
+
 if __name__ == "__main__":
     test_codelist_union()
