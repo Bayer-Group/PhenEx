@@ -2,7 +2,6 @@ from typing import Optional
 from phenex.phenotypes import MeasurementPhenotype, Phenotype
 from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.aggregators.aggregator import First, Last, ValueAggregator, DailyMedian
 
@@ -53,7 +52,6 @@ class MeasurementChangePhenotype(Phenotype):
         direction="increase",
         min_days_between: Value = GreaterThanOrEqualTo(0),
         max_days_between: Value = None,
-        relative_time_range: RelativeTimeRangeFilter = None,
         component_date_select="second",
         return_date="first",
         return_value: Optional[ValueAggregator] = None,
@@ -68,7 +66,6 @@ class MeasurementChangePhenotype(Phenotype):
         self.max_days_between = max_days_between
         self.component_date_select = component_date_select
         self.return_date = return_date
-        self.relative_time_range = relative_time_range
         self.return_value = return_value
         self.children = [phenotype]
         if self.direction not in ["increase", "decrease"]:
