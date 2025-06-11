@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from phenex.codelists import Codelist
-from phenex.phenotypes import CodelistPhenotype, DeathPhenotype, LogicPhenotype
+from phenex.phenotypes import CodelistPhenotype, DeathPhenotype, LogicPhenotype, MeasurementPhenotype, MeasurementChangePhenotype
 from phenex.filters import (
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,

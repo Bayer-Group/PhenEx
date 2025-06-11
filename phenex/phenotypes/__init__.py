@@ -5,6 +5,7 @@ from .age_phenotype import AgePhenotype
 from .sex_phenotype import SexPhenotype
 from .multiple_occurrences_phenotype import MultipleOccurrencesPhenotype
 from .measurement_phenotype import MeasurementPhenotype
+from .measurement_change_phenotype import MeasurementChangePhenotype
 from .death_phenotype import DeathPhenotype
 from .categorical_phenotype import CategoricalPhenotype
 from .continuous_coverage_phenotype import ContinuousCoveragePhenotype
