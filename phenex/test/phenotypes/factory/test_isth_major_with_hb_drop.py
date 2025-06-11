@@ -215,6 +215,7 @@ class ISTHFatalBleedTestGenerator(ISTHTestGeneratorWithHb):
         patids_death = self.get_correct_fatal_bleed_patients()
         return patids_death
 
+
 def test_symptomatic_with_hb():
     g = ISTHSymptommaticBleedTestGenerator()
     g.run_tests()
