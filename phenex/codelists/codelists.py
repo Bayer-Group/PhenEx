@@ -417,11 +417,11 @@ class Codelist:
             )
         if self.remove_punctuation != other.remove_punctuation:
             raise ValueError(
-                "Cannot add codelists with different remove_punctuation settings."
+                "Cannot add codelists with non-matching remove_punctuation settings."
             )
         if self.use_code_type != other.use_code_type:
             raise ValueError(
-                "Cannot add codelists with different use_code_type settings."
+                "Cannot add codelists with non-matching use_code_type settings."
             )
 
         return Codelist(
@@ -443,11 +443,11 @@ class Codelist:
 
         if self.remove_punctuation != other.remove_punctuation:
             raise ValueError(
-                "Cannot add codelists with different remove_punctuation settings."
+                "Cannot create difference of codelists with non-matching remove_punctuation settings."
             )
         if self.use_code_type != other.use_code_type:
             raise ValueError(
-                "Cannot add codelists with different use_code_type settings."
+                "Cannot create difference of codelists with non-matching use_code_type settings."
             )
 
         return Codelist(
