@@ -9,9 +9,10 @@ from phenex.filters.value import (
     LessThanOrEqualTo,
     LessThan,
 )
+from phenex.filters import RelativeTimeRangeFilter
 from phenex.phenotypes.measurement_phenotype import MeasurementPhenotype
 from phenex.phenotypes.measurement_change_phenotype import MeasurementChangePhenotype
-from phenex.codelists import LocalCSVCodelistFactory
+from phenex.codelists import LocalCSVCodelistFactory, Codelist
 from phenex.aggregators import *
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 
@@ -201,10 +202,315 @@ class MeasurementChangePhenotypeTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
+class MeasurementChangeIncreaseDecreasePhenotypeTestGenerator(PhenotypeTestGenerator):
+    name_space = "mcpt_increasedecrease"
+
+    def define_input_tables(self):
+        df = pd.DataFrame()
+
+        measurements = [
+            12,
+            9,  # P0
+            12,
+            10,  # P1
+            12,
+            11,  # P2
+            12,
+            12,  # P3
+            12,
+            13,  # P4
+            12,
+            14,  # P5
+            12,
+            15,  # P6
+        ]
+
+        one_day = datetime.timedelta(days=1)
+        event_date = datetime.date(2022, 2, 1)
+        index_date = datetime.date(2022, 1, 1)
+
+        event_dates = [
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+            event_date,
+            event_date + one_day,
+        ]
+        person_id = [
+            "P0",
+            "P0",
+            "P1",
+            "P1",
+            "P2",
+            "P2",
+            "P3",
+            "P3",
+            "P4",
+            "P4",
+            "P5",
+            "P5",
+            "P6",
+            "P6",
+        ]
+
+        df["VALUE"] = measurements
+        df["INDEX_DATE"] = index_date
+        df["EVENT_DATE"] = event_dates
+        df["CODE_TYPE"] = None
+        df["CODE"] = "hb"
+        df["PERSON_ID"] = person_id
+
+        df_person = pd.DataFrame()
+        df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+
+        return [
+            {"name": "MEASUREMENT", "df": df},
+        ]
+
+    def define_phenotype_tests(self):
+        # create measurement phenotype
+        mmpt = MeasurementPhenotype(
+            name="mmpt",
+            codelist=Codelist(["hb"], use_code_type=False),
+            domain="MEASUREMENT",
+            return_date="all",
+        )
+
+        # TEST decrease >2
+        mmcpt = MeasurementChangePhenotype(
+            name="mmcpt",
+            phenotype=mmpt,
+            min_change=GreaterThan(2),
+            max_days_between=LessThan(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t1 = {"name": "mmcpt", "persons": ["P0"], "phenotype": mmcpt}
+
+        # TEST decrease >=2
+        mmcpt2 = MeasurementChangePhenotype(
+            name="mmcpt_2",
+            phenotype=mmpt,
+            min_change=GreaterThanOrEqualTo(2),
+            max_days_between=LessThan(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t2 = {"name": "mmcpt_2", "persons": ["P0", "P1"], "phenotype": mmcpt2}
+
+        # TEST increase >2
+        mmcpt3 = MeasurementChangePhenotype(
+            name="mmcpt_3",
+            phenotype=mmpt,
+            min_change=GreaterThan(2),
+            max_days_between=LessThan(2),
+            direction="increase",
+            return_date="last",
+        )
+
+        t3 = {"name": "mmcpt_3", "persons": ["P6"], "phenotype": mmcpt3}
+
+        # TEST increase >=2
+        mmcpt4 = MeasurementChangePhenotype(
+            name="mmcpt_4",
+            phenotype=mmpt,
+            min_change=GreaterThanOrEqualTo(2),
+            max_days_between=LessThan(2),
+            direction="increase",
+            return_date="last",
+        )
+
+        t4 = {"name": "mmcpt_4", "persons": ["P5", "P6"], "phenotype": mmcpt4}
+
+        test_infos = [t1, t2, t3, t4]
+
+        return test_infos
+
+
+class MeasurementChangePhenotypeRelativeTimeRangeTestGenerator(PhenotypeTestGenerator):
+    name_space = "mcpt_relativetimerange"
+
+    def define_input_tables(self):
+        df = pd.DataFrame()
+
+        measurements = [
+            12,
+            9,  # P0
+            12,
+            9,  # P1
+            12,
+            9,  # P2
+            12,
+            9,  # P3
+            12,
+            9,  # P4
+            12,
+            9,  # P5
+            12,
+            9,  # P6
+        ]
+
+        day = datetime.timedelta(days=1)
+        event_date = datetime.date(2022, 10, 1)
+        index_date = datetime.date(2022, 1, 1)
+
+        event_dates = [
+            index_date + day * 5,
+            index_date + day * 6,
+            index_date + day * 5,
+            index_date + day * 7,
+            index_date + day * 5,
+            index_date + day * 8,
+            index_date - day * 5,
+            index_date - day * 4,
+            index_date - day * 5,
+            index_date - day * 3,
+            index_date - day * 5,
+            index_date - day * 2,
+            index_date - day,
+            index_date + day,
+        ]
+        person_id = [
+            "P0",
+            "P0",
+            "P1",
+            "P1",
+            "P2",
+            "P2",
+            "P3",
+            "P3",
+            "P4",
+            "P4",
+            "P5",
+            "P5",
+            "P6",
+            "P6",
+        ]
+
+        df["VALUE"] = measurements
+        df["INDEX_DATE"] = index_date
+        df["EVENT_DATE"] = event_dates
+        df["CODE_TYPE"] = None
+        df["CODE"] = "hb"
+        df["PERSON_ID"] = person_id
+
+        df_person = pd.DataFrame()
+        df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+
+        return [
+            {"name": "MEASUREMENT", "df": df},
+        ]
+
+    def define_phenotype_tests(self):
+        # create measurement phenotype
+        mmpt_postindex = MeasurementPhenotype(
+            name="mmpt",
+            codelist=Codelist(["hb"], use_code_type=False),
+            domain="MEASUREMENT",
+            return_date="all",
+            relative_time_range=RelativeTimeRangeFilter(
+                when="after", min_days=GreaterThanOrEqualTo(0)
+            ),
+        )
+
+        # create measurement phenotype
+        mmpt_preindex = MeasurementPhenotype(
+            name="mmpt",
+            codelist=Codelist(["hb"], use_code_type=False),
+            domain="MEASUREMENT",
+            return_date="all",
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
+        )
+
+        mmpt_anytime = MeasurementPhenotype(
+            name="mmpt",
+            codelist=Codelist(["hb"], use_code_type=False),
+            domain="MEASUREMENT",
+            return_date="all",
+        )
+
+        # TEST post index >2 days apart
+        mmcpt = MeasurementChangePhenotype(
+            name="mmcpt",
+            phenotype=mmpt_postindex,
+            min_change=GreaterThan(2),
+            max_days_between=LessThan(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t1 = {"name": "mmcpt", "persons": ["P0"], "phenotype": mmcpt}
+
+        # TEST post index >=2 days apart
+        mmcpt2 = MeasurementChangePhenotype(
+            name="mmcpt_2",
+            phenotype=mmpt_postindex,
+            min_change=GreaterThanOrEqualTo(2),
+            max_days_between=LessThanOrEqualTo(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t2 = {"name": "mmcpt_2", "persons": ["P0", "P1"], "phenotype": mmcpt2}
+
+        # TEST pre index >2 days apart
+        mmcpt3 = MeasurementChangePhenotype(
+            name="mmcpt_3",
+            phenotype=mmpt_preindex,
+            min_change=GreaterThan(2),
+            max_days_between=LessThan(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t3 = {"name": "mmcpt_3", "persons": ["P3"], "phenotype": mmcpt3}
+
+        # TEST pre index >=2 days apart
+        mmcpt4 = MeasurementChangePhenotype(
+            name="mmcpt_4",
+            phenotype=mmpt_preindex,
+            min_change=GreaterThanOrEqualTo(2),
+            max_days_between=LessThanOrEqualTo(2),
+            direction="decrease",
+            return_date="last",
+        )
+
+        t4 = {"name": "mmcpt_4", "persons": ["P3", "P4"], "phenotype": mmcpt4}
+
+        test_infos = [t1, t2, t3, t4]
+
+        return test_infos
+
+
 def test_measurement_change_phenotype():
     spg = MeasurementChangePhenotypeTestGenerator()
     spg.run_tests()
 
 
+def test_measurement_change_phenotype_increase_decrease():
+    spg = MeasurementChangeIncreaseDecreasePhenotypeTestGenerator()
+    spg.run_tests()
+
+
+def test_measurement_change_phenotype_relative_time_range():
+    spg = MeasurementChangePhenotypeRelativeTimeRangeTestGenerator()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_measurement_change_phenotype()
+    test_measurement_change_phenotype_increase_decrease()
+    test_measurement_change_phenotype_relative_time_range()
