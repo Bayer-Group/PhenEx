@@ -2,13 +2,24 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from phenex.codelists import Codelist
-from phenex.phenotypes import CodelistPhenotype, DeathPhenotype, LogicPhenotype, MeasurementPhenotype, MeasurementChangePhenotype
+from phenex.phenotypes import (
+    CodelistPhenotype, 
+    DeathPhenotype, 
+    LogicPhenotype,
+    MeasurementPhenotype,
+    MeasurementChangePhenotype
+)
+
 from phenex.filters import (
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,
     LessThanOrEqualTo,
     CategoricalFilter,
 )
+
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 @dataclass
@@ -29,7 +40,6 @@ class ISTHBleedComponents:
     overt_bleed_codelist: Codelist
     possible_bleed_codelist: Codelist
     transfusion_codelist: Codelist
-    hemoglobin_codelist: Codelist
 
     inpatient: CategoricalFilter
     outpatient: CategoricalFilter
@@ -39,8 +49,10 @@ class ISTHBleedComponents:
 
     diagnosis_code_domain: str = "CONDITION_OCCURRENCE_SOURCE"
     procedure_code_domain: str = "PROCEDURE_OCCURRENCE_SOURCE"
-    measurement_code_domain: str = "MEASUREMENT"
+    measurement_code_domain: str = None
     death_domain: str = "PERSON"
+    hemoglobin_codelist: Optional[Codelist] = None
+
 
 
 def ISTHMajorBleedPhenotype(
@@ -87,6 +99,7 @@ def CriticalOrganBleedPhenotype(
     components: ISTHBleedComponents,
     return_date: str = "first",
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
+    name: Optional[str] = 'isth_critical_organ_bleed'
 ) -> CodelistPhenotype:
     """
     Operational definition for critical organ bleed subcomponent of ISTH Major Bleed as defined in [*Identification of International Society on Thrombosis and Haemostasis major and clinically relevant non-major bleed events from electronic health records: a novel algorithm to enhance data utilisation from real-world sources*,  Hartenstein et. al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10898215/).
@@ -108,7 +121,7 @@ def CriticalOrganBleedPhenotype(
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     return CodelistPhenotype(
-        name="isth_critical_organ_bleed",
+        name=name,
         domain=components.diagnosis_code_domain,
         codelist=components.critical_organ_bleed_codelist,
         categorical_filter=categorical_filters,
@@ -121,6 +134,7 @@ def SymptomaticBleedPhenotype(
     components: ISTHBleedComponents,
     return_date: str = "first",
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
+    name: Optional[str] = "isth_overt_bleed",
 ) -> "BleedVerificationPhenotype":
     """
     Operational definition for symptomatic bleeds as defined in [*Identification of International Society on Thrombosis and Haemostasis major and clinically relevant non-major bleed events from electronic health records: a novel algorithm to enhance data utilisation from real-world sources*,  Hartenstein et. al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10898215/).
@@ -141,7 +155,7 @@ def SymptomaticBleedPhenotype(
     categorical_filters = add_diagnosis_of_filter(categorical_filters, components)
 
     overt_bleed = CodelistPhenotype(
-        name="isth_overt_bleed",
+        name=name,
         domain=components.diagnosis_code_domain,
         codelist=components.overt_bleed_codelist,
         categorical_filter=categorical_filters,
@@ -150,7 +164,9 @@ def SymptomaticBleedPhenotype(
     )
 
     return BleedVerificationPhenotype(
-        overt_bleed, components, relative_time_range=relative_time_range
+        anchor_phenotype=overt_bleed, 
+        components=components, 
+        relative_time_range=relative_time_range
     )
 
 
@@ -158,6 +174,7 @@ def FatalBleedPhenotype(
     components: ISTHBleedComponents,
     return_date: str = "first",
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
+    name: Optional[str] = "isth_fatal_bleed",
 ) -> CodelistPhenotype:
     """
     Operational definition for fatal bleed subcomponent of ISTH Major Bleed as defined in [*Identification of International Society on Thrombosis and Haemostasis major and clinically relevant non-major bleed events from electronic health records: a novel algorithm to enhance data utilisation from real-world sources*,  Hartenstein et. al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10898215/).
@@ -194,7 +211,7 @@ def FatalBleedPhenotype(
     else:
         full_relative_time_range = [relative_45_days_prior, relative_time_range]
     return CodelistPhenotype(
-        name="isth_fatal_bleed",
+        name=name,
         domain=components.diagnosis_code_domain,
         codelist=components.critical_organ_bleed_codelist,
         categorical_filter=categorical_filters,
@@ -241,25 +258,30 @@ def BleedVerificationPhenotype(
     )
 
     if relative_time_range is not None:
-        relative_time_range = [relative_time_range, within_two_days]
+        composite_relative_time_range = [relative_time_range, within_two_days]
 
     transfusion = BloodTransfusionPhenotype(
         anchor_phenotype=anchor_phenotype,
         name = f"{name}_blood_transfusion",
         components = components,
-        relative_time_range = relative_time_range,
+        relative_time_range = composite_relative_time_range,
         transfusion_codelist = transfusion_codelist,
         procedure_code_domain = procedure_code_domain,
     )
+
+    if hemoglobin_codelist is None and measurement_code_domain is None:
+        logger.info("ISTH Major bleeding verification : no hemoglobing measurement codes or measurement table provided. Using procedure codes for blood transfusion only.")
+        return transfusion
 
     hb_drop = HbDropPhenotype(
         anchor_phenotype=anchor_phenotype,
         name = f"{name}_hb_drop",
         components = components,
-        relative_time_range = relative_time_range,
+        relative_time_range = composite_relative_time_range,
         hemoglobin_codelist = hemoglobin_codelist,
         measurement_code_domain = measurement_code_domain,
     )
+    logger.info("ISTH Major bleeding verification : using both transfusion and hemoglobin information.")
 
     return LogicPhenotype(
         name=name,
@@ -288,7 +310,6 @@ def BloodTransfusionPhenotype(
         anchor_phenotype: Specify whether to return the date of the first, last or all bleed events
         relative_time_range: Optional specificiation of a relative time range in which to observe bleeds. For example, 'any_time_post_index' could be constructed and passed to the ISTH bleed.
     """
-
     if components is not None:
         transfusion_codelist = components.transfusion_codelist
         procedure_code_domain = components.procedure_code_domain
@@ -331,7 +352,7 @@ def HbDropPhenotype(
         name=name,
         phenotype=hemoglobin,
         min_change=GreaterThanOrEqualTo(2),
-        max_days_apart=LessThanOrEqualTo(2),
+        max_days_between=LessThanOrEqualTo(2),
         direction='decrease',
         component_date_select='second',
         return_date='all'
