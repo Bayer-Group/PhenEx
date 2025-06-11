@@ -76,9 +76,11 @@ class MeasurementChangePhenotype(Phenotype):
             raise ValueError(
                 f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
             )
-        super(Phenotype, self).__init__(**kwargs)
+        super(MeasurementChangePhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
+        if self.phenotype.table is None:
+            self.phenotype.execute(tables)
         # Execute the child phenotype to get the initial filtered table
         phenotype_table_1 = self.phenotype.table
         phenotype_table_2 = self.phenotype.table.view()
