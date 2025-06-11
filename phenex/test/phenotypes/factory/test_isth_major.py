@@ -95,7 +95,7 @@ class ISTHTestGenerator(CohortTestGenerator):
         return Cohort(
             name=isth_phenotype.name, entry_criterion=entry, inclusions=[isth_phenotype]
         )
-    
+
     def generate_dummy_input_values_dict(self):
         values = [
             {

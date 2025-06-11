@@ -3,11 +3,11 @@ from typing import Optional, Union
 
 from phenex.codelists import Codelist
 from phenex.phenotypes import (
-    CodelistPhenotype, 
-    DeathPhenotype, 
+    CodelistPhenotype,
+    DeathPhenotype,
     LogicPhenotype,
     MeasurementPhenotype,
-    MeasurementChangePhenotype
+    MeasurementChangePhenotype,
 )
 
 from phenex.filters import (
@@ -54,7 +54,6 @@ class ISTHBleedComponents:
     hemoglobin_codelist: Optional[Codelist] = None
 
 
-
 def ISTHMajorBleedPhenotype(
     components: ISTHBleedComponents,
     name: Optional[str] = "isth_major_bleed",
@@ -99,7 +98,7 @@ def CriticalOrganBleedPhenotype(
     components: ISTHBleedComponents,
     return_date: str = "first",
     relative_time_range: Optional[RelativeTimeRangeFilter] = None,
-    name: Optional[str] = 'isth_critical_organ_bleed'
+    name: Optional[str] = "isth_critical_organ_bleed",
 ) -> CodelistPhenotype:
     """
     Operational definition for critical organ bleed subcomponent of ISTH Major Bleed as defined in [*Identification of International Society on Thrombosis and Haemostasis major and clinically relevant non-major bleed events from electronic health records: a novel algorithm to enhance data utilisation from real-world sources*,  Hartenstein et. al](https://pmc.ncbi.nlm.nih.gov/articles/PMC10898215/).
@@ -164,9 +163,9 @@ def SymptomaticBleedPhenotype(
     )
 
     return BleedVerificationPhenotype(
-        anchor_phenotype=overt_bleed, 
-        components=components, 
-        relative_time_range=relative_time_range
+        anchor_phenotype=overt_bleed,
+        components=components,
+        relative_time_range=relative_time_range,
     )
 
 
@@ -219,6 +218,7 @@ def FatalBleedPhenotype(
         return_date=component_return_date(relative_time_range),
     )
 
+
 def BleedVerificationPhenotype(
     anchor_phenotype,
     name: Optional[str] = None,
@@ -262,32 +262,36 @@ def BleedVerificationPhenotype(
 
     transfusion = BloodTransfusionPhenotype(
         anchor_phenotype=anchor_phenotype,
-        name = f"{name}_blood_transfusion",
-        components = components,
-        relative_time_range = composite_relative_time_range,
-        transfusion_codelist = transfusion_codelist,
-        procedure_code_domain = procedure_code_domain,
+        name=f"{name}_blood_transfusion",
+        components=components,
+        relative_time_range=composite_relative_time_range,
+        transfusion_codelist=transfusion_codelist,
+        procedure_code_domain=procedure_code_domain,
     )
 
     if hemoglobin_codelist is None and measurement_code_domain is None:
-        logger.info("ISTH Major bleeding verification : no hemoglobing measurement codes or measurement table provided. Using procedure codes for blood transfusion only.")
+        logger.info(
+            "ISTH Major bleeding verification : no hemoglobing measurement codes or measurement table provided. Using procedure codes for blood transfusion only."
+        )
         return transfusion
-
     hb_drop = HbDropPhenotype(
         anchor_phenotype=anchor_phenotype,
-        name = f"{name}_hb_drop",
-        components = components,
-        relative_time_range = composite_relative_time_range,
-        hemoglobin_codelist = hemoglobin_codelist,
-        measurement_code_domain = measurement_code_domain,
+        name=f"{name}_hb_drop",
+        components=components,
+        relative_time_range=composite_relative_time_range,
+        hemoglobin_codelist=hemoglobin_codelist,
+        measurement_code_domain=measurement_code_domain,
     )
-    logger.info("ISTH Major bleeding verification : using both transfusion and hemoglobin information.")
+    logger.info(
+        "ISTH Major bleeding verification : using both transfusion and hemoglobin information."
+    )
 
     return LogicPhenotype(
         name=name,
         expression=transfusion | hb_drop,
         return_date=component_return_date(relative_time_range),
     )
+
 
 def BloodTransfusionPhenotype(
     anchor_phenotype,
@@ -321,7 +325,7 @@ def BloodTransfusionPhenotype(
         codelist=transfusion_codelist,
         domain=procedure_code_domain,
         relative_time_range=relative_time_range,
-        return_date = 'all'
+        return_date="all",
     )
     return transfusion
 
@@ -334,13 +338,13 @@ def HbDropPhenotype(
     hemoglobin_codelist: Optional["Codelist"] = None,
     measurement_code_domain: Optional[str] = None,
 ) -> CodelistPhenotype:
-    
+
     if components is not None:
         hemoglobin_codelist = components.hemoglobin_codelist
         measurement_code_domain = components.measurement_code_domain
     if name is None:
         name = "hb_drop_two_days_within_" + anchor_phenotype.name
-        
+
     hemoglobin = MeasurementPhenotype(
         name=f"{name}_hemoglobin",
         codelist=hemoglobin_codelist,
@@ -353,9 +357,9 @@ def HbDropPhenotype(
         phenotype=hemoglobin,
         min_change=GreaterThanOrEqualTo(2),
         max_days_between=LessThanOrEqualTo(2),
-        direction='decrease',
-        component_date_select='second',
-        return_date='all'
+        direction="decrease",
+        component_date_select="second",
+        return_date="all",
     )
 
     return hemoglobin_drop

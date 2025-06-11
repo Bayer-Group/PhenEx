@@ -31,11 +31,12 @@ from phenex.mappers import (
     OMOPProcedureOccurrenceSourceTable,
     OMOPConditionOccurrenceSourceTable,
     OMOPDeathTable,
-    OMOPMeasurementTable
+    OMOPMeasurementTable,
 )
 
 from phenex.test.util.dummy.generate_dummy_cohort_data import generate_dummy_cohort_data
 from phenex.test.phenotypes.factory.test_isth_major import ISTHTestGenerator
+
 
 def get_ISTH_components():
     return ISTHBleedComponents(
@@ -72,46 +73,43 @@ def get_ISTH_components():
         procedure_code_domain="PROCEDURE_OCCURRENCE_SOURCE",
         death_domain="DEATH",
         measurement_code_domain="MEASUREMENT",
-        hemoglobin_codelist=Codelist(['hb'], use_code_type=False)
+        hemoglobin_codelist=Codelist(["hb"], use_code_type=False),
     )
+
 
 class ISTHTestGeneratorWithHb(ISTHTestGenerator):
 
     def define_isth_phenotype(self, entry):
         return ISTHMajorBleedPhenotype(
-            name = "isth_with_hb",
+            name="isth_with_hb",
             return_date="first",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after", anchor_phenotype=entry
             ),
             components=get_ISTH_components(),
         )
-    
+
     def generate_dummy_input_values_dict(self):
         one_day = datetime.timedelta(days=1)
         values_standard = super().generate_dummy_input_values_dict()
 
         values_new = [
+            {"name": "hb", "values": ["hb"]},
+            {"name": "hb1", "values": [12]},
+            {"name": "hb2", "values": [8, 12]},
             {
-                "name":"hb",
-                "values":['hb']
+                "name": "hb1_date",
+                "values": [
+                    datetime.date(2020, 3, 1) - one_day
+                ],  # all hb1 events occur on postindex overt_bleeddate
             },
             {
-                "name":"hb1",
-                "values":[12]
+                "name": "hb2_date",
+                "values": [
+                    datetime.date(2020, 3, 1),
+                    datetime.date(2020, 3, 1) + 3 * one_day,
+                ],
             },
-            {
-                "name":"hb2",
-                "values":[8,12]
-            },
-            {
-                "name":"hb1_date",
-                "values":[datetime.date(2020, 3, 1)-one_day] # all hb1 events occur on postindex overt_bleeddate
-            },
-            {
-                "name":"hb2_date",
-                "values":[datetime.date(2020, 3, 1), datetime.date(2020, 3, 1)+3*one_day]
-            }
         ]
 
         return values_standard + values_new
@@ -121,26 +119,21 @@ class ISTHTestGeneratorWithHb(ISTHTestGenerator):
 
         mapped_tables = super().define_mapped_tables()
 
-        df_hb1 = pd.DataFrame(
-            df_allvalues[["PATID", "hb1_date", "hb", "hb1"]]
-        )
+        df_hb1 = pd.DataFrame(df_allvalues[["PATID", "hb1_date", "hb", "hb1"]])
         df_hb1.columns = [
             "PERSON_ID",
             "MEASUREMENT_DATE",
             "MEASUREMENT_TYPE_CONCEPT_ID",
-            "VALUE_AS_NUMBER"
+            "VALUE_AS_NUMBER",
         ]
-        df_hb2 = pd.DataFrame(
-            df_allvalues[["PATID", "hb2_date", "hb", "hb2"]]
-        )
+        df_hb2 = pd.DataFrame(df_allvalues[["PATID", "hb2_date", "hb", "hb2"]])
         df_hb2.columns = [
             "PERSON_ID",
             "MEASUREMENT_DATE",
             "MEASUREMENT_TYPE_CONCEPT_ID",
-            "VALUE_AS_NUMBER"
+            "VALUE_AS_NUMBER",
         ]
-        df_measurement = pd.concat([df_hb1, df_hb2],axis=0)
-        print(df_measurement)
+        df_measurement = pd.concat([df_hb1, df_hb2], axis=0)
         # create measurement table
         schema_measurement = {
             "PERSON_ID": str,
@@ -155,27 +148,30 @@ class ISTHTestGeneratorWithHb(ISTHTestGenerator):
                 schema=schema_measurement,
             )
         )
-        mapped_tables['MEASUREMENT'] = measurement_table
+        mapped_tables["MEASUREMENT"] = measurement_table
         return mapped_tables
 
-        
     def get_correct_symptommatic_bleed_patients(self):
         df = self.generate_dummy_input_data()
-
         _df = df[df["overt_bleeddate"] == datetime.date(2020, 3, 1)]
         _df = _df[_df["encounter_type"] == "inpatient"]
         _df = _df[_df["diagnosis_status"] == "DIAGNOSIS_OF"]
         _df = _df[_df["diagnosis_position"] == 1]
-        _df = _df[ (_df["transfusion"] == "t1")| ((_df["hb2_date"] == datetime.date(2020, 3, 1)) &  (_df["hb2"]==8)) ]
-
-        _df = _df[_df["transfusion_date"] == datetime.date(2020, 3, 2)]
+        _df = _df[
+            (
+                (_df["transfusion"] == "t1")
+                & (_df["transfusion_date"] == datetime.date(2020, 3, 2))
+            )
+            | ((_df["hb2_date"] == datetime.date(2020, 3, 1)) & (_df["hb2"] == 8))
+        ]
         patids_overt = list(_df["PATID"].values)
         return patids_overt
+
 
 class ISTHCriticalOrganBleedTestGenerator(ISTHTestGeneratorWithHb):
     def define_isth_phenotype(self, entry):
         return CriticalOrganBleedPhenotype(
-            name = "isth_with_hb_critical_organ_bleed",
+            name="isth_with_hb_critical_organ_bleed",
             return_date="first",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after", anchor_phenotype=entry
@@ -191,7 +187,7 @@ class ISTHCriticalOrganBleedTestGenerator(ISTHTestGeneratorWithHb):
 class ISTHSymptommaticBleedTestGenerator(ISTHTestGeneratorWithHb):
     def define_isth_phenotype(self, entry):
         return SymptomaticBleedPhenotype(
-            name = "isth_with_hb_symptommatic_bleed",
+            name="isth_with_hb_symptommatic_bleed",
             return_date="first",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after", anchor_phenotype=entry
@@ -207,7 +203,7 @@ class ISTHSymptommaticBleedTestGenerator(ISTHTestGeneratorWithHb):
 class ISTHFatalBleedTestGenerator(ISTHTestGeneratorWithHb):
     def define_isth_phenotype(self, entry):
         return FatalBleedPhenotype(
-            name = "isth_with_hb_fatal_bleed",
+            name="isth_with_hb_fatal_bleed",
             return_date="first",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after", anchor_phenotype=entry
