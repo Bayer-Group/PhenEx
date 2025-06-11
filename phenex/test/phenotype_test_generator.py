@@ -91,9 +91,10 @@ class PhenotypeTestGenerator:
                 table_type = PhenexTable
                 if input_info["name"].lower() in [
                     "condition_occurrence",
-                    "measurement",
                 ]:
                     table_type = CodeTable
+                if input_info["name"].lower() in ["measurement"]:
+                    table_type = MeasurementTable
                 elif input_info["name"].lower() in ["person"]:
                     table_type = PhenexPersonTable
 
