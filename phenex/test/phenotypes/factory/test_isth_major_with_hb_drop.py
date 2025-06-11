@@ -166,7 +166,7 @@ class ISTHTestGeneratorWithHb(ISTHTestGenerator):
         _df = _df[_df["encounter_type"] == "inpatient"]
         _df = _df[_df["diagnosis_status"] == "DIAGNOSIS_OF"]
         _df = _df[_df["diagnosis_position"] == 1]
-        _df = _df[ (_df["transfusion"] == "t1")| ((_df["hb2_date"] == datetime.date(2019, 11, 1)) &  (_df["hb2"]==8)) ]
+        _df = _df[ (_df["transfusion"] == "t1")| ((_df["hb2_date"] == datetime.date(2020, 3, 1)) &  (_df["hb2"]==8)) ]
 
         _df = _df[_df["transfusion_date"] == datetime.date(2020, 3, 2)]
         patids_overt = list(_df["PATID"].values)
