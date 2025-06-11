@@ -215,29 +215,16 @@ class ISTHFatalBleedTestGenerator(ISTHTestGeneratorWithHb):
         patids_death = self.get_correct_fatal_bleed_patients()
         return patids_death
 
-
-def test_critical_organ_with_hb():
-    g = ISTHCriticalOrganBleedTestGenerator()
-    g.run_tests()
-
-
 def test_symptomatic_with_hb():
     g = ISTHSymptommaticBleedTestGenerator()
     g.run_tests()
 
 
-def test_fatal_with_hb():
-    g = ISTHFatalBleedTestGenerator()
-    g.run_tests()
-
-
 def test_isth_major_with_hb():
-    g = ISTHTestGenerator()
+    g = ISTHTestGeneratorWithHb()
     g.run_tests()
 
 
 if __name__ == "__main__":
-    # test_critical_organ_with_hb()
     test_symptomatic_with_hb()
-    # test_fatal_with_hb()
-    # test_isth_major_with_hb()
+    test_isth_major_with_hb()
