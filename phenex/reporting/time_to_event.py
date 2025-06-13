@@ -49,9 +49,12 @@ class TimeToEvent(Reporter):
             INDEX_DATE=self.cohort.index_table.EVENT_DATE
         ).select(["PERSON_ID", "INDEX_DATE"])
         table = self._append_date_events(table)
+        print(table)
         table = self._append_days_to_event(table)
+        print(table)
         table = self._append_date_and_days_to_first_event(table)
         self.table = table
+        print(table)
         logger.info("time to event finished execution")
         self.plot_kaplan_meier()
 
@@ -154,7 +157,7 @@ class TimeToEvent(Reporter):
         # subset for current codelist
         fig, axes = plt.subplots(1, len(self.cohort.outcomes), sharey=True)
 
-        for i, phenotype in enumerate(cohort.outcomes):
+        for i, phenotype in enumerate(self.cohort.outcomes):
             indicator = f"INDICATOR_{phenotype.name.upper()}"
             durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
             _df = self.table.select([indicator, durations]).to_pandas()

@@ -16,7 +16,7 @@ class Table1(Reporter):
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
-        if len(cohort.characteristics)==0:
+        if len(cohort.characteristics) == 0:
             logger.info("No characteristics. table1 is empty")
             return pd.DataFrame()
 
