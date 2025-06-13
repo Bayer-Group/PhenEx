@@ -1,3 +1,4 @@
+from typing import Optional, List
 from lifelines import KaplanMeierFitter
 import matplotlib.pyplot as plt
 import ibis
@@ -25,12 +26,22 @@ class TimeToEvent(Reporter):
         end_of_study_period: A datetime defining the end of study period.
     """
 
-    def __init__(self, right_censor_phenotypes=None, end_of_study_period=None):
+    def __init__(
+        self,
+        right_censor_phenotypes: Optional[List["Phenotype"]] = None,
+        end_of_study_period: Optional["datetime"] = None,
+    ):
         self.right_censor_phenotypes = right_censor_phenotypes
         self.end_of_study_period = end_of_study_period
         self._date_column_names = None
 
-    def execute(self, cohort):
+    def execute(self, cohort: "Cohort"):
+        """
+        Execute the time to event analysis for a provided cohort. This will generate a table with all necessary cohort outcome event dates and right censoring event dates. Following execution, a Kaplan Meier curve will be generated.
+
+        Parameters:
+            cohort: The cohort for which the time to event analysis should be performed.
+        """
         self.cohort = cohort
         self._execute_right_censoring_phenotypes(self.cohort)
 
@@ -101,7 +112,7 @@ class TimeToEvent(Reporter):
 
     def _append_date_and_days_to_first_event(self, table):
         """
-        For each outcome phenotype, appends a new colum
+        For each outcome phenotype, determines which event occurred first, whether the outcome, a right censoring event, or the end of study period. Adds an indicator column whether the first event is the outcome.
         """
         for phenotype in self.cohort.outcomes:
             # Subset the columns from which the minimum date should be determined; this is the outcome of interest, all right censoring events, and end of study period.
