@@ -52,7 +52,7 @@ class TimeToEvent(Reporter):
         table = self._append_days_to_event(table)
         table = self._append_date_and_days_to_first_event(table)
         self.table = table
-        logger.log("time to event finished execution")
+        logger.info("time to event finished execution")
         self.plot_kaplan_meier()
 
     def _execute_right_censoring_phenotypes(self, cohort):

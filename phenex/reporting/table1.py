@@ -16,6 +16,10 @@ class Table1(Reporter):
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
+        if len(cohort.characteristics)==0:
+            logger.info("No characteristics. table1 is empty")
+            return pd.DataFrame()
+
         self.cohort = cohort
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
