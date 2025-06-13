@@ -47,6 +47,7 @@ nav:
           - Table1: api/reporting/table1.md
           - Waterfall: api/reporting/waterfall.md
           - InExCounts: api/reporting/counts.md
+          - TimeToEvent: api/reporting/time_to_event.md
       - Util:
           - Serialization: api/util/serialization.md
   - License: LICENSE.md

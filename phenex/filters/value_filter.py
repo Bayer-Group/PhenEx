@@ -49,7 +49,6 @@ class ValueFilter(Filter):
         super(ValueFilter, self).__init__()
 
     def _filter(self, table: PhenexTable) -> PhenexTable:
-
         conditions = []
         value_column = getattr(table, self.column_name)
         if self.min_value is not None:

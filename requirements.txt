@@ -10,3 +10,5 @@ mkdocs-jupyter
 setuptools
 openpyxl
 deepdiff
+lifelines==0.30.0
+matplotlib==3.10.1
