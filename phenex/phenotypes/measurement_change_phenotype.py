@@ -69,7 +69,6 @@ class MeasurementChangePhenotype(Phenotype):
         self.return_date = return_date
         self.return_value = return_value
         self.children = [phenotype]
-        self.table = None
         if self.direction not in ["increase", "decrease"]:
             raise ValueError(
                 f"Invalid choice for direction: {direction}. Must be 'increase' or 'decrease'."
@@ -80,8 +79,6 @@ class MeasurementChangePhenotype(Phenotype):
             )
 
     def _execute(self, tables) -> PhenotypeTable:
-        if self.phenotype.table is None:
-            self.phenotype.execute(tables)
         # Execute the child phenotype to get the initial filtered table
         phenotype_table_1 = self.phenotype.table
         phenotype_table_2 = self.phenotype.table.view()
