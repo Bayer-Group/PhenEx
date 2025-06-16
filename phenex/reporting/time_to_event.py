@@ -13,6 +13,16 @@ class TimeToEvent(Reporter):
     """
     Perform a time to event analysis.
 
+    The time_to_event table is first generated, after which, by default, a Kaplan Meier plot is generated. The time_to_event table contains one row per patient and then multiple columns containing 
+    
+    ### Dates
+    1. the index date for each patient
+    2. the dates of all outcomes or NULL if they did not occur
+    3. the dates of all right censoring events or NULL if they did not occur
+    4. the date of the end of the study, if provided
+    5. the days from index to the dates provided above
+    6. the 
+
     | Column | Description |
     | --- | --- |
     | `date` columns | The EVENT_DATE of every 1. cohort outcome phenotype and 2. the right censoring phenotypes, if provided. The column name for the respective EVENT_DATE is the name of the phenotype. 3. Additionally, the date of the end of study period is present, if provided. |
