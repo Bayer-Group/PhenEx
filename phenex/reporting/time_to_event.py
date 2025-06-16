@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import ibis
 
 from phenex.reporting import Reporter
+from phenex.filters import ValueFilter
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -96,7 +97,7 @@ class TimeToEvent(Reporter):
         For example, if three phenotypes are provided, named pt1, pt2, pt3, three new columns pt1, pt2, pt3 are added each populated with the EVENT_DATE of the respective phenotype.
         """
         for _phenotype in phenotypes:
-            logger.info("appending dates for", _phenotype.name)
+            logger.info(f"appending dates for { _phenotype.name}")
             join_table = _phenotype.table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
             # rename event_date to the right_censor_phenotype's name
             join_table = join_table.mutate(
@@ -115,7 +116,7 @@ class TimeToEvent(Reporter):
         Calculates the days to each EVENT_DATE column found in _date_column_names. New columm names are "DAYS_TO_{date column name}".
         """
         for column_name in self._date_column_names:
-            logger.info("appending time to event for", column_name)
+            logger.info(f"appending time to event for {column_name}")
             DAYS_TO_EVENT = table[column_name].delta(table.INDEX_DATE, "day")
             table = table.mutate(**{f"DAYS_TO_{column_name}": DAYS_TO_EVENT})
         return table
@@ -157,7 +158,7 @@ class TimeToEvent(Reporter):
             )
         return table
 
-    def plot_kaplan_meier(self, max_days: Optional["ValueFilter"] = None):
+    def plot_kaplan_meier(self, max_days: Optional["Value"] = None):
         """
         For each outcome, plot a kaplan meier curve.
         """
@@ -169,8 +170,8 @@ class TimeToEvent(Reporter):
             durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
             _sdf = self.table.select([indicator, durations])
             if max_days is not None:
-                max_days.column_name = durations
-                _sdf = max_days._filter(_sdf)
+                value_filter = ValueFilter(max_value = max_days, column_name=durations)
+                _sdf = value_filter._filter(_sdf)
 
             _df = _sdf.to_pandas()
             kmf = KaplanMeierFitter(label=phenotype.name)
