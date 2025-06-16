@@ -13,15 +13,15 @@ class TimeToEvent(Reporter):
     """
     Perform a time to event analysis.
 
-    The time_to_event table is first generated, after which, by default, a Kaplan Meier plot is generated. The time_to_event table contains one row per patient and then multiple columns containing 
-    
+    The time_to_event table is first generated, after which, by default, a Kaplan Meier plot is generated. The time_to_event table contains one row per patient and then multiple columns containing
+
     ### Dates
     1. the index date for each patient
     2. the dates of all outcomes or NULL if they did not occur
     3. the dates of all right censoring events or NULL if they did not occur
     4. the date of the end of the study, if provided
     5. the days from index to the dates provided above
-    6. the 
+    6. the
 
     | Column | Description |
     | --- | --- |
@@ -160,7 +160,7 @@ class TimeToEvent(Reporter):
             )
         return table
 
-    def plot_kaplan_meier(self):
+    def plot_kaplan_meier(self, max_days: Union[ValueFilter, None] = None):
         """
         For each outcome, plot a kaplan meier curve.
         """
@@ -170,7 +170,12 @@ class TimeToEvent(Reporter):
         for i, phenotype in enumerate(self.cohort.outcomes):
             indicator = f"INDICATOR_{phenotype.name.upper()}"
             durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-            _df = self.table.select([indicator, durations]).to_pandas()
+            _sdf = self.table.select([indicator, durations])
+            if max_days is not None:
+                max_days.column_name = durations
+                _sdf = max_days._filter(_sdf)
+
+            _df = _sdf.to_pandas()
             kmf = KaplanMeierFitter(label=phenotype.name)
             kmf.fit(durations=_df[durations], event_observed=_df[indicator])
             kmf.plot(ax=axes[i])
