@@ -57,6 +57,7 @@ class MeasurementChangePhenotype(Phenotype):
         return_value: Optional[ValueAggregator] = None,
         **kwargs,
     ):
+        super(MeasurementChangePhenotype, self).__init__(**kwargs)
         self.name = name
         self.phenotype = phenotype
         self.min_change = min_change
@@ -77,7 +78,6 @@ class MeasurementChangePhenotype(Phenotype):
             raise ValueError(
                 f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
             )
-        super(MeasurementChangePhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         if self.phenotype.table is None:
