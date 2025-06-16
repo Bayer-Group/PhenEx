@@ -96,7 +96,7 @@ class ISTHTestGenerator(CohortTestGenerator):
             name=isth_phenotype.name, entry_criterion=entry, inclusions=[isth_phenotype]
         )
 
-    def generate_dummy_input_data(self):
+    def generate_dummy_input_values_dict(self):
         values = [
             {
                 "name": "entry",
@@ -160,7 +160,10 @@ class ISTHTestGenerator(CohortTestGenerator):
                 "values": ["DIAGNOSIS_OF", "HISTORY_OF"],
             },
         ]
+        return values
 
+    def generate_dummy_input_data(self):
+        values = self.generate_dummy_input_values_dict()
         return generate_dummy_cohort_data(values)
 
     def get_correct_critical_organ_bleed_patients(self):
