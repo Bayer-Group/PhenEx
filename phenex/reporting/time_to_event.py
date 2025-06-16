@@ -59,12 +59,9 @@ class TimeToEvent(Reporter):
             INDEX_DATE=self.cohort.index_table.EVENT_DATE
         ).select(["PERSON_ID", "INDEX_DATE"])
         table = self._append_date_events(table)
-        print(table)
         table = self._append_days_to_event(table)
-        print(table)
         table = self._append_date_and_days_to_first_event(table)
         self.table = table
-        print(table)
         logger.info("time to event finished execution")
         self.plot_kaplan_meier()
 
@@ -99,7 +96,7 @@ class TimeToEvent(Reporter):
         For example, if three phenotypes are provided, named pt1, pt2, pt3, three new columns pt1, pt2, pt3 are added each populated with the EVENT_DATE of the respective phenotype.
         """
         for _phenotype in phenotypes:
-            print("appending dates for", _phenotype.name)
+            logger.info("appending dates for", _phenotype.name)
             join_table = _phenotype.table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
             # rename event_date to the right_censor_phenotype's name
             join_table = join_table.mutate(
@@ -118,7 +115,7 @@ class TimeToEvent(Reporter):
         Calculates the days to each EVENT_DATE column found in _date_column_names. New columm names are "DAYS_TO_{date column name}".
         """
         for column_name in self._date_column_names:
-            print("appending time to event for", column_name)
+            logger.info("appending time to event for", column_name)
             DAYS_TO_EVENT = table[column_name].delta(table.INDEX_DATE, "day")
             table = table.mutate(**{f"DAYS_TO_{column_name}": DAYS_TO_EVENT})
         return table
@@ -160,7 +157,7 @@ class TimeToEvent(Reporter):
             )
         return table
 
-    def plot_kaplan_meier(self, max_days: Union[ValueFilter, None] = None):
+    def plot_kaplan_meier(self, max_days: Optional["ValueFilter"] = None):
         """
         For each outcome, plot a kaplan meier curve.
         """
