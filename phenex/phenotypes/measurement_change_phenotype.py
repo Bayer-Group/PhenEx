@@ -2,7 +2,6 @@ from typing import Optional
 from phenex.phenotypes import MeasurementPhenotype, Phenotype
 from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.aggregators.aggregator import First, Last, ValueAggregator, DailyMedian
 
@@ -53,12 +52,12 @@ class MeasurementChangePhenotype(Phenotype):
         direction="increase",
         min_days_between: Value = GreaterThanOrEqualTo(0),
         max_days_between: Value = None,
-        relative_time_range: RelativeTimeRangeFilter = None,
         component_date_select="second",
         return_date="first",
-        return_value: Optional[ValueAggregator] = DailyMedian(),
+        return_value: Optional[ValueAggregator] = None,
         **kwargs,
     ):
+        super(MeasurementChangePhenotype, self).__init__(**kwargs)
         self.name = name
         self.phenotype = phenotype
         self.min_change = min_change
@@ -68,7 +67,6 @@ class MeasurementChangePhenotype(Phenotype):
         self.max_days_between = max_days_between
         self.component_date_select = component_date_select
         self.return_date = return_date
-        self.relative_time_range = relative_time_range
         self.return_value = return_value
         self.children = [phenotype]
         if self.direction not in ["increase", "decrease"]:
@@ -79,13 +77,11 @@ class MeasurementChangePhenotype(Phenotype):
             raise ValueError(
                 f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
             )
-        super(Phenotype, self).__init__(**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table
         phenotype_table_1 = self.phenotype.table
         phenotype_table_2 = self.phenotype.table.view()
-
         # Create a self-join to compare each measurement with every other measurement
         joined_table = phenotype_table_1.join(
             phenotype_table_2,
@@ -106,18 +102,29 @@ class MeasurementChangePhenotype(Phenotype):
         )
 
         # Filter to keep only those with at least min_change and within max_days_apart
-        min_change = self.min_change
-        max_change = self.max_change
-        if self.direction == "decrease" and min_change:
-            min_change = Value(operator=min_change.operator, value=-min_change.value)
-        if self.direction == "decrease" and max_change:
-            max_change = Value(operator=max_change.operator, value=-max_change.value)
+        if self.direction == "decrease":
+            if self.min_change:
+                max_change = Value(
+                    operator=self.min_change.operator.replace(">", "<"),
+                    value=-self.min_change.value,
+                )
+            else:
+                max_change = None
+            if self.max_change:
+                min_change = Value(
+                    operator=self.max_change.operator.replace("<", ">"),
+                    value=-self.max_change.value,
+                )
+            else:
+                min_change = None
+        else:
+            min_change = self.min_change
+            max_change = self.max_change
 
         value_filter = ValueFilter(
             min_value=min_change, max_value=max_change, column_name="VALUE_CHANGE"
         )
         filtered_table = value_filter.filter(joined_table)
-
         time_filter = ValueFilter(
             min_value=self.min_days_between,
             max_value=self.max_days_between,
@@ -140,14 +147,11 @@ class MeasurementChangePhenotype(Phenotype):
             PERSON_ID="PERSON_ID_1", VALUE="VALUE_CHANGE", BOOLEAN=True
         )
 
-        if self.relative_time_range is not None:
-            filtered_table = self.relative_time_range.filter(filtered_table)
-
         # Handle the return_date attribute for each PERSON_ID using window functions
         if self.return_date == "first":
-            filtered_table = First(reduce=True).aggregate(filtered_table)
+            filtered_table = First(reduce=False).aggregate(filtered_table)
         elif self.return_date == "last":
-            filtered_table = Last(reduce=True).aggregate(filtered_table)
+            filtered_table = Last(reduce=False).aggregate(filtered_table)
 
         if self.return_value is not None:
             filtered_table = self.return_value.aggregate(filtered_table)
