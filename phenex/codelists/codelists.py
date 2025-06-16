@@ -176,6 +176,7 @@ class Codelist:
         name: Optional[str] = None,
         use_code_type: bool = True,
         remove_punctuation: bool = False,
+        rename_code_type: dict = None,
     ) -> "Codelist":
         """
         Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
@@ -184,12 +185,20 @@ class Codelist:
             name: Name for newly created code list if different from the old one.
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
+            rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
 
         Returns:
             Codelist instance with the updated resolution options.
         """
+        _codelist = self.codelist.copy()
+        if rename_code_type is not None and isinstance(rename_code_type, dict):
+            for current, renamed in rename_code_type.items():
+                if _codelist.get(current) is not None:
+                    _codelist[renamed] = _codelist[current]
+                    del _codelist[current]
+
         return Codelist(
-            self.codelist,
+            _codelist,
             name=name or self.name,
             use_code_type=use_code_type,
             remove_punctuation=remove_punctuation,
