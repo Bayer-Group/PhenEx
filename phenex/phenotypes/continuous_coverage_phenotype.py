@@ -75,7 +75,6 @@ class ContinuousCoveragePhenotype(Phenotype):
             self.children.append(self.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
-
         table = tables[self.domain]
         table, reference_column = attach_anchor_and_get_reference_date(
             table, self.anchor_phenotype
