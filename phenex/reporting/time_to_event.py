@@ -173,8 +173,8 @@ class TimeToEvent(Reporter):
 
     def plot_multiple_kaplan_meier(
         self,
-        xlim: Union[List[int, int]] = None,
-        ylim: Union[List[int, int]] = None,
+        xlim: Optional[List[int]] = None,
+        ylim: Optional[List[int]] = None,
         n_cols: int = 3,
         outcome_indices: Optional[List[int]] = None,
         path_dir: Optional[str] = None,
@@ -213,8 +213,8 @@ class TimeToEvent(Reporter):
     def plot_single_kaplan_meier(
         self,
         outcome_index: int = 0,
-        xlim: Union[List[int, int]] = None,
-        ylim: Union[List[int, int]] = None,
+        xlim: Optional[List[int]] = None,
+        ylim: Optional[List[int]] = None,
         path_dir: Optional[str] = None,
     ):
         """
