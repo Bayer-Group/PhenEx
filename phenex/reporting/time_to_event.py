@@ -137,8 +137,15 @@ class TimeToEvent(Reporter):
             if self.end_of_study_period is not None:
                 cols.append("END_OF_STUDY_PERIOD")
 
-            # Creating a new column with the minimum date from the specified columns
-            min_date_column = ibis.coalesce(*(table[col] for col in cols))
+            # Using least and handling the case where all are null
+            min_date_column = ibis.ifelse(
+                ibis.least(*(table[col] for col in cols)).isnull(),
+                ibis.literal(self.end_of_study_period),  # Default date if all columns are null
+                ibis.least(*(table[col] for col in cols))
+            )
+            
+            # Adding the new column to the table
+            table = table.mutate(min_date=min_date_column)
 
             # Adding the new column to the table
             column_name_date_first_event = f"DATE_FIRST_EVENT_{phenotype.name.upper()}"
