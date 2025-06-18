@@ -3,9 +3,8 @@ import pandas as pd
 
 from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.codelists import LocalCSVCodelistFactory, Codelist
-from phenex.filters.date_filter import DateFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.codelists import Codelist
+from phenex.filters import ValueFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -80,7 +79,9 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                min_days=test_info.get("coverage_period_min"),
+                value_filter=ValueFilter(
+                    min_value=test_info.get("coverage_period_min")
+                ),
             )
 
         return test_infos
@@ -122,7 +123,9 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                min_days=test_info.get("coverage_period_min"),
+                value_filter=ValueFilter(
+                    min_value=test_info.get("coverage_period_min")
+                ),
                 when="after",
             )
 
@@ -147,7 +150,6 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
         return tables
 
     def define_phenotype_tests(self):
-
         entry = CodelistPhenotype(
             name="entry",
             codelist=Codelist(name="c1", codelist={"ICD10": ["c1"]}),
@@ -156,7 +158,7 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
 
         cc1 = ContinuousCoveragePhenotype(
             name="cc_prior_entry",
-            min_days=GreaterThanOrEqualTo(90),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(90)),
             when="before",
             anchor_phenotype=entry,
         )
