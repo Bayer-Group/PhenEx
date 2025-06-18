@@ -19,6 +19,7 @@ def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTa
         subset_tables[key] = type(table)(
             table.inner_join(index_table, "PERSON_ID").select(columns)
         )
+    subset_tables["__INDEX"] = PhenotypeTable(index_table)
     return subset_tables
 
 
