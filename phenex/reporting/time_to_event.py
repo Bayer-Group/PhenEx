@@ -171,7 +171,8 @@ class TimeToEvent(Reporter):
 
     def plot_multiple_kaplan_meier(
         self,
-        max_days: Union[ValueFilter, None] = None,
+        xlim: Union[List[int,int]] = None,
+        ylim: Union[List[int,int]] = None,
         n_cols: int = 3,
         outcome_indices: Optional[List[int]] = None,
         path_dir: Optional[str] = None,
@@ -189,12 +190,14 @@ class TimeToEvent(Reporter):
         fig, axes = plt.subplots(n_rows, n_cols, sharey=True, sharex=True)
 
         for i, phenotype in enumerate(phenotypes):
-            kmf = self.fit_kaplan_meier_for_phenotype(phenotype, max_days)
+            kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
             if n_rows > 1 and n_cols > 1:
                 ax = axes[int(i / n_cols), i % n_cols]
             else:
                 ax = axes[i]
             ax.set_title(phenotype.name)
+            if xlim is not None: ax.set_xlim(xlim)
+            if ylim is not None: ax.set_ylim(ylim)
             kmf.plot(ax=ax)
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
@@ -205,8 +208,9 @@ class TimeToEvent(Reporter):
 
     def plot_single_kaplan_meier(
         self,
-        max_days: Union[ValueFilter, None] = None,
         outcome_index: int = 0,
+        xlim: Union[List[int,int]] = None,
+        ylim: Union[List[int,int]] = None,
         path_dir: Optional[str] = None,
     ):
         """
@@ -216,13 +220,16 @@ class TimeToEvent(Reporter):
         phenotype = self.cohort.outcomes[outcome_index]
         fig, ax = plt.subplots(1, 1)
 
-        kmf = self.fit_kaplan_meier_for_phenotype(phenotype, max_days)
+        kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
 
         ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
         kmf.plot(ax=ax)
         add_at_risk_counts(kmf, ax=ax)
         plt.tight_layout()
         ax.grid(color="gray", linestyle="-", linewidth=0.1)
+        if xlim is not None: ax.set_xlim(xlim)
+        if ylim is not None: ax.set_ylim(ylim)
+
         if path_dir is not None:
             path = os.path.join(
                 path_dir, f"KaplanMeier_{self.cohort.name}_{phenotype.name}.svg"
@@ -230,13 +237,10 @@ class TimeToEvent(Reporter):
             plt.savefig(path, dpi=150)
         plt.show()
 
-    def fit_kaplan_meier_for_phenotype(self, phenotype, max_days):
+    def fit_kaplan_meier_for_phenotype(self, phenotype):
         indicator = f"INDICATOR_{phenotype.name.upper()}"
         durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
         _sdf = self.table.select([indicator, durations])
-        if max_days is not None:
-            max_days.column_name = durations
-            _sdf = max_days._filter(_sdf)
         _df = _sdf.to_pandas()
         kmf = KaplanMeierFitter(label=phenotype.name)
         kmf.fit(durations=_df[durations], event_observed=_df[indicator])
