@@ -338,7 +338,6 @@ def HbDropPhenotype(
     hemoglobin_codelist: Optional["Codelist"] = None,
     measurement_code_domain: Optional[str] = None,
 ) -> CodelistPhenotype:
-
     if components is not None:
         hemoglobin_codelist = components.hemoglobin_codelist
         measurement_code_domain = components.measurement_code_domain

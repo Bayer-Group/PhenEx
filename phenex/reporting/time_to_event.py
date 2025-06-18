@@ -140,10 +140,12 @@ class TimeToEvent(Reporter):
             # Using least and handling the case where all are null
             min_date_column = ibis.ifelse(
                 ibis.least(*(table[col] for col in cols)).isnull(),
-                ibis.literal(self.end_of_study_period),  # Default date if all columns are null
-                ibis.least(*(table[col] for col in cols))
+                ibis.literal(
+                    self.end_of_study_period
+                ),  # Default date if all columns are null
+                ibis.least(*(table[col] for col in cols)),
             )
-            
+
             # Adding the new column to the table
             table = table.mutate(min_date=min_date_column)
 
@@ -171,8 +173,8 @@ class TimeToEvent(Reporter):
 
     def plot_multiple_kaplan_meier(
         self,
-        xlim: Union[List[int,int]] = None,
-        ylim: Union[List[int,int]] = None,
+        xlim: Union[List[int, int]] = None,
+        ylim: Union[List[int, int]] = None,
         n_cols: int = 3,
         outcome_indices: Optional[List[int]] = None,
         path_dir: Optional[str] = None,
@@ -196,8 +198,10 @@ class TimeToEvent(Reporter):
             else:
                 ax = axes[i]
             ax.set_title(phenotype.name)
-            if xlim is not None: ax.set_xlim(xlim)
-            if ylim is not None: ax.set_ylim(ylim)
+            if xlim is not None:
+                ax.set_xlim(xlim)
+            if ylim is not None:
+                ax.set_ylim(ylim)
             kmf.plot(ax=ax)
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
@@ -209,8 +213,8 @@ class TimeToEvent(Reporter):
     def plot_single_kaplan_meier(
         self,
         outcome_index: int = 0,
-        xlim: Union[List[int,int]] = None,
-        ylim: Union[List[int,int]] = None,
+        xlim: Union[List[int, int]] = None,
+        ylim: Union[List[int, int]] = None,
         path_dir: Optional[str] = None,
     ):
         """
@@ -227,8 +231,10 @@ class TimeToEvent(Reporter):
         add_at_risk_counts(kmf, ax=ax)
         plt.tight_layout()
         ax.grid(color="gray", linestyle="-", linewidth=0.1)
-        if xlim is not None: ax.set_xlim(xlim)
-        if ylim is not None: ax.set_ylim(ylim)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
 
         if path_dir is not None:
             path = os.path.join(
