@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Load a pre-trained sentence embedding model
-embeddings_model = TextEmbedding('sentence-transformers/all-MiniLM-L6-v2')
+embeddings_model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def get_phenex_context_documents():
@@ -28,7 +28,17 @@ def get_phenex_context_documents():
     python_files = list(
         set(glob.glob(os.path.join(base_dir, "**/**/*.py"), recursive=True))
     )
-    exclude_paths = ['/aggregators', '/filters', '/test/', '/reporting/', 'ibis_connect.py', 'sim.py', 'tables.py', 'logging.py', '__init__.py']
+    exclude_paths = [
+        "/aggregators",
+        "/filters",
+        "/test/",
+        "/reporting/",
+        "ibis_connect.py",
+        "sim.py",
+        "tables.py",
+        "logging.py",
+        "__init__.py",
+    ]
     python_files = [f for f in python_files if not any([x in f for x in exclude_paths])]
     logger.info(f"LLM context files found: {len(python_files)}")
 
@@ -46,17 +56,16 @@ def get_phenex_context_documents():
                             docstring = ast.get_docstring(node)
                             if not docstring:
                                 raise ValueError(f"No docstring found for file {f}")
-                            document = f''''
+                            document = f"""'
 FILE: {file_path}
 CLASS: {class_name}
 DOCSTRING: 
 {docstring}
-'''
+"""
                             documents.append(document)
                             logger.info(document)
                 except Exception as e:
                     logger.error(f"Failed to parse {file_path}: {e}")
-
 
     for example in EXAMPLES:
         document = f"\n\nEXAMPLE COHORT DEFINITIONS IN JSON FORMAT:\n"
@@ -128,6 +137,7 @@ class QueryRequest(BaseModel):
     query: str
     top_k: int = 10
 
+
 @router.post("/query")
 async def query_rag(request: QueryRequest):
     """
@@ -145,10 +155,10 @@ async def query_rag(request: QueryRequest):
             index=phenex_rag_index,
             document_map=phenex_document_map,
             model=embeddings_model,
-            top_k=request.top_k
+            top_k=request.top_k,
         )
         return {"results": results}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error querying FAISS index: {str(e)}")
-
-
+        raise HTTPException(
+            status_code=500, detail=f"Error querying FAISS index: {str(e)}"
+        )

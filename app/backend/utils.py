@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+
 class CohortUtils:
     @staticmethod
     def convert_phenotypes_to_structure(cohort: Dict) -> Dict:
@@ -87,7 +88,9 @@ class CohortUtils:
         new_ids = [p.get("id") for p in new_phenotypes]
         old_phenotypes = cohort.get("phenotypes", [])
 
-        updated_phenotypes = new_phenotypes + [p for p in old_phenotypes if p.get("id") not in new_ids]
+        updated_phenotypes = new_phenotypes + [
+            p for p in old_phenotypes if p.get("id") not in new_ids
+        ]
 
         cohort["phenotypes"] = updated_phenotypes
         return cohort

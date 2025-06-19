@@ -1,5 +1,7 @@
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.phenotypes.multiple_occurrences_phenotype import MultipleOccurrencesPhenotype
+from phenex.phenotypes.multiple_occurrences_phenotype import (
+    MultipleOccurrencesPhenotype,
+)
 from phenex.phenotypes.cohort import Cohort
 from phenex.codelists.codelists import Codelist
 from phenex.util.serialization.to_dict import to_dict
@@ -12,10 +14,11 @@ from phenex.phenotypes.measurement_phenotype import MeasurementPhenotype
 from phenex.util.serialization.to_dict import to_dict
 from phenex.filters.value import Value
 
+
 def diabetes_cohort():
     """
     This function defines an example cohort for patients with diabetes using a specific codelist.
-    
+
     The cohort is defined based on an entry criterion that identifies patients with diabetes
     using ICD9 and ICD10 codes. Additionally, it includes inclusion criteria for patients
     aged 18 years or older and those with chronic kidney disease (CKD) using SNOMED codes.
@@ -27,8 +30,16 @@ def diabetes_cohort():
     # Define an explicit codelist for diabetes
     diabetes_codelist = Codelist(
         codelist={
-            "ICD9": ["250.00", "250.01", "250.02"],  # Diabetes mellitus without mention of complication
-            "ICD10": ["E10.9", "E11.9", "E13.9"],   # Type 1, Type 2, and other specified diabetes mellitus without complications
+            "ICD9": [
+                "250.00",
+                "250.01",
+                "250.02",
+            ],  # Diabetes mellitus without mention of complication
+            "ICD10": [
+                "E10.9",
+                "E11.9",
+                "E13.9",
+            ],  # Type 1, Type 2, and other specified diabetes mellitus without complications
         },
         name="diabetes_codelist",
     )
@@ -100,7 +111,6 @@ def diabetes_cohort():
     return to_dict(cohort)
 
 
-
 def atrial_fibrillation_cohort():
     """
     This function defines a cohort for patients with atrial fibrillation (AF) requiring
@@ -132,7 +142,7 @@ def atrial_fibrillation_cohort():
         description="Requires two instances of atrial fibrillation codes within 90 days of each other.",
         phenotype=af_phenotype,
         n_occurrences=2,
-        return_date="second"
+        return_date="second",
     )
 
     # Define the cohort
@@ -145,8 +155,4 @@ def atrial_fibrillation_cohort():
     return to_dict(cohort)
 
 
-
-EXAMPLES = [
-    diabetes_cohort(),
-    atrial_fibrillation_cohort()
-]
+EXAMPLES = [diabetes_cohort(), atrial_fibrillation_cohort()]
