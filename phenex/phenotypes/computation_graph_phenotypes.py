@@ -80,9 +80,13 @@ class ComputationGraphPhenotype(Phenotype):
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
                 column_name = f"{child.name}_BOOLEAN"
-                joined_table = joined_table.mutate(
-                    **{column_name: joined_table[column_name].cast(float)}
-                )
+                mutated_column = ibis.ifelse(
+                    joined_table[column_name].isnull(),
+                    0,
+                    joined_table[column_name].cast("int"),
+                ).cast("float")
+
+                joined_table = joined_table.mutate(**{column_name: mutated_column})
 
         if self.populate == "value":
             _expression = self.expression.get_value_expression(

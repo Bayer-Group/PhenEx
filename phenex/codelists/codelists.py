@@ -176,6 +176,7 @@ class Codelist:
         name: Optional[str] = None,
         use_code_type: bool = True,
         remove_punctuation: bool = False,
+        rename_code_type: dict = None,
     ) -> "Codelist":
         """
         Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
@@ -184,12 +185,20 @@ class Codelist:
             name: Name for newly created code list if different from the old one.
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
+            rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
 
         Returns:
             Codelist instance with the updated resolution options.
         """
+        _codelist = self.codelist.copy()
+        if rename_code_type is not None and isinstance(rename_code_type, dict):
+            for current, renamed in rename_code_type.items():
+                if _codelist.get(current) is not None:
+                    _codelist[renamed] = _codelist[current]
+                    del _codelist[current]
+
         return Codelist(
-            self.codelist,
+            _codelist,
             name=name or self.name,
             use_code_type=use_code_type,
             remove_punctuation=remove_punctuation,
@@ -323,7 +332,7 @@ class Codelist:
 
         code_dict = _df.groupby(code_type_column)[code_column].apply(list).to_dict()
 
-        if codelist_name is None:
+        if codelist_name is not None:
             name = codelist_name
         elif sheet_name is not None:
             name = sheet_name
@@ -417,15 +426,42 @@ class Codelist:
             )
         if self.remove_punctuation != other.remove_punctuation:
             raise ValueError(
-                "Cannot add codelists with different remove_punctuation settings."
+                "Cannot add codelists with non-matching remove_punctuation settings."
             )
         if self.use_code_type != other.use_code_type:
             raise ValueError(
-                "Cannot add codelists with different use_code_type settings."
+                "Cannot add codelists with non-matching use_code_type settings."
             )
 
         return Codelist(
             new_codelist,
+            name=f"({self.name}_union_{other.name})",
+            remove_punctuation=self.remove_punctuation,
+            use_code_type=self.use_code_type,
+        )
+
+    def __sub__(self, other):
+        codetypes = list(self.codelist.keys())
+        new_codelist = {}
+        for codetype in codetypes:
+            new_codelist[codetype] = [
+                x
+                for x in self.codelist.get(codetype, [])
+                if x not in other.codelist.get(codetype, [])
+            ]
+
+        if self.remove_punctuation != other.remove_punctuation:
+            raise ValueError(
+                "Cannot create difference of codelists with non-matching remove_punctuation settings."
+            )
+        if self.use_code_type != other.use_code_type:
+            raise ValueError(
+                "Cannot create difference of codelists with non-matching use_code_type settings."
+            )
+
+        return Codelist(
+            new_codelist,
+            name=f"{self.name}_excluding_{other.name}",
             remove_punctuation=self.remove_punctuation,
             use_code_type=self.use_code_type,
         )

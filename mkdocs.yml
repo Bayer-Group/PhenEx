@@ -26,6 +26,8 @@ nav:
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
+          - Factory:
+            - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
@@ -45,6 +47,7 @@ nav:
           - Table1: api/reporting/table1.md
           - Waterfall: api/reporting/waterfall.md
           - InExCounts: api/reporting/counts.md
+          - TimeToEvent: api/reporting/time_to_event.md
       - Util:
           - Serialization: api/util/serialization.md
   - License: LICENSE.md
