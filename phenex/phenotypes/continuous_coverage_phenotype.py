@@ -63,7 +63,6 @@ class ContinuousCoveragePhenotype(Phenotype):
         value_filter: Optional[ValueFilter] = None,
         when: Optional[str] = "before",
         anchor_phenotype: Optional[Phenotype] = None,
-        relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
