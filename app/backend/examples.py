@@ -2,9 +2,8 @@ from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.phenotypes.multiple_occurrences_phenotype import MultipleOccurrencesPhenotype
 from phenex.phenotypes.cohort import Cohort
 from phenex.codelists.codelists import Codelist
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.util.serialization.to_dict import to_dict
-from phenex.filters.value import LessThanOrEqualTo
+from phenex.filters.value_filter import ValueFilter, GreaterThanOrEqualTo
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists.codelists import Codelist
 from phenex.phenotypes.cohort import Cohort
@@ -47,7 +46,7 @@ def diabetes_cohort():
     age_inclusion = AgePhenotype(
         name="age_inclusion",
         description="Includes patients aged 18 years or older.",
-        min_age=Value(">=", 18),
+        value_filter=ValueFilter(GreaterThanOrEqualTo(18)),
     )
 
     # Define an explicit codelist for CKD using SNOMED codes
