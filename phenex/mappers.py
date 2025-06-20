@@ -75,14 +75,18 @@ class OMOPPersonTable(PhenexPersonTable):
         "OMOPConditionOccurenceTable": ["PERSON_ID"],
         "OMOPVisitOccurrenceTable": ["PERSON_ID"],
     }
-
-
-class OMOPVisitOccurrenceTable(PhenexTable):
+ 
+class OMOPVisitOccurrenceTable(PhenexObservationPeriodTable):
     NAME_TABLE = "VISIT_OCCURRENCE"
-    RELATIONSHIPS = {
+    JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
         "OMOPConditionOccurenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
         "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "START_DATE": "VISIT_START_DATE",
+        "END_DATE": "VISIT_END_DATE",
     }
 
 
@@ -240,8 +244,8 @@ class OMOPObservationPeriodTable(PhenexObservationPeriodTable):
     JOIN_KEYS = {"OMOPPersonTable": ["PERSON_ID"]}
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
-        "OBSERVATION_PERIOD_START_DATE": "OBSERVATION_PERIOD_START_DATE",
-        "OBSERVATION_PERIOD_END_DATE": "OBSERVATION_PERIOD_END_DATE",
+        "START_DATE": "OBSERVATION_PERIOD_START_DATE",
+        "END_DATE": "OBSERVATION_PERIOD_END_DATE",
     }
 
 
