@@ -12,7 +12,6 @@ logger = create_logger(__name__)
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
-    index_table = index_table.mutate(INDEX_DATE="EVENT_DATE")
     subset_tables = {}
     for key, table in tables.items():
         columns = ["INDEX_DATE"] + table.columns
@@ -54,6 +53,7 @@ class Cohort(Phenotype):
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
         characteristics: Optional[List[Phenotype]] = None,
+        derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
         **kwargs,
     ):
@@ -69,6 +69,7 @@ class Cohort(Phenotype):
         self.inclusions_table = None
         self.characteristics_table = None
         self.outcomes_table = None
+        self.derived_tables = derived_tables
         self.children = (
             [entry_criterion]
             + self.inclusions
@@ -113,9 +114,9 @@ class Cohort(Phenotype):
             )
 
         logger.debug("Entry criterion computed.")
-        self.subset_tables_entry = subset_and_add_index_date(
-            tables, self.entry_criterion.table
-        )
+        index_table = self.entry_criterion.table.mutate(INDEX_DATE="EVENT_DATE")
+
+        self.subset_tables_entry = subset_and_add_index_date(tables, index_table)
         if write_subset_tables:
             logger.debug("Writing subset entry tables ...")
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
@@ -132,7 +133,9 @@ class Cohort(Phenotype):
                         future.result()
                     )
 
-        index_table = self.entry_criterion.table
+        self.subset_tables_entry = self.derive_tables(
+            self.subset_tables_entry, index_table, con, overwrite=overwrite
+        )
 
         # Apply inclusions if any
         if self.inclusions:
@@ -322,7 +325,7 @@ class Cohort(Phenotype):
                 future.result()
         self.characteristics_table = hstack(
             self.characteristics,
-            join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
+            join_table=self.index_table.select(["PERSON_ID", "INDEX_DATE"]),
         )
         logger.debug("Characteristics table computed")
         return self.characteristics_table
@@ -344,7 +347,7 @@ class Cohort(Phenotype):
                 future.result()
         self.outcomes_table = hstack(
             self.outcomes,
-            join_table=self.index_table.select(["PERSON_ID", "EVENT_DATE"]),
+            join_table=self.index_table.select(["PERSON_ID", "INDEX_DATE"]),
         )
         logger.debug("Outcomes table computed")
         return self.outcomes_table
@@ -357,3 +360,28 @@ class Cohort(Phenotype):
             self._table1 = reporter.execute(self)
             logger.debug("Table1 report generated.")
         return self._table1
+
+    def derive_tables(self, tables, index_table, con, overwrite=False):
+        if self.derived_tables is None:
+            return tables
+        for derived_table in self.derived_tables:
+            logger.info(f"Deriving table {derived_table.dest_domain}")
+            # derive the table
+            table = derived_table.derive(
+                tables=tables,
+            )
+            # join on index table to get index date
+            columns = ["INDEX_DATE"] + table.columns
+            table = table.inner_join(index_table, "PERSON_ID").select(columns)
+
+            if con:
+                logger.info(
+                    f"Saving derived table {self.name}__subset_entry_{derived_table.dest_domain}"
+                )
+                table_name = f"{self.name}__subset_entry_{derived_table.dest_domain}"
+                tables[derived_table.dest_domain] = con.create_table(
+                    table, table_name, overwrite=overwrite, schema=table.schema()
+                )
+            else:
+                tables[derived_table.dest_domain] = table
+        return tables

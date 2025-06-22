@@ -75,7 +75,8 @@ class OMOPPersonTable(PhenexPersonTable):
         "OMOPConditionOccurenceTable": ["PERSON_ID"],
         "OMOPVisitOccurrenceTable": ["PERSON_ID"],
     }
- 
+
+
 class OMOPVisitOccurrenceTable(PhenexObservationPeriodTable):
     NAME_TABLE = "VISIT_OCCURRENCE"
     JOIN_KEYS = {

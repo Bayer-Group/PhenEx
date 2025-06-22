@@ -256,7 +256,7 @@ class SnowflakeConnector:
             schema=table.schema(),
         )
 
-    def create_table(self, table, name_table=None, overwrite=False):
+    def create_table(self, table, name_table=None, overwrite=False, schema=None):
         """
         Materialize a table in the destination Snowflake database.
 
@@ -283,7 +283,7 @@ class SnowflakeConnector:
             database=database,
             obj=table,
             overwrite=overwrite,
-            schema=table.schema(),
+            schema=table.schema(),  # if schema is None else schema,
         )
 
     def drop_table(self, name_table):
