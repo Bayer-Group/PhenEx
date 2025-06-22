@@ -11,9 +11,6 @@ class Table1(Reporter):
     """
     Table1 is a common term used in epidemiology to describe a table that shows an overview of the baseline characteristics of a cohort. It contains the counts and percentages of the cohort that have each characteristic, for both boolean and value characteristics. In addition, summary statistics are provided for value characteristics (mean, std, median, min, max).
 
-
-    ToDo:
-        1. implement categorical value reporting
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:

@@ -7,6 +7,7 @@ from phenex.test.util.check_equality import check_start_end_date_equality
 
 
 def create_input_data(con):
+    # create all possible edge cases of consecutive and overlapping periods
     df_input = pd.DataFrame.from_records(
         [
             ("P1", "V2", "2022-01-17", "2022-01-19"),

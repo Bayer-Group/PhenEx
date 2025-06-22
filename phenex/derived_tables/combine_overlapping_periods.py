@@ -10,6 +10,11 @@ logger = create_logger(__name__)
 
 
 class CombineOverlappingPeriods(DerivedTable):
+    """
+    CombineOverlappingPeriods takes overlapping and consecutive time periods the source table and combines them into a single time period with a single start and end date on a per patient level. For example, if a patient has two visits with the same start and end date, they will be combined into one visit. If a patient has two visits with overlapping dates, they will be combined into one visit with the earliest start date and the latest end date. If a patient has two visits with consecutive dates, they will be combined into one visit with the earliest start date and the latest end date.
+    This is useful for creating a single time period for a patient, e.g. admission discharge periods, vaccination periods, etc. It is also useful for creating a single time period for a patient when there are multiple visits with the same start and end date, or overlapping dates.
+    """
+
     def derive(
         self,
         tables: Dict[str, Table],
@@ -17,8 +22,10 @@ class CombineOverlappingPeriods(DerivedTable):
         # get the appropriate table
         table = tables[self.source_domain]
 
+        # subset to only the relevant columns
         df = table.select("PERSON_ID", "START_DATE", "END_DATE").to_pandas()
 
+        # perform time period merging
         df = df.sort_values(["PERSON_ID", "START_DATE", "END_DATE"])
         result = []
         for pid, group in df.groupby("PERSON_ID"):
@@ -32,5 +39,6 @@ class CombineOverlappingPeriods(DerivedTable):
             for start, end in merged:
                 result.append({"PERSON_ID": pid, "START_DATE": start, "END_DATE": end})
         df_result = pd.DataFrame(result)
+        # create a new table with the merged results
         table = ibis.memtable(df_result)
         return table
