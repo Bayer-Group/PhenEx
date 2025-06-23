@@ -66,6 +66,7 @@ class Table1(Reporter):
                 "AgePhenotype",
                 "CategoricalPhenotype",
                 "SexPhenotype",
+                "ContinuousCoveragePhenotype",
             ]
         ]
 
@@ -73,7 +74,8 @@ class Table1(Reporter):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ in ["MeasurementPhenotype", "AgePhenotype"]
+            if type(x).__name__
+            in ["MeasurementPhenotype", "AgePhenotype", "ContinuousCoveragePhenotype"]
         ]
 
     def _get_categorical_characteristics(self):

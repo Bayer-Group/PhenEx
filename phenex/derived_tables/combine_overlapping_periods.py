@@ -5,6 +5,7 @@ import pandas as pd
 
 from phenex.derived_tables.derived_table import DerivedTable
 from phenex.util import create_logger
+from phenex.tables import PhenexTable
 
 logger = create_logger(__name__)
 
@@ -41,4 +42,4 @@ class CombineOverlappingPeriods(DerivedTable):
         df_result = pd.DataFrame(result)
         # create a new table with the merged results
         table = ibis.memtable(df_result)
-        return table
+        return PhenexTable(table, name=self.dest_domain)

@@ -14,7 +14,7 @@ logger = create_logger(__name__)
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     subset_tables = {}
     for key, table in tables.items():
-        columns = ["INDEX_DATE"] + table.columns
+        columns = list(set(["INDEX_DATE"] + table.columns))
         subset_tables[key] = type(table)(
             table.inner_join(index_table, "PERSON_ID").select(columns)
         )
@@ -178,7 +178,9 @@ class Cohort(Phenotype):
                 index_table, f"{self.name}__index", overwrite=overwrite
             )
 
-        self.subset_tables_index = subset_and_add_index_date(tables, self.index_table)
+        self.subset_tables_index = subset_and_add_index_date(
+            self.subset_tables_entry, self.index_table.select("PERSON_ID")
+        )
         if write_subset_tables:
             logger.debug("Writing subset index tables ...")
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
@@ -194,6 +196,7 @@ class Cohort(Phenotype):
                     self.subset_tables_index[key] = type(self.subset_tables_index[key])(
                         future.result()
                     )
+            logger.debug("Finished writing subset index tables ...")
 
         if self.characteristics:
             logger.debug("Computing characteristics ...")
@@ -372,15 +375,17 @@ class Cohort(Phenotype):
             )
             # join on index table to get index date
             columns = ["INDEX_DATE"] + table.columns
-            table = table.inner_join(index_table, "PERSON_ID").select(columns)
+            table = type(table)(
+                table.inner_join(index_table, "PERSON_ID").select(columns)
+            )
 
             if con:
                 logger.info(
                     f"Saving derived table {self.name}__subset_entry_{derived_table.dest_domain}"
                 )
                 table_name = f"{self.name}__subset_entry_{derived_table.dest_domain}"
-                tables[derived_table.dest_domain] = con.create_table(
-                    table, table_name, overwrite=overwrite, schema=table.schema()
+                tables[derived_table.dest_domain] = type(table)(
+                    con.create_table(table, table_name, overwrite=overwrite)
                 )
             else:
                 tables[derived_table.dest_domain] = table
