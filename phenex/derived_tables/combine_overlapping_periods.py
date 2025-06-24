@@ -16,12 +16,22 @@ class CombineOverlappingPeriods(DerivedTable):
     This is useful for creating a single time period for a patient, e.g. admission discharge periods, vaccination periods, etc. It is also useful for creating a single time period for a patient when there are multiple visits with the same start and end date, or overlapping dates.
     """
 
+    def __init__(
+        self, categorical_filter: Optional["CategoricalFilter"] = None, **kwargs
+    ):
+        self.categorical_filter = categorical_filter
+        super(CombineOverlappingPeriods, self).__init__(**kwargs)
+
     def derive(
         self,
         tables: Dict[str, Table],
     ) -> "PhenexTable":
         # get the appropriate table
         table = tables[self.source_domain]
+
+        if self.categorical_filter is not None:
+            # apply the categorical filter to the table
+            table = self.categorical_filter.autojoin_filter(table, tables)
 
         # subset to only the relevant columns
         df = table.select("PERSON_ID", "START_DATE", "END_DATE").to_pandas()
