@@ -118,19 +118,16 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     await dataService.executeCohort();
   };
   const clickedOnHeader = () => {
-    console.log("CLICKED ON HEDAER", customizableDropdownButtonRef);
+    console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
     customizableDropdownButtonRef.current?.closeDropdown();
   };
 
   const renderPhenotypeSelection = () => {
     return (
       <div className={styles.phenotypeSelection}>
-        <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>New phenotype
-
-
-          <span className={styles.phenotypeSelectionHeaderButton}>
-            Close
-          </span>
+        <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>
+          New phenotype
+          <span className={styles.phenotypeSelectionHeaderButton}>Close</span>
         </div>
         <TypeSelectorEditor onValueChange={handlePhenotypeSelection} />
       </div>

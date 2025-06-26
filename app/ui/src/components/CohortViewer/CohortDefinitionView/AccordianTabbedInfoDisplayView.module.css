@@ -216,14 +216,12 @@ strong {
   font-family: 'SNPro-bold';
   top: 4px;
   right: -15px;
-
 }
 
 .phenotypeSelectionHeader:hover {
   transform: translateY(-1px);
 }
 
-.phenotypeSelectionHeader:hover .phenotypeSelectionHeaderButton  {
-  color:red !important;
+.phenotypeSelectionHeader:hover .phenotypeSelectionHeaderButton {
+  color: red !important;
 }
-

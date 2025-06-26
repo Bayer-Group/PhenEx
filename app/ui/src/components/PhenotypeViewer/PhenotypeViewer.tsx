@@ -112,9 +112,8 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   }
   return (
     <div className={styles.container}>
-      <div
-        className={`${styles.header}`}>        
-         <div className={styles.title}>
+      <div className={`${styles.header}`}>
+        <div className={styles.title}>
           <EditableTextField
             value={phenotypeName}
             placeholder="Name your cohort..."
@@ -146,21 +145,24 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
                 const numEntries = Object.keys(params.data.codelist.codelist).length;
                 const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
                 current_max_height = Math.max(current_max_height, codelist_phenotype_height);
-                return current_max_height
+                return current_max_height;
               }
 
               if (params.data?.parameter == 'categorical_filter') {
-                return current_max_height*2
+                return current_max_height * 2;
               }
-              
+
               // Calculate height of RELATIVE TIME RANGES
-              if (params.data?.parameter == 'relative_time_range' && params.data?.relative_time_range) {
+              if (
+                params.data?.parameter == 'relative_time_range' &&
+                params.data?.relative_time_range
+              ) {
                 const numEntries = params.data.relative_time_range.length;
                 const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of codelist entries
                 current_max_height = Math.max(current_max_height, time_range_phenotype_height);
-                return current_max_height
+                return current_max_height;
               }
-  
+
               if (params.data?.parameter == 'description') {
                 if (!params.data?.value) {
                   current_max_height = 30;
@@ -174,7 +176,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
                 const lines = Math.ceil(params.data?.value.length / charPerLine);
                 return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
               }
-  
+
               return current_max_height;
             }}
           />
@@ -182,10 +184,11 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
       </div>
       <div className={styles.bottomSection}>
         <div className={styles.componentsTitleDiv}>
-          <span className={styles.components_title}>Component phenotypes</span><br></br>
+          <span className={styles.components_title}>Component phenotypes</span>
+          <br></br>
           <span className={styles.components_phenotype_name}> of {phenotypeName}</span>
           <button className={styles.addButton} onClick={clickedOnAddButton}>
-          Add
+            Add
           </button>
         </div>
         <div className={`${styles.componentsContainer}`}>

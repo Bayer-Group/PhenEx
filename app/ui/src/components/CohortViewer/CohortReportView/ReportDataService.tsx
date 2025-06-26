@@ -22,7 +22,7 @@ export class ReportDataService {
   private updateReportData() {
     if (this.cohortDataService.cohort_data?.waterfall) {
       const { columns, data } = this.cohortDataService.cohort_data.waterfall;
-      
+
       // Transform array data into dictionaries using column names as keys
       this.row_data = data.map(row => {
         const rowDict: { [key: string]: any } = {};
@@ -38,7 +38,7 @@ export class ReportDataService {
         headerName: column.charAt(0).toUpperCase() + column.slice(1),
         sortable: true,
         filter: true,
-        width: 120
+        width: 120,
       }));
     } else {
       this.row_data = [];
@@ -46,12 +46,10 @@ export class ReportDataService {
     }
   }
 
-
-
   public setCohortDataService(dataService: any) {
     this.cohortDataService = dataService;
     this.cohortDataService.addListener(() => {
       this.updateReportData();
-    });  
+    });
   }
 }

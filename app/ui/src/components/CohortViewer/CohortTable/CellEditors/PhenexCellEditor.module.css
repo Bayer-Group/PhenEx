@@ -32,7 +32,7 @@
     transform 0.2s ease-in-out;
   position: relative;
   padding-bottom: 10px;
-  padding-left:15px;
+  padding-left: 15px;
 }
 .header:hover {
   box-shadow: var(--box_shadow_selected_hover);
@@ -50,7 +50,7 @@
 .phenotypeName {
   font-family: 'IBMPlexSans-bold';
   font-size: 20px;
-  padding-left:5px;
+  padding-left: 5px;
 }
 .container {
   display: flex;
@@ -84,8 +84,7 @@
   padding-left: 5px;
   font-size: 18px;
   font-family: 'IBMPlexSans-bold';
-  padding-right:10px;
-
+  padding-right: 10px;
 }
 
 .doneButton {
@@ -100,7 +99,7 @@
 }
 
 .header:hover .doneButton {
-  color: red!important;
+  color: red !important;
 }
 
 /*
@@ -120,7 +119,6 @@
   border: none;
 } */
 
-
-.bottomLabel{
-  padding-left:10px;
+.bottomLabel {
+  padding-left: 10px;
 }

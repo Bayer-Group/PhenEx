@@ -198,15 +198,15 @@ export class CohortDataService {
     }
   }
 
-  public addPhenotype(type: string = 'NA', parentPhenotypeId: string|null = null) {
+  public addPhenotype(type: string = 'NA', parentPhenotypeId: string | null = null) {
     const newPhenotype: TableRow = {
       id: createID(),
       type: type,
       name: 'New phenotype',
       class_name: 'CodelistPhenotype',
     };
-    if (parentPhenotypeId){
-      newPhenotype.parentIds = [parentPhenotypeId]
+    if (parentPhenotypeId) {
+      newPhenotype.parentIds = [parentPhenotypeId];
     }
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
@@ -357,8 +357,9 @@ export class CohortDataService {
   public tableDataForComponentPhenotype(parentPhenotype): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
-      filteredPhenotypes = filteredPhenotypes.filter((phenotype: TableRow) =>
-        phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
+      filteredPhenotypes = filteredPhenotypes.filter(
+        (phenotype: TableRow) =>
+          phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
       );
     }
     return {

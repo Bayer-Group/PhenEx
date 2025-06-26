@@ -161,10 +161,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
           <span className={styles.phenotypeName}>{props.data.name}</span>
 
-  
-          <span className={styles.doneButton} >
-          Done
-          </span>
+          <span className={styles.doneButton}>Done</span>
         </div>
         <div className={styles.content}>
           {React.Children.map(props.children, child =>

@@ -19,7 +19,9 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   options,
   className,
 }) => {
-  const [selectedEditor, setSelectedEditor] = useState<EditorType>(value?.codelist_type || 'manual');
+  const [selectedEditor, setSelectedEditor] = useState<EditorType>(
+    value?.codelist_type || 'manual'
+  );
 
   const handleValueChange = (newValue: any) => {
     console.log('SINGLE CODELIST EDITOR', newValue);

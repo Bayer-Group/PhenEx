@@ -34,7 +34,6 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
       case CohortReportViewType.Cohort:
         return (
           <>
-          
             <ReportCard title={'Attrition Table'} dataService={dataService.report_service} />
           </>
         );
@@ -68,7 +67,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
         </div>
       </div> */}
       {/* <div className={styles.bottomSection}> */}
-        <div className={styles.viewContainer}>{renderViewContent()}</div>
+      <div className={styles.viewContainer}>{renderViewContent()}</div>
       {/* </div> */}
     </div>
   );

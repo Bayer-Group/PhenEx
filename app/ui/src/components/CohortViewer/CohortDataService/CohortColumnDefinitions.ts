@@ -18,6 +18,12 @@ import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelec
 import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
 
+export const columnNameToApplicablePhenotypeMapping = {
+  relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'ContinuousCoveragePhenotype'],
+  value_filter:['MeasurementPhenotype', 'AgePhenotype'],
+  categorical_filter:['CodelistPhenotype', 'MeasurementPhenotype'],
+  codelist: ['CodelistPhenotype', 'MeasurementPhenotype']
+}
 
 export const defaultColumns = [
   {
@@ -105,8 +111,7 @@ export const defaultColumns = [
     width: 200,
     editable: params => {
       return (
-        params.data.class_name === 'MeasurementPhenotype' ||
-        params.data.class_name === 'CodelistPhenotype'
+        columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name)
       );
     },
     valueParser: params => {
@@ -131,12 +136,9 @@ export const defaultColumns = [
     headerName: 'Relative time ranges',
     width: 200,
     editable: params => {
-      console.log('CHECKING EDITABLE', params.data);
       return (
         params.data.type !== 'entry' &&
-        (params.data.class_name === 'MeasurementPhenotype' ||
-          params.data.class_name === 'CodelistPhenotype' ||
-          params.data.class_name === 'ContinuousCoveragePhenotype')
+        columnNameToApplicablePhenotypeMapping.relative_time_range.includes(params.data.class_name)
       );
     },
     valueParser: params => {
@@ -157,7 +159,9 @@ export const defaultColumns = [
     field: 'value_filter',
     headerName: 'Value filters',
     width: 150,
-    editable: true,
+    editable: params => {
+      return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name)
+    },
     cellEditorPopup: true,
     valueParser: params => {
       if (params.newValue && typeof params.newValue === 'object') {
@@ -172,7 +176,9 @@ export const defaultColumns = [
     field: 'categorical_filter',
     headerName: 'Categorical filters',
     width: 400,
-    editable: true,
+    editable: params => {
+      return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(params.data.class_name)
+    },
     valueParser: params => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;

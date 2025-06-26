@@ -10,22 +10,22 @@ interface PhenotypeComponentsProps {
 export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => PhenotypeDataService.getInstance());
-  
+
   const refreshGrid = () => {
     const maxRetries = 5;
     const retryDelay = 100; // milliseconds
     let retryCount = 0;
 
     const tryRefresh = () => {
-      console.log("THERE IS  gridfRE", gridRef)
+      console.log('THERE IS  gridfRE', gridRef);
       if (gridRef.current?.api) {
         const api = gridRef.current.api;
         const firstRow = api.getFirstDisplayedRow();
         const lastRow = api.getLastDisplayedRow();
-        console.log("TRYING REFRESH")
-        console.log(dataService.componentPhenotypeTableData)
+        console.log('TRYING REFRESH');
+        console.log(dataService.componentPhenotypeTableData);
         api.setGridOption('rowData', dataService.componentPhenotypeTableData.rows);
-        console.log("THERE IS  gridfREAFTER", gridRef)
+        console.log('THERE IS  gridfREAFTER', gridRef);
 
         requestAnimationFrame(() => {
           api.ensureIndexVisible(firstRow, 'top');
@@ -43,12 +43,16 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
 
   useEffect(() => {
     const listener = (refreshPhenotypeGrid: boolean = false) => {
-      console.log("REFRESHING GRID ATTMPET", refreshPhenotypeGrid, dataService.componentPhenotypeTableData)
+      console.log(
+        'REFRESHING GRID ATTMPET',
+        refreshPhenotypeGrid,
+        dataService.componentPhenotypeTableData
+      );
       if (refreshPhenotypeGrid) {
         refreshGrid();
       }
     };
-    console.log("IA M ADDING A COMPONENT PHENOTYPE LISTNERE")
+    console.log('IA M ADDING A COMPONENT PHENOTYPE LISTNERE');
     dataService.addComponentPhenotypeListener(listener);
 
     return () => {

@@ -10,8 +10,7 @@ interface ReportCardProps {
   dataService: ReportDataService;
 }
 
-export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick, dataService}) => {
-
+export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick, dataService }) => {
   return (
     <div className={styles.reportCard}>
       <div className={styles.reportCardHeader}>

@@ -51,9 +51,12 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     return [formatValueFilter(value)];
   };
 
-  const filterPhenotypes = ['MeasurementPhenotype', 'AgePhenotype'];
-  if (!filterPhenotypes.includes(props.data.class_name) || !props.value || props.value === null) {
-    return <div></div>;
+  if (!props.value || typeof props.value === null) {
+    return (
+    <PhenexCellRenderer {...props}>
+      <div></div>
+    </PhenexCellRenderer>
+    )
   }
 
   const filters = formatFilter(props.value);
@@ -67,8 +70,8 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
             className={styles.filterRow}
             onClick={() => {
               props.api?.startEditingCell({
-                rowIndex: props.node.rowIndex,
-                colKey: props.column.getColId(),
+                rowIndex: props.node?.rowIndex ?? 0,
+                colKey: props.column?.getColId() ?? ''
               });
             }}
           >

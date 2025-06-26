@@ -32,7 +32,6 @@
   /* background-color: var(--color-accent); */
   border: 1px solid var(--line-color);
   background-color: var(--color-accent-hover) !important;
-
 }
 
 .tab.active {

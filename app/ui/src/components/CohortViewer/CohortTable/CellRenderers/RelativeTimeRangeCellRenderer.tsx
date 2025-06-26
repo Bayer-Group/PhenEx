@@ -3,6 +3,7 @@ import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
 import deleteIcon from '../../../../assets/icons/delete.svg';
 import styles from './RelativeTimeRangeCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import { NARenderer } from './NARenderer';
 
 interface RelativeTimeRangeFilter {
   class_name: 'RelativeTimeRangeFilter';
@@ -57,9 +58,10 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
   };
 
   let filters: RelativeTimeRangeFilter[] = Array.isArray(props.value) ? props.value : [];
-  if (props.data.type == 'entry') {
-    return <div>not applicable</div>;
+  if (props.data.type === 'entry') {
+    return <NARenderer value={props.value} />
   }
+
   return (
     <PhenexCellRenderer {...props}>
       <div className={styles.filtersContainer}>

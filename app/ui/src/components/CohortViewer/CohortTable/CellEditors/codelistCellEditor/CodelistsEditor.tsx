@@ -8,7 +8,11 @@ interface CodelistsEditorProps {
   onValueChange?: (value: any[]) => void;
 }
 
-export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], options, onValueChange }) => {
+export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({
+  value = [],
+  options,
+  onValueChange,
+}) => {
   const [codelists, setCodelists] = useState(() => {
     console.log('Initial codelists value:', value);
     return Array.isArray(value) ? [...value] : [];
@@ -21,12 +25,10 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
       updatedCodelists[index] = newValue;
       setCodelists(updatedCodelists);
       onValueChange?.(updatedCodelists);
-    }
-    else{
+    } else {
       setCodelists(newValue);
       onValueChange?.(newValue);
     }
-   
   };
 
   const addNewCodelist = () => {
@@ -45,7 +47,7 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
             <SingleCodelistEditor
               value={value}
               options={options}
-              onValueChange={(newValue) => handleValueChange(index, newValue)}
+              onValueChange={newValue => handleValueChange(index, newValue)}
             />
           </div>
         ))
@@ -54,12 +56,13 @@ export const CodelistsEditor: React.FC<CodelistsEditorProps> = ({ value = [], op
           <SingleCodelistEditor
             value={codelists}
             options={options}
-            onValueChange={(newValue) => handleValueChange(0, newValue)}
+            onValueChange={newValue => handleValueChange(0, newValue)}
           />
         </div>
       )}
-        <button className={styles.addButton} onClick={addNewCodelist}>Add Codelist</button>
-
+      <button className={styles.addButton} onClick={addNewCodelist}>
+        Add Codelist
+      </button>
     </div>
   );
 };

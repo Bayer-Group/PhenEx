@@ -32,14 +32,13 @@
   display: flex;
   overflow-y: auto;
   padding: 0px;
-  padding-top:50px;
-
+  padding-top: 50px;
 }
 
 .viewContainer {
   width: 100%;
   padding-bottom: 100px;
-  padding-top:30px;
+  padding-top: 30px;
   height: auto;
   min-height: fit-content;
 }

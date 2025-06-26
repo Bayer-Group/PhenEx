@@ -2,10 +2,10 @@
   margin-left: 10px;
   margin-right: 10px;
   width: calc(100% - 30px);
-  height:calc(100% - 20px);
+  height: calc(100% - 20px);
   /* padding: 8px; */
   border: none;
-  font-family: "IBMPlexSans-regular";
+  font-family: 'IBMPlexSans-regular';
   font-size: 14px;
   resize: none;
   line-height: 1.5;
@@ -14,5 +14,5 @@
 
 .textarea:focus {
   outline: none;
-  border:none;
+  border: none;
 }

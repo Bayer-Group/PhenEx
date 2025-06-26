@@ -7,10 +7,11 @@ interface ValueFilterEditorProps {
   onValueChange?: (value: ValueFilter | AndFilter) => void;
 }
 
-export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
-  value = [],
-  onValueChange,
-}) => {
+
+export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = (props) => {
+  const { value = [], onValueChange, data, node, column, colDef, api } = props;
+  console.log("VALUE EDITOR", value, data)
+
   const [filters, setFilters] = useState<ValueFilter[]>(() => {
     if (value) {
       if (value.class_name === 'AndFilter') {
@@ -92,19 +93,25 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
     }
   };
 
+  const addColumnInput = (filter: ValueFilter, index: number) => (
+    <>
+      <label>Column Name:</label>
+      <input
+        className={styles.column_name}
+        value={filter.column_name}
+        onChange={e => updateFilter(index, { column_name: e.target.value })}
+        placeholder="Enter column name"
+      />
+    </>
+  );
+
   return (
     <div className={styles.container}>
       {filters.map((filter, index) => (
         <div key={index} className={styles.filterRow}>
-          <label>Column Name:</label>
-          <input
-            className={styles.column_name}
-            value={filter.column_name}
-            onChange={e => updateFilter(index, { column_name: e.target.value })}
-            placeholder="Enter column name"
-          />
+          {data?.class_name !== 'AgePhenotype' && addColumnInput(filter, index)}
           <div className={styles.filterSection}>
-            <label>Min Value:</label>
+            <label>Min {data?.class_name== 'AgePhenotype'? 'Age' : 'Value'}:</label>
             <select
               value={filter.min?.operator || '>='}
               onChange={e =>
@@ -139,7 +146,7 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = ({
           </div>
 
           <div className={styles.filterSection}>
-            <label>Max Value:</label>
+            <label>Max {data?.class_name== 'AgePhenotype'? 'Age' : 'Value'}:</label>
             <select
               value={filter.max?.operator || '<'}
               className={styles.select}

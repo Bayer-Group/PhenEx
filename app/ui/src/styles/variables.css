@@ -48,7 +48,7 @@
 
   --phenex-dark: hsl(0, 40%, 5%);
 
-  --color-accent:var(--phenex-dark);/* #03396c;/*#fa934f;*/
+  --color-accent: var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
   --box_shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -88,5 +88,3 @@
   background-color: var(--phenex-dark) !important;
   color: white !important;
 }
-
-

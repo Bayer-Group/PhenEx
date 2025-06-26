@@ -7,14 +7,18 @@ import { Portal } from '../common/Portal';
 interface CustomizableDropdownButtonProps {
   label: string;
   content: React.ReactNode;
-  customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;}
+  customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
+}
 
-export const CustomizableDropdownButton = forwardRef<{ closeDropdown: () => void }, CustomizableDropdownButtonProps>(({ label, content }, customizableDropdownButtonRef) => {
+export const CustomizableDropdownButton = forwardRef<
+  { closeDropdown: () => void },
+  CustomizableDropdownButtonProps
+>(({ label, content }, customizableDropdownButtonRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  console.log("THIS IS THE REF CREATED", customizableDropdownButtonRef)
+  console.log('THIS IS THE REF CREATED', customizableDropdownButtonRef);
   useImperativeHandle(customizableDropdownButtonRef, () => ({
     closeDropdown: () => setIsOpen(false),
   }));

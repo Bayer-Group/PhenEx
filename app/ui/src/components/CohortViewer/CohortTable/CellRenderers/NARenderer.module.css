@@ -1,0 +1,7 @@
+.naContainer {
+  color: var(--line-color);
+  font-style: italic;
+  padding: 4px 8px;
+  font-size: 12px;
+
+}

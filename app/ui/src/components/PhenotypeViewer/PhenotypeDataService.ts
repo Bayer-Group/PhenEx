@@ -138,7 +138,6 @@ export class PhenotypeDataService {
     }
   }
 
-
   public addListener(listener: () => void) {
     this.listeners.push(listener);
   }
@@ -162,17 +161,18 @@ export class PhenotypeDataService {
     return this.cohortDataService._cohort_name;
   }
 
-
   public updateComponentPhenotypeData() {
-    this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(this.currentPhenotype);
-    console.log("THIS IS COMPONENT PHENOTYPE DATA", this.componentPhenotypeTableData)
-    console.log(this.cohortDataService)
+    this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
+      this.currentPhenotype
+    );
+    console.log('THIS IS COMPONENT PHENOTYPE DATA', this.componentPhenotypeTableData);
+    console.log(this.cohortDataService);
   }
 
   public addNewComponentPhenotype() {
-    this.cohortDataService.addPhenotype('component',this.currentPhenotype?.id)
-    this.updateComponentPhenotypeData()
-    this.notifyComponentPhenotypeListeners(true)
+    this.cohortDataService.addPhenotype('component', this.currentPhenotype?.id);
+    this.updateComponentPhenotypeData();
+    this.notifyComponentPhenotypeListeners(true);
   }
 
   public addComponentPhenotypeListener(listener: () => void) {

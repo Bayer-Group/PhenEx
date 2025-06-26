@@ -6,19 +6,17 @@ interface DescriptionCellEditorProps extends PhenexCellEditorProps {
   value?: string;
 }
 
-export const DescriptionCellEditor = forwardRef<any, DescriptionCellEditorProps>(
-  (props, ref) => {
-    const handleValueChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      props.onValueChange?.(event.target.value);
-    };
+export const DescriptionCellEditor = forwardRef<any, DescriptionCellEditorProps>((props, ref) => {
+  const handleValueChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    props.onValueChange?.(event.target.value);
+  };
 
-    return (
-      <PhenexCellEditor {...props} ref={ref}>
-        <DescriptionEditor {...props} onValueChange={handleValueChange} />
-      </PhenexCellEditor>
-    );
-  }
-);
+  return (
+    <PhenexCellEditor {...props} ref={ref}>
+      <DescriptionEditor {...props} onValueChange={handleValueChange} />
+    </PhenexCellEditor>
+  );
+});
 
 DescriptionCellEditor.displayName = 'DescriptionCellEditor';
 
@@ -27,7 +25,9 @@ export interface DescriptionEditorProps {
   onValueChange?: (value: any) => void;
 }
 export const DescriptionEditor: React.FC<DescriptionEditorProps> = props => {
-  const [localValue, setLocalValue] = React.useState(typeof props.value === 'string' ? props.value : '');
+  const [localValue, setLocalValue] = React.useState(
+    typeof props.value === 'string' ? props.value : ''
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalValue(e.target.value);

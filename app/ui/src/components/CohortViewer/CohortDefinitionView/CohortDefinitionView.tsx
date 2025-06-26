@@ -97,7 +97,6 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
     if (['description', 'class_name'].includes(event.colDef.field)) {
       refreshGrid();
     }
-
   };
 
   const renderView = () => {

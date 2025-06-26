@@ -3,6 +3,7 @@ import { ICellRendererParams } from 'ag-grid-community';
 import styles from './CodelistCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 
+
 const MAX_CODES_TO_SHOW = 3;
 
 interface CodelistCellRendererProps extends PhenexCellRendererProps {
@@ -15,13 +16,11 @@ interface CodelistCellRendererProps extends PhenexCellRendererProps {
 }
 
 const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
-  if (
-    props.data.class_name !== 'CodelistPhenotype' &&
-    props.data.class_name !== 'MeasurementPhenotype'
-  ) {
-    return <div className={styles.notApplicable}>na</div>;
-  }
-  if (Array.isArray(props.value) || (props.value?.codelist_type)) {
+//   if ( !columnNameToApplicablePhenotypeMapping.value_filter.includes(props.data.class_name))
+//  {
+//     return <NARenderer value={props.value} />
+//   }
+  if (Array.isArray(props.value) || props.value?.codelist_type) {
     // if the codelist is an array, it's a list of codelists; we do want to render
   } else if (
     !props.value ||
