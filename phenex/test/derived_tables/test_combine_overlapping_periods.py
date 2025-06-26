@@ -94,7 +94,7 @@ def test_combine_overlapping_periods():
         source_domain="VISIT_OCCURRENCE",
     )
 
-    result = cop.derive(tables={"VISIT_OCCURRENCE": visit_occurrence_table})
+    result = cop.execute(tables={"VISIT_OCCURRENCE": visit_occurrence_table})
 
     check_start_end_date_equality(result, expected_table)
 

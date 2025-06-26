@@ -370,7 +370,7 @@ class Cohort(Phenotype):
         for derived_table in self.derived_tables:
             logger.info(f"Deriving table {derived_table.dest_domain}")
             # derive the table
-            table = derived_table.derive(
+            table = derived_table.execute(
                 tables=tables,
             )
             # join on index table to get index date

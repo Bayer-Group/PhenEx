@@ -10,14 +10,14 @@ class DerivedTable:
     3. performing aggregations on a table, e.g. calculating the number of visits per patient, etc.
 
     To subclass:
-        1. implement derive method, and return a single table
+        1. implement execute method, and return a single table
     """
 
     def __init__(self, source_domain: str, dest_domain: str):
         self.source_domain = source_domain
         self.dest_domain = dest_domain
 
-    def derive(
+    def execute(
         self,
         tables: Dict[str, Table],
     ) -> "PhenexTable":

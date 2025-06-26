@@ -22,7 +22,7 @@ class CombineOverlappingPeriods(DerivedTable):
         self.categorical_filter = categorical_filter
         super(CombineOverlappingPeriods, self).__init__(**kwargs)
 
-    def derive(
+    def execute(
         self,
         tables: Dict[str, Table],
     ) -> "PhenexTable":
