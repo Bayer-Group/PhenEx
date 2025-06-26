@@ -82,16 +82,16 @@ class ContinuousCoveragePhenotype(Phenotype):
 
         # Ensure that the observation period includes anchor date
         table = table.filter(
-            (table.OBSERVATION_PERIOD_START_DATE <= reference_column)
-            & (reference_column <= table.OBSERVATION_PERIOD_END_DATE)
+            (table.START_DATE <= reference_column)
+            & (reference_column <= table.END_DATE)
         )
 
         if self.when == "before":
-            VALUE = reference_column.delta(table.OBSERVATION_PERIOD_START_DATE, "day")
-            EVENT_DATE = table.OBSERVATION_PERIOD_START_DATE
+            VALUE = reference_column.delta(table.START_DATE, "day")
+            EVENT_DATE = table.START_DATE
         else:
-            VALUE = table.OBSERVATION_PERIOD_END_DATE.delta(reference_column, "day")
-            EVENT_DATE = table.OBSERVATION_PERIOD_END_DATE
+            VALUE = table.END_DATE.delta(reference_column, "day")
+            EVENT_DATE = table.END_DATE
 
         table = table.mutate(VALUE=VALUE, EVENT_DATE=EVENT_DATE)
 

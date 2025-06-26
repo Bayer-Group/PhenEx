@@ -100,3 +100,37 @@ def check_counts_table_equal(
         assert (
             values_match.all()
         ), f"Found unexpected in test {test_name} : not all pairs match"
+
+
+def check_start_end_date_equality(
+    result,
+    expected,
+    join_on=["PERSON_ID", "START_DATE", "END_DATE"],
+    test_name="test",
+):
+    result = result.to_pandas()
+    result.loc[:, "DUMMY"] = 1
+    expected = expected.to_pandas()
+    expected.loc[:, "DUMMY"] = 1
+
+    full_results = result.merge(
+        expected, on=join_on, suffixes=("_result", "_expected"), how="outer"
+    )
+
+    found_not_expected = full_results[full_results["DUMMY_expected"].isnull()]
+    expected_not_found = full_results[full_results["DUMMY_result"].isnull()]
+    found_in_both = full_results[
+        (~full_results["DUMMY_expected"].isnull())
+        & (~full_results["DUMMY_result"].isnull())
+    ]
+
+    logger.debug(f"{test_name} : {len(found_in_both)} found in both")
+    logger.debug(f"{test_name} : {len(found_not_expected)} in result not in expected")
+    logger.debug(f"{test_name} : {len(expected_not_found)} in expected not in result")
+    assert (
+        len(found_not_expected) == 0
+    ), f"Found unexpected in test {test_name}: {found_not_expected['PERSON_ID'].values}"
+    assert (
+        len(expected_not_found) == 0
+    ), f"Expected not found in test {test_name}: {expected_not_found['PERSON_ID'].values}"
+    logger.debug(f"{test_name} : patient ids equal")

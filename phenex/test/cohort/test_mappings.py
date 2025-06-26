@@ -43,6 +43,6 @@ class ObservationPeriodTableForTests(PhenexObservationPeriodTable):
     JOIN_KEYS = {"PersonTableForTests": ["PATID"]}
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
-        "OBSERVATION_PERIOD_START_DATE": "REGSTARTDATE",
-        "OBSERVATION_PERIOD_END_DATE": "REGENDDATE",
+        "START_DATE": "REGSTARTDATE",
+        "END_DATE": "REGENDDATE",
     }
