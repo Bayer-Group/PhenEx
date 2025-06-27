@@ -49,7 +49,6 @@ class Cohort(Phenotype):
 
     def __init__(
         self,
-        name: str,
         entry_criterion: Phenotype,
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
@@ -58,7 +57,6 @@ class Cohort(Phenotype):
         **kwargs,
     ):
         super(Cohort, self).__init__(**kwargs)
-        self.name = name
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []
         self.exclusions = exclusions if exclusions is not None else []

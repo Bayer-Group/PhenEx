@@ -181,11 +181,14 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
     def define_expected_output(self):
         df_counts_inclusion = pd.DataFrame()
         df_counts_inclusion["phenotype"] = [
-            "breast_cancer",
-            "continuous_coverage",
-            "data_quality",
-            "age",
-            "sex",
+            x.upper()
+            for x in [
+                "breast_cancer",
+                "continuous_coverage",
+                "data_quality",
+                "age",
+                "sex",
+            ]
         ]
         df_counts_inclusion["n"] = [16, 32, 32, 32, 32]
 
