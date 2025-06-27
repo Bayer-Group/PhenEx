@@ -92,9 +92,9 @@ class Phenotype:
                 raise ValueError("Phenotype has not been executed yet.")
             new_column_names = {
                 "PERSON_ID": "PERSON_ID",
-                f"{self.name}_BOOLEAN": "BOOLEAN",
-                f"{self.name}_EVENT_DATE": "EVENT_DATE",
-                f"{self.name}_VALUE": "VALUE",
+                f"{self.name.upper()}_BOOLEAN": "BOOLEAN",
+                f"{self.name.upper()}_EVENT_DATE": "EVENT_DATE",
+                f"{self.name.upper()}_VALUE": "VALUE",
             }
             self._namespaced_table = self.table.rename(new_column_names)
         return self._namespaced_table
@@ -288,8 +288,8 @@ class ComputationGraph:
                 return node.get_value_expression(table, operate_on)
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
-                    return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_VALUE"]
+                    return table[f"{node.name.upper()}_BOOLEAN"]
+                return table[f"{node.name.upper()}_VALUE"]
             return node
 
         left = manage_node(self.left)
@@ -311,8 +311,8 @@ class ComputationGraph:
                 return node.get_boolean_expression(table, operate_on)
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
-                    return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_VALUE"]
+                    return table[f"{node.name.upper()}_BOOLEAN"]
+                return table[f"{node.name.upper()}_VALUE"]
             return node
 
         left = manage_node(self.left)

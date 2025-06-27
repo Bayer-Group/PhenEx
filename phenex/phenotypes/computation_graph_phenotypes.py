@@ -79,7 +79,7 @@ class ComputationGraphPhenotype(Phenotype):
 
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
-                column_name = f"{child.name}_BOOLEAN"
+                column_name = f"{child.name.upper()}_BOOLEAN"
                 mutated_column = ibis.ifelse(
                     joined_table[column_name].isnull(),
                     0,

@@ -217,7 +217,7 @@ class SnowflakeConnector:
         if self.dest_connection is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.table(
-            name_table, database=self.SNOWFLAKE_DEST_DATABASE
+            name_table.upper(), database=self.SNOWFLAKE_DEST_DATABASE
         )
 
     def _get_output_table_name(self, table):
