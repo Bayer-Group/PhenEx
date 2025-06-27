@@ -52,7 +52,9 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
 
     for pt in phenotypes:
         column_operation = join_table[f"{pt.name.upper()}_BOOLEAN"].fill_null(False)
-        join_table = join_table.mutate(**{f"{pt.name.upper()}_BOOLEAN": column_operation})
+        join_table = join_table.mutate(
+            **{f"{pt.name.upper()}_BOOLEAN": column_operation}
+        )
     return join_table
 
 
