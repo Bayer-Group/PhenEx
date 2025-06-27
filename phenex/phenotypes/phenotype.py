@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 from ibis.expr.types.relations import Table
 from deepdiff import DeepDiff
 from phenex.tables import (
@@ -32,14 +32,25 @@ class Phenotype:
         description: A plain text description of the phenotype.
     """
 
-    def __init__(self, description: str = None):
+    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )
+        self._name = name
         self._namespaced_table = None
         self.children = []  # List[Phenotype]
         self.description = description
         self._check_for_children()
+
+    @property
+    def name(self):
+        if self._name is not None:
+            return self._name.upper()
+        return "PHENOTYPE"  # TODO replace with phenotype id when phenotype id is implemented
+
+    @name.setter
+    def name(self, name):
+        self._name = name
 
     def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """

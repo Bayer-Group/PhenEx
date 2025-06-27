@@ -222,8 +222,10 @@ class AgePhenotypeImputeMonthDayTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = AgePhenotype(
                 name=test_info["name"],
-                min_age=test_info.get("min_age"),
-                max_age=test_info.get("max_age"),
+                value_filter=ValueFilter(
+                    min_value=test_info.get("min_age"),
+                    max_value=test_info.get("max_age"),
+                ),
                 # impute_day=1,
                 # impute_month=6,
             )
@@ -234,5 +236,12 @@ class AgePhenotypeImputeMonthDayTestGenerator(PhenotypeTestGenerator):
 def test_age_phenotype():
     spg = AgePhenotypeTestGenerator()
     spg.run_tests()
-    # spg = AgePhenotypeImputeMonthDayTestGenerator()
-    # spg.generate()
+
+
+# def test_impute_month_age_phenotype():
+#     spg = AgePhenotypeImputeMonthDayTestGenerator()
+#     spg.run_tests()
+
+if __name__ == "__main__":
+    test_age_phenotype()
+    test_impute_month_age_phenotype()

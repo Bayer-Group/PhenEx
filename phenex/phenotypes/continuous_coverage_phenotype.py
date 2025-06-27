@@ -58,15 +58,14 @@ class ContinuousCoveragePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: Optional[str] = "continuous_coverage",
+        name: Optional[str] = "CONTINUOUS_COVERAGE",
         domain: Optional[str] = "OBSERVATION_PERIOD",
         value_filter: Optional[ValueFilter] = None,
         when: Optional[str] = "before",
         anchor_phenotype: Optional[Phenotype] = None,
         **kwargs
     ):
-        super().__init__(**kwargs)
-        self.name = name
+        super().__init__(name=name, **kwargs)
         self.domain = domain
         self.when = when
         self.value_filter = value_filter

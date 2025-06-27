@@ -49,7 +49,6 @@ class Cohort(Phenotype):
 
     def __init__(
         self,
-        name: str,
         entry_criterion: Phenotype,
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
@@ -58,7 +57,6 @@ class Cohort(Phenotype):
         **kwargs,
     ):
         super(Cohort, self).__init__(**kwargs)
-        self.name = name
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []
         self.exclusions = exclusions if exclusions is not None else []
@@ -124,7 +122,7 @@ class Cohort(Phenotype):
                     futures[key] = executor.submit(
                         con.create_table,
                         table.table,
-                        f"{self.name}__subset_entry_{key}",
+                        f"{self.name}__subset_entry_{key}".upper(),
                         overwrite,
                     )
                 for key, future in futures.items():
@@ -142,7 +140,7 @@ class Cohort(Phenotype):
                 logger.debug("Writing inclusions table ...")
                 self.inclusions_table = con.create_table(
                     self.inclusions_table,
-                    f"{self.name}__inclusions",
+                    f"{self.name}__inclusions".upper(),
                     overwrite=overwrite,
                 )
             include = self.inclusions_table.filter(
@@ -159,7 +157,7 @@ class Cohort(Phenotype):
                 logger.debug("Writing exclusions table ...")
                 self.exclusions_table = con.create_table(
                     self.exclusions_table,
-                    f"{self.name}__exclusions",
+                    f"{self.name}__exclusions".upper(),
                     overwrite=overwrite,
                 )
             exclude = self.exclusions_table.filter(
@@ -172,7 +170,7 @@ class Cohort(Phenotype):
         if con:
             logger.debug("Writing index table ...")
             self.index_table = con.create_table(
-                index_table, f"{self.name}__index", overwrite=overwrite
+                index_table, f"{self.name}__index".upper(), overwrite=overwrite
             )
 
         self.subset_tables_index = subset_and_add_index_date(tables, self.index_table)
@@ -184,7 +182,7 @@ class Cohort(Phenotype):
                     futures[key] = executor.submit(
                         con.create_table,
                         table.table,
-                        f"{self.name}__subset_index_{key}",
+                        f"{self.name}__subset_index_{key}".upper(),
                         overwrite,
                     )
                 for key, future in futures.items():
@@ -199,7 +197,7 @@ class Cohort(Phenotype):
                 logger.debug("Writing characteristics table ...")
                 self.characteristics_table = con.create_table(
                     self.characteristics_table,
-                    f"{self.name}__characteristics",
+                    f"{self.name}__characteristics".upper(),
                     overwrite=overwrite,
                 )
             logger.debug("Characteristics computed.")

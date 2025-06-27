@@ -24,13 +24,11 @@ class CategoricalPhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str = None,
         domain: str = None,
         allowed_values: List = None,
         column_name: str = None,
         **kwargs,
     ):
-        self.name = name
         self.categorical_filter = CategoricalFilter(
             allowed_values=allowed_values, domain=domain, column_name=column_name
         )

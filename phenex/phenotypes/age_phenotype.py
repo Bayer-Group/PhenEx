@@ -59,13 +59,12 @@ class AgePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str = "age",
+        name: Optional[str] = "AGE",
         value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
         domain: str = "PERSON",
         **kwargs,
     ):
-        self.name = name
         self.min_age = self.max_age = None
         if value_filter:
             self.min_age = value_filter.min_value
@@ -84,7 +83,7 @@ class AgePhenotype(Phenotype):
         else:
             self.children = []
 
-        super(AgePhenotype, self).__init__(**kwargs)
+        super(AgePhenotype, self).__init__(name=name, **kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]

@@ -32,7 +32,7 @@ class SexPhenotype(CategoricalPhenotype):
 
     def __init__(
         self,
-        name: str = "sex",
+        name: str = "SEX",
         allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
         column_name="SEX",
