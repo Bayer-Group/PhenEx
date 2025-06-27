@@ -279,7 +279,7 @@ class SnowflakeConnector:
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_table(
-            name=name_table,
+            name=name_table.upper(),
             database=database,
             obj=table,
             overwrite=overwrite,
