@@ -5,6 +5,7 @@ from phenex.filters.filter import Filter
 from phenex.filters.value_filter import ValueFilter
 from phenex.tables import EventTable, is_phenex_phenotype_table
 from phenex.filters.value import *
+from phenex.phenotypes.functions import attach_anchor_and_get_reference_date
 
 
 class RelativeTimeRangeFilter(Filter):
@@ -56,21 +57,9 @@ class RelativeTimeRangeFilter(Filter):
         super(RelativeTimeRangeFilter, self).__init__()
 
     def _filter(self, table: EventTable):
-        if self.anchor_phenotype is not None:
-            if self.anchor_phenotype.table is None:
-                raise ValueError(
-                    f"Dependent Phenotype {self.anchor_phenotype.name} must be executed before this node can run!"
-                )
-            else:
-                anchor_table = self.anchor_phenotype.table
-                reference_column = anchor_table.EVENT_DATE
-                # Note that joins can change column names if the tables have name collisions!
-                table = table.join(anchor_table, "PERSON_ID")
-        else:
-            assert (
-                "INDEX_DATE" in table.columns
-            ), f"INDEX_DATE column not found in table {table}"
-            reference_column = table.INDEX_DATE
+        table, reference_column = attach_anchor_and_get_reference_date(
+            table, self.anchor_phenotype
+        )
 
         DAYS_FROM_ANCHOR = reference_column.delta(table.EVENT_DATE, "day")
         if self.when == "after":
