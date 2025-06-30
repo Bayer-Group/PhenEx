@@ -46,8 +46,8 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         df_observation_period = pd.DataFrame()
         df_observation_period["PERSON_ID"] = [f"P{x}" for x in list(range(N))]
         df_observation_period["INDEX_DATE"] = index_date
-        df_observation_period["OBSERVATION_PERIOD_START_DATE"] = start_dates
-        df_observation_period["OBSERVATION_PERIOD_END_DATE"] = end_dates
+        df_observation_period["START_DATE"] = start_dates
+        df_observation_period["END_DATE"] = end_dates
 
         df_observation_period["start_from_end"] = [
             x - y for x, y in zip(end_dates, start_dates)
@@ -102,7 +102,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "OBSERVATION_PERIOD_END_DATE"
+                    "END_DATE"
                 ].values
             ),
         }
@@ -114,7 +114,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "persons": persons,
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
-                    "OBSERVATION_PERIOD_END_DATE"
+                    "END_DATE"
                 ].values
             ),
         }
