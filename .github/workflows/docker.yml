@@ -30,7 +30,8 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           else
-            echo "DOCKER_TAG=latest" >> $GITHUB_ENV
+            BRANCH_NAME=$(echo "$GITHUB_REF" | sed 's|refs/heads/||')
+            echo "DOCKER_TAG=$BRANCH_NAME" >> $GITHUB_ENV
           fi
 
       - name: Build and push backend Docker image
@@ -62,7 +63,8 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           else
-            echo "DOCKER_TAG=latest" >> $GITHUB_ENV
+            BRANCH_NAME=$(echo "$GITHUB_REF" | sed 's|refs/heads/||')
+            echo "DOCKER_TAG=$BRANCH_NAME" >> $GITHUB_ENV
           fi
 
       - name: Build and push frontend Docker image
