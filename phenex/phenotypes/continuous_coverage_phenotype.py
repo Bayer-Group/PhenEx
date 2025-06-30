@@ -42,17 +42,17 @@ class ContinuousCoveragePhenotype(Phenotype):
     entry_phenotype = CodelistPhenotype(...)
     # one year continuous coverage prior to index
     one_year_coverage = ContinuousCoveragePhenotype(
-        when = 'before',
         relative_time_range = RelativeTimeRangeFilter(
             min_days=GreaterThanOrEqualTo(365),
-            anchor_phenotype = entry_phenotype
+            anchor_phenotype = entry_phenotype,
+            when = 'before',
         ),
     )
     # determine the date of loss to followup
     loss_to_followup = ContinuousCoveragePhenotype(
         relative_time_range = RelativeTimeRangeFilter(
-            when = 'after',
             anchor_phenotype = entry_phenotype
+            when = 'after',
         )
     )
     ```
