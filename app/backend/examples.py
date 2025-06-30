@@ -59,7 +59,7 @@ def diabetes_cohort():
     age_inclusion = AgePhenotype(
         name="age_inclusion",
         description="Includes patients aged 18 years or older.",
-        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)),
     )
 
     # Define an explicit codelist for CKD using SNOMED codes
