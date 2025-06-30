@@ -8,40 +8,38 @@ from ibis.expr.types.relations import Table
 import ibis
 
 
-class ContinuousCoveragePhenotype(Phenotype):
+class TimeRangePhenotype(Phenotype):
     """
-    ContinuousCoveragePhenotype identifies patients based on duration of observation data. ContinuousCoveragePhenotype requires an anchor phenotype, typically the entry criterion. It then identifies an observation time period that contains the anchor phenotype. The phenotype can then be used to identify patients with a user specified continuous coverage before or after the anchor phenotype. The returned Phenotype has the following interpretation:
+    As the name implies, TimeRangePhenotype is designed for working with time ranges. If the input data has a start and an end date, use TimeRangePhenotype to identify other events (or patients) that occur within this time range. The most common use case of this is working with 'health insurance coverage' data i.e. on 'OBSERVATION_PERIOD' table. These tables have one or many rows per patient with the start of coverage and end of coverage. At it's simplest, TimeRangePhenotype identifies patients who have their INDEX_DATE (or other anchor date of interest) within this time range. Additionally, a minimum or maximum number of days from the anchor date to the beginning/end of the time range can be defined. The returned Phenotype has the following interpretation:
 
-    DATE: If when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If when='after', then DATE is the end of the coverage period containing the anchor date.
+    DATE: If relative_time_range.when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If relative_time_range.when='after', then DATE is the end of the coverage period containing the anchor date.
     VALUE: Coverage (in days) relative to the anchor date. By convention, always non-negative.
 
-    There are two primary use cases for ContinuousCoveragePhenotype:
+    There are two primary use cases for TimeRangePhenotype:
         1. Identify patients with some minimum duration of coverage prior to anchor_phenotype date e.g. "identify patients with 1 year of continuous coverage prior to index date"
         2. Determine the date of loss to followup (right censoring) i.e. the duration of coverage after the anchor_phenotype event
 
-    ## Data for ContinuousCoveragePhenotype
+    ## Data for TimeRangePhenotype
     This phenotype requires a table with PersonID and a coverage start date and end date. Depending on the datasource used, this information is a separate ObservationPeriod table or found in the PersonTable. Use an PhenexObservationPeriodTable to map required coverage start and end date columns.
 
-    | PersonID    |   coverageStartDate  |   coverageEndDate  |
+    | PersonID    |   startDate          |   endDate          |
     |-------------|----------------------|--------------------|
     | 1           |   2009-01-01         |   2010-01-01       |
     | 2           |   2008-01-01         |   2010-01-02       |
 
-    One assumption that is made by ContinuousCoveragePhenotype is that there are **NO overlapping coverage periods**.
+    One assumption that is made by TimeRangePhenotype is that there are **NO overlapping coverage periods**.
 
     Parameters:
         name: The name of the phenotype.
         domain: The domain of the phenotype. Default is 'observation_period'.
-        value_filter: Fitler returned persons based on the duration of coverage in days.
-        anchor_phenotype: An anchor phenotype defines the reference date with respect to calculate coverage. In typical applications, the anchor phenotype will be the entry criterion.
-        when: 'before', 'after'. If before, the return date is the start of the coverage period containing the anchor_phenotype. If after, the return date is the end of the coverage period containing the anchor_phenotype.
+        relative_time_range: Filter returned persons based on the duration of coverage in days. The relative_time_range.anchor_phenotype defines the reference date with respect to calculate coverage. In typical applications, the anchor phenotype will be the entry criterion. The relative_time_range.when 'before', 'after'. If before, the return date is the start of the coverage period containing the anchor_phenotype. If after, the return date is the end of the coverage period containing the anchor_phenotype.
 
     Example:
     ```python
     # make sure to create an entry phenotype, for example 'atrial fibrillation diagnosis'
     entry_phenotype = CodelistPhenotype(...)
     # one year continuous coverage prior to index
-    one_year_coverage = ContinuousCoveragePhenotype(
+    one_year_coverage = TimeRangePhenotype(
         relative_time_range = RelativeTimeRangeFilter(
             min_days=GreaterThanOrEqualTo(365),
             anchor_phenotype = entry_phenotype,
@@ -49,7 +47,7 @@ class ContinuousCoveragePhenotype(Phenotype):
         ),
     )
     # determine the date of loss to followup
-    loss_to_followup = ContinuousCoveragePhenotype(
+    loss_to_followup = TimeRangePhenotype(
         relative_time_range = RelativeTimeRangeFilter(
             anchor_phenotype = entry_phenotype
             when = 'after',

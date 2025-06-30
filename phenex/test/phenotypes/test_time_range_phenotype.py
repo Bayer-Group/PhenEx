@@ -1,7 +1,7 @@
 import datetime, os
 import pandas as pd
 
-from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
+from phenex.phenotypes.time_range_phenotype import TimeRangePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
@@ -10,7 +10,7 @@ from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
 
 
-class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
+class TimeRangePhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "ccpt"
 
     def define_input_tables(self):
@@ -77,7 +77,7 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         test_infos = [t1, t2]
 
         for test_info in test_infos:
-            test_info["phenotype"] = ContinuousCoveragePhenotype(
+            test_info["phenotype"] = TimeRangePhenotype(
                 name=test_info["name"],
                 relative_time_range=RelativeTimeRangeFilter(
                     min_days=test_info.get("coverage_period_min")
@@ -88,7 +88,7 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
 
 
 class ContinuousCoverageReturnLastPhenotypeTestGenerator(
-    ContinuousCoveragePhenotypeTestGenerator
+    TimeRangePhenotypeTestGenerator
 ):
     name_space = "ccpt_returnlast"
     test_date = True
@@ -121,7 +121,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         test_infos = [t1, t2]
 
         for test_info in test_infos:
-            test_info["phenotype"] = ContinuousCoveragePhenotype(
+            test_info["phenotype"] = TimeRangePhenotype(
                 name=test_info["name"],
                 relative_time_range=RelativeTimeRangeFilter(
                     min_days=test_info.get("coverage_period_min"), when="after"
@@ -131,7 +131,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         return test_infos
 
 
-class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGenerator):
+class ContinuousCoverageWithAnchorPhenotype(TimeRangePhenotypeTestGenerator):
     name_space = "ccpt_anchorphenotype"
 
     def define_input_tables(self):
@@ -155,7 +155,7 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
             domain="CONDITION_OCCURRENCE",
         )
 
-        cc1 = ContinuousCoveragePhenotype(
+        cc1 = TimeRangePhenotype(
             name="cc_prior_entry",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(90), when="before", anchor_phenotype=entry
@@ -174,8 +174,8 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
         return test_infos
 
 
-def test_continuous_coverage_phenotypes():
-    spg = ContinuousCoveragePhenotypeTestGenerator()
+def test_time_range_phenotypes():
+    spg = TimeRangePhenotypeTestGenerator()
     spg.run_tests()
 
 
@@ -190,6 +190,6 @@ def test_continuous_coverage_with_anchor_phenotype():
 
 
 if __name__ == "__main__":
-    test_continuous_coverage_phenotypes()
+    test_time_range_phenotypes()
     test_continuous_coverage_return_last()
     test_continuous_coverage_with_anchor_phenotype()

@@ -8,7 +8,7 @@ from .measurement_phenotype import MeasurementPhenotype
 from .measurement_change_phenotype import MeasurementChangePhenotype
 from .death_phenotype import DeathPhenotype
 from .categorical_phenotype import CategoricalPhenotype
-from .continuous_coverage_phenotype import ContinuousCoveragePhenotype
+from .time_range_phenotype import TimeRangePhenotype
 from .computation_graph_phenotypes import (
     ScorePhenotype,
     ArithmeticPhenotype,

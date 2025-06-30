@@ -8,7 +8,7 @@ from phenex.phenotypes import (
     CategoricalPhenotype,
     CodelistPhenotype,
     Cohort,
-    ContinuousCoveragePhenotype,
+    TimeRangePhenotype,
     SexPhenotype,
 )
 from phenex.filters import (
@@ -46,7 +46,7 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
+        cc = TimeRangePhenotype(
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
             )
@@ -170,7 +170,7 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
+        cc = TimeRangePhenotype(
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
             )
@@ -328,7 +328,7 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
+        cc = TimeRangePhenotype(
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
             )
@@ -457,7 +457,7 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
+        cc = TimeRangePhenotype(
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
             )
@@ -586,7 +586,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
+        cc = TimeRangePhenotype(
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
             )
@@ -702,7 +702,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         return test_infos
 
 
-def test_continuous_coverage_phenotype():
+def test_time_range_phenotype():
     g = CohortWithContinuousCoverageTestGenerator()
     g.run_tests()
 
