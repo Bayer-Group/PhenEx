@@ -43,15 +43,17 @@ class ContinuousCoveragePhenotype(Phenotype):
     # one year continuous coverage prior to index
     one_year_coverage = ContinuousCoveragePhenotype(
         when = 'before',
-        value_filter = ValueFilter(
-            min_value=GreaterThanOrEqualTo(365)
-            ),
-        anchor_phenotype = entry_phenotype
+        relative_time_range = RelativeTimeRangeFilter(
+            min_days=GreaterThanOrEqualTo(365),
+            anchor_phenotype = entry_phenotype
+        ),
     )
     # determine the date of loss to followup
     loss_to_followup = ContinuousCoveragePhenotype(
-        when = 'after',
-        anchor_phenotype = entry_phenotype
+        relative_time_range = RelativeTimeRangeFilter(
+            when = 'after',
+            anchor_phenotype = entry_phenotype
+        )
     )
     ```
     """
@@ -60,24 +62,21 @@ class ContinuousCoveragePhenotype(Phenotype):
         self,
         name: Optional[str] = "continuous_coverage",
         domain: Optional[str] = "OBSERVATION_PERIOD",
-        value_filter: Optional[ValueFilter] = None,
-        when: Optional[str] = "before",
-        anchor_phenotype: Optional[Phenotype] = None,
+        relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.name = name
         self.domain = domain
-        self.when = when
-        self.value_filter = value_filter
-        self.anchor_phenotype = anchor_phenotype
-        if self.anchor_phenotype is not None:
-            self.children.append(self.anchor_phenotype)
+        self.relative_time_range = relative_time_range
+        if self.relative_time_range is not None:
+            if self.relative_time_range.anchor_phenotype is not None:
+                self.children.append(self.relative_time_range.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         table = tables[self.domain]
         table, reference_column = attach_anchor_and_get_reference_date(
-            table, self.anchor_phenotype
+            table, self.relative_time_range.anchor_phenotype
         )
 
         # Ensure that the observation period includes anchor date
@@ -86,7 +85,10 @@ class ContinuousCoveragePhenotype(Phenotype):
             & (reference_column <= table.END_DATE)
         )
 
-        if self.when == "before":
+        if (
+            self.relative_time_range is None
+            or self.relative_time_range.when == "before"
+        ):
             VALUE = reference_column.delta(table.START_DATE, "day")
             EVENT_DATE = table.START_DATE
         else:
@@ -95,7 +97,13 @@ class ContinuousCoveragePhenotype(Phenotype):
 
         table = table.mutate(VALUE=VALUE, EVENT_DATE=EVENT_DATE)
 
-        if self.value_filter:
-            table = self.value_filter.filter(table)
+        if self.relative_time_range is not None:
+            value_filter = ValueFilter(
+                min_value=self.relative_time_range.min_days,
+                max_value=self.relative_time_range.max_days,
+                column_name="VALUE",
+            )
+            ibis.options.interactive = True
+            table = value_filter.filter(table)
 
         return table

@@ -4,7 +4,7 @@ import pandas as pd
 from phenex.phenotypes.continuous_coverage_phenotype import ContinuousCoveragePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
-from phenex.filters import ValueFilter
+from phenex.filters import ValueFilter, RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -79,8 +79,8 @@ class ContinuousCoveragePhenotypeTestGenerator(PhenotypeTestGenerator):
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                value_filter=ValueFilter(
-                    min_value=test_info.get("coverage_period_min")
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=test_info.get("coverage_period_min")
                 ),
             )
 
@@ -123,10 +123,9 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
         for test_info in test_infos:
             test_info["phenotype"] = ContinuousCoveragePhenotype(
                 name=test_info["name"],
-                value_filter=ValueFilter(
-                    min_value=test_info.get("coverage_period_min")
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=test_info.get("coverage_period_min"), when="after"
                 ),
-                when="after",
             )
 
         return test_infos
@@ -158,9 +157,9 @@ class ContinuousCoverageWithAnchorPhenotype(ContinuousCoveragePhenotypeTestGener
 
         cc1 = ContinuousCoveragePhenotype(
             name="cc_prior_entry",
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(90)),
-            when="before",
-            anchor_phenotype=entry,
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(90), when="before", anchor_phenotype=entry
+            ),
         )
 
         persons = ["P7", "P10", "P11"]

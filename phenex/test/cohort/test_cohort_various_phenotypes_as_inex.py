@@ -47,7 +47,9 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
         )
 
         cc = ContinuousCoveragePhenotype(
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
 
         return Cohort(
@@ -169,7 +171,9 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
         )
 
         cc = ContinuousCoveragePhenotype(
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
 
         e4 = CodelistPhenotype(
@@ -325,7 +329,9 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
         )
 
         cc = ContinuousCoveragePhenotype(
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
         agege18 = AgePhenotype(
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
@@ -452,7 +458,9 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
         )
 
         cc = ContinuousCoveragePhenotype(
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
         agel18 = AgePhenotype(value_filter=ValueFilter(max_value=LessThan(18)))
 
@@ -579,7 +587,9 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         )
 
         cc = ContinuousCoveragePhenotype(
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365))
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
         agege18 = AgePhenotype(
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
