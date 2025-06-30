@@ -24,24 +24,68 @@ class CategoricalPhenotype(Phenotype):
 
     def __init__(
         self,
+        categorical_filter: CategoricalFilter,
         name: str = None,
-        domain: str = None,
-        allowed_values: List = None,
-        column_name: str = None,
+        date_range: DateFilter = None,
+        relative_time_range: Union[
+            RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
+        ] = None,
+        return_date="first",
         **kwargs,
     ):
         self.name = name
-        self.categorical_filter = CategoricalFilter(
-            allowed_values=allowed_values, domain=domain, column_name=column_name
-        )
         super(CategoricalPhenotype, self).__init__(**kwargs)
+        if not isinstance(self.categorical_filter, CategoricalFilter):
+            raise ValueError("Categorical Phenotype requires a single categorical filter. Logical expressions of CategoricalFilters are not allowed for CategoricalPhenotype. If such behavior is desired, use LogicPhenotype with CategoricalPhenotypes.")
+        self.categorical_filter = categorical_filter
+        self.date_range = date_range
+        self.return_date = return_date
+        assert self.return_date in [
+            "first",
+            "last",
+            "nearest",
+            "all",
+        ], f"Unknown return_date: {return_date}"
 
-    def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
-        table = tables[self.categorical_filter.domain]
-        table = self.categorical_filter._filter(table)
-        return table.mutate(
-            VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null(date)
-        )
+        if isinstance(relative_time_range, RelativeTimeRangeFilter):
+            relative_time_range = [relative_time_range]
+
+        self.relative_time_range = relative_time_range
+        if self.relative_time_range is not None:
+            for rtr in self.relative_time_range:
+                if rtr.anchor_phenotype is not None:
+                    self.children.append(rtr.anchor_phenotype)
+
+    def _execute(self, tables) -> PhenotypeTable:
+        code_table = tables[self.domain]
+        code_table = self._perform_categorical_filtering(code_table)
+        code_table = self._perform_time_filtering(code_table)
+        code_table = self._perform_date_selection(code_table)
+        return select_phenotype_columns(code_table)
+
+    def _perform_categorical_filtering(self, code_table):
+        assert is_phenex_code_table(code_table)
+        code_table = self.categorical_filter.filter(code_table)
+        return code_table
+
+    def _perform_time_filtering(self, code_table):
+        if self.date_range is not None:
+            code_table = self.date_range.filter(code_table)
+        if self.relative_time_range is not None:
+            for rtr in self.relative_time_range:
+                code_table = rtr.filter(code_table)
+        return code_table
+
+    def _perform_date_selection(self, code_table):
+        if self.return_date is None or self.return_date == "all":
+            return code_table
+        if self.return_date == "first":
+            aggregator = First()
+        elif self.return_date == "last":
+            aggregator = Last()
+        else:
+            raise ValueError(f"Unknown return_date: {self.return_date}")
+        return aggregator.aggregate(code_table)
 
 
 class HospitalizationPhenotype(Phenotype):
