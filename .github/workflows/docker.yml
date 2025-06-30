@@ -39,7 +39,7 @@ jobs:
           context: ./app/backend
           file: ./app/backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phenex-backend:${{ env.DOCKER_TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phenex:backend-${{ env.DOCKER_TAG }}
 
   build-and-push-frontend:
     runs-on: ubuntu-latest
@@ -71,4 +71,4 @@ jobs:
           context: ./app/ui
           file: ./app/ui/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phenex-frontend:${{ env.DOCKER_TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/phenex:frontend-${{ env.DOCKER_TAG }}
