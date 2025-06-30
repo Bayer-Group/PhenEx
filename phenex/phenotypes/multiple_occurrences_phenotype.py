@@ -47,7 +47,6 @@ class MultipleOccurrencesPhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str,
         phenotype: Phenotype,
         n_occurrences: int = 2,
         date_range: DateFilter = None,
@@ -55,7 +54,6 @@ class MultipleOccurrencesPhenotype(Phenotype):
         return_date="first",
         **kwargs
     ):
-        self.name = name
         self.date_range = date_range
         self.relative_time_range = relative_time_range
         self.return_date = return_date
