@@ -28,7 +28,9 @@ class CombineOverlappingPeriods(DerivedTable):
     ) -> "PhenexTable":
         # get the appropriate table
         table = tables[self.source_domain]
-        logger.warning("CombineOverlappingTables has known potential performance issues especially when working with large cohorts. Please open an issue on GitHub if performance issues appear.")
+        logger.warning(
+            "CombineOverlappingTables has known potential performance issues especially when working with large cohorts. Please open an issue on GitHub if performance issues appear."
+        )
         if self.categorical_filter is not None:
             # apply the categorical filter to the table
             table = self.categorical_filter.autojoin_filter(table, tables)
