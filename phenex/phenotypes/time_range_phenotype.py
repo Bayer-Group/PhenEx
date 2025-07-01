@@ -66,13 +66,12 @@ class TimeRangePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: Optional[str] = "continuous_coverage",
+        name: Optional[str] = "TIME_RANGE",
         domain: Optional[str] = "OBSERVATION_PERIOD",
         relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
-        super().__init__(**kwargs)
-        self.name = name
+        super().__init__(name=name, **kwargs)
         self.domain = domain
         self.relative_time_range = relative_time_range
         if self.relative_time_range is not None:
