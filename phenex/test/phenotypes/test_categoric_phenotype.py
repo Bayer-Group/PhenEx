@@ -29,17 +29,17 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
         df = add_flag(df, "z", ["z1", "z2"])
         df["PERSON_ID"] = [f"P{i}" for i in range(df.shape[0])]
 
-        return [{"name":"person", "df": df}]
+        return [{"name": "person", "df": df}]
 
     def define_phenotype_tests(self):
         c1 = {
             "name": "single_flag",
             "persons": [f"P{i}" for i in range(4)],
             "phenotype": CategoricalPhenotype(
+                domain="person",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["z1"], 
+                    allowed_values=["z1"],
                     column_name="z",
-                    domain='person'
                 ),
             ),
         }
@@ -48,11 +48,13 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_or",
             "persons": [f"P{i}" for i in range(4)] + [f"P{i}" for i in range(6, 8)],
             "phenotype": CategoricalPhenotype(
+                domain="person",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["z1"], column_name="z",
-                    domain="person"
+                    allowed_values=["z1", "y2"], column_name="z", domain="person"
                 )
-                | CategoricalFilter(allowed_values=["y2"], column_name="y", domain='person'),
+                | CategoricalFilter(
+                    allowed_values=["y2"], column_name="y", domain="person"
+                ),
             ),
         }
 
@@ -60,10 +62,13 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_and",
             "persons": [f"P{i}" for i in range(2, 4)],
             "phenotype": CategoricalPhenotype(
+                domain="person",
                 categorical_filter=CategoricalFilter(
-                    allowed_values=["z1"], column_name="z", domain='person'
+                    allowed_values=["z1"], column_name="z", domain="person"
                 )
-                & CategoricalFilter(allowed_values=["y2"], column_name="y", domain='person'),
+                & CategoricalFilter(
+                    allowed_values=["y2"], column_name="y", domain="person"
+                ),
             ),
         }
 
