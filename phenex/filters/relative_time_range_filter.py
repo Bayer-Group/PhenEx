@@ -2,6 +2,7 @@ from typing import Optional
 
 # from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.filter import Filter
+from phenex.filters.value_filter import ValueFilter
 from phenex.tables import EventTable, is_phenex_phenotype_table
 from phenex.filters.value import *
 
@@ -78,25 +79,14 @@ class RelativeTimeRangeFilter(Filter):
         table = table.mutate(DAYS_FROM_ANCHOR=DAYS_FROM_ANCHOR)
 
         conditions = []
-        # Fix this, this logic needs to be abstracted to a ValueFilter
-        if self.min_days is not None:
-            if self.min_days.operator == ">":
-                conditions.append(table.DAYS_FROM_ANCHOR > self.min_days.value)
-            elif self.min_days.operator == ">=":
-                conditions.append(table.DAYS_FROM_ANCHOR >= self.min_days.value)
-            else:
-                raise ValueError("Operator for min days be > or >=")
-        if self.max_days is not None:
-            if self.max_days.operator == "<":
-                conditions.append(table.DAYS_FROM_ANCHOR < self.max_days.value)
-            elif self.max_days.operator == "<=":
-                conditions.append(table.DAYS_FROM_ANCHOR <= self.max_days.value)
-            else:
-                raise ValueError("Operator for max days be < or <=")
-        if conditions:
-            table = table.filter(conditions)
 
-        return table
+        value_filter = ValueFilter(
+            min_value=self.min_days,
+            max_value=self.max_days,
+            column_name="DAYS_FROM_ANCHOR",
+        )
+
+        return value_filter.filter(table)
 
 
 def verify_relative_time_range_filter_input(min_days, max_days, when):
