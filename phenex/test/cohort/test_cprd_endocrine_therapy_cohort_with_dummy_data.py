@@ -185,7 +185,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
             x.upper()
             for x in [
                 "breast_cancer",
-                "continuous_coverage",
+                "time_range",
                 "data_quality",
                 "age",
                 "sex",
