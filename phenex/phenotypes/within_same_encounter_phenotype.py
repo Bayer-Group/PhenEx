@@ -53,14 +53,12 @@ class WithinSameEncounterPhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str,
         anchor_phenotype: Union["CodelistPhenotype", "MeasurementPhenotype"],
         phenotype: Union["CodelistPhenotype", "MeasurementPhenotype"],
         column_name: str,
         **kwargs,
     ):
         super(WithinSameEncounterPhenotype, self).__init__(**kwargs)
-        self.name = name
         if (
             anchor_phenotype.__class__.__name__
             not in ["CodelistPhenotype", "MeasurementPhenotype"]

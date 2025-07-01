@@ -8,7 +8,7 @@ from phenex.phenotypes import (
     CategoricalPhenotype,
     CodelistPhenotype,
     Cohort,
-    ContinuousCoveragePhenotype,
+    TimeRangePhenotype,
     SexPhenotype,
 )
 from phenex.filters import *

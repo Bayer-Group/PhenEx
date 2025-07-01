@@ -20,7 +20,7 @@ nav:
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
-          - ContinuousCoveragePhenotype: api/phenotypes/continuous_coverage_phenotype.md
+          - TimeRangePhenotype: api/phenotypes/time_range_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
