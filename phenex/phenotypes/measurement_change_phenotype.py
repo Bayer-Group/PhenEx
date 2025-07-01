@@ -45,7 +45,6 @@ class MeasurementChangePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str,
         phenotype: MeasurementPhenotype,
         min_change: Value = None,
         max_change: Value = None,
@@ -58,7 +57,6 @@ class MeasurementChangePhenotype(Phenotype):
         **kwargs,
     ):
         super(MeasurementChangePhenotype, self).__init__(**kwargs)
-        self.name = name
         self.phenotype = phenotype
         self.min_change = min_change
         self.max_change = max_change
