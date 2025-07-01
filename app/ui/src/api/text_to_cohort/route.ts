@@ -1,11 +1,15 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8000';
+let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+if (!BACKEND_URL) {
+  console.warn('VITE_BACKEND_URL is undefined. Defaulting BACKEND_URL to http://localhost:8000');
+  BACKEND_URL = 'http://localhost:8000';
+}
 
 export const getCohorts = async () => {
   try {
     console.log('Sending request to getCohorts with data:');
-    const response = await axios.get(`${BASE_URL}/cohorts`);
+    const response = await axios.get(`${BACKEND_URL}/cohorts`);
     console.log('Received response from getCohorts:', response.data);
     return response.data;
   } catch (error) {
@@ -18,7 +22,7 @@ export const getCohort = async (cohort_id: string, provisional: boolean = false)
   try {
     console.log('Sending request to getCohorts with data:');
     const response = await axios.get(
-      `${BASE_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`
+      `${BACKEND_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`
     );
     console.log('Received response from getCohorts:', response.data);
     return response.data;
@@ -31,7 +35,7 @@ export const getCohort = async (cohort_id: string, provisional: boolean = false)
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
     console.log('Sending request to updateCohort with data:', cohort_data);
-    const response = await axios.post(`${BASE_URL}/cohort?cohort_id=${cohort_id}`, cohort_data);
+    const response = await axios.post(`${BACKEND_URL}/cohort?cohort_id=${cohort_id}`, cohort_data);
     console.log('Received response from updateCohort:', response.data);
     return response.data;
   } catch (error) {
@@ -43,7 +47,7 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
 export const deleteCohort = async (cohort_id: string) => {
   try {
     console.log('Sending request to deleteCohort with data:', cohort_id);
-    const response = await axios.delete(`${BASE_URL}/cohort?cohort_id=${cohort_id}`);
+    const response = await axios.delete(`${BACKEND_URL}/cohort?cohort_id=${cohort_id}`);
     console.log('Received response from deleteCohort:', response.data);
     return response.data;
   } catch (error) {
@@ -55,7 +59,7 @@ export const deleteCohort = async (cohort_id: string) => {
 export const acceptChanges = async (cohort_id: string) => {
   try {
     console.log('Sending request to acceptChanges with cohort_id:', cohort_id);
-    const response = await axios.get(`${BASE_URL}/cohort/accept_changes`, {
+    const response = await axios.get(`${BACKEND_URL}/cohort/accept_changes`, {
       params: { cohort_id },
     });
     return response.data;
@@ -68,7 +72,7 @@ export const acceptChanges = async (cohort_id: string) => {
 export const rejectChanges = async (cohort_id: string) => {
   try {
     console.log('Sending request to rejectChanges with cohort_id:', cohort_id);
-    const response = await axios.get(`${BASE_URL}/cohort/reject_changes`, {
+    const response = await axios.get(`${BACKEND_URL}/cohort/reject_changes`, {
       params: { cohort_id },
     });
     console.log('Received response from rejectChanges:', response.data);
@@ -82,7 +86,7 @@ export const rejectChanges = async (cohort_id: string) => {
 export const textToCohort = async (data: any) => {
   try {
     console.log('Sending request to planUpdateCohort with data:', data);
-    const response = await fetch(`${BASE_URL}/text_to_cohort`, {
+    const response = await fetch(`${BACKEND_URL}/text_to_cohort`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
