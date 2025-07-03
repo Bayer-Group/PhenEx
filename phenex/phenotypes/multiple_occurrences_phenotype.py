@@ -59,8 +59,9 @@ class MultipleOccurrencesPhenotype(Phenotype):
         self.return_date = return_date
         self.n_occurrences = n_occurrences
         self.phenotype = phenotype
-        self.children = [phenotype]
-        super(MultipleOccurrencesPhenotype, self).__init__(**kwargs)
+        children = kwargs.pop("children", [])
+        children.append(phenotype)
+        super(MultipleOccurrencesPhenotype, self).__init__(children=children, **kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table

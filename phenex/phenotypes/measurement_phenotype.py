@@ -73,7 +73,12 @@ class MeasurementPhenotype(CodelistPhenotype):
         # Default value of return_date in codelist_phenotype is 'first'. This is not helpful behavior for measurementphenotype as we will perform further operations that require all values. For example, if we want the mean of all values in the post index period, setting return_date = 'first' will return only the values on the first day
         if "return_date" not in kwargs:
             kwargs["return_date"] = "all"
+        children = kwargs.pop("children", [])
+        if further_value_filter_phenotype is not None:
+            children.append(further_value_filter_phenotype)
+
         super(MeasurementPhenotype, self).__init__(
+            children=children,
             **kwargs,
         )
         self.clean_nonphysiologicals_value_filter = clean_nonphysiologicals_value_filter
@@ -92,9 +97,6 @@ class MeasurementPhenotype(CodelistPhenotype):
                 raise ValueError(
                     f"{self.name}: you have selected an aggregation of the entire time period while selecting a single date selection of {self.return_date}. Select a daily aggregator (DailyMean, DailyMedian, DailyMin, DailyMax) if selecting a specific return date."
                 )
-
-        if self.further_value_filter_phenotype is not None:
-            self.children.append(self.further_value_filter_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         # perform codelist filtering

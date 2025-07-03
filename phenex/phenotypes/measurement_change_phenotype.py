@@ -56,7 +56,6 @@ class MeasurementChangePhenotype(Phenotype):
         return_value: Optional[ValueAggregator] = None,
         **kwargs,
     ):
-        super(MeasurementChangePhenotype, self).__init__(**kwargs)
         self.phenotype = phenotype
         self.min_change = min_change
         self.max_change = max_change
@@ -66,7 +65,6 @@ class MeasurementChangePhenotype(Phenotype):
         self.component_date_select = component_date_select
         self.return_date = return_date
         self.return_value = return_value
-        self.children = [phenotype]
         if self.direction not in ["increase", "decrease"]:
             raise ValueError(
                 f"Invalid choice for direction: {direction}. Must be 'increase' or 'decrease'."
@@ -75,6 +73,7 @@ class MeasurementChangePhenotype(Phenotype):
             raise ValueError(
                 f'component_date_select = {component_date_select} not supported, must be either "first" or "second"'
             )
+        super(MeasurementChangePhenotype, self).__init__(children=[phenotype], **kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial filtered table

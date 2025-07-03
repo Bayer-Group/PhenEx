@@ -34,9 +34,7 @@ class Phenotype(PhenexComputeNode):
         kwargs: For additional parameters, see PhenexComputeNode.
     """
 
-    def __init__(
-        self, description: str = None, **kwargs
-    ):
+    def __init__(self, description: str = None, **kwargs):
         self.description = description
         super(Phenotype, self).__init__(**kwargs)
 

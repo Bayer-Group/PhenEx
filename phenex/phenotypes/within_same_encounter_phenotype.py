@@ -58,7 +58,8 @@ class WithinSameEncounterPhenotype(Phenotype):
         column_name: str,
         **kwargs,
     ):
-        super(WithinSameEncounterPhenotype, self).__init__(**kwargs)
+        children = [anchor_phenotype]
+        super(WithinSameEncounterPhenotype, self).__init__(children=children, **kwargs)
         if (
             anchor_phenotype.__class__.__name__
             not in ["CodelistPhenotype", "MeasurementPhenotype"]
@@ -73,7 +74,6 @@ class WithinSameEncounterPhenotype(Phenotype):
         self.anchor_phenotype = anchor_phenotype
         self.phenotype = phenotype
         self.column_name = column_name
-        self.children.append(self.anchor_phenotype)
 
     def _execute(self, tables) -> "PhenotypeTable":
         # Subset the raw anchor data that occurs on the same day as the anchor date in order to get the column of interest
