@@ -13,7 +13,7 @@ class PhenexComputeNode:
     A PhenexComputeNode is a "unit of computation" in the execution of phenotypes / cohorts. Its output is always a single table. PhenexComputeNode manages the execution of itself and any children (dependent) nodes, optionally using lazy (re)execution for making incremental updates to a node defintion.
 
     Parameters:
-        name: A short but descriptive name for the node. The name is used as a unique identifier for the node and must be unique across all nodes used in the graph (you cannot have two nodes called "age_phenotype", for example, as they will conflict with each other).
+        name: A short but descriptive name for the node. The name is used as a unique identifier for the node and must be unique across all nodes used in the graph (you cannot have two nodes called "age_phenotype", for example, as they will conflict with each other). If the output table is materialized from this node, name will be used as the table name in the database.
         children: The list of dependent nodes that must be executed before this node can run.
 
     Attributes:
@@ -91,14 +91,14 @@ class PhenexComputeNode:
                 raise ValueError("lazy_execution only works with overwrite=True.")
             if con is None:
                 raise ValueError(
-                    "A DatabseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
+                    "A DatabaseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
                 )
 
             # first time computing, self.hash will be None and execution will still be triggered
             hash = self._compute_hash()
             if hash != self.hash:
                 logger.info(
-                    f"Node '{self.name}': changed since last computation -- recomputing ..."
+                    f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
                 )
                 self.table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
@@ -112,6 +112,7 @@ class PhenexComputeNode:
                 logger.info(
                     f"Node '{self.name}': unchanged since last computation -- skipping!"
                 )
+                self.table = con.get_dest_table(self.name)
 
         else:
             self.table = self._execute(tables)
