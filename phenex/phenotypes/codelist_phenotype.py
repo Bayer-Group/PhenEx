@@ -104,7 +104,6 @@ class CodelistPhenotype(Phenotype):
     ):
         if name is None:
             name = codelist.name
-        super(CodelistPhenotype, self).__init__(name=name, **kwargs)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
@@ -117,16 +116,18 @@ class CodelistPhenotype(Phenotype):
             "nearest",
             "all",
         ], f"Unknown return_date: {return_date}"
-        self.table: PhenotypeTable = None
         self.domain = domain
         if isinstance(relative_time_range, RelativeTimeRangeFilter):
             relative_time_range = [relative_time_range]
 
         self.relative_time_range = relative_time_range
+        children = []
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
-                    self.children.append(rtr.anchor_phenotype)
+                    children.append(rtr.anchor_phenotype)
+
+        super(CodelistPhenotype, self).__init__(name=name, children=children,**kwargs)
 
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]

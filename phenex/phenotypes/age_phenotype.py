@@ -79,11 +79,11 @@ class AgePhenotype(Phenotype):
 
         # Set children to the dependent PHENOTYPES
         if anchor_phenotype is not None:
-            self.children = [anchor_phenotype]
+            children = [anchor_phenotype]
         else:
-            self.children = []
+            children = []
 
-        super(AgePhenotype, self).__init__(name=name, **kwargs)
+        super(AgePhenotype, self).__init__(name=name, children=children, **kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]

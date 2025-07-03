@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-from typing import Dict, Union, Optional
-=======
 from typing import Dict, Union, List
->>>>>>> 4673ee6 (stage)
 from ibis.expr.types.relations import Table
 from deepdiff import DeepDiff
 from phenex.tables import (
@@ -12,11 +8,12 @@ from phenex.tables import (
 )
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import to_dict
+from phenex.pipe import PhenexComputeNode
 
 logger = create_logger(__name__)
 
 
-class Phenotype(Node):
+class Phenotype(PhenexComputeNode):
     """
     A phenotype is a description of the state of a person at a specific time.
 
@@ -34,23 +31,14 @@ class Phenotype(Node):
 
     Parameters:
         description: A plain text description of the phenotype.
+        kwargs: For additional parameters, see PhenexComputeNode.
     """
 
-<<<<<<< HEAD
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
-        self.table = (
-            None  # self.table is populated ONLY AFTER self.execute() is called!
-        )
-        self._name = name
-        self.children = []  # List[Phenotype]
+    def __init__(
+        self, description: str = None, **kwargs
+    ):
         self.description = description
-=======
-    def __init__(self, name: str, description: str = None, children: List["Phenotype"] = None):
-
-        self._namespaced_table = None
-        super(Phenotype, self).__init__(name=name, description=description, children = children)
->>>>>>> 4673ee6 (stage)
-        self._check_for_children()
+        super(Phenotype, self).__init__(**kwargs)
 
     @property
     def name(self):
@@ -62,7 +50,13 @@ class Phenotype(Node):
     def name(self, name):
         self._name = name
 
-    def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+    def execute(
+        self,
+        tables: Dict[str, Table] = None,
+        con: "SnowflakeConnector" = None,
+        overwrite: bool = False,
+        lazy_execution: bool = False,
+    ) -> Table:
         """
         Executes the phenotype computation for the current object and its children. This method recursively iterates over the children of the current object and calls their execute method if their table attribute is None.
 
@@ -72,19 +66,15 @@ class Phenotype(Node):
         Returns:
             table (PhenotypeTable): The resulting phenotype table containing the required columns. The PhenotypeTable will contain the columns: PERSON_ID, EVENT_DATE, VALUE. DATE is determined by the return_date parameter. VALUE is different for each phenotype. For example, AgePhenotype will return the age in the VALUE column. A MeasurementPhenotype will return the observed value for the measurement. See the specific phenotype of interest to understand more.
         """
-        logger.info(f"Phenotype '{self.name}': executing...")
-        for child in self.children:
-            if child.table is None:
-                logger.debug(
-                    f"Phenotype {self.name}: executing child phenotype '{child.name}'..."
-                )
-                child.execute(tables)
-            else:
-                logger.debug(
-                    f"Phenotype {self.name}: skipping already computed child phenotype '{child.name}'."
-                )
+        table = super(Phenotype, self).execute(
+            tables=tables,
+            con=con,
+            overwrite=overwrite,
+            lazy_execution=lazy_execution,
+        )  # calls ._execute()
 
-        table = self._execute(tables).mutate(BOOLEAN=True)
+        # post-processing specific to Phenotype Nodes
+        table = table.mutate(BOOLEAN=True)
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(
@@ -130,11 +120,6 @@ class Phenotype(Node):
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
-
-    def _check_for_children(self):
-        for phenotype in self.children:
-            if not isinstance(phenotype, Phenotype):
-                raise ValueError("Dependent children must be of type Phenotype!")
 
     def __add__(
         self, other: Union["Phenotype", "ComputationGraph"]
