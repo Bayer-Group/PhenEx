@@ -85,7 +85,7 @@
   align-self: flex-start;
   color: var(--text-color);
   border-top-left-radius: 0px;
-  margin-left: 0px;
+  margin-left: 15px;
   margin-right: 20px;
   /* background: repeating-linear-gradient(-15deg, #f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 6px); */
 }

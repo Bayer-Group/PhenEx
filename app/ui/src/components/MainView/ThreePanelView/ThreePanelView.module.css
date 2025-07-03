@@ -60,9 +60,9 @@
   cursor: pointer;
   z-index: 1;
   position: absolute;
-  width: 24px;
+  width: 20px;
   height: 10px;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   padding-left: -10px !important;
   background-color: transparent;
   display: flex;
@@ -74,12 +74,10 @@
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
-  /* transition: transform 0.2s ease; */
   border: transparent 1px solid;
   background-color: transparent;
   color: black;
   user-select: none;
-  /* transition: all 0.2s ease; */
 }
 
 .arrow {
@@ -104,9 +102,11 @@
 .collapseButton.left {
   left: -45px;
   top: 4px;
+  font-size: 20px;
+
   font-family: 'SNPro-black';
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   bottom: 1px;
 }
 
@@ -118,11 +118,12 @@
 }
 
 .collapseButton.left.collapsed {
-  left: 7px;
-  top: 6px;
+  left: 10px;
+  top: 10px;
   border: 1px solid transparent;
   box-shadow: none;
   font-family: 'SNPro-black';
+  transform: rotate(180deg) !important;
 }
 
 .collapseButton.right {

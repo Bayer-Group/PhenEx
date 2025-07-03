@@ -89,8 +89,8 @@
   border: 1px solid transparent;
   cursor: pointer;
   z-index: 1;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background-color: transparent;
   display: flex;
@@ -108,7 +108,7 @@
   color: black;
   user-select: none;
   font-family: 'SNPro-black';
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .collapseButton:hover {
@@ -117,7 +117,7 @@
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
   color: var(--color-accent);
   outline: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   background-color: var(--background-color-deeper);
   color: var(--background-color-deeper-text);
   border-color: var(--background-color-deeper) !important;

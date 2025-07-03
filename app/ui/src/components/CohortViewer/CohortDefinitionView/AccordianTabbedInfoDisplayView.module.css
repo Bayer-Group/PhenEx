@@ -131,11 +131,16 @@ strong {
   /* padding: 20px; */
 }
 
+.accordianContainer.opened .tabsContainer {
+  margin-left:100px;
+}
+
+
 .tabsContainer {
   position: relative !important;
   margin-bottom: 0px;
   margin-top: 15px;
-  margin-left: 20px;
+  margin-left: 0px;
   transition: 0.2s ease;
   padding-right: 15px;
   z-index: 1000;

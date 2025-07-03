@@ -20,7 +20,7 @@ const phenotypes = [
     info: 'For categorical values, for example ethnicity, sex, or hospitalization',
   },
   {
-    name: 'ContinuousCoveragePhenotype',
+    name: 'TimeRangePhenotype',
     info: 'For observation period data. Identify patients with continuous periods of insurance or healthcare coverage.',
   },
   {

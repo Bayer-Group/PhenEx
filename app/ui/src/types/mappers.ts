@@ -46,7 +46,7 @@ export const MapperDomains: Record<Mapper, DomainInfo[]> = {
     },
     { name: 'DEATH', info: 'For usage with DeathPhenotype' },
     { name: 'VISIT_DETAIL', info: 'Contains additional information pertaining to encounters.' },
-    { name: 'OBSERVATION_PERIOD', info: 'For usage with ContinuousCoveragePhenotype.' },
+    { name: 'OBSERVATION_PERIOD', info: 'For usage with TimeRangePhenotype.' },
   ],
   [Mapper.OPTUM_EHR]: [
     {

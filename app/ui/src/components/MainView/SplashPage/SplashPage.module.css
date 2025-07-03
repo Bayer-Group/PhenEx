@@ -7,22 +7,26 @@
 
 .content {
   padding: 2rem;
-  padding-top: 100px;
-  position: relative;
+  padding-top: 0px;
+  position: absolute;
   z-index: 2;
-  margin-right: 280px;
+  top: 0px;
+  margin-right: 40px;
   font-family: 'IBMPlexSans-Regular';
 }
 
 .content h1 {
-  margin-bottom: 1rem;
+  position: relative;;
   color: var(--text-color);
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-Bold';
+  margin-bottom: 40px;
+  margin-top:190px;
 }
 
 .content p {
   color: var(--text-color-secondary);
   z-index: 10;
+  max-width: 700px;
 }
 
 .topLeft {
@@ -35,9 +39,9 @@
 
 .bottomRight {
   position: absolute;
-  bottom: 4px;
+  bottom: 15px;
   right: 80px;
-  font-size: 50px;
+  font-size: 32px;
 }
 
 .label {
@@ -48,10 +52,11 @@
 
 .logo {
   position: absolute;
-  width: 800px;
-  right: -250px;
-  top: -50px;
+  width: 150px;
+  right: 0px;
+  top: 10px;
   z-index: 1;
   pointer-events: none;
+  z-index: 0;
   /* transform: rotate(-40deg); */
 }

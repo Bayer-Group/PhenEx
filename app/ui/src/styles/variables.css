@@ -44,7 +44,8 @@
   --phenex-coral: hsl(16, 40%, 80%);
   --phenex-red: hsl(0, 40%, 80%);
   --phenex-red-active: hsl(0, 90%, 80%);
-  --color-accent-hover: hsl(0, 30%, 96%);
+  /* --color-accent-hover: hsl(0, 30%, 96%); */
+  --color-accent-hover: hsl(24, 80%, 94%);
 
   --phenex-dark: hsl(0, 40%, 5%);
 

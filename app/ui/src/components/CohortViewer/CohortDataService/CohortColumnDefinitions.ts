@@ -19,7 +19,7 @@ import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorC
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
 
 export const columnNameToApplicablePhenotypeMapping = {
-  relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'ContinuousCoveragePhenotype'],
+  relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
   value_filter:['MeasurementPhenotype', 'AgePhenotype'],
   categorical_filter:['CodelistPhenotype', 'MeasurementPhenotype'],
   codelist: ['CodelistPhenotype', 'MeasurementPhenotype']
@@ -75,7 +75,7 @@ export const defaultColumns = [
       values: [
         'CodelistPhenotype',
         'MeasurementPhenotype',
-        'ContinuousCoveragePhenotype',
+        'TimeRangePhenotype',
         'AgePhenotype',
         'DeathPhenotype',
         'LogicPhenotype',

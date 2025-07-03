@@ -98,11 +98,13 @@ export class PhenotypeDataService {
   private updateRowData() {
     console.log('UPDATING ROW DATA');
     if (this.currentPhenotype?.class_name && classDefinitions[this.currentPhenotype.class_name]) {
-      const paramDefinitions = classDefinitions[this.currentPhenotype.class_name];
+      let paramDefinitions = classDefinitions[this.currentPhenotype.class_name];
+      // filter out the non user visible params
+      paramDefinitions = paramDefinitions.filter(paramDef => paramDef.user_visible);
+
       const requiredParams = paramDefinitions.filter(paramDef => paramDef.required);
       const nonRequiredParams = paramDefinitions.filter(paramDef => !paramDef.required);
-      console.log('THIS IS THE PHENOTYPE', this.currentPhenotype);
-      const sharedParams = ['type', 'class_name', 'description'].map(param => ({
+      const sharedParams = ['type', 'class_name'].map(param => ({
         parameter: param,
         value: this.currentPhenotype![param] || 'Not set',
         ...this.currentPhenotype,
@@ -112,7 +114,7 @@ export class PhenotypeDataService {
 
       this.rowData = [
         ...sharedParams,
-        ...requiredParams
+        ...paramDefinitions
           .map(paramDef => ({
             parameter: paramDef.param,
             value: this.currentPhenotype![paramDef.param]
@@ -120,18 +122,6 @@ export class PhenotypeDataService {
               : paramDef.default,
             ...this.currentPhenotype,
           }))
-          .filter(row => row.parameter !== 'name')
-          .sort((a, b) => a.parameter.localeCompare(b.parameter)),
-        ...nonRequiredParams
-          .map(paramDef => ({
-            parameter: paramDef.param,
-            value: this.currentPhenotype![paramDef.param]
-              ? this.currentPhenotype![paramDef.param]
-              : paramDef.default,
-            ...this.currentPhenotype,
-          }))
-          .filter(row => row.parameter !== 'name')
-          .sort((a, b) => a.parameter.localeCompare(b.parameter)),
       ];
     } else {
       this.rowData = [];

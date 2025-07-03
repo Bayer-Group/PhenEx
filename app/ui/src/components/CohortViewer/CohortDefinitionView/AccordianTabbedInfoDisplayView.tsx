@@ -136,7 +136,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   return (
     <div className={`${styles.accordianContainer} ${isOpen ? styles.opened : ''}`}>
       <div className={`${styles.header} ${!isOpen ? styles.closed : ''}`}>
-        <h2>{title}</h2>
+        {/* <h2>{title}</h2> */}
         <button
           className={`${styles.toggleButton} ${!isOpen ? styles.closed : ''}`}
           onClick={() => setIsOpen(!isOpen)}

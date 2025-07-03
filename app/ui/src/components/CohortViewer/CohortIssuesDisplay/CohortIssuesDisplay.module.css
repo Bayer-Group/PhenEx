@@ -39,7 +39,7 @@
   font-family: 'SNPro-bold';
 }
 .row:hover {
-  border-color: var(--color-accent);
+  background-color: var(--color-accent-hover) !important;
   color: var(--color-accent);
 
   /* transform: translateY(-1px); */
