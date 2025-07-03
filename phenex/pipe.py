@@ -25,7 +25,7 @@ class PhenexComputeNode:
         self.name = name
         self.children = children if children is not None else []
         self.table = None
-        self._last_hash = None
+        self.hash = self._compute_hash()
         self._check_children_are_ok()
 
     def _check_children_are_ok(self):
@@ -86,7 +86,6 @@ class PhenexComputeNode:
                 overwrite=overwrite,
                 lazy_execution=lazy_execution,
             )
-
         if lazy_execution:
             if not overwrite:
                 raise ValueError("lazy_execution only works with overwrite=True.")
@@ -98,19 +97,33 @@ class PhenexComputeNode:
             # first time computing, _last_hash will be None and execution will still be triggered
             hash = self._compute_hash()
             if hash != self._last_hash:
+                logger.info(
+                    f"Node '{self.name}': changed since last computation -- recomputing ..."
+                )
                 self.table = self._execute(tables)
+                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
+                con.create_table(
+                    self.table,
+                    self.name,
+                    overwrite=overwrite,
+                )
                 self._last_hash = hash
+            else:
+                logger.info(
+                    f"Node '{self.name}': unchanged since last computation -- skipping!"
+                )
+
         else:
             self.table = self._execute(tables)
+            if con:
+                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
+                con.create_table(
+                    self.table,
+                    self.name,
+                    overwrite=overwrite,
+                )
 
-        if con:
-            logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-            con.create_table(
-                self.table,
-                self.name,
-                overwrite=overwrite,
-            )
-
+        logger.info(f"Node '{self.name}': execution completed.")
         return self.table
 
     def _execute(self, tables: Dict[str, Table]) -> Table:

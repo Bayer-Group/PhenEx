@@ -48,29 +48,10 @@ class Phenotype(PhenexComputeNode):
     def name(self, name):
         self._name = name
 
-    def execute(
-        self,
-        tables: Dict[str, Table] = None,
-        con: "SnowflakeConnector" = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-    ) -> Table:
+    def _perform_final_processing(self, table: Table) -> Table:
         """
-        Executes the phenotype computation for the current object and its children. This method recursively iterates over the children of the current object and calls their execute method if their table attribute is None.
-
-        Args:
-            tables (Dict[str, PhenexTable]): A dictionary mapping table names to PhenexTable objects. See phenex.mappers.DomainsDictionary.get_mapped_tables().
-
-        Returns:
-            table (PhenotypeTable): The resulting phenotype table containing the required columns. The PhenotypeTable will contain the columns: PERSON_ID, EVENT_DATE, VALUE. DATE is determined by the return_date parameter. VALUE is different for each phenotype. For example, AgePhenotype will return the age in the VALUE column. A MeasurementPhenotype will return the observed value for the measurement. See the specific phenotype of interest to understand more.
+        Post process a Table before writing to disk to enforce that the table is actually a PhenotypeTable.
         """
-        table = super(Phenotype, self).execute(
-            tables=tables,
-            con=con,
-            overwrite=overwrite,
-            lazy_execution=lazy_execution,
-        )  # calls ._execute()
-
         # post-processing specific to Phenotype Nodes
         table = table.mutate(BOOLEAN=True)
 
@@ -85,7 +66,6 @@ class Phenotype(PhenexComputeNode):
             self.table = self.table.cast({"VALUE": "float64"})
 
         assert is_phenex_phenotype_table(self.table)
-        logger.info(f"Phenotype '{self.name}': execution completed.")
         return self.table
 
     @property

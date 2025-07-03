@@ -256,14 +256,15 @@ class SnowflakeConnector:
             schema=table.schema(),
         )
 
-    def create_table(self, table, name_table=None, overwrite=False):
+    def create_table(self, table, name_table=None, overwrite=False, comment=None):
         """
         Materialize a table in the destination Snowflake database.
 
         Args:
-            table (Table): Ibis table object to materialize.
+            table: Ibis table object to materialize.
             name_table (str, optional): Name of the table to create. Defaults to None.
-            overwrite (bool, optional): Whether to overwrite the table if it exists. Defaults to False.
+            overwrite: Whether to overwrite the table if it exists. Defaults to False.
+            comment: Add a comment about the table.
 
         Returns:
             Table: Ibis table object created in the destination Snowflake database.
@@ -284,6 +285,7 @@ class SnowflakeConnector:
             obj=table,
             overwrite=overwrite,
             schema=table.schema(),
+            comment=comment,
         )
 
     def drop_table(self, name_table):

@@ -135,7 +135,9 @@ class CodelistPhenotype(Phenotype):
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
-        return select_phenotype_columns(code_table)
+        code_table = select_phenotype_columns(code_table)
+        code_table = self._perform_final_processing(code_table)
+        return code_table
 
     def _perform_codelist_filtering(self, code_table):
         assert is_phenex_code_table(code_table)
