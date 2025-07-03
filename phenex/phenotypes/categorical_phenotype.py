@@ -32,13 +32,17 @@ def check_categorical_filters_share_same_domain(filter, domain):
 
 class CategoricalPhenotype(Phenotype):
     """
-    CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity.
+    CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity. Categorical Phenotype is especially helpful as a baseline characteristic from PERSON like tables. 
+    The returned Phenotype has the following interpretation:
+
+    DATE: If when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If when='after', then DATE is the end of the coverage period containing the anchor date.
+    VALUE: Coverage (in days) relative to the anchor date. By convention, always non-negative.
+
 
     Parameters:
         name: Name of the phenotype.
         domain: Domain of the phenotype.
-        allowed_values: List of allowed values for the categorical variable. If not passed, all values are returned.
-        column_name: Name of the column containing the required categorical variable.
+        categorical_filter: Use CategoricalFilter to input allowed values for the categorical variable. If not passed, all values are returned.
     """
 
     def __init__(
