@@ -10,7 +10,7 @@ logger = create_logger(__name__)
 
 class PhenexComputeNode:
     """
-    PhenexComputeNode manages the state of a single node in a phenotype computation pipeline. A PhenexComputeNode manages the execution of itself and any children (dependent) nodes, optionally using lazy (re)execution for making incremental updates to a node defintion.
+    A PhenexComputeNode is a "unit of computation" in the execution of phenotypes / cohorts. Its output is always a single table. PhenexComputeNode manages the execution of itself and any children (dependent) nodes, optionally using lazy (re)execution for making incremental updates to a node defintion.
 
     Parameters:
         name: A short but descriptive name for the node. The name is used as a unique identifier for the node and must be unique across all nodes used in the graph (you cannot have two nodes called "age_phenotype", for example, as they will conflict with each other).
@@ -104,6 +104,7 @@ class PhenexComputeNode:
             self.table = self._execute(tables)
 
         if con:
+            logger.info(f"Node '{self.name}': writing table to {self.name} ...")
             con.create_table(
                 self.table,
                 self.name,
@@ -117,7 +118,7 @@ class PhenexComputeNode:
         Implements the processing logic for this node. Should be implemented by subclasses to define specific computation logic.
 
         Parameters:
-            tables (Dict[str, Table]): A dictionary where the keys are table names and the values are Table objects.
+            tables (Dict[str, Table]): A dictionary where the keys are table domains and the values are Table objects.
 
         Raises:
             NotImplementedError: This method should be implemented by subclasses.

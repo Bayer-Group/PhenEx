@@ -23,8 +23,7 @@ def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTa
 
 class Cohort(Phenotype):
     """
-    The Cohort class represents a cohort of individuals based on specified entry criteria,
-    inclusions, exclusions, and baseline characteristics. It extends the Phenotype class.
+    The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
 
     Parameters:
         name: A descriptive name for the cohort.
@@ -86,6 +85,7 @@ class Cohort(Phenotype):
         con: "SnowflakeConnector" = None,
         write_subset_tables=False,
         overwrite: bool = False,
+        lazy_execution: bool = False,
         n_threads: int = 1,
     ) -> PhenotypeTable:
         """
@@ -104,7 +104,9 @@ class Cohort(Phenotype):
         logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
         # Compute entry criterion
         logger.debug("Computing entry criterion ...")
-        self.entry_criterion.execute(tables)
+        self.entry_criterion.execute(
+            tables, con=con, overwrite=overwrite, lazy_execution=lazy_execution
+        )
         if con:
             logger.debug("Writing entry table ...")
             self.entry_criterion.table = con.create_table(
@@ -311,8 +313,7 @@ class Cohort(Phenotype):
         logger.debug("Computing characteristics table")
         """
         Retrieves and joins all characteristic tables.
-        Meant only to be called internally from _execute() so that all dependent phenotypes
-        have already been computed.
+        Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
 
         Returns:
             Table: The join of all characteristic tables.

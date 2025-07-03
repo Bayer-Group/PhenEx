@@ -31,7 +31,7 @@ class DeathPhenotype(Phenotype):
     ):
         self.domain = domain
         self.relative_time_range = relative_time_range
-        children = []
+        children = kwargs.pop("children", [])
         if self.relative_time_range is not None:
             if isinstance(self.relative_time_range, RelativeTimeRangeFilter):
                 self.relative_time_range = [self.relative_time_range]

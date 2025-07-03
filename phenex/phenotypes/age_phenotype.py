@@ -78,10 +78,9 @@ class AgePhenotype(Phenotype):
         )
 
         # Set children to the dependent PHENOTYPES
+        children = kwargs.pop("children", [])
         if anchor_phenotype is not None:
-            children = [anchor_phenotype]
-        else:
-            children = []
+            children.append(anchor_phenotype)
 
         super(AgePhenotype, self).__init__(name=name, children=children, **kwargs)
 
