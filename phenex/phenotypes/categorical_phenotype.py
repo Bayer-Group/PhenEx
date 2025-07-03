@@ -37,9 +37,10 @@ class CategoricalPhenotype(Phenotype):
     def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
         table = tables[self.categorical_filter.domain]
         table = self.categorical_filter._filter(table)
-        return table.mutate(
+        table = table.mutate(
             VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null(date)
         )
+        return self._perform_final_processing(table)
 
 
 class HospitalizationPhenotype(Phenotype):

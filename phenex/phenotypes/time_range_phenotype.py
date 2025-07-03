@@ -112,4 +112,4 @@ class TimeRangePhenotype(Phenotype):
             ibis.options.interactive = True
             table = value_filter.filter(table)
 
-        return table
+        return self._perform_final_processing(table)

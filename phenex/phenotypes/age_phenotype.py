@@ -152,4 +152,4 @@ class AgePhenotype(Phenotype):
 
         person_table = person_table.mutate(VALUE=person_table.YEARS_FROM_ANCHOR)
 
-        return person_table
+        return self._perform_final_processing(person_table)
