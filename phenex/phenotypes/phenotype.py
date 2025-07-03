@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from typing import Dict, Union, Optional
+=======
+from typing import Dict, Union, List
+>>>>>>> 4673ee6 (stage)
 from ibis.expr.types.relations import Table
 from deepdiff import DeepDiff
 from phenex.tables import (
@@ -12,7 +16,7 @@ from phenex.util.serialization.to_dict import to_dict
 logger = create_logger(__name__)
 
 
-class Phenotype:
+class Phenotype(Node):
     """
     A phenotype is a description of the state of a person at a specific time.
 
@@ -32,6 +36,7 @@ class Phenotype:
         description: A plain text description of the phenotype.
     """
 
+<<<<<<< HEAD
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         self.table = (
             None  # self.table is populated ONLY AFTER self.execute() is called!
@@ -39,6 +44,12 @@ class Phenotype:
         self._name = name
         self.children = []  # List[Phenotype]
         self.description = description
+=======
+    def __init__(self, name: str, description: str = None, children: List["Phenotype"] = None):
+
+        self._namespaced_table = None
+        super(Phenotype, self).__init__(name=name, description=description, children = children)
+>>>>>>> 4673ee6 (stage)
         self._check_for_children()
 
     @property
