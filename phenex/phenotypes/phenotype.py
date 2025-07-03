@@ -37,7 +37,6 @@ class Phenotype:
             None  # self.table is populated ONLY AFTER self.execute() is called!
         )
         self._name = name
-        self._namespaced_table = None
         self.children = []  # List[Phenotype]
         self.description = description
         self._check_for_children()
@@ -93,22 +92,21 @@ class Phenotype:
     @property
     def namespaced_table(self) -> Table:
         """
-        A PhenotypeTable has generic column names 'person_id', 'boolean', 'event_date', and 'value'. The namespaced_table appends the phenotype name to all of these columns. This is useful when joining multiple phenotype tables together.
+        A PhenotypeTable has generic column names 'person_id', 'boolean', 'event_date', and 'value'. The namespaced_table prepends the phenotype name to all of these columns. This is useful when joining multiple phenotype tables together.
 
         Returns:
             table (Table): The namespaced table for the current phenotype.
         """
-        if self._namespaced_table is None:
-            if self.table is None:
-                raise ValueError("Phenotype has not been executed yet.")
-            new_column_names = {
-                "PERSON_ID": "PERSON_ID",
-                f"{self.name}_BOOLEAN": "BOOLEAN",
-                f"{self.name}_EVENT_DATE": "EVENT_DATE",
-                f"{self.name}_VALUE": "VALUE",
-            }
-            self._namespaced_table = self.table.rename(new_column_names)
-        return self._namespaced_table
+        if self.table is None:
+            raise ValueError("Phenotype has not been executed yet.")
+        # since phenotypes may be executed multiple times (in an interactive setting for example), we must always get the namespaced table freshly from self.table
+        new_column_names = {
+            "PERSON_ID": "PERSON_ID",
+            f"{self.name}_BOOLEAN": "BOOLEAN",
+            f"{self.name}_EVENT_DATE": "EVENT_DATE",
+            f"{self.name}_VALUE": "VALUE",
+        }
+        return self.table.rename(new_column_names)
 
     def _execute(self, tables: Dict[str, Table]):
         """
