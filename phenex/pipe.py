@@ -25,7 +25,7 @@ class PhenexComputeNode:
         self.name = name
         self.children = children if children is not None else []
         self.table = None
-        self.hash = self._compute_hash()
+        self.hash = None
         self._check_children_are_ok()
 
     def _check_children_are_ok(self):
@@ -94,9 +94,9 @@ class PhenexComputeNode:
                     "A DatabseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
                 )
 
-            # first time computing, _last_hash will be None and execution will still be triggered
+            # first time computing, self.hash will be None and execution will still be triggered
             hash = self._compute_hash()
-            if hash != self._last_hash:
+            if hash != self.hash:
                 logger.info(
                     f"Node '{self.name}': changed since last computation -- recomputing ..."
                 )
@@ -107,7 +107,7 @@ class PhenexComputeNode:
                     self.name,
                     overwrite=overwrite,
                 )
-                self._last_hash = hash
+                self.hash = hash
             else:
                 logger.info(
                     f"Node '{self.name}': unchanged since last computation -- skipping!"
