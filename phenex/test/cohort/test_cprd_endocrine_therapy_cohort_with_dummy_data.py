@@ -8,7 +8,7 @@ from phenex.phenotypes import (
     CategoricalPhenotype,
     CodelistPhenotype,
     Cohort,
-    ContinuousCoveragePhenotype,
+    TimeRangePhenotype,
     SexPhenotype,
 )
 from phenex.filters import *
@@ -63,9 +63,10 @@ def create_cohort():
 
 
 def define_inclusion_exclusion_criteria(entry):
-    continuous_coverage = ContinuousCoveragePhenotype(
-        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365)),
-        anchor_phenotype=entry,
+    continuous_coverage = TimeRangePhenotype(
+        relative_time_range=RelativeTimeRangeFilter(
+            min_days=GreaterThanOrEqualTo(365), anchor_phenotype=entry
+        )
     )
 
     age_18 = AgePhenotype(
@@ -184,7 +185,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
             x.upper()
             for x in [
                 "breast_cancer",
-                "continuous_coverage",
+                "time_range",
                 "data_quality",
                 "age",
                 "sex",
