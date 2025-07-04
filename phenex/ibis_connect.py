@@ -324,14 +324,10 @@ class DuckDBConnector:
     DuckDBConnector manages connections to DuckDB using Ibis.
 
     Attributes:
-        DUCKDB_PATH: Path to the DuckDB database file.
-        DUCKDB_SOURCE_DATABASE: Source DuckDB database name. Defaults to the value of DUCKDB_PATH.
-        DUCKDB_DEST_DATABASE: Destination DuckDB database name. If not specified, no destination
+        DUCKDB_SOURCE_DATABASE: Source DuckDB database name.
+        DUCKDB_DEST_DATABASE: Destination DuckDB database name. If not specified, defaults to an in-memory database.
 
     Methods:
-        connect() -> BaseBackend:
-            Establishes and returns an Ibis backend connection to the DuckDB database.
-        
         connect_source() -> BaseBackend:
             Establishes and returns an Ibis backend connection to the source DuckDB database.
         
@@ -352,11 +348,28 @@ class DuckDBConnector:
         
         drop_table(name_table: str):
             Drop a table from the destination DuckDB database.
+        
+        drop_view(name_table: str):
+            Drop a view from the destination DuckDB database.
+
+    Example:
+        ```python
+        # Initialize the DuckDBConnector with a source duckdb database file with path "file.duckdb" and in-memory destination database.
+        con = DuckDBConnector(DUCKDB_SOURCE_DATABASE="file.duckdb")
+        ```
+
+    Example:
+        ```python
+        # Initialize the DuckDBConnector with a source duckdb database file with path "source_file.duckdb" and a destination duckdb database with path "destination_file.duckdb".
+        con = DuckDBConnector(
+            DUCKDB_SOURCE_DATABASE="source_file.duckdb"
+            DUCKDB_DEST_DATABASE="destination_file.duckdb"
+        )
+        ```
     """
 
     def __init__(
         self,
-        DUCKDB_PATH: Optional[str] = ":memory:",
         DUCKDB_SOURCE_DATABASE: Optional[str] = None,
         DUCKDB_DEST_DATABASE: Optional[str] = None,
 
@@ -365,31 +378,28 @@ class DuckDBConnector:
         Initializes the DuckDBConnector with the specified path.
 
         Args:
-            DUCKDB_PATH (str, optional): Path to the DuckDB database file. Defaults to ":memory".
+            DUCKDB_SOURCE_DATABASE (str, optional): Path to the source DuckDB database.
+            DUCKDB_DEST_DATABASE (str, optional): Path to the destination DuckDB database. If not specified, defaults to an in-memory database.
         """
-        self.DUCKDB_PATH = DUCKDB_PATH or os.environ.get("DUCKDB_PATH")
-        self.DUCKDB_SOURCE_DATABASE = DUCKDB_SOURCE_DATABASE or os.environ.get("DUCKDB_SOURCE_DATABASE") or self.DUCKDB_PATH
-        self.DUCKDB_DEST_DATABASE = DUCKDB_DEST_DATABASE or os.environ.get("DUCKDB_DEST_DATABASE")
-
+        self.DUCKDB_SOURCE_DATABASE = DUCKDB_SOURCE_DATABASE or os.environ.get("DUCKDB_SOURCE_DATABASE")
+        self.DUCKDB_DEST_DATABASE = DUCKDB_DEST_DATABASE or os.environ.get("DUCKDB_DEST_DATABASE") or ":memory:"
+        required_vars = [
+            "DUCKDB_SOURCE_DATABASE"
+        ]
+        self._check_env_vars(required_vars)
         self.source_connection = self.connect_source()
         if self.DUCKDB_DEST_DATABASE:
             self.dest_connection = self.connect_dest()
         else:
             self.dest_connection = None
 
+    def _check_env_vars(self, required_vars: List[str]):
+        for var in required_vars:
+            if not getattr(self, var):
+                raise ValueError(
+                    f"Missing required variable: {var}. Set in the environment or pass through __init__()."
+                )
 
-    def connect(self) -> BaseBackend:
-        """
-        Establishes and returns an Ibis backend connection to the DuckDB database.
-
-        Returns:
-            BaseBackend: Ibis backend connection to the DuckDB database.
-        """
-        required_vars = ["DUCKDB_PATH"]
-        _check_env_vars(*required_vars)
-        return ibis.connect(
-            backend="duckdb", path=self.DUCKDB_PATH or os.getenv("DUCKDB_PATH")
-        )
     
     def connect_source(self) -> BaseBackend:
         """
@@ -399,7 +409,7 @@ class DuckDBConnector:
             BaseBackend: Ibis backend connection to the  DuckDB database.
         """
         try:
-            return ibis.connect(self.DUCKDB_SOURCE_DATABASE)
+            return ibis.duckdb.connect(self.DUCKDB_SOURCE_DATABASE)
         except Exception as e:
             print(f"An error occurred: {e}")
             raise
@@ -414,7 +424,7 @@ class DuckDBConnector:
         if self.DUCKDB_DEST_DATABASE is None:
             raise ValueError("Must specify DUCKDB_DEST_DATABASE")
         try:
-            return ibis.connect(self.DUCKDB_DEST_DATABASE)
+            return ibis.duckdb.connect(self.DUCKDB_DEST_DATABASE)
         except Exception as e:
             print(f"An error occurred: {e}")
             raise
