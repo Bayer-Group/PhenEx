@@ -326,31 +326,217 @@ class DuckDBConnector:
     DuckDBConnector manages connections to DuckDB using Ibis.
 
     Attributes:
-        DUCKDB_PATH: Path to the DuckDB database file.
+        DUCKDB_SOURCE_DATABASE: Source DuckDB database name.
+        DUCKDB_DEST_DATABASE: Destination DuckDB database name. If not specified, defaults to an in-memory database.
 
     Methods:
-        connect() -> BaseBackend:
-            Establishes and returns an Ibis backend connection to the DuckDB database.
+        connect_source() -> BaseBackend:
+            Establishes and returns an Ibis backend connection to the source DuckDB database.
+
+        connect_dest() -> BaseBackend:
+            Establishes and returns an Ibis backend connection to the destination DuckDB database.
+
+        get_source_table(name_table: str):
+            Retrieves a table from the source DuckDB database.
+
+        get_dest_table(name_table: str):
+            Retrieves a table from the destination DuckDB database.
+
+        create_view(table, name_table: Optional[str] = None, overwrite: bool = False):
+            Create a view of a table in the destination DuckDB database.
+
+        create_table(table, name_table: Optional[str] = None, overwrite: bool = False):
+            Materialize a table in the destination DuckDB database.
+
+        drop_table(name_table: str):
+            Drop a table from the destination DuckDB database.
+
+        drop_view(name_table: str):
+            Drop a view from the destination DuckDB database.
+
+    Example:
+        ```python
+        # Initialize the DuckDBConnector with a source duckdb database file with path "file.duckdb" and in-memory destination database.
+        con = DuckDBConnector(DUCKDB_SOURCE_DATABASE="file.duckdb")
+        ```
+
+    Example:
+        ```python
+        # Initialize the DuckDBConnector with a source duckdb database file with path "source_file.duckdb" and a destination duckdb database with path "destination_file.duckdb".
+        con = DuckDBConnector(
+            DUCKDB_SOURCE_DATABASE="source_file.duckdb"
+            DUCKDB_DEST_DATABASE="destination_file.duckdb"
+        )
+        ```
     """
 
-    def __init__(self, DUCKDB_PATH: Optional[str] = ":memory"):
+    def __init__(
+        self,
+        DUCKDB_SOURCE_DATABASE: Optional[str] = None,
+        DUCKDB_DEST_DATABASE: Optional[str] = None,
+    ):
         """
         Initializes the DuckDBConnector with the specified path.
 
         Args:
-            DUCKDB_PATH (str, optional): Path to the DuckDB database file. Defaults to ":memory".
+            DUCKDB_SOURCE_DATABASE (str, optional): Path to the source DuckDB database.
+            DUCKDB_DEST_DATABASE (str, optional): Path to the destination DuckDB database. If not specified, defaults to an in-memory database.
         """
-        self.DUCKDB_PATH = DUCKDB_PATH
+        self.DUCKDB_SOURCE_DATABASE = DUCKDB_SOURCE_DATABASE or os.environ.get(
+            "DUCKDB_SOURCE_DATABASE"
+        )
+        self.DUCKDB_DEST_DATABASE = (
+            DUCKDB_DEST_DATABASE or os.environ.get("DUCKDB_DEST_DATABASE") or ":memory:"
+        )
+        required_vars = ["DUCKDB_SOURCE_DATABASE"]
+        self._check_env_vars(required_vars)
+        self.source_connection = self.connect_source()
+        if self.DUCKDB_DEST_DATABASE:
+            self.dest_connection = self.connect_dest()
+        else:
+            self.dest_connection = None
 
-    def connect(self) -> BaseBackend:
+    def _check_env_vars(self, required_vars: List[str]):
+        for var in required_vars:
+            if not getattr(self, var):
+                raise ValueError(
+                    f"Missing required variable: {var}. Set in the environment or pass through __init__()."
+                )
+
+    def connect_source(self) -> BaseBackend:
         """
-        Establishes and returns an Ibis backend connection to the DuckDB database.
+        Establishes and returns an Ibis backend connection to the source DuckDB database.
 
         Returns:
-            BaseBackend: Ibis backend connection to the DuckDB database.
+            BaseBackend: Ibis backend connection to the  DuckDB database.
         """
-        required_vars = ["DUCKDB_PATH"]
-        _check_env_vars(*required_vars)
-        return ibis.connect(
-            backend="duckdb", path=self.DUCKDB_PATH or os.getenv("DUCKDB_PATH")
+        try:
+            return ibis.duckdb.connect(self.DUCKDB_SOURCE_DATABASE)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise
+
+    def connect_dest(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the destination DuckDB database.
+
+        Returns:
+            BaseBackend: Ibis backend connection to the destination DuckDB database.
+        """
+        if self.DUCKDB_DEST_DATABASE is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE")
+        try:
+            return ibis.duckdb.connect(self.DUCKDB_DEST_DATABASE)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            raise
+
+    def get_source_table(self, name_table: str):
+        """
+        Retrieves a table from the source DuckDB database.
+
+        Args:
+            name_table (str): Name of the table to retrieve.
+
+        Returns:
+            Table: Ibis table object from the source DuckDB database.
+        """
+        return self.source_connection.table(name_table)
+
+    def get_dest_table(self, name_table: str):
+        """
+        Retrieves a table from the destination DuckDB database.
+
+        Args:
+            name_table (str): Name of the table to retrieve.
+
+        Returns:
+            Table: Ibis table object from the destination DuckDB database.
+        """
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+        return self.dest_connection.table(name_table)
+
+    def create_view(self, table, name_table=None, overwrite=False):
+        """
+        Create a view of a table in the destination DuckDB database.
+
+        Args:
+            table (Table): Ibis table object to create a view from.
+            name_table (str, optional): Name of the view to create. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite the view if it exists. Defaults to False.
+
+        Returns:
+            View: Ibis view object created in the destination DuckDB database.
+        """
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+
+        if not name_table:
+            if hasattr(table, "get_name") and table.get_name():
+                name_table = table.get_name()
+            else:
+                raise ValueError(
+                    "name_table must be provided if the table doesn't have a name."
+                )
+
+        try:
+            return self.dest_connection.create_view(
+                name=name_table, obj=table, overwrite=overwrite
+            )
+        except AttributeError as e:
+            print(f"Error creating view: {e}")
+            raise
+
+    def create_table(self, table, name_table=None, overwrite=False):
+        """
+        Materialize a table in the destination DuckDB database.
+
+        Args:
+            table (Table): Ibis table object to materialize.
+            name_table (str, optional): Name of the table to create. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite the table if it exists. Defaults to False.
+
+        Returns:
+            Table: Ibis table object created in the destination DuckDB database.
+        """
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+        if not name_table:
+            if hasattr(table, "get_name") and table.get_name():
+                name_table = table.get_name()
+            else:
+                raise ValueError(
+                    "name_table must be provided if the table doesn't have a name."
+                )
+        return self.dest_connection.create_table(
+            name=name_table, obj=table, overwrite=overwrite
         )
+
+    def drop_table(self, name_table):
+        """
+        Drop a table from the destination DuckDB database.
+
+        Args:
+            name_table (str): Name of the table to drop.
+
+        Returns:
+            None
+        """
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+        self.dest_connection.drop_table(name_table)
+
+    def drop_view(self, name_table):
+        """
+        Drop a view from the destination DuckDB database.
+
+        Args:
+            name_table (str): Name of the view to drop.
+
+        Returns:
+            None
+        """
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+        self.dest_connection.drop_view(name_table)
