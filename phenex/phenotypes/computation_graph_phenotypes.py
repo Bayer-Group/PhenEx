@@ -157,6 +157,8 @@ class ComputationGraphPhenotype(Phenotype):
         coalesce_expressions = []
 
         names = [col for col in table.columns if "EVENT_DATE" in col]
+        if len(names) == 1:
+            return [table[names[0]]]
 
         for i in range(len(names)):
             rotated_names = names[i:] + names[:i]
