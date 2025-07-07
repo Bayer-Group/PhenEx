@@ -1,4 +1,4 @@
-from typing import Dict, Union, List
+from typing import Dict, Union, Optional
 from ibis.expr.types.relations import Table
 from deepdiff import DeepDiff
 from phenex.tables import (
@@ -34,20 +34,9 @@ class Phenotype(PhenexComputeNode):
         kwargs: For additional parameters, see PhenexComputeNode.
     """
 
-    def __init__(self, name: Optional[str] = None, description: str = None, **kwargs):
-        self._name = name
+    def __init__(self, description: str = None, **kwargs):
         self.description = description
         super(Phenotype, self).__init__(**kwargs)
-
-    @property
-    def name(self):
-        if self._name is not None:
-            return self._name.upper()
-        return "PHENOTYPE"  # TODO replace with phenotype id when phenotype id is implemented
-
-    @name.setter
-    def name(self, name):
-        self._name = name
 
     def _perform_final_processing(self, table: Table) -> Table:
         """

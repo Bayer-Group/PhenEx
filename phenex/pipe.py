@@ -22,11 +22,21 @@ class PhenexComputeNode:
     """
 
     def __init__(self, name: str, children: List["PhenexComputeNode"] = None):
-        self.name = name
+        self._name = name
         self.children = children if children is not None else []
         self.table = None
         self.hash = None
         self._check_children_are_ok()
+
+    @property
+    def name(self):
+        if self._name is not None:
+            return self._name.upper()
+        return "PHENOTYPE"  # TODO replace with phenotype id when phenotype id is implemented
+
+    @name.setter
+    def name(self, name):
+        self._name = name
 
     def _check_children_are_ok(self):
         """
