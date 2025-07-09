@@ -241,12 +241,12 @@ class SnowflakeConnector:
 
         # Check if the destination database exists, if not, create it
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases():
+        if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_view(
             name=name_table.upper(),
-            database=database,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite,
             schema=table.schema(),
@@ -272,12 +272,12 @@ class SnowflakeConnector:
 
         # Check if the destination database exists, if not, create it
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases():
+        if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_table(
             name=name_table.upper(),
-            database=database,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite,
             schema=table.schema(),
