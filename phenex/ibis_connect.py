@@ -112,11 +112,7 @@ class SnowflakeConnector:
         ]
         self._check_env_vars(required_vars)
         self._check_source_dest()
-        self.source_connection = self.connect_source()
-        if self.SNOWFLAKE_DEST_DATABASE:
-            self.dest_connection = self.connect_dest()
-        else:
-            self.dest_connection = None
+        self.source_connection = self.dest_connection = self.connect_source()
 
     def _check_env_vars(self, required_vars: List[str]):
         for var in required_vars:
@@ -214,7 +210,7 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object from the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.table(
             name_table, database=self.SNOWFLAKE_DEST_DATABASE
@@ -239,7 +235,7 @@ class SnowflakeConnector:
         Returns:
             View: Ibis view object created in the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         name_table = name_table or self._get_output_table_name(table)
 
@@ -269,7 +265,7 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object created in the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
 
         name_table = name_table or self._get_output_table_name(table)
@@ -298,7 +294,7 @@ class SnowflakeConnector:
         Returns:
             None
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_table(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
@@ -314,7 +310,7 @@ class SnowflakeConnector:
         Returns:
             None
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_view(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
