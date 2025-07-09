@@ -387,9 +387,9 @@ class DuckDBConnector:
         required_vars = []
         self._check_env_vars(required_vars)
         if self.DUCKDB_SOURCE_DATABASE:
-            self.dest_connection = self.connect_source()
+            self.source_connection = self.connect_source()
         else:
-            self.dest_connection = None
+            self.source_connection = None
         if self.DUCKDB_DEST_DATABASE:
             self.dest_connection = self.connect_dest()
         else:
