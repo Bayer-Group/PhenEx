@@ -1,11 +1,16 @@
 import hashlib
 import json
 from typing import Dict, List
+import pandas as pd
+import ibis
 from ibis.expr.types.relations import Table
 from phenex.util import create_logger
-from phenex.util.serialization.to_dict import to_dict
+from phenex.ibis_connect import DuckDBConnector
 
 logger = create_logger(__name__)
+
+NODE_STATES_TABLE_NAME = "__PHENEX_META__NODE_STATES"
+NODE_STATES_DB_NAME = "phenex.db"
 
 
 class PhenexComputeNode:
@@ -54,19 +59,57 @@ class PhenexComputeNode:
                 f"Duplicate node name found: '{self.name}' is used both for this node and one of its children."
             )
 
-    def _compute_hash(self):
+    def _get_last_hash(self):
         """
-        Computes a hash of the node's defining parameters for change detection in lazy execution.
+        Retrieve the hash of the node's defining parameters from the last time it was computed. This hash is stored in a local DuckDB database.
 
         Returns:
             str: The MD5 hash of the node's attributes as a hexadecimal string.
         """
-        as_dict = to_dict(self)
+        con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+        if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+            table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+            table = table[table.NODE_NAME == self.name]
+            if len(table):
+                return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
+
+    def _get_current_hash(self):
+        """
+        Computes the hash of the node's defining parameters for change detection in lazy execution.
+
+        Returns:
+            str: The MD5 hash of the node's attributes as a hexadecimal string.
+        """
+        as_dict = self.to_dict()
+        # to make sure that difference classes that take the same parameters return different hashes!
+        as_dict["class"] = self.__class__.__name__
         dhash = hashlib.md5()
         # Use json.dumps to get a string, enforce sorted keys for deterministic ordering
         encoded = json.dumps(as_dict, sort_keys=True).encode()
         dhash.update(encoded)
         return dhash.hexdigest()
+
+    def _update_current_hash(self):
+
+        con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+
+        df = pd.DataFrame.from_dict(
+            {
+                "NODE_NAME": [self.name],
+                "LAST_HASH": [self._get_current_hash()],
+                "NODE_PARAMS": [json.dumps(self.to_dict())],
+            }
+        )
+
+        if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+            table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+            table = table[table.NODE_NAME != self.name]
+            df = pd.concat([table, df])
+
+        table = ibis.memtable(df)
+        con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
+
+        return True
 
     def execute(
         self,
@@ -87,15 +130,19 @@ class PhenexComputeNode:
         Returns:
             Table: The resulting table for this node. Also accessible through self.talbe after calling self.execute().
         """
+
+        # First recursively execute all children nodes
         logger.info(f"Node '{self.name}': executing ...")
         for child in self.children:
-            logger.info(f"Node '{self.name}': executing children nodes ...")
+            logger.info(f"Node '{self.name}': executing child node {child.name} ...")
             child.execute(
                 tables=tables,
                 con=con,
                 overwrite=overwrite,
                 lazy_execution=lazy_execution,
             )
+
+        # Execute current node
         if lazy_execution:
             if not overwrite:
                 raise ValueError("lazy_execution only works with overwrite=True.")
@@ -104,9 +151,8 @@ class PhenexComputeNode:
                     "A DatabaseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
                 )
 
-            # first time computing, self.hash will be None and execution will still be triggered
-            hash = self._compute_hash()
-            if hash != self.hash:
+            # first time computing, _get_current_hash() will be None and execution will still be triggered
+            if self._get_current_hash() != self._get_last_hash():
                 logger.info(
                     f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
                 )
@@ -117,7 +163,7 @@ class PhenexComputeNode:
                     self.name,
                     overwrite=overwrite,
                 )
-                self.hash = hash
+                self._update_current_hash()
             else:
                 logger.info(
                     f"Node '{self.name}': unchanged since last computation -- skipping!"
@@ -146,5 +192,11 @@ class PhenexComputeNode:
 
         Raises:
             NotImplementedError: This method should be implemented by subclasses.
+        """
+        raise NotImplementedError()
+
+    def to_dict(self):
+        """
+        Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
         raise NotImplementedError()

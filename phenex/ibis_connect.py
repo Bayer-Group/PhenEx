@@ -388,9 +388,12 @@ class DuckDBConnector:
         self.DUCKDB_DEST_DATABASE = (
             DUCKDB_DEST_DATABASE or os.environ.get("DUCKDB_DEST_DATABASE") or ":memory:"
         )
-        required_vars = ["DUCKDB_SOURCE_DATABASE"]
+        required_vars = []
         self._check_env_vars(required_vars)
-        self.source_connection = self.connect_source()
+        if self.DUCKDB_SOURCE_DATABASE:
+            self.dest_connection = self.connect_source()
+        else:
+            self.dest_connection = None
         if self.DUCKDB_DEST_DATABASE:
             self.dest_connection = self.connect_dest()
         else:
