@@ -21,13 +21,7 @@ class Phenotype(PhenexComputeNode):
 
     The translation of this description in actual executable code (the "how") is handled via the `Phenotype.execute()` method. The execute method returns a PhenotypeTable - the realization of the defined Phenotype in a particular database. See `execute()` for details.
 
-    All Phenotype's in Phenex derive from the Phenotype class.
-
-    To subclass:
-        1. Define the parameters required to compute the Phenotype in the `__init__()` interface.
-        2. Within `__init__()`, define `self.children` - a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and executed recursively.
-        3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Phenotype and returning the appropriate PhenotypeTable.
-        4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
+    All Phenotype's in Phenex derive from the Phenotype class. To subclass, see documentation for PhenexComputeNode.
 
     Parameters:
         description: A plain text description of the phenotype.

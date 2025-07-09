@@ -4,6 +4,7 @@ from typing import Dict, List
 import pandas as pd
 import ibis
 from ibis.expr.types.relations import Table
+from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.ibis_connect import DuckDBConnector
 
@@ -16,6 +17,12 @@ NODE_STATES_DB_NAME = "phenex.db"
 class PhenexComputeNode:
     """
     A PhenexComputeNode is a "unit of computation" in the execution of phenotypes / cohorts. Its output is always a single table. PhenexComputeNode manages the execution of itself and any children (dependent) nodes, optionally using lazy (re)execution for making incremental updates to a node defintion.
+
+    To subclass:
+        1. Define the parameters required to compute the Node in the `__init__()` interface.
+        2. At the end of `__init__()`, call super().__init__() as pass along the required children nodes - a list of Node's which must be executed before the current Node, allowing Node's to be chained and executed recursively.
+        3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Node and returning the appropriate Table.
+        4. Define tests in `phenex.test`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
 
     Parameters:
         name: A short but descriptive name for the node. The name is used as a unique identifier for the node and must be unique across all nodes used in the graph (you cannot have two nodes called "age_phenotype", for example, as they will conflict with each other). If the output table is materialized from this node, name will be used as the table name in the database.
@@ -30,7 +37,6 @@ class PhenexComputeNode:
         self._name = name
         self.children = children if children is not None else []
         self.table = None
-        self.hash = None
         self._check_children_are_ok()
 
     @property
@@ -199,4 +205,4 @@ class PhenexComputeNode:
         """
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
-        raise NotImplementedError()
+        return to_dict(self)
