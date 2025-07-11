@@ -60,7 +60,6 @@ def get_cohort_path(cohort_id, provisional=False):
     else:
         return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.json")
 
-
 @app.get("/cohorts")
 async def get_all_cohorts():
     """
@@ -399,36 +398,308 @@ async def execute_study(
     Returns:
         JSONResponse: The results of the study execution.
     """
-    logger.info("Received request!!!!")
-    # print(cohort)
-    # print(database_config)
-    response = {
-        'cohort': cohort
-    }
+    # logger.info("Received request!!!!")
+    # # print(cohort)
+    # # print(database_config)
+    # response = {
+    #     'cohort': cohort
+    # }
 
     print(database_config)
     if database_config['mapper'] == 'OMOP':
         from phenex.mappers import OMOPDomains
         mapper = OMOPDomains
 
-    database = database_config['config']
-    logger.info('ENVIRON')
-    logger.info(os.environ)
+    # database = database_config['config']
+    # logger.info('ENVIRON')
+    # logger.info(os.environ)
 
-    con = SnowflakeConnector(
-        SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
-        SNOWFLAKE_DEST_DATABASE = database['destination_database'],
-    )
+    # con = SnowflakeConnector(
+    #     SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
+    #     SNOWFLAKE_DEST_DATABASE = database['destination_database'],
+    # )
     
 
-    mapped_tables = mapper.get_mapped_tables(con)
-    print("GOT MAPPED TABLES!")
+    # mapped_tables = mapper.get_mapped_tables(con)
+    del cohort['phenotypes']
+    processed_cohort = prepare_cohort_for_phenex(cohort)
     px_cohort = from_dict(cohort)
-    px_cohort.execute(mapped_tables)
-    # px_cohort.append_results()
+    import json
+    with open('cohort.json', 'w') as f:
+        json.dump(px_cohort.to_dict(), f, indent=4)
+    # px_cohort.execute(mapped_tables)
+    # # px_cohort.append_results()
 
-    px_cohort.append_counts()
-    response = {'cohort':px_cohort.to_dict()}
+    # px_cohort.append_counts()
+    # response = {'cohort':px_cohort.to_dict()}
 
-    return JSONResponse(content=response)
+    # return JSONResponse(content=response)
 
+
+
+
+# -- CODELIST FILE MANAGEMENT ENDPOINTS
+@app.get("/codelist_filesnames_for_cohort")
+async def codelist_filesnames_for_cohort(cohort_id: str):
+    """
+    Get a list of codelist filenames for a given cohort ID.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+
+    Returns:
+        list: list of filenames
+    """
+    return get_codelist_filenames_for_cohort(cohort_id)
+
+
+
+@app.get("/codelist_file_for_cohort")
+async def codelist_file_for_cohort(cohort_id: str, file_id: str):
+    """
+    Get the contents of a codelist file for a given cohort ID and file ID.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+        file_id (str): The ID of the file to retrieve.
+
+    Returns:
+        dict: codelist file contents
+    """
+    return get_codelist_file_for_cohort(cohort_id, file_id)
+
+
+@app.post("/upload_codelist_file_to_cohort")
+async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
+    """
+    Delete a cohort by its ID.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+        file (dict): The file to upload.
+
+    Returns:
+        dict: The cohort data.
+    """
+    save_codelist_file_for_cohort(cohort_id, file["id"], file)
+    return {"status": "success", "message": f"Uploaded {cohort_id} {file["id"]} successfully."}
+
+@app.delete("/codelist_file")
+async def delete_codelist_file(cohort_id: str, file_id: str):
+    """
+    Delete a codelist file and it's contents.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+        file_id (str): The ID of the file to retrieve.
+    """
+    delete_codelist_file_for_cohort(cohort_id, file_id)
+
+    return {"status": "success", "message": f"Codelist file {file_id} deleted successfully."}
+
+
+
+# -- CODELIST FILE MANAGEMENT --
+# TODO import to codelist_file_management.py
+def get_path_cohort_files(cohort_id):
+    path_cohort_files = os.path.join(COHORTS_DIR, f"cohort_{cohort_id}")
+    if not os.path.exists(path_cohort_files):
+        os.makedirs(path_cohort_files)
+    return path_cohort_files
+
+def get_path_codelist(cohort_id, file_id):
+    return os.path.join(get_path_cohort_files(cohort_id), f"codelist_{file_id}.json")
+
+def get_path_cohort_index_file(cohort_id):
+    """
+    The cohort index file is located in the cohort directory. It contains a listing of files related to a cohort, for example, a list of all codelist files that have been uploaded by a user. # TODO : track cohort checkpoints in index file as well
+    """
+    return os.path.join(get_path_cohort_files(cohort_id), f"index.json")
+
+def get_codelist_filenames_for_cohort(cohort_id):
+    """
+    Get a list of codelist filenames for a given cohort ID.
+    Args:
+        cohort_id (str): The ID of the cohort.
+    Returns:
+        list: A list of codelist filenames.
+    """
+    index_file_path = get_path_cohort_index_file(cohort_id)
+    if not os.path.exists(index_file_path):
+        return []
+    with open(index_file_path, "r") as f:
+        index = json.load(f)
+    return index["uploaded_codelist_files"]
+
+def get_codelist_file_for_cohort(cohort_id, file_id):
+    """
+    Get a codelist file for a given cohort ID and file ID.
+    Args:
+        cohort_id (str): The ID of the cohort.
+        file_id (str): The ID of the codelist file.
+    Returns:
+        dict: The codelist file.
+    """
+    codelist_file_path = get_path_codelist(cohort_id, file_id)
+    if not os.path.exists(codelist_file_path):
+        return None
+    with open(codelist_file_path, "r") as f:
+        codelist_file = json.load(f)
+    return codelist_file
+
+def save_codelist_file_for_cohort(cohort_id, file_id, codelist_file):
+    """
+    Save a codelist file for a given cohort ID and file ID.
+    Args:
+        cohort_id (str): The ID of the cohort.
+        file_id (str): The ID of the codelist file.
+        codelist_file (dict): The codelist file.
+    """
+    codelist_file_path = get_path_codelist(cohort_id, file_id)
+    with open(codelist_file_path, "w") as f:
+        json.dump(codelist_file, f)
+    index_file_path = get_path_cohort_index_file(cohort_id)
+    if not os.path.exists(index_file_path):
+        index = {"uploaded_codelist_files": []}
+    else:
+        with open(index_file_path, "r") as f:
+            index = json.load(f)
+    if file_id not in [x['id'] for x in index["uploaded_codelist_files"]]:
+        index["uploaded_codelist_files"].append({"id":file_id, "filename": codelist_file["filename"]})
+    with open(index_file_path, "w") as f:
+        json.dump(index, f)
+        
+def delete_codelist_file_for_cohort(cohort_id, file_id):
+    """
+    Delete a codelist file for a given cohort ID and file ID.
+    Args:
+        cohort_id (str): The ID of the cohort.
+        file_id (str): The ID of the codelist file.
+    """
+    codelist_file_path = get_path_codelist(cohort_id, file_id)
+    if os.path.exists(codelist_file_path):
+        os.remove(codelist_file_path)
+    index_file_path = get_path_cohort_index_file(cohort_id)
+    if os.path.exists(index_file_path):
+        with open(index_file_path, "r") as f:
+            index = json.load(f)
+        if file_id in index["uploaded_codelist_files"]:
+            index["uploaded_codelist_files"].remove(file_id)
+        with open(index_file_path, "w") as f:
+            json.dump(index, f)
+
+
+# -- EXECUTION CODELIST MANAGEMENT --
+# TODO import to codelist_file_management.py
+
+def resolve_phenexui_codelist_file(phenexui_codelist):
+    """
+    Resolves a phenexui codelist file to a codelist object dict representation. PhenEx UI codelists of file type do not contain actual codes, rather only the name of the codelist file, a mapping of codelist columns, and the name of codelist to extract.
+    Args:
+        phenexui_codelist: The phenexui codelist representation.
+    Returns:
+        dict: The resolved PhenEx Codelist object dict representation with codes and code_type.
+    """
+    codelist_file = get_codelist_file_for_cohort(phenexui_codelist['cohort_id'], phenexui_codelist['file_id'])
+
+    # variables phenexui codelist components (for ease of reading...)
+    code_column = phenexui_codelist['code_column']
+    code_type_column = phenexui_codelist['code_type_column']
+    codelist_column = phenexui_codelist['codelist_column']
+    data = codelist_file['contents']['data']
+
+    # data are three parallel lists of code, code_type, codelist_name
+    # get all codes/code_type for codelist_name
+    codes_and_code_type = [[code, code_type] for code, code_type, codelist in zip(data[code_column], data[code_type_column], data[codelist_column]) if codelist == phenexui_codelist['codelist_name']]
+
+    # convert into phenex codelist representation {code_type:[codes...]}
+    phenex_codelist = {}
+    for [code, code_type] in codes_and_code_type:
+        if code_type not in phenex_codelist.keys():
+            phenex_codelist[code_type] = []
+        phenex_codelist[code_type].append(code)
+
+    # return phenex Codelist representation
+    return {
+        'class_name': 'Codelist',
+        'name': phenexui_codelist['codelist_name'],
+        'codelist': phenex_codelist,
+    }
+
+def resolve_medconb_codelist(phenexui_codelist):
+    """
+    Get Codelists from MedConB codelist files
+    """
+    return phenexui_codelist
+
+def prepare_codelist_for_phenex(phenexui_codelist):
+    """
+    Prepares a single codelist from PhenEx UI for PhenEx execution by resolving codelists if necessary.
+    Args:
+        phenexui_codelist: A dictionary representing a codelist in the PhenEx UI.
+    Returns:
+        A dictionary representing PhenEx codelist with codes resolved
+    """
+    codelist_type = phenexui_codelist.get('codelist_type')
+    if codelist_type is None:
+        return phenexui_codelist
+    if codelist_type == 'manual':
+        return phenexui_codelist
+    elif codelist_type == 'from file':
+        return resolve_phenexui_codelist_file(phenexui_codelist)
+    elif codelist_type == 'from medconb':
+        return resolve_medconb_codelist(phenexui_codelist)
+    raise ValueError(f"Unknown codelist class: {phenexui_codelist['class_name']}")
+
+def prepare_codelists_for_phenotypes(phenotypes: list[dict]):
+    """
+    Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
+
+    Args:
+        phenotypes : List of phenotypes from PhenEx UI with codelists of various types
+    Returns:
+        List of phenotypes with codelists prepared for phenex
+    """
+    new_phenotypes = []
+    # iterate over each phenotype
+    for phenotype in phenotypes:
+        # if it contains a codelist, prepare it for phenex
+        if 'codelist' in phenotype.keys():
+            # if it is a list, create a composite codelist
+            if isinstance(phenotype['codelist'], list):
+                codelist = [
+                    prepare_codelist_for_phenex(x)
+                    for x in phenotype['codelist']
+                ]
+                composite_codelist = {
+                    'class_name': 'CompositeCodelist',
+                    'codelists': codelist,
+                }
+                phenotype['codelist'] = composite_codelist
+            else:
+                phenotype['codelist'] = prepare_codelist_for_phenex(phenotype['codelist'])
+    return phenotypes
+
+def prepare_cohort_for_phenex(phenexui_cohort: dict):
+    """
+    Codelists in the UI are of three types : manual, from file, from medconb. Additionally, a single phenotype can receive a list of codelists, each of various types (manual, file, medconb). Prior to PhenEx execution, we resolve each codelist individually i.e. getting codes from the csv file or pulling them from medconb. Then, if a list of codelists is passed, we combine them into a single codelist and store original references in a CompositeCodelist class.
+
+    Args:
+        phenexui_cohort : The cohort dictionary representation generated by PhenExUI.
+    Returns:
+        phenex_cohort : The cohort dictionary representation with codelists ready for PhenEx execution
+    """
+    phenex_cohort = phenexui_cohort.copy()
+    phenex_cohort['entry_criterion'] = prepare_codelists_for_phenotypes([phenex_cohort['entry_criterion']])[0]
+    if 'inclusions' in phenex_cohort.keys():
+        phenex_cohort['inclusions'] = prepare_codelists_for_phenotypes(phenex_cohort['inclusions'])
+    if 'exclusions' in phenex_cohort.keys():
+        phenex_cohort['exclusions'] = prepare_codelists_for_phenotypes(phenex_cohort['exclusions'])
+    if 'characteristics' in phenex_cohort.keys():
+        phenex_cohort['characteristics'] = prepare_codelists_for_phenotypes(phenex_cohort['characteristics'])
+    if 'outcomes' in phenex_cohort.keys():
+        phenex_cohort['outcomes'] = prepare_codelists_for_phenotypes(phenex_cohort['outcomes'])
+    if 'phenotypes' in phenex_cohort.keys():
+        phenex_cohort['phenotypes'] = prepare_codelists_for_phenotypes(phenex_cohort['phenotypes'])
+    return phenex_cohort
+    
