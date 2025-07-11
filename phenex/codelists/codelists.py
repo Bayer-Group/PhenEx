@@ -571,3 +571,24 @@ class MedConBCodelistFactory:
         return sum(
             [c.items for c in self.medconb_client.get_workspace().collections], []
         )
+
+
+class CompositeCodelist(Codelist):
+    """
+    CompositeCodelist is a class that allows us to conveniently work with medical codes used in RWD analyses. A CompositeCodelist represents a
+    """
+    def __init__(self, 
+        codelists: List[Codelist],
+        name: Optional[str] = None,
+        use_code_type: Optional[bool] = True,
+        remove_punctuation: Optional[bool] = False,
+        **kwargs,
+    ) -> None:
+        sum_of_codelists = sum(codelists[1:],codelists[0])
+        self.codelists = codelists
+        super().__init__(
+            codelist= sum(self.codelists[1:],self.codelists[0]).codelist,
+            name=name,
+            use_code_type=use_code_type,
+            remove_punctuation=remove_punctuation,  
+        )

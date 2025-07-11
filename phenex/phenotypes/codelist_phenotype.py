@@ -127,7 +127,7 @@ class CodelistPhenotype(Phenotype):
         self.relative_time_range = relative_time_range
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
-                if rtr.anchor_phenotype is not None:
+                if isinstance(rtr, RelativeTimeRangeFilter) and rtr.anchor_phenotype is not None:
                     self.children.append(rtr.anchor_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
