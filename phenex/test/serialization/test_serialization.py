@@ -5,7 +5,7 @@ from phenex.filters import (
     LessThan,
     GreaterThan,
     GreaterThanOrEqualTo,
-    DateRangeFilter,
+    DateFilter,
 )
 from phenex.codelists import *
 from phenex.phenotypes import *
@@ -39,9 +39,9 @@ def test_SexPhenotype():
 
 
 def test_MultipleOccurrencesPhenotype():
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2015, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
     phenotype = CodelistPhenotype(
         name="example_phenotype",
@@ -86,8 +86,8 @@ def test_CategoricalPhenotype():
     assertions(pt)
 
 
-def test_ContinuousCoveragePhenotype():
-    pt = ContinuousCoveragePhenotype()
+def test_TimeRangePhenotype():
+    pt = TimeRangePhenotype()
     assertions(pt)
 
 
@@ -176,10 +176,8 @@ def dump_load_assertion(obj):
     path = os.path.join(PATH_ARTIFACTS, obj.name + ".json")
     with open(path, "w") as f:
         pxjson.dump(obj, f, indent=4)
-
     with open(path, "r") as f:
         deserialized_obj = pxjson.load(f)
-
     assert deserialized_obj == obj
 
 
@@ -201,9 +199,9 @@ def create_cohort():
         domain="PROCEDURE_OCCURRENCE",
     )
 
-    study_period = DateRangeFilter(
-        min_date=datetime.date(2015, 1, 1),
-        max_date=datetime.date(2020, 12, 31),
+    study_period = DateFilter(
+        min_date=AfterOrOn(datetime.date(2015, 1, 1)),
+        max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
     )
 
     entry = CodelistPhenotype(
@@ -225,13 +223,13 @@ def create_cohort():
 
     pt2 = CodelistPhenotype(
         return_date="first",
-        codelist=Codelist(["d1"]).resolve(use_code_type=False),
+        codelist=Codelist(["d1"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
     )
 
     pt3 = CodelistPhenotype(
         name="prior_et_usage",
-        codelist=Codelist(["e4"]).resolve(use_code_type=False),
+        codelist=Codelist(["e4"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",
         relative_time_range=RelativeTimeRangeFilter(
             when="before", min_days=GreaterThanOrEqualTo(0)
@@ -276,7 +274,7 @@ if __name__ == "__main__":
     test_MeasurementPhenotype()
     test_DeathPhenotype()
     test_CategoricalPhenotype()
-    test_ContinuousCoveragePhenotype()
+    test_TimeRangePhenotype()
     test_ScorePhenotype()
     test_ArithmeticPhenotype()
     test_LogicPhenotype()

@@ -8,11 +8,12 @@ from phenex.phenotypes import (
     CategoricalPhenotype,
     CodelistPhenotype,
     Cohort,
-    ContinuousCoveragePhenotype,
+    TimeRangePhenotype,
     SexPhenotype,
 )
 from phenex.filters import (
-    DateRangeFilter,
+    DateFilter,
+    ValueFilter,
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,
     GreaterThan,
@@ -41,12 +42,14 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
 
         return Cohort(
@@ -163,17 +166,19 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -319,18 +324,22 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
-        agege18 = AgePhenotype(min_age=GreaterThanOrEqualTo(18))
+        agege18 = AgePhenotype(
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
+        )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -444,18 +453,20 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
-        agel18 = AgePhenotype(max_age=LessThan(18))
+        agel18 = AgePhenotype(value_filter=ValueFilter(max_value=LessThan(18)))
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -571,19 +582,23 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
     def define_cohort(self):
         entry = CodelistPhenotype(
             return_date="first",
-            codelist=Codelist(["d1"]).resolve(use_code_type=False),
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
-        cc = ContinuousCoveragePhenotype(
-            min_days=GreaterThanOrEqualTo(365),
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            )
         )
-        agege18 = AgePhenotype(min_age=GreaterThanOrEqualTo(18))
+        agege18 = AgePhenotype(
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
+        )
         sex = SexPhenotype(allowed_values=[1])
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
-            codelist=Codelist(["e4"]).resolve(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -687,7 +702,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         return test_infos
 
 
-def test_continuous_coverage_phenotype():
+def test_time_range_phenotype():
     g = CohortWithContinuousCoverageTestGenerator()
     g.run_tests()
 

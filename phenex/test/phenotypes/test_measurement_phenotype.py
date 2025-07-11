@@ -11,7 +11,7 @@ from phenex.filters.value import (
 from phenex.phenotypes.measurement_phenotype import MeasurementPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.value_filter import ValueFilter
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import *
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.util.dummy.generate_dummy_data import (
@@ -46,7 +46,7 @@ class MeasurementPhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
                 name="leq5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThanOrEqualTo(5)),
+                value_filter=ValueFilter(max_value=LessThanOrEqualTo(5)),
                 return_date="all",
             ),
         }
@@ -58,7 +58,7 @@ class MeasurementPhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
                 name="l5",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThan(5)),
+                value_filter=ValueFilter(max_value=LessThan(5)),
                 return_date="all",
             ),
         }
@@ -96,10 +96,9 @@ class MeasurementPhenotypeReturnAllValueFilterTestGenerator(PhenotypeTestGenerat
             "values": [x for x in range(6)],
             "phenotype": MeasurementPhenotype(
                 name="leq5",
-                return_value="all",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThanOrEqualTo(5)),
+                value_filter=ValueFilter(max_value=LessThanOrEqualTo(5)),
                 return_date="all",
             ),
         }
@@ -110,10 +109,9 @@ class MeasurementPhenotypeReturnAllValueFilterTestGenerator(PhenotypeTestGenerat
             "values": [x for x in range(5)],
             "phenotype": MeasurementPhenotype(
                 name="l5",
-                return_value="all",
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                value_filter=ValueFilter(max=LessThan(5)),
+                value_filter=ValueFilter(max_value=LessThan(5)),
                 return_date="all",
             ),
         }
@@ -169,7 +167,6 @@ class MeasurementPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGene
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
             ),
         }
 
@@ -186,7 +183,6 @@ class MeasurementPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGene
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
             ),
         }
 
@@ -294,7 +290,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
             ),
         }
 
@@ -311,7 +306,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMean(),
             ),
         }
@@ -329,7 +323,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMedian(),
             ),
         }
@@ -349,7 +342,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
             ),
         }
 
@@ -366,7 +358,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="first",
                 value_aggregation=DailyMean(),
             ),
         }
@@ -405,7 +396,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
             ),
         }
 
@@ -422,7 +412,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMean(),
             ),
         }
@@ -457,7 +446,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Mean(),
             ),
         }
@@ -473,7 +461,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Mean(),
             ),
         }
@@ -523,7 +510,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Max(),
             ),
         }
@@ -540,7 +526,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 codelist=codelist_factory.get_codelist("c1"),
                 return_date="all",
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Max(),
             ),
         }
@@ -557,7 +542,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 codelist=codelist_factory.get_codelist("c1"),
                 return_date="all",
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Min(),
             ),
         }
@@ -573,7 +557,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="all",
                 value_aggregation=Min(),
             ),
         }
@@ -590,7 +573,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMax(),
                 return_date="last",
             ),
@@ -608,7 +590,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMax(),
                 return_date="last",
             ),
@@ -626,7 +607,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="first",
                 value_aggregation=DailyMax(),
                 return_date="first",
             ),
@@ -644,7 +624,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="first",
                 value_aggregation=DailyMin(),
                 return_date="first",
             ),
@@ -662,7 +641,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="MEASUREMENT",
-                return_value="last",
                 value_aggregation=DailyMin(),
                 return_date="last",
             ),
@@ -721,7 +699,6 @@ class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
         )
         phenotype_to_filter_further = MeasurementPhenotype(
             name="leq9",
-            return_value="all",
             codelist=codelist_factory.get_codelist("c1"),
             domain="MEASUREMENT",
             value_filter=ValueFilter(value=9, operator="<="),
@@ -733,7 +710,6 @@ class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
             "values": [x for x in range(2)],
             "phenotype": MeasurementPhenotype(
                 name="further_filter_l2",
-                return_value="all",
                 value_filter=ValueFilter(value=2, operator="<"),
                 further_value_filter_phenotype=phenotype_to_filter_further,
             ),

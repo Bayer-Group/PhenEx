@@ -2,7 +2,7 @@ from typing import Union, List, Dict
 from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.date_range_filter import DateRangeFilter
+from phenex.filters.date_filter import DateFilter
 from phenex.aggregators import First, Last
 from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -13,28 +13,22 @@ import ibis
 
 class CategoricalPhenotype(Phenotype):
     """
-    CategoricalPhenotype is a class that represents a sex-based phenotype. It is able to identify the sex of individuals and filter them based on identified sex.
+    CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity.
 
-    Attributes:
-        name (str): Name of the phenotype, default is 'sex'.
-        allowed_values (List[str]): List of allowed values for the sex column.
-        domain (str): Domain of the phenotype, default is 'PERSON'.
-        children (list): List of dependent phenotypes.
-
-    Methods:
-        _execute(tables: Dict[str, Table]) -> PhenotypeTable:
-            Executes the phenotype calculation and returns a table with the filtered individuals.
+    Parameters:
+        name: Name of the phenotype.
+        domain: Domain of the phenotype.
+        allowed_values: List of allowed values for the categorical variable. If not passed, all values are returned.
+        column_name: Name of the column containing the required categorical variable.
     """
 
     def __init__(
         self,
-        name: str = None,
         domain: str = None,
         allowed_values: List = None,
         column_name: str = None,
         **kwargs,
     ):
-        self.name = name
         self.categorical_filter = CategoricalFilter(
             allowed_values=allowed_values, domain=domain, column_name=column_name
         )
@@ -75,7 +69,7 @@ class HospitalizationPhenotype(Phenotype):
         column_name: str,
         allowed_values: List[str],
         name=None,
-        date_range: DateRangeFilter = None,
+        date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,

@@ -2,6 +2,7 @@ from typing import Optional
 
 # from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.filter import Filter
+from phenex.filters.value_filter import ValueFilter
 from phenex.tables import EventTable, is_phenex_phenotype_table
 from phenex.filters.value import *
 
@@ -10,11 +11,11 @@ class RelativeTimeRangeFilter(Filter):
     """
     This class filters events in an EventTable based on a specified time range relative to an anchor date.  The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the EventTable.
 
-    Attributes:
-        min_days (Optional[int]): Minimum number of days from the anchor date to filter events.
-        max_days (Optional[int]): Maximum number of days from the anchor date to filter events.
-        anchor_phenotype (Phenotype): A phenotype providing the anchor date for filtering.
-        when (Optional[str]): when can be "before" or "after"; if "before", days prior to anchor event_date are positive, and days after are negative; using after, days before the anchor event_date are negative and days after the anchor event_date are positive.
+    Parameters:
+        min_days: Minimum number of days from the anchor date to filter events.
+        max_days: Maximum number of days from the anchor date to filter events.
+        anchor_phenotype: A phenotype providing the anchor date for filtering.
+        when: when can be "before" or "after"; if "before", days prior to anchor event_date are positive, and days after are negative; using after, days before the anchor event_date are negative and days after the anchor event_date are positive.
 
     Methods:
         filter: Filters the given EventTable based on the specified time range relative to the anchor date.
@@ -22,9 +23,10 @@ class RelativeTimeRangeFilter(Filter):
     Examples:
         ```
         # filter events to one year before index date, excluding index date
+        from phenex.filters.value import LessThan, GreaterThan
         one_year_preindex = RelativeTimeRangeFilter(
-            max_days = Value('<', 365),
-            min_days = Value('>', 0),
+            max_days = LessThan(365),
+            min_days = GreaterThan(0),
             when = 'before'
             )
         ```
@@ -32,7 +34,7 @@ class RelativeTimeRangeFilter(Filter):
         ```
         # filter events to one year after index date, including index date
         anytime_after_index = RelativeTimeRangeFilter(
-            min_days = Value('>=', 0),
+            min_days = GreaterThan(0),
             when = 'after'
             )
         ```
@@ -43,7 +45,7 @@ class RelativeTimeRangeFilter(Filter):
         min_days: Optional[Value] = GreaterThanOrEqualTo(0),
         max_days: Optional[Value] = None,
         when: Optional[str] = "before",
-        anchor_phenotype: "Phenotype" = None,
+        anchor_phenotype: Optional["Phenotype"] = None,
     ):
         verify_relative_time_range_filter_input(min_days, max_days, when)
 
@@ -77,25 +79,14 @@ class RelativeTimeRangeFilter(Filter):
         table = table.mutate(DAYS_FROM_ANCHOR=DAYS_FROM_ANCHOR)
 
         conditions = []
-        # Fix this, this logic needs to be abstracted to a ValueFilter
-        if self.min_days is not None:
-            if self.min_days.operator == ">":
-                conditions.append(table.DAYS_FROM_ANCHOR > self.min_days.value)
-            elif self.min_days.operator == ">=":
-                conditions.append(table.DAYS_FROM_ANCHOR >= self.min_days.value)
-            else:
-                raise ValueError("Operator for min days be > or >=")
-        if self.max_days is not None:
-            if self.max_days.operator == "<":
-                conditions.append(table.DAYS_FROM_ANCHOR < self.max_days.value)
-            elif self.max_days.operator == "<=":
-                conditions.append(table.DAYS_FROM_ANCHOR <= self.max_days.value)
-            else:
-                raise ValueError("Operator for max days be < or <=")
-        if conditions:
-            table = table.filter(conditions)
 
-        return table
+        value_filter = ValueFilter(
+            min_value=self.min_days,
+            max_value=self.max_days,
+            column_name="DAYS_FROM_ANCHOR",
+        )
+
+        return value_filter.filter(table)
 
 
 def verify_relative_time_range_filter_input(min_days, max_days, when):

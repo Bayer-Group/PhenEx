@@ -4,7 +4,7 @@ import ibis
 from ibis.expr.types.relations import Table
 
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters.value import Value
+from phenex.filters import ValueFilter, Value
 from phenex.tables import PhenotypeTable, is_phenex_person_table
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.util import create_logger
@@ -20,8 +20,7 @@ class AgePhenotype(Phenotype):
 
     Parameters:
         name: Name of the phenotype, default is 'age'.
-        min_age: Minimum age for filtering, in years.
-        max_age: Maximum age for filtering, in years.
+        value_filter: Filter the returned patients based on their age (in years)
         anchor_phenotype: An optional anchor phenotype to calculate relative age.
         domain: Domain of the phenotype, default is 'PERSON'.
 
@@ -42,8 +41,10 @@ class AgePhenotype(Phenotype):
         )
 
         age_phenotype = AgePhenotype(
-            min_age=Value('>=', 18),
-            max_age=Value('<=', 65),
+            value_filter=ValueFilter(
+                min_value=GreaterThan(18),
+                max_value=LessThan(65)
+                ),
             anchor_phenotype=af_phenotype
         )
 
@@ -58,30 +59,19 @@ class AgePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: str = "age",
-        min_age: Optional[Value] = None,
-        max_age: Optional[Value] = None,
+        name: Optional[str] = "AGE",
+        value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
         domain: str = "PERSON",
         **kwargs,
     ):
-        self.name = name
-        self.min_age = min_age
-        self.max_age = max_age
+        self.min_age = self.max_age = None
+        if value_filter:
+            self.min_age = value_filter.min_value
+            self.max_age = value_filter.max_value
+
         self.domain = domain
         self.anchor_phenotype = anchor_phenotype
-        if self.min_age is not None:
-            min_days = Value(
-                self.min_age.operator, self.min_age.value * self.DAYS_IN_YEAR
-            )
-        else:
-            min_days = None
-        if self.max_age is not None:
-            max_days = Value(
-                self.max_age.operator, self.max_age.value * self.DAYS_IN_YEAR
-            )
-        else:
-            max_days = None
 
         self.time_range_filter = RelativeTimeRangeFilter(
             anchor_phenotype=anchor_phenotype
@@ -93,7 +83,7 @@ class AgePhenotype(Phenotype):
         else:
             self.children = []
 
-        super(AgePhenotype, self).__init__(**kwargs)
+        super(AgePhenotype, self).__init__(name=name, **kwargs)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]

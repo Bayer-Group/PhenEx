@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 from datetime import date
 from ibis.expr.types.relations import Table
 import ibis
@@ -38,32 +38,23 @@ class ComputationGraphPhenotype(Phenotype):
         self,
         expression: ComputationGraph,
         return_date: Union[str, Phenotype],
-        name: str = None,
+        name: Optional[str] = None,
         aggregation_index=["PERSON_ID"],
         operate_on: str = "boolean",
         populate: str = "value",
         reduce: bool = False,
         **kwargs,
     ):
-        super(ComputationGraphPhenotype, self).__init__(**kwargs)
+        if name is None:
+            name = str(expression)
+        super(ComputationGraphPhenotype, self).__init__(name=name, **kwargs)
         self.expression = expression
         self.return_date = return_date
         self.aggregation_index = aggregation_index
-        self._name = name
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
         self.children = self.expression.get_leaf_phenotypes()
-
-    @property
-    def name(self):
-        if self._name is None:
-            self._name = str(self.expression)
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        self._name = name
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
@@ -80,9 +71,13 @@ class ComputationGraphPhenotype(Phenotype):
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
                 column_name = f"{child.name}_BOOLEAN"
-                joined_table = joined_table.mutate(
-                    **{column_name: joined_table[column_name].cast(float)}
-                )
+                mutated_column = ibis.ifelse(
+                    joined_table[column_name].isnull(),
+                    0,
+                    joined_table[column_name].cast("int"),
+                ).cast("float")
+
+                joined_table = joined_table.mutate(**{column_name: mutated_column})
 
         if self.populate == "value":
             _expression = self.expression.get_value_expression(

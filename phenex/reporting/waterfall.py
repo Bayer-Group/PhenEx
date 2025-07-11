@@ -67,9 +67,7 @@ class Waterfall(Reporter):
                 phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
             )
         elif type == "exclusion":
-            table = table.anti_join(
-                phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
-            )
+            table = table.filter(~table["PERSON_ID"].isin(phenotype.table["PERSON_ID"]))
         else:
             raise ValueError("type must be either inclusion or exclusion")
         logger.debug(f"Starting {type} criteria {phenotype.name}")
