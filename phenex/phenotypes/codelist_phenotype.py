@@ -3,6 +3,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_filter import DateFilter
+from phenex.filters import ValueFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -150,11 +151,12 @@ class CodelistPhenotype(Phenotype):
         return code_table
 
     def _perform_time_filtering(self, code_table):
-        if self.date_range is not None:
+        if self.date_range is not None and isinstance(self.date_range, ValueFilter):
             code_table = self.date_range.filter(code_table)
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
-                code_table = rtr.filter(code_table)
+                if isinstance(rtr, RelativeTimeRangeFilter):
+                    code_table = rtr.filter(code_table)
         return code_table
 
     def _perform_date_selection(self, code_table, reduce=True):

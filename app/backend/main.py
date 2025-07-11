@@ -398,42 +398,66 @@ async def execute_study(
     Returns:
         JSONResponse: The results of the study execution.
     """
-    # logger.info("Received request!!!!")
-    # # print(cohort)
-    # # print(database_config)
-    # response = {
-    #     'cohort': cohort
-    # }
-
     print(database_config)
-    if database_config['mapper'] == 'OMOP':
+    if database_config["mapper"] == "OMOP":
         from phenex.mappers import OMOPDomains
+
         mapper = OMOPDomains
 
-    # database = database_config['config']
-    # logger.info('ENVIRON')
-    # logger.info(os.environ)
+    database = database_config["config"]
+    logger.info("ENVIRON")
+    logger.info(os.environ)
 
-    # con = SnowflakeConnector(
-    #     SNOWFLAKE_SOURCE_DATABASE = database['source_database'],
-    #     SNOWFLAKE_DEST_DATABASE = database['destination_database'],
-    # )
-    
+    con = SnowflakeConnector(
+        SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
+        SNOWFLAKE_DEST_DATABASE=database["destination_database"],
+    )
 
-    # mapped_tables = mapper.get_mapped_tables(con)
-    del cohort['phenotypes']
+    mapped_tables = mapper.get_mapped_tables(con)
+    del cohort["phenotypes"]
     processed_cohort = prepare_cohort_for_phenex(cohort)
-    px_cohort = from_dict(cohort)
+
     import json
-    with open('cohort.json', 'w') as f:
+
+    with open("./processed_cohort.json", "w") as f:
+        json.dump(processed_cohort, f, indent=4)
+    px_cohort = from_dict(processed_cohort)
+    import json
+
+    with open("./cohort.json", "w") as f:
         json.dump(px_cohort.to_dict(), f, indent=4)
-    # px_cohort.execute(mapped_tables)
-    # # px_cohort.append_results()
 
-    # px_cohort.append_counts()
-    # response = {'cohort':px_cohort.to_dict()}
+    px_cohort.execute(mapped_tables)
+    px_cohort.append_counts()
 
-    # return JSONResponse(content=response)
+    path_cohort = get_path_cohort_files(cohort["id"])
+
+    px_cohort.table1.to_csv(os.path.join(path_cohort, "table1.csv"))
+
+    from phenex.reporting import Waterfall
+
+    r = Waterfall()
+    df_waterfall = r.execute(px_cohort)
+    df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
+
+    append_count_to_cohort(px_cohort, cohort)
+
+    from json import loads, dumps
+
+    cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
+    cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
+
+    response = {
+        "cohort": cohort,
+    }
+
+    with open("./executed_cohort.json", "w") as f:
+        json.dump(px_cohort.to_dict(), f, indent=4)
+
+    with open("./returned_cohort.json", "w") as f:
+        json.dump(cohort, f, indent=4)
+
+    return JSONResponse(content=response)
 
 
 
