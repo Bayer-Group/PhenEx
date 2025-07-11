@@ -24,9 +24,7 @@ export const Tabs: FC<TabsProps> = ({ width, height, tabs, active_tab_index = 0,
   };
 
   return (
-    <div
-      className={styles.tabsContainer}
-    >
+    <div className={styles.tabsContainer}>
       {tabs.map((tab, index) => (
         <button
           key={index}

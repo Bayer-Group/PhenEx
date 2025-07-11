@@ -15,6 +15,17 @@ import { CategoricalFilterCellEditor } from '../CohortTable/CellEditors/Categori
 import { ValueFilterCellEditor } from '../CohortTable/CellEditors/ValueFilterCellEditor';
 import { PhenotypeSelectorCellEditor } from '../CohortTable/CellEditors/PhenotypeSelectorCellEditor';
 import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelectorCellEditor';
+import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
+import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
+import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
+
+
+export const columnNameToApplicablePhenotypeMapping = {
+  relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
+  value_filter:['MeasurementPhenotype', 'AgePhenotype'],
+  categorical_filter:['CodelistPhenotype', 'MeasurementPhenotype'],
+  codelist: ['CodelistPhenotype', 'MeasurementPhenotype']
+}
 
 export const defaultColumns = [
   {
@@ -24,18 +35,30 @@ export const defaultColumns = [
     pinned: 'left',
     editable: true,
     cellRenderer: NameCellRenderer,
-  },
+    cellEditor: 'agTextCellEditor',
+    cellEditorSelector: (params: ICellEditorParams) => {
+      if (params.eventKey == 'settings') {
+        return {
+          component: SettingsCellEditor,
+          popup: true
+        };
+      }
+      return {
+        component: 'agTextCellEditor'
+      };
+    }},
   {
     field: 'type',
     headerName: 'Type',
     width: 80,
     pinned: 'left',
     editable: true,
-    cellEditor: 'agSelectCellEditor',
+    cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
       values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
     },
     cellRenderer: TypeCellRenderer,
+    cellEditorPopup: true,
   },
   {
     field: 'count',
@@ -50,12 +73,8 @@ export const defaultColumns = [
     headerName: 'Description',
     width: 250,
     editable: true,
-    cellEditor: 'agLargeTextCellEditor',
+    cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    wrapText: true,
-    cellEditorParams: {
-      maxLength: 2000,
-    },
     cellRenderer: DescriptionCellRenderer,
   },
   {
@@ -69,7 +88,7 @@ export const defaultColumns = [
       values: [
         'CodelistPhenotype',
         'MeasurementPhenotype',
-        'ContinuousCoveragePhenotype',
+        'TimeRangePhenotype',
         'AgePhenotype',
         'DeathPhenotype',
         'LogicPhenotype',
@@ -105,8 +124,7 @@ export const defaultColumns = [
     width: 200,
     editable: params => {
       return (
-        params.data.class_name === 'MeasurementPhenotype' ||
-        params.data.class_name === 'CodelistPhenotype'
+        columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name)
       );
     },
     valueParser: params => {
@@ -131,11 +149,9 @@ export const defaultColumns = [
     headerName: 'Relative time ranges',
     width: 200,
     editable: params => {
-      console.log('CHECKING EDITABLE', params.data);
       return (
         params.data.type !== 'entry' &&
-        (params.data.class_name === 'MeasurementPhenotype' ||
-          params.data.class_name === 'CodelistPhenotype')
+        columnNameToApplicablePhenotypeMapping.relative_time_range.includes(params.data.class_name)
       );
     },
     valueParser: params => {
@@ -156,7 +172,9 @@ export const defaultColumns = [
     field: 'value_filter',
     headerName: 'Value filters',
     width: 150,
-    editable: true,
+    editable: params => {
+      return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name)
+    },
     cellEditorPopup: true,
     valueParser: params => {
       if (params.newValue && typeof params.newValue === 'object') {
@@ -171,7 +189,9 @@ export const defaultColumns = [
     field: 'categorical_filter',
     headerName: 'Categorical filters',
     width: 400,
-    editable: true,
+    editable: params => {
+      return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(params.data.class_name)
+    },
     valueParser: params => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;

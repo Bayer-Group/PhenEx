@@ -1,0 +1,46 @@
+.container {
+  padding: 20px 25px 20px 10px;
+  /* background-color: var(--background-color); */
+}
+.settingSection {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 4px 30px 8px 8px;
+  background-color: transparent;
+  border-radius: var(--border-radius);
+  border: transparent solid 1px;
+}
+
+.settingSection:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--line-color);
+}
+
+.settingSection.selected {
+  background-color: white;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}
+
+.settingSection.selected:hover {
+  color: black;
+}
+
+.settingName {
+  font-family: 'SNPro-bold';
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.settingInfo {
+  margin: 0;
+  margin-top: 0px;
+  padding-left: 3px;
+  /* width: calc(100% - 50px); */
+  font-size: 10px;
+}
+.emph{
+  font-family: "IBMPlexSans-bold";
+  font-size:10px;
+}

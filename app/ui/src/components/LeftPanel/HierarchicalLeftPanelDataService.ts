@@ -96,7 +96,6 @@ export class HierarchicalLeftPanelDataService {
 
   public async addNewCohort() {
     const response = await this.dataService.createNewCohort();
-    console.log(response);
 
     const newCohort: TreeNodeData = {
       id: 'new-cohort',
@@ -105,10 +104,9 @@ export class HierarchicalLeftPanelDataService {
     };
     const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
     if (cohortsNode && cohortsNode.children) {
-      console.log('ADDING NEW CZOHORT');
       cohortsNode.children.push(newCohort);
     }
-    console.log(this.treeData);
     this.notifyListeners();
+    return newCohort.viewInfo;
   }
 }

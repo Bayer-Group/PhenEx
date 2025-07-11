@@ -12,17 +12,19 @@ export const ReportTable: FC<ReportTableProps> = ({ dataService }) => {
   const gridRef = useRef<any>(null);
 
   const theme = themeQuartz.withParams({
-    // accentColor: '#DDDDDD',
-    // borderColor: '#AFAFAF26',
+    accentColor: '#DDDDDD',
+    borderColor: 'var(--line-color-grid)',
     browserColorScheme: 'light',
     columnBorder: true,
     headerFontSize: 11,
     headerRowBorder: true,
     cellHorizontalPadding: 10,
-    headerBackgroundColor: 'var(--background-color-content, #FFFFFF)',
+    fontSize: 11,
+    headerBackgroundColor: 'var(--background-color, red)',
     rowBorder: true,
-    spacing: 8,
+    spacing: 3,
     wrapperBorder: false,
+    backgroundColor: 'var(--background-color)',
   });
 
   return (

@@ -196,7 +196,12 @@ export const CategoricalFilterEditor: React.FC<CategoricalFilterEditorProps> = (
                   >
                     {currentFilter.class_name === 'AndFilter' ? 'AND' : 'OR'}
                   </div>
-                  <div className = {currentFilter.filter2.class_name === 'CategoricalFilter'? styles.lastCategoricalFilter:''}
+                  <div
+                    className={
+                      currentFilter.filter2.class_name === 'CategoricalFilter'
+                        ? styles.lastCategoricalFilter
+                        : ''
+                    }
                   >
                     {renderFilter(currentFilter.filter2)}
                   </div>

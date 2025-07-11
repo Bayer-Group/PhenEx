@@ -1,10 +1,11 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AccordianTabbedInfoDisplayView.module.css';
-import { Tabs } from '../../Tabs/Tabs';
+import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortDatabaseSettings } from '../CohortInfo/CohortDatabaseSettings/CohortDatabaseSettings';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ConstantsTable } from './ConstantsTable'
+import { ConstantsTable } from './ConstantsTable';
+import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 interface AccordianTabbedInfoDisplayViewProps {
   title: string;
   infoContent?: string;
@@ -13,12 +14,14 @@ interface AccordianTabbedInfoDisplayViewProps {
 import { CodelistsInfoDisplay } from '../../CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
-  Info = 'i',
-  Constants = 'Constants',
+  NewPhenotype = 'New Phenotype',
   Database = 'Database',
+  Constants = 'Constants',
   Codelists = 'Codelists',
   Visibility = 'Visibility',
-
+  Execute = 'Execute',
+  Report = 'Report',
+  Info = 'i',
 }
 
 export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
@@ -28,11 +31,12 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
+  const customizableDropdownButtonRef = useRef(null);
 
   useEffect(() => {
     const updateAccordionState = () => {
       if (dataService.isNewCohortCreation()) {
-        setCurrentTab(Object.values(InfoTabType)[0]);
+        setCurrentTab(InfoTabType.Info);
 
         setIsOpen(true);
       }
@@ -52,14 +56,32 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     console.log('SH?OWING CODELISTS');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('codelists');
-    // TODO: Implement logic to show codelists
+  };
+
+  const showReport = () => {
+    console.log('SH?OWING CODELISTS');
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('report');
   };
 
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
+    console.log('ON TAB CHANGE', index);
+    if (index == 0) {
+      setIsOpen(false);
+      return;
+    }
     if (index == 3) {
       showCodelists();
+      setCurrentTab(tabTypes[index]);
+    }
+    if (index == 6) {
+      showReport();
+      setCurrentTab(tabTypes[index]);
+    }
+    if (index == 5) {
+      executeCohort();
       setCurrentTab(tabTypes[index]);
     }
     if (!isOpen) {
@@ -77,9 +99,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       case InfoTabType.Info:
         return <div className={styles.infoContent}>{infoContent}</div>;
       case InfoTabType.Constants:
-        return (
-          <ConstantsTable/>
-        );
+        return <ConstantsTable />;
       case InfoTabType.Database:
         return <CohortDatabaseSettings />;
       case InfoTabType.Codelists:
@@ -89,24 +109,50 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     }
   };
 
+  const handlePhenotypeSelection = type => {
+    dataService.addPhenotype(type);
+    setIsOpen(false);
+  };
+
+  const executeCohort = async () => {
+    await dataService.executeCohort();
+  };
+  const clickedOnHeader = () => {
+    console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
+    customizableDropdownButtonRef.current?.closeDropdown();
+  };
+
+  const renderPhenotypeSelection = () => {
+    return (
+      <div className={styles.phenotypeSelection}>
+        <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>
+          New phenotype
+          <span className={styles.phenotypeSelectionHeaderButton}>Close</span>
+        </div>
+        <TypeSelectorEditor onValueChange={handlePhenotypeSelection} />
+      </div>
+    );
+  };
   return (
     <div className={`${styles.accordianContainer} ${isOpen ? styles.opened : ''}`}>
       <div className={`${styles.header} ${!isOpen ? styles.closed : ''}`}>
-        <h2>{title}</h2>
+        {/* <h2>{title}</h2> */}
         <button
           className={`${styles.toggleButton} ${!isOpen ? styles.closed : ''}`}
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>>'}
+          {'>'}
         </button>
         <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
-          <Tabs
-            width={200}
-            height={25}
+          <TabsWithDropdown
+            width={'100%'}
+            height={'100%'}
             tabs={tabs}
+            dropdown_items={{ 0: renderPhenotypeSelection() }}
             onTabChange={onTabChange}
             active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+            customizableDropdownButtonRef={customizableDropdownButtonRef}
           />
         </div>
       </div>

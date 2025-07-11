@@ -3,6 +3,7 @@ import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
 import deleteIcon from '../../../../assets/icons/delete.svg';
 import styles from './RelativeTimeRangeCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import { NARenderer } from './NARenderer';
 
 interface RelativeTimeRangeFilter {
   class_name: 'RelativeTimeRangeFilter';
@@ -38,30 +39,45 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
       : filter.anchor_phenotype || 'unknown phenotype';
     return (
       <span className={styles.filterRowSpan}>
-        <span className={`${styles.timeValue} ${styles.min}`}>
-          <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
-          {filter.min_days.value}
-        </span>
-        <span className={`${styles.timeValue} ${styles.max}`}>
-          <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
-          {filter.max_days.value}
-        </span>
+        {filter.min_days && (
+          <span className={`${styles.timeValue} ${styles.min}`}>
+            <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
+            {filter.min_days.value}
+          </span>
+        )}
+        {filter.max_days && (
+          <span className={`${styles.timeValue} ${styles.max}`}>
+            <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
+            {filter.max_days.value}
+          </span>
+        )}
         days <span className={styles.when}>{filter.when}</span>
         <span className={styles.reference}> {reference} </span>
       </span>
     );
   };
 
-  let filters: RelativeTimeRangeFilter[] = props.value || [];
-  if (props.data.type == 'entry') {
-    return <div>not applicable</div>;
+  let filters: RelativeTimeRangeFilter[] = Array.isArray(props.value) ? props.value : [];
+  if (props.data.type === 'entry') {
+    return <NARenderer value={props.value} />
   }
+
   return (
     <PhenexCellRenderer {...props}>
       <div className={styles.filtersContainer}>
         {filters.map((filter, index) => (
-          <div key={index} className={styles.filterRow}>
-            {formatTimeRange(filter)}<br/>
+          <div
+            key={index}
+            className={styles.filterRow}
+            onClick={() => {
+              props.api?.startEditingCell({
+                rowIndex: props.node.rowIndex,
+                colKey: props.column.getColId(),
+              });
+            }}
+          >
+            {formatTimeRange(filter)}
+            <br />
           </div>
         ))}
       </div>

@@ -4,6 +4,7 @@ import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
 import { PhenotypeViewer } from '../../PhenotypeViewer/PhenotypeViewer';
 import { CodelistsViewer } from '../../CodelistsViewer/CodelistsViewer';
+import { CohortReportView } from '../../CohortViewer/CohortReportView/CohortReportView';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -87,10 +88,19 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   }, [service]);
   service.setData(data);
 
+  const renderRightPanel = () => {
+    if (viewType === 'phenotype') {
+      return <PhenotypeViewer data={extraData} />;
+    } else if (viewType === 'report') {
+      return <CohortReportView />;
+    }
+    return <CodelistsViewer />;
+  };
+
   return (
     <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={400}>
       <CohortViewer data={service.getData()} />
-      {viewType === 'phenotype' ? <PhenotypeViewer data={extraData} /> : <CodelistsViewer />}
+      {renderRightPanel()}
     </TwoPanelView>
   );
 };

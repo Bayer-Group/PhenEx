@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
-
+import { Portal } from '../../../common/Portal';
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value?: any;
   onValueChange?: (value: any) => void;
@@ -78,47 +78,108 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
   }, []);
 
-  const titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
+  let titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
+  if (titleText == 'Name') {
+    titleText = 'Settings';
+  } else{
+    titleText = `"${titleText}"`
+  }
+  let cellRect = { left: 0, top: 0, width: 200, height: 100 };
+
+  if (props.eGridCell) {
+    const cellElement = props.eGridCell as HTMLElement;
+    cellRect = cellElement.getBoundingClientRect();
+  } else {
+    console.warn('Could not find grid cell element for editor positioning');
+  }
+  console.log(cellRect);
+  const gridContainer = props.eGridCell?.closest('.ag-root');
+  const gridScrollTop = gridContainer?.scrollTop || 0;
+  const gridScrollLeft = gridContainer?.scrollLeft || 0;
+  const gridHeight = gridContainer?.getBoundingClientRect().height || window.innerHeight;
+  const gridWidth = gridContainer?.getBoundingClientRect().width || window.innerWidth;
+
+  // Calculate positions relative to grid scroll
+  const scrollLeft = (window.pageXOffset || document.documentElement.scrollLeft) - gridScrollLeft;
+  const scrollTop = (window.pageYOffset || document.documentElement.scrollTop) - gridScrollTop;
+
+  // Calculate the editor height (500px as specified)
+  const editorHeight = 500;
+  const editorWidth = 300;
+
+  // Calculate the top position
+  let topPosition = cellRect.top;
+  const editorBottom = topPosition + editorHeight;
+  if (editorBottom > gridHeight) {
+    const overflow = editorBottom - gridHeight;
+    topPosition = Math.max(topPosition - overflow + 80, 0);
+  }
+
+  // Calculate the left position
+  let leftPosition = cellRect.left + scrollLeft;
+  if (leftPosition + editorWidth > gridWidth) {
+    leftPosition = Math.min(
+      leftPosition,
+      gridWidth - editorWidth - 20 + gridContainer?.getBoundingClientRect().left || 0
+    );
+  }
+
+  const portalStyle = {
+    position: 'absolute',
+    left: `${cellRect.left + scrollLeft}px`,
+    top: `${topPosition}px`,
+    // minHeight: `${cellRect.height}px`,
+    maxHeight: '500px',
+    zIndex: 9999,
+  };
+
   return (
-    <div
-      ref={containerRef}
-      className={styles.container}
-      onKeyDown={e => {
-        if (e.key === 'Tab') {
-          e.nativeEvent.stopImmediatePropagation();
-          e.preventDefault();
-          e.stopPropagation();
-          handleKeyDown(e);
-        }
-      }}
-      onKeyDownCapture={e => {
-        if (e.key === 'Tab') {
-          e.nativeEvent.stopImmediatePropagation();
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }}
-      tabIndex={-1}
-    >
-      <div className={styles.header}>
-        <span className={styles.filler}>editing</span>{' '}
-        {titleText}{' '}
-        <span className={styles.filler}>in</span> {props.data.name}
-        <button className={styles.doneButton} onClick={handleDone}>
-          Done
-        </button>
+    <Portal>
+      <div
+        style={portalStyle}
+        ref={containerRef}
+        className={styles.container}
+        onKeyDown={e => {
+          if (e.key === 'Tab') {
+            e.nativeEvent.stopImmediatePropagation();
+            e.preventDefault();
+            e.stopPropagation();
+            handleKeyDown(e);
+          }
+        }}
+        onKeyDownCapture={e => {
+          if (e.key === 'Tab') {
+            e.nativeEvent.stopImmediatePropagation();
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        tabIndex={-1}
+      >
+        <div className={styles.header} onClick={handleDone}>
+          <span className={styles.topLine}>
+            <span className={styles.filler}>editing</span>
+            <span className={styles.actionText}>{titleText}</span>
+          </span>
+          <br></br>
+          <span className={`${styles.filler} ${styles.bottomLabel}`}>for</span>
+
+          <span className={styles.phenotypeName}>"{props.data.name}"</span>
+
+          <span className={styles.doneButton}>Done</span>
+        </div>
+        <div className={styles.content}>
+          {React.Children.map(props.children, child =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, {
+                  ...props,
+                  onValueChange: handleValueChange,
+                })
+              : child
+          )}
+        </div>
       </div>
-      <div className={styles.content}>
-        {React.Children.map(props.children, child =>
-          React.isValidElement(child)
-            ? React.cloneElement(child, {
-                ...props,
-                onValueChange: handleValueChange
-              })
-            : child
-        )}
-      </div>
-    </div>
+    </Portal>
   );
 });
 

@@ -2,14 +2,14 @@ export interface TimeRangeFilter {
   class_name: 'RelativeTimeRangeFilter';
   min_days: {
     class_name: 'Value';
-    operator: '>' | '>=';
+    operator: '>' | '>=' | 'not set';
     value: number;
-  };
+  } | null;
   max_days: {
     class_name: 'Value';
-    operator: '<' | '<=';
+    operator: '<' | '<=' | 'not set';
     value: number;
-  };
+  } | null;
   when: 'before' | 'after' | 'range';
   useIndexDate: boolean;
   useConstant: boolean;

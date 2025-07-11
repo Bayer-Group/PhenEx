@@ -66,17 +66,11 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
     <Node {...props} onNavigate={onNavigate} onClickAdd={onClickAdd} />
   );
 
-  const myOnNavigate = (viewInfo: ViewInfo) => {
-    onNavigate(viewInfo);
-    dataService.current.setSelectedViewInfo(viewInfo);
-  };
-
-  const onClickAdd = (name: str) => {
+  const onClickAdd = async (name: string) => {
     if (name === 'Cohorts') {
-      console.log('CREATING NEW COHORT');
-      dataService.current.addNewCohort();
+      const newCohortViewInfo = await dataService.current.addNewCohort();
+      onNavigate(newCohortViewInfo);
     }
-    console.log('CLICKED ADD', name);
   };
 
   return (

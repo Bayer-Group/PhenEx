@@ -1,21 +1,25 @@
+import styles from './TypeCellRenderer.module.css';
+import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+
 const TypeCellRenderer = (props: any) => {
   const type = props.value;
   const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
   return (
-    <div style={{ textAlign: 'left' }}>
-      <span
-        style={{
-          // display: 'inline-block',
-          padding: '2px 5px',
-          borderRadius: '4px',
-          backgroundColor: 'red',
-          fontSize: '12px',
-        }}
-        className={colorClass}
-      >
-        {type}
-      </span>
-    </div>
+    <PhenexCellRenderer {...props}>
+      <div className={styles.container}>
+        <span
+          className={`${styles.block} ${colorClass}`}
+          onClick={() => {
+            props.api?.startEditingCell({
+              rowIndex: props.node.rowIndex,
+              colKey: props.column.getColId(),
+            });
+          }}
+        >
+          {type}
+        </span>
+      </div>
+    </PhenexCellRenderer>
   );
 };
 

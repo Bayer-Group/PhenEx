@@ -2,97 +2,125 @@
   background-color: transparent !important;
   border: none !important;
   padding: 0 !important;
-  border-radius: 0px 10px 10px 10px !important;
-  overflow: hidden !important;
+  border-radius: 4px 10px 10px 10px !important;
+  box-shadow: none !important;
+  transform: translateY(calc(-100% + 40px));
 }
 
 :global(.ag-popup-child) {
-  border-radius: 0px 10px 10px 10px !important;
+  border-radius: 4px 10px 10px 10px !important;
 }
 
 .header {
+  cursor: pointer;
   font-size: 16px;
   font-family: 'SNPro-regular';
   margin-bottom: 0px;
-  padding-bottom: 8px;
-  padding: 8px;  
-  line-height: 18px;
-  padding-right: 80px;
+  padding: 8px;
+  padding-right: 20px;
+  margin: 4px;
   overflow: hidden;
   text-wrap: wrap;
-  min-height: 30px;
-  background-color: transparent !important;
-  /* border-bottom: 2px solid var(--color-accent); */
+  min-height: 50px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid var(--color-accent);
+  box-shadow: var(--box_shadow_selected_no_hover);
+  background-color: white !important;
+  transition:
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  position: relative;
+  padding-bottom: 10px;
+  padding-left: 15px;
+}
+.header:hover {
+  box-shadow: var(--box_shadow_selected_hover);
+  transform: translateY(-1px);
+  background-color: var(--color-accent-hover) !important;
+
+}
+
+.topLine {
+  line-height: 20px;
 }
 
 .container > * {
   background-color: transparent;
+}
 
+.phenotypeName {
+  font-family: 'IBMPlexSans-bold';
+  font-size: 20px;
+  padding-left: 5px;
 }
 .container {
   display: flex;
   flex-direction: column;
-  width: 300px;
+  width: 350px;
   height: 500px;
   padding: 0px;
-  background-color: white;
   border: 1px solid var(--line-color);
-  border-radius: 0px 10px 10px 10px;
+  border-radius: var(--issue_popover_radius);
   padding-bottom: 10px;
   position: relative;
-  background-color: var(--background-color);
-
+  margin-bottom: 20px !important;
+  margin-right: 20px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--background_color_translucent);
 }
 
 .content {
   overflow-y: auto;
   height: 100%;
-  border-top: 2px solid var(--color-accent);
-  border-bottom: 2px solid var(--color-accent);
-
 }
 
 .filler {
   font-family: 'SNPro-bold';
+  font-size: 16px;
+}
+
+.actionText {
+  padding-left: 5px;
   font-size: 18px;
+  font-family: 'IBMPlexSans-bold';
+  padding-right: 10px;
 }
 
 .doneButton {
   background-color: transparent;
-  color:black;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  color: var(--phenex-red-active);
   font-size: 14px;
   width: 60px;
   position: absolute;
-  font-family: "SNPro-bold";
-  top: 8px;
-  height: 25px;
-  right: 10px;
-  padding: 2px 0;
-  text-align: center;
-  transition: all 0.2s ease-in-out;
-  border: 2px solid var(--color-accent);
+  font-family: 'SNPro-bold';
+  top: 4px;
+  right: -15px;
 }
 
+.header:hover .doneButton {
+  color: var(--color-accent) !important;
+}
+
+/*
 .doneButton:hover {
   color: white;
   background-color: var(--color-accent);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--color-accent);
-
 }
 
 .doneButton:focus {
   outline: none;
-  border: 2px solid var(--color-accent);
+  border: none;
 
 }
 
 .doneButton:focus-visible {
   outline: none;
-  border: 2px solid var(--color-accent);
+  border: none;
+} */
 
+.bottomLabel {
+  /* padding-left: 10px; */
 }

@@ -7,39 +7,41 @@
   user-select: none;
   border-radius: var(--border-radius);
   font-size: 24px;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   overflow: visible;
   margin: 8px 10px;
   border: 1px solid transparent;
+  background-color: transparent;
 }
 
-.node:hover {
-  /* background-color: white;  */
-  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);  */
-  /* border: var(--border);  */
-  /* transform: translateY(-1px);  */
+.node:hover .nodeName {
+  background-color: var(--color-accent-hover);
+  border-color: var(--line-color);
+
+}
+
+.nodeName{
+  padding: 2px 10px 0px 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
 }
 
 .nodeHeader:hover {
   background-color: transparent !important;
   border: 1px solid transparent !important;
-  /* transform: translateY(-1px);  */
 }
 
-.selected {
+.selected .nodeName {
   border: var(--border);
   background-color: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
-
-  /* transform: translateY(-1px); */
+  background-color: var(--color-accent-hover);
 }
 
-.selected:hover {
-  border: var(--border);
-  background-color: white;
+.selected:hover .nodeName{
+  border: 1px solid var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  /* transform: translateY(-1px); */
 }
 
 .arrow {
@@ -67,6 +69,12 @@
   text-overflow: ellipsis;
 }
 
+.headerNode .nodeName {
+  /* font-size: 24px; */
+  font-family: "IBMPlexSans-Bold";
+  color: var(--text-color);
+}
+
 .node:hover .nodeName {
   color: var(--color-accent);
 }
@@ -76,9 +84,14 @@
 }
 
 .headerNode {
-  font-size: 20px;
+  font-size: 24px;
   pointer-events: none;
-  margin-bottom: 100px;
+  margin: 0 0 24px 0;
+  padding: 12px 16px;
+  font-weight: bold;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--background-color-secondary);
 }
 
 .headerNode:hover {
@@ -113,4 +126,8 @@
   color: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 2px solid var(--color-accent);
+}
+
+.headerNode{
+  font-size:100px;
 }

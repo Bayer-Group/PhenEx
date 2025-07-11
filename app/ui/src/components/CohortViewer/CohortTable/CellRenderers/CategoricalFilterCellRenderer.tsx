@@ -13,7 +13,15 @@ const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props =
       const categoricalFilter = filter as BaseCategoricalFilter;
       return (
         <>
-          <div className={styles.unit}>
+          <div
+            className={styles.unit}
+            onClick={() => {
+              props.api?.startEditingCell({
+                rowIndex: props.node.rowIndex,
+                colKey: props.column.getColId(),
+              });
+            }}
+          >
             <div className={styles.top}>{categoricalFilter.allowed_values.join(', ')}</div>
             <div className={styles.bottom}>{categoricalFilter.column_name}</div>
           </div>

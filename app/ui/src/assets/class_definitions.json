@@ -1,648 +1,781 @@
 {
-  "CodelistPhenotype": [
-    {
-      "param": "domain",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "codelist",
-      "default": null,
-      "type": "Codelist",
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "date_range",
-      "default": null,
-      "type": "DateRangeFilter",
-      "required": false
-    },
-    {
-      "param": "relative_time_range",
-      "default": null,
-      "type": ["RelativeTimeRangeFilter", "List:RelativeTimeRangeFilter"],
-      "required": false
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "categorical_filter",
-      "default": null,
-      "type": "CategoricalFilter",
-      "required": false
-    }
-  ],
-  "AgePhenotype": [
-    {
-      "param": "name",
-      "default": "age",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "min_age",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "max_age",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "anchor_phenotype",
-      "default": null,
-      "type": "Phenotype",
-      "required": false
-    },
-    {
-      "param": "domain",
-      "default": "PERSON",
-      "type": "str",
-      "required": true
-    }
-  ],
-  "SexPhenotype": [
-    {
-      "param": "name",
-      "default": "sex",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "allowed_values",
-      "default": null,
-      "type": "List:str",
-      "required": false
-    },
-    {
-      "param": "domain",
-      "default": "PERSON",
-      "type": "str",
-      "required": true
-    }
-  ],
-  "MultipleOccurrencesPhenotype": [
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "phenotype",
-      "default": null,
-      "type": "Phenotype",
-      "required": true
-    },
-    {
-      "param": "n_occurrences",
-      "default": "2",
-      "type": "int",
-      "required": true
-    },
-    {
-      "param": "date_range",
-      "default": null,
-      "type": "DateRangeFilter",
-      "required": true
-    },
-    {
-      "param": "relative_time_range",
-      "default": null,
-      "type": "RelativeTimeRangeFilter",
-      "required": true
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": "_empty",
-      "required": true
-    }
-  ],
-  "MeasurementPhenotype": [
-    {
-      "param": "domain",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "codelist",
-      "default": null,
-      "type": "Codelist",
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "date_range",
-      "default": null,
-      "type": "DateRangeFilter",
-      "required": false
-    },
-    {
-      "param": "relative_time_range",
-      "default": null,
-      "type": ["RelativeTimeRangeFilter", "List:RelativeTimeRangeFilter"],
-      "required": false
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "categorical_filter",
-      "default": null,
-      "type": "CategoricalFilter",
-      "required": false
-    },
-    {
-      "param": "value_filter",
-      "default": null,
-      "type": "ValueFilter",
-      "required": false
-    },
-    {
-      "param": "clean_nonphysiologicals_value_filter",
-      "default": null,
-      "type": "ValueFilter",
-      "required": false
-    },
-    {
-      "param": "clean_null_values",
-      "default": "True",
-      "type": "bool",
-      "required": false
-    },
-    {
-      "param": "value_aggregation",
-      "default": null,
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "return_value",
-      "default": null,
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "further_value_filter_phenotype",
-      "default": null,
-      "type": "MeasurementPhenotype",
-      "required": false
-    }
-  ],
-  "DeathPhenotype": [
-    {
-      "param": "name",
-      "default": "death",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "domain",
-      "default": "PERSON",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "relative_time_range",
-      "default": null,
-      "type": ["RelativeTimeRangeFilter", "List:RelativeTimeRangeFilter"],
-      "required": true
-    }
-  ],
-  "CategoricalPhenotype": [
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "domain",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "allowed_values",
-      "default": null,
-      "type": "List",
-      "required": true
-    },
-    {
-      "param": "column_name",
-      "default": null,
-      "type": "str",
-      "required": true
-    }
-  ],
-  "ContinuousCoveragePhenotype": [
-    {
-      "param": "name",
-      "default": "continuous_coverage",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "domain",
-      "default": "OBSERVATION_PERIOD",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "min_days",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "max_days",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "when",
-      "default": "before",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "anchor_phenotype",
-      "default": null,
-      "type": "Phenotype",
-      "required": false
-    }
-  ],
-  "ScorePhenotype": [
-    {
-      "param": "expression",
-      "default": null,
-      "type": "ComputationGraph",
-      "required": true
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": ["str", "Phenotype"],
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "aggregation_index",
-      "default": "['PERSON_ID']",
-      "type": "_empty",
-      "required": true
-    },
-    {
-      "param": "operate_on",
-      "default": "boolean",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "populate",
-      "default": "value",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "reduce",
-      "default": "False",
-      "type": "bool",
-      "required": true
-    }
-  ],
-  "ArithmeticPhenotype": [
-    {
-      "param": "expression",
-      "default": null,
-      "type": "ComputationGraph",
-      "required": true
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": ["str", "Phenotype"],
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "aggregation_index",
-      "default": "['PERSON_ID']",
-      "type": "_empty",
-      "required": true
-    },
-    {
-      "param": "operate_on",
-      "default": "boolean",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "populate",
-      "default": "value",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "reduce",
-      "default": "False",
-      "type": "bool",
-      "required": true
-    }
-  ],
-  "LogicPhenotype": [
-    {
-      "param": "expression",
-      "default": null,
-      "type": "ComputationGraph",
-      "required": true
-    },
-    {
-      "param": "return_date",
-      "default": "first",
-      "type": ["str", "Phenotype"],
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "aggregation_index",
-      "default": "['PERSON_ID']",
-      "type": "_empty",
-      "required": true
-    },
-    {
-      "param": "operate_on",
-      "default": "boolean",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "populate",
-      "default": "value",
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "reduce",
-      "default": "False",
-      "type": "bool",
-      "required": true
-    }
-  ],
-  "GreaterThan": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": "int",
-      "required": true
-    }
-  ],
-  "GreaterThanOrEqualTo": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": "int",
-      "required": true
-    }
-  ],
-  "LessThan": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": "int",
-      "required": true
-    }
-  ],
-  "LessThanOrEqualTo": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": "int",
-      "required": true
-    }
-  ],
-  "EqualTo": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": "int",
-      "required": true
-    }
-  ],
-  "Value": [
-    {
-      "param": "operator",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "value",
-      "default": null,
-      "type": ["int", "float", "date"],
-      "required": true
-    }
-  ],
-  "CategoricalFilter": [
-    {
-      "param": "column_name",
-      "default": null,
-      "type": "str",
-      "required": true
-    },
-    {
-      "param": "allowed_values",
-      "default": null,
-      "type": "List:str",
-      "required": true
-    },
-    {
-      "param": "domain",
-      "default": null,
-      "type": "str",
-      "required": false
-    }
-  ],
-  "CodelistFilter": [
-    {
-      "param": "codelist",
-      "default": null,
-      "type": "Codelist",
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "_empty",
-      "required": true
-    }
-  ],
-  "DateRangeFilter": [
-    {
-      "param": "min",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "max",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "column_name",
-      "default": "EVENT_DATE",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "min_date",
-      "default": null,
-      "type": ["date", "str"],
-      "required": false
-    },
-    {
-      "param": "max_date",
-      "default": null,
-      "type": ["date", "str"],
-      "required": false
-    },
-    {
-      "param": "date_format",
-      "default": "YYYY-MM-DD",
-      "type": "_empty",
-      "required": true
-    }
-  ],
-  "RelativeTimeRangeFilter": [
-    {
-      "param": "min_days",
-      "default": "<phenex.filters.value.GreaterThanOrEqualTo object at 0x1116ef2d0>",
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "max_days",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "when",
-      "default": "before",
-      "type": "str",
-      "required": false
-    },
-    {
-      "param": "anchor_phenotype",
-      "default": null,
-      "type": "Phenotype",
-      "required": true
-    }
-  ],
-  "ValueFilter": [
-    {
-      "param": "min",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "max",
-      "default": null,
-      "type": "Value",
-      "required": false
-    },
-    {
-      "param": "column_name",
-      "default": "VALUE",
-      "type": "str",
-      "required": false
-    }
-  ],
-  "Codelist": [
-    {
-      "param": "codelist",
-      "default": null,
-      "type": ["str", "List", "Dict[str, ['List']]"],
-      "required": true
-    },
-    {
-      "param": "name",
-      "default": null,
-      "type": "str",
-      "required": false
-    }
-  ]
+    "AgePhenotype": [
+        {
+            "param": "domain",
+            "default": "PERSON",
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "value_filter",
+            "default": null,
+            "type": "ValueFilter",
+            "required": false,
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": 1
+        },
+        {
+            "param": "anchor_phenotype",
+            "default": null,
+            "type": "Phenotype",
+            "required": false,
+            "user_visible": true,
+            "display_name": "anchor_phenotype",
+            "index": 2
+        },
+        {
+            "param": "name",
+            "default": "AGE",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        }
+    ],
+    "CategoricalPhenotype": [
+        {
+            "param": "domain",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "allowed_values",
+            "default": null,
+            "type": "List:Any",
+            "required": true,
+            "user_visible": true,
+            "display_name": "allowed_values",
+            "index": 1
+        },
+        {
+            "param": "column_name",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": true,
+            "display_name": "column_name",
+            "index": 2
+        },
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        }
+    ],
+    "CodelistPhenotype": [
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": 0
+        },
+        {
+            "param": "domain",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 1
+        },
+        {
+            "param": "codelist",
+            "default": null,
+            "type": "Codelist",
+            "required": true,
+            "user_visible": true,
+            "display_name": "codelist",
+            "index": 2
+        },
+        {
+            "param": "date_range",
+            "default": null,
+            "type": "DateFilter",
+            "required": true,
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": 3
+        },
+        {
+            "param": "relative_time_range",
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "required": true,
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": 3
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": 4
+        },
+        {
+            "param": "categorical_filter",
+            "default": null,
+            "type": "ForwardRef('CategoricalFilter')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "categorical_filter",
+            "index": 5
+        },
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        }
+    ],
+    "DeathPhenotype": [
+        {
+            "param": "relative_time_range",
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "required": true,
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "default": "DEATH",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "domain",
+            "default": "PERSON",
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": null
+        }
+    ],
+    "MeasurementChangePhenotype": [
+        {
+            "param": "phenotype",
+            "default": null,
+            "type": "MeasurementPhenotype",
+            "required": true,
+            "user_visible": true,
+            "display_name": "phenotype",
+            "index": 0
+        },
+        {
+            "param": "min_change",
+            "default": null,
+            "type": "Value",
+            "required": true,
+            "user_visible": true,
+            "display_name": "min_change",
+            "index": 1
+        },
+        {
+            "param": "max_change",
+            "default": null,
+            "type": "Value",
+            "required": true,
+            "user_visible": true,
+            "display_name": "max_change",
+            "index": 2
+        },
+        {
+            "param": "max_days_between",
+            "default": null,
+            "type": "Value",
+            "required": true,
+            "user_visible": true,
+            "display_name": "max_days_between",
+            "index": 3
+        },
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "direction",
+            "default": "increase",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "direction",
+            "index": null
+        },
+        {
+            "param": "min_days_between",
+            "default": "<phenex.filters.value.GreaterThanOrEqualTo object at 0x11bbe5650>",
+            "type": "Value",
+            "required": false,
+            "user_visible": true,
+            "display_name": "min_days_between",
+            "index": null
+        },
+        {
+            "param": "component_date_select",
+            "default": "second",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "component_date_select",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        },
+        {
+            "param": "return_value",
+            "default": null,
+            "type": "ValueAggregator",
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_value",
+            "index": null
+        }
+    ],
+    "MeasurementPhenotype": [
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": 0
+        },
+        {
+            "param": "domain",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 1
+        },
+        {
+            "param": "codelist",
+            "default": null,
+            "type": "Codelist",
+            "required": true,
+            "user_visible": true,
+            "display_name": "codelist",
+            "index": 2
+        },
+        {
+            "param": "value_filter",
+            "default": null,
+            "type": "ForwardRef('ValueFilter')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": 3
+        },
+        {
+            "param": "value_aggregation",
+            "default": null,
+            "type": [
+                "ForwardRef('ValueAggregator')",
+                "ForwardRef('DailyMedian')",
+                "ForwardRef('DailyMean')",
+                "ForwardRef('DailyMin')",
+                "ForwardRef('DailyMax')",
+                "ForwardRef('DailyValueAggregator')",
+                "ForwardRef('Min')",
+                "ForwardRef('Max')",
+                "ForwardRef('Mean')"
+            ],
+            "required": false,
+            "user_visible": true,
+            "display_name": "value_aggregation",
+            "index": 4
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": 5
+        },
+        {
+            "param": "relative_time_range",
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "required": true,
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": 6
+        },
+        {
+            "param": "date_range",
+            "default": null,
+            "type": "DateFilter",
+            "required": true,
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": 7
+        },
+        {
+            "param": "categorical_filter",
+            "default": null,
+            "type": "ForwardRef('CategoricalFilter')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "categorical_filter",
+            "index": 8
+        },
+        {
+            "param": "clean_nonphysiologicals_value_filter",
+            "default": null,
+            "type": "ForwardRef('ValueFilter')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "clean_nonphysiologicals_value_filter",
+            "index": 9
+        },
+        {
+            "param": "clean_null_values",
+            "default": "True",
+            "type": "bool",
+            "required": false,
+            "user_visible": true,
+            "display_name": "clean_null_values",
+            "index": 10
+        },
+        {
+            "param": "further_value_filter_phenotype",
+            "default": null,
+            "type": "ForwardRef('MeasurementPhenotype')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "further_value_filter_phenotype",
+            "index": 11
+        },
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        }
+    ],
+    "MultipleOccurrencesPhenotype": [
+        {
+            "param": "phenotype",
+            "default": null,
+            "type": "Phenotype",
+            "required": true,
+            "user_visible": true,
+            "display_name": "phenotype",
+            "index": 0
+        },
+        {
+            "param": "date_range",
+            "default": null,
+            "type": "DateFilter",
+            "required": true,
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": 1
+        },
+        {
+            "param": "relative_time_range",
+            "default": null,
+            "type": "RelativeTimeRangeFilter",
+            "required": true,
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": 2
+        },
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "n_occurrences",
+            "default": "2",
+            "type": "int",
+            "required": false,
+            "user_visible": true,
+            "display_name": "n_occurrences",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": "_empty",
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        }
+    ],
+    "TimeRangePhenotype": [
+        {
+            "param": "name",
+            "default": "TIME_RANGE",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "domain",
+            "default": "OBSERVATION_PERIOD",
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "domain",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "default": null,
+            "type": "ForwardRef('RelativeTimeRangeFilter')",
+            "required": false,
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        }
+    ],
+    "ScorePhenotype": [
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": false,
+            "display_name": "name",
+            "index": 0
+        },
+        {
+            "param": "expression",
+            "default": null,
+            "type": "ComputationGraph",
+            "required": true,
+            "user_visible": true,
+            "display_name": "expression",
+            "index": 1
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": [
+                "str",
+                "Phenotype"
+            ],
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        },
+        {
+            "param": "aggregation_index",
+            "default": "['PERSON_ID']",
+            "type": "_empty",
+            "required": false,
+            "user_visible": false,
+            "display_name": "aggregation_index",
+            "index": null
+        },
+        {
+            "param": "operate_on",
+            "default": "boolean",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "operate_on",
+            "index": null
+        },
+        {
+            "param": "populate",
+            "default": "value",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "populate",
+            "index": null
+        },
+        {
+            "param": "reduce",
+            "default": "False",
+            "type": "bool",
+            "required": false,
+            "user_visible": false,
+            "display_name": "reduce",
+            "index": null
+        }
+    ],
+    "ArithmeticPhenotype": [
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": false,
+            "display_name": "name",
+            "index": 0
+        },
+        {
+            "param": "expression",
+            "default": null,
+            "type": "ComputationGraph",
+            "required": true,
+            "user_visible": true,
+            "display_name": "expression",
+            "index": 1
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": [
+                "str",
+                "Phenotype"
+            ],
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        },
+        {
+            "param": "aggregation_index",
+            "default": "['PERSON_ID']",
+            "type": "_empty",
+            "required": false,
+            "user_visible": false,
+            "display_name": "aggregation_index",
+            "index": null
+        },
+        {
+            "param": "operate_on",
+            "default": "boolean",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "operate_on",
+            "index": null
+        },
+        {
+            "param": "populate",
+            "default": "value",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "populate",
+            "index": null
+        },
+        {
+            "param": "reduce",
+            "default": "False",
+            "type": "bool",
+            "required": false,
+            "user_visible": false,
+            "display_name": "reduce",
+            "index": null
+        }
+    ],
+    "LogicPhenotype": [
+        {
+            "param": "name",
+            "default": null,
+            "type": "str",
+            "required": true,
+            "user_visible": false,
+            "display_name": "name",
+            "index": 0
+        },
+        {
+            "param": "expression",
+            "default": null,
+            "type": "ComputationGraph",
+            "required": true,
+            "user_visible": true,
+            "display_name": "expression",
+            "index": 1
+        },
+        {
+            "param": "description",
+            "default": null,
+            "type": "str",
+            "required": false,
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "default": "first",
+            "type": [
+                "str",
+                "Phenotype"
+            ],
+            "required": false,
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        },
+        {
+            "param": "aggregation_index",
+            "default": "['PERSON_ID']",
+            "type": "_empty",
+            "required": false,
+            "user_visible": false,
+            "display_name": "aggregation_index",
+            "index": null
+        },
+        {
+            "param": "operate_on",
+            "default": "boolean",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "operate_on",
+            "index": null
+        },
+        {
+            "param": "populate",
+            "default": "value",
+            "type": "str",
+            "required": false,
+            "user_visible": false,
+            "display_name": "populate",
+            "index": null
+        },
+        {
+            "param": "reduce",
+            "default": "False",
+            "type": "bool",
+            "required": false,
+            "user_visible": false,
+            "display_name": "reduce",
+            "index": null
+        }
+    ]
 }

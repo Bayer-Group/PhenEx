@@ -11,9 +11,11 @@ export const CodelistsInfoDisplay: FC = () => {
   return (
     <div className={styles.container}>
       <p>
-        <span className={styles.number}>{dataService.codelists_service.getTotalCodes()}</span> codes in{' '}
-        <span className={styles.number}>{dataService.codelists_service.getTotalCodelists()}</span> codelists. The code 
-        type in your database is ICD10CM, NDC. There is no punctuation the codelists!
+        <span className={styles.number}>{dataService.codelists_service.getTotalCodes()}</span> codes
+        in{' '}
+        <span className={styles.number}>{dataService.codelists_service.getTotalCodelists()}</span>{' '}
+        codelists. The code type in your database is ICD10CM, NDC. There is no punctuation the
+        codelists!
       </p>
     </div>
   );

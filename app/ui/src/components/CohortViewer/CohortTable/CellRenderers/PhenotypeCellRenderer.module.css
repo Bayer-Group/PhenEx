@@ -4,7 +4,6 @@
   text-wrap: wrap;
   background-color: var(--item-color-default);
   line-height: 11px;
-  font-size: 11px;
   padding: 3px 5px;
   border-radius: 5px;
   border-radius: var(--item-radius);
@@ -16,14 +15,12 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--item-border-hover);
-
 }
 
 .domainPart {
   background-color: var(--item-color-default);
   padding: 2px 2px;
   border-radius: var(--item-radius);
-  font-size: 0.9em;
   color: #333;
   border: 1px solid #e0e0e0;
 }

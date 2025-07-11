@@ -7,21 +7,16 @@ import styles from './ReportCard.module.css';
 interface ReportCardProps {
   title: string;
   onInfoClick?: () => void;
+  dataService: ReportDataService;
 }
 
-export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick }) => {
-  const dataService = ReportDataService.getInstance();
-
+export const ReportCard: FC<ReportCardProps> = ({ title, onInfoClick, dataService }) => {
   return (
     <div className={styles.reportCard}>
       <div className={styles.reportCardHeader}>
         <h3 className={styles.reportCardTitle}>{title}</h3>
         {onInfoClick && (
-          <button
-            className={styles.infoButton}
-            onClick={onInfoClick}
-            aria-label="More information"
-          >
+          <button className={styles.infoButton} onClick={onInfoClick} aria-label="More information">
             ℹ️
           </button>
         )}

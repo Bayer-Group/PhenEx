@@ -1,5 +1,8 @@
 import React from 'react';
-import { PhenexCellRenderer, PhenexCellRendererProps } from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+import {
+  PhenexCellRenderer,
+  PhenexCellRendererProps,
+} from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 
 export interface PhenexPhenotypeCellRendererProps extends PhenexCellRendererProps {}
 
@@ -9,21 +12,26 @@ import CodelistCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/C
 import PhenotypeCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/PhenotypeCellRenderer';
 import DomainCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/DomainCellRenderer';
 import ValueFilterCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/ValueFilterCellRenderer';
+import LogicalExpressionCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/LogicalExpressionCellRenderer';
+import TypeCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/TypeCellRenderer';
+import DescriptionCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/DescriptionCellRenderer';
 
 const classNameToRendererMapping = {
   relative_time_range: RelativeTimeRangeCellRenderer,
   categorical_filter: CategoricalFilterCellRenderer,
   codelist: CodelistCellRenderer,
-  class_name: PhenotypeCellRenderer, 
+  class_name: PhenotypeCellRenderer,
   domain: DomainCellRenderer,
-  value_filter: ValueFilterCellRenderer
-}
+  value_filter: ValueFilterCellRenderer,
+  expression: LogicalExpressionCellRenderer,
+  type: TypeCellRenderer,
+  description: DescriptionCellRenderer,
+};
 
 export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererProps> = props => {
   if (props.data?.parameter in classNameToRendererMapping) {
-    console.log("RENDERING THISKIND OF CELL", props.data?.parameter, props.data)
     const Renderer = classNameToRendererMapping[props.data?.parameter];
-    return <Renderer {...props} />;
+    return <Renderer {...props} fontSize={'12px'} />;
   }
   return <div>{props.data.value}</div>;
 };

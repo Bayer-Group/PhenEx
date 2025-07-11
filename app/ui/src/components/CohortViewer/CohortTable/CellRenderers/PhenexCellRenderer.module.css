@@ -1,10 +1,41 @@
 :global(.ag-cell) {
   /* overflow: visible !important; */
+  transition: background-color 0.2s ease;
+  /* border-radius: 4px; */
 }
 
+:global(.ag-cell:hover) {
+  background-color: var(--color-accent-hover);
+}
+
+:global(.ag-header-cell:hover) {
+  color: var(--color-accent);
+}
+
+:global(.ag-header-cell) {
+  border-bottom: var(--border);
+}
+
+:global(.ag-cell-focus),
+:global(.ag-cell-range-selected) {
+  background-color: transparent !important;
+  border-color: var(--color-accent) !important;
+  border-radius: 10px;
+}
 
 .missing {
   background-color: red;
+}
+
+:global(.ag-cell) .missing {
+  /* overflow: visible !important; */
+  transition: background-color 0.2s ease;
+  background-color: var(--color-accent);
+  border-radius: 10px;
+
+  margin: 4px 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
 }
 
 .container {
@@ -15,6 +46,15 @@
   height: 100%;
   padding: 0;
   position: relative;
+  font-size: 100px;
+}
+
+.containerStyle {
+  font-size: 12px;
+}
+
+.selected {
+  background-color: red;
 }
 
 .missing {

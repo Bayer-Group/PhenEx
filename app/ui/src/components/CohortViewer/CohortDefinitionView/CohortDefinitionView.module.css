@@ -4,6 +4,7 @@
   height: 100%;
   width: 100%;
   min-width: 0;
+  background-color: transparent;
 }
 
 .topSection {
@@ -12,12 +13,24 @@
 }
 
 .controlsContainer {
-  display: flex;
+  /* display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: center; */
   gap: 16px;
-  margin-left: 20px;
-  margin-right: 30px;
+  margin-left: 16px;
+  margin-right: 10px;
+}
+
+.actionControls {
+  position: absolute;
+  right: 30px;
+  top: 14px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hidden {
+  opacity: 0;
 }
 
 .viewContainer {
@@ -66,5 +79,4 @@
 
 .tableBox {
   flex: 1;
-  color: white;
 }

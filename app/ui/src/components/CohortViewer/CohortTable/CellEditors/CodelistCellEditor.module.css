@@ -1,4 +1,4 @@
-.editor {
+/* .editor {
   padding: 12px;
   background: white;
   border-radius: 8px;
@@ -16,30 +16,7 @@
   margin-bottom: 12px;
 }
 
-.codeTypeField,
-.codesField {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
 
-.codeTypeField {
-  flex: 0 0 80px;
-}
-
-.codesField {
-  flex: 1;
-}
-
-.codesTextarea {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  min-height: 60px;
-  resize: vertical;
-  font-family: inherit;
-}
 
 .addButton {
   background: #f0f0f0;
@@ -144,4 +121,4 @@ label {
 .checkboxLabel input[type='checkbox'] {
   margin: 0;
   cursor: pointer;
-}
+} */

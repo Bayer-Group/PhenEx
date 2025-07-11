@@ -115,10 +115,16 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   return (
-    <div id="three-panel-container" className={styles.container} style={{ 
-      '--initial-left-width': `${leftWidth}px`,
-      '--initial-right-width': `${rightWidth}px`
-    } as React.CSSProperties}>
+    <div
+      id="three-panel-container"
+      className={styles.container}
+      style={
+        {
+          '--initial-left-width': `${leftWidth}px`,
+          '--initial-right-width': `${rightWidth}px`,
+        } as React.CSSProperties
+      }
+    >
       <div
         className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}
       >
@@ -139,8 +145,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         <button
           className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         >
-          {'<<'}
-          {/* {isLeftCollapsed ? '>>' : '<<'} */}
+          <span className={styles.arrow}>{'<<'}</span>
+          {/* {isLeftCollapsed ? '>' : '<'} */}
         </button>
       </div>
 

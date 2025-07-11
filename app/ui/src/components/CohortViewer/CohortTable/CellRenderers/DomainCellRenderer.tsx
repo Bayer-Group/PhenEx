@@ -9,7 +9,17 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   const renderDomain = (value: string): string => {
     return (
-      <span className={styles.domainContainer}>{props.value ? formatDomain(props.value) : null}</span>
+      <span
+        className={styles.domainContainer}
+        onClick={() =>
+          props.api?.startEditingCell({
+            rowIndex: props.node.rowIndex,
+            colKey: props.column.getColId(),
+          })
+        }
+      >
+        {props.value ? formatDomain(props.value) : null}
+      </span>
     );
   };
 

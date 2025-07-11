@@ -5,23 +5,23 @@
   /* max-width: 250px; */
   gap: 4px;
   position: absolute;
-  right: 40px;
+  right: 10px;
   top: 10px;
   user-select: none;
   transition: all 0.3s ease;
-  z-index:10;
+  z-index: 1001;
   /* max-height: 400px; */
   /* overflow-y: auto; */
 }
 
-.showingPopover{
+.showingPopover {
   top: 35px;
-  right:40px;
+  right: 14px;
 }
 .issuesButton {
   z-index: 1000;
 }
 
-.popover{
+.popover {
   z-index: 2;
 }

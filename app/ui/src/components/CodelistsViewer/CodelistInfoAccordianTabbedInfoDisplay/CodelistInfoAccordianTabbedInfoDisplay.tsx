@@ -2,6 +2,8 @@ import { FC, useState } from 'react';
 import styles from './CodelistInfoAccordianTabbedInfoDisplay.module.css';
 import { Tabs } from '../../Tabs/Tabs';
 import { CodelistColumnMapping } from '../CodelistsInfoDisplay/CodelistColumnMapping';
+import { CodelistFileContent } from '../CodelistsInfoDisplay/CodelistFileContent';
+
 interface CodelistInfoAccordianTabbedInfoDisplayProps {
   title: string;
   infoContent?: string;
@@ -11,13 +13,12 @@ enum InfoTabType {
   Info = 'Info',
   Mapping = 'Mapping',
   Edit = 'Edit',
-  Visibility = 'Visibility'
+  Visibility = 'Visibility',
 }
 
-export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTabbedInfoDisplayProps> = ({
-  title,
-  infoContent,
-}) => {
+export const CodelistInfoAccordianTabbedInfoDisplay: FC<
+  CodelistInfoAccordianTabbedInfoDisplayProps
+> = ({ title, infoContent }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
 
@@ -39,7 +40,7 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTab
   const renderContent = () => {
     switch (currentTab) {
       case InfoTabType.Info:
-        return <div className={styles.infoContent}></div>;
+        return <CodelistFileContent />;
       case InfoTabType.Mapping:
         return <CodelistColumnMapping />;
       case InfoTabType.Edit:
@@ -60,18 +61,18 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<CodelistInfoAccordianTab
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>>'}
+          {'>'}
         </button>
       </div>
       <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
-          <Tabs
-            width={200}
-            height={25}
-            tabs={tabs}
-            onTabChange={onTabChange}
-            active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-          />
-        </div>
+        <Tabs
+          width={200}
+          height={25}
+          tabs={tabs}
+          onTabChange={onTabChange}
+          active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+        />
+      </div>
 
       <div className={styles.content}>
         <div className={styles.contentArea}>{renderContent()}</div>

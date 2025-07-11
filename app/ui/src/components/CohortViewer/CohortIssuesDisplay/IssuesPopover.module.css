@@ -1,16 +1,18 @@
 :root {
   --issue_popover_margin: -12px;
-  --issue_popover_radius: 20px;
+  --issue_popover_radius: 10px;
+  --background_color_translucent: rgba(248, 249, 250, 0.8);
 }
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
   top: var(--issue_popover_margin);
-  background: var(--background-color);
+  background-color: var(--background_color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 2px solid var(--line-color);
-  border-radius: 20px 20px 20px 20px;
+  border-radius: var(--issue_popover_radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 0px;
   width: 300px;
   /* z-index: 2; */
   max-height: calc(100vh - 50px);
@@ -19,10 +21,9 @@
   overflow: hidden;
 }
 
-.popover.noIssues{
+.popover.noIssues {
   border-color: var(--phenex-green);
 }
-
 
 .header {
   position: sticky;
@@ -50,7 +51,7 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 2 8px 0;
-  color: #333;
+  /* color: #333; */
 }
 
 .phenotypeSection {
@@ -66,6 +67,7 @@
 .phenotypeSection:hover {
   color: var(--color-accent);
   border-color: var(--line-color);
+  background-color: var(--color-accent-hover) !important;
 }
 /* 
 .phenotypeSection:hover .phenotypeType{
@@ -73,7 +75,7 @@
 } */
 
 .phenotypeSection.selected {
-  background-color: white;
+  background-color: var(--color-accent-hover) !important;
   border-color: var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
@@ -84,10 +86,10 @@
 }
 
 .phenotypeId {
-  color: black;
+  /* color: black; */
   margin-bottom: 0px;
   margin-right: 50px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   font-size: 18px;
   line-height: 1.2;
 }

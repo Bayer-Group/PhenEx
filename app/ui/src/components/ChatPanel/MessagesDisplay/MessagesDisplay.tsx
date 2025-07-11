@@ -85,6 +85,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
     };
   }, []);
 
+  console.log('MESSAGES', messages);
   return (
     <div
       className={`${styles.container} ${!isScrolledToBottom ? styles.scrolling : ''}`}

@@ -1,0 +1,28 @@
+/* Add your styles here */
+.tabContent {
+  padding: 10px;
+}
+.searchInput {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+.optionsList {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.option {
+  padding: 8px;
+  cursor: pointer;
+}
+.option:hover {
+  background-color: #f0f0f0;
+}
+.selected {
+  background-color: #d0d0d0;
+}
+.noResults {
+  color: #888;
+  text-align: center;
+  padding: 10px;
+}

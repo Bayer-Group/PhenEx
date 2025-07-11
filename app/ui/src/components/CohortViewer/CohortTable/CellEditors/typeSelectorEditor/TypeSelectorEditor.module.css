@@ -1,0 +1,41 @@
+.container {
+  padding: 5px 25px 20px 10px;
+}
+
+.typeSection {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 4px 30px 8px 8px;
+  background-color: transparent;
+  border-radius: var(--border-radius);
+  border: transparent solid 1px;
+}
+
+.typeSection:hover {
+  border-color: var(--line-color);
+  background-color: var(--color-accent-hover);
+}
+
+.typeSection.selected {
+  background-color: white;
+  background-color: var(--color-accent-hover);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}
+
+.typeSection.selected:hover {
+  color: black;
+}
+
+.typeName {
+  font-family: 'SNPro-bold';
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.typeInfo {
+  margin: 0;
+  margin-top: 0px;
+  padding-left: 3px;
+  font-size: 10px;
+}

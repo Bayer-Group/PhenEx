@@ -1,10 +1,30 @@
 .container {
   display: flex;
   flex-direction: column;
+  gap: 0px;
+  padding: 0px;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+.header {
+  font-size: 12px;
+  padding: 0px 0px 0px 10px;
+  margin: 0px;
+  border-bottom: var(--border);
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 8px;
-  max-height: 400px;
   overflow-y: auto;
+  height: 100%;
+  padding-right: 20px;
 }
 
 .domainSection {
@@ -20,10 +40,11 @@
 
 .domainSection:hover {
   border-color: var(--line-color);
+  background-color: var(--color-accent-hover);
 }
 
 .domainSection.selected {
-  background-color: white;
+  background-color: var(--color-accent-hover);
   border-color: var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
@@ -34,14 +55,15 @@
 }
 
 .domainName {
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
+  font-family: 'SNPro-Bold';
+  text-wrap: wrap;
+  font-size: 16px;
+  line-height: 16px;
+  margin: 0px;
 }
 
 .domainInfo {
-  font-size: 0.9em;
-  color: #666;
-  margin: 0;
-  line-height: 1.4;
+  font-family: 'SNPro-Regular';
+  font-size: 10px;
+  margin: 0px;
 }

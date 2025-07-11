@@ -3,7 +3,7 @@
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
   --line-color: hsl(0, 0%, 88%);
-  --line-color-grid: hsl(0, 0%, 98%);
+  --line-color-grid: hsl(0, 0%, 95%);
   --line-width-grid: 1px;
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
@@ -20,6 +20,8 @@
   --border-radius: 8px;
   --height-table-header: 100px;
   --table-margin: 0px;
+  --background-color-deeper: hsl(0, 0%, 80%);
+  --background-color-deeper-text: white;
   /* --phenex-blue: #11b4d9;
   --phenex-green: #babf21;
   --phenex-coral: #f24f13;
@@ -42,20 +44,25 @@
   --phenex-coral: hsl(16, 40%, 80%);
   --phenex-red: hsl(0, 40%, 80%);
   --phenex-red-active: hsl(0, 90%, 80%);
+  /* --color-accent-hover: hsl(0, 30%, 96%); */
+  --color-accent-hover: hsl(24, 80%, 94%);
 
   --phenex-dark: hsl(0, 40%, 5%);
 
-  --color-accent: hsl(0, 90%, 80%);
+  --color-accent: var(--phenex-dark); /* #03396c;/*#fa934f;*/
+  --color-accent_2: var(--color-accent);
+
+  --box_shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --box_shadow_hover: 0 4px 8px rgba(0, 0, 0, 0.1);
+
   /* --color-accent:  var(--phenex-red); */
 
   --categorical-filter-color-domain: hsl(252, 40%, 95%);
   --categorical-filter-color-allowed-values: hsl(16, 40%, 95%);
   --categorical-filter-color-column-name: hsl(62, 40%, 95%);
 
-
   --item-transition: all 0.1s ease-in-out;
   --item-border-hover: 1px solid var(--line-color);
-
 }
 
 .rag-blue-outer {
@@ -74,7 +81,7 @@
 }
 
 .rag-red-outer {
-  background-color: var(--color-accent) !important;
+  background-color: var(--phenex-red) !important;
   color: #000 !important;
 }
 

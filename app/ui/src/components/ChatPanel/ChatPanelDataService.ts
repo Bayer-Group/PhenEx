@@ -20,8 +20,8 @@ class ChatPanelDataService {
   private static instance: ChatPanelDataService;
   private messages: Message[] = [
     {
-      id: 1,
-      text: '# Create cohorts with PhenEx AI\n1. **Create an entire cohort from scratch** - enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort**, by ask for help on a single aspect of your study.',
+      id: 123,
+      text: '# Create cohorts with AI\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];

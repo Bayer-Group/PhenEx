@@ -1,34 +1,57 @@
+:root {
+  --box_shadow_selected_no_hover: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --box_shadow_selected_hover: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 .row {
   /* display: flex; */
-  background-color: white;
+
+  background-color: var(--background_color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   font-family: 'SNPro-bold';
   /* padding: 0px 20px; */
-  border-radius: 30px;
-  border: 2px solid var(--color-accent);
-  height:52px;
-  width:180px;
-  transition: all 0.3s ease-in-out;
+  border-radius: 10px;
+  border: var(--border);
+  height: 52px;
+  width: 190px;
+  /* transition: all 0.3s ease-in-out; */
   position: relative;
   z-index: 1;
+  transition: color 0.3s ease-in-out !important;
 }
 
-.row.hasIssues{
-  border-color:var(--color-accent);
+.row.hasIssues {
+  /* border-color:var(--color-accent); */
 }
 
-.row.noIssues{
-  border-color:transparent;
+.row.noIssues {
+  border-color: transparent;
 }
 
+.issuesText {
+  font-size: 18px;
+  font-family: 'SNPro-black';
+}
+
+.row.selected .issuesText {
+  font-size: 38px;
+  font-family: 'SNPro-bold';
+}
 .row:hover {
-  border-color: var(--color-accent);
-  transform: translateY(-1px);
+  background-color: var(--color-accent-hover) !important;
+  color: var(--color-accent);
+
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--color-accent);
+  transition: translateY 0.3s ease-in-out;
+  transition: border 0.3s ease-in-out;
+
+  /* border: 2px solid var(--color-accent); */
 }
 
-.row.noIssues:hover{
-  border-color:var(--phenex-green);
+.row.noIssues:hover {
+  border-color: var(--phenex-green);
 }
 
 .statusDot {
@@ -36,11 +59,11 @@
   height: 24px;
   border-radius: 50%;
   position: absolute;
-  top:12px;
-  left:12px;
+  top: 12px;
+  right: 10px;
 }
 
-.row.noIssues .statusDot.green{
+.row.noIssues .statusDot.green {
   /* background-color: blue;
   right:0px !important;
   position: absolute !important; */
@@ -51,11 +74,10 @@
 }
 
 .statusDot.green {
-  background-color: var(--phenex-green);
+  background-color: transparent;
 }
 
 .statusDot.selected {
-  background-color: white !important;
 }
 
 .text {
@@ -64,51 +86,83 @@
 }
 
 .row.selected {
-  border-color: var(--color-accent);
+  border-color: transparent;
+  /* transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+
   /* transform: translateY(-1px); */
-  background-color: var(--color-accent);
-  color: white;
+  background-color: white !important;
+  border-color: var(--color-accent_2) !important;
+  color: black;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
   /* transform: translateY(-1px); */
-  width:270px;
+  width: 257px;
+  padding-left: 20px;
   z-index: 2;
+  height: 65px;
+  border-radius: 12px;
+  transition: box-shadow 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out;
+
+  box-shadow: var(--box_shadow_selected_no_hover);
+}
+
+.row.selected:hover {
+  transform: translateY(-1px);
+
+  box-shadow: var(--box_shadow_selected_hover);
 }
 
 .row.noIssues.selected {
   background-color: var(--phenex-green);
   border-color: var(--phenex-green);
-
 }
 
-.labelMain{
-  margin-left:45px;
+.labelMain {
+  margin-left: 0px;
   height: 20px;
   position: absolute;
-  top:0px;
-  font-size: 22px;
+  top: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  width: calc(100% - 45px);
+  text-wrap: wrap;
+  text-align: right;
+  /* transition: all 0.3s ease-in-out; */
 }
 
-.labelNoIssues{
-  margin-left:45px;
+.row.selected .labelMain {
+  text-align: left;
+  /* transition: all 0.3s ease-in-out; */
+  background-color: transparent !important;
+  top: 14px;
+  padding-left: 8px;
+}
+
+.labelNoIssues {
+  margin-left: 45px;
   height: 20px;
   position: absolute;
-  top:8px;
+  top: 8px;
   font-size: 20px;
-  color:var(--phenex-green);
+  color: var(--phenex-green);
 }
 
 .labelMain .number {
-  font-size:24px !important;
 }
 
-.labelSecondary{
-  font-size:12px;
-  margin-left:47px;
+.number.phenotypeIssues {
+  margin-left: 5px;
+}
+
+.labelSecondary {
+  font-size: 12px;
+  margin-left: 20px;
   height: 15px;
   position: absolute;
-  top:30px;
+  top: 30px;
 }
 
-.totalIssues{
+.totalIssues {
   margin-right: 5px;
 }
