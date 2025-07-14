@@ -78,7 +78,6 @@ def get_ISTH_components():
 
 
 class ISTHTestGeneratorWithHb(ISTHTestGenerator):
-
     def define_isth_phenotype(self, entry):
         return ISTHMajorBleedPhenotype(
             name="isth_with_hb",

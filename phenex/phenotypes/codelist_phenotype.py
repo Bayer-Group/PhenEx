@@ -3,6 +3,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_filter import DateFilter
+from phenex.filters import ValueFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -102,12 +103,13 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        super(CodelistPhenotype, self).__init__(**kwargs)
+        if name is None:
+            name = codelist.name
+        super(CodelistPhenotype, self).__init__(name=name, **kwargs)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
         self.categorical_filter = categorical_filter
-        self.name = name or self.codelist.name
         self.date_range = date_range
         self.return_date = return_date
         assert self.return_date in [
@@ -124,7 +126,7 @@ class CodelistPhenotype(Phenotype):
         self.relative_time_range = relative_time_range
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
-                if rtr.anchor_phenotype is not None:
+                if isinstance(rtr, RelativeTimeRangeFilter) and rtr.anchor_phenotype is not None:
                     self.children.append(rtr.anchor_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
@@ -147,11 +149,12 @@ class CodelistPhenotype(Phenotype):
         return code_table
 
     def _perform_time_filtering(self, code_table):
-        if self.date_range is not None:
+        if self.date_range is not None and isinstance(self.date_range, ValueFilter):
             code_table = self.date_range.filter(code_table)
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
-                code_table = rtr.filter(code_table)
+                if isinstance(rtr, RelativeTimeRangeFilter):
+                    code_table = rtr.filter(code_table)
         return code_table
 
     def _perform_date_selection(self, code_table, reduce=True):

@@ -18,12 +18,12 @@
   margin-bottom: 0px;
   padding: 8px;
   padding-right: 20px;
-  margin: 10px;
+  margin: 4px;
   overflow: hidden;
   text-wrap: wrap;
   min-height: 50px;
   background-color: white;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid var(--color-accent);
   box-shadow: var(--box_shadow_selected_no_hover);
   background-color: white !important;
@@ -37,6 +37,8 @@
 .header:hover {
   box-shadow: var(--box_shadow_selected_hover);
   transform: translateY(-1px);
+  background-color: var(--color-accent-hover) !important;
+
 }
 
 .topLine {
@@ -99,7 +101,7 @@
 }
 
 .header:hover .doneButton {
-  color: red !important;
+  color: var(--color-accent) !important;
 }
 
 /*
@@ -120,5 +122,5 @@
 } */
 
 .bottomLabel {
-  padding-left: 10px;
+  /* padding-left: 10px; */
 }

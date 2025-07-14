@@ -1,8 +1,8 @@
 .container {
-  padding: 5px 25px 20px 10px;
+  padding: 20px 25px 20px 10px;
+  /* background-color: var(--background-color); */
 }
-
-.typeSection {
+.settingSection {
   position: relative;
   margin-bottom: 4px;
   padding: 4px 30px 8px 8px;
@@ -11,31 +11,36 @@
   border: transparent solid 1px;
 }
 
-.typeSection:hover {
-  border-color: var(--line-color);
+.settingSection:hover {
   background-color: var(--color-accent-hover);
+  border-color: var(--line-color);
 }
 
-.typeSection.selected {
+.settingSection.selected {
   background-color: white;
-  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
 }
 
-.typeSection.selected:hover {
+.settingSection.selected:hover {
   color: black;
 }
 
-.typeName {
+.settingName {
   font-family: 'SNPro-bold';
   font-size: 18px;
   line-height: 1.2;
 }
 
-.typeInfo {
+.settingInfo {
   margin: 0;
   margin-top: 0px;
   padding-left: 3px;
+  /* width: calc(100% - 50px); */
   font-size: 10px;
+}
+.emph{
+  font-family: "IBMPlexSans-bold";
+  font-size:10px;
 }

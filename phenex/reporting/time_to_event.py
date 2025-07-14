@@ -1,9 +1,14 @@
-from typing import Optional, List
+from typing import Union, Optional, List
+import math
+import os
 from lifelines import KaplanMeierFitter
+from lifelines.plotting import add_at_risk_counts
+
 import matplotlib.pyplot as plt
 import ibis
 
 from phenex.reporting import Reporter
+from phenex.filters import ValueFilter
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -63,7 +68,7 @@ class TimeToEvent(Reporter):
         table = self._append_date_and_days_to_first_event(table)
         self.table = table
         logger.info("time to event finished execution")
-        self.plot_kaplan_meier()
+        self.plot_multiple_kaplan_meier()
 
     def _execute_right_censoring_phenotypes(self, cohort):
         for phenotype in self.right_censor_phenotypes:
@@ -96,7 +101,7 @@ class TimeToEvent(Reporter):
         For example, if three phenotypes are provided, named pt1, pt2, pt3, three new columns pt1, pt2, pt3 are added each populated with the EVENT_DATE of the respective phenotype.
         """
         for _phenotype in phenotypes:
-            logger.info("appending dates for", _phenotype.name)
+            logger.info(f"appending dates for { _phenotype.name}")
             join_table = _phenotype.table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
             # rename event_date to the right_censor_phenotype's name
             join_table = join_table.mutate(
@@ -115,7 +120,7 @@ class TimeToEvent(Reporter):
         Calculates the days to each EVENT_DATE column found in _date_column_names. New columm names are "DAYS_TO_{date column name}".
         """
         for column_name in self._date_column_names:
-            logger.info("appending time to event for", column_name)
+            logger.info(f"appending time to event for {column_name}")
             DAYS_TO_EVENT = table[column_name].delta(table.INDEX_DATE, "day")
             table = table.mutate(**{f"DAYS_TO_{column_name}": DAYS_TO_EVENT})
         return table
@@ -132,8 +137,17 @@ class TimeToEvent(Reporter):
             if self.end_of_study_period is not None:
                 cols.append("END_OF_STUDY_PERIOD")
 
-            # Creating a new column with the minimum date from the specified columns
-            min_date_column = ibis.coalesce(*(table[col] for col in cols))
+            # Using least and handling the case where all are null
+            min_date_column = ibis.ifelse(
+                ibis.least(*(table[col] for col in cols)).isnull(),
+                ibis.literal(
+                    self.end_of_study_period
+                ),  # Default date if all columns are null
+                ibis.least(*(table[col] for col in cols)),
+            )
+
+            # Adding the new column to the table
+            table = table.mutate(min_date=min_date_column)
 
             # Adding the new column to the table
             column_name_date_first_event = f"DATE_FIRST_EVENT_{phenotype.name.upper()}"
@@ -157,23 +171,83 @@ class TimeToEvent(Reporter):
             )
         return table
 
-    def plot_kaplan_meier(self, max_days: Optional["ValueFilter"] = None):
+    def plot_multiple_kaplan_meier(
+        self,
+        xlim: Optional[List[int]] = None,
+        ylim: Optional[List[int]] = None,
+        n_cols: int = 3,
+        outcome_indices: Optional[List[int]] = None,
+        path_dir: Optional[str] = None,
+    ):
         """
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
-        fig, axes = plt.subplots(1, len(self.cohort.outcomes), sharey=True)
+        phenotypes = self.cohort.outcomes
+        if outcome_indices is not None:
+            phenotypes = [
+                x for i, x in enumerate(self.cohort.outcomes) if i in outcome_indices
+            ]
+        n_rows = math.ceil(len(phenotypes) / n_cols)
+        fig, axes = plt.subplots(n_rows, n_cols, sharey=True, sharex=True)
 
-        for i, phenotype in enumerate(self.cohort.outcomes):
-            indicator = f"INDICATOR_{phenotype.name.upper()}"
-            durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-            _sdf = self.table.select([indicator, durations])
-            if max_days is not None:
-                max_days.column_name = durations
-                _sdf = max_days._filter(_sdf)
+        for i, phenotype in enumerate(phenotypes):
+            kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if n_rows > 1 and n_cols > 1:
+                ax = axes[int(i / n_cols), i % n_cols]
+            else:
+                ax = axes[i]
+            ax.set_title(phenotype.name)
+            if xlim is not None:
+                ax.set_xlim(xlim)
+            if ylim is not None:
+                ax.set_ylim(ylim)
+            kmf.plot(ax=ax)
+            ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
-            _df = _sdf.to_pandas()
-            kmf = KaplanMeierFitter(label=phenotype.name)
-            kmf.fit(durations=_df[durations], event_observed=_df[indicator])
-            kmf.plot(ax=axes[i])
+        if path_dir is not None:
+            path = os.path.join(path_dir, f"KaplanMeierPanelFor_{self.cohort.name}.svg")
+            plt.savefig(path, dpi=150)
         plt.show()
+
+    def plot_single_kaplan_meier(
+        self,
+        outcome_index: int = 0,
+        xlim: Optional[List[int]] = None,
+        ylim: Optional[List[int]] = None,
+        path_dir: Optional[str] = None,
+    ):
+        """
+        For each outcome, plot a kaplan meier curve.
+        """
+        # subset for current codelist
+        phenotype = self.cohort.outcomes[outcome_index]
+        fig, ax = plt.subplots(1, 1)
+
+        kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+
+        ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
+        kmf.plot(ax=ax)
+        add_at_risk_counts(kmf, ax=ax)
+        plt.tight_layout()
+        ax.grid(color="gray", linestyle="-", linewidth=0.1)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
+        if path_dir is not None:
+            path = os.path.join(
+                path_dir, f"KaplanMeier_{self.cohort.name}_{phenotype.name}.svg"
+            )
+            plt.savefig(path, dpi=150)
+        plt.show()
+
+    def fit_kaplan_meier_for_phenotype(self, phenotype):
+        indicator = f"INDICATOR_{phenotype.name.upper()}"
+        durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
+        _sdf = self.table.select([indicator, durations])
+        _df = _sdf.to_pandas()
+        kmf = KaplanMeierFitter(label=phenotype.name)
+        kmf.fit(durations=_df[durations], event_observed=_df[indicator])
+        return kmf

@@ -157,11 +157,13 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
                 params.data?.parameter == 'relative_time_range' &&
                 params.data?.relative_time_range
               ) {
-                const numEntries = params.data.relative_time_range.length;
-                const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of codelist entries
-                current_max_height = Math.max(current_max_height, time_range_phenotype_height);
-                return current_max_height;
+                if (params.data?.relative_time_range && Array.isArray(params.data.relative_time_range)) {
+                  const numEntries = params.data.relative_time_range.length;
+                  const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
+                  current_max_height = Math.max(current_max_height, time_range_phenotype_height);
+                }
               }
+              
 
               if (params.data?.parameter == 'description') {
                 if (!params.data?.value) {

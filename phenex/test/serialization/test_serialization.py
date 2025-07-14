@@ -86,8 +86,8 @@ def test_CategoricalPhenotype():
     assertions(pt)
 
 
-def test_ContinuousCoveragePhenotype():
-    pt = ContinuousCoveragePhenotype()
+def test_TimeRangePhenotype():
+    pt = TimeRangePhenotype()
     assertions(pt)
 
 
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     test_MeasurementPhenotype()
     test_DeathPhenotype()
     test_CategoricalPhenotype()
-    test_ContinuousCoveragePhenotype()
+    test_TimeRangePhenotype()
     test_ScorePhenotype()
     test_ArithmeticPhenotype()
     test_LogicPhenotype()

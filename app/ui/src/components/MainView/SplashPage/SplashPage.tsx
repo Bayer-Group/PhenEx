@@ -26,6 +26,9 @@ export const SplashPage = () => {
           Once defined, PhenEx automatically creates your analysis dataset with tested, reliable
           code.
         </p>
+        <p>
+          To get started, create a cohort or select an existing one in the left navigation area, or ask AI to generate one for you.
+        </p>
       </div>
       <div className={`${styles.label} ${styles.bottomRight}`}>Ask</div>
     </div>

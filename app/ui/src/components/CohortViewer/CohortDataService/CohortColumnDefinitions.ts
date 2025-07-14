@@ -17,6 +17,8 @@ import { PhenotypeSelectorCellEditor } from '../CohortTable/CellEditors/Phenotyp
 import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelectorCellEditor';
 import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
+import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
+
 
 export const columnNameToApplicablePhenotypeMapping = {
   relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
@@ -33,7 +35,18 @@ export const defaultColumns = [
     pinned: 'left',
     editable: true,
     cellRenderer: NameCellRenderer,
-  },
+    cellEditor: 'agTextCellEditor',
+    cellEditorSelector: (params: ICellEditorParams) => {
+      if (params.eventKey == 'settings') {
+        return {
+          component: SettingsCellEditor,
+          popup: true
+        };
+      }
+      return {
+        component: 'agTextCellEditor'
+      };
+    }},
   {
     field: 'type',
     headerName: 'Type',
