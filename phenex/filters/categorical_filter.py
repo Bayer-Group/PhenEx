@@ -83,7 +83,7 @@ class CategoricalFilter(Filter):
 
     def __init__(
         self,
-        column_name: str,
+        column_name: str = None,
         allowed_values: Optional[List[Union[str, int]]] = None,
         domain: Optional[str] = None,
         operator: Optional[str] = "isin",

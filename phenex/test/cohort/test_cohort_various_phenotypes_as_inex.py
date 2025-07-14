@@ -14,6 +14,7 @@ from phenex.phenotypes import (
 from phenex.filters import (
     DateFilter,
     ValueFilter,
+    CategoricalFilter,
     RelativeTimeRangeFilter,
     GreaterThanOrEqualTo,
     GreaterThan,
@@ -594,7 +595,7 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         agege18 = AgePhenotype(
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
         )
-        sex = SexPhenotype(allowed_values=[1])
+        sex = SexPhenotype(categorical_filter=CategoricalFilter(allowed_values=[1]))
 
         e4 = CodelistPhenotype(
             name="prior_et_usage",
