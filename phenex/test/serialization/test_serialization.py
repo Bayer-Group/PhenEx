@@ -78,16 +78,18 @@ def test_DeathPhenotype():
 
 def test_CategoricalPhenotype():
     pt = CategoricalPhenotype(
-        allowed_values=[1],
-        column_name="ACCEPTABLE",
+        categorical_filter=CategoricalFilter(
+            allowed_values=[1],
+            column_name="ACCEPTABLE",
+        ),
         domain="PERSON",
         name="data_quality",
     )
     assertions(pt)
 
 
-def test_ContinuousCoveragePhenotype():
-    pt = ContinuousCoveragePhenotype()
+def test_TimeRangePhenotype():
+    pt = TimeRangePhenotype()
     assertions(pt)
 
 
@@ -274,7 +276,7 @@ if __name__ == "__main__":
     test_MeasurementPhenotype()
     test_DeathPhenotype()
     test_CategoricalPhenotype()
-    test_ContinuousCoveragePhenotype()
+    test_TimeRangePhenotype()
     test_ScorePhenotype()
     test_ArithmeticPhenotype()
     test_LogicPhenotype()

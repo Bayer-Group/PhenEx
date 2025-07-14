@@ -72,7 +72,9 @@ class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
             test_info["phenotype"] = SexPhenotype(
                 name=test_info["name"],
                 domain="PERSON",
-                categorical_filter=CategoricalFilter(allowed_values =test_info.get("allowed_values")),
+                categorical_filter=CategoricalFilter(
+                    allowed_values=test_info.get("allowed_values")
+                ),
             )
 
         return test_infos

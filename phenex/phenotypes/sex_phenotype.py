@@ -33,22 +33,17 @@ class SexPhenotype(CategoricalPhenotype):
 
     def __init__(
         self,
-        name: str = "sex",
+        name: str = "SEX",
         domain: str = "PERSON",
         categorical_filter: "CategoricalFilter" = None,
         **kwargs
     ):
         if categorical_filter is None:
-            categorical_filter = CategoricalFilter(
-                column_name='SEX'
-            )
+            categorical_filter = CategoricalFilter(column_name="SEX")
         else:
             if categorical_filter.column_name is None:
-                categorical_filter.column_name = 'SEX'
-        
+                categorical_filter.column_name = "SEX"
+
         super(SexPhenotype, self).__init__(
-            name=name,
-            domain=domain,
-            categorical_filter=categorical_filter,
-            **kwargs
+            name=name, domain=domain, categorical_filter=categorical_filter, **kwargs
         )

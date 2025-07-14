@@ -8,7 +8,7 @@ from phenex.phenotypes import (
     CategoricalPhenotype,
     CodelistPhenotype,
     Cohort,
-    ContinuousCoveragePhenotype,
+    TimeRangePhenotype,
     SexPhenotype,
 )
 from phenex.filters import *
@@ -63,9 +63,10 @@ def create_cohort():
 
 
 def define_inclusion_exclusion_criteria(entry):
-    continuous_coverage = ContinuousCoveragePhenotype(
-        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(365)),
-        anchor_phenotype=entry,
+    continuous_coverage = TimeRangePhenotype(
+        relative_time_range=RelativeTimeRangeFilter(
+            min_days=GreaterThanOrEqualTo(365), anchor_phenotype=entry
+        )
     )
 
     age_18 = AgePhenotype(
@@ -73,13 +74,15 @@ def define_inclusion_exclusion_criteria(entry):
         anchor_phenotype=entry,
     )
 
-    sex = SexPhenotype(allowed_values=[2])
+    sex = SexPhenotype(categorical_filter=CategoricalFilter(allowed_values=[2]))
 
     quality = CategoricalPhenotype(
-        allowed_values=[1],
-        column_name="ACCEPTABLE",
         domain="PERSON",
         name="data_quality",
+        categorical_filter=CategoricalFilter(
+            allowed_values=[1],
+            column_name="ACCEPTABLE",
+        ),
     )
 
     breast_cancer = CodelistPhenotype(
@@ -181,11 +184,14 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
     def define_expected_output(self):
         df_counts_inclusion = pd.DataFrame()
         df_counts_inclusion["phenotype"] = [
-            "breast_cancer",
-            "continuous_coverage",
-            "data_quality",
-            "age",
-            "sex",
+            x.upper()
+            for x in [
+                "breast_cancer",
+                "time_range",
+                "data_quality",
+                "age",
+                "sex",
+            ]
         ]
         df_counts_inclusion["n"] = [16, 32, 32, 32, 32]
 

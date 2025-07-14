@@ -38,7 +38,7 @@ In PhenEx, the concept on an electronic phenotype is encapsulated by Phenotype c
 | --------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | CodelistPhenotype           | Medical code lists (e.g. ICD10CM, SNOMED, NDC, RxNorm)    | All patients with a diagnosis code for atrial fibrillation one year prior to index |
 | MeasurementPhenotype        | Numerical values such as lab tests or observation results | All patients with systolic blood pressure greater than 160                         |
-| ContinuousCoveragePhenotype | Observation coverage data                                 | One year continuous insurance coverage prior to index                              |
+| TimeRangePhenotype | Observation coverage data                                 | One year continuous insurance coverage prior to index                              |
 | AgePhenotype                | Date of birth data                                        | Age at date of first atrial fibrillation diagnosis                                 |
 | DeathPhenotype              | Date of death data                                        | Date of death after atrial fibrillation diagnosis                                  |
 
