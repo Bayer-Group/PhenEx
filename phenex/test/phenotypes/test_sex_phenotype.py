@@ -5,6 +5,7 @@ from phenex.phenotypes.sex_phenotype import SexPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.date_filter import DateFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.filters.categorical_filter import CategoricalFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -71,7 +72,9 @@ class SexPhenotypeTestGenerator(PhenotypeTestGenerator):
             test_info["phenotype"] = SexPhenotype(
                 name=test_info["name"],
                 domain="PERSON",
-                allowed_values=test_info.get("allowed_values"),
+                categorical_filter=CategoricalFilter(
+                    allowed_values=test_info.get("allowed_values")
+                ),
             )
 
         return test_infos

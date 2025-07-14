@@ -1,5 +1,6 @@
 from typing import List, Optional, Union
 from phenex.phenotypes.categorical_phenotype import CategoricalPhenotype
+from phenex.filters import CategoricalFilter
 
 
 class SexPhenotype(CategoricalPhenotype):
@@ -33,15 +34,16 @@ class SexPhenotype(CategoricalPhenotype):
     def __init__(
         self,
         name: str = "SEX",
-        allowed_values: Optional[List[Union[str, int, float]]] = None,
         domain: str = "PERSON",
-        column_name="SEX",
+        categorical_filter: "CategoricalFilter" = None,
         **kwargs
     ):
+        if categorical_filter is None:
+            categorical_filter = CategoricalFilter(column_name="SEX")
+        else:
+            if categorical_filter.column_name is None:
+                categorical_filter.column_name = "SEX"
+
         super(SexPhenotype, self).__init__(
-            name=name,
-            allowed_values=allowed_values,
-            domain=domain,
-            column_name=column_name,
-            **kwargs
+            name=name, domain=domain, categorical_filter=categorical_filter, **kwargs
         )

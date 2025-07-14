@@ -74,13 +74,15 @@ def define_inclusion_exclusion_criteria(entry):
         anchor_phenotype=entry,
     )
 
-    sex = SexPhenotype(allowed_values=[2])
+    sex = SexPhenotype(categorical_filter=CategoricalFilter(allowed_values=[2]))
 
     quality = CategoricalPhenotype(
-        allowed_values=[1],
-        column_name="ACCEPTABLE",
         domain="PERSON",
         name="data_quality",
+        categorical_filter=CategoricalFilter(
+            allowed_values=[1],
+            column_name="ACCEPTABLE",
+        ),
     )
 
     breast_cancer = CodelistPhenotype(

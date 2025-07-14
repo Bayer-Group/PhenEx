@@ -158,6 +158,11 @@ class ComputationGraphPhenotype(Phenotype):
 
         names = [col for col in table.columns if "EVENT_DATE" in col]
 
+        # computation graph phenotypes occasionally have a single phenotype in the expression e.g. negation of a single phenotype. In this case, some backends (e.g. Snowflake) do not work with coalesce of a single column. Therefore, if only a single phenotype, return the select of that column
+        if len(names) == 1:
+            return [table[names[0]]]
+
+        # if more than one phenotype in expression, coalesce return date columns to allow for further date selection
         for i in range(len(names)):
             rotated_names = names[i:] + names[:i]
             coalesce_expr = ibis.coalesce(

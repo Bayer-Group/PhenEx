@@ -78,8 +78,10 @@ def test_DeathPhenotype():
 
 def test_CategoricalPhenotype():
     pt = CategoricalPhenotype(
-        allowed_values=[1],
-        column_name="ACCEPTABLE",
+        categorical_filter=CategoricalFilter(
+            allowed_values=[1],
+            column_name="ACCEPTABLE",
+        ),
         domain="PERSON",
         name="data_quality",
     )
