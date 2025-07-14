@@ -1,43 +1,22 @@
 import React from 'react';
 import styles from './ValueFilterCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-
-interface ValueFilter {
-  class_name: 'ValueFilter';
-  min: {
-    class_name: 'Value';
-    operator: string;
-    value: number;
-  } | null;
-  max: {
-    class_name: 'Value';
-    operator: string;
-    value: number;
-  } | null;
-  column_name: string;
-}
-
-interface AndFilter {
-  class_name: 'AndFilter';
-  filter1: ValueFilter;
-  filter2: ValueFilter;
-}
-
+import { ValueFilter, AndFilter } from '../CellEditors/valueFilterEditor/types'  
 const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatValueFilter = (filter: ValueFilter): JSX.Element => {
     return (
       <div className={styles.filterContent}>
         <span className={styles.columnName}>{filter.column_name}</span>
-        {filter.min && (
+        {filter.min_value && (
           <span className={`${styles.filterValue} ${styles.min}`}>
-            <span className={`${styles.operator} ${styles.min}`}>{filter.min.operator} </span>
-            {filter.min.value}
+            <span className={`${styles.operator} ${styles.min}`}>{filter.min_value.operator} </span>
+            {filter.min_value.value}
           </span>
         )}
-        {filter.max && (
+        {filter.max_value && (
           <span className={`${styles.filterValue} ${styles.max}`}>
-            <span className={`${styles.operator} ${styles.max}`}>{filter.max.operator} </span>
-            {filter.max.value}
+            <span className={`${styles.operator} ${styles.max_value}`}>{filter.max_value.operator} </span>
+            {filter.max_value.value}
           </span>
         )}
       </div>
