@@ -16,9 +16,14 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   const field = props.colDef?.field;
-  const isFieldInMapping = field ? Object.keys(columnNameToApplicablePhenotypeMapping).includes(field) : false;
-  if (isFieldInMapping && !columnNameToApplicablePhenotypeMapping[field]?.includes(props.data.class_name)) {
-    return <NARenderer value={props.value} />
+  const isFieldInMapping = field
+    ? Object.keys(columnNameToApplicablePhenotypeMapping).includes(field)
+    : false;
+  if (
+    isFieldInMapping &&
+    !columnNameToApplicablePhenotypeMapping[field]?.includes(props.data.class_name)
+  ) {
+    return <NARenderer value={props.value} />;
   }
 
   return (

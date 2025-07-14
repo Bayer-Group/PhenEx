@@ -57,10 +57,7 @@ const extractFilters = (value?: ValueFilter | AndFilter): ValueFilter[] => {
 /**
  * Creates a Value object or returns null when operator is 'not set'
  */
-const createValueObject = (
-  operator: string,
-  currentValue: Value | null
-): Value | null => {
+const createValueObject = (operator: string, currentValue: Value | null): Value | null => {
   if (operator === 'not set') {
     return null;
   }
@@ -89,7 +86,7 @@ const formatOutput = (filters: ValueFilter[]): ValueFilter | AndFilter | null =>
   return null;
 };
 
-export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = (props) => {
+export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = props => {
   const { value, onValueChange, data } = props;
 
   const [filters, setFilters] = useState<ValueFilter[]>(() => extractFilters(value));
@@ -113,7 +110,7 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = (props) => {
    */
   const addFilter = () => {
     if (filters.length >= MAX_FILTERS) return;
-    
+
     const newFilters = [...filters, createDefaultFilter()];
     setFilters(newFilters);
     onValueChange?.(formatOutput(newFilters));
@@ -152,7 +149,7 @@ export const ValueFilterEditor: React.FC<ValueFilterEditorProps> = (props) => {
   ) => {
     const filter = filters[index];
     const currentField = filter[field];
-    
+
     if (currentField && currentField.operator !== 'not set') {
       updateFilter(index, {
         [field]: {
@@ -225,17 +222,17 @@ const FilterCard: React.FC<FilterCardProps> = ({
       {!isAgePhenotype && (
         <ColumnNameInput
           value={filter.column_name}
-          onChange={(column_name) => onUpdate(index, { column_name })}
+          onChange={column_name => onUpdate(index, { column_name })}
         />
       )}
-      
+
       <ValueRangeSection
         label={`Min ${fieldLabel}`}
         field="min_value"
         value={filter.min_value}
         operators={['>', '>=']}
-        onOperatorChange={(operator) => onOperatorChange(index, 'min_value', operator)}
-        onValueChange={(value) => onValueChange(index, 'min_value', value)}
+        onOperatorChange={operator => onOperatorChange(index, 'min_value', operator)}
+        onValueChange={value => onValueChange(index, 'min_value', value)}
       />
 
       <ValueRangeSection
@@ -243,8 +240,8 @@ const FilterCard: React.FC<FilterCardProps> = ({
         field="max_value"
         value={filter.max_value}
         operators={['<', '<=']}
-        onOperatorChange={(operator) => onOperatorChange(index, 'max_value', operator)}
-        onValueChange={(value) => onValueChange(index, 'max_value', value)}
+        onOperatorChange={operator => onOperatorChange(index, 'max_value', operator)}
+        onValueChange={value => onValueChange(index, 'max_value', value)}
       />
 
       <RemoveFilterButton onRemove={() => onRemove(index)} />
@@ -330,11 +327,7 @@ interface RemoveFilterButtonProps {
 }
 
 const RemoveFilterButton: React.FC<RemoveFilterButtonProps> = ({ onRemove }) => (
-  <button
-    className={styles.deleteButton}
-    onClick={onRemove}
-    aria-label="Remove filter"
-  >
+  <button className={styles.deleteButton} onClick={onRemove} aria-label="Remove filter">
     ×
   </button>
 );
@@ -348,11 +341,7 @@ interface AddFilterButtonProps {
 }
 
 const AddFilterButton: React.FC<AddFilterButtonProps> = ({ onAdd, disabled }) => (
-  <button 
-    className={styles.addButton} 
-    onClick={onAdd}
-    disabled={disabled}
-  >
+  <button className={styles.addButton} onClick={onAdd} disabled={disabled}>
     Click to add a value filter
   </button>
 );

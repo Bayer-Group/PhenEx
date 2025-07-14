@@ -16,11 +16,11 @@
 }
 
 .content h1 {
-  position: relative;;
+  position: relative;
   color: var(--text-color);
   font-family: 'IBMPlexSans-Bold';
   margin-bottom: 40px;
-  margin-top:190px;
+  margin-top: 190px;
 }
 
 .content p {

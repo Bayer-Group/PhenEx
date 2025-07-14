@@ -81,8 +81,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   let titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
   if (titleText == 'Name') {
     titleText = 'Settings';
-  } else{
-    titleText = `"${titleText}"`
+  } else {
+    titleText = `"${titleText}"`;
   }
   let cellRect = { left: 0, top: 0, width: 200, height: 100 };
 

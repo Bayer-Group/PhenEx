@@ -114,14 +114,13 @@ export class PhenotypeDataService {
 
       this.rowData = [
         ...sharedParams,
-        ...paramDefinitions
-          .map(paramDef => ({
-            parameter: paramDef.param,
-            value: this.currentPhenotype![paramDef.param]
-              ? this.currentPhenotype![paramDef.param]
-              : paramDef.default,
-            ...this.currentPhenotype,
-          }))
+        ...paramDefinitions.map(paramDef => ({
+          parameter: paramDef.param,
+          value: this.currentPhenotype![paramDef.param]
+            ? this.currentPhenotype![paramDef.param]
+            : paramDef.default,
+          ...this.currentPhenotype,
+        })),
       ];
     } else {
       this.rowData = [];

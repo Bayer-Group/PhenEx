@@ -22,8 +22,8 @@ export const ValueFilterCellEditor = forwardRef((props: ValueFilterCellEditorPro
   if (!filterPhenotypes.includes(props.data.class_name)) {
     return <div></div>;
   }
-  
-  console.log("VALUE CELL EDITOR", props)
+
+  console.log('VALUE CELL EDITOR', props);
   return (
     <PhenexCellEditor {...props} ref={ref}>
       <ValueFilterEditor {...props} />

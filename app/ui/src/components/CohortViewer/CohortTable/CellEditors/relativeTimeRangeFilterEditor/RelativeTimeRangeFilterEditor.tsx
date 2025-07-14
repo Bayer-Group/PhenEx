@@ -45,16 +45,22 @@ const createDefaultFilter = (): TimeRangeFilter => ({
  */
 const normalizeFilter = (filter: TimeRangeFilter): TimeRangeFilter => ({
   class_name: 'RelativeTimeRangeFilter',
-  min_days: filter.min_days === null ? null : {
-    class_name: 'Value',
-    operator: filter.min_days?.operator || DEFAULT_MIN_OPERATOR,
-    value: filter.min_days?.value ?? DEFAULT_MIN_DAYS,
-  },
-  max_days: filter.max_days === null ? null : {
-    class_name: 'Value',
-    operator: filter.max_days?.operator || DEFAULT_MAX_OPERATOR,
-    value: filter.max_days?.value ?? DEFAULT_MAX_DAYS,
-  },
+  min_days:
+    filter.min_days === null
+      ? null
+      : {
+          class_name: 'Value',
+          operator: filter.min_days?.operator || DEFAULT_MIN_OPERATOR,
+          value: filter.min_days?.value ?? DEFAULT_MIN_DAYS,
+        },
+  max_days:
+    filter.max_days === null
+      ? null
+      : {
+          class_name: 'Value',
+          operator: filter.max_days?.operator || DEFAULT_MAX_OPERATOR,
+          value: filter.max_days?.value ?? DEFAULT_MAX_DAYS,
+        },
   when: filter.when || DEFAULT_WHEN,
   useConstant: filter.useConstant ?? false,
   useIndexDate: filter.useIndexDate ?? true,
@@ -110,30 +116,32 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
   const updateFilter = (index: number, updates: Partial<TimeRangeFilter>) => {
     const newFilters = [...filters];
     const currentFilter = newFilters[index];
-    
+
     newFilters[index] = {
       ...currentFilter,
       ...updates,
       class_name: 'RelativeTimeRangeFilter',
       // Handle min_days updates while preserving existing values
-      min_days: updates.min_days === null 
-        ? null 
-        : updates.min_days 
-          ? { ...currentFilter.min_days, ...updates.min_days, class_name: 'Value' }
-          : currentFilter.min_days,
-      // Handle max_days updates while preserving existing values  
-      max_days: updates.max_days === null
-        ? null
-        : updates.max_days
-          ? { ...currentFilter.max_days, ...updates.max_days, class_name: 'Value' }
-          : currentFilter.max_days,
+      min_days:
+        updates.min_days === null
+          ? null
+          : updates.min_days
+            ? { ...currentFilter.min_days, ...updates.min_days, class_name: 'Value' }
+            : currentFilter.min_days,
+      // Handle max_days updates while preserving existing values
+      max_days:
+        updates.max_days === null
+          ? null
+          : updates.max_days
+            ? { ...currentFilter.max_days, ...updates.max_days, class_name: 'Value' }
+            : currentFilter.max_days,
       // Preserve existing values with fallbacks
       useConstant: updates.useConstant ?? currentFilter.useConstant ?? false,
       constant: updates.constant ?? currentFilter.constant,
       useIndexDate: updates.useIndexDate ?? currentFilter.useIndexDate ?? true,
       anchor_phenotype: updates.anchor_phenotype ?? currentFilter.anchor_phenotype ?? null,
     };
-    
+
     setFilters(newFilters);
   };
 
@@ -148,9 +156,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
    * Removes a filter at the specified index and normalizes remaining filters
    */
   const deleteFilter = (index: number) => {
-    const newFilters = filters
-      .filter((_, i) => i !== index)
-      .map(normalizeFilter);
+    const newFilters = filters.filter((_, i) => i !== index).map(normalizeFilter);
     setFilters(newFilters);
   };
 
@@ -165,7 +171,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
     const currentFilter = filters[index];
     const currentValue = currentFilter[field];
     const defaultValue = field === 'min_days' ? DEFAULT_MIN_DAYS : DEFAULT_MAX_DAYS;
-    
+
     const newValue = createValueObject(operator, currentValue, defaultValue);
     updateFilter(index, { [field]: newValue });
   };
@@ -180,7 +186,7 @@ export const RelativeTimeRangeFilterEditor: React.FC<RelativeTimeRangeFilterEdit
   ) => {
     const filter = filters[index];
     const currentField = filter[field];
-    
+
     if (currentField) {
       updateFilter(index, {
         [field]: {
@@ -235,21 +241,15 @@ const FilterCard: React.FC<FilterCardProps> = ({
   return (
     <div className={styles.timerangefilter} style={{ position: 'relative' }}>
       <DeleteButton onDelete={() => onDelete(index)} />
-      
-      <UseConstantSection
-        filter={filter}
-        onUpdate={(updates) => onUpdate(index, updates)}
-      />
+
+      <UseConstantSection filter={filter} onUpdate={updates => onUpdate(index, updates)} />
 
       {filter.useConstant ? (
-        <ConstantSelector
-          filter={filter}
-          onUpdate={(updates) => onUpdate(index, updates)}
-        />
+        <ConstantSelector filter={filter} onUpdate={updates => onUpdate(index, updates)} />
       ) : (
         <ManualTimeRangeControls
           filter={filter}
-          onUpdate={(updates) => onUpdate(index, updates)}
+          onUpdate={updates => onUpdate(index, updates)}
           onOperatorChange={(field, operator) => onOperatorChange(index, field, operator)}
           onValueChange={(field, value) => onValueChange(index, field, value)}
         />
@@ -319,9 +319,7 @@ const ConstantSelector: React.FC<ConstantSelectorProps> = ({ filter, onUpdate })
   <div className={styles.filterSection}>
     <select
       value={filter.constant || 'one_year_pre_index'}
-      onChange={e =>
-        onUpdate({ constant: e.target.value as TimeRangeFilter['constant'] })
-      }
+      onChange={e => onUpdate({ constant: e.target.value as TimeRangeFilter['constant'] })}
       className={styles.select}
     >
       <option value="one_year_pre_index">One Year Pre-Index</option>
@@ -368,7 +366,7 @@ const ManualTimeRangeControls: React.FC<ManualTimeRangeControlsProps> = ({
     />
 
     <WhenSection filter={filter} onUpdate={onUpdate} />
-    
+
     <AnchorSection filter={filter} onUpdate={onUpdate} />
   </>
 );
@@ -434,9 +432,7 @@ const WhenSection: React.FC<WhenSectionProps> = ({ filter, onUpdate }) => (
     <label>When:</label>
     <select
       value={filter.when}
-      onChange={e =>
-        onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })
-      }
+      onChange={e => onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })}
       className={styles.select}
     >
       <option value="before">Before</option>

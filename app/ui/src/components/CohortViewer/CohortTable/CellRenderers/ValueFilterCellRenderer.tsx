@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './ValueFilterCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-import { ValueFilter, AndFilter } from '../CellEditors/valueFilterEditor/types'  
+import { ValueFilter, AndFilter } from '../CellEditors/valueFilterEditor/types';
 const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatValueFilter = (filter: ValueFilter): JSX.Element => {
     return (
@@ -15,7 +15,9 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
         )}
         {filter.max_value && (
           <span className={`${styles.filterValue} ${styles.max}`}>
-            <span className={`${styles.operator} ${styles.max_value}`}>{filter.max_value.operator} </span>
+            <span className={`${styles.operator} ${styles.max_value}`}>
+              {filter.max_value.operator}{' '}
+            </span>
             {filter.max_value.value}
           </span>
         )}
@@ -32,10 +34,10 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   if (!props.value || typeof props.value === null) {
     return (
-    <PhenexCellRenderer {...props}>
-      <div></div>
-    </PhenexCellRenderer>
-    )
+      <PhenexCellRenderer {...props}>
+        <div></div>
+      </PhenexCellRenderer>
+    );
   }
 
   const filters = formatFilter(props.value);
@@ -50,7 +52,7 @@ const ValueFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
             onClick={() => {
               props.api?.startEditingCell({
                 rowIndex: props.node?.rowIndex ?? 0,
-                colKey: props.column?.getColId() ?? ''
+                colKey: props.column?.getColId() ?? '',
               });
             }}
           >

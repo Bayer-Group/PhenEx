@@ -17,10 +17,9 @@
 .node:hover .nodeName {
   background-color: var(--color-accent-hover);
   border-color: var(--line-color);
-
 }
 
-.nodeName{
+.nodeName {
   padding: 2px 10px 0px 10px;
   border-radius: var(--border-radius);
   border: 1px solid transparent;
@@ -39,7 +38,7 @@
   background-color: var(--color-accent-hover);
 }
 
-.selected:hover .nodeName{
+.selected:hover .nodeName {
   border: 1px solid var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -71,7 +70,7 @@
 
 .headerNode .nodeName {
   /* font-size: 24px; */
-  font-family: "IBMPlexSans-Bold";
+  font-family: 'IBMPlexSans-Bold';
   color: var(--text-color);
 }
 
@@ -128,6 +127,6 @@
   border: 2px solid var(--color-accent);
 }
 
-.headerNode{
-  font-size:100px;
+.headerNode {
+  font-size: 100px;
 }

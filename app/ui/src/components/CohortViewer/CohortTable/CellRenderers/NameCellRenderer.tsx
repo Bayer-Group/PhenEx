@@ -18,11 +18,11 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   const onClickDelete = () => {
     if (!props.node || !props.column) return;
-    
+
     const params = {
       rowIndex: props.node.rowIndex,
       colKey: props.column.getColId(),
-      key:"settings",
+      key: 'settings',
     };
     props.api.startEditingCell(params);
     console.log('Edit delete clicked for row with ID:', props.data?.id);
@@ -37,7 +37,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
         <button
           className={styles.deleteButton}
           onClick={() => {
-            onClickDelete()
+            onClickDelete();
             if (props.data?.id) {
               // dataService.deletePhenotype(props.data.id);
             }

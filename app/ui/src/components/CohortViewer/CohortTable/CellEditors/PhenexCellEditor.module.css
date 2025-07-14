@@ -38,7 +38,6 @@
   box-shadow: var(--box_shadow_selected_hover);
   transform: translateY(-1px);
   background-color: var(--color-accent-hover) !important;
-
 }
 
 .topLine {

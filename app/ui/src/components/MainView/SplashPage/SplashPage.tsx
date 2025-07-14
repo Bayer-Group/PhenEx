@@ -7,12 +7,10 @@ export const SplashPage = () => {
     <div className={styles.container}>
       <div className={`${styles.label} ${styles.topLeft}`}></div>
       <div className={styles.content}>
-        <div className = {styles.header}>
-                          <img src={phenexLogo} alt="PhenEx Logo" className={styles.logo} />
+        <div className={styles.header}>
+          <img src={phenexLogo} alt="PhenEx Logo" className={styles.logo} />
 
-        <h1>Welcome to PhenEx</h1>
-
-
+          <h1>Welcome to PhenEx</h1>
         </div>
         <p>
           PhenEx allows you to define the medical content of an observational study using Real World
@@ -27,7 +25,8 @@ export const SplashPage = () => {
           code.
         </p>
         <p>
-          To get started, create a cohort or select an existing one in the left navigation area, or ask AI to generate one for you.
+          To get started, create a cohort or select an existing one in the left navigation area, or
+          ask AI to generate one for you.
         </p>
       </div>
       <div className={`${styles.label} ${styles.bottomRight}`}>Ask</div>

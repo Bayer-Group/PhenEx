@@ -194,9 +194,12 @@ class Phenotype:
 
     def append_counts(self):
         if self.table is not None:
-            self.count = int(self.table.select('PERSON_ID').distinct().count().to_pandas())
+            self.count = int(
+                self.table.select("PERSON_ID").distinct().count().to_pandas()
+            )
         for child in self.children:
             child.append_counts()
+
 
 from typing import Dict, Union
 from datetime import date

@@ -132,9 +132,8 @@ strong {
 }
 
 .accordianContainer.opened .tabsContainer {
-  margin-left:100px;
+  margin-left: 100px;
 }
-
 
 .tabsContainer {
   position: relative !important;

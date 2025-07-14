@@ -19,13 +19,12 @@ import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorC
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
 import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
 
-
 export const columnNameToApplicablePhenotypeMapping = {
-  relative_time_range:['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
-  value_filter:['MeasurementPhenotype', 'AgePhenotype'],
-  categorical_filter:['CodelistPhenotype', 'MeasurementPhenotype'],
-  codelist: ['CodelistPhenotype', 'MeasurementPhenotype']
-}
+  relative_time_range: ['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
+  value_filter: ['MeasurementPhenotype', 'AgePhenotype'],
+  categorical_filter: ['CodelistPhenotype', 'MeasurementPhenotype'],
+  codelist: ['CodelistPhenotype', 'MeasurementPhenotype'],
+};
 
 export const defaultColumns = [
   {
@@ -40,13 +39,14 @@ export const defaultColumns = [
       if (params.eventKey == 'settings') {
         return {
           component: SettingsCellEditor,
-          popup: true
+          popup: true,
         };
       }
       return {
-        component: 'agTextCellEditor'
+        component: 'agTextCellEditor',
       };
-    }},
+    },
+  },
   {
     field: 'type',
     headerName: 'Type',
@@ -123,9 +123,7 @@ export const defaultColumns = [
     headerName: 'Codelists',
     width: 200,
     editable: params => {
-      return (
-        columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name)
-      );
+      return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
     valueParser: params => {
       // this is required for codelist cell editor return value type
@@ -173,7 +171,7 @@ export const defaultColumns = [
     headerName: 'Value filters',
     width: 150,
     editable: params => {
-      return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name)
+      return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name);
     },
     cellEditorPopup: true,
     valueParser: params => {
@@ -190,7 +188,9 @@ export const defaultColumns = [
     headerName: 'Categorical filters',
     width: 400,
     editable: params => {
-      return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(params.data.class_name)
+      return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(
+        params.data.class_name
+      );
     },
     valueParser: params => {
       if (params.newValue && typeof params.newValue === 'object') {

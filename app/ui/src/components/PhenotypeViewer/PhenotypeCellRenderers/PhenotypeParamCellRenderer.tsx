@@ -14,8 +14,8 @@ export const PhenotypeParamCellRenderer: React.FC<PhenotypeParamCellRendererProp
   const formatValue = () => {
     if (props.value === 'class_name') {
       return 'phenotype';
-    } 
-    return props.value?.split('_').join(' ')
+    }
+    return props.value?.split('_').join(' ');
   };
   return (
     <div className={styles.container}>
