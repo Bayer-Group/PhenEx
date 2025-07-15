@@ -90,7 +90,8 @@ class CategoricalPhenotype(Phenotype):
 
         if isinstance(self.categorical_filter, CategoricalFilter):
             table = table.mutate(
-                VALUE=table[self.categorical_filter.column_name], EVENT_DATE=ibis.null(date)
+                VALUE=table[self.categorical_filter.column_name],
+                EVENT_DATE=ibis.null(date),
             )
         return select_phenotype_columns(table)
 
