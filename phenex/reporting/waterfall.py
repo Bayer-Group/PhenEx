@@ -22,11 +22,6 @@ class Waterfall(Reporter):
     Parameters:
         pretty_display: If set to true, display names
     """
-
-    def __init__(self, pretty_display: bool = True, **kwargs):
-        super(Waterfall, self).__init__(**kwargs)
-        self.pretty_display = pretty_display
-
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
         logger.debug(f"Beginning execution of waterfall. Calculating N patents")
