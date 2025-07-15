@@ -20,24 +20,59 @@ class PhenexComputeNode:
 
     To subclass:
         1. Define the parameters required to compute the Node in the `__init__()` interface.
-        2. At the end of `__init__()`, call super().__init__() as pass along the required children nodes - a list of Node's which must be executed before the current Node, allowing Node's to be chained and executed recursively.
-        3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Node and returning the appropriate Table.
-        4. Define tests in `phenex.test`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
+        2. At the top of `__init__()`, call super().__init__().
+        3. Add all prerequisite nodes - Node's which must be executed before the current Node - by calling `add_children()`, allowing Node's to be chained and executed recursively.
+        4. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Node and returning the appropriate Table.
+        5. Define tests in `phenex.test`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
 
     Parameters:
         name: A short but descriptive name for the node. The name is used as a unique identifier for the node and must be unique across all nodes used in the graph (you cannot have two nodes called "age_phenotype", for example, as they will conflict with each other). If the output table is materialized from this node, name will be used as the table name in the database.
-        children: The list of dependent nodes that must be executed before this node can run.
 
     Attributes:
         table: The stored output from call to self.execute().
 
     """
 
-    def __init__(self, name: str, children: List["PhenexComputeNode"] = None):
+    def __init__(self, name):
         self._name = name
-        self.children = children if children is not None else []
-        self.table = None
-        self._check_children_are_ok()
+        self._children = []
+
+    def add_children(self, children):
+        if not isinstance(children, list):
+            children = [children]
+        for child in children:
+            if not child in self.children:
+                self._check_child(child)
+                self.children.append(child)
+
+    def __rshift__(self, right):
+        self.add_children(right)
+        return right
+
+    def _check_child(self, child):
+        """
+        Checks that child node can be added to self.children. A child node must:
+            1. Be of type PhenexComputeNode
+            2. Not already be in self.children and
+            3. Have a unique name.
+        """
+        if not isinstance(child, PhenexComputeNode):
+            raise ValueError("Dependent children must be of type PhenexComputeNode!")
+        # if child in self.children:
+        #     raise ValueError(
+        #         f"Duplicate node found: '{child.name}' has already been added to list of children."
+        #     )
+        child_names = [child.name for child in self.children]
+        if child.name in child_names:
+            raise ValueError(
+                f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its children."
+            )
+        return True
+
+    @property
+    def children(self):
+        # implementation of children as a property to prevent direct modification
+        return self._children
 
     @property
     def name(self):
@@ -48,22 +83,6 @@ class PhenexComputeNode:
     @name.setter
     def name(self, name):
         self._name = name
-
-    def _check_children_are_ok(self):
-        """
-        Checks that children nodes are in fact PhenexComputeNode's and contain no duplicate names between this node and its children.
-        """
-        for node in self.children:
-            if not isinstance(node, PhenexComputeNode):
-                raise ValueError(
-                    "Dependent children must be of type PhenexComputeNode!"
-                )
-
-        child_names = [child.name for child in self.children]
-        if self.name in child_names:
-            raise ValueError(
-                f"Duplicate node name found: '{self.name}' is used both for this node and one of its children."
-            )
 
     def _get_last_hash(self):
         """
@@ -206,3 +225,6 @@ class PhenexComputeNode:
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
         return to_dict(self)
+
+    def __repr__(self):
+        return f"node={self.name}"

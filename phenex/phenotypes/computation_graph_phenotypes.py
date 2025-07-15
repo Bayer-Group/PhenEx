@@ -54,7 +54,7 @@ class ComputationGraphPhenotype(Phenotype):
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
-        self.children = self.expression.get_leaf_phenotypes()
+        self.add_children(self.expression.get_leaf_phenotypes())
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """

@@ -71,13 +71,12 @@ class TimeRangePhenotype(Phenotype):
         relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
+        super(TimeRangePhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
         self.relative_time_range = relative_time_range
-        children = kwargs.pop("children", [])
         if self.relative_time_range is not None:
             if self.relative_time_range.anchor_phenotype is not None:
-                children.append(self.relative_time_range.anchor_phenotype)
-        super(TimeRangePhenotype, self).__init__(name=name, children=children, **kwargs)
+                self.add_children(self.relative_time_range.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         table = tables[self.domain]

@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
+from phenex.pipe import PhenexComputeNode
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
@@ -9,6 +10,21 @@ from phenex.util import create_logger
 from concurrent.futures import ThreadPoolExecutor
 
 logger = create_logger(__name__)
+
+
+class SubsetTableNode(PhenexComputeNode):
+    def __init__(self, domain: str, index_phenotype: Phenotype, **kwargs):
+        self.domain = domain
+        self.index_phenotype = index_phenotype
+        super(SubsetTableNode, self).__init__(children=[index_phenotype], **kwargs)
+
+    def _execute(self, tables: Dict[str, Table]):
+        table = tables[self.domain]
+        columns = list(set(["INDEX_DATE"] + table.columns))
+        subset_table = type(table)(
+            table.inner_join(self.index_phenotype.table, "PERSON_ID").select(columns)
+        )
+        return subset_table
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -67,7 +83,7 @@ class Cohort(Phenotype):
         self.characteristics_table = None
         self.outcomes_table = None
         self.derived_tables = derived_tables
-        self.children = (
+        self.add_children(
             [entry_criterion]
             + self.inclusions
             + self.exclusions

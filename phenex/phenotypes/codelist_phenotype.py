@@ -102,8 +102,7 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        if name is None:
-            name = codelist.name
+        super(CodelistPhenotype, self).__init__(name=name or codelist.name)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
@@ -121,13 +120,10 @@ class CodelistPhenotype(Phenotype):
             relative_time_range = [relative_time_range]
 
         self.relative_time_range = relative_time_range
-        children = kwargs.pop("children", [])
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
-                    children.append(rtr.anchor_phenotype)
-
-        super(CodelistPhenotype, self).__init__(name=name, children=children, **kwargs)
+                    self.add_children(rtr.anchor_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]

@@ -29,10 +29,10 @@ class CategoricalPhenotype(Phenotype):
         column_name: str = None,
         **kwargs,
     ):
+        super(CategoricalPhenotype, self).__init__(**kwargs)
         self.categorical_filter = CategoricalFilter(
             allowed_values=allowed_values, domain=domain, column_name=column_name
         )
-        super(CategoricalPhenotype, self).__init__(**kwargs)
 
     def _execute(self, tables: Dict[str, "PhenexTable"]) -> PhenotypeTable:
         table = tables[self.categorical_filter.domain]

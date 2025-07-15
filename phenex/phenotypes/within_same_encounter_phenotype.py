@@ -58,8 +58,8 @@ class WithinSameEncounterPhenotype(Phenotype):
         column_name: str,
         **kwargs,
     ):
-        children = [anchor_phenotype]
-        super(WithinSameEncounterPhenotype, self).__init__(children=children, **kwargs)
+        super(WithinSameEncounterPhenotype, self).__init__(**kwargs)
+        self.add_children(anchor_phenotype)
         if (
             anchor_phenotype.__class__.__name__
             not in ["CodelistPhenotype", "MeasurementPhenotype"]
