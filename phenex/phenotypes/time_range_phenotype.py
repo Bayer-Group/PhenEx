@@ -71,12 +71,12 @@ class TimeRangePhenotype(Phenotype):
         relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         **kwargs
     ):
-        super().__init__(name=name, **kwargs)
+        super(TimeRangePhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
         self.relative_time_range = relative_time_range
         if self.relative_time_range is not None:
             if self.relative_time_range.anchor_phenotype is not None:
-                self.children.append(self.relative_time_range.anchor_phenotype)
+                self.add_children(self.relative_time_range.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         table = tables[self.domain]
@@ -111,4 +111,4 @@ class TimeRangePhenotype(Phenotype):
             ibis.options.interactive = True
             table = value_filter.filter(table)
 
-        return table
+        return self._perform_final_processing(table)

@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
+from phenex.pipe import PhenexComputeNode
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenotypeTable
@@ -9,6 +10,21 @@ from phenex.util import create_logger
 from concurrent.futures import ThreadPoolExecutor
 
 logger = create_logger(__name__)
+
+
+class SubsetTableNode(PhenexComputeNode):
+    def __init__(self, domain: str, index_phenotype: Phenotype, **kwargs):
+        self.domain = domain
+        self.index_phenotype = index_phenotype
+        super(SubsetTableNode, self).__init__(children=[index_phenotype], **kwargs)
+
+    def _execute(self, tables: Dict[str, Table]):
+        table = tables[self.domain]
+        columns = list(set(["INDEX_DATE"] + table.columns))
+        subset_table = type(table)(
+            table.inner_join(self.index_phenotype.table, "PERSON_ID").select(columns)
+        )
+        return subset_table
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -23,8 +39,7 @@ def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTa
 
 class Cohort(Phenotype):
     """
-    The Cohort class represents a cohort of individuals based on specified entry criteria,
-    inclusions, exclusions, and baseline characteristics. It extends the Phenotype class.
+    The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
 
     Parameters:
         name: A descriptive name for the cohort.
@@ -68,7 +83,7 @@ class Cohort(Phenotype):
         self.characteristics_table = None
         self.outcomes_table = None
         self.derived_tables = derived_tables
-        self.children = (
+        self.add_children(
             [entry_criterion]
             + self.inclusions
             + self.exclusions
@@ -86,6 +101,7 @@ class Cohort(Phenotype):
         con: "SnowflakeConnector" = None,
         write_subset_tables=False,
         overwrite: bool = False,
+        lazy_execution: bool = False,
         n_threads: int = 1,
     ) -> PhenotypeTable:
         """
@@ -104,7 +120,9 @@ class Cohort(Phenotype):
         logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
         # Compute entry criterion
         logger.debug("Computing entry criterion ...")
-        self.entry_criterion.execute(tables)
+        self.entry_criterion.execute(
+            tables, con=con, overwrite=overwrite, lazy_execution=lazy_execution
+        )
         if con:
             logger.debug("Writing entry table ...")
             self.entry_criterion.table = con.create_table(
@@ -311,8 +329,7 @@ class Cohort(Phenotype):
         logger.debug("Computing characteristics table")
         """
         Retrieves and joins all characteristic tables.
-        Meant only to be called internally from _execute() so that all dependent phenotypes
-        have already been computed.
+        Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
 
         Returns:
             Table: The join of all characteristic tables.

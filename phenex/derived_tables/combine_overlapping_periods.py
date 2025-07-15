@@ -3,31 +3,34 @@ from ibis.expr.types.relations import Table
 import ibis
 import pandas as pd
 
-from phenex.derived_tables.derived_table import DerivedTable
+from phenex.pipe import PhenexComputeNode
 from phenex.util import create_logger
-from phenex.tables import PhenexTable
 
 logger = create_logger(__name__)
 
 
-class CombineOverlappingPeriods(DerivedTable):
+class CombineOverlappingPeriods(PhenexComputeNode):
     """
     CombineOverlappingPeriods takes overlapping and consecutive time periods the source table and combines them into a single time period with a single start and end date on a per patient level. For example, if a patient has two visits with the same start and end date, they will be combined into one visit. If a patient has two visits with overlapping dates, they will be combined into one visit with the earliest start date and the latest end date. If a patient has two visits with consecutive dates, they will be combined into one visit with the earliest start date and the latest end date.
     This is useful for creating a single time period for a patient, e.g. admission discharge periods, vaccination periods, etc. It is also useful for creating a single time period for a patient when there are multiple visits with the same start and end date, or overlapping dates.
     """
 
     def __init__(
-        self, categorical_filter: Optional["CategoricalFilter"] = None, **kwargs
+        self,
+        domain: str,
+        categorical_filter: Optional["CategoricalFilter"] = None,
+        **kwargs
     ):
+        self.domain = domain
         self.categorical_filter = categorical_filter
         super(CombineOverlappingPeriods, self).__init__(**kwargs)
 
-    def execute(
+    def _execute(
         self,
         tables: Dict[str, Table],
-    ) -> "PhenexTable":
+    ) -> "Table":
         # get the appropriate table
-        table = tables[self.source_domain]
+        table = tables[self.domain]
         logger.warning(
             "CombineOverlappingTables has known potential performance issues especially when working with large cohorts. Please open an issue on GitHub if performance issues appear."
         )
@@ -54,4 +57,4 @@ class CombineOverlappingPeriods(DerivedTable):
         df_result = pd.DataFrame(result)
         # create a new table with the merged results
         table = ibis.memtable(df_result)
-        return PhenexTable(table, name=self.dest_domain)
+        return table
