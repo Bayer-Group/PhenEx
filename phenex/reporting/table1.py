@@ -33,10 +33,12 @@ class Table1(Reporter):
         logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
 
+        # add the full cohort size as the first row
+        df_n = pd.DataFrame({"N": [self.N], "idx": [-1]}, index=["Cohort"])
         # add percentage column
         dfs = [
             df
-            for df in [self.df_booleans, self.df_values, self.df_categoricals]
+            for df in [df_n, self.df_booleans, self.df_values, self.df_categoricals]
             if df is not None
         ]
         if len(dfs) > 1:
@@ -54,6 +56,12 @@ class Table1(Reporter):
             ]
             self.df = self.df[column_order]
         logger.debug("Finished creating table1")
+
+        if self.pretty_display:
+            self.create_pretty_display()
+
+        self.df = self.df.sort_values(by="idx")
+        self.df = self.df[[x for x in list(self.df.columns) if x != "idx"]]
         return self.df
 
     def _get_boolean_characteristics(self):
@@ -100,13 +108,14 @@ class Table1(Reporter):
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
         df_t1 = pd.DataFrame()
         df_t1["N"] = [get_counts_for_column(col) for col in boolean_columns]
-        df_t1.index = [x.replace("_BOOLEAN", "") for x in boolean_columns]
-
-        # add the full cohort size as the first row
-        df_n = pd.DataFrame({"N": [self.N]}, index=["cohort"])
-        # concat population size
-        df = pd.concat([df_n, df_t1])
-        return df
+        df_t1.index = [
+            x.display_name if self.pretty_display else x.name
+            for x in boolean_phenotypes
+        ]
+        df_t1["idx"] = [
+            self.cohort.characteristics.index(x) for x in boolean_phenotypes
+        ]
+        return df_t1
 
     def _report_value_columns(self):
         table = self.cohort.characteristics_table
@@ -120,19 +129,21 @@ class Table1(Reporter):
 
         names = []
         dfs = []
-        for col in value_columns:
-            name = col.split("_VALUE")[0]
+        for col, phenotype in zip(value_columns, value_phenotypes):
             _table = table.select(["PERSON_ID", col]).distinct()
             d = {
                 "N": _table[col].count().execute(),
-                "mean": _table[col].mean().execute(),
-                "std": _table[col].std().execute(),
-                "median": _table[col].median().execute(),
-                "min": _table[col].min().execute(),
-                "max": _table[col].max().execute(),
+                "Mean": _table[col].mean().execute(),
+                "STD": _table[col].std().execute(),
+                "Median": _table[col].median().execute(),
+                "Min": _table[col].min().execute(),
+                "Max": _table[col].max().execute(),
+                "idx": self.cohort.characteristics.index(phenotype),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
-            names.append(name)
+            names.append(
+                phenotype.display_name if self.pretty_display else phenotype.name
+            )
         if len(dfs) == 1:
             df = dfs[0]
         else:
@@ -153,8 +164,8 @@ class Table1(Reporter):
             return None
         dfs = []
         names = []
-        for col in categorical_columns:
-            name = col.replace("_VALUE", "")
+        for col, phenotype in zip(categorical_columns, categorical_phenotypes):
+            name = phenotype.display_name if self.pretty_display else phenotype.name
             # Get counts for each category
             cat_counts = (
                 table.select(["PERSON_ID", col])
@@ -164,7 +175,9 @@ class Table1(Reporter):
                 .execute()
             )
             cat_counts.index = [f"{name}={v}" for v in cat_counts[col]]
-            dfs.append(pd.DataFrame(cat_counts["N"]))
+            _df = pd.DataFrame(cat_counts["N"])
+            _df["idx"] = self.cohort.characteristics.index(phenotype)
+            dfs.append(_df)
             names.extend(cat_counts.index)
         if len(dfs) == 1:
             df = dfs[0]
@@ -172,3 +185,17 @@ class Table1(Reporter):
             df = pd.concat(dfs)
         df.index = names
         return df
+
+    def create_pretty_display(self):
+        # cast counts to integer and to str, so that we can display without 'NaNs'
+        self.df["N"] = self.df["N"].astype("Int64").astype(str)
+        self.df = self.df.reset_index()
+        self.df.columns = ["Name"] + list(self.df.columns[1:])
+
+        self.df = self.df.round(self.decimal_places)
+
+        to_prettify = ["%", "Mean", "STD", "Median", "Min", "Max"]
+        for column in to_prettify:
+            self.df[column] = self.df[column].astype(str)
+
+        self.df = self.df.replace("<NA>", "").replace("nan", "")
