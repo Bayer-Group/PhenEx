@@ -150,6 +150,10 @@ class Phenotype(PhenexComputeNode):
     def to_dict(self):
         return to_dict(self)
 
+    @property
+    def display_name(self):
+        return self.name.replace("_", " ").lower().capitalize()
+
 
 from typing import Dict, Union
 from datetime import date
