@@ -19,8 +19,6 @@ class Waterfall(Reporter):
     | % | The percentage of patients who fulfill the entry criterion who are remaining in the cohort after application of the phenotype on that row |
     | Delta | The change in number of patients that occurs by applying the phenotype on that row. |
 
-    Parameters:
-        pretty_display: If set to true, display names
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
