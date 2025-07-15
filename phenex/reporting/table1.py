@@ -122,7 +122,6 @@ class Table1(Reporter):
         # get value columns
         value_phenotypes = self._get_value_characteristics()
         value_columns = [f"{x.name}_VALUE" for x in value_phenotypes]
-        print("hello")
         logger.debug(f"Found {len(value_columns)} : {value_columns}")
 
         if len(value_columns) == 0:
@@ -184,7 +183,6 @@ class Table1(Reporter):
             df = dfs[0]
         else:
             df = pd.concat(dfs)
-        print(df)
         df.index = names
         return df
 
