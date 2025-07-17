@@ -13,18 +13,55 @@ logger = create_logger(__name__)
 
 
 class SubsetTableNode(PhenexComputeNode):
-    def __init__(self, domain: str, index_phenotype: Phenotype, **kwargs):
-        self.domain = domain
+    def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
+        super(SubsetTableNode, self).__init__(name=name)
+        self.add_children(index_phenotype)
         self.index_phenotype = index_phenotype
-        super(SubsetTableNode, self).__init__(children=[index_phenotype], **kwargs)
+        self.domain = domain
 
     def _execute(self, tables: Dict[str, Table]):
         table = tables[self.domain]
+        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
         columns = list(set(["INDEX_DATE"] + table.columns))
-        subset_table = type(table)(
-            table.inner_join(self.index_phenotype.table, "PERSON_ID").select(columns)
-        )
+        subset_table = table.inner_join(index_table, "PERSON_ID").select(columns)
         return subset_table
+
+
+class InExTableNode(PhenexComputeNode):
+    """
+    Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
+    """
+
+    def __init__(
+        self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
+    ):
+        super(InExTableNode, self).__init__(name=name)
+        self.add_children(phenotypes)
+        self.add_children(index_phenotype)
+        self.phenotypes = phenotypes
+        self.index_phenotype = index_phenotype
+
+    def _execute(self, tables: Dict[str, Table]):
+
+        inex_table = self.index_table.table.select(["PERSON_ID"])
+
+        for pt in self.phenotypes:
+            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+                **{
+                    f"{pt.name}_BOOLEAN": "BOOLEAN",
+                }
+            )
+            inex_table = inex_table.left_join(pt_table, ["PERSON_ID"])
+            columns = inex_table.columns
+            columns.remove("PERSON_ID_right")
+            inex_table = inex_table.select(columns)
+
+        # fill all nones with False
+        boolean_columns = [col for col in inex_table.columns if "BOOLEAN" in col]
+        for col in boolean_columns:
+            inex_table = inex_table.mutate({col: inex_table[col].fill_null(False)})
+
+        return inex_table
 
 
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
@@ -77,6 +114,19 @@ class Cohort(Phenotype):
         self.exclusions = exclusions if exclusions is not None else []
         self.characteristics = characteristics if characteristics is not None else []
         self.outcomes = outcomes if outcomes is not None else []
+        self.subset_tables_entry_nodes = self._get_subset_table_entry_nodes()
+        self.subset_tables_entry = {}
+        self.inclusions_table = InExTableNode(
+            name=f"{self.name}__inclusions".upper(),
+            index_phenotype=self.entry_criterion,
+            phenotypes=self.inclusions,
+        )
+        self.exclusions_table = InExTableNode(
+            name=f"{self.name}__exclusions".upper(),
+            index_phenotype=self.entry_criterion,
+            phenotypes=self.exclusions,
+        )
+
         self.index_table = None
         self.exclusions_table = None
         self.inclusions_table = None
@@ -94,6 +144,29 @@ class Cohort(Phenotype):
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
+
+    def _get_subset_table_entry_nodes(self):
+        domains = list(
+            set(
+                [
+                    getattr(pt, "domain", None)
+                    for pt in [self.entry_criterion]
+                    + self.inclusions
+                    + self.exclusions
+                    + self.characteristics
+                    + self.outcomes
+                    if getattr(pt, "domain", None) is not None
+                ]
+            )
+        )
+        return [
+            SubsetTableNode(
+                name=f"{self.name}__subset_entry_{domain}".upper(),
+                domain=domain,
+                index_phenotype=self.entry_criterion,
+            )
+            for domain in domains
+        ]
 
     def execute(
         self,
@@ -123,31 +196,22 @@ class Cohort(Phenotype):
         self.entry_criterion.execute(
             tables, con=con, overwrite=overwrite, lazy_execution=lazy_execution
         )
-        if con:
-            logger.debug("Writing entry table ...")
-            self.entry_criterion.table = con.create_table(
-                self.entry_criterion.table, f"{self.name}__entry", overwrite=overwrite
-            )
 
         logger.debug("Entry criterion computed.")
         index_table = self.entry_criterion.table.mutate(INDEX_DATE="EVENT_DATE")
 
-        self.subset_tables_entry = subset_and_add_index_date(tables, index_table)
-        if write_subset_tables:
-            logger.debug("Writing subset entry tables ...")
-            with ThreadPoolExecutor(max_workers=n_threads) as executor:
-                futures = {}
-                for key, table in self.subset_tables_entry.items():
-                    futures[key] = executor.submit(
-                        con.create_table,
-                        table.table,
-                        f"{self.name}__subset_entry_{key}".upper(),
-                        overwrite,
-                    )
-                for key, future in futures.items():
-                    self.subset_tables_entry[key] = type(self.subset_tables_entry[key])(
-                        future.result()
-                    )
+        with ThreadPoolExecutor(max_workers=n_threads) as executor:
+            futures = {}
+            for node in self.subset_tables_entry_nodes:
+                futures[node.domain] = executor.submit(
+                    node.execute,
+                    tables,
+                    con,
+                    overwrite,
+                    lazy_execution,
+                )
+            for key, future in futures.items():
+                self.subset_tables_entry[key] = type(tables[key])(future.result())
 
         self.subset_tables_entry = self.derive_tables(
             self.subset_tables_entry, index_table, con, overwrite=overwrite
