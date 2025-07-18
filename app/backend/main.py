@@ -401,75 +401,168 @@ async def execute_study(
     database_config: Dict = None,
 ):
     """
-    Execute a study using the provided cohort and database configuration.
+    Execute a study using the provided cohort and database configuration with streaming output.
 
     Args:
         cohort (Dict): The cohort definition.
         database_config (Dict): The database configuration for the study.
 
     Returns:
-        JSONResponse: The results of the study execution.
+        StreamingResponse: A stream of execution logs followed by the final results.
     """
-    print(database_config)
-    if database_config["mapper"] == "OMOP":
-        from phenex.mappers import OMOPDomains
+    import sys
+    import io
+    import contextlib
+    import asyncio
+    from queue import Queue
+    import threading
+    import json
+    
+    async def stream_execution():
+        # Create a queue to capture output
+        output_queue = Queue()
+        final_result = {}
+        
+        def capture_output():
+            # Capture stdout and stderr
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+            
+            class StreamCapture:
+                def __init__(self, queue, prefix=""):
+                    self.queue = queue
+                    self.prefix = prefix
+                    
+                def write(self, text):
+                    if text.strip():  # Only send non-empty lines
+                        self.queue.put(f"{self.prefix}{text}")
+                    return len(text)
+                    
+                def flush(self):
+                    pass
+            
+            sys.stdout = StreamCapture(output_queue, "[STDOUT] ")
+            sys.stderr = StreamCapture(output_queue, "[STDERR] ")
+            
+            try:
+                print(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
+                print(f"Database config: {database_config}")
+                
+                if database_config["mapper"] == "OMOP":
+                    from phenex.mappers import OMOPDomains
+                    mapper = OMOPDomains
+                    print("Using OMOP mapper")
 
-        mapper = OMOPDomains
+                database = database_config["config"]
+                print("Creating database connection...")
+                
+                con = SnowflakeConnector(
+                    SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
+                    SNOWFLAKE_DEST_DATABASE=database["destination_database"],
+                )
+                print("Database connection established")
 
-    database = database_config["config"]
-    logger.info("ENVIRON")
-    logger.info(os.environ)
+                print("Getting mapped tables...")
+                mapped_tables = mapper.get_mapped_tables(con)
+                print(f"Found {len(mapped_tables)} mapped tables")
+                
+                del cohort["phenotypes"]
+                print("Preparing cohort for phenex...")
+                processed_cohort = prepare_cohort_for_phenex(cohort)
 
-    con = SnowflakeConnector(
-        SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
-        SNOWFLAKE_DEST_DATABASE=database["destination_database"],
+                print("Saving processed cohort...")
+                with open("./processed_cohort.json", "w") as f:
+                    json.dump(processed_cohort, f, indent=4)
+                    
+                print("Creating phenex cohort object...")
+                px_cohort = from_dict(processed_cohort)
+                
+                with open("./cohort.json", "w") as f:
+                    json.dump(px_cohort.to_dict(), f, indent=4)
+
+                print("Executing cohort...")
+                px_cohort.execute(mapped_tables)
+                print("Appending counts...")
+                px_cohort.append_counts()
+
+                path_cohort = get_path_cohort_files(cohort["id"])
+                print(f"Saving results to: {path_cohort}")
+
+                print("Generating table1...")
+                px_cohort.table1.to_csv(os.path.join(path_cohort, "table1.csv"))
+
+                print("Generating waterfall report...")
+                from phenex.reporting import Waterfall
+                r = Waterfall()
+                df_waterfall = r.execute(px_cohort)
+                df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
+
+                print("Finalizing results...")
+                append_count_to_cohort(px_cohort, cohort)
+
+                from json import loads, dumps
+                cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
+                cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
+
+                final_result["cohort"] = cohort
+                
+                print("Saving final results...")
+                with open("./executed_cohort.json", "w") as f:
+                    json.dump(px_cohort.to_dict(), f, indent=4)
+
+                with open("./returned_cohort.json", "w") as f:
+                    json.dump(cohort, f, indent=4)
+                    
+                print("Execution completed successfully!")
+                
+            except Exception as e:
+                print(f"ERROR: {str(e)}")
+                import traceback
+                print(f"TRACEBACK: {traceback.format_exc()}")
+                final_result["error"] = str(e)
+            finally:
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
+                output_queue.put("__EXECUTION_COMPLETE__")
+        
+        # Start execution in a separate thread
+        execution_thread = threading.Thread(target=capture_output)
+        execution_thread.start()
+        
+        # Stream output as it comes
+        while True:
+            try:
+                # Check for output with a timeout
+                if not output_queue.empty():
+                    output = output_queue.get_nowait()
+                    if output == "__EXECUTION_COMPLETE__":
+                        break
+                    yield f"data: {json.dumps({'type': 'log', 'message': output})}\n\n"
+                else:
+                    await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
+            except:
+                await asyncio.sleep(0.1)
+        
+        # Wait for thread to complete
+        execution_thread.join()
+        
+        # Send final result
+        if "error" in final_result:
+            yield f"data: {json.dumps({'type': 'error', 'message': final_result['error']})}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'result', 'data': final_result})}\n\n"
+        
+        yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+
+    return StreamingResponse(
+        stream_execution(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+        }
     )
-
-    mapped_tables = mapper.get_mapped_tables(con)
-    del cohort["phenotypes"]
-    processed_cohort = prepare_cohort_for_phenex(cohort)
-
-    import json
-
-    with open("./processed_cohort.json", "w") as f:
-        json.dump(processed_cohort, f, indent=4)
-    px_cohort = from_dict(processed_cohort)
-    import json
-
-    with open("./cohort.json", "w") as f:
-        json.dump(px_cohort.to_dict(), f, indent=4)
-
-    px_cohort.execute(mapped_tables)
-    px_cohort.append_counts()
-
-    path_cohort = get_path_cohort_files(cohort["id"])
-
-    px_cohort.table1.to_csv(os.path.join(path_cohort, "table1.csv"))
-
-    from phenex.reporting import Waterfall
-
-    r = Waterfall()
-    df_waterfall = r.execute(px_cohort)
-    df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
-
-    append_count_to_cohort(px_cohort, cohort)
-
-    from json import loads, dumps
-
-    cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
-    cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
-
-    response = {
-        "cohort": cohort,
-    }
-
-    with open("./executed_cohort.json", "w") as f:
-        json.dump(px_cohort.to_dict(), f, indent=4)
-
-    with open("./returned_cohort.json", "w") as f:
-        json.dump(cohort, f, indent=4)
-
-    return JSONResponse(content=response)
 
 
 def append_count_to_cohort(phenex_cohort, cohort_dict):

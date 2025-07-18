@@ -278,9 +278,28 @@ export class CohortDataService {
 
   private nameChangeListeners: Array<() => void> = [];
 
+  // Add execution progress listeners
+  private executionProgressListeners: Array<(message: string, type: 'log' | 'error' | 'result' | 'complete') => void> = [];
+
+  public addExecutionProgressListener(listener: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void) {
+    this.executionProgressListeners.push(listener);
+  }
+
+  public removeExecutionProgressListener(listener: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void) {
+    const index = this.executionProgressListeners.indexOf(listener);
+    if (index > -1) {
+      this.executionProgressListeners.splice(index, 1);
+    }
+  }
+
+  private notifyExecutionProgressListeners(message: string, type: 'log' | 'error' | 'result' | 'complete') {
+    this.executionProgressListeners.forEach(listener => listener(message, type));
+  }
+
   public addNameChangeListener(listener: () => void) {
     this.nameChangeListeners.push(listener);
   }
+  
   public removeNameChangeListener(listener: () => void) {
     const index = this.nameChangeListeners.indexOf(listener);
     if (index > -1) {
@@ -305,16 +324,28 @@ export class CohortDataService {
 
   public async executeCohort(): Promise<void> {
     try {
-      const response = await executeStudy({
-        cohort: this._cohort_data,
-        database_config: this._cohort_data.database_config,
-      });
+      const response = await executeStudy(
+        {
+          cohort: this._cohort_data,
+          database_config: this._cohort_data.database_config,
+        },
+        (message: string, type: 'log' | 'error' | 'result' | 'complete') => {
+          // Handle streaming messages
+          console.log(`[${type.toUpperCase()}]`, message);
+          
+          // You can emit these to listeners or store them for display
+          this.notifyExecutionProgressListeners(message, type);
+        }
+      );
+      
       console.log('GOT RESPONSE', response);
       this._cohort_data = response.cohort;
       this.preparePhenexCohortForUI();
       this.saveChangesToCohort();
     } catch (error) {
       console.error('Error fetching cohort explanation:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      this.notifyExecutionProgressListeners(`Error: ${errorMessage}`, 'error');
     }
   }
 
