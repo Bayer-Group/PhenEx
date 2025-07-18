@@ -64,6 +64,12 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     cohortViewer.displayExtraContent('report');
   };
 
+  const showExecute = () => {
+    console.log('SH?OWING Execute');
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('execute');
+  };
+
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
@@ -81,8 +87,8 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       setCurrentTab(tabTypes[index]);
     }
     if (index == 5) {
-      executeCohort();
-      setCurrentTab(tabTypes[index]);
+      // executeCohort();
+      showExecute();
     }
     if (!isOpen) {
       setIsOpen(true);

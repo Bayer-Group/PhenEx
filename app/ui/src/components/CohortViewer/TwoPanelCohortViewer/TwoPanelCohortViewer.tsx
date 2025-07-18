@@ -5,6 +5,7 @@ import { CohortViewType } from '../CohortViewer';
 import { PhenotypeViewer } from '../../PhenotypeViewer/PhenotypeViewer';
 import { CodelistsViewer } from '../../CodelistsViewer/CodelistsViewer';
 import { CohortReportView } from '../../CohortViewer/CohortReportView/CohortReportView';
+import { ExecutePanel } from '../../ExecutePanel/ExecutePanel';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -93,6 +94,8 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       return <PhenotypeViewer data={extraData} />;
     } else if (viewType === 'report') {
       return <CohortReportView />;
+    } else if (viewType === 'execute') {
+      return <ExecutePanel />;
     }
     return <CodelistsViewer />;
   };

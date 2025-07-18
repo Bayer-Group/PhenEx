@@ -22,7 +22,7 @@ import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEdito
 export const columnNameToApplicablePhenotypeMapping = {
   relative_time_range: ['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
   value_filter: ['MeasurementPhenotype', 'AgePhenotype'],
-  categorical_filter: ['CodelistPhenotype', 'MeasurementPhenotype'],
+  categorical_filter: ['CodelistPhenotype', 'MeasurementPhenotype', 'CategoricalPhenotype'],
   codelist: ['CodelistPhenotype', 'MeasurementPhenotype'],
 };
 
