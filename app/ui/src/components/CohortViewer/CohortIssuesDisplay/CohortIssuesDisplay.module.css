@@ -27,6 +27,7 @@
 
 .row.noIssues {
   border-color: transparent;
+  opacity: 0;
 }
 
 .issuesText {

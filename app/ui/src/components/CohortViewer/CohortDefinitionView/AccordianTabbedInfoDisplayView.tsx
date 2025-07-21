@@ -81,14 +81,17 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     if (index == 3) {
       showCodelists();
       setCurrentTab(tabTypes[index]);
+      return;
     }
     if (index == 6) {
       showReport();
       setCurrentTab(tabTypes[index]);
+      return;
     }
     if (index == 5) {
       // executeCohort();
       showExecute();
+      return;
     }
     if (!isOpen) {
       setIsOpen(true);
