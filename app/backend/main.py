@@ -428,6 +428,9 @@ async def execute_study(
             old_stdout = sys.stdout
             old_stderr = sys.stderr
             
+            # Capture logging output
+            import logging
+            
             class StreamCapture:
                 def __init__(self, queue, prefix=""):
                     self.queue = queue
@@ -441,63 +444,119 @@ async def execute_study(
                 def flush(self):
                     pass
             
+            # Custom logging handler to capture log messages
+            class QueueHandler(logging.Handler):
+                def __init__(self, queue):
+                    super().__init__()
+                    self.queue = queue
+                    
+                def emit(self, record):
+                    try:
+                        log_message = self.format(record)
+                        level_name = record.levelname
+                        self.queue.put(f"[{level_name}] {log_message}")
+                    except Exception:
+                        self.handleError(record)
+            
+            # Set up logging capture
+            queue_handler = QueueHandler(output_queue)
+            queue_handler.setFormatter(logging.Formatter('%(name)s - %(message)s'))
+            
+            # Get the root logger and add our handler
+            root_logger = logging.getLogger()
+            original_level = root_logger.level
+            original_handlers = root_logger.handlers.copy()
+            
+            # Also specifically capture phenex logger messages
+            phenex_logger = logging.getLogger('phenex')
+            phenex_original_level = phenex_logger.level
+            phenex_original_handlers = phenex_logger.handlers.copy()
+            
+            # Clear existing handlers and add our queue handler
+            root_logger.handlers.clear()
+            root_logger.addHandler(queue_handler)
+            root_logger.setLevel(logging.INFO)  # Capture all log levels
+            
+            # Ensure phenex logger also uses our handler
+            phenex_logger.handlers.clear()
+            phenex_logger.addHandler(queue_handler)
+            phenex_logger.setLevel(logging.INFO)
+            phenex_logger.propagate = True  # Ensure messages propagate to root logger
+            
             sys.stdout = StreamCapture(output_queue, "[STDOUT] ")
             sys.stderr = StreamCapture(output_queue, "[STDERR] ")
             
             try:
                 print(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
+                logger.info(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
                 print(f"Database config: {database_config}")
+                logger.info(f"Database configuration: {database_config}")
                 
                 if database_config["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
+                    logger.info("Using OMOP mapper")
 
                 database = database_config["config"]
                 print("Creating database connection...")
+                logger.info("Creating Snowflake database connection...")
                 
                 con = SnowflakeConnector(
                     SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
                     SNOWFLAKE_DEST_DATABASE=database["destination_database"],
                 )
                 print("Database connection established")
+                logger.info("Database connection established successfully")
 
                 print("Getting mapped tables...")
+                logger.info("Retrieving mapped tables from database...")
                 mapped_tables = mapper.get_mapped_tables(con)
                 print(f"Found {len(mapped_tables)} mapped tables")
+                logger.info(f"Successfully retrieved {len(mapped_tables)} mapped tables")
                 
                 del cohort["phenotypes"]
                 print("Preparing cohort for phenex...")
+                logger.info("Converting cohort data structure for phenex processing...")
                 processed_cohort = prepare_cohort_for_phenex(cohort)
 
                 print("Saving processed cohort...")
+                logger.debug("Saving processed cohort to processed_cohort.json")
                 with open("./processed_cohort.json", "w") as f:
                     json.dump(processed_cohort, f, indent=4)
                     
                 print("Creating phenex cohort object...")
+                logger.info("Creating phenex cohort object from processed data...")
                 px_cohort = from_dict(processed_cohort)
                 
+                logger.debug("Saving cohort object to cohort.json")
                 with open("./cohort.json", "w") as f:
                     json.dump(px_cohort.to_dict(), f, indent=4)
 
                 print("Executing cohort...")
+                logger.info("Starting cohort execution against mapped tables...")
                 px_cohort.execute(mapped_tables)
                 print("Appending counts...")
+                logger.info("Appending patient counts to cohort results...")
                 px_cohort.append_counts()
 
                 path_cohort = get_path_cohort_files(cohort["id"])
                 print(f"Saving results to: {path_cohort}")
+                logger.info(f"Saving results to directory: {path_cohort}")
 
                 print("Generating table1...")
+                logger.info("Generating Table 1 (baseline characteristics)...")
                 px_cohort.table1.to_csv(os.path.join(path_cohort, "table1.csv"))
 
                 print("Generating waterfall report...")
+                logger.info("Generating waterfall/attrition report...")
                 from phenex.reporting import Waterfall
                 r = Waterfall()
                 df_waterfall = r.execute(px_cohort)
                 df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
 
                 print("Finalizing results...")
+                logger.info("Finalizing and formatting results for return...")
                 append_count_to_cohort(px_cohort, cohort)
 
                 from json import loads, dumps
@@ -507,13 +566,16 @@ async def execute_study(
                 final_result["cohort"] = cohort
                 
                 print("Saving final results...")
+                logger.debug("Saving executed cohort to executed_cohort.json")
                 with open("./executed_cohort.json", "w") as f:
                     json.dump(px_cohort.to_dict(), f, indent=4)
 
+                logger.debug("Saving returned cohort to returned_cohort.json")
                 with open("./returned_cohort.json", "w") as f:
                     json.dump(cohort, f, indent=4)
                     
                 print("Execution completed successfully!")
+                logger.info("Cohort execution completed successfully!")
                 
             except Exception as e:
                 print(f"ERROR: {str(e)}")
@@ -521,8 +583,22 @@ async def execute_study(
                 print(f"TRACEBACK: {traceback.format_exc()}")
                 final_result["error"] = str(e)
             finally:
+                # Restore original stdout/stderr
                 sys.stdout = old_stdout
                 sys.stderr = old_stderr
+                
+                # Restore original logging configuration
+                root_logger.handlers.clear()
+                for handler in original_handlers:
+                    root_logger.addHandler(handler)
+                root_logger.setLevel(original_level)
+                
+                # Restore phenex logger configuration
+                phenex_logger.handlers.clear()
+                for handler in phenex_original_handlers:
+                    phenex_logger.addHandler(handler)
+                phenex_logger.setLevel(phenex_original_level)
+                
                 output_queue.put("__EXECUTION_COMPLETE__")
         
         # Start execution in a separate thread

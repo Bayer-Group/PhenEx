@@ -279,20 +279,20 @@ export class CohortDataService {
   private nameChangeListeners: Array<() => void> = [];
 
   // Add execution progress listeners
-  private executionProgressListeners: Array<(message: string, type: 'log' | 'error' | 'result' | 'complete') => void> = [];
+  private executionProgressListeners: Array<(message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void> = [];
 
-  public addExecutionProgressListener(listener: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void) {
+  public addExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) {
     this.executionProgressListeners.push(listener);
   }
 
-  public removeExecutionProgressListener(listener: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void) {
+  public removeExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) {
     const index = this.executionProgressListeners.indexOf(listener);
     if (index > -1) {
       this.executionProgressListeners.splice(index, 1);
     }
   }
 
-  private notifyExecutionProgressListeners(message: string, type: 'log' | 'error' | 'result' | 'complete') {
+  private notifyExecutionProgressListeners(message: string | any, type: 'log' | 'error' | 'result' | 'complete') {
     this.executionProgressListeners.forEach(listener => listener(message, type));
   }
 
