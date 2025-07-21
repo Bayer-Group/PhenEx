@@ -96,7 +96,7 @@ class Waterfall(Reporter):
                 "Name": (
                     phenotype.display_name if self.pretty_display else phenotype.name
                 ),
-                "N": phenotype.table.count().execute(),
+                "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
                 "Remaining": table.count().execute(),
             }
         )
