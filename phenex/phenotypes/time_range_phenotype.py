@@ -69,11 +69,13 @@ class TimeRangePhenotype(Phenotype):
         name: Optional[str] = "TIME_RANGE",
         domain: Optional[str] = "OBSERVATION_PERIOD",
         relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
+        allow_null_end_date: bool = True,
         **kwargs
     ):
         super().__init__(name=name, **kwargs)
         self.domain = domain
         self.relative_time_range = relative_time_range
+        self.allow_null_end_date = allow_null_end_date
         if self.relative_time_range is not None:
             if self.relative_time_range.anchor_phenotype is not None:
                 self.children.append(self.relative_time_range.anchor_phenotype)
@@ -85,10 +87,17 @@ class TimeRangePhenotype(Phenotype):
         )
 
         # Ensure that the observation period includes anchor date
-        table = table.filter(
-            (table.START_DATE <= reference_column)
-            & (reference_column <= table.END_DATE)
-        )
+        # Allow END_DATE to be null (ongoing periods) if allow_null_end_date is True
+        if self.allow_null_end_date:
+            table = table.filter(
+                (table.START_DATE <= reference_column)
+                & ((reference_column <= table.END_DATE) | (table.END_DATE.isnull()))
+            )
+        else:
+            table = table.filter(
+                (table.START_DATE <= reference_column)
+                & (reference_column <= table.END_DATE)
+            )
 
         if (
             self.relative_time_range is None
