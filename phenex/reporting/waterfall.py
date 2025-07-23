@@ -101,7 +101,7 @@ class Waterfall(Reporter):
             }
         )
         logger.debug(
-            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]["Remaining"]}"
+            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['Remaining']}"
         )
         return table.select("PERSON_ID")
 
