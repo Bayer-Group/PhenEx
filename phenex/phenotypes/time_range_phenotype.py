@@ -33,6 +33,7 @@ class TimeRangePhenotype(Phenotype):
         name: The name of the phenotype.
         domain: The domain of the phenotype. Default is 'observation_period'.
         relative_time_range: Filter returned persons based on the duration of coverage in days. The relative_time_range.anchor_phenotype defines the reference date with respect to calculate coverage. In typical applications, the anchor phenotype will be the entry criterion. The relative_time_range.when 'before', 'after'. If before, the return date is the start of the coverage period containing the anchor_phenotype. If after, the return date is the end of the coverage period containing the anchor_phenotype.
+        allow_null_end_date: TimeRangePhenotype checks that anchor date is within the time range of interest. This requires that the start date is not null, and the end date is either null or after the anchor date. If you want to require that the end date is not null, set allow_null_end_date to False.
 
     Example:
     ```python
