@@ -34,7 +34,7 @@ class Table1(Reporter):
         self.df_values = self._report_value_columns()
 
         # add the full cohort size as the first row
-        df_n = pd.DataFrame({"N": [self.N], "idx": [-1]}, index=["Cohort"])
+        df_n = pd.DataFrame({"N": [self.N], "inex_order": [-1]}, index=["Cohort"])
         # add percentage column
         dfs = [
             df
@@ -60,8 +60,10 @@ class Table1(Reporter):
         if self.pretty_display:
             self.create_pretty_display()
 
-        self.df = self.df.sort_values(by="idx")
-        self.df = self.df[[x for x in list(self.df.columns) if x != "idx"]]
+        self.df = self.df.sort_values(by="inex_order")
+        self.df = self.df.reset_index()[
+            [x for x in self.df.columns if x not in ["index", "inex_order"]]
+        ]
         return self.df
 
     def _get_boolean_characteristics(self):
@@ -72,9 +74,11 @@ class Table1(Reporter):
             not in [
                 "MeasurementPhenotype",
                 "AgePhenotype",
+                "TimeRangePhenotype",
+                "ScorePhenotype",
                 "CategoricalPhenotype",
                 "SexPhenotype",
-                "TimeRangePhenotype",
+                "ArithmeticPhenotype",
             ]
         ]
 
@@ -83,7 +87,13 @@ class Table1(Reporter):
             x
             for x in self.cohort.characteristics
             if type(x).__name__
-            in ["MeasurementPhenotype", "AgePhenotype", "TimeRangePhenotype"]
+            in [
+                "MeasurementPhenotype",
+                "AgePhenotype",
+                "TimeRangePhenotype",
+                "ScorePhenotype",
+                "ArithmeticPhenotype",
+            ]
         ]
 
     def _get_categorical_characteristics(self):
@@ -112,7 +122,7 @@ class Table1(Reporter):
             x.display_name if self.pretty_display else x.name
             for x in boolean_phenotypes
         ]
-        df_t1["idx"] = [
+        df_t1["inex_order"] = [
             self.cohort.characteristics.index(x) for x in boolean_phenotypes
         ]
         return df_t1
@@ -138,7 +148,7 @@ class Table1(Reporter):
                 "Median": _table[col].median().execute(),
                 "Min": _table[col].min().execute(),
                 "Max": _table[col].max().execute(),
-                "idx": self.cohort.characteristics.index(phenotype),
+                "inex_order": self.cohort.characteristics.index(phenotype),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(
@@ -176,7 +186,7 @@ class Table1(Reporter):
             )
             cat_counts.index = [f"{name}={v}" for v in cat_counts[col]]
             _df = pd.DataFrame(cat_counts["N"])
-            _df["idx"] = self.cohort.characteristics.index(phenotype)
+            _df["inex_order"] = self.cohort.characteristics.index(phenotype)
             dfs.append(_df)
             names.extend(cat_counts.index)
         if len(dfs) == 1:
