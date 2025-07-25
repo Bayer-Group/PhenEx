@@ -21,5 +21,5 @@ def create_logger(name):
 
         # Add console handler to logger
         logger.addHandler(console_handler)
-    
+
     return logger

@@ -19,6 +19,7 @@ class Table1(Reporter):
             return pd.DataFrame()
 
         self.cohort = cohort
+        self.cohort_names_in_order = [x.name for x in self.cohort.characteristics]
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
             .select("PERSON_ID")
@@ -104,32 +105,42 @@ class Table1(Reporter):
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
-        return phenotype.table.select(["PERSON_ID", "BOOLEAN"]).distinct()["BOOLEAN"].sum().execute()
+        return (
+            phenotype.table.select(["PERSON_ID", "BOOLEAN"])
+            .distinct()["BOOLEAN"]
+            .sum()
+            .execute()
+        )
 
     def _report_boolean_columns(self):
         table = self.cohort.characteristics_table
         # get list of all boolean columns
         boolean_phenotypes = self._get_boolean_characteristics()
-        logger.debug(f"Found {len(boolean_phenotypes)} : {[x.name for x in boolean_phenotypes]}")
-
+        logger.debug(
+            f"Found {len(boolean_phenotypes)} : {[x.name for x in boolean_phenotypes]}"
+        )
         if len(boolean_phenotypes) == 0:
             return None
-
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
         df_t1 = pd.DataFrame()
-        df_t1["N"] = [self._get_boolean_count_for_phenotype(phenotype) for phenotype in boolean_phenotypes]
+        df_t1["N"] = [
+            self._get_boolean_count_for_phenotype(phenotype)
+            for phenotype in boolean_phenotypes
+        ]
         df_t1.index = [
             x.display_name if self.pretty_display else x.name
             for x in boolean_phenotypes
         ]
         df_t1["inex_order"] = [
-            self.cohort.characteristics.index(x) for x in boolean_phenotypes
+            self.cohort_names_in_order.index(x.name) for x in boolean_phenotypes
         ]
         return df_t1
 
     def _report_value_columns(self):
         value_phenotypes = self._get_value_characteristics()
-        logger.debug(f"Found {len(value_phenotypes)} : {[x.name for x in value_phenotypes]}")
+        logger.debug(
+            f"Found {len(value_phenotypes)} : {[x.name for x in value_phenotypes]}"
+        )
 
         if len(value_phenotypes) == 0:
             return None
@@ -145,7 +156,7 @@ class Table1(Reporter):
                 "Median": _table["VALUE"].median().execute(),
                 "Min": _table["VALUE"].min().execute(),
                 "Max": _table["VALUE"].max().execute(),
-                "inex_order": self.cohort.characteristics.index(phenotype),
+                "inex_order": self.cohort_names_in_order.index(phenotype.name),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(
@@ -160,7 +171,9 @@ class Table1(Reporter):
 
     def _report_categorical_columns(self):
         categorical_phenotypes = self._get_categorical_characteristics()
-        logger.debug(f"Found {len(categorical_phenotypes)} : {[x.name for x in categorical_phenotypes]}")
+        logger.debug(
+            f"Found {len(categorical_phenotypes)} : {[x.name for x in categorical_phenotypes]}"
+        )
         if len(categorical_phenotypes) == 0:
             return None
         dfs = []
@@ -170,15 +183,11 @@ class Table1(Reporter):
             _table = phenotype.table.select(["PERSON_ID", "VALUE"])
             # Get counts for each category
             cat_counts = (
-                _table
-                .distinct()
-                .group_by("VALUE")
-                .aggregate(N=_.count())
-                .execute()
+                _table.distinct().group_by("VALUE").aggregate(N=_.count()).execute()
             )
             cat_counts.index = [f"{name}={v}" for v in cat_counts["VALUE"]]
             _df = pd.DataFrame(cat_counts["N"])
-            _df["inex_order"] = self.cohort.characteristics.index(phenotype)
+            _df["inex_order"] = self.cohort_names_in_order.index(phenotype.name)
             dfs.append(_df)
             names.extend(cat_counts.index)
         if len(dfs) == 1:
