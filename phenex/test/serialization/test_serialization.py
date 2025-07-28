@@ -38,7 +38,7 @@ def test_SexPhenotype():
     assertions(pt)
 
 
-def test_MultipleOccurrencesPhenotype():
+def test_EventCountPhenotype():
     study_period = DateFilter(
         min_date=AfterOrOn(datetime.date(2015, 1, 1)),
         max_date=BeforeOrOn(datetime.date(2020, 12, 31)),
@@ -51,7 +51,7 @@ def test_MultipleOccurrencesPhenotype():
         return_date="first",
     )
 
-    pt = MultipleOccurrencesPhenotype(
+    pt = EventCountPhenotype(
         name="motest", phenotype=phenotype, n_occurrences=2, return_date="second"
     )
     assertions(pt)
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     test_CodelistPhenotype()
     test_AgePhenotype()
     test_SexPhenotype()
-    test_MultipleOccurrencesPhenotype()
+    test_EventCountPhenotype()
     test_MeasurementPhenotype()
     test_DeathPhenotype()
     test_CategoricalPhenotype()

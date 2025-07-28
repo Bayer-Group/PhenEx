@@ -1,3 +1,3 @@
-# MultipleOccurrencesPhenotype
+# EventCountPhenotype
 
-::: phenex.phenotypes.multiple_occurrences_phenotype.MultipleOccurrencesPhenotype
+::: phenex.phenotypes.event_count_phenotype.EventCountPhenotype
