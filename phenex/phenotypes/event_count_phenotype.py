@@ -10,12 +10,13 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 class EventCountPhenotype(Phenotype):
     """
     EventCountPhenotype counts the number of events that occur on distinct days. It is additionally able to filter patients based on:
     1. the number of distinct days an event occurred, by setting value_filter
     2. the number of days between pairs of events
-    
+
     EventCountPhenotype is a composite phenotype, meaning that it does not directly operate on source data and takes a phenotype as an argument. The phenotype passed to EventCountPhenotype must have return_date set to 'all' (if return_date on the provided phenotype is set to `first` or `last`, there will only be one event per patient...)
 
 
@@ -64,14 +65,14 @@ class EventCountPhenotype(Phenotype):
         value_filter: ValueFilter = None,
         relative_time_range: RelativeTimeRangeFilter = None,
         return_date="first",
-        return_event = "second",
-        **kwargs
+        return_event="second",
+        **kwargs,
     ):
         super(EventCountPhenotype, self).__init__(**kwargs)
         self.relative_time_range = relative_time_range
         self.return_date = return_date
         self.return_event = return_event
-        if self.return_event not in ['first', 'second']:
+        if self.return_event not in ["first", "second"]:
             raise ValueError(f"Invalid return_event: {self.return_event}")
         self.value_filter = value_filter
         self.phenotype = phenotype
@@ -79,23 +80,25 @@ class EventCountPhenotype(Phenotype):
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial table to filter
-        if self.phenotype.return_date != 'all':
-            raise ValueError("EventCountPhenotype requires that return_date is set to all on its component phenotype")
+        if self.phenotype.return_date != "all":
+            raise ValueError(
+                "EventCountPhenotype requires that return_date is set to all on its component phenotype"
+            )
         table = self.phenotype.table
 
         # Select only distinct dates:
         table = table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
 
         # Count occurrences per PERSON_ID
-        occurrence_counts_table = table.group_by("PERSON_ID").aggregate(
-            VALUE=_.count()
+        occurrence_counts_table = table.group_by("PERSON_ID").aggregate(VALUE=_.count())
+        table, occurrence_counts_table = self._perform_value_filtering(
+            table, occurrence_counts_table
         )
-        table, occurrence_counts_table = self._perform_value_filtering(table, occurrence_counts_table)
         table = self._perform_relative_time_range_filtering(table)
         table = self._perform_date_selection(table)
         table = table.left_join(
-            occurrence_counts_table.select('PERSON_ID', 'VALUE'),
-            table.PERSON_ID == occurrence_counts_table.PERSON_ID
+            occurrence_counts_table.select("PERSON_ID", "VALUE"),
+            table.PERSON_ID == occurrence_counts_table.PERSON_ID,
         ).select("PERSON_ID", "EVENT_DATE", "VALUE")
 
         table = table.mutate(BOOLEAN=True).distinct()
@@ -105,7 +108,7 @@ class EventCountPhenotype(Phenotype):
         if self.value_filter is not None:
             occurrence_counts_table = self.value_filter.filter(occurrence_counts_table)
             table = table.right_join(
-                occurrence_counts_table, 
+                occurrence_counts_table,
                 table.PERSON_ID == occurrence_counts_table.PERSON_ID,
             ).select(["PERSON_ID", "EVENT_DATE", "VALUE"])
         return table, occurrence_counts_table
@@ -113,34 +116,33 @@ class EventCountPhenotype(Phenotype):
     def _perform_relative_time_range_filtering(self, table):
         if self.relative_time_range is not None:
             # make sure that the 'when' keyword parameter is correctly set to after
-            self.relative_time_range.when = 'after'
-            # Self join and rename event_date columns; 
+            self.relative_time_range.when = "after"
+            # Self join and rename event_date columns;
             # the first dates will be called INDEX_DATE
             # the second dates will be called EVENT_DATE
             first_table = table.select(
-                "PERSON_ID", 
+                "PERSON_ID",
                 table.EVENT_DATE.name("INDEX_DATE"),
             )
             second_table = table.select(
                 "PERSON_ID",
                 table.EVENT_DATE.name("EVENT_DATE"),
             )
-            table =  first_table.join(second_table, first_table.PERSON_ID == second_table.PERSON_ID)
+            table = first_table.join(
+                second_table, first_table.PERSON_ID == second_table.PERSON_ID
+            )
 
-            table = table.filter(
-                table.INDEX_DATE <= table.EVENT_DATE
-            ) 
+            table = table.filter(table.INDEX_DATE <= table.EVENT_DATE)
             # perform relative time range filtering; the first date is the anchor ('index_date')
             table = self.relative_time_range.filter(table)
 
-            if self.return_event == 'first':
-                table = table.select('PERSON_ID', 'INDEX_DATE').rename(
+            if self.return_event == "first":
+                table = table.select("PERSON_ID", "INDEX_DATE").rename(
                     {"EVENT_DATE": "INDEX_DATE"}
                 )
-            elif self.return_event == 'second':
-                table = table.select('PERSON_ID', 'EVENT_DATE')
+            elif self.return_event == "second":
+                table = table.select("PERSON_ID", "EVENT_DATE")
         return table
-
 
     def _perform_date_selection(self, table, reduce=True):
         if self.return_date is None or self.return_date == "all":

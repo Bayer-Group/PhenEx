@@ -52,7 +52,10 @@ def test_EventCountPhenotype():
     )
 
     pt = EventCountPhenotype(
-        name="motest", phenotype=phenotype, n_occurrences=2, return_date="second"
+        name="motest",
+        phenotype=phenotype,
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
+        return_date="second",
     )
     assertions(pt)
 
