@@ -52,7 +52,7 @@ class VerticalDateAggregator:
         if self.reduce:
             selected_columns = self.aggregation_index + [self.event_date_column]
             input_table = input_table.select(selected_columns).distinct()
-            input_table = input_table.mutate(VALUE=ibis.null())
+            input_table = input_table.mutate(VALUE=ibis.null().cast("int32"))
 
         return input_table
 
