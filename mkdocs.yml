@@ -15,7 +15,7 @@ nav:
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
-          - MultipleOccurrencePhenotype: api/phenotypes/event_count_phenotype.md
+          - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md

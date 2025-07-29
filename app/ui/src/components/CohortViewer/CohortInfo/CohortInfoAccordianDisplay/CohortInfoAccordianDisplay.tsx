@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import styles from './CohortInfoAccordianDisplay.module.css';
 import { Tabs } from '../../../Tabs/Tabs';
-import { CohortDatabaseSettings } from '../CohortDatabaseSettings/CohortDatabaseSettings';
+import { DatabasePanel } from '../../../DatabasePanel/DatabasePanel';
 import deleteIcon from '../../../../assets/icons/delete.svg';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
@@ -39,7 +39,7 @@ export const CohortInfoAccordianDisplayView: FC<CohortInfoAccordianDisplayViewPr
       case InfoTabType.Info:
         return <div className={styles.infoContent}>{infoContent}</div>;
       case InfoTabType.Variables:
-        return <CohortDatabaseSettings />;
+        return <DatabasePanel />;
 
       case InfoTabType.Settings:
         return (

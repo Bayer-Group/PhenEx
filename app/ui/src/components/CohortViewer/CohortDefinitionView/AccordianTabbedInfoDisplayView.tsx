@@ -2,7 +2,7 @@ import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AccordianTabbedInfoDisplayView.module.css';
 import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
-import { CohortDatabaseSettings } from '../CohortInfo/CohortDatabaseSettings/CohortDatabaseSettings';
+import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { ConstantsTable } from './ConstantsTable';
 import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
@@ -70,12 +70,23 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     cohortViewer.displayExtraContent('execute');
   };
 
+  const showDatabase = () => {
+    console.log("showing database");
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('database');
+  }
+
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
     console.log('ON TAB CHANGE', index);
     if (index == 0) {
       setIsOpen(false);
+      return;
+    }
+    if (index == 1){
+      showDatabase();
+      setCurrentTab(tabTypes[index]);
       return;
     }
     if (index == 3) {
@@ -110,7 +121,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       case InfoTabType.Constants:
         return <ConstantsTable />;
       case InfoTabType.Database:
-        return <CohortDatabaseSettings />;
+        return <DatabasePanel />;
       case InfoTabType.Codelists:
         return <CodelistsInfoDisplay />;
       default:

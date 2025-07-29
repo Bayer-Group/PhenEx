@@ -1,6 +1,6 @@
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.phenotypes.multiple_occurrences_phenotype import (
-    MultipleOccurrencesPhenotype,
+from phenex.phenotypes.event_count_phenotype import (
+    EventCountPhenotype,
 )
 from phenex.phenotypes.cohort import Cohort
 from phenex.codelists.codelists import Codelist
@@ -140,12 +140,13 @@ def atrial_fibrillation_cohort():
     )
 
     # Create a MultipleOccurrencesPhenotype for the entry criterion
-    entry_criterion = MultipleOccurrencesPhenotype(
+    entry_criterion = EventCountPhenotype(
         name="af_multiple_occurrences",
         description="Requires two instances of atrial fibrillation codes within 90 days of each other.",
         phenotype=af_phenotype,
-        n_occurrences=2,
-        return_date="second",
+        value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
+        return_event="second",
+        return_date='first'
     )
 
     # Define the cohort

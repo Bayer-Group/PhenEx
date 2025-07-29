@@ -1,12 +1,12 @@
 import { FC, useState, useEffect } from 'react';
-import styles from './CohortDatabaseSettings.module.css';
-import { Mapper } from '../../../../types/mappers';
-import { CohortDataService } from '../../CohortDataService/CohortDataService';
+import styles from './DatabasePanel.module.css';
+import { Mapper } from '../../types/mappers';
+import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
 import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
 
-interface CohortDatabaseSettingsProps {}
+interface DatabasePanelProps {}
 
 const mappers = Object.values(Mapper);
 const connector_types = ['Snowflake', 'duckdb'];
@@ -19,7 +19,7 @@ const snowflakeDefaults = {
   password: 'default_password',
 };
 
-export const CohortDatabaseSettings: FC<CohortDatabaseSettingsProps> = () => {
+export const DatabasePanel: FC<DatabasePanelProps> = () => {
   const dataService = CohortDataService.getInstance();
   const [existingConfig, setExistingConfig] = useState(
     dataService.cohort_data.database_config || {}
