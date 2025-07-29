@@ -21,7 +21,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragging, setWasDragging] = useState(false);
 

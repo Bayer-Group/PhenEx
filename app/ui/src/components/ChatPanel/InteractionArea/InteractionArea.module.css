@@ -17,19 +17,20 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   padding: 5px 10px;
   /* font-size: 16px; */
-  border: solid 3px transparent;
+  border: solid 1px transparent;
   background:
     linear-gradient(
         var(--interaction_area_background_color),
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent), var(--phenex-blue))
+    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright))
       border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';
   font-size: 12px;
   margin-bottom: 10px;
+  transition: all 0.2s ease-in-out;
 }
 
 .wrapper:hover {
@@ -42,7 +43,7 @@
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent), var(--phenex-blue))
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright))
       border-box;
 }
 
@@ -53,7 +54,7 @@
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent), var(--phenex-blue))
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright))
       border-box;
 }
 
@@ -73,14 +74,14 @@
   /* border: solid 3px transparent;
   background:
     linear-gradient(var(--interaction_area_background_color), var(--interaction_area_background_color)) padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent), var(--phenex-blue)) border-box;
+    linear-gradient(to right, var(--phenex-coral), var(--color-accent)) border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';
   font-size: 16px; */
 }
 
 .textBox:empty::before {
-  content: 'Please enter a message...';
+  content: 'Ask a question...';
   color: #999;
 }
 
@@ -99,7 +100,7 @@
   resize: none;
   background:
     linear-gradient(var(--background-color), var(--background-color)) padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent), var(--phenex-blue))
+    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright))
       border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';

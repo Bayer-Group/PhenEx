@@ -29,7 +29,7 @@ export const SplashPage = () => {
           ask AI to generate one for you.
         </p>
       </div>
-      <div className={`${styles.label} ${styles.bottomRight}`}>Ask</div>
+      <div className={`${styles.label} ${styles.bottomRight}`}></div>
     </div>
   );
 };
