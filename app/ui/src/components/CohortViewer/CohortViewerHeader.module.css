@@ -6,7 +6,7 @@
   padding-top: 4px;
   background-color: transparent;
   border-bottom: 1px solid var(--border-color);
-  height: 40px;
+  height: 50px;
 }
 
 .controlsContainer {
@@ -34,7 +34,7 @@
   font-size: 30px;
   outline: none;
   width: 60%;
-  font-family: 'SNPro-Bold';
+  font-family: 'IBMPlexSans-Bold';
   margin-left: 20px;
 }
 

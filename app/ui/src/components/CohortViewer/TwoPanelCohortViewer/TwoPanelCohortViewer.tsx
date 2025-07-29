@@ -7,6 +7,7 @@ import { CodelistsViewer } from '../../CodelistsViewer/CodelistsViewer';
 import { CohortReportView } from '../../CohortViewer/CohortReportView/CohortReportView';
 import { ExecutePanel } from '../../ExecutePanel/ExecutePanel';
 import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
+import { ConstantsPanel } from '../../ConstantsPanel/ConstantsPanel';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -99,8 +100,11 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       return <ExecutePanel />;
     } else if (viewType === 'database') {
       return <DatabasePanel />
+    } else if (viewType === 'constants') {
+      return <ConstantsPanel />;
+    } else if (viewType === 'codelists') {
+      return <CodelistsViewer />;
     }
-    return <CodelistsViewer />;
   };
 
   return (

@@ -4,7 +4,7 @@ import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_coho
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
-import { ConstantsDataService } from './ConstantsDataService';
+import { ConstantsDataService } from '../../ConstantsPanel/ConstantsDataService';
 import { CodelistDataService } from '../../CodelistsViewer/CodelistDataService';
 import { ReportDataService } from '../CohortReportView/ReportDataService';
 

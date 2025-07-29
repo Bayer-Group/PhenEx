@@ -4,7 +4,7 @@ import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ConstantsTable } from './ConstantsTable';
+import { ConstantsTable } from '../../ConstantsPanel/ConstantsTable';
 import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 interface AccordianTabbedInfoDisplayViewProps {
   title: string;
@@ -76,6 +76,12 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     cohortViewer.displayExtraContent('database');
   }
 
+  const showConstants = () => {
+    console.log("showing constants");
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('constants');
+  }
+
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
@@ -86,6 +92,10 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     }
     if (index == 1){
       showDatabase();
+      setCurrentTab(tabTypes[index]);
+      return;
+    } if (index == 2){
+      showConstants();
       setCurrentTab(tabTypes[index]);
       return;
     }
@@ -125,7 +135,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       case InfoTabType.Codelists:
         return <CodelistsInfoDisplay />;
       default:
-        return null;
+        return <CodelistsInfoDisplay />;
     }
   };
 
@@ -154,17 +164,9 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     );
   };
   return (
-    <div className={`${styles.accordianContainer} ${isOpen ? styles.opened : ''}`}>
-      <div className={`${styles.header} ${!isOpen ? styles.closed : ''}`}>
-        {/* <h2>{title}</h2> */}
-        <button
-          className={`${styles.toggleButton} ${!isOpen ? styles.closed : ''}`}
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? 'Close panel' : 'Open panel'}
-        >
-          {'>'}
-        </button>
-        <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
+    <div className={`${styles.accordianContainer}`}>
+      <div className={`${styles.header} ${styles.closed}`}>
+        <div className={`${styles.tabsContainer} ${styles.closed}`}>
           <TabsWithDropdown
             width={'100%'}
             height={'100%'}
@@ -177,7 +179,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
         </div>
       </div>
       <div className={styles.content}>
-        <div className={styles.contentArea}>{renderContent()}</div>
+        {/* <div className={styles.contentArea}>{renderContent()}</div> */}
       </div>
     </div>
   );

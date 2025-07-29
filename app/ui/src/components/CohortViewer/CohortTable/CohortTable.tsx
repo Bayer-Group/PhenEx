@@ -56,7 +56,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       rowBorder: true,
       spacing: 8,
       wrapperBorder: false,
-      backgroundColor: 'transparent',
+      backgroundColor: 'var(--background-color)',
     });
 
     const onGridReady = () => {
