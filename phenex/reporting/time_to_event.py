@@ -134,17 +134,23 @@ class TimeToEvent(Reporter):
             cols = [phenotype.name.upper()] + [
                 x.name.upper() for x in self.right_censor_phenotypes
             ]
-            if self.end_of_study_period is not None:
-                cols.append("END_OF_STUDY_PERIOD")
 
-            # Using least and handling the case where all are null
-            min_date_column = ibis.ifelse(
-                ibis.least(*(table[col] for col in cols)).isnull(),
-                ibis.literal(
-                    self.end_of_study_period
-                ),  # Default date if all columns are null
-                ibis.least(*(table[col] for col in cols)),
-            )
+            # Create a proper minimum date calculation that handles nulls correctly
+            # Start with a very large date as the initial minimum
+            min_date_expr = ibis.literal(self.end_of_study_period)
+
+            # For each column, update the minimum if the column has a valid (non-null) date that's smaller
+            for col in cols:
+                min_date_expr = (
+                    ibis.case()
+                    .when(
+                        table[col].notnull() & (table[col] < min_date_expr), table[col]
+                    )
+                    .else_(min_date_expr)
+                    .end()
+                )
+
+            min_date_column = min_date_expr
 
             # Adding the new column to the table
             table = table.mutate(min_date=min_date_column)

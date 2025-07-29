@@ -127,7 +127,7 @@ class OMOPObservationTable(MeasurementTable):
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "OBSERVATION_DATE",
-        "CODE": "OBSERVATION_TYPE_CONCEPT_ID",
+        "CODE": "OBSERVATION_CONCEPT_ID",
         "VALUE": "VALUE_AS_NUMBER",
     }
 

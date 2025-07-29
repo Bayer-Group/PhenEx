@@ -199,6 +199,9 @@ class Phenotype:
             )
         for child in self.children:
             child.append_counts()
+    @property
+    def display_name(self):
+        return self.name.replace("_", " ").lower().capitalize()
 
 
 from typing import Dict, Union
