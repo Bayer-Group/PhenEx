@@ -116,6 +116,12 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
+  public setConstants(constants) {
+    this._cohort_data.constants = constants;
+    console.log(constants);
+    this.saveChangesToCohort(false, false);
+  }
+
   public onCellValueChanged(event: any) {
     /*
     Update phenotype data with new value from grid editor
