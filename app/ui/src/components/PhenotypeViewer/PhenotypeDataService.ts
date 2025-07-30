@@ -177,7 +177,7 @@ export class PhenotypeDataService {
     this.componentPhenotypeListeners.forEach(listener => listener(refreshGrid));
   }
 
-  public onCellValueChanged(event: any) {
-    this.cohortDataService.onCellValueChanged(event);
-  }
+  // public onCellValueChanged(event: any) {
+  //   this.cohortDataService.onCellValueChanged(event);
+  // }
 }
