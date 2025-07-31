@@ -23,6 +23,7 @@ nav:
           - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
           - UserDefinedPhenotype: api/phenotypes/user_defined_phenotype.md
+          - BinPhenotype: api/phenotypes/bin_phenotype.md
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
