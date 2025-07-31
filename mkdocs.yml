@@ -70,7 +70,8 @@ plugins:
 theme:
   name: material
   palette:
-    primary: red
+    primary: deep orange
+    accent: deep orange
   features:
     - content.code.copy
     - content.action.edit
