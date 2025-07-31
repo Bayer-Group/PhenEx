@@ -1,8 +1,8 @@
+<img src="assets/bird_icon.png" alt="Bird Icon" class="bird-icon-top-right">
 <div id="main_title" class="my-class">PhenEx</div>
 
 # Building real-world data cohorts
 
-![Alt text](assets/phenex_feather_horizontal.png)
 
 Implementing observational studies using real-world data (RWD) is challenging, requiring expertise in epidemiology, medical practice, statistics and data engineering. Observational studies are often implemented as bespoke software packages by individual data analysts or small teams. While tools exist to help, such as open-source tools from the [OHDSI community](https://ohdsi.github.io/Hades/) in the R language and proprietary tools, they are typically bound to a specific data model (e.g. [OMOP](https://ohdsi.github.io/CommonDataModel/cdm54.html)) and limited in their ability to express and implement complicated medical definitions.
 
