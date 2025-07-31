@@ -14,7 +14,7 @@ logger = create_logger(__name__)
 
 class BinPhenotype(Phenotype):
     """
-    BinPhenotype converts numeric values into categorical bin labels.
+    BinPhenotype converts numeric values into categorical bin labels. To use, pass it a numeric valued phenotype such as AgePhenotype, MeasurementPhenotype, ArithmeticPhenotype, or ScorePhenotype.
 
     Takes a phenotype that returns numeric values (like age, measurements, etc.)
     and converts the VALUE column into bin labels like "[10-20)", "[20-30)", etc.
