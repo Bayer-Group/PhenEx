@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-import DescriptionCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/DescriptionCellRenderer';
+import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
+import DescriptionCellRenderer from '../../../CohortViewer/CohortTable/CellRenderers/DescriptionCellRenderer';
 import styles from './CodelistColumnMapping.module.css';
 
 export const CodelistColumnMapping: React.FC = () => {

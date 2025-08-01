@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
 import styles from './CodelistFileContent.module.css';
 
 export const CodelistFileContent: React.FC = () => {

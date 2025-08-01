@@ -2,16 +2,16 @@ import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AccordianTabbedInfoDisplayView.module.css';
 import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
-import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
+import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ConstantsTable } from '../../ConstantsPanel/ConstantsTable';
+import { ConstantsTable } from '../../SlideoverPanels/ConstantsPanel/ConstantsTable';
 import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 interface AccordianTabbedInfoDisplayViewProps {
   title: string;
   infoContent?: string;
 }
 
-import { CodelistsInfoDisplay } from '../../CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
+import { CodelistsInfoDisplay } from '../../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
   NewPhenotype = 'New Phenotype',
@@ -131,7 +131,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       case InfoTabType.Constants:
         return <ConstantsTable />;
       case InfoTabType.Database:
-        return <DatabasePanel />;
+        return <DatabaseFields />;
       case InfoTabType.Codelists:
         return <CodelistsInfoDisplay />;
       default:

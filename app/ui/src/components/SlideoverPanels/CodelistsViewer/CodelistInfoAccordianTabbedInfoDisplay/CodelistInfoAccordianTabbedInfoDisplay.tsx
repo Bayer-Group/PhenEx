@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 import styles from './CodelistInfoAccordianTabbedInfoDisplay.module.css';
-import { Tabs } from '../../Tabs/Tabs';
+import { Tabs } from '../../../Tabs/Tabs';
 import { CodelistColumnMapping } from '../CodelistsInfoDisplay/CodelistColumnMapping';
 import { CodelistFileContent } from '../CodelistsInfoDisplay/CodelistFileContent';
 

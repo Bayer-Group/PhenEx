@@ -3,11 +3,11 @@ import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
 import { PhenotypeViewer } from '../../PhenotypeViewer/PhenotypeViewer';
-import { CodelistsViewer } from '../../CodelistsViewer/CodelistsViewer';
-import { CohortReportView } from '../../CohortViewer/CohortReportView/CohortReportView';
-import { ExecutePanel } from '../../ExecutePanel/ExecutePanel';
-import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
-import { ConstantsPanel } from '../../ConstantsPanel/ConstantsPanel';
+import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
+import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
+import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
+import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
+import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
 
 interface TwoPanelCohortViewerProps {
   data?: string;

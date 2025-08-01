@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './ExecutePanel.module.css';
-import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 export const ExecutePanel: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
@@ -104,60 +105,61 @@ export const ExecutePanel: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.title}>Execute</div>
-      <div className={styles.controls}>
-        <button 
-          onClick={handleExecute} 
-          disabled={isExecuting}
-          className={styles.executeButton}
-        >
-          {isExecuting ? 'Executing...' : 'Execute Cohort'}
-        </button>
-        <button 
-          onClick={clearLogs}
-          className={styles.clearButton}
-        >
-          Clear Logs
-        </button>
-        <select 
-          value={logFilter} 
-          onChange={(e) => setLogFilter(e.target.value)}
-          className={styles.filterSelect}
-        >
-          <option value="all">All Logs</option>
-          <option value="info">Info</option>
-          <option value="warning">Warnings</option>
-          <option value="error">Errors</option>
-          <option value="debug">Debug</option>
-        </select>
-      </div>
-      <div className={styles.content}>
-        <div className={styles.logsContainer}>
-          {logs.length === 0 ? (
-            <div className={styles.emptyState}>
-              Click "Execute Cohort" to see real-time execution logs
-            </div>
-          ) : (
-            logs
-              .filter(log => shouldShowLog(log.message))
-              .map((log, index) => {
-                // Format message for display
-                const displayMessage = typeof log.message === 'string' 
-                  ? log.message 
-                  : JSON.stringify(log.message, null, 2);
-                
-                return (
-                  <div key={index} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
-                    <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
-                    <span className={styles.logMessage}>{displayMessage}</span>
-                  </div>
-                );
-              })
-          )}
-          <div ref={logsEndRef} />
+    <SlideoverPanel title="Execute">
+      <div className={styles.container}>
+        <div className={styles.controls}>
+          <button 
+            onClick={handleExecute} 
+            disabled={isExecuting}
+            className={styles.executeButton}
+          >
+            {isExecuting ? 'Executing...' : 'Execute Cohort'}
+          </button>
+          <button 
+            onClick={clearLogs}
+            className={styles.clearButton}
+          >
+            Clear Logs
+          </button>
+          <select 
+            value={logFilter} 
+            onChange={(e) => setLogFilter(e.target.value)}
+            className={styles.filterSelect}
+          >
+            <option value="all">All Logs</option>
+            <option value="info">Info</option>
+            <option value="warning">Warnings</option>
+            <option value="error">Errors</option>
+            <option value="debug">Debug</option>
+          </select>
+        </div>
+        <div className={styles.content}>
+          <div className={styles.logsContainer}>
+            {logs.length === 0 ? (
+              <div className={styles.emptyState}>
+                Click "Execute Cohort" to see real-time execution logs
+              </div>
+            ) : (
+              logs
+                .filter(log => shouldShowLog(log.message))
+                .map((log, index) => {
+                  // Format message for display
+                  const displayMessage = typeof log.message === 'string' 
+                    ? log.message 
+                    : JSON.stringify(log.message, null, 2);
+                  
+                  return (
+                    <div key={index} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
+                      <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
+                      <span className={styles.logMessage}>{displayMessage}</span>
+                    </div>
+                  );
+                })
+            )}
+            <div ref={logsEndRef} />
+          </div>
         </div>
       </div>
-    </div>
+    </SlideoverPanel>
   );
 };

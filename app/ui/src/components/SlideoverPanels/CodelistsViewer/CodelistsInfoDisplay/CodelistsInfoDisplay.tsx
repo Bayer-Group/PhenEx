@@ -3,7 +3,7 @@ import styles from './CodelistsInfoDisplay.module.css';
 // Try one of these import statements:
 
 // If it's a default export:
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
 
 export const CodelistsInfoDisplay: FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());

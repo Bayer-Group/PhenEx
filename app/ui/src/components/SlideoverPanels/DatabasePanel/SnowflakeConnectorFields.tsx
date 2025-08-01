@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import styles from './DatabasePanel.module.css';
+import styles from './DatabaseFields.module.css';
 
 interface SnowflakeConfig {
   sourceDb: string;

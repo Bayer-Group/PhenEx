@@ -3,9 +3,9 @@ import {
   getCodelistFilenamesForCohort,
   getCodelistFileForCohort,
   uploadCodelistFileToCohort,
-} from '../../api/codelists/route';
-import { createID } from '../../types/createID';
-import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+} from '../../../api/codelists/route';
+import { createID } from '../../../types/createID';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 
 interface CodelistFile {
   filename: string;

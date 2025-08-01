@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
-import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 
 export const ConstantsTable: React.FC = () => {
   const dataService = useRef(CohortDataService.getInstance()).current;

@@ -7,7 +7,7 @@ import { CohortTable } from './CohortTable/CohortTable';
 import { CohortInfo } from './CohortInfo/CohortInfo';
 import { CohortDefinitionView } from './CohortDefinitionView/CohortDefinitionView';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { CohortReportView } from './CohortReportView/CohortReportView';
+import { CohortReportView } from '../SlideoverPanels/CohortReportView/CohortReportView';
 
 interface CohortViewerProps {
   data?: string;

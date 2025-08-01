@@ -1,6 +1,5 @@
 import { FC } from 'react';
 import styles from './CohortInfo.module.css';
-import { DatabasePanel } from '../../DatabasePanel/DatabasePanel';
 import { CohortTextArea } from './CohortTextArea/CohortTextArea';
 import { CohortInfoAccordianDisplayView } from './CohortInfoAccordianDisplay/CohortInfoAccordianDisplay';
 

@@ -4,9 +4,9 @@ import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_coho
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
-import { ConstantsDataService } from '../../ConstantsPanel/ConstantsDataService';
-import { CodelistDataService } from '../../CodelistsViewer/CodelistDataService';
-import { ReportDataService } from '../CohortReportView/ReportDataService';
+import { ConstantsDataService } from '../../SlideoverPanels/ConstantsPanel/ConstantsDataService';
+import { CodelistDataService } from '../../SlideoverPanels/CodelistsViewer/CodelistDataService';
+import { ReportDataService } from '../../SlideoverPanels/CohortReportView/ReportDataService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {

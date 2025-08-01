@@ -1,0 +1,53 @@
+.container {
+  height: 100%;
+  max-height: 100vh; /* Ensure it never exceeds viewport height */
+  display: flex;
+  flex-direction: column;
+  padding: 60px 0px 0px 0px;
+  margin: 0;
+  overflow: hidden; /* Prevent container from growing */
+  box-sizing: border-box; /* Include padding in height calculation */
+}
+
+.title {
+  font-size: 24px;
+  font-family: 'IBMPlexSans-bold';
+  padding-left: 10px;
+  flex-shrink: 0; /* Prevent title from shrinking */
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.actionButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.actionButton:hover {
+  background-color: var(--primary-color-hover, #0056b3);
+}
+
+.actionButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-color-focus, rgba(0, 123, 255, 0.25));
+}
+
+.content {
+  flex: 1;
+  overflow: auto; /* Allow content to scroll if needed */
+  padding: 10px;
+}

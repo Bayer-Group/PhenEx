@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styles from './CodelistsViewer.module.css';
-import { Tabs } from '../Tabs/Tabs';
-import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { Tabs } from '../../Tabs/Tabs';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';
 import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
+import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 export const CodelistsViewer: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
@@ -61,36 +62,37 @@ export const CodelistsViewer: React.FC = () => {
 
   return (
     <FileDropZone onFileDrop={handleFileDrop}>
-      <div className={styles.container}>
-        <div className={styles.title}>Codelists</div>
-        <div className={styles.tabsContainer}>
-          <Tabs
-            width="100%"
-            height={40}
-            tabs={tabs}
-            active_tab_index={activeTab}
-            onTabChange={handleTabChange}
-          />
-        </div>
-        <div className={styles.bottomSection}>
-          <div className={styles.infoBox}>
-            {activeTab !== 0 && <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />}
-          </div>
-          <div className={styles.tableBox} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
-            <AgGridReact
-              rowData={gridData.rowData}
-              columnDefs={gridData.columnDefs}
-              defaultColDef={{
-                sortable: true,
-                filter: true,
-                resizable: true,
-              }}
-              animateRows={true}
-              theme={dataService.codelists_service.getTheme()}
+      <SlideoverPanel title="Codelists">
+        <div className={styles.container}>
+          <div className={styles.tabsContainer}>
+            <Tabs
+              width="100%"
+              height={40}
+              tabs={tabs}
+              active_tab_index={activeTab}
+              onTabChange={handleTabChange}
             />
           </div>
+          <div className={styles.bottomSection}>
+            <div className={styles.infoBox}>
+              {activeTab !== 0 && <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />}
+            </div>
+            <div className={styles.tableBox} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
+              <AgGridReact
+                rowData={gridData.rowData}
+                columnDefs={gridData.columnDefs}
+                defaultColDef={{
+                  sortable: true,
+                  filter: true,
+                  resizable: true,
+                }}
+                animateRows={true}
+                theme={dataService.codelists_service.getTheme()}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </SlideoverPanel>
     </FileDropZone>
   );
 };

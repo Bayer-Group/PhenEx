@@ -1,6 +1,8 @@
 import { FC, useState } from 'react';
 import styles from './CohortReportView.module.css';
-import { CohortDataService } from '../CohortDataService/CohortDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
+
 import { TableData } from '../tableTypes';
 import { Tabs } from '../../Tabs/Tabs';
 import { ReportCard } from './ReportCard';
@@ -54,21 +56,23 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   };
 
   return (
-    <div className={styles.container}>
-      {/* <div className={styles.topSection}>
-        <div className={styles.controlsContainer}>
-          <Tabs
-            width={400}
-            height={25}
-            tabs={tabs}
-            onTabChange={onTabChange}
-            active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
-          />
-        </div>
-      </div> */}
-      {/* <div className={styles.bottomSection}> */}
-      <div className={styles.viewContainer}>{renderViewContent()}</div>
-      {/* </div> */}
-    </div>
+    <SlideoverPanel title='Report'>
+      <div className={styles.container}>
+        {/* <div className={styles.topSection}>
+          <div className={styles.controlsContainer}>
+            <Tabs
+              width={400}
+              height={25}
+              tabs={tabs}
+              onTabChange={onTabChange}
+              active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
+            />
+          </div>
+        </div> */}
+        {/* <div className={styles.bottomSection}> */}
+        <div className={styles.viewContainer}>{renderViewContent()}</div>
+        {/* </div> */}
+      </div>
+    </SlideoverPanel>
   );
 };
