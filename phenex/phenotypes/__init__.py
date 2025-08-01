@@ -2,6 +2,7 @@ from .phenotype import Phenotype
 
 from .codelist_phenotype import CodelistPhenotype
 from .age_phenotype import AgePhenotype
+from .bin_phenotype import BinPhenotype
 from .sex_phenotype import SexPhenotype
 from .event_count_phenotype import EventCountPhenotype
 from .measurement_phenotype import MeasurementPhenotype
