@@ -73,7 +73,9 @@ class EventCountPhenotype(Phenotype):
         self.return_date = return_date
         self.component_date_select = component_date_select
         if self.component_date_select not in ["first", "second"]:
-            raise ValueError(f"Invalid component_date_select: {self.component_date_select}")
+            raise ValueError(
+                f"Invalid component_date_select: {self.component_date_select}"
+            )
         self.value_filter = value_filter
         self.phenotype = phenotype
         self.children = [phenotype]
