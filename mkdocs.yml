@@ -70,10 +70,13 @@ plugins:
 theme:
   name: material
   palette:
-    primary: red
+    primary: deep orange
+    accent: deep orange
   features:
     - content.code.copy
     - content.action.edit
+  favicon: assets/bird_icon.png
+  logo: assets/bird_icon_white.png
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

@@ -40,10 +40,7 @@ body {
 
 #main_title {
     font-family: "IBMPlexSans-bold", sans-serif; /* Use the custom font */
-    background-size: 100% 100%; /* Ensure the gradient covers the entire text */
-    background: linear-gradient(#e32b0e 20%, #71010c 80%);
-    -webkit-background-clip: text; /* Clip the background to the text */
-    -webkit-text-fill-color: transparent; /* Make the text color transparent */
+    color: hsl(14, 100%, 63%);
     font-size: 90px; /* Change size of h1 headings */
 }
 
@@ -51,7 +48,7 @@ h1,
 h2,
 h3 {
     font-family: "IBMPlexSans-bold", sans-serif; /* Apply to headings */
-    background: linear-gradient(#e32b0e 20%, #71010c 80%);
+    color: hsl(14, 100%, 63%);
     -webkit-background-clip: text; /* Clip the background to the text */
 }
 

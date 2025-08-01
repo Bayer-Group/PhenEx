@@ -118,7 +118,7 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
                     min_days=GreaterThanOrEqualTo(5),
                 ),
                 return_date="all",
-                return_event="first",
+                component_date_select="first",
             ),
         }
 
@@ -135,7 +135,7 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
                     min_days=GreaterThanOrEqualTo(5),
                 ),
                 return_date="last",
-                return_event="first",
+                component_date_select="first",
             ),
         }
 
@@ -152,7 +152,7 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
                     min_days=GreaterThanOrEqualTo(5),
                 ),
                 return_date="first",
-                return_event="first",
+                component_date_select="first",
             ),
         }
 
@@ -170,7 +170,7 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
                     min_days=GreaterThanOrEqualTo(5),
                 ),
                 return_date="first",
-                return_event="first",
+                component_date_select="first",
             ),
         }
 
