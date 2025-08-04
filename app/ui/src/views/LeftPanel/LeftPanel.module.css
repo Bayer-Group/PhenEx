@@ -82,35 +82,3 @@
   margin-left:20px;
   margin-top:13px;
 }
-
-
-.loginHeader {
-  margin: 10px 10px;
-  border-radius: 10px;
-  font-family: 'SNPro-bold';
-  padding: 10px 15px;
-  background-color: white;
-  border: 1px solid var(--color-accent_2);
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.2s ease;
-}
-
-.loginHeaderButton {
-  background-color: transparent;
-  color: var(--phenex-red-active);
-  font-size: 14px;
-  width: 60px;
-  position: absolute;
-  font-family: 'SNPro-bold';
-  top: 4px;
-  right: -15px;
-}
-
-.loginHeader:hover {
-  transform: translateY(-1px);
-}
-
-.loginHeader:hover .loginHeaderButton {
-  color: red !important;
-}
