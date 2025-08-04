@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './DomainSelectorEditor.module.css';
 import { MapperDomains, DomainInfo } from '../../../../../types/mappers';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
+import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
 
 export interface DomainSelectorEditorProps {
   value?: any;
@@ -39,16 +40,11 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
         </p>
       </div>
       <div className={styles.content}>
-        {domains.map(domain => (
-          <div
-            key={domain.name}
-            className={`${styles.domainSection} ${selectedDomain === domain.name ? styles.selected : ''}`}
-            onClick={() => handleDomainSelect(domain.name)}
-          >
-            <div className={styles.domainName}>{domain.name.replace(/_/g, ' ')}</div>
-            <p className={styles.domainInfo}>{domain.info}</p>
-          </div>
-        ))}
+        <ItemList
+          items={domains}
+          selectedName={selectedDomain || undefined}
+          onSelect={handleDomainSelect}
+        />
       </div>
     </div>
   );

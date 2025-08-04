@@ -32,12 +32,12 @@
 
 .issuesText {
   font-size: 18px;
-  font-family: 'SNPro-black';
+  font-family: 'IBMPlexSans-Bold';
 }
 
 .row.selected .issuesText {
   font-size: 38px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-Bold';
 }
 .row:hover {
   background-color: var(--color-accent-hover) !important;

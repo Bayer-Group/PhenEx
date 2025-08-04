@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './TypeSelectorEditor.module.css';
+import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
 
 export interface TypeSelectorEditorProps {
   value?: any;
@@ -37,16 +38,11 @@ export const TypeSelectorEditor: React.FC<TypeSelectorEditorProps> = props => {
 
   return (
     <div className={styles.container}>
-      {types.map(type => (
-        <div
-          key={type.name}
-          className={`${styles.typeSection} ${selectedType === type.name ? styles.selected : ''}`}
-          onClick={() => handleTypeSelect(type.name)}
-        >
-          <div className={styles.typeName}>{type.name}</div>
-          <p className={styles.typeInfo}>{type.info}</p>
-        </div>
-      ))}
+      <ItemList
+        items={types}
+        selectedName={selectedType || undefined}
+        onSelect={handleTypeSelect}
+      />
     </div>
   );
 };

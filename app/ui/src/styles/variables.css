@@ -45,12 +45,14 @@
   --phenex-red: hsl(0, 40%, 80%);
   --phenex-red-active: hsl(0, 90%, 80%);
   /* --color-accent-hover: hsl(0, 30%, 96%); */
-  --color-accent-hover: hsl(24, 80%, 94%);
+  /* --color-accent-hover: hsl(24, 80%, 94%); */
+  --color-accent-hover: rgb(240,240,240);
+
   /* --color-accent-bright: hsl(24, 90%, 60%); */
   --color-accent-bright: hsl(14, 100%, 63%);
   --phenex-dark: hsl(0, 40%, 5%);
 
-  --color-accent: var(--phenex-dark); /* #03396c;/*#fa934f;*/
+  --color-accent: var(--color-accent-bright);/*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
   --box_shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -64,6 +66,13 @@
 
   --item-transition: all 0.1s ease-in-out;
   --item-border-hover: 1px solid var(--line-color);
+
+  --button-text-color-selected: var(--color-accent-bright);
+  --button-text-color-default: black;
+  --button-background-color-selected: transparent;
+  --button-background-color-default: transparent;
+  --button-border-color-selected: transparent;
+  --button-border-color-default: transparent;
 }
 
 .rag-blue-outer {
