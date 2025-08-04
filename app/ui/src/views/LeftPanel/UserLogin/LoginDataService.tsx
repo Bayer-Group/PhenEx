@@ -1,0 +1,106 @@
+import axiosInstance from '../../../api/axios';
+
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+interface UserData {
+  username: string;
+  email: string;
+}
+
+export class LoginDataService {
+  private static instance: LoginDataService;
+  public loggedIn: boolean = false;
+  public loginUsername: string = '';
+  private token: string | null = null;
+  private currentUser: UserData | null = null;
+
+  private constructor() {
+  }
+
+  public static getInstance(): LoginDataService {
+    if (!LoginDataService.instance) {
+      LoginDataService.instance = new LoginDataService();
+    }
+    return LoginDataService.instance;
+  }
+
+  async login(username: string, password: string): Promise<boolean> {
+    try {
+      const response = await loginUser(username, password);
+      if (response?.access_token) {
+        this.token = response.access_token;
+        this.loggedIn = true;
+        this.loginUsername = username;
+        await this.fetchUserData();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      this.loggedIn = false;
+      this.loginUsername = '';
+      this.token = null;
+      return false;
+    }
+  }
+
+  async register(username: string, password: string, email: string): Promise<boolean> {
+    try {
+      const response = await registerUser(username, password);
+      return !!response;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      return false;
+    }
+  }
+
+  async logout(): Promise<void> {
+    this.token = null;
+    this.currentUser = null;
+    this.loggedIn = false;
+    this.loginUsername = '';
+  }
+
+  private async fetchUserData(): Promise<void> {
+    if (!this.token) return;
+
+    try {
+      // Implement user data fetching once the endpoint is available
+      // const response = await axios.get<UserData>('/users/me', {
+      //   headers: {
+      //     Authorization: `Bearer ${this.token}`,
+      //   },
+      // });
+      // this.currentUser = response.data;
+      this.currentUser = {
+        username: this.loginUsername,
+        email: ''  // Will be populated when the endpoint is available
+      };
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      this.token = null;
+      this.currentUser = null;
+      this.loggedIn = false;
+      this.loginUsername = '';
+    }
+  }
+
+  isLoggedIn(): boolean {
+    return this.loggedIn;
+  }
+
+  getCurrentUser(): UserData | null {
+    return this.currentUser;
+  }
+
+  getToken(): string | null {
+    return this.token;
+  }
+
+  getUsername(): string {
+    return this.loginUsername;
+  }
+}

@@ -6,3 +6,6 @@ openai
 deepdiff
 fastembed
 faiss-cpu
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart

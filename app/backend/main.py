@@ -1,8 +1,13 @@
 from typing import Dict, Optional, Union
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import ast
 import phenex
+import bcrypt
+import jwt
+from datetime import datetime, timedelta
+from pydantic import BaseModel
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
 from examples import EXAMPLES
@@ -17,7 +22,76 @@ load_dotenv()
 
 from openai import AzureOpenAI, OpenAI
 
+# Constants and configuration
 COHORTS_DIR = "/data/cohorts"
+USERS_FILE = "/data/users.json"
+SECRET_KEY = "your-secret-key-here"  # In production, use a proper secret key
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Pydantic models for request/response
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: str
+
+class User(BaseModel):
+    username: str
+    email: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# OAuth2 scheme for JWT tokens
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# User management functions
+def get_users():
+    try:
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE, 'r') as f:
+                return json.load(f)
+        return []
+    except Exception as e:
+        logger.error(f"Error reading users file: {e}")
+        return []
+
+def save_users(users):
+    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f)
+
+def get_user(username: str):
+    users = get_users()
+    return next((user for user in users if user['username'] == username), None)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        user = get_user(username)
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return User(**user)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 openai_client = AzureOpenAI()
 if "AZURE_OPENAI_ENDPOINT" in os.environ:
@@ -53,6 +127,76 @@ app.add_middleware(
 # Include the router from rag.py
 app.include_router(rag_router, prefix="/rag")
 
+@app.post("/register")
+async def register(user: UserCreate):
+    """
+    Register a new user.
+    
+    Args:
+        user: UserCreate object containing username, password, and email
+        
+    Returns:
+        Dict with status message
+    """
+    users = get_users()
+    
+    # Check if username already exists
+    if any(u["username"] == user.username for u in users):
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Check if email already exists
+    if any(u["email"] == user.email for u in users):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Validate password strength
+    if len(user.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    
+    # Create new user with hashed password
+    new_user = {
+        "username": user.username,
+        "password": get_password_hash(user.password),
+        "email": user.email
+    }
+    
+    users.append(new_user)
+    save_users(users)
+    
+    return {"status": "success", "message": "User registered successfully"}
+
+@app.post("/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Authenticate a user and return a JWT token.
+    
+    Args:
+        form_data: OAuth2PasswordRequestForm containing username and password
+        
+    Returns:
+        Token object containing access token and token type
+    """
+    user = get_user(form_data.username)
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    if not verify_password(form_data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    
+    access_token = create_access_token({"sub": user["username"]})
+    return Token(access_token=access_token, token_type="bearer")
+
+@app.get("/users/me", response_model=User)
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    """
+    Get current user information.
+    
+    Args:
+        current_user: User object from the JWT token
+        
+    Returns:
+        User object containing user information
+    """
+    return current_user
 
 def get_cohort_path(cohort_id, provisional=False):
     if provisional:
