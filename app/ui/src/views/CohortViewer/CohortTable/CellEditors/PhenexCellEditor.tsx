@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
-import { Portal } from '../../../common/Portal';
+import { Portal } from '../../../../components/common/Portal';
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value?: any;
   onValueChange?: (value: any) => void;

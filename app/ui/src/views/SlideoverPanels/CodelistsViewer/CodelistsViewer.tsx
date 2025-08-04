@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './CodelistsViewer.module.css';
-import { Tabs } from '../../Tabs/Tabs';
+import { Tabs } from '../../../components/Tabs/Tabs';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';

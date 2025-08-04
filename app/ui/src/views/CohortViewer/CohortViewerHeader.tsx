@@ -4,7 +4,7 @@ import { CohortDataService } from './CohortDataService/CohortDataService';
 import { Tabs } from '../Tabs/Tabs';
 import { CohortViewType } from './CohortViewer';
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
-import { EditableTextField } from '../EditableTextField/EditableTextField';
+import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 
 interface CohortViewerHeaderProps {
   onCohortNameChange: (newValue: string) => void;

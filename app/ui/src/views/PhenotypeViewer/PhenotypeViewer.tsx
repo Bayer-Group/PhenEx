@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
-import { EditableTextField } from '../EditableTextField/EditableTextField';
-import { PhenotypeAccordianInfo } from './PhenotypeAccordianInfo/PhenotypeAccordianInfo';
+import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
 
 interface PhenotypeViewerProps {

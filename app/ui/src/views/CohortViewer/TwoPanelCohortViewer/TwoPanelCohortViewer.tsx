@@ -1,5 +1,5 @@
 import React, { FC, useState } from 'react';
-import { TwoPanelView } from '../../../views/MainView/TwoPanelView/TwoPanelView';
+import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
 import { PhenotypeViewer } from '../../PhenotypeViewer/PhenotypeViewer';

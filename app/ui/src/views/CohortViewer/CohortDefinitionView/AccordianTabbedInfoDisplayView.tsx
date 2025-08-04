@@ -1,8 +1,7 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AccordianTabbedInfoDisplayView.module.css';
-import { TabsWithDropdown } from '../../Tabs/TabsWithDropdown';
+import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
-import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { ConstantsTable } from '../../SlideoverPanels/ConstantsPanel/ConstantsTable';
 import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';

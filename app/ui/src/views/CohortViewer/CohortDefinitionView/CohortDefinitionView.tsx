@@ -1,11 +1,8 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import styles from './CohortDefinitionView.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
-import { TableData } from '../tableTypes';
 import { CohortTable } from '../CohortTable/CohortTable';
-import { Tabs } from '../../Tabs/Tabs';
-import { ButtonsBarWithDropdowns } from '../../ButtonsBar/ButtonsBarWithDropdowns';
-import { phenotypeAddableTypeValues } from '../../PhenotypeViewer/phenotype';
+import { Tabs } from '../../../components/Tabs/Tabs';
 import { AccordianTabbedInfoDisplayView } from './AccordianTabbedInfoDisplayView';
 
 interface CohortDefinitionViewProps {
