@@ -1,7 +1,7 @@
 import { TableData, ColumnDefinition } from '../CohortViewer/tableTypes';
 import { themeQuartz } from 'ag-grid-community';
 
-import { ConstantsCellRenderer } from './ConstantsCellRenderer'
+import { ConstantsCellRenderer } from './ConstantsCellRenderer';
 import { ConstantsCellEditorSelector } from './ConstantsCellEditorSelector';
 
 const defaultColumns: ColumnDefinition[] = [
@@ -57,13 +57,18 @@ const DEFAULT_CONSTANTS: Constant[] = [
     name: 'data_period',
     description: 'all available data',
     type: 'DateFilter',
-    value: { class_name: 'DateRangeFilter', min_date: null, max_date: null , type: 'date_range'},
+    value: { class_name: 'DateRangeFilter', min_date: null, max_date: null, type: 'date_range' },
   },
   {
     name: 'index_period',
     description: '2016-2023',
     type: 'DateFilter',
-    value: { class_name: 'DateRangeFilter', min_date: '2016-01-01', max_date: '2023-12-31' , type: 'date_range'},
+    value: {
+      class_name: 'DateRangeFilter',
+      min_date: '2016-01-01',
+      max_date: '2023-12-31',
+      type: 'date_range',
+    },
   },
   {
     name: 'domains',
@@ -75,13 +80,13 @@ const DEFAULT_CONSTANTS: Constant[] = [
     name: 'baseline_period',
     description: 'one_year_pre_index',
     type: 'RelativeTimeRangeFilter',
-    value: { class_name: 'RelativeTimeRangeFilter', when: 'before', type: 'relative_time_range'},
+    value: { class_name: 'RelativeTimeRangeFilter', when: 'before', type: 'relative_time_range' },
   },
   {
     name: 'followup_period',
     description: 'any_time_post_index',
     type: 'RelativeTimeRangeFilter',
-    value: { class_name: 'RelativeTimeRangeFilter', when: 'after', type: 'relative_time_range'},
+    value: { class_name: 'RelativeTimeRangeFilter', when: 'after', type: 'relative_time_range' },
   },
   // {
   //   name: 'inpatient',

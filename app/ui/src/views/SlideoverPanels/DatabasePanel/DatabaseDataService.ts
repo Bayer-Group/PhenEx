@@ -65,7 +65,6 @@ const SNOWFLAKE_PARAMETERS: Constant[] = [
     description: 'Snowflake password',
     value: 'default_password',
   },
-
 ];
 
 export class ConstantsDataService {

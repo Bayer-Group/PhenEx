@@ -89,7 +89,7 @@
   overflow-y: auto;
   overflow-x: hidden; /* Prevent horizontal overflow */
   padding: 10px;
-  font-family: 'IBMPlexSans-Regular';/*'Courier New', monospace;*/
+  font-family: 'IBMPlexSans-Regular'; /*'Courier New', monospace;*/
   font-size: 12px;
   color: black;
   box-sizing: border-box; /* Include padding in height calculation */

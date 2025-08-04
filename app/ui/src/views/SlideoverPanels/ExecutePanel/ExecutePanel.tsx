@@ -5,7 +5,9 @@ import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 export const ExecutePanel: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
-  const [logs, setLogs] = useState<Array<{ message: string | any; type: 'log' | 'error' | 'result' | 'complete'; timestamp: Date }>>([]);
+  const [logs, setLogs] = useState<
+    Array<{ message: string | any; type: 'log' | 'error' | 'result' | 'complete'; timestamp: Date }>
+  >([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [logFilter, setLogFilter] = useState<string>('all'); // 'all', 'info', 'warning', 'error', 'debug'
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -15,16 +17,19 @@ export const ExecutePanel: React.FC = () => {
   };
 
   useEffect(() => {
-    const handleExecutionProgress = (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => {
+    const handleExecutionProgress = (
+      message: string | any,
+      type: 'log' | 'error' | 'result' | 'complete'
+    ) => {
       setLogs(prevLogs => [...prevLogs, { message, type, timestamp: new Date() }]);
-      
+
       if (type === 'complete' || type === 'error') {
         setIsExecuting(false);
       }
     };
 
     dataService.addExecutionProgressListener(handleExecutionProgress);
-    
+
     return () => {
       dataService.removeExecutionProgressListener(handleExecutionProgress);
     };
@@ -51,11 +56,11 @@ export const ExecutePanel: React.FC = () => {
 
   const shouldShowLog = (message: string | any) => {
     if (logFilter === 'all') return true;
-    
+
     // Convert message to string if it's not already
     const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
     const lowerMessage = messageStr.toLowerCase();
-    
+
     switch (logFilter) {
       case 'error':
         return lowerMessage.includes('[error]') || lowerMessage.includes('[stderr]');
@@ -77,7 +82,7 @@ export const ExecutePanel: React.FC = () => {
   const getLogClassName = (type: string, message: string | any) => {
     // Convert message to string if it's not already
     const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
-    
+
     // Check for log level indicators in the message
     if (messageStr.includes('[ERROR]') || messageStr.includes('[STDERR]')) {
       return styles.errorLog;
@@ -91,7 +96,7 @@ export const ExecutePanel: React.FC = () => {
     if (messageStr.includes('[DEBUG]')) {
       return styles.debugLog;
     }
-    
+
     switch (type) {
       case 'error':
         return styles.errorLog;
@@ -108,22 +113,15 @@ export const ExecutePanel: React.FC = () => {
     <SlideoverPanel title="Execute">
       <div className={styles.container}>
         <div className={styles.controls}>
-          <button 
-            onClick={handleExecute} 
-            disabled={isExecuting}
-            className={styles.executeButton}
-          >
+          <button onClick={handleExecute} disabled={isExecuting} className={styles.executeButton}>
             {isExecuting ? 'Executing...' : 'Execute Cohort'}
           </button>
-          <button 
-            onClick={clearLogs}
-            className={styles.clearButton}
-          >
+          <button onClick={clearLogs} className={styles.clearButton}>
             Clear Logs
           </button>
-          <select 
-            value={logFilter} 
-            onChange={(e) => setLogFilter(e.target.value)}
+          <select
+            value={logFilter}
+            onChange={e => setLogFilter(e.target.value)}
             className={styles.filterSelect}
           >
             <option value="all">All Logs</option>
@@ -144,12 +142,16 @@ export const ExecutePanel: React.FC = () => {
                 .filter(log => shouldShowLog(log.message))
                 .map((log, index) => {
                   // Format message for display
-                  const displayMessage = typeof log.message === 'string' 
-                    ? log.message 
-                    : JSON.stringify(log.message, null, 2);
-                  
+                  const displayMessage =
+                    typeof log.message === 'string'
+                      ? log.message
+                      : JSON.stringify(log.message, null, 2);
+
                   return (
-                    <div key={index} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
+                    <div
+                      key={index}
+                      className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}
+                    >
                       <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
                       <span className={styles.logMessage}>{displayMessage}</span>
                     </div>

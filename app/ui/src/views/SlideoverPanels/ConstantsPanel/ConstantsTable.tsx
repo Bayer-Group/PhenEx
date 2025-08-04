@@ -36,7 +36,6 @@ export const ConstantsTable: React.FC = () => {
     }
   };
 
-
   return (
     console.log('CONSTANTS DATA', dataService.constants_service.tableData),
     (

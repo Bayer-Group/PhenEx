@@ -70,16 +70,16 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   };
 
   const showDatabase = () => {
-    console.log("showing database");
+    console.log('showing database');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('database');
-  }
+  };
 
   const showConstants = () => {
-    console.log("showing constants");
+    console.log('showing constants');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('constants');
-  }
+  };
 
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
@@ -89,11 +89,12 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       setIsOpen(false);
       return;
     }
-    if (index == 1){
+    if (index == 1) {
       showDatabase();
       setCurrentTab(tabTypes[index]);
       return;
-    } if (index == 2){
+    }
+    if (index == 2) {
       showConstants();
       setCurrentTab(tabTypes[index]);
       return;

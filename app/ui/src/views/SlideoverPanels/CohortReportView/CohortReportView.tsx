@@ -56,7 +56,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   };
 
   return (
-    <SlideoverPanel title='Report'>
+    <SlideoverPanel title="Report">
       <div className={styles.container}>
         {/* <div className={styles.topSection}>
           <div className={styles.controlsContainer}>

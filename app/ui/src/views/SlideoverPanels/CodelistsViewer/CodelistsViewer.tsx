@@ -75,9 +75,14 @@ export const CodelistsViewer: React.FC = () => {
           </div>
           <div className={styles.bottomSection}>
             <div className={styles.infoBox}>
-              {activeTab !== 0 && <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />}
+              {activeTab !== 0 && (
+                <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
+              )}
             </div>
-            <div className={styles.tableBox} style={{ height: 'calc(100vh - 150px)', width: '100%' }}>
+            <div
+              className={styles.tableBox}
+              style={{ height: 'calc(100vh - 150px)', width: '100%' }}
+            >
               <AgGridReact
                 rowData={gridData.rowData}
                 columnDefs={gridData.columnDefs}

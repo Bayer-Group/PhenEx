@@ -28,8 +28,8 @@ const classNameToEditorMapping = {
 
 export const ConstantsCellEditorSelector = forwardRef(
   (props: ConstantsCellEditorSelectorProps, ref) => {
-    console.log(props)
-    console.log("THIS IS CELL EDITOR CONSTANTs")
+    console.log(props);
+    console.log('THIS IS CELL EDITOR CONSTANTs');
     if (props.data?.type in classNameToEditorMapping) {
       const Editor = classNameToEditorMapping[props.data?.type];
       return <Editor {...props} onValueChange={props.onValueChange} ref={ref} />;

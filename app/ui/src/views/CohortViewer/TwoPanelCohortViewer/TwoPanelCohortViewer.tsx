@@ -99,7 +99,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
     } else if (viewType === 'execute') {
       return <ExecutePanel />;
     } else if (viewType === 'database') {
-      return <DatabasePanel />
+      return <DatabasePanel />;
     } else if (viewType === 'constants') {
       return <ConstantsPanel />;
     } else if (viewType === 'codelists') {

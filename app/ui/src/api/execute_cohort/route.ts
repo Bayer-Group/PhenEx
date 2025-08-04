@@ -4,7 +4,10 @@ if (!BACKEND_URL) {
   BACKEND_URL = 'http://localhost:8000';
 }
 
-export const executeStudy = async (data: any, onProgress?: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void) => {
+export const executeStudy = async (
+  data: any,
+  onProgress?: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void
+) => {
   try {
     const response = await fetch(`${BACKEND_URL}/execute_study`, {
       method: 'POST',
@@ -29,7 +32,7 @@ export const executeStudy = async (data: any, onProgress?: (message: string, typ
     try {
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
@@ -39,7 +42,7 @@ export const executeStudy = async (data: any, onProgress?: (message: string, typ
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               if (data.type === 'result') {
                 finalResult = data.data;
                 // Don't send the result data as a progress message since it's large

@@ -13,23 +13,21 @@
   top: 0px;
   margin-right: 40px;
   font-family: 'IBMPlexSans-Regular';
-
 }
 
 .title {
   position: relative;
   color: var(--color-accent-bright);
   font-family: 'IBMPlexSans-Bold';
-  font-size:50px;
-  margin-right:5px;
+  font-size: 50px;
+  margin-right: 5px;
 }
 
-.text{
+.text {
   margin-top: 190px;
-
 }
 
-.content emph{
+.content emph {
   color: var(--color-accent-bright);
   font-family: 'IBMPlexSans-Bold';
 }

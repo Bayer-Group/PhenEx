@@ -24,8 +24,7 @@
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright))
-      border-box;
+    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright)) border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';
   font-size: 12px;
@@ -43,8 +42,7 @@
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright))
-      border-box;
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box;
 }
 
 .wrapper:focus-within {
@@ -54,8 +52,7 @@
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright))
-      border-box;
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box;
 }
 
 .textBox {
@@ -100,8 +97,7 @@
   resize: none;
   background:
     linear-gradient(var(--background-color), var(--background-color)) padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright))
-      border-box;
+    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright)) border-box;
   border-radius: 8px;
   font-family: 'SNPro-regular';
 }

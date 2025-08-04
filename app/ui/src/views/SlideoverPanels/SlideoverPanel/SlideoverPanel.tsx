@@ -6,10 +6,7 @@ interface SlideoverPanelProps {
   children: React.ReactNode;
 }
 
-export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
-  title,
-  children,
-}) => {
+export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({ title, children }) => {
   return (
     <div className={styles.container}>
       <div className={styles.title}>{title}</div>

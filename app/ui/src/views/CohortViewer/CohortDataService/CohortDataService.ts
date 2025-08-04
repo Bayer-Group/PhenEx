@@ -285,27 +285,36 @@ export class CohortDataService {
   private nameChangeListeners: Array<() => void> = [];
 
   // Add execution progress listeners
-  private executionProgressListeners: Array<(message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void> = [];
+  private executionProgressListeners: Array<
+    (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
+  > = [];
 
-  public addExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) {
+  public addExecutionProgressListener(
+    listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
+  ) {
     this.executionProgressListeners.push(listener);
   }
 
-  public removeExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) {
+  public removeExecutionProgressListener(
+    listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
+  ) {
     const index = this.executionProgressListeners.indexOf(listener);
     if (index > -1) {
       this.executionProgressListeners.splice(index, 1);
     }
   }
 
-  private notifyExecutionProgressListeners(message: string | any, type: 'log' | 'error' | 'result' | 'complete') {
+  private notifyExecutionProgressListeners(
+    message: string | any,
+    type: 'log' | 'error' | 'result' | 'complete'
+  ) {
     this.executionProgressListeners.forEach(listener => listener(message, type));
   }
 
   public addNameChangeListener(listener: () => void) {
     this.nameChangeListeners.push(listener);
   }
-  
+
   public removeNameChangeListener(listener: () => void) {
     const index = this.nameChangeListeners.indexOf(listener);
     if (index > -1) {
@@ -338,12 +347,12 @@ export class CohortDataService {
         (message: string, type: 'log' | 'error' | 'result' | 'complete') => {
           // Handle streaming messages
           console.log(`[${type.toUpperCase()}]`, message);
-          
+
           // You can emit these to listeners or store them for display
           this.notifyExecutionProgressListeners(message, type);
         }
       );
-      
+
       console.log('GOT RESPONSE', response);
       this._cohort_data = response.cohort;
       this.preparePhenexCohortForUI();
