@@ -13,20 +13,32 @@
   top: 0px;
   margin-right: 40px;
   font-family: 'IBMPlexSans-Regular';
+
 }
 
-.content h1 {
+.title {
   position: relative;
-  color: var(--text-color);
+  color: var(--color-accent-bright);
   font-family: 'IBMPlexSans-Bold';
-  margin-bottom: 40px;
+  font-size:50px;
+  margin-right:5px;
+}
+
+.text{
   margin-top: 190px;
+
+}
+
+.content emph{
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-Bold';
 }
 
 .content p {
   color: var(--text-color-secondary);
   z-index: 10;
-  max-width: 700px;
+  max-width: 900px;
+  font-size: 25px;
 }
 
 .topLeft {
