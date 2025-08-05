@@ -103,6 +103,9 @@ class CategoricalFilter(Filter):
         super(CategoricalFilter, self).__init__()
 
     def _filter(self, table: "PhenexTable"):
+        # if simply setting the desired column with the categorical filter, return the table without any filtering. This occurs when allowed_values is null, or the operator is 'isnull' or 'notnull'
+        if self.allowed_values is None and "null" not in self.operator:
+            return table
         if self.operator == "isin" and self.allowed_values:
             table = table.filter(table[self.column_name].isin(self.allowed_values))
         if self.operator == "notin" and self.allowed_values:

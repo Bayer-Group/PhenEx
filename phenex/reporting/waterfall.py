@@ -96,12 +96,12 @@ class Waterfall(Reporter):
                 "Name": (
                     phenotype.display_name if self.pretty_display else phenotype.name
                 ),
-                "N": phenotype.table.count().execute(),
-                "Remaining": table.count().execute(),
+                "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
+                "Remaining": table.select("PERSON_ID").distinct().count().execute(),
             }
         )
         logger.debug(
-            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]["Remaining"]}"
+            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['Remaining']}"
         )
         return table.select("PERSON_ID")
 

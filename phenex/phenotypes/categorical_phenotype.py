@@ -88,6 +88,12 @@ class CategoricalPhenotype(Phenotype):
         table = self._perform_categorical_filtering(table)
         table = self._perform_time_filtering(table)
         table = self._perform_date_selection(table)
+
+        if isinstance(self.categorical_filter, CategoricalFilter):
+            table = table.mutate(
+                VALUE=table[self.categorical_filter.column_name],
+                EVENT_DATE=ibis.null(date),
+            )
         return select_phenotype_columns(table)
 
     def _perform_categorical_filtering(self, table):
