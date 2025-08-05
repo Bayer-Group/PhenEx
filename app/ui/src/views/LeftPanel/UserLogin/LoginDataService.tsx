@@ -14,6 +14,17 @@ export class LoginDataService {
   private currentUser: UserData | null = null;
 
   private constructor() {
+    // Restore session from localStorage if it exists
+    const storedToken = localStorage.getItem('token');
+    const storedUsername = localStorage.getItem('username');
+    const storedUser = localStorage.getItem('userData');
+
+    if (storedToken && storedUsername) {
+      this.token = storedToken;
+      this.loginUsername = storedUsername;
+      this.loggedIn = true;
+      this.currentUser = storedUser ? JSON.parse(storedUser) : null;
+    }
   }
 
   public static getInstance(): LoginDataService {
@@ -30,6 +41,11 @@ export class LoginDataService {
         this.token = response.access_token;
         this.loggedIn = true;
         this.loginUsername = username;
+        
+        // Save to localStorage
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('username', username);
+        
         await this.fetchUserData();
         return true;
       }
@@ -58,6 +74,11 @@ export class LoginDataService {
     this.currentUser = null;
     this.loggedIn = false;
     this.loginUsername = '';
+    
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userData');
   }
 
   private async fetchUserData(): Promise<void> {
@@ -75,6 +96,9 @@ export class LoginDataService {
         username: this.loginUsername,
         email: ''  // Will be populated when the endpoint is available
       };
+      
+      // Save user data to localStorage
+      localStorage.setItem('userData', JSON.stringify(this.currentUser));
     } catch (error) {
       console.error('Failed to fetch user data:', error);
       this.token = null;
