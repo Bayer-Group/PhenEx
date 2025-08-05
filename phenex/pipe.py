@@ -47,7 +47,7 @@ class PhenexComputeNode:
         for child in children:
             if not child in self.children:
                 self._check_child(child)
-                self.children.append(child)
+                self._children.append(child)
 
     def __rshift__(self, right):
         self.add_children(right)
@@ -62,10 +62,10 @@ class PhenexComputeNode:
         """
         if not isinstance(child, PhenexComputeNode):
             raise ValueError("Dependent children must be of type PhenexComputeNode!")
-        # if child in self.children:
-        #     raise ValueError(
-        #         f"Duplicate node found: '{child.name}' has already been added to list of children."
-        #     )
+        if child in self.children:
+            raise ValueError(
+                f"Duplicate node found: '{child.name}' has already been added to list of children."
+            )
         child_names = [child.name for child in self.children]
         if child.name in child_names:
             raise ValueError(
@@ -236,7 +236,7 @@ class PhenexComputeNode:
 
 class PhenexWorkflow:
     """
-    A PhenexComputeGraph manages the execution of multiple PhenexComputeNodes in the correct dependency order,
+    A PhenexWorkflow manages the execution of multiple PhenexComputeNodes in the correct dependency order,
     with support for multithreaded execution while respecting dependencies.
 
     The graph ensures that child nodes (dependencies) are computed before their parent nodes,
@@ -246,7 +246,8 @@ class PhenexWorkflow:
         nodes: A list of PhenexComputeNode objects to be computed
     """
 
-    def __init__(self, nodes: List[PhenexComputeNode]):
+    def __init__(self, name: str, nodes: List[PhenexComputeNode]):
+        self.name = name
         self.nodes = {node.name: node for node in nodes}
         self._dependency_graph = self._build_dependency_graph()
         self._reverse_graph = self._build_reverse_graph()
@@ -306,18 +307,94 @@ class PhenexWorkflow:
 
         return result
 
+    def _collect_all_dependencies(
+        self, node: PhenexComputeNode, visited: Set[str] = None
+    ) -> Dict[str, PhenexComputeNode]:
+        """
+        Recursively collect all dependencies of a node (including dependencies of dependencies).
+
+        Parameters:
+            node: The node to collect dependencies for
+            visited: Set of already visited node names to avoid infinite loops
+
+        Returns:
+            Dict[str, PhenexComputeNode]: A dictionary mapping node names to node objects for all dependencies
+        """
+        if visited is None:
+            visited = set()
+
+        all_deps = {}
+
+        # Avoid infinite loops with circular dependencies
+        if node.name in visited:
+            return all_deps
+        visited.add(node.name)
+
+        # Add direct children (dependencies)
+        for child in node.children:
+            if child.name not in all_deps:
+                all_deps[child.name] = child
+                # Recursively collect dependencies of this child
+                child_deps = self._collect_all_dependencies(child, visited.copy())
+                all_deps.update(child_deps)
+
+        return all_deps
+
+    def _auto_add_missing_dependencies(self):
+        """
+        Automatically find and add all missing dependencies to the workflow.
+        This includes dependencies of dependencies recursively.
+        """
+        added_nodes = {}
+
+        # Keep adding dependencies until no more are found
+        while True:
+            new_deps_found = False
+
+            # Check all current nodes for missing dependencies
+            for node_name, node in self.nodes.items():
+                all_deps = self._collect_all_dependencies(node)
+
+                for dep_name, dep_node in all_deps.items():
+                    if dep_name not in self.nodes and dep_name not in added_nodes:
+                        added_nodes[dep_name] = dep_node
+                        new_deps_found = True
+                        logger.info(
+                            f"Auto-adding missing dependency: '{dep_name}' required by '{node_name}'"
+                        )
+
+            # If no new dependencies were found, we're done
+            if not new_deps_found:
+                break
+
+        # Add all collected dependencies to the workflow
+        if added_nodes:
+            logger.info(
+                f"Auto-added {len(added_nodes)} missing dependencies to workflow '{self.name}'"
+            )
+            self.nodes.update(added_nodes)
+            # Rebuild the dependency graphs with the new nodes
+            self._dependency_graph = self._build_dependency_graph()
+            self._reverse_graph = self._build_reverse_graph()
+
     def _validate_dependencies(self):
         """
-        Validate that all node dependencies exist in the graph.
+        Automatically find and add all missing dependencies to the workflow,
+        then validate that the dependency graph is complete and valid.
         """
+        # First, automatically add all missing dependencies
+        self._auto_add_missing_dependencies()
+
+        # Now validate that all dependencies are satisfied
         missing_deps = []
         for node_name, node in self.nodes.items():
             for child in node.children:
                 if child.name not in self.nodes:
                     missing_deps.append((node_name, child.name))
 
+        # This should not happen after auto-adding dependencies, but check anyway
         if missing_deps:
-            error_msg = "Missing dependencies found:\n"
+            error_msg = "Missing dependencies found after auto-collection:\n"
             for parent, child in missing_deps:
                 error_msg += f"  Node '{parent}' depends on '{child}' which is not in the graph\n"
             raise ValueError(error_msg)
@@ -338,6 +415,7 @@ class PhenexWorkflow:
             con: Database connector for materializing outputs
             overwrite: Whether to overwrite existing tables
             lazy_execution: Whether to use lazy execution with change detection
+            n_threads: Max number of jobs to run simultaneously.
 
         Returns:
             Dict[str, Table]: A dictionary mapping node names to their computed tables
