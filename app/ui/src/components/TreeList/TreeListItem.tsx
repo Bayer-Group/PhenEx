@@ -7,6 +7,7 @@ export interface TreeNode {
   children: TreeNode[];
   renderer?: React.ComponentType<TreeItemRendererProps>;
   onClick?: (e: React.MouseEvent) => void;
+  height?: number;  // Optional height in pixels, defaults to 30 if not specified
 }
 
 export interface TreeItemRendererProps {
@@ -76,6 +77,24 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       return lines;
     };
 
+    const renderCaret = () => {
+    return(
+        node.children.length > 0 && (
+            <div className={styles.toggleContainer}>
+              <button 
+                className={`${styles.toggleButton} ${isOpen ? styles.open : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  this.toggleOpen();
+                }}
+              >
+                <span>{'>'}</span>
+              </button>
+            </div>
+            )
+        )
+    };
+
     return (
       <div className={styles.treeItem}>
 
@@ -84,20 +103,16 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
           onClick={this.handleClick}
         >
 
-          <div className={`${styles.itemContent} ${styles[`level${node.level}`]}`}>
-            {renderVerticalLines()}
+            <div 
+              className={`${styles.itemContent} ${styles[`level${node.level}`]}`}
+              style={{ 
+                    height: `${node.height || 30}px`, 
+                    fontSize: `${node.fontSize || 20}px`,
+                    fontFamily: `${node.fontFamily || "IBMPlexSans-regular" }`
 
-            {node.children.length > 0 && (
-              <button 
-                className={`${styles.toggleButton} ${isOpen ? styles.open : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  this.toggleOpen();
-                }}
-              >
-                <span>▶</span>
-              </button>
-            )}
+                }}>
+            {renderVerticalLines()}            
+            {renderCaret()}
             <div className={styles.content}>
               {content}
             </div>

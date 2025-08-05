@@ -59,17 +59,19 @@ export class HierarchicalLeftPanelDataService {
 
     const createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
       // Only add children if we're at level 1
-      const children = level <= 2 
+      const children = level ===1 
         ? this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, level+1))
         : [];
 
       return {
         id: cohort.id,
         displayName: cohort.name,
-        level,
+        level: level,
         viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
-        children,
-        // renderer: CohortTreeRenderer
+        children:[],
+        height:40,
+        fontSize: 20,
+        renderer: CohortTreeRenderer
       };
     };
 
@@ -79,6 +81,10 @@ export class HierarchicalLeftPanelDataService {
       level: 0,
       children: this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1)),
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+      height: 60,
+      fontSize: 20,
+      fontFamily: "IBMPlexSans-bold"
+
       // renderer: CohortTreeRenderer
     });
 
