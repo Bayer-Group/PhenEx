@@ -129,8 +129,7 @@ class Phenotype(PhenexComputeNode):
     def __eq__(self, other) -> bool:
         diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
         if diff:
-            logger.info(f"{self.__class__.__name__}s NOT equal")
-            logger.info(diff)
+            logger.debug(f"{self.__class__.__name__}s NOT equal")
             return False
         else:
             logger.debug(f"{self.__class__.__name__}s are equal")

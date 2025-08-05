@@ -5,7 +5,7 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
-from phenex.util.serialization import to_dict
+from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -47,9 +47,10 @@ class SubsetTableNode(PhenexComputeNode):
 
     def _execute(self, tables: Dict[str, Table]):
         table = tables[self.domain]
-        index_table = self.index_phenotype.table
+        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
         columns = list(set(["INDEX_DATE"] + table.columns))
-        subset_table = table.inner_join(index_table, "PERSON_ID").select(columns)
+        subset_table = table.inner_join(index_table, "PERSON_ID")
+        subset_table = subset_table.select(columns)
         return subset_table
 
 
@@ -172,13 +173,13 @@ class IndexTableNode(PhenexComputeNode):
 
         index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
 
-        if self.inclusion_table_node.phenotypes:
+        if self.inclusion_table_node:
             include = self.inclusion_table_node.table.filter(
                 self.inclusion_table_node.table["BOOLEAN"] == True
             ).select(["PERSON_ID"])
             index_table = index_table.inner_join(include, ["PERSON_ID"])
 
-        if self.exclusion_table_node.phenotypes:
+        if self.exclusion_table_node:
             exclude = self.exclusion_table_node.table.filter(
                 self.exclusion_table_node.table["BOOLEAN"] == False
             ).select(["PERSON_ID"])
