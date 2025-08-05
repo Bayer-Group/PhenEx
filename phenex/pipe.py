@@ -37,8 +37,8 @@ class PhenexComputeNode:
 
     """
 
-    def __init__(self, name):
-        self._name = name
+    def __init__(self, name: Optional[str] = None):
+        self._name = name or type(self).__name__
         self._children = []
 
     def add_children(self, children):

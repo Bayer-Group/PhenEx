@@ -108,7 +108,7 @@ class IndexTableNode(PhenexComputeNode):
         inclusion_table_node: PhenexComputeNode,
         exclusion_table_node: PhenexComputeNode,
     ):
-        super(InExTableNode, self).__init__(name=name)
+        super(IndexTableNode, self).__init__(name=name)
         self.add_children([entry_phenotype, inclusion_table_node, exclusion_table_node])
 
         self.entry_phenotype = entry_phenotype

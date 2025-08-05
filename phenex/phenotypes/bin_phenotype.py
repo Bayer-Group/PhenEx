@@ -65,7 +65,7 @@ class BinPhenotype(Phenotype):
             raise ValueError(
                 f"Invalid phenotype type: {self.phenotype.__class__.__name__}"
             )
-        self.children = [phenotype]
+        self.add_children(phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial table to filter
