@@ -1,3 +1,8 @@
+:root{
+  --indentation-width: 10px;
+  --treelist_width_line: var(--indentation-width);
+  --tree_list_row_height: 44px;
+}
 .treeList {
   display: flex;
   flex-direction: column;
@@ -10,29 +15,20 @@
   flex-direction: column;
   width: 100%;
   gap: 0px;
-  background-color: red;
+  background-color: transparent;
 }
 
 /* Core tree structure */
 .container {
-  --indentation-width: 50px;
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
   gap: 0px;
-  background-color:blue;
 }
-
-/* Level-based indentation */
-.container.level0 { padding-left: 0; }
-.container.level1 { padding-left: var(--indentation-width); }
-.container.level2 { padding-left: calc(var(--indentation-width) * 2); }
-.container.level3 { padding-left: calc(var(--indentation-width) * 3); }
 
 /* Tree structure elements */
 .toggleButton {
-  flex: 0 0 16px;
   width: 16px;
   height: 16px;
   display: flex;
@@ -64,92 +60,62 @@
 } */
 
 
-.container.level0 {
-  padding-left: 0;
-}
-
-.container.level1 {
-  padding-left: calc(var(--indentation-width) * 1);
-}
-
-.container.level2 {
-  padding-left: calc(var(--indentation-width) * 2);
-}
-
-.container.level3 {
-  padding-left: calc(var(--indentation-width) * 3);
-}
-
-.container.level4 {
-  padding-left: calc(var(--indentation-width) * 4); /* doesn't work for some reason*/
-}
-
-.container.level5 {
-  padding-left: calc(var(--indentation-width) * 5);
-}
-
 
 .container:hover {
   /* background-color: yellow; */
 }
 
 .verticalLine {
-  top: 0;
-  bottom: 0;
-  left: 0;
-  position: absolute;
-  width: 3px;
-  height: 100%;
-  background-color: var(--vscode-tree-indentGuidesStroke);
-  opacity: 0.5;
-  background-color: green;
+  /* position: relative;
+  display: inline-block; */
+  width: calc(var(--treelist_width_line) + 10px);
+  opacity: 0.2;
+  background-color: purple;
+  height: var(--tree_list_row_height);
+  margin:0px;
 }
 
 .itemContent {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 4px;
+  padding-left: 30px; /* left margin of entire list*/
   width: 100%;
   box-sizing: border-box;
   margin: 0;
-    margin-left: 40px;
-
+  height: var(--tree_list_row_height);
 }
-
-/* Level-based indentation */
-/* .itemContent.level0 {
-  margin-left: 0;
-}
-
-.itemContent.level1 {
-  margin-left: calc(var(--indentation-width) * 1);
-}
-
-.itemContent.level2 {
-  margin-left: calc(var(--indentation-width) * 2);
-}
-
-.itemContent.level3 {
-  margin-left: calc(var(--indentation-width) * 3);
-} */
 
 /* Vertical lines per level */
-.verticalLine.level0{
+.verticalLine.level0 {
   display: none;
 }
 
-.verticalLine.level1{
-  margin-left: calc(var(--indentation-width) * 1);
+.verticalLine.level1 {
+  /* margin-left: calc(var(--treelist_width_line)*1); */
+  background-color: red;
 }
 
-.verticalLine.level2{
-  margin-left: calc(var(--indentation-width) * 2);
+.verticalLine.level2 {
+  margin-left: calc(var(--treelist_width_line));
+  background-color: orange;
 }
 
-.verticalLine.level3{
-  margin-left: calc(var(--indentation-width) * 3);
+.verticalLine.level3 {
+  margin-left: calc(var(--treelist_width_line));
+  background-color: yellow;
 }
+
+.verticalLine.level4 {
+  margin-left: calc(var(--treelist_width_line)*4);
+}
+
+.verticalLine.level5 {
+  margin-left: calc(var(--treelist_width_line)*5);
+}
+
+
+
 
 .toggleButton {
   display: flex;
@@ -161,8 +127,8 @@
   background: transparent;
   cursor: pointer;
   padding: 0;
-  margin-right: 4px;
   transition: transform 0.2s ease;
+  margin-left:-10px;
 }
 
 .toggleButton span {
@@ -174,11 +140,11 @@
   transform: rotate(90deg);
 }
 
-.content {
+/* .content {
   display: grid;
   align-items: center;
   flex: 1;
-}
+} */
 
 .children {
   display: flex;

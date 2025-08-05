@@ -69,7 +69,7 @@ export class HierarchicalLeftPanelDataService {
         level,
         viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
         children,
-        renderer: CohortTreeRenderer
+        // renderer: CohortTreeRenderer
       };
     };
 
@@ -79,7 +79,7 @@ export class HierarchicalLeftPanelDataService {
       level: 0,
       children: this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1)),
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
-      renderer: CohortTreeRenderer
+      // renderer: CohortTreeRenderer
     });
 
     this.treeData = [

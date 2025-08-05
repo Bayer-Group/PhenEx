@@ -64,14 +64,29 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       />
     ) : this.renderDefaultContent();
 
+    // Create an array of indices up to current level for vertical lines
+    const renderVerticalLines = () => {
+      const lines = [];
+      // Start from level 1 (not 0) up to current level
+      for (let i = 0; i <= node.level; i++) {
+        lines.push(
+          <div key={`line-${i}`} className={`${styles.verticalLine} ${styles[`level${i}`]}`} />
+        );
+      }
+      return lines;
+    };
+
     return (
       <div className={styles.treeItem}>
+
         <div 
           className={`${styles.container} ${styles[`level${node.level}`]}`}
           onClick={this.handleClick}
         >
-          <div className={`${styles.verticalLine} ${styles[`level${node.level}`]}`}></div>
+
           <div className={`${styles.itemContent} ${styles[`level${node.level}`]}`}>
+            {renderVerticalLines()}
+
             {node.children.length > 0 && (
               <button 
                 className={`${styles.toggleButton} ${isOpen ? styles.open : ''}`}
