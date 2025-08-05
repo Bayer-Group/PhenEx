@@ -1,0 +1,72 @@
+.treeList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  background-color: blue;
+}
+
+.treeItem {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  padding-left: calc(var(--level) * 24px + 8px);
+  width: 100%;
+  box-sizing: border-box;
+  background-color: red;
+}
+
+.verticalLine {
+  position: absolute;
+  left: calc(var(--level) * 24px + 16px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #e0e0e0;
+}
+
+.container:last-child .verticalLine {
+  height: 50%;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.toggleButton span {
+  display: block;
+  font-size: 12px;
+}
+
+.toggleButton.open span {
+  transform: rotate(90deg);
+}
+
+.content {
+  display: grid;
+  align-items: center;
+  flex: 1;
+}
+
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

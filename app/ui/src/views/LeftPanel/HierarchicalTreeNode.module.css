@@ -1,56 +1,91 @@
-.node,
-.headerNode {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  cursor: pointer;
-  user-select: none;
-  border-radius: var(--border-radius);
-  font-size: 24px;
-  transition: 0.2s ease-in-out;
-  overflow: visible;
-  margin: 8px 10px;
-  border: 1px solid transparent;
-  background-color: transparent;
+.treeItem {
+  width: 100%;
 }
 
-.node:hover .nodeName {
-  background-color: var(--color-accent-hover);
-  border-color: var(--line-color);
+.container {
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.container:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
 }
 
 .nodeName {
-  padding: 2px 10px 0px 10px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 8px;
   border-radius: var(--border-radius);
-  border: 1px solid transparent;
 }
 
-.nodeHeader:hover {
-  background-color: transparent !important;
-  border: 1px solid transparent !important;
+.container:hover .nodeName {
+  color: var(--vscode-list-activeSelectionForeground);
 }
 
-.selected .nodeName {
-  border: var(--border);
-  background-color: white;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-accent-hover);
-}
-
-.selected:hover .nodeName {
-  border: 1px solid var(--color-accent);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.arrow {
-  width: 16px;
-  height: 16px;
+.toggleButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--vscode-foreground);
+  opacity: 0.8;
 }
+
+.verticalLine {
+  position: absolute;
+  left: calc(var(--level) * 24px + 16px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--vscode-list-inactiveSelectionBackground);
+  opacity: 0.4;
+}
+
+.addButton {
+  background: transparent;
+  border: none;
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.container:hover .addButton {
+  opacity: 1;
+}
+
+.addButton:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.toggleButton.open span {
+  transform: rotate(90deg);
+}
+
 
 .caret {
   font-size: 10px;

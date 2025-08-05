@@ -1,8 +1,10 @@
 .treeContainer {
   height: 100%;
+  width: 100%;
+  min-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding-top: 20px;
+  flex: 1;
 }
