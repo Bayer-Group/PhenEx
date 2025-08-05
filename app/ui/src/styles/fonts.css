@@ -1,13 +1,13 @@
 @font-face {
-  font-family: 'SNPro-regular';
-  src: url('../assets/fonts/SNPro-Regular.otf') format('opentype');
+  font-family: 'IBMPlexSans-regular';
+  src: url('../assets/fonts/IBMPlexSans-regular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'SNPro-bold';
-  src: url('../assets/fonts/SNPro-Bold.otf') format('opentype');
+  font-family: 'IBMPlexSans-bold';
+  src: url('../assets/fonts/IBMPlexSans-bold.otf') format('opentype');
   font-weight: bold;
   font-style: normal;
 }

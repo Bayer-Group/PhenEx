@@ -156,7 +156,7 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
     return (
       <div className={styles.phenotypeSelection}>
         <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>
-          New phenotype
+          Add a new phenotype
           <span className={styles.phenotypeSelectionHeaderButton}>Close</span>
         </div>
         <TypeSelectorEditor onValueChange={handlePhenotypeSelection} />

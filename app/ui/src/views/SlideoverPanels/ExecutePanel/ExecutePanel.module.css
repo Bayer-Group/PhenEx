@@ -11,7 +11,7 @@
 
 .title {
   font-size: 24px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   padding-left: 10px;
   flex-shrink: 0; /* Prevent title from shrinking */
 }

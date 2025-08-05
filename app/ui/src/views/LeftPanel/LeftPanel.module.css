@@ -12,7 +12,7 @@
 }
 
 .title {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   font-size: 30px;
 }
 
@@ -30,7 +30,7 @@
   padding: 8px;
   border: 1px solid #dee2e6;
   border-radius: 4px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   font-size: 14px;
   outline: none;
   position: relative;
@@ -46,11 +46,11 @@
   width: 100%;
   flex: 1;
   overflow: auto;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }
 
 .logoText {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   font-size: 50px;
   height: 100px;
   margin-top: 30px;

@@ -59,7 +59,7 @@
   width: 40px;
   border-radius: 25px;
   font-size: 22px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   color: black;
   transform: rotate(-90deg);
   left: 10px;
@@ -132,5 +132,5 @@
 }
 
 strong {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }

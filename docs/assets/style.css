@@ -1,13 +1,13 @@
 /* custom.css */
 @font-face {
-    font-family: "SNPro-regular";
-    src: url("./fonts/SNPro-Regular.otf") format("opentype");
+    font-family: "IBMPlexSans-regular";
+    src: url("./fonts/IBMPlexSans-regular.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
 }
 @font-face {
-    font-family: "SNPro-bold";
-    src: url("./fonts/SNPro-Bold.otf") format("opentype");
+    font-family: "IBMPlexSans-bold";
+    src: url("./fonts/IBMPlexSans-bold.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
 }
@@ -20,7 +20,7 @@
 
 /* Example usage */
 body {
-    font-family: "SNPro-regular", sans-serif; /* Use the custom font */
+    font-family: "IBMPlexSans-regular", sans-serif; /* Use the custom font */
 }
 
 #main_title {
@@ -35,7 +35,7 @@ body {
 h1,
 h2,
 h3 {
-    font-family: "SNPro-bold", sans-serif; /* Apply to headings */
+    font-family: "IBMPlexSans-bold", sans-serif; /* Apply to headings */
     background: linear-gradient(#e32b0e 20%, #71010c 80%);
     -webkit-background-clip: text; /* Clip the background to the text */
 }

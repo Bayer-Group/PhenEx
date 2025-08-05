@@ -69,7 +69,7 @@
 }
 
 strong {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }
 
 .toggleButton {
@@ -79,7 +79,7 @@ strong {
   width: 40px;
   border-radius: 25px;
   font-size: 22px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   color: black;
   transform: rotate(-90deg);
   left: 30px;
@@ -202,7 +202,7 @@ strong {
 .phenotypeSelectionHeader {
   margin: 10px 10px;
   border-radius: 10px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   padding: 10px 15px;
   background-color: white;
   border: 1px solid var(--color-accent_2);
@@ -217,7 +217,7 @@ strong {
   font-size: 14px;
   width: 60px;
   position: absolute;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   top: 4px;
   right: -15px;
 }

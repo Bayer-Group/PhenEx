@@ -3,7 +3,7 @@
   gap: 3px;
   line-height: 11px;
   font-size: 11px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
   padding-top: var(--item-margin-top) !important;
 }
 
@@ -54,11 +54,11 @@
 }
 
 .operator {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }
 
 .when {
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }
 .min {
 }

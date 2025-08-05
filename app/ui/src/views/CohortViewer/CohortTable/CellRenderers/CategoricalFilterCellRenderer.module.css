@@ -17,7 +17,7 @@
 .punctuation {
   color: var(--phenex-coral);
   font-size: 22px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   line-height: 10px;
   padding: 0px;
   margin-left: -2px;
@@ -27,7 +27,7 @@
 .logicalOperator {
   color: var(--phenex-blue);
   font-size: 18px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   margin: 0 2px;
   line-height: 10px;
 }

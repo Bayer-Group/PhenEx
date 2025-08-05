@@ -26,7 +26,7 @@
       padding-box,
     linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright)) border-box;
   border-radius: 8px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
   font-size: 12px;
   margin-bottom: 10px;
   transition: all 0.2s ease-in-out;
@@ -73,7 +73,7 @@
     linear-gradient(var(--interaction_area_background_color), var(--interaction_area_background_color)) padding-box,
     linear-gradient(to right, var(--phenex-coral), var(--color-accent)) border-box;
   border-radius: 8px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
   font-size: 16px; */
 }
 
@@ -99,5 +99,5 @@
     linear-gradient(var(--background-color), var(--background-color)) padding-box,
     linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright)) border-box;
   border-radius: 8px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
 }

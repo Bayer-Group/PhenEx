@@ -9,7 +9,7 @@
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   /* padding: 0px 20px; */
   border-radius: 10px;
   border: var(--border);

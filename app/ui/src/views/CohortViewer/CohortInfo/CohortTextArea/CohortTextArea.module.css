@@ -10,7 +10,7 @@
 
 .title {
   margin-left: 20px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   font-size: 18px;
   height: 20px;
 }
@@ -63,7 +63,7 @@
 :global(.ql-editor h1) {
   font-size: 18px;
   font-weight: 600;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   margin-bottom: 0.5em;
   color: var(--text-color-primary);
 }

@@ -78,7 +78,7 @@
   color: var(--text-color-inactive);
   cursor: pointer;
   font-size: 14px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   transition: background-color 0.2s;
 }
 

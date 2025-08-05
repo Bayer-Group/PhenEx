@@ -4,7 +4,7 @@
   gap: 3px;
   line-height: 11px;
   font-size: 11px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
 }
 
 .filterRow {
@@ -31,12 +31,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: 'SNPro-regular';
+  font-family: 'IBMPlexSans-regular';
 }
 
 .operator {
   color: var(--text-color-inactive);
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
 }
 
 /* .min {

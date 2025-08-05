@@ -110,21 +110,21 @@
 
 .messageBubble h1 {
   font-size: 22px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   line-height: 22px;
   color: var(--text-color);
 }
 
 .messageBubble h2 {
   font-size: 18px;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   color: var(--text-color);
 }
 
 .messageBubble h3 {
   font-size: 16px;
   margin: 0.3em 0;
-  font-family: 'SNPro-bold';
+  font-family: 'IBMPlexSans-bold';
   color: var(--text-color);
 }
 

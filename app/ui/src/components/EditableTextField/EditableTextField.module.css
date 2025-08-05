@@ -21,7 +21,7 @@
   border-radius: var(--border-radius);
   z-index: 10;
   text-wrap: wrap;
-  /* font-family: "SNPro-bold"; */
+  /* font-family: "IBMPlexSans-bold"; */
 }
 
 .saveIndicator {
