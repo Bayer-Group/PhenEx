@@ -72,7 +72,7 @@
 }
 
 .container {
-  --indentation-width: 50px;
+  --indentation-width: 10px;
   position: relative;
   width: 100%;
   box-sizing: border-box;
@@ -96,6 +96,16 @@
 .container.level3 {
   padding-left: calc(var(--indentation-width) * 3);
 }
+
+.container.level4 {
+    background-color: red;
+  padding-left: 1000px;
+}
+
+.container.level5 {
+  padding-left: calc(var(--indentation-width) * 5);
+}
+
 
 .container:hover {
   background-color: var(--vscode-list-hoverBackground);

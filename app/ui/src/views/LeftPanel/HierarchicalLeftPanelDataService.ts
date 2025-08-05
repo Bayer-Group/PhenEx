@@ -59,15 +59,8 @@ export class HierarchicalLeftPanelDataService {
 
     const createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
       // Only add children if we're at level 1
-      const children = level <= 4 
-        ? this.cachedCohortNamesAndIds.map(childCohort => ({
-            id: childCohort.id,
-            displayName: childCohort.name,
-            level: level + 1,
-            viewInfo: { viewType: ViewType.CohortDefinition, data: childCohort },
-            children: [],
-            renderer: CohortTreeRenderer
-          }))
+      const children = level <= 2 
+        ? this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, level+1))
         : [];
 
       return {
