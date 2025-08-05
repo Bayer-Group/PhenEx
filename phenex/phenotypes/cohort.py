@@ -7,9 +7,41 @@ from phenex.tables import PhenotypeTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 from phenex.util import create_logger
+from phenex.util.serialization.to_dict import to_dict
 from concurrent.futures import ThreadPoolExecutor
 
 logger = create_logger(__name__)
+
+
+class HStackNode(PhenexComputeNode):
+    """
+    A compute node that horizontally stacks (joins) multiple phenotypes into a single table. Used for computing characteristics and outcomes tables in cohorts.
+    """
+
+    def __init__(
+        self, name: str, phenotypes: List[Phenotype], join_table: Optional[Table] = None
+    ):
+        super(HStackNode, self).__init__(name=name)
+        self.add_children(phenotypes)
+        self.phenotypes = phenotypes
+        self.join_table = join_table
+
+    def _execute(self, tables: Dict[str, Table]) -> Table:
+        """
+        Execute all phenotypes and horizontally stack their results.
+
+        Args:
+            tables: Dictionary of table names to Table objects
+
+        Returns:
+            Table: Horizontally stacked table with all phenotype results
+        """
+        # Stack the phenotype tables horizontally
+        return hstack(self.phenotypes, join_table=self.join_table)
+
+    def to_dict(self):
+        """Serialize the HStackNode to a dictionary."""
+        return to_dict(self)
 
 
 class SubsetTableNode(PhenexComputeNode):
@@ -64,6 +96,43 @@ class InExTableNode(PhenexComputeNode):
         return inex_table
 
 
+class IndexTableNode(PhenexComputeNode):
+    """
+    Compute the index table form the individual inclusions / exclusions phenotypes.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        entry_phenotype: Phenotype,
+        inclusion_table_node: PhenexComputeNode,
+        exclusion_table_node: PhenexComputeNode,
+    ):
+        super(InExTableNode, self).__init__(name=name)
+        self.add_children([entry_phenotype, inclusion_table_node, exclusion_table_node])
+
+        self.entry_phenotype = entry_phenotype
+        self.inclusion_table_node = inclusion_table_node
+        self.exclusion_table_node = exclusion_table_node
+
+    def _execute(self, tables: Dict[str, Table]):
+
+        index_table = self.entry_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
+        if self.inclusion_table_node.phenotypes:
+            include = self.inclusion_table_node.table.filter(
+                self.exclusions_table["BOOLEAN"] == True
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(include, ["PERSON_ID"])
+
+        if self.exclusion_table_node.phenotypes:
+            exclude = self.inclusion_table_node.table.filter(
+                self.exclusions_table["BOOLEAN"] == False
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(exclude, ["PERSON_ID"])
+
+        return index_table
+
+
 def subset_and_add_index_date(tables: Dict[str, Table], index_table: PhenotypeTable):
     subset_tables = {}
     for key, table in tables.items():
@@ -116,16 +185,39 @@ class Cohort(Phenotype):
         self.outcomes = outcomes if outcomes is not None else []
         self.subset_tables_entry_nodes = self._get_subset_table_entry_nodes()
         self.subset_tables_entry = {}
-        self.inclusions_table = InExTableNode(
+
+        self.inclusions_node = InExTableNode(
             name=f"{self.name}__inclusions".upper(),
             index_phenotype=self.entry_criterion,
             phenotypes=self.inclusions,
         )
-        self.exclusions_table = InExTableNode(
+        self.exclusions_node = InExTableNode(
             name=f"{self.name}__exclusions".upper(),
             index_phenotype=self.entry_criterion,
             phenotypes=self.exclusions,
         )
+        self.index_table_node = IndexTableNode(
+            f"{self.name}__index".upper(),
+            entry_phenotype=self.entry_criterion,
+            inclusion_table_node=self.inclusions_node,
+            exclusion_table_node=self.exclusions_node,
+        )
+
+        # Create HStackNodes for characteristics and outcomes
+        self.characteristics_node = None
+        self.outcomes_node = None
+        if self.characteristics:
+            self.characteristics_node = HStackNode(
+                name=f"{self.name}__characteristics".upper(),
+                phenotypes=self.characteristics,
+                n_threads=1,  # Will be updated during execute
+            )
+        if self.outcomes:
+            self.outcomes_node = HStackNode(
+                name=f"{self.name}__outcomes".upper(),
+                phenotypes=self.outcomes,
+                n_threads=1,  # Will be updated during execute
+            )
 
         self.index_table = None
         self.exclusions_table = None
@@ -191,14 +283,12 @@ class Cohort(Phenotype):
             PhenotypeTable: The index table corresponding the cohort.
         """
         logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
-        # Compute entry criterion
         logger.debug("Computing entry criterion ...")
         self.entry_criterion.execute(
             tables, con=con, overwrite=overwrite, lazy_execution=lazy_execution
         )
 
         logger.debug("Entry criterion computed.")
-        index_table = self.entry_criterion.table.mutate(INDEX_DATE="EVENT_DATE")
 
         with ThreadPoolExecutor(max_workers=n_threads) as executor:
             futures = {}
@@ -213,6 +303,7 @@ class Cohort(Phenotype):
             for key, future in futures.items():
                 self.subset_tables_entry[key] = type(tables[key])(future.result())
 
+        index_table = self.entry_criterion.table.mutate(INDEX_DATE="EVENT_DATE")
         self.subset_tables_entry = self.derive_tables(
             self.subset_tables_entry, index_table, con, overwrite=overwrite
         )
@@ -294,6 +385,13 @@ class Cohort(Phenotype):
         if self.outcomes:
             logger.debug("Computing outcomes ...")
             self._compute_outcomes_table(n_threads)
+            if con:
+                logger.debug("Writing outcomes table ...")
+                self.outcomes_table = con.create_table(
+                    self.outcomes_table,
+                    f"{self.name}__outcomes".upper(),
+                    overwrite=overwrite,
+                )
             logger.debug("Outcomes computed.")
 
         logger.info(f"Cohort '{self.name}' execution completed.")
@@ -392,22 +490,25 @@ class Cohort(Phenotype):
     def _compute_characteristics_table(self, n_threads: int) -> Table:
         logger.debug("Computing characteristics table")
         """
-        Retrieves and joins all characteristic tables.
+        Retrieves and joins all characteristic tables using HStackNode.
         Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
 
         Returns:
             Table: The join of all characteristic tables.
         """
-        with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            futures = [
-                executor.submit(c.execute, self.subset_tables_index)
-                for c in self.characteristics
-            ]
-            for future in futures:
-                future.result()
-        self.characteristics_table = hstack(
-            self.characteristics,
-            join_table=self.index_table.select(["PERSON_ID", "INDEX_DATE"]),
+        if self.characteristics_node is None:
+            logger.warning("No characteristics node found")
+            return None
+
+        # Update the number of threads and join table for the characteristics node
+        self.characteristics_node.n_threads = n_threads
+        self.characteristics_node.join_table = self.index_table.select(
+            ["PERSON_ID", "INDEX_DATE"]
+        )
+
+        # Execute the characteristics node
+        self.characteristics_table = self.characteristics_node.execute(
+            self.subset_tables_index
         )
         logger.debug("Characteristics table computed")
         return self.characteristics_table
@@ -415,22 +516,24 @@ class Cohort(Phenotype):
     def _compute_outcomes_table(self, n_threads: int) -> Table:
         logger.debug("Computing outcomes table")
         """
-        Retrieves and joins all outcome tables. Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
+        Retrieves and joins all outcome tables using HStackNode. 
+        Meant only to be called internally from execute() so that all dependent phenotypes have already been computed.
 
         Returns:
             Table: The join of all outcome tables.
         """
-        with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            futures = [
-                executor.submit(o.execute, self.subset_tables_index)
-                for o in self.outcomes
-            ]
-            for future in futures:
-                future.result()
-        self.outcomes_table = hstack(
-            self.outcomes,
-            join_table=self.index_table.select(["PERSON_ID", "INDEX_DATE"]),
+        if self.outcomes_node is None:
+            logger.warning("No outcomes node found")
+            return None
+
+        # Update the number of threads and join table for the outcomes node
+        self.outcomes_node.n_threads = n_threads
+        self.outcomes_node.join_table = self.index_table.select(
+            ["PERSON_ID", "INDEX_DATE"]
         )
+
+        # Execute the outcomes node
+        self.outcomes_table = self.outcomes_node.execute(self.subset_tables_index)
         logger.debug("Outcomes table computed")
         return self.outcomes_table
 
