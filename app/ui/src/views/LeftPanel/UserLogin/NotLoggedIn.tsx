@@ -64,6 +64,12 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                isRegistering ? handleRegister() : handleLogin();
+              }
+            }}
             className={styles.loginInput}
           />
           <input
@@ -71,6 +77,12 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                isRegistering ? handleRegister() : handleLogin();
+              }
+            }}
             className={styles.loginInput}
           />
           {isRegistering && (
@@ -79,6 +91,12 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleRegister();
+                }
+              }}
               className={styles.loginInput}
             />
           )}
