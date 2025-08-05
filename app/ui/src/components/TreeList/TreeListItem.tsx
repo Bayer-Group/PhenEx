@@ -64,20 +64,13 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       />
     ) : this.renderDefaultContent();
 
-    console.log(node.level)
-    console.log (styles[`level${node.level}`])
-    console.log("Its here")
-    console.log("TREE LIST ITEM")
-
     return (
       <div className={styles.treeItem}>
         <div 
           className={`${styles.container} ${styles[`level${node.level}`]}`}
           onClick={this.handleClick}
         >
-          <div className={`${styles.verticalLines} ${styles[`level${node.level}`]}`}>
-            <div className={styles.verticalLine} />
-          </div>
+          <div className={`${styles.verticalLine} ${styles[`level${node.level}`]}`}></div>
           <div className={`${styles.itemContent} ${styles[`level${node.level}`]}`}>
             {node.children.length > 0 && (
               <button 

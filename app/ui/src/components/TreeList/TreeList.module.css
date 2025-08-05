@@ -1,7 +1,7 @@
 .treeList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
   width: 100%;
 }
 
@@ -9,17 +9,19 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  gap: 0px;
+  background-color: red;
 }
 
 /* Core tree structure */
 .container {
-  --indentation-width: 20px;
+  --indentation-width: 50px;
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   width: 100%;
-  box-sizing: border-box;
-  padding: 4px 0;
+  gap: 0px;
+  background-color:blue;
 }
 
 /* Level-based indentation */
@@ -53,33 +55,14 @@
   transform: rotate(90deg);
 }
 
-.verticalLine {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background-color: var(--vscode-tree-indentGuidesStroke);
-  opacity: 0.4;
-}
-
 /* Content area for custom renderers */
-.content {
+/* .content {
   display: flex;
   align-items: center;
   flex: 1;
   min-width: 0;
-}
+} */
 
-.container {
-  --indentation-width: 10px;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-}
 
 .container.level0 {
   padding-left: 0;
@@ -98,8 +81,7 @@
 }
 
 .container.level4 {
-    background-color: red;
-  padding-left: 1000px;
+  padding-left: calc(var(--indentation-width) * 4); /* doesn't work for some reason*/
 }
 
 .container.level5 {
@@ -108,23 +90,19 @@
 
 
 .container:hover {
-  background-color: var(--vscode-list-hoverBackground);
-}
-
-.verticalLines {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  pointer-events: none;
+  /* background-color: yellow; */
 }
 
 .verticalLine {
+  top: 0;
+  bottom: 0;
+  left: 0;
   position: absolute;
-  width: 1px;
+  width: 3px;
   height: 100%;
   background-color: var(--vscode-tree-indentGuidesStroke);
   opacity: 0.5;
+  background-color: green;
 }
 
 .itemContent {
@@ -135,42 +113,42 @@
   width: 100%;
   box-sizing: border-box;
   margin: 0;
+    margin-left: 40px;
+
 }
 
 /* Level-based indentation */
-.itemContent.level0 {
+/* .itemContent.level0 {
   margin-left: 0;
 }
 
 .itemContent.level1 {
   margin-left: calc(var(--indentation-width) * 1);
-  background-color: green;
 }
 
 .itemContent.level2 {
   margin-left: calc(var(--indentation-width) * 2);
-  background-color: blue;
 }
 
 .itemContent.level3 {
   margin-left: calc(var(--indentation-width) * 3);
-}
+} */
 
 /* Vertical lines per level */
-.verticalLines.level0 .verticalLine {
+.verticalLine.level0{
   display: none;
 }
 
-.verticalLines.level1 .verticalLine {
-  left: 0;
+.verticalLine.level1{
+  margin-left: calc(var(--indentation-width) * 1);
 }
 
-.verticalLines.level2 .verticalLine {
-  left: var(--indentation-width);
+.verticalLine.level2{
+  margin-left: calc(var(--indentation-width) * 2);
 }
 
-.verticalLines.level3 .verticalLine {
-  left: calc(var(--indentation-width) * 2);
+.verticalLine.level3{
+  margin-left: calc(var(--indentation-width) * 3);
 }
 
 .toggleButton {
@@ -205,5 +183,6 @@
 .children {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  margin: 0;
+  padding: 0;
 }
