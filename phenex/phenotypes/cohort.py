@@ -38,9 +38,9 @@ class HStackNode(PhenexComputeNode):
         return hstack(self.phenotypes, join_table=self.join_table)
 
 
-class SubsetTableNode(PhenexComputeNode):
+class SubsetTable(PhenexComputeNode):
     def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
-        super(SubsetTableNode, self).__init__(name=name)
+        super(SubsetTable, self).__init__(name=name)
         self.add_children(index_phenotype)
         self.index_phenotype = index_phenotype
         self.domain = domain
@@ -325,7 +325,7 @@ class Cohort:
         """
         domains = self._get_domains()
         return [
-            SubsetTableNode(
+            SubsetTable(
                 name=f"{self.name}__{stage}_{domain}".upper(),
                 domain=domain,
                 index_phenotype=index_phenotype,
