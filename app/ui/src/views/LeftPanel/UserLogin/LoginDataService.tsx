@@ -1,15 +1,11 @@
-import axiosInstance from '../../../api/axios';
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-}
+import { loginUser, registerUser } from '../../../api/user_login/route';
 
 interface UserData {
   username: string;
   email: string;
 }
 
+// export abstract class LoginDataService {
 export class LoginDataService {
   private static instance: LoginDataService;
   public loggedIn: boolean = false;
@@ -43,17 +39,17 @@ export class LoginDataService {
       this.loggedIn = false;
       this.loginUsername = '';
       this.token = null;
-      return false;
+      throw error;
     }
   }
 
   async register(username: string, password: string, email: string): Promise<boolean> {
     try {
-      const response = await registerUser(username, password);
+      const response = await registerUser(username, password, email);
       return !!response;
     } catch (error) {
       console.error('Registration failed:', error);
-      return false;
+      throw error; // Propagate the error to show validation messages
     }
   }
 

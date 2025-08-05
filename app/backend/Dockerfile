@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY . .
 
+# Create data directories in /app
+RUN mkdir -p /app/data/cohorts && \
+    mkdir -p /app/data/users
+
 # Expose the port the app runs on
 EXPOSE 8000
 

@@ -6,22 +6,21 @@ export const SplashPage = () => {
   return (
     <div className={styles.container}>
       <div className={`${styles.label} ${styles.topLeft}`}></div>
-      <div className={styles.content}>
         <div className={styles.header}>
           <img src={phenexLogo} alt="PhenEx Logo" className={styles.logo} />
         </div>
+
+      <div className={styles.content}>
         <div className={styles.text}>
           <p>
-            <span className={styles.title}>PhenEx</span> allows you to define the medical content of
-            an observation study in real world data.
+            <span className={styles.title}>PhenEx</span> separates observational study definition from SQL code implementation.
           </p>
           <p>
-            The code to extract this data is then <emph>automatically generated</emph>, giving you
-            your analysis ready cohort, table 1, and basic outcome reporting.
+            Define your study using PhenEx phenotypes, and the code to extract analysis-ready datasets is <emph>automatically generated</emph>. Table1 and time to event analyses are also included.
           </p>
           <p>
             To get started, <emph>create a cohort</emph> or select an existing one in the left
-            navigation area, or ask AI to generate one for you.
+            navigation area, or generate one with AI.
           </p>
         </div>
       </div>

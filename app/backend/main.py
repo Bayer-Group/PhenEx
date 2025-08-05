@@ -22,9 +22,21 @@ load_dotenv()
 
 from openai import AzureOpenAI, OpenAI
 
+# Required imports for authentication
+import os
+import json
+import bcrypt
+import jwt
+import logging
+import sys
+import traceback
+import threading
+import asyncio
+from datetime import datetime, timedelta
+
 # Constants and configuration
 COHORTS_DIR = "/data/cohorts"
-USERS_FILE = "/data/users.json"
+USERS_FILE = "/data/users/users.json"
 SECRET_KEY = "your-secret-key-here"  # In production, use a proper secret key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -49,18 +61,26 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # User management functions
 def get_users():
     try:
+        # Ensure the directory exists
+        print("GETTING USERS")
         if os.path.exists(USERS_FILE):
+            print("exists")
             with open(USERS_FILE, 'r') as f:
                 return json.load(f)
+        # If file doesn't exist, create it with an empty list
+        print('doesnt exist')
+        with open(USERS_FILE, 'w') as f:
+            json.dump([], f)
         return []
     except Exception as e:
         logger.error(f"Error reading users file: {e}")
-        return []
+        raise HTTPException(status_code=500, detail=f"Error accessing user database: {str(e)}")
 
 def save_users(users):
-    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
     with open(USERS_FILE, 'w') as f:
+        print("THIS is writing users")
         json.dump(users, f)
+    print("RWOTE OK")
 
 def get_user(username: str):
     users = get_users()
@@ -137,9 +157,13 @@ async def register(user: UserCreate):
         
     Returns:
         Dict with status message
+        
+    Raises:
+        HTTPException: If registration fails due to validation or database errors
     """
     users = get_users()
-    
+    print(users)
+    print('tat was users!!!')
     # Check if username already exists
     if any(u["username"] == user.username for u in users):
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -152,12 +176,14 @@ async def register(user: UserCreate):
     if len(user.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
     
+    print("got through")
     # Create new user with hashed password
     new_user = {
         "username": user.username,
         "password": get_password_hash(user.password),
         "email": user.email
     }
+    print(new_user)
     
     users.append(new_user)
     save_users(users)

@@ -5,9 +5,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: phenex-backend:latest
-    # mount your local disk to save cohorts
+    # mount your local disk to save cohorts and user data
     volumes:
       - ${HOME}/data/phenex/cohorts:/data/cohorts
+      - ${HOME}/data/phenex/users:/data/users
     env_file: ./backend/.env
     ports:
       - "8000:8000"
@@ -41,6 +42,7 @@ services:
       - "8000:8000"
     volumes:
       - ${HOME}/data/phenex/cohorts:/data/cohorts
+      - ${HOME}/data/phenex/users:/data/users
       - ./backend:/app
       - ../phenex:/app/phenex
     networks:
