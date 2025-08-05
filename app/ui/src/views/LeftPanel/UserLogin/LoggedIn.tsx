@@ -21,7 +21,7 @@ const items = [
 
   const renderUserPanel = () => {
     return (
-      <div className={styles.phenotypeSelection}>
+      <div className={styles.container}>
         <div className={styles.loginHeader} onClick={() => clickedOnHeader()}>
           @ahartens
           <span className={styles.loginHeaderButton}>Close</span>
@@ -55,6 +55,7 @@ const items = [
             label={"@ahartens"}
             content={renderUserPanel()}
             ref={customizableDropdownButtonRef}
+            menuClassName={styles.userDropdownMenu}
     />
   );
 };

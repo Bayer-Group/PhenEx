@@ -53,9 +53,9 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
 
   const renderLogin = () => {
     return (
-      <div className={styles.phenotypeSelection}>
+      <div className={styles.container}>
         <div className={styles.loginHeader} onClick={() => clickedOnHeader()}>
-          {isRegistering ? 'Register New Account' : 'Login'}
+          {isRegistering ? 'Register New Account' : 'Login to PhenEx!'}
           <span className={styles.loginHeaderButton}>Close</span>
         </div>
         <div className={styles.loginForm}>
@@ -115,6 +115,7 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
       label={"Login"}
       content={renderLogin()}
       ref={customizableDropdownButtonRef}
+      menuClassName={styles.loginDropdownMenu}
     />
   );
 };

@@ -1,4 +1,7 @@
 
+.container{
+}
+
 .loginHeader {
   margin: 10px 10px;
   border-radius: 10px;
@@ -28,4 +31,83 @@
 
 .loginHeader:hover .loginHeaderButton {
   color: red !important;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loginInput {
+  padding: 8px 12px;
+  border: 1px solid var(--color-accent_2);
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.loginInput:focus {
+  outline: none;
+  border-color: var(--phenex-red-active);
+}
+
+.loginButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.loginButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'SNPro-bold';
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--phenex-red);
+  color: white;
+}
+
+.loginButton:hover {
+  background-color: var(--phenex-red-active);
+  transform: translateY(-1px);
+}
+
+.loginButton:last-child {
+  background-color: transparent;
+  color: var(--phenex-red);
+  border: 1px solid var(--phenex-red);
+}
+
+.loginButton:last-child:hover {
+  background-color: var(--phenex-red);
+  color: white;
+}
+
+.errorMessage {
+  color: var(--phenex-red);
+  font-size: 14px;
+  margin-top: -4px;
+}
+
+.loginDropdownMenu {
+  min-width: 400px !important;
+  max-width: 500px !important;
+  margin-top: 12px;
+  background-color: var(--color-accent-bright) !important;
+}
+
+.userDropdownMenu {
+  min-width: 400px !important;
+  max-width: 500px !important;
+  margin-top: 12px;
+  background-color: var(--color-accent-bright) !important;
 }

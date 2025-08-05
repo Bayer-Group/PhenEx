@@ -7,13 +7,14 @@ import { Portal } from '../common/Portal';
 interface CustomizableDropdownButtonProps {
   label: string;
   content: React.ReactNode;
+  menuClassName?: string;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
 }
 
 export const CustomizableDropdownButton = forwardRef<
   { closeDropdown: () => void },
   CustomizableDropdownButtonProps
->(({ label, content }, customizableDropdownButtonRef) => {
+>(({ label, content, menuClassName = 'dropdownMenu' }, customizableDropdownButtonRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -46,7 +47,7 @@ export const CustomizableDropdownButton = forwardRef<
         <Portal>
           <div
             ref={menuRef}
-            className={styles.dropdownMenu}
+            className={`${styles.dropdownMenu} ${menuClassName}`}
             style={{
               top: dropdownRef.current?.getBoundingClientRect().bottom - 40,
               left: dropdownRef.current?.getBoundingClientRect().left,
