@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HierarchicalLeftPanel } from '../LeftPanel/HierarchicalLeftPanel';
 import { RightPanel } from './RightPanel';
 import { CohortViewer } from '../CohortViewer/CohortViewer';
@@ -23,7 +23,7 @@ export enum ViewType {
 
 export interface ViewInfo {
   viewType: ViewType;
-  data?: string;
+  data?: any; // TODO: Make this more specific with a union type of possible data types
 }
 
 export const MainView = () => {

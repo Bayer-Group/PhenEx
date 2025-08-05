@@ -16,17 +16,23 @@
  */
 
 import { ViewType } from '../MainView/MainView';
-import { TreeNodeData } from './HierarchicalTreeNode';
+import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
 import { CohortsDataService } from './CohortsDataService';
+
+interface CohortData {
+  id: string;
+  name: string;
+}
+
 type ChangeListener = () => void;
 
 export class HierarchicalLeftPanelDataService {
   private static instance: HierarchicalLeftPanelDataService;
   private changeListeners: ChangeListener[] = [];
-  private treeData: TreeNodeData[] = [];
+  private treeData: HierarchicalTreeNode[] = [];
   private dataService = CohortsDataService.getInstance();
 
-  private cachedCohortNamesAndIds = null;
+  private cachedCohortNamesAndIds: CohortData[] = [];
 
   private constructor() {
     this.treeData = [];
@@ -46,32 +52,48 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async updateTreeData() {
-    this.cachedCohortNamesAndIds = await this.dataService.cohortNamesAndIds();
+    const cohortData = await this.dataService.cohortNamesAndIds();
+    this.cachedCohortNamesAndIds = cohortData || [];
     console.log(this.cachedCohortNamesAndIds, 'ARE THE LOADED CohorTS HERE');
 
+
+    const createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
+      // Only add children if we're at level 1
+      const children = level <= 4 
+        ? this.cachedCohortNamesAndIds.map(childCohort => ({
+            id: childCohort.id,
+            displayName: childCohort.name,
+            level: level + 1,
+            viewInfo: { viewType: ViewType.CohortDefinition, data: childCohort },
+            children: [],
+            renderer: CohortTreeRenderer
+          }))
+        : [];
+
+      return {
+        id: cohort.id,
+        displayName: cohort.name,
+        level,
+        viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
+        children,
+        renderer: CohortTreeRenderer
+      };
+    };
+
+    const createRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
+      id,
+      displayName,
+      level: 0,
+      children: this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1)),
+      viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+      renderer: CohortTreeRenderer
+    });
+
     this.treeData = [
-      {
-        id: 'cohorts',
-        name: 'Cohorts',
-        collapsed: false,
-        // viewInfo: { viewType: ViewType.NewCohort, data: '' },
-        children: [],
-      },
+      createRootNode('mycohorts', 'My Cohorts'),
+      createRootNode('publiccohorts', 'Public Cohorts')
     ];
 
-    const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
-
-    if (this.cachedCohortNamesAndIds && this.cachedCohortNamesAndIds.length > 0) {
-      if (cohortsNode?.children) {
-        this.cachedCohortNamesAndIds.forEach(cohort => {
-          cohortsNode.children?.push({
-            id: cohort.id,
-            name: cohort.name,
-            viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
-          });
-        });
-      }
-    }
     this.notifyListeners();
   }
 
@@ -90,19 +112,23 @@ export class HierarchicalLeftPanelDataService {
     }
   }
 
-  getTreeData(): TreeNodeData[] {
+  getTreeData(): HierarchicalTreeNode[] {
     return this.treeData;
   }
 
   public async addNewCohort() {
-    const response = await this.dataService.createNewCohort();
+    await this.dataService.createNewCohort();
 
-    const newCohort: TreeNodeData = {
+    const newCohort: HierarchicalTreeNode = {
       id: 'new-cohort',
-      name: 'New Cohort',
+      displayName: 'New Cohort',
+      level: 1,
+      children: [],
       viewInfo: { viewType: ViewType.NewCohort, data: '' },
+      renderer: CohortTreeRenderer
     };
-    const cohortsNode = this.treeData.find(node => node.id === 'cohorts');
+
+    const cohortsNode = this.treeData.find(node => node.id === 'mycohorts');
     if (cohortsNode && cohortsNode.children) {
       cohortsNode.children.push(newCohort);
     }

@@ -3,7 +3,6 @@
   flex-direction: column;
   gap: 4px;
   width: 100%;
-  background-color: blue;
 }
 
 .treeItem {
@@ -12,41 +11,169 @@
   width: 100%;
 }
 
+/* Core tree structure */
 .container {
+  --indentation-width: 20px;
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  padding-left: calc(var(--level) * 24px + 8px);
   width: 100%;
   box-sizing: border-box;
-  background-color: red;
+  padding: 4px 0;
+}
+
+/* Level-based indentation */
+.container.level0 { padding-left: 0; }
+.container.level1 { padding-left: var(--indentation-width); }
+.container.level2 { padding-left: calc(var(--indentation-width) * 2); }
+.container.level3 { padding-left: calc(var(--indentation-width) * 3); }
+
+/* Tree structure elements */
+.toggleButton {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 8px 0 0;
+  opacity: 0.8;
+}
+
+.toggleButton span {
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.toggleButton.open span {
+  transform: rotate(90deg);
 }
 
 .verticalLine {
   position: absolute;
-  left: calc(var(--level) * 24px + 16px);
+  left: 0;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background-color: #e0e0e0;
+  width: 1px;
+  background-color: var(--vscode-tree-indentGuidesStroke);
+  opacity: 0.4;
 }
 
-.container:last-child .verticalLine {
-  height: 50%;
+/* Content area for custom renderers */
+.content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.container {
+  --indentation-width: 50px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.container.level0 {
+  padding-left: 0;
+}
+
+.container.level1 {
+  padding-left: calc(var(--indentation-width) * 1);
+}
+
+.container.level2 {
+  padding-left: calc(var(--indentation-width) * 2);
+}
+
+.container.level3 {
+  padding-left: calc(var(--indentation-width) * 3);
+}
+
+.container:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.verticalLines {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.verticalLine {
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background-color: var(--vscode-tree-indentGuidesStroke);
+  opacity: 0.5;
+}
+
+.itemContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Level-based indentation */
+.itemContent.level0 {
+  margin-left: 0;
+}
+
+.itemContent.level1 {
+  margin-left: calc(var(--indentation-width) * 1);
+  background-color: green;
+}
+
+.itemContent.level2 {
+  margin-left: calc(var(--indentation-width) * 2);
+  background-color: blue;
+}
+
+.itemContent.level3 {
+  margin-left: calc(var(--indentation-width) * 3);
+}
+
+/* Vertical lines per level */
+.verticalLines.level0 .verticalLine {
+  display: none;
+}
+
+.verticalLines.level1 .verticalLine {
+  left: 0;
+}
+
+.verticalLines.level2 .verticalLine {
+  left: var(--indentation-width);
+}
+
+.verticalLines.level3 .verticalLine {
+  left: calc(var(--indentation-width) * 2);
 }
 
 .toggleButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   border: none;
   background: transparent;
   cursor: pointer;
   padding: 0;
+  margin-right: 4px;
   transition: transform 0.2s ease;
 }
 

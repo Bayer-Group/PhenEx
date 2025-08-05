@@ -7,6 +7,7 @@ interface TreeListProps {
 }
 
 const TreeList: React.FC<TreeListProps> = ({ data }) => {
+    console.log("Making THREE LIST")
   return (
     <div className={styles.treeList}>
       {data.map((node, index) => {
