@@ -80,6 +80,7 @@ class Table1(Reporter):
                 "CategoricalPhenotype",
                 "SexPhenotype",
                 "ArithmeticPhenotype",
+                "EventCountPhenotype",
             ]
         ]
 
@@ -92,8 +93,8 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
-                "ScorePhenotype",
                 "ArithmeticPhenotype",
+                "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
             ]
         ]
 
@@ -101,7 +102,12 @@ class Table1(Reporter):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ in ["CategoricalPhenotype", "SexPhenotype"]
+            if type(x).__name__
+            in [
+                "CategoricalPhenotype",
+                "SexPhenotype",
+                "ScorePhenotype",  # score is categorical; show number of patients in each score category
+            ]
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
