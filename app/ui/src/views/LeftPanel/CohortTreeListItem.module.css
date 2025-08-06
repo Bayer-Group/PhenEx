@@ -1,11 +1,13 @@
 .nodeName{
-  padding: 5px 10px;
+  padding: 3px 10px;
   transition: all 0.2s ease;
   border: 1px solid transparent;
   border-radius: var(--border-radius);
+  font-size: var(--button-size-default);
+
 
 }
-.nodeName:hover {
+.content:hover .nodeName {
   color: white;
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -21,4 +23,5 @@
   border: 1px solid var(--color-accent);
   color: var(--color-accent);
   background-color: var(----color-accent-hover);
+  font-family: "IBMPlexSans-bold";
 }

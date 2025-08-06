@@ -69,7 +69,7 @@ export class HierarchicalLeftPanelDataService {
         level: level,
         viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
         children:[],
-        height:40,
+        height:30,
         fontSize: 20,
         renderer: CohortTreeRenderer,
         collapsed: true,
@@ -84,7 +84,7 @@ export class HierarchicalLeftPanelDataService {
       children: this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1)),
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
       height: 60,
-      fontSize: 20,
+      fontSize: 18,
       fontFamily: "IBMPlexSans-bold",
       collapsed: false,
       selected: false

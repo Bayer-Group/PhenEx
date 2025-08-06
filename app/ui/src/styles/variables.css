@@ -67,12 +67,23 @@
   --item-transition: all 0.1s ease-in-out;
   --item-border-hover: 1px solid var(--line-color);
 
+  --button-size-default: 14px;
   --button-text-color-selected: var(--color-accent-bright);
   --button-text-color-default: black;
+  --button-text-color-hover: var(--color-accent-bright);
+
   --button-background-color-selected: transparent;
+  --button-background-color-hover: transparent;
   --button-background-color-default: transparent;
-  --button-border-color-selected: transparent;
+
+  --button-border-color-selected: var(--color-accent-bright);
   --button-border-color-default: transparent;
+  --button-border-color-hover: var(--color-accent-bright);
+
+  --button-font-family-selected: "IBMPlexSans-bold";
+  --button-font-family-default: "IBMPlexSans-regular";
+  --button-font-family-hover: "IBMPlexSans-regular";
+
 }
 
 .rag-blue-outer {
