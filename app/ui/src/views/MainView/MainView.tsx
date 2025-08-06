@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HierarchicalLeftPanel } from '../LeftPanel/HierarchicalLeftPanel';
 import { RightPanel } from './RightPanel';
 import { CohortViewer } from '../CohortViewer/CohortViewer';
@@ -26,15 +26,51 @@ export interface ViewInfo {
   data?: any; // TODO: Make this more specific with a union type of possible data types
 }
 
+export class MainViewService {
+  private static instance: MainViewService | null = null;
+  private listeners: Array<(viewInfo: ViewInfo) => void> = [];
+
+  private constructor() {}
+
+  public static getInstance(): MainViewService {
+    if (!MainViewService.instance) {
+      MainViewService.instance = new MainViewService();
+    }
+    return MainViewService.instance;
+  }
+
+  public navigateTo = (viewInfo: ViewInfo) => {
+    this.notifyListeners(viewInfo);
+  };
+
+  private notifyListeners(viewInfo: ViewInfo) {
+    this.listeners.forEach(listener => listener(viewInfo));
+  }
+
+  public addListener(listener: (viewInfo: ViewInfo) => void) {
+    this.listeners.push(listener);
+  }
+
+  public removeListener(listener: (viewInfo: ViewInfo) => void) {
+    this.listeners = this.listeners.filter(l => l !== listener);
+  }
+}
+
 export const MainView = () => {
   const [currentView, setCurrentView] = useState<ViewInfo>({
     viewType: ViewType.Empty,
     data: undefined,
   });
 
-  const navigateTo = (viewInfo: ViewInfo) => {
-    setCurrentView(viewInfo);
-  };
+  useEffect(() => {
+    const service = MainViewService.getInstance();
+    const updateView = (viewInfo: ViewInfo) => {
+      setCurrentView(viewInfo);
+    };
+    
+    service.addListener(updateView);
+    return () => service.removeListener(updateView);
+  }, []);
 
   const renderView = () => {
     console.log('RENDERING VIEW');
@@ -74,7 +110,7 @@ export const MainView = () => {
         minSizeLeft={300}
         minSizeRight={300}
       >
-        <HierarchicalLeftPanel isVisible={true} onNavigate={navigateTo} />
+        <HierarchicalLeftPanel isVisible={true} />
         <RightPanel>{renderView()}</RightPanel>
         <ChatPanel
           onTextEnter={text => {
