@@ -61,7 +61,7 @@ class Table1(Reporter):
         if self.pretty_display:
             self.create_pretty_display()
 
-        self.df = self.df.sort_values(by="inex_order")
+        self.df = self.df.sort_values(by=["inex_order", "Name"])
         self.df = self.df.reset_index()[
             [x for x in self.df.columns if x not in ["index", "inex_order"]]
         ]
@@ -80,6 +80,7 @@ class Table1(Reporter):
                 "CategoricalPhenotype",
                 "SexPhenotype",
                 "ArithmeticPhenotype",
+                "BinPhenotype",
             ]
         ]
 
@@ -106,6 +107,7 @@ class Table1(Reporter):
                 "CategoricalPhenotype",
                 "SexPhenotype",
                 "ScorePhenotype",  # score is categorical; show number of patients in each score category
+                "BinPhenotype",
             ]
         ]
 
