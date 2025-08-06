@@ -2,6 +2,8 @@ import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { Portal } from '../../../../components/common/Portal';
+import { XButton } from './../../../../components/XButton/XButton';
+
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value?: any;
   onValueChange?: (value: any) => void;
@@ -165,8 +167,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
 
           <span className={styles.phenotypeName}>{props.data.name}</span>
-
-          <span className={styles.doneButton}>Done</span>
+<XButton 
+  onClick={() => null} 
+  title="Close panel"  // optional
+/>
         </div>
         <div className={styles.content}>
           {React.Children.map(props.children, child =>
