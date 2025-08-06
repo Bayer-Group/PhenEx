@@ -8,7 +8,7 @@ export interface TypeSelectorEditorProps {
 }
 
 const types = [
-  { name: 'entry', info: 'Entry Criterion - Define the initial population for your cohort' },
+  { name: 'entry', info: 'Define the index of your study' },
   {
     name: 'inclusion',
     info: 'Specify conditions that must be met for patients to be included in the cohort',

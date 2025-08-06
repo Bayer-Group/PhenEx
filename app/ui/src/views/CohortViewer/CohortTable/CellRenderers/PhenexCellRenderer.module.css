@@ -19,7 +19,7 @@
 :global(.ag-cell-focus),
 :global(.ag-cell-range-selected) {
   background-color: transparent !important;
-  border-color: var(--color-accent) !important;
+  border-color: var(--line-color) !important;
   border-radius: 10px;
 }
 

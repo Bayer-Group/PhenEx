@@ -24,12 +24,11 @@
   font-size: 16px;
   font-family: 'IBMPlexSans-regular';
   margin-bottom: 0px;
-  padding: 8px;
   padding-right: 20px;
   /* margin: 4px; */
   overflow: hidden;
   text-wrap: wrap;
-  min-height: 50px;
+  min-height: 40px;
   background-color: white;
   /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
   border: 1px solid var(--color-accent);
@@ -39,10 +38,9 @@
     box-shadow 0.2s ease-in-out,
     transform 0.2s ease-in-out;
   position: relative;
-  padding-bottom: 10px;
-  padding-left: 5px;
   color: var(--xbutton_color_orange_background);
-  line-height:var(--popover_font_size);
+  padding: 4px 20px 10px 4px;
+  /* line-height:var(--popover_font_size); */
 }
 
 .header:hover{
@@ -137,7 +135,7 @@
 
 .bottomLabel {
   font-family: "IBMPlexSans-regular";
-  font-size:calc(var(--popover_font_size) - 4px);
+  /* font-size:calc(var(--popover_font_size) - 4px); */
 }
 
 
