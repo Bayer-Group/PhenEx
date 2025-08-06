@@ -79,6 +79,43 @@ class PhenexComputeNode:
         return self._children
 
     @property
+    def dependencies(self) -> List["PhenexComputeNode"]:
+        """
+        Recursively collect all dependencies of a node (including dependencies of dependencies).
+
+        Parameters:
+            node: The node to collect dependencies for
+            visited: Set of already visited node names to avoid infinite loops
+
+        Returns:
+            Dict[str, PhenexComputeNode]: A dictionary mapping node names to node objects for all dependencies
+        """
+        return list(self._collect_all_dependencies().values())
+
+    def _collect_all_dependencies(
+        self, visited: Set[str] = None
+    ) -> Dict[str, "PhenexComputeNode"]:
+        if visited is None:
+            visited = set()
+
+        all_deps = {}
+
+        # Avoid infinite loops with circular dependencies
+        if self.name in visited:
+            return all_deps
+        visited.add(self.name)
+
+        # Add direct children (dependencies)
+        for child in self.children:
+            if child.name not in all_deps:
+                all_deps[child.name] = child
+                # Recursively collect dependencies of this child
+                child_deps = child._collect_all_dependencies(visited.copy())
+                all_deps.update(child_deps)
+
+        return all_deps
+
+    @property
     def name(self):
         if self._name is not None:
             return self._name.upper()

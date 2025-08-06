@@ -304,15 +304,23 @@ class Cohort:
         """
         Get a list of all domains used by any phenotype in this cohort.
         """
+        top_level_nodes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
+        for node in top_level_nodes:
+            logger.info(f"{node.name} dependencies: {node._collect_all_dependencies()}")
+        all_nodes = top_level_nodes + sum([t.dependencies for t in top_level_nodes], [])
+        # FIXME Person domain should not be HARD CODED; however, it IS hardcoded in SCORE phenotype. Remove hardcoding!
         domains = list(
             set(
-                [
+                ["PERSON"]
+                + [
                     getattr(pt, "domain", None)
-                    for pt in [self.entry_criterion]
-                    + self.inclusions
-                    + self.exclusions
-                    + self.characteristics
-                    + self.outcomes
+                    for pt in all_nodes
                     if getattr(pt, "domain", None) is not None
                 ]
             )
@@ -324,6 +332,7 @@ class Cohort:
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
         """
         domains = self._get_domains()
+        logger.info(f"Domains: {domains}")
         return [
             SubsetTable(
                 name=f"{self.name}__{stage}_{domain}".upper(),
@@ -398,7 +407,8 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
-        logger.info(f"Executing cohort '{self.name}' with {n_threads} threads...")
+        logger.info(f"Cohort '{self.name}': executing entry stage.")
+        logger.debug(f"Cohort '{self.name}': subset tables {tables.keys()}")
 
         self.entry_stage.execute(
             tables=tables,
@@ -406,6 +416,12 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
+        )
+
+        logger.info(f"Cohort '{self.name}': completed entry stage.")
+        logger.info(f"Cohort '{self.name}': executing index stage.")
+        logger.debug(
+            f"Cohort '{self.name}': subset tables {self.subset_tables_entry.keys()}"
         )
 
         self.index_stage.execute(
@@ -416,6 +432,12 @@ class Cohort:
             lazy_execution=lazy_execution,
         )
         self.table = self.index_table_node.table
+
+        logger.info(f"Cohort '{self.name}': completed index stage.")
+        logger.info(f"Cohort '{self.name}': executing reporting stage.")
+        logger.debug(
+            f"Cohort '{self.name}': subset tables {self.subset_tables_index.keys()}"
+        )
 
         self.reporting_stage.execute(
             tables=self.subset_tables_index,
