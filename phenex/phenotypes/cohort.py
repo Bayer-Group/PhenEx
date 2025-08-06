@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.pipe import PhenexComputeNode, PhenexWorkflow
+from phenex.pipe import PhenexNode, PhenexExecutor
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.functions import hstack
@@ -11,7 +11,7 @@ from phenex.util import create_logger
 logger = create_logger(__name__)
 
 
-class HStackNode(PhenexComputeNode):
+class HStackNode(PhenexNode):
     """
     A compute node that horizontally stacks (joins) multiple phenotypes into a single table. Used for computing characteristics and outcomes tables in cohorts.
     """
@@ -38,7 +38,7 @@ class HStackNode(PhenexComputeNode):
         return hstack(self.phenotypes, join_table=self.join_table)
 
 
-class SubsetTable(PhenexComputeNode):
+class SubsetTable(PhenexNode):
     def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
         super(SubsetTable, self).__init__(name=name)
         self.add_children(index_phenotype)
@@ -54,7 +54,7 @@ class SubsetTable(PhenexComputeNode):
         return subset_table
 
 
-class InclusionsTableNode(PhenexComputeNode):
+class InclusionsTableNode(PhenexNode):
     """
     Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
     """
@@ -99,7 +99,7 @@ class InclusionsTableNode(PhenexComputeNode):
         return inclusions_table
 
 
-class ExclusionsTableNode(PhenexComputeNode):
+class ExclusionsTableNode(PhenexNode):
     """
     Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
     """
@@ -146,7 +146,7 @@ class ExclusionsTableNode(PhenexComputeNode):
         return exclusions_table
 
 
-class IndexTableNode(PhenexComputeNode):
+class IndexTableNode(PhenexNode):
     """
     Compute the index table form the individual inclusions / exclusions phenotypes.
     """
@@ -155,8 +155,8 @@ class IndexTableNode(PhenexComputeNode):
         self,
         name: str,
         entry_phenotype: Phenotype,
-        inclusion_table_node: PhenexComputeNode,
-        exclusion_table_node: PhenexComputeNode,
+        inclusion_table_node: PhenexNode,
+        exclusion_table_node: PhenexNode,
     ):
         super(IndexTableNode, self).__init__(name=name)
         self.add_children(entry_phenotype)
@@ -235,7 +235,7 @@ class Cohort:
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
             stage="subset_entry", index_phenotype=entry_criterion
         )
-        self.entry_stage = PhenexWorkflow(
+        self.entry_stage = PhenexExecutor(
             name="entry", nodes=self.subset_tables_entry_nodes
         )
 
@@ -269,7 +269,7 @@ class Cohort:
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
             stage="subset_index", index_phenotype=self.index_table_node
         )
-        self.index_stage = PhenexWorkflow(
+        self.index_stage = PhenexExecutor(
             name="index",
             nodes=self.subset_tables_index_nodes + index_nodes,
         )
@@ -293,7 +293,7 @@ class Cohort:
             )
             reporting_nodes.append(self.outcomes_node)
 
-        self.reporting_stage = PhenexWorkflow(name="reporting", nodes=reporting_nodes)
+        self.reporting_stage = PhenexExecutor(name="reporting", nodes=reporting_nodes)
 
         self._table1 = None
         logger.info(
