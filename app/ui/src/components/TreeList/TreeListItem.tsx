@@ -8,6 +8,10 @@ export interface TreeNode {
   renderer?: React.ComponentType<TreeItemRendererProps>;
   onClick?: (e: React.MouseEvent) => void;
   height?: number;  // Optional height in pixels, defaults to 30 if not specified
+  selected?: boolean;  // Whether this node is currently selected
+  collapsed?: boolean;  // Whether this node's children are collapsed/hidden
+  fontSize?: number;  // Optional font size in pixels
+  fontFamily?: string;  // Optional font family
 }
 
 export interface TreeItemRendererProps {
@@ -25,7 +29,7 @@ export interface TreeListItemProps {
 
 export class TreeListItem extends React.Component<TreeListItemProps> {
   state = {
-    isOpen: false
+    isOpen: !this.props.node.collapsed
   };
 
   handleClick = (e: React.MouseEvent) => {

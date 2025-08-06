@@ -71,7 +71,9 @@ export class HierarchicalLeftPanelDataService {
         children:[],
         height:40,
         fontSize: 20,
-        renderer: CohortTreeRenderer
+        renderer: CohortTreeRenderer,
+        collapsed: true,
+        selected: false
       };
     };
 
@@ -83,7 +85,10 @@ export class HierarchicalLeftPanelDataService {
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
       height: 60,
       fontSize: 20,
-      fontFamily: "IBMPlexSans-bold"
+      fontFamily: "IBMPlexSans-bold",
+      collapsed: false,
+      selected: false
+
 
       // renderer: CohortTreeRenderer
     });
@@ -113,6 +118,39 @@ export class HierarchicalLeftPanelDataService {
 
   getTreeData(): HierarchicalTreeNode[] {
     return this.treeData;
+  }
+
+  // Recursively deselect all nodes in the tree
+  private deselectAllNodes(nodes: HierarchicalTreeNode[]) {
+    nodes.forEach(node => {
+      node.selected = false;
+      if (node.children) {
+        this.deselectAllNodes(node.children as HierarchicalTreeNode[]);
+      }
+    });
+  }
+
+  // Set selected state for a specific node
+  public selectNode(nodeId: string) {
+    // First deselect all nodes
+    this.deselectAllNodes(this.treeData);
+
+    // Helper function to find and select the target node
+    const findAndSelectNode = (nodes: HierarchicalTreeNode[]): boolean => {
+      for (const node of nodes) {
+        if (node.id === nodeId) {
+          node.selected = true;
+          return true;
+        }
+        if (node.children && findAndSelectNode(node.children as HierarchicalTreeNode[])) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    findAndSelectNode(this.treeData);
+    this.notifyListeners();
   }
 
   public async addNewCohort() {
