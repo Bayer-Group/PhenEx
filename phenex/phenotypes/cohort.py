@@ -246,6 +246,15 @@ class Cohort:
         )
 
         #
+        # Derived tables stage
+        #
+        self.derived_tables_stage = None
+        if derived_tables:
+            self.derived_tables_stage = PhenexExecutor(
+                name="entry", nodes=self.derived_tables
+            )
+
+        #
         # Index stage
         #
         self.inclusions_table_node = None
@@ -265,6 +274,7 @@ class Cohort:
                 phenotypes=self.exclusions,
             )
             index_nodes.append(self.exclusions_table_node)
+
         self.index_table_node = IndexTableNode(
             f"{self.name}__index".upper(),
             entry_phenotype=self.entry_criterion,
@@ -420,11 +430,24 @@ class Cohort:
             n_threads=n_threads,
             lazy_execution=lazy_execution,
         )
+        tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
+        if self.derived_tables_stage:
+            logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
+            self.derived_tables_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
+            logger.info(f"Cohort '{self.name}': completed derived tables stage.")
+            for node in self.derived_tables:
+                tables[node.name] = node.table
+
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
-        tables = self.get_subset_tables_entry(tables)
         self.index_stage.execute(
             tables=tables,
             con=con,
