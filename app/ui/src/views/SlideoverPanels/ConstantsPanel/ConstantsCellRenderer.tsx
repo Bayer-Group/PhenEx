@@ -16,7 +16,6 @@ const classNameToRendererMapping = {
 };
 
 export const ConstantsCellRenderer: React.FC<ConstantsCellRendererProps> = props => {
-  console.log(props.data);
   if (props.data?.type in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.type];
     return <Renderer {...props} fontSize={'12px'} />;

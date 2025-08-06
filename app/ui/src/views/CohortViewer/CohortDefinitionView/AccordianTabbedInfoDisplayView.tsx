@@ -84,58 +84,40 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
-    console.log('ON TAB CHANGE', index);
+    console.log('ON TAB CHANGE', index, currentTabIndex);
     if (index == 0) {
       setIsOpen(false);
-      return;
     }
     if (index == 1) {
       showDatabase();
       setCurrentTab(tabTypes[index]);
-      return;
+      console.log("clicked database", isOpen)
     }
     if (index == 2) {
       showConstants();
       setCurrentTab(tabTypes[index]);
-      return;
     }
     if (index == 3) {
       showCodelists();
       setCurrentTab(tabTypes[index]);
-      return;
     }
     if (index == 6) {
       showReport();
       setCurrentTab(tabTypes[index]);
-      return;
     }
     if (index == 5) {
       // executeCohort();
       showExecute();
-      return;
     }
+    console.log("clicked",index, isOpen)
     if (!isOpen) {
       setIsOpen(true);
       setCurrentTab(tabTypes[index]);
-    } else if (currentTabIndex === index) {
+    } else{
       setIsOpen(false);
-    } else {
+      const cohortViewer = TwoPanelCohortViewerService.getInstance();
+      cohortViewer.hideExtraContent();
       setCurrentTab(tabTypes[index]);
-    }
-  };
-
-  const renderContent = () => {
-    switch (currentTab) {
-      case InfoTabType.Info:
-        return <div className={styles.infoContent}>{infoContent}</div>;
-      case InfoTabType.Constants:
-        return <ConstantsTable />;
-      case InfoTabType.Database:
-        return <DatabaseFields />;
-      case InfoTabType.Codelists:
-        return <CodelistsInfoDisplay />;
-      default:
-        return <CodelistsInfoDisplay />;
     }
   };
 
@@ -177,9 +159,6 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
             customizableDropdownButtonRef={customizableDropdownButtonRef}
           />
         </div>
-      </div>
-      <div className={styles.content}>
-        {/* <div className={styles.contentArea}>{renderContent()}</div> */}
       </div>
     </div>
   );

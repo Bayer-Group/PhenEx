@@ -19,7 +19,6 @@ export const CustomizableDropdownButton = forwardRef<
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  console.log('THIS IS THE REF CREATED', customizableDropdownButtonRef);
   useImperativeHandle(customizableDropdownButtonRef, () => ({
     closeDropdown: () => setIsOpen(false),
   }));
