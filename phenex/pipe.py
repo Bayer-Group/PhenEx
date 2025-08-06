@@ -47,8 +47,8 @@ class PhenexNode:
             children = [children]
         for child in children:
             if not child in self.children:
-                self._check_child_can_be_added(child)
-                self._children.append(child)
+                if self._check_child_can_be_added(child):
+                    self._children.append(child)
 
     def __rshift__(self, right):
         self.add_children(right)
@@ -63,15 +63,19 @@ class PhenexNode:
         """
         if not isinstance(child, PhenexNode):
             raise ValueError("Dependent children must be of type PhenexNode!")
+
         if child in self.children:
-            raise ValueError(
+            logger.warning(
                 f"Duplicate node found: '{child.name}' has already been added to list of children."
             )
-        dependency_names = [dep.name for dep in self.dependencies]
-        if child.name in dependency_names:
-            raise ValueError(
-                f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
-            )
+            return False  # do not add the node
+
+        for dep in self.dependencies:
+            if child.name == dep.name and child != dep:
+                raise ValueError(
+                    f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
+                )
+
         return True
 
     @property

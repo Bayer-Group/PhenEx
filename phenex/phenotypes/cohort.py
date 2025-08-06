@@ -63,8 +63,13 @@ class InclusionsTableNode(PhenexNode):
         self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
     ):
         super(InclusionsTableNode, self).__init__(name=name)
+        logger.info(phenotypes)
+        logger.info(index_phenotype)
+        logger.info(self.dependencies)
         self.add_children(phenotypes)
+        logger.info(self.dependencies)
         self.add_children(index_phenotype)
+        logger.info(self.dependencies)
         self.phenotypes = phenotypes
         self.index_phenotype = index_phenotype
 
@@ -222,6 +227,7 @@ class Cohort:
     ):
         self.name = name
         self.table = None  # Will be set during execution
+        self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []
         self.exclusions = exclusions if exclusions is not None else []
@@ -405,8 +411,7 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
-        logger.info(f"Cohort '{self.name}': executing entry stage.")
-        logger.debug(f"Cohort '{self.name}': subset tables {tables.keys()}")
+        logger.info(f"Cohort '{self.name}': executing entry stage ...")
 
         self.entry_stage.execute(
             tables=tables,
@@ -417,7 +422,7 @@ class Cohort:
         )
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
-        logger.info(f"Cohort '{self.name}': executing index stage.")
+        logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         tables = self.get_subset_tables_entry(tables)
         self.index_stage.execute(
@@ -430,9 +435,9 @@ class Cohort:
         self.table = self.index_table_node.table
 
         logger.info(f"Cohort '{self.name}': completed index stage.")
-        logger.info(f"Cohort '{self.name}': executing reporting stage.")
+        logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
-        tables = self.get_subset_tables_index(tables)
+        self.subset_tables_index = tables = self.get_subset_tables_index(tables)
         self.reporting_stage.execute(
             tables=tables,
             con=con,
