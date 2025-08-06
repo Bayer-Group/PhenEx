@@ -18,17 +18,29 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: "IBMPlexSans-regular";
+    src: url("./fonts/IBMPlexSans-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "IBMPlexSans-bold";
+    src: url("./fonts/IBMPlexSans-Bold.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+
 /* Example usage */
 body {
     font-family: "IBMPlexSans-regular", sans-serif; /* Use the custom font */
 }
 
 #main_title {
-    font-family: "SNPro-black", sans-serif; /* Use the custom font */
-    background-size: 100% 100%; /* Ensure the gradient covers the entire text */
-    background: linear-gradient(#e32b0e 20%, #71010c 80%);
-    -webkit-background-clip: text; /* Clip the background to the text */
-    -webkit-text-fill-color: transparent; /* Make the text color transparent */
+    font-family: "IBMPlexSans-bold", sans-serif; /* Use the custom font */
+    color: hsl(14, 100%, 63%);
     font-size: 90px; /* Change size of h1 headings */
 }
 
@@ -36,7 +48,7 @@ h1,
 h2,
 h3 {
     font-family: "IBMPlexSans-bold", sans-serif; /* Apply to headings */
-    background: linear-gradient(#e32b0e 20%, #71010c 80%);
+    color: hsl(14, 100%, 63%);
     -webkit-background-clip: text; /* Clip the background to the text */
 }
 
@@ -45,4 +57,11 @@ h2 {
 }
 h3 {
     font-size: 25px;
+}
+
+/* Bird icon positioning */
+.bird-icon-top-right {
+    top: 20px;
+    width: 100px;
+    height: auto;
 }

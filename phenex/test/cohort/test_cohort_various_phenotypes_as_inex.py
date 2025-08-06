@@ -10,6 +10,7 @@ from phenex.phenotypes import (
     Cohort,
     TimeRangePhenotype,
     SexPhenotype,
+    UserDefinedPhenotype,
 )
 from phenex.filters import (
     DateFilter,
@@ -186,10 +187,18 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             ),
         )
 
+        def user_defined_function(mapped_tables):
+            table = mapped_tables["DRUG_EXPOSURE"]
+            table = table.filter(table.PRODCODEID == "d1")
+            table = table.select("PERSON_ID")
+            return table
+
+        udp = UserDefinedPhenotype(name="udp", function=user_defined_function)
+
         return Cohort(
             name="test_continuous_coverage_with_exclusion",
             entry_criterion=entry,
-            inclusions=[cc],
+            inclusions=[cc, udp],
             exclusions=[e4],
         )
 
@@ -703,6 +712,153 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         return test_infos
 
 
+class CohortWithUDPTestGenerator(CohortTestGenerator):
+    """
+    | **PATID** | **entry** | **entry_date** | **obs_start** | **obs_end** | **prior_et_use** | **prior_et_use_date** |
+    | --- | --- | --- | --- | --- | --- | --- |
+    | **P0** | d1 | 2020-01-01 | 2018-12-30 | 2020-01-10 | e1 | 2019-04-01 |
+    | **P1** | d4 | 2020-01-01 | 2018-12-30 | 2020-01-10 | e1 | 2019-04-01 |
+    | **P2** | d1 | 2020-01-01 | 2019-01-03 | 2020-01-10 | e1 | 2019-04-01 |
+    | **P3** | d4 | 2020-01-01 | 2019-01-03 | 2020-01-10 | e1 | 2019-04-01 |
+    | **P4** | d1 | 2020-01-01 | 2018-12-30 | 2019-12-31 | e1 | 2019-04-01 |
+    | **P5** | d4 | 2020-01-01 | 2018-12-30 | 2019-12-31 | e1 | 2019-04-01 |
+    | **P6** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e1 | 2019-04-01 |
+    | **P7** | d4 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e1 | 2019-04-01 |
+    | **P8** | d1 | 2020-01-01 | 2018-12-30 | 2020-01-10 | e4 | 2019-04-01 |
+    | **P9** | d4 | 2020-01-01 | 2018-12-30 | 2020-01-10 | e4 | 2019-04-01 |
+    | **P10** | d1 | 2020-01-01 | 2019-01-03 | 2020-01-10 | e4 | 2019-04-01 |
+    | **P11** | d4 | 2020-01-01 | 2019-01-03 | 2020-01-10 | e4 | 2019-04-01 |
+    | **P12** | d1 | 2020-01-01 | 2018-12-30 | 2019-12-31 | e4 | 2019-04-01 |
+    | **P13** | d4 | 2020-01-01 | 2018-12-30 | 2019-12-31 | e4 | 2019-04-01 |
+    | **P14** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 |
+    | **P15** | d4 | 2020-01-01 | 2019-01-03 | 2019-12-31 | e4 | 2019-04-01 |
+    """
+
+    def define_cohort(self):
+
+        def user_defined_function(mapped_tables):
+            df = pd.DataFrame()
+            df["PERSON_ID"] = ["P0", "P1", "P2", "P3", "P4"]
+            df["EVENT_DATE"] = [
+                datetime.date(2020, 1, 1),  # d1 give correct cc
+                datetime.date(2020, 1, 1),
+                datetime.date(2020, 1, 3),  # d1 give correct cc
+                datetime.date(2020, 1, 1),
+                datetime.date(2018, 1, 1),  # d1 give incorrect cc
+            ]
+            return ibis.memtable(df)
+
+        entry = UserDefinedPhenotype(name="udp", function=user_defined_function)
+
+        d1 = CodelistPhenotype(
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+
+        cc = TimeRangePhenotype(
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(30)
+            )
+        )
+
+        return Cohort(
+            name="test_udp_entry",
+            entry_criterion=entry,
+            inclusions=[cc, d1],
+        )
+
+    def generate_dummy_input_data(self):
+        values = [
+            {
+                "name": "entry",
+                "values": ["d1", "d4"],
+            },
+            {
+                "name": "entry_date",
+                "values": [datetime.date(2020, 1, 1)],
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+            {"name": "prior_et_use", "values": ["e1", "e4"]},
+            {
+                "name": "prior_et_use_date",
+                "values": [datetime.date(2019, 4, 1)],
+            },
+        ]
+
+        return generate_dummy_cohort_data(values)
+
+    def define_mapped_tables(self):
+        self.con = ibis.duckdb.connect()
+        df_allvalues = self.generate_dummy_input_data()
+
+        # create dummy person table
+        df_person = pd.DataFrame(df_allvalues[["PATID"]])
+        df_person["YOB"] = 1
+        df_person["GENDER"] = 1
+        df_person["ACCEPTABLE"] = 1
+        schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
+        person_table = PersonTableForTests(
+            self.con.create_table("PERSON", df_person, schema=schema_person)
+        )
+        # create drug exposure table
+        df_drug_exposure_entry = pd.DataFrame(
+            df_allvalues[["PATID", "entry", "entry_date"]]
+        )
+        df_drug_exclusion_exposure = pd.DataFrame(
+            df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]]
+        )
+        df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        df_drug_exposure = pd.concat(
+            [df_drug_exposure_entry, df_drug_exclusion_exposure]
+        )
+
+        schema_drug_exposure = {
+            "PATID": str,
+            "PRODCODEID": str,
+            "ISSUEDATE": datetime.date,
+        }
+        drug_exposure_table = DrugExposureTableForTests(
+            self.con.create_table(
+                "DRUG_EXPOSURE", df_drug_exposure, schema=schema_drug_exposure
+            )
+        )
+
+        # create observation period table
+        df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
+        df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
+
+        schema_obs = {
+            "PATID": str,
+            "REGSTARTDATE": datetime.date,
+            "REGENDDATE": datetime.date,
+        }
+        obs_table = ObservationPeriodTableForTests(
+            self.con.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+        )
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_exposure_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
+
+    def define_expected_output(self):
+        df_expected_index = pd.DataFrame()
+        df_expected_index["PERSON_ID"] = ["P0", "P2"]
+        test_infos = {
+            "index": df_expected_index,
+        }
+        return test_infos
+
+
 def test_time_range_phenotype():
     g = CohortWithContinuousCoverageTestGenerator()
     g.run_tests()
@@ -728,5 +884,10 @@ def test_continuous_coverage_age_sex_with_exclusion():
     g.run_tests()
 
 
+def test_udp_entry():
+    g = CohortWithUDPTestGenerator()
+    g.run_tests()
+
+
 if __name__ == "__main__":
-    test_continuous_coverage_age_as_exclusion_with_exclusion()
+    test_udp_entry()

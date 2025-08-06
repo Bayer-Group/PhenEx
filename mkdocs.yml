@@ -15,13 +15,19 @@ nav:
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
+<<<<<<< HEAD
           - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
+=======
+>>>>>>> main
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - TimeRangePhenotype: api/phenotypes/time_range_phenotype.md
+          - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
+          - UserDefinedPhenotype: api/phenotypes/user_defined_phenotype.md
+          - BinPhenotype: api/phenotypes/bin_phenotype.md
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
@@ -68,10 +74,13 @@ plugins:
 theme:
   name: material
   palette:
-    primary: red
+    primary: deep orange
+    accent: deep orange
   features:
     - content.code.copy
     - content.action.edit
+  favicon: assets/bird_icon.png
+  logo: assets/bird_icon_white.png
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

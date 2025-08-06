@@ -145,7 +145,7 @@ def atrial_fibrillation_cohort():
         description="Requires two instances of atrial fibrillation codes within 90 days of each other.",
         phenotype=af_phenotype,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
-        return_event="second",
+        component_date_select="second",
         return_date='first'
     )
 

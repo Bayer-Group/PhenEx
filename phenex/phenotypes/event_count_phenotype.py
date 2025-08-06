@@ -20,7 +20,7 @@ class EventCountPhenotype(Phenotype):
     EventCountPhenotype is a composite phenotype, meaning that it does not directly operate on source data and takes a phenotype as an argument. The phenotype passed to EventCountPhenotype must have return_date set to 'all' (if return_date on the provided phenotype is set to `first` or `last`, there will only be one event per patient...)
 
 
-    DATE: The event date selected based on `return_event` and `return_date` parameters. `return_date` returns multiple rows per patient for all events that fulfill criteria. `return_date` first is the first fulfilling event date, last the last. If return_event = 'first' the returned date is a pair of events, if return_event = 'second' we return the second of a pair of events.
+    DATE: The event date selected based on `component_date_select` and `return_date` parameters. `return_date` returns multiple rows per patient for all events that fulfill criteria. `return_date` first is the first fulfilling event date, last the last. If component_date_select = 'first' the returned date is a pair of events, if component_date_select = 'second' we return the second of a pair of events.
     VALUE: The number of days that the phenotype of interest has occurred i.e. if 4, that means the phenotype has occurred on 4 distinct days.
 
     Parameters:
@@ -29,7 +29,7 @@ class EventCountPhenotype(Phenotype):
         value_filter: Set the minimum and/or maximum number of distinct days on which an event may occur.
         relative_time_range: Set the minimum and/or maximum number of days that are allowed to occur between any pair of events.
         return_date: Specifies whether to return the 'first', 'last', or 'all' dates on which the criteria are fulfilled. Default is 'first'.
-        return_event: Specifies whether to return the 'first' or 'second' event date within each pair of events. Default is 'second'. It is highly recommended to never use 'first', as there is a high risk of introducing immortal time bias.
+        component_date_select: Specifies whether to return the 'first' or 'second' event date within each pair of events. Default is 'second'. It is highly recommended to never use 'first', as there is a high risk of introducing immortal time bias.
 
     Example:
         ```python
@@ -51,7 +51,7 @@ class EventCountPhenotype(Phenotype):
                 max_days=LessThanOrEqualTo(180)
             ),
             return_date='first',
-            return_event='second'
+            component_date_select='second'
         )
 
         result_table = multiple_occurrences.execute(tables)
@@ -65,15 +65,17 @@ class EventCountPhenotype(Phenotype):
         value_filter: ValueFilter = None,
         relative_time_range: RelativeTimeRangeFilter = None,
         return_date="first",
-        return_event="second",
+        component_date_select="second",
         **kwargs,
     ):
         super(EventCountPhenotype, self).__init__(**kwargs)
         self.relative_time_range = relative_time_range
         self.return_date = return_date
-        self.return_event = return_event
-        if self.return_event not in ["first", "second"]:
-            raise ValueError(f"Invalid return_event: {self.return_event}")
+        self.component_date_select = component_date_select
+        if self.component_date_select not in ["first", "second"]:
+            raise ValueError(
+                f"Invalid component_date_select: {self.component_date_select}"
+            )
         self.value_filter = value_filter
         self.phenotype = phenotype
         self.children = [phenotype]
@@ -136,11 +138,11 @@ class EventCountPhenotype(Phenotype):
             # perform relative time range filtering; the first date is the anchor ('index_date')
             table = self.relative_time_range.filter(table)
 
-            if self.return_event == "first":
+            if self.component_date_select == "first":
                 table = table.select("PERSON_ID", "INDEX_DATE").rename(
                     {"EVENT_DATE": "INDEX_DATE"}
                 )
-            elif self.return_event == "second":
+            elif self.component_date_select == "second":
                 table = table.select("PERSON_ID", "EVENT_DATE")
         return table
 
