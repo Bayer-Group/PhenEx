@@ -366,24 +366,22 @@ class Cohort:
         if self.outcomes_node:
             return self.outcomes_table_node.table
 
-    @property
-    def subset_tables_entry(self):
+    def get_subset_tables_entry(self, tables):
         """
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
         """
         subset_tables_entry = {}
         for node in self.subset_tables_entry_nodes:
-            subset_tables_entry[node.domain] = node.table
+            subset_tables_entry[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_entry
 
-    @property
-    def subset_tables_index(self):
+    def get_subset_tables_index(self, tables):
         """
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
         """
         subset_tables_index = {}
         for node in self.subset_tables_index_nodes:
-            subset_tables_index[node.domain] = node.table
+            subset_tables_index[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_index
 
     def execute(
@@ -420,12 +418,10 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
         logger.info(f"Cohort '{self.name}': executing index stage.")
-        logger.debug(
-            f"Cohort '{self.name}': subset tables {self.subset_tables_entry.keys()}"
-        )
 
+        tables = self.get_subset_tables_entry(tables)
         self.index_stage.execute(
-            tables=self.subset_tables_entry,
+            tables=tables,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,
@@ -435,12 +431,10 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage.")
-        logger.debug(
-            f"Cohort '{self.name}': subset tables {self.subset_tables_index.keys()}"
-        )
 
+        tables = self.get_subset_tables_index(tables)
         self.reporting_stage.execute(
-            tables=self.subset_tables_index,
+            tables=tables,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,
