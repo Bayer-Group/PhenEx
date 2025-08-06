@@ -40,6 +40,8 @@ class DeathPhenotype(Phenotype):
                     self.add_children(rtr.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+        print("DEATH_PHENOTYPE : BEFORE LINE 45 : BEGINNING EXECUTION OF DEATH PHENOTYPE")
+        print(tables.keys())
         person_table = tables[self.domain]
         person_table = person_table.mutate(EVENT_DATE=person_table.DATE_OF_DEATH)
         assert is_phenex_person_table(person_table)

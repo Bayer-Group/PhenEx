@@ -35,6 +35,8 @@ class CohortTestGenerator:
 
         self._create_artifact_directory(self.cohort.name, path)
         self.mapped_tables = self.define_mapped_tables()
+        print("COHORT_TEST_GENERATOR : AFTER LINE 37 : JUST GENERATED INPUT DATA")
+        print(self.mapped_tables.keys())
         self._write_mapped_tables()
         self._generate_output_artifacts()
         self._run_tests()
@@ -67,6 +69,8 @@ class CohortTestGenerator:
             table.to_pandas().to_csv(path, index=False)
 
     def _run_tests(self):
+        print("COHORT_TEST_GENERATOR : BEFORE LINE 72 : ABOUT TO EXECUTE COHORT")
+        print(self.mapped_tables.keys())
         self.cohort.execute(self.mapped_tables)
 
         logger.debug(

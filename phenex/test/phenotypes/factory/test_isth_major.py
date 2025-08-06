@@ -382,7 +382,8 @@ def test_isth_major():
 
 
 if __name__ == "__main__":
-    test_critical_organ()
-    test_symptomatic()
+    # test_critical_organ()
+    # test_symptomatic()
+    # STEP1_COMMENTOUTALLBUTONETEST
     test_fatal()
-    test_isth_major()
+    # test_isth_major()
