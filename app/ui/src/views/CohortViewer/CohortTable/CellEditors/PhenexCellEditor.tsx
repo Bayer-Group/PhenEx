@@ -173,9 +173,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             <span className={styles.actionText}>{titleText}</span>
           </span>
           <br></br>
-          <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
 
-          <span className={`${styles.phenotypeName} ${styles.actionText}`}>{props.data.name}</span>
+          <span className={styles.bottomLine}>
+            <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+            <span className={`${styles.phenotypeName} ${styles.actionText}`}>{props.data.name}</span>
+          </span>
           {renderXButton()}
 
 

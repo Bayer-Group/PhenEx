@@ -8,15 +8,20 @@
   cursor: pointer;
   padding: 4px 30px 8px 8px;
   border-radius: 8px;
-  background: transparent;
   transition: background 0.2s, box-shadow 0.2s;
   outline: none;
-  border: transparent solid 1px;
+
+  color: var(--button-text-color-default);
+  background-color: var(--button-background-color-default);
+  font-family: var(--button-font-family-default)!important;
+  border: 1px solid var(--button-border-color-default);
 }
 
 .listItem:hover {
-  border-color: var(--line-color);
-  background-color: var(--color-accent-hover);
+  color: var(--button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  font-family: var(--button-font-family-hover);
+  border: 1px solid var(--button-border-color-hover);
 }
 
 .listItem.selected:hover {
@@ -29,22 +34,32 @@
 
 
 .selected {
-  background-color: white;
-  background-color: var(--color-accent-hover);
+  
+  color: var(--button-text-color-selected);
+  background-color: var(--button-background-color-selected);
+  font-family: var(--button-font-family-selected);
+  border: 1px solid var(--button-border-color-selected);
+
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-accent);
 }
 
 .itemName {
-    font-family:"IBMPlexSans-Bold";
+    /* font-family:"IBMPlexSans-Bold"; */
   font-size: 18px;
   line-height: 1.2;
+}
+.listItem:hover .itemName{
+  font-family: var(--button-font-family-hover);
+}
+
+.listItem.selected .itemName{
+  font-family: var(--button-font-family-selected);
 }
 
 .itemInfo {
   margin: 0;
   margin-top: 0px;
   padding-left: 3px;
-  font-size: 10px;
+  font-size: 12px;
   font-family: "IBMPlexSans-Regular";
 }

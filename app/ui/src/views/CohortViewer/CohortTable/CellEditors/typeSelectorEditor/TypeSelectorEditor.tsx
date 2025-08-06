@@ -11,19 +11,19 @@ const types = [
   { name: 'entry', info: 'Entry Criterion - Define the initial population for your cohort' },
   {
     name: 'inclusion',
-    info: 'Inclusion Criterion - Specify conditions that must be met for patients to be included in the cohort',
+    info: 'Specify conditions that must be met for patients to be included in the cohort',
   },
   {
     name: 'exclusion',
-    info: 'Exclusion Criterion - Specify conditions that will exclude patients from the cohort',
+    info: 'Specify conditions that will exclude patients from the cohort',
   },
   {
     name: 'baseline',
-    info: 'Baseline Characteristic - Define characteristics to be measured at the time of cohort entry',
+    info: 'Define characteristics to be measured at the time of cohort entry',
   },
   {
     name: 'outcome',
-    info: 'Outcome - Define events or measurements to be tracked after cohort entry',
+    info: 'Define events or measurements to be tracked after cohort entry',
   },
 ];
 

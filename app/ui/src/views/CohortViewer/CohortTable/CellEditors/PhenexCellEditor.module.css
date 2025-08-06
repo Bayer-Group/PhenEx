@@ -1,7 +1,8 @@
 :root{
   --xbutton_color_orange_background:hsl(14, 100%, 95%);
   --popover_border_radius_bottom:10px;
-  --popover_border_radius_top:2px;
+  --popover_border_radius_top:10px;
+  --popover_font_size: 20px;
 
 }
 :global(.ag-popup-editor) {
@@ -39,8 +40,9 @@
     transform 0.2s ease-in-out;
   position: relative;
   padding-bottom: 10px;
-  padding-left: 15px;
+  padding-left: 5px;
   color: var(--xbutton_color_orange_background);
+  line-height:var(--popover_font_size);
 }
 
 .header:hover{
@@ -49,7 +51,10 @@
 }
 
 .topLine {
-  line-height: 20px;
+  line-height: 10px;
+}
+
+.bottomLine{
 }
 
 .container > * {
@@ -81,19 +86,19 @@
 }
 
 .filler {
-  font-size: 30px;
-  font-family: "IBMPlexSans-bold";
+  font-size: var(--popover_font_size);
+  font-family: "IBMPlexSans-regular";
 
 }
 
 .phenotypeName {
-  font-family: "IBMPlexSans-bold" !important;
+  font-family: "IBMPlexSans-bolditalic" !important;
   padding-left: 5px;
 }
 
 .actionText {
   padding-left: 5px;
-  font-size: 30px;
+  font-size: var(--popover_font_size);
   font-family: 'IBMPlexSans-bolditalic';
   padding-right: 10px;
 }
@@ -131,8 +136,8 @@
 } */
 
 .bottomLabel {
-  font-family: "IBMPlexSans-italic";
-  font-size:25px;
+  font-family: "IBMPlexSans-regular";
+  font-size:calc(var(--popover_font_size) - 4px);
 }
 
 
