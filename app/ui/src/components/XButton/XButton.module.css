@@ -8,14 +8,13 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 50px;
-  color: var(--text-color);
+  font-size: 40px;
   transition: background-color 0.2s, color 0.2s;
   padding: 0;
   line-height: 1;
   position: absolute;
-  right:15px;
-  top:10px;
+  right:5px;
+  top:3px;
   font-family:"IBMPlexSans-bold";
 }
 
@@ -23,11 +22,6 @@
   background-color: var(--hover-background);
 }
 
-.xButton:active {
-  background-color: var(--active-background);
-}
-
 .xButton:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--focus-ring-color);
 }

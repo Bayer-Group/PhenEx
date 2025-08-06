@@ -1,6 +1,6 @@
 :root {
   --issue_popover_margin: -12px;
-  --issue_popover_radius: 10px;
+  --issue_popover_radius: 5px;
   --background_color_translucent: rgba(248, 249, 250, 0.8);
 }
 .popover {
