@@ -82,7 +82,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   if (titleText == 'Name') {
     titleText = 'Settings';
   } else {
-    titleText = `"${titleText}"`;
+    titleText = `${titleText}`;
   }
   let cellRect = { left: 0, top: 0, width: 200, height: 100 };
 
@@ -162,9 +162,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             <span className={styles.actionText}>{titleText}</span>
           </span>
           <br></br>
-          <span className={`${styles.filler} ${styles.bottomLabel}`}>for</span>
+          <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
 
-          <span className={styles.phenotypeName}>"{props.data.name}"</span>
+          <span className={styles.phenotypeName}>{props.data.name}</span>
 
           <span className={styles.doneButton}>Done</span>
         </div>
