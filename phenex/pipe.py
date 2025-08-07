@@ -58,8 +58,9 @@ class PhenexNode:
         """
         Checks that child node can be added to self.children. A child node must:
             1. Be of type PhenexNode
-            2. Not already be in self.children and
-            3. Have a unique name from all other dependencies.
+            2. Not already be in self.children
+            3. Does not create a circular dependency and
+            4. Have a unique name from all other dependencies
         """
         if not isinstance(child, PhenexNode):
             raise ValueError("Dependent children must be of type PhenexNode!")
@@ -69,6 +70,13 @@ class PhenexNode:
                 f"Duplicate node found: '{child.name}' has already been added to list of children."
             )
             return False  # do not add the node
+
+        # Check for circular dependencies: ensure that self is not already a dependency of child
+        if self in child.dependencies:
+            raise ValueError(
+                f"Circular dependency detected: adding '{child.name}' as a child of '{self.name}' "
+                f"would create a circular dependency because '{self.name}' is already a dependency of '{child.name}'."
+            )
 
         for dep in self.dependencies:
             if child.name == dep.name and child != dep:
@@ -81,7 +89,7 @@ class PhenexNode:
     @property
     def children(self):
         # implementation of children as a property to prevent direct modification
-        return self._children
+        return self._children[:]
 
     @property
     def dependencies(self) -> List["PhenexNode"]:
@@ -284,6 +292,7 @@ class PhenexExecutor:
     def __init__(self, name: str, nodes: List[PhenexNode]):
         self.name = name
         self.nodes = {node.name: node for node in nodes}
+        self._auto_add_missing_dependencies()
         self._dependency_graph = self._build_dependency_graph()
         self._reverse_graph = self._build_reverse_graph()
 
@@ -417,10 +426,7 @@ class PhenexExecutor:
         Automatically find and add all missing dependencies to the workflow,
         then validate that the dependency graph is complete and valid.
         """
-        # First, automatically add all missing dependencies
-        self._auto_add_missing_dependencies()
-
-        # Now validate that all dependencies are satisfied
+        # Validate that all dependencies are satisfied
         missing_deps = []
         for node_name, node in self.nodes.items():
             for child in node.children:
