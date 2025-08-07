@@ -1,11 +1,11 @@
 import { FC, useState, useEffect, useRef } from 'react';
-import styles from './AccordianTabbedInfoDisplayView.module.css';
+import styles from './AppNavigationTabBar.module.css';
 import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { ConstantsTable } from '../../SlideoverPanels/ConstantsPanel/ConstantsTable';
 import { TypeSelectorEditor } from '../CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
-interface AccordianTabbedInfoDisplayViewProps {
+interface AppNavigationTabBarProps {
   title: string;
   infoContent?: string;
 }
@@ -23,7 +23,7 @@ enum InfoTabType {
   Info = 'i',
 }
 
-export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewProps> = ({
+export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
   title,
   infoContent,
 }) => {
@@ -114,51 +114,51 @@ export const AccordianTabbedInfoDisplayView: FC<AccordianTabbedInfoDisplayViewPr
       setIsOpen(true);
       setCurrentTab(tabTypes[index]);
     } else{
-      setIsOpen(false);
-      const cohortViewer = TwoPanelCohortViewerService.getInstance();
-      cohortViewer.hideExtraContent();
-      setCurrentTab(tabTypes[index]);
+      if (index === currentTabIndex){
+        setIsOpen(false);
+        const cohortViewer = TwoPanelCohortViewerService.getInstance();
+        cohortViewer.hideExtraContent();
+        setCurrentTab(tabTypes[index]);
+      }
     }
   };
 
-  const handlePhenotypeSelection = type => {
-    dataService.addPhenotype(type);
-    setIsOpen(false);
-  };
 
   const executeCohort = async () => {
     await dataService.executeCohort();
   };
   const clickedOnHeader = () => {
-    console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
     customizableDropdownButtonRef.current?.closeDropdown();
   };
 
-  const renderPhenotypeSelection = () => {
+  const handleAddNewPhenotypeDropdownSelection = type => {
+    dataService.addPhenotype(type);
+    setIsOpen(false);
+  };
+
+  const renderAddNewPhenotypeDropdown = () => {
     return (
-      <div className={styles.phenotypeSelection}>
-        <div className={styles.phenotypeSelectionHeader} onClick={() => clickedOnHeader()}>
+      <div className={styles.addNewPhenotypeDropdown}>
+        <div className={styles.addNewPhenotypeDropdownHeader} onClick={() => clickedOnHeader()}>
           Add a new phenotype
-          <span className={styles.phenotypeSelectionHeaderButton}>Close</span>
+          <span className={styles.addNewPhenotypeDropdownHeaderButton}>Close</span>
         </div>
-        <TypeSelectorEditor onValueChange={handlePhenotypeSelection} />
+        <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
       </div>
     );
   };
   return (
-    <div className={`${styles.accordianContainer}`}>
-      <div className={`${styles.header} ${styles.closed}`}>
-        <div className={`${styles.tabsContainer} ${styles.closed}`}>
-          <TabsWithDropdown
-            width={'100%'}
-            height={'100%'}
-            tabs={tabs}
-            dropdown_items={{ 0: renderPhenotypeSelection() }}
-            onTabChange={onTabChange}
-            active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-            customizableDropdownButtonRef={customizableDropdownButtonRef}
-          />
-        </div>
+    <div className={`${styles.accordianContainer} ${styles.closed}`}>
+      <div className={`${styles.tabsContainer} ${styles.closed}`}>
+        <TabsWithDropdown
+          width={'100%'}
+          height={'100%'}
+          tabs={tabs}
+          dropdown_items={{ 0: renderAddNewPhenotypeDropdown() }}
+          onTabChange={onTabChange}
+          active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+          customizableDropdownButtonRef={customizableDropdownButtonRef}
+        />
       </div>
     </div>
   );

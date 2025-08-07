@@ -25,12 +25,14 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
         <span className={styles.labelMain}>
           <span className={styles.issuesText}>Issues</span>
           <br></br>
-          <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
-          in
-          <span className={`${styles.number} ${styles.phenotypeIssues}`}>
-            {phenotypesWithIssues}
-          </span>{' '}
-          phenotypes
+          <span className={styles.labelSecondary}>
+            <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
+            in
+            <span className={`${styles.number} ${styles.phenotypeIssues}`}>
+              {phenotypesWithIssues}
+            </span>{' '}
+            phenotypes
+          </span>
         </span>
       </p>
     );

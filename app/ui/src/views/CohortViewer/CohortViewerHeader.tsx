@@ -5,6 +5,7 @@ import { Tabs } from '../Tabs/Tabs';
 import { CohortViewType } from './CohortViewer';
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
+import { AppNavigationTabBar } from './CohortDefinitionView/AppNavigationTabBar';
 
 interface CohortViewerHeaderProps {
   onCohortNameChange: (newValue: string) => void;
@@ -67,6 +68,7 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
       {/* <div className={styles.controlsContainer}>
         <Tabs width={400} height={25} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
       </div> */}
+      <AppNavigationTabBar />
       <IssuesDisplayControl />
     </div>
   );

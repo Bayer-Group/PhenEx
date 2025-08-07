@@ -6,7 +6,7 @@
   padding-top: 4px;
   background-color: transparent;
   border-bottom: 1px solid var(--border-color);
-  height: 50px;
+  height: 70px;
 }
 
 .controlsContainer {
@@ -36,6 +36,7 @@
   width: 60%;
   font-family: 'IBMPlexSans-Bold';
   margin-left: 20px;
+  margin-top:25px;
 }
 
 .cohortNameInput::placeholder {

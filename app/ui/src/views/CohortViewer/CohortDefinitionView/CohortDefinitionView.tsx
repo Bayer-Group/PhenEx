@@ -3,7 +3,7 @@ import styles from './CohortDefinitionView.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortTable } from '../CohortTable/CohortTable';
 import { Tabs } from '../../../components/Tabs/Tabs';
-import { AccordianTabbedInfoDisplayView } from './AccordianTabbedInfoDisplayView';
+import { AppNavigationTabBar } from './AppNavigationTabBar';
 
 interface CohortDefinitionViewProps {
   data?: string;
@@ -97,83 +97,83 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   };
 
   const renderView = () => {
-    switch (currentView) {
-      case CohortDefinitionViewType.Cohort:
-        return (
-          <AccordianTabbedInfoDisplayView
-            title="Cohort"
-            infoContent={
-              <>
-                <p>
-                  Define your cohort here using <strong>electronic phenotypes</strong> that define:
-                </p>
-                <ol>
-                  <li>
-                    a single <strong>entry</strong> criterion, which sets the{' '}
-                    <strong>index date</strong> (study entry date)
-                  </li>
-                  <li>
-                    <strong>inclusion</strong> criteria, which all patients must fulfill at index
-                    date
-                  </li>
-                  <li>
-                    <strong>exclusion</strong> criteria that patients may not exhibit at index date
-                  </li>
-                </ol>
-                <p>
-                  Each row in the following table is a single electronic phenotype (entry, inclusion
-                  or exclusion criteria). Click{' '}
-                  <span className={styles.inTextButton}>New Phenotype</span> above to add new
-                  phenotypes! Then edit parameters within the table.
-                </p>
-                <p>
-                  If you have a text description of your cohort, try asking our AI to generate the
-                  cohort for you!
-                </p>
-              </>
-            }
-          />
-        );
-      case CohortDefinitionViewType.Baseline:
-        return (
-          <AccordianTabbedInfoDisplayView
-            title="Baseline"
-            infoContent={
-              <>
-                <p>
-                  Define how you want to characterize your population at index date. To do this
-                  first define a baseline period; the default is one year running up to the index
-                  date, inclusive, but modify as necessary.
-                </p>
-                <p>
-                  Speed up your work by selecting one or all of our pre-defined phenotype libraries,
-                  and add and adjust as necessary.
-                </p>
-              </>
-            }
-          />
-        );
-      case CohortDefinitionViewType.Outcomes:
-        return (
-          <AccordianTabbedInfoDisplayView
-            title="Outcomes"
-            infoContent={
-              <>
-                <p>
-                  Define what events you are interested in observing as outcomes in the post index
-                  period. Time to first event is a common analysis.
-                </p>
-                <p>
-                  Speed up your work by selecting one or all of our pre-defined phenotype libraries,
-                  and add and adjust as necessary.
-                </p>
-              </>
-            }
-          />
-        );
-      default:
-        return null;
-    }
+    // switch (currentView) {
+    //   case CohortDefinitionViewType.Cohort:
+    //     return (
+    //       <AppNavigationTabBar
+    //         title="Cohort"
+    //         infoContent={
+    //           <>
+    //             <p>
+    //               Define your cohort here using <strong>electronic phenotypes</strong> that define:
+    //             </p>
+    //             <ol>
+    //               <li>
+    //                 a single <strong>entry</strong> criterion, which sets the{' '}
+    //                 <strong>index date</strong> (study entry date)
+    //               </li>
+    //               <li>
+    //                 <strong>inclusion</strong> criteria, which all patients must fulfill at index
+    //                 date
+    //               </li>
+    //               <li>
+    //                 <strong>exclusion</strong> criteria that patients may not exhibit at index date
+    //               </li>
+    //             </ol>
+    //             <p>
+    //               Each row in the following table is a single electronic phenotype (entry, inclusion
+    //               or exclusion criteria). Click{' '}
+    //               <span className={styles.inTextButton}>New Phenotype</span> above to add new
+    //               phenotypes! Then edit parameters within the table.
+    //             </p>
+    //             <p>
+    //               If you have a text description of your cohort, try asking our AI to generate the
+    //               cohort for you!
+    //             </p>
+    //           </>
+    //         }
+    //       />
+    //     );
+    //   case CohortDefinitionViewType.Baseline:
+    //     return (
+    //       <AppNavigationTabBar
+    //         title="Baseline"
+    //         infoContent={
+    //           <>
+    //             <p>
+    //               Define how you want to characterize your population at index date. To do this
+    //               first define a baseline period; the default is one year running up to the index
+    //               date, inclusive, but modify as necessary.
+    //             </p>
+    //             <p>
+    //               Speed up your work by selecting one or all of our pre-defined phenotype libraries,
+    //               and add and adjust as necessary.
+    //             </p>
+    //           </>
+    //         }
+    //       />
+    //     );
+    //   case CohortDefinitionViewType.Outcomes:
+    //     return (
+    //       <AppNavigationTabBar
+    //         title="Outcomes"
+    //         infoContent={
+    //           <>
+    //             <p>
+    //               Define what events you are interested in observing as outcomes in the post index
+    //               period. Time to first event is a common analysis.
+    //             </p>
+    //             <p>
+    //               Speed up your work by selecting one or all of our pre-defined phenotype libraries,
+    //               and add and adjust as necessary.
+    //             </p>
+    //           </>
+    //         }
+    //       />
+    //     );
+    //   default:
+    //     return null;
+    // }
   };
 
   const tabs = Object.values(CohortDefinitionViewType).map(value => {

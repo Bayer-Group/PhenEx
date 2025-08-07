@@ -158,10 +158,7 @@
 
 .labelSecondary {
   font-size: 12px;
-  margin-left: 20px;
-  height: 15px;
-  position: absolute;
-  top: 30px;
+  font-family: "IBMPlexSans-regular"
 }
 
 .totalIssues {

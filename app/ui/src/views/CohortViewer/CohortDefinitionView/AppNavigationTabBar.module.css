@@ -1,0 +1,144 @@
+:root {
+  --accordian_container_border_width: 1px;
+}
+.accordianContainer {
+  border: var(--accordian_container_border_width) solid transparent;
+  border-radius: 8px;
+  user-select: none;
+  transition:
+    max-height 0.3s ease-in-out,
+    height 0.3s ease-in-out;
+  margin-bottom: 0px !important;
+  margin-top: 0px !important;
+  margin-left: 12px;
+  max-width: 1000px;
+  background-color: var(--background_color_translucent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line-color);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  position: absolute;
+  top: 5px;
+  padding:0px;
+  right: 10px;
+  height:33px;
+  padding-top:3px;
+  padding-left:3px;
+  z-index: 999;
+  transition: border 0.3s ease-in-out;
+
+}
+
+.accordianContainer:hover{
+  background-color: var(--color-accent-hover) !important;
+  border: 1px solid var(--color-accent-bright);
+
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: translateY 0.3s ease-in-out;
+}
+
+/* .accordianContainer.opened {
+  max-height: 2000px;
+  transition:
+    max-height 0.3s ease-in-out,
+    height 0.3s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px !important;
+} */
+
+.accordianContainer.opened {
+  border-color: var(--color-accent_2);
+}
+
+
+.toggleButton {
+  position: absolute;
+  padding: 0px 0px;
+  height: 40px;
+  width: 40px;
+  border-radius: 25px;
+  font-size: 22px;
+  font-family: 'IBMPlexSans-bold';
+  color: black;
+  transform: rotate(-90deg);
+  left: 30px;
+  background-color: white;
+  margin-top: 8px;
+  border: var(--accordian_container_border_width) solid var(--line-color);
+
+  opacity: 1;
+  transition: 0.2s ease;
+}
+
+.toggleButton.closed {
+  opacity: 0;
+}
+
+.toggleButton:hover {
+  transition: transform 0.2s ease;
+  /* transform: translateY(-1px); */
+  transform: rotate(-90deg) translateX(1px);
+  outline: none;
+  box-shadow: -2px 0px 4px rgba(0, 0, 0, 0.1);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.toggleButton.closed {
+  transform: translateY(-24px);
+  transform: rotate(90deg);
+  border: var(--border);
+}
+
+.toggleButton:focus {
+  outline: none;
+}
+
+
+
+.tabsContainer {
+  margin-top:0px;
+  padding:0px;
+  margin:0px;
+  transition: 0.2s ease;
+  z-index: 1000;
+  background-color: transparent;
+}
+
+.tabsContainer.closed {
+  /* margin-top: 2px; */
+}
+
+
+
+.addNewPhenotypeDropdownHeader {
+  margin: 10px 10px;
+  border-radius: 10px;
+  font-family: 'IBMPlexSans-bold';
+  padding: 10px 15px;
+  background-color: white;
+  border: 1px solid var(--color-accent_2);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.addNewPhenotypeDropdownHeaderButton {
+  background-color: transparent;
+  color: var(--phenex-red-active);
+  font-size: 14px;
+  width: 60px;
+  position: absolute;
+  font-family: 'IBMPlexSans-bold';
+  top: 4px;
+  right: -15px;
+}
+
+.addNewPhenotypeDropdownHeader:hover {
+  transform: translateY(-1px);
+}
+
+.addNewPhenotypeDropdownHeader:hover .addNewPhenotypeDropdownHeaderButton {
+  color: red !important;
+}
