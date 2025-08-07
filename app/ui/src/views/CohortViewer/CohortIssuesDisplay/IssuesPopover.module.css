@@ -1,6 +1,6 @@
 :root {
-  --issue_popover_margin: -12px;
-  --issue_popover_radius: 5px;
+  --issue_popover_margin: 0px;
+  --issue_popover_radius: 0px;
   --background_color_translucent: rgba(248, 249, 250, 0.8);
 }
 .popover {
@@ -10,7 +10,7 @@
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 2px solid var(--line-color);
+  border: 1px solid var(--color-accent-bright);
   border-radius: var(--issue_popover_radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 300px;

@@ -15,8 +15,8 @@
 }
 
 .showingPopover {
-  top: 15px;
-  right: 14px;
+  top: 4px;
+  right: 8px;
 }
 .issuesButton {
   z-index: 1000;
