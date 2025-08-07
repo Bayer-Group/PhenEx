@@ -119,7 +119,7 @@
 }
 
 .collapseButton.left.collapsed {
-  left: 25px;
+  left: 10px;
   top: 10px;
   border: 1px solid transparent;
   box-shadow: none;

@@ -112,15 +112,14 @@ export const TwoPanelView = React.forwardRef<
       <div className={styles.leftPanel} style={{ width: isRightCollapsed ? '100%' : leftWidth }}>
         {children[0]}
       </div>
-      <div
-        className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
-        onMouseDown={handleMouseDown}
-      ></div>
+
       <div
         className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
         style={{ width: isRightCollapsed ? 0 : rightWidth }}
       >
-        {children[1]}
+        <div className={styles.rightPanelContent}>
+          {children[1]}
+        </div>
         <button
           className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}
@@ -128,6 +127,10 @@ export const TwoPanelView = React.forwardRef<
           {/* {'×'} */}
           {'>>'}
         </button>
+        <div
+          className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
+          onMouseDown={handleMouseDown}
+        ></div>
       </div>
     </div>
   );
