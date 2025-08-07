@@ -119,7 +119,21 @@ class Node:
         Returns:
             List[Node]: A list of Node objects on which this Node depends.
         """
+        # always recompute the dependencies because you don't know if a child has invalidated the dependency list
         return list(self._collect_all_dependencies().values())
+
+    @property
+    def dependency_graph(self) -> Dict[str, Set[str]]:
+        """
+        Build a dependency graph where each node maps to its direct dependencies (children).
+        """
+        graph = defaultdict(set)
+        for node in self.children:
+            graph[self.name].add(node.name)
+
+        for node in self.dependencies:
+            graph[node.name].add(node.name)
+        return dict(graph)
 
     def _collect_all_dependencies(self, visited: Set[str] = None) -> Dict[str, "Node"]:
         if visited is None:

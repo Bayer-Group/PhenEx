@@ -1,20 +1,14 @@
 import pytest
-import hashlib
-import json
-import threading
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import pandas as pd
-import ibis
-from ibis.expr.types.relations import Table
+
 
 from phenex.pipe import (
     Node,
     Executor,
     NODE_STATES_TABLE_NAME,
-    NODE_STATES_DB_NAME,
 )
-from phenex.ibis_connect import DuckDBConnector
 
 
 class MockTable:
@@ -60,6 +54,20 @@ class TestPhenexNode:
         parent.add_children(child)  # Add same child again
 
         assert len(parent.children) == 1
+
+    def test_collect_dependencies(self):
+        """Test that grandchildren are added to dependencies"""
+
+        w = Node("w")
+        x = Node("x")
+        y = Node("y")
+        z = Node("z")
+
+        w >> [x, y]
+        x >> z
+        y >> z
+
+        assert z in w.dependencies
 
     def test_add_children_non_phenex_node(self):
         """Test that adding non-Node raises ValueError"""
