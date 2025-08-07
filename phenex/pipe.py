@@ -123,16 +123,18 @@ class Node:
         return list(self._collect_all_dependencies().values())
 
     @property
-    def dependency_graph(self) -> Dict[str, Set[str]]:
+    def dependency_graph(self) -> Dict["Node", List["Node"]]:
         """
         Build a dependency graph where each node maps to its direct dependencies (children).
+
+        Returns:
+            Dict[Node, List[Node]: A mapping of Node's to their children Node's.
         """
         graph = defaultdict(set)
-        for node in self.children:
-            graph[self.name].add(node.name)
+        graph[self] = self.children
 
         for node in self.dependencies:
-            graph[node.name].add(node.name)
+            graph[node] = node.children
         return dict(graph)
 
     def _collect_all_dependencies(self, visited: Set[str] = None) -> Dict[str, "Node"]:
@@ -192,7 +194,11 @@ class Node:
         # Use json.dumps to get a string, enforce sorted keys for deterministic ordering
         encoded = json.dumps(as_dict, sort_keys=True).encode()
         dhash.update(encoded)
-        return dhash.hexdigest()
+        return hash(dhash.hexdigest())
+
+    def __hash__(self):
+        # For python built-in function hash().
+        return self._get_current_hash()
 
     def _update_current_hash(self):
 
@@ -307,7 +313,7 @@ class Node:
         return to_dict(self)
 
     def __repr__(self):
-        return f"node={self.name}"
+        return f"Node('{self.name}')"
 
 
 class Executor:

@@ -147,10 +147,6 @@ class TestPhenexNode:
         hash2 = node._get_current_hash()
         assert hash1 == hash2
 
-        # Hash should be MD5 hex string
-        assert len(hash1) == 32
-        assert all(c in "0123456789abcdef" for c in hash1)
-
     def test_get_current_hash_different_nodes(self):
         """Test that different nodes have different hashes"""
         node1 = Node("node1")
@@ -225,10 +221,41 @@ class TestPhenexNode:
         assert isinstance(result, dict)
         # The exact content depends on the to_dict implementation
 
-    def test_repr(self):
-        """Test string representation"""
-        node = Node("test")
-        assert repr(node) == "node=TEST"
+    def test_dependency_graph(self):
+        """Test dependency_graph property with depth >= 2"""
+        # Create a hierarchy with depth 3: root -> middle -> leaf
+        root = Node("root")
+        middle = Node("middle")
+        leaf = Node("leaf")
+
+        # Create another branch
+        other_middle = Node("other_middle")
+        other_leaf = Node("other_leaf")
+
+        # Build the dependency tree
+        root >> [middle, other_middle]
+        middle >> leaf
+        other_middle >> other_leaf
+
+        # Test the dependency graph
+        graph = root.dependency_graph
+
+        # Should be a dictionary representation of the graph
+        assert isinstance(graph, dict)
+
+        # Root should have middle and other_middle as dependencies
+        assert middle in graph[root]
+        assert other_middle in graph[root]
+
+        # Middle should have leaf as dependency
+        assert leaf in graph[middle]
+
+        # Other_middle should have other_leaf as dependency
+        assert other_leaf in graph[other_middle]
+
+        # Leaf nodes should have empty dependency lists
+        assert len(graph[leaf]) == 0
+        assert len(graph[other_leaf]) == 0
 
 
 class ConcreteNode(Node):
