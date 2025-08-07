@@ -14,9 +14,11 @@
 }
 
 .rightPanel {
+  position: relative;
   transition:
     width 0.2s ease,
     opacity 0.2s ease;
+  background-color: var(--background-color) !important;
 }
 
 .rightPanel.collapsed {
@@ -32,19 +34,25 @@
 }
 
 .divider {
-  width: 100px;
+  width: 15px;
   height:100%;
   /* background-color: var(--background-color) !important; */
   cursor: col-resize;
   position: absolute;
   box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.1);
   border-left: 1px solid var(--line-color);
-  background-color: aqua;
+  background-color: transparent;
   z-index: 5000;
+  top:0px;
+  left:0px;
+
 }
 
-.rightPanelContent{
-  z-index: 100;
+.rightPanelContent {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  z-index: 0;
 }
 .divider.collapsed {
   width: 0;
@@ -57,7 +65,6 @@
 
 
 .divider:hover .dividerLine {
-  background-color: red;
   width: 3px;
 }
 
@@ -96,7 +103,7 @@
   cursor: pointer;
   z-index: 1000;
   top: 10px;
-  /* left: 0px; */
+  left: 10px;
 
   transition: transform 0.2s ease;
   color: black;

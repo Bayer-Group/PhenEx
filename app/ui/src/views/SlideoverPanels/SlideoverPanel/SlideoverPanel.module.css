@@ -7,13 +7,12 @@
   margin: 0;
   overflow: hidden; /* Prevent container from growing */
   box-sizing: border-box; /* Include padding in height calculation */
-  background-color: red;
 }
 
 .title {
   font-size: 24px;
   font-family: 'IBMPlexSans-bold';
-  padding-left: 10px;
+  padding-left: 20px;
   margin-top:6px;
   margin-left:30px;
   flex-shrink: 0; /* Prevent title from shrinking */
