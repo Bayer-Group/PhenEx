@@ -9,8 +9,8 @@ import ibis
 from ibis.expr.types.relations import Table
 
 from phenex.pipe import (
-    PhenexNode,
-    PhenexExecutor,
+    Node,
+    Executor,
     NODE_STATES_TABLE_NAME,
     NODE_STATES_DB_NAME,
 )
@@ -29,12 +29,12 @@ class MockTable:
 
 
 class TestPhenexNode:
-    """Test class for PhenexNode"""
+    """Test class for Node"""
 
     def test_add_children_single_node(self):
         """Test adding a single child node"""
-        parent = PhenexNode("parent")
-        child = PhenexNode("child")
+        parent = Node("parent")
+        child = Node("child")
 
         parent.add_children(child)
         assert child in parent.children
@@ -42,9 +42,9 @@ class TestPhenexNode:
 
     def test_add_children_list(self):
         """Test adding multiple children as a list"""
-        parent = PhenexNode("parent")
-        child1 = PhenexNode("child1")
-        child2 = PhenexNode("child2")
+        parent = Node("parent")
+        child1 = Node("child1")
+        child2 = Node("child2")
 
         parent.add_children([child1, child2])
         assert child1 in parent.children
@@ -53,8 +53,8 @@ class TestPhenexNode:
 
     def test_add_children_duplicate(self):
         """Test that duplicate children are not added"""
-        parent = PhenexNode("parent")
-        child = PhenexNode("child")
+        parent = Node("parent")
+        child = Node("child")
 
         parent.add_children(child)
         parent.add_children(child)  # Add same child again
@@ -62,19 +62,17 @@ class TestPhenexNode:
         assert len(parent.children) == 1
 
     def test_add_children_non_phenex_node(self):
-        """Test that adding non-PhenexNode raises ValueError"""
-        parent = PhenexNode("parent")
+        """Test that adding non-Node raises ValueError"""
+        parent = Node("parent")
 
-        with pytest.raises(
-            ValueError, match="Dependent children must be of type PhenexNode"
-        ):
+        with pytest.raises(ValueError, match="Dependent children must be of type Node"):
             parent.add_children("not_a_node")
 
     def test_add_children_duplicate_name_different_node(self):
         """Test that nodes with duplicate names but different objects raise ValueError"""
-        parent = PhenexNode("parent")
-        child1 = PhenexNode("duplicate_name")
-        child2 = PhenexNode("duplicate_name")
+        parent = Node("parent")
+        child1 = Node("duplicate_name")
+        child2 = Node("duplicate_name")
 
         parent.add_children(child1)
         with pytest.raises(ValueError, match="Duplicate node name found"):
@@ -82,8 +80,8 @@ class TestPhenexNode:
 
     def test_rshift_operator(self):
         """Test >> operator for adding children"""
-        parent = PhenexNode("parent")
-        child = PhenexNode("child")
+        parent = Node("parent")
+        child = Node("child")
 
         result = parent >> child
         assert child in parent.children
@@ -91,9 +89,9 @@ class TestPhenexNode:
 
     def test_children_property_immutable(self):
         """Test that children property returns a copy to prevent direct modification"""
-        parent = PhenexNode("parent")
-        child1 = PhenexNode("child1")
-        child2 = PhenexNode("child2")
+        parent = Node("parent")
+        child1 = Node("child1")
+        child2 = Node("child2")
         parent.add_children(child1)
 
         # try to manually add children (should have no effect)
@@ -102,9 +100,9 @@ class TestPhenexNode:
 
     def test_dependencies_simple(self):
         """Test dependencies property with simple hierarchy"""
-        grandparent = PhenexNode("grandparent")
-        parent = PhenexNode("parent")
-        child = PhenexNode("child")
+        grandparent = Node("grandparent")
+        parent = Node("parent")
+        child = Node("child")
 
         parent.add_children(child)
         grandparent.add_children(parent)
@@ -117,10 +115,10 @@ class TestPhenexNode:
     def test_dependencies_complex(self):
         """Test dependencies with more complex hierarchy"""
         # Create a diamond dependency pattern
-        root = PhenexNode("root")
-        left = PhenexNode("left")
-        right = PhenexNode("right")
-        bottom = PhenexNode("bottom")
+        root = Node("root")
+        left = Node("left")
+        right = Node("right")
+        bottom = Node("bottom")
 
         left.add_children(bottom)
         right.add_children(bottom)
@@ -134,7 +132,7 @@ class TestPhenexNode:
 
     def test_get_current_hash(self):
         """Test hash generation for current state"""
-        node = PhenexNode("test")
+        node = Node("test")
         hash1 = node._get_current_hash()
 
         # Hash should be consistent
@@ -147,8 +145,8 @@ class TestPhenexNode:
 
     def test_get_current_hash_different_nodes(self):
         """Test that different nodes have different hashes"""
-        node1 = PhenexNode("node1")
-        node2 = PhenexNode("node2")
+        node1 = Node("node1")
+        node2 = Node("node2")
 
         hash1 = node1._get_current_hash()
         hash2 = node2._get_current_hash()
@@ -162,7 +160,7 @@ class TestPhenexNode:
         mock_connector.dest_connection.list_tables.return_value = []
         mock_connector_class.return_value = mock_connector
 
-        node = PhenexNode("test")
+        node = Node("test")
         result = node._get_last_hash()
 
         assert result is None
@@ -184,7 +182,7 @@ class TestPhenexNode:
         mock_connector.get_dest_table.return_value = mock_table
         mock_connector_class.return_value = mock_connector
 
-        node = PhenexNode("test")
+        node = Node("test")
         result = node._get_last_hash()
 
         assert result == "hash123"
@@ -198,7 +196,7 @@ class TestPhenexNode:
         mock_connector_class.return_value = mock_connector
         mock_memtable.return_value = Mock()
 
-        node = PhenexNode("test")
+        node = Node("test")
         result = node._update_current_hash()
 
         assert result is True
@@ -206,14 +204,14 @@ class TestPhenexNode:
 
     def test_execute_not_implemented(self):
         """Test that _execute raises NotImplementedError"""
-        node = PhenexNode("test")
+        node = Node("test")
 
         with pytest.raises(NotImplementedError):
             node._execute({})
 
     def test_to_dict(self):
         """Test to_dict method"""
-        node = PhenexNode("test")
+        node = Node("test")
         result = node.to_dict()
 
         assert isinstance(result, dict)
@@ -221,12 +219,12 @@ class TestPhenexNode:
 
     def test_repr(self):
         """Test string representation"""
-        node = PhenexNode("test")
+        node = Node("test")
         assert repr(node) == "node=TEST"
 
 
-class ConcreteNode(PhenexNode):
-    """Concrete implementation of PhenexNode for testing execute method"""
+class ConcreteNode(Node):
+    """Concrete implementation of Node for testing execute method"""
 
     def __init__(self, name, execution_time=0, fail=False):
         super().__init__(name)
@@ -246,7 +244,7 @@ class ConcreteNode(PhenexNode):
 
 
 class TestPhenexNodeExecution:
-    """Test PhenexNode execution functionality"""
+    """Test Node execution functionality"""
 
     def test_execute_simple(self):
         """Test simple execution without dependencies"""
@@ -354,9 +352,9 @@ class TestPhenexNodeExecution:
 
     def test_add_children_circular_dependency(self):
         """Test that adding a child that would create circular dependency raises ValueError"""
-        node1 = PhenexNode("node1")
-        node2 = PhenexNode("node2")
-        node3 = PhenexNode("node3")
+        node1 = Node("node1")
+        node2 = Node("node2")
+        node3 = Node("node3")
 
         # Create a chain: node1 -> node2 -> node3
         node2.add_children(node3)
@@ -367,8 +365,8 @@ class TestPhenexNodeExecution:
             node3.add_children(node1)
 
         # Also test direct circular dependency
-        node_a = PhenexNode("node_a")
-        node_b = PhenexNode("node_b")
+        node_a = Node("node_a")
+        node_b = Node("node_b")
 
         node_a.add_children(node_b)
 
@@ -378,10 +376,10 @@ class TestPhenexNodeExecution:
 
 
 class TestPhenexExecutor:
-    """Test PhenexExecutor class"""
+    """Test Executor class"""
 
     def test_autoadd_dependencies(self):
-        """Test PhenexExecutor initialization"""
+        """Test Executor initialization"""
         node1 = ConcreteNode("node1")
         node2 = ConcreteNode("node2")
         node3 = ConcreteNode("node3")
@@ -389,7 +387,7 @@ class TestPhenexExecutor:
         node2.add_children(node3)
         node3.add_children(node4)
 
-        executor = PhenexExecutor("test_executor", [node1, node2])
+        executor = Executor("test_executor", [node1, node2])
 
         assert "NODE3" in executor.nodes
         assert "NODE4" in executor.nodes
@@ -400,7 +398,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent, child])
+        executor = Executor("test", [parent, child])
 
         assert "CHILD" in executor._reverse_graph
         assert "PARENT" in executor._reverse_graph["CHILD"]
@@ -411,7 +409,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent, child])
+        executor = Executor("test", [parent, child])
         order = executor._topological_sort()
 
         # Child should come before parent
@@ -430,7 +428,7 @@ class TestPhenexExecutor:
         right.add_children(bottom)
         top.add_children([left, right])
 
-        executor = PhenexExecutor("test", [top, left, right, bottom])
+        executor = Executor("test", [top, left, right, bottom])
         order = executor._topological_sort()
 
         # Bottom should come first, top should come last
@@ -444,7 +442,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent, child])
+        executor = Executor("test", [parent, child])
         tables = {"domain1": MockTable()}
 
         results = executor.execute_sequential(tables)
@@ -462,7 +460,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children([fast_child, slow_child])
 
-        executor = PhenexExecutor("test", [parent])
+        executor = Executor("test", [parent])
         tables = {"domain1": MockTable()}
 
         start_time = time.time()
@@ -483,7 +481,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent])
+        executor = Executor("test", [parent])
         tables = {"domain1": MockTable()}
 
         with patch.object(executor, "execute_sequential") as mock_sequential:
@@ -499,7 +497,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent, child])
+        executor = Executor("test", [parent, child])
         plan = executor.get_execution_plan()
 
         assert isinstance(plan, list)
@@ -513,7 +511,7 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = PhenexExecutor("test", [parent, child])
+        executor = Executor("test", [parent, child])
         viz = executor.visualize_dependencies()
 
         assert isinstance(viz, str)
@@ -527,7 +525,7 @@ class TestPhenexExecutor:
     #     parent = ConcreteNode("parent")
     #     parent.add_children(failing_child)
 
-    #     executor = PhenexExecutor("test", [parent])
+    #     executor = Executor("test", [parent])
     #     tables = {"domain1": MockTable()}
 
     #     with pytest.raises(RuntimeError, match="Node FAILING_CHILD failed"):
@@ -552,7 +550,7 @@ class TestPhenexExecutor:
         parent._get_current_hash = Mock(return_value="parent_hash")
         parent._update_current_hash = Mock(return_value=True)
 
-        executor = PhenexExecutor("test", [parent])
+        executor = Executor("test", [parent])
         tables = {"domain1": MockTable()}
 
         results = executor.execute(
@@ -569,7 +567,7 @@ class TestEdgeCases:
 
     def test_empty_executor(self):
         """Test executor with no nodes"""
-        executor = PhenexExecutor("empty", [])
+        executor = Executor("empty", [])
         results = executor.execute({})
 
         assert len(results) == 0
@@ -577,7 +575,7 @@ class TestEdgeCases:
     def test_node_with_no_dependencies(self):
         """Test single node with no dependencies"""
         node = ConcreteNode("single")
-        executor = PhenexExecutor("test", [node])
+        executor = Executor("test", [node])
 
         results = executor.execute({})
 
@@ -591,7 +589,7 @@ class TestEdgeCases:
         node2 = ConcreteNode("node2")
         node3 = ConcreteNode("node3")
 
-        executor = PhenexExecutor("test", [node1, node2, node3])
+        executor = Executor("test", [node1, node2, node3])
         results = executor.execute({}, n_threads=3)
 
         assert len(results) == 3
@@ -606,7 +604,7 @@ class TestEdgeCases:
                 node.add_children(nodes[i - 1])
             nodes.append(node)
 
-        executor = PhenexExecutor("test", [nodes[-1]])  # Only provide the top node
+        executor = Executor("test", [nodes[-1]])  # Only provide the top node
         results = executor.execute({})
 
         assert len(results) == 5

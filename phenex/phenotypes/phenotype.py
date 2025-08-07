@@ -8,12 +8,12 @@ from phenex.tables import (
 )
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import to_dict
-from phenex.pipe import PhenexNode
+from phenex.pipe import Node
 
 logger = create_logger(__name__)
 
 
-class Phenotype(PhenexNode):
+class Phenotype(Node):
     """
     A phenotype is a description of the state of a person at a specific time.
 
@@ -21,11 +21,11 @@ class Phenotype(PhenexNode):
 
     The translation of this description in actual executable code (the "how") is handled via the `Phenotype.execute()` method. The execute method returns a PhenotypeTable - the realization of the defined Phenotype in a particular database. See `execute()` for details.
 
-    All Phenotype's in Phenex derive from the Phenotype class. To subclass, see documentation for PhenexNode.
+    All Phenotype's in Phenex derive from the Phenotype class. To subclass, see documentation for Node.
 
     Parameters:
         description: A plain text description of the phenotype.
-        kwargs: For additional parameters, see PhenexNode.
+        kwargs: For additional parameters, see Node.
     """
 
     def __init__(self, description: str = None, **kwargs):

@@ -18,24 +18,44 @@ NODE_STATES_TABLE_NAME = "__PHENEX_META__NODE_STATES"
 NODE_STATES_DB_NAME = "phenex.db"
 
 
-class PhenexNode:
+class Node:
     """
-    A PhenexNode is a "unit of computation" in the execution of phenotypes and cohorts in PhenEx. A PhenexNode takes in arbitrary parameters and can have arbitrary dependencies and outputs always a single ibis table. The PhenexNode class manages the execution of itself and any dependent nodes, optionally using lazy (re)execution for making incremental updates to a PhenexNode object.
+    A Node is a "unit of computation" in the execution of phenotypes and cohorts in PhenEx. Each Node outputs a single table and the output table is the smallest unit of computation in PhenEx that can be materialized to a database. Anything you want to "checkpoint-able" should be encapsulated within a Node. Smaller units of calculation are never materialized.
 
-    The user injects the logic for producing the output table from the input parameters and dependent nodes by subclassing PhenexNode.
+    A Node is defined by an arbitrary set of user-specified parameters and can have arbitrary dependencies. Abstractly, a Node represents a node in the directed acyclic graph (DAG) that determines the order of execution of dependencies for a given Phenotype (which is itself a Node). The Node class manages the execution of itself and any dependent nodes, optionally using lazy (re)execution for making incremental updates to a Node object.
+
+    The user injects the logic for producing the output table from the input parameters and dependent nodes by subclassing Node.
 
     To subclass:
-        1. Define the parameters required to compute the PhenexNode in the `__init__()` interface.
+        1. Define the parameters required to compute the Node in the `__init__()` interface.
         2. At the top of `__init__()`, call super().__init__(). This must be called before any calls to `add_children()`.
-        3. Register children nodes - PhenexNode's which must be executed before the current PhenexNode - by calling `add_children()`, allowing PhenexNode's to be executed recursively. You only need to add direct dependencies as children. Deeper dependencies (children of children) are automatically inferred.
-        4. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the PhenexNode and returning the appropriate Table.
-        5. Define tests in `phenex.test`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
+        3. Register children nodes - Node's which must be executed before the current Node - by calling `add_children()`, allowing Node's to be executed recursively. You only need to add direct dependencies as children. Deeper dependencies (children of children) are automatically inferred.
+        4. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Node and returning the appropriate Table.
+        5. Define tests in `phenex.test`! High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
 
     Parameters:
         name: A short, descriptive, and unique name for the node. The name is used as a unique identifier for the node and cannot be the same as the name of any dependent node (you cannot have two dependent nodes called "codelist_phenotype", for example). If the output table is materialized from this node, name will be used as the table name in the database.
 
     Attributes:
         table: The stored output from call to self.execute().
+
+    Example:
+        ```python
+        class MyNode(Node):
+            def __init__(self, name, other_node, threshold=10):
+
+                # call super() at the TOP of __init__()
+                super(MyNode, self).__init__(name=name)
+                self.other_node = other_node
+                self.threshold = threshold
+
+                # Add any dependent nodes
+                self.add_children(other_node)
+
+            def _execute(self, tables):
+                # Your computation logic here
+                return some_table
+        ```
     """
 
     def __init__(self, name: Optional[str] = None):
@@ -57,13 +77,13 @@ class PhenexNode:
     def _check_child_can_be_added(self, child):
         """
         Checks that child node can be added to self.children. A child node must:
-            1. Be of type PhenexNode
+            1. Be of type Node
             2. Not already be in self.children
             3. Does not create a circular dependency and
             4. Have a unique name from all other dependencies
         """
-        if not isinstance(child, PhenexNode):
-            raise ValueError("Dependent children must be of type PhenexNode!")
+        if not isinstance(child, Node):
+            raise ValueError("Dependent children must be of type Node!")
 
         if child in self.children:
             logger.warning(
@@ -92,18 +112,16 @@ class PhenexNode:
         return self._children[:]
 
     @property
-    def dependencies(self) -> List["PhenexNode"]:
+    def dependencies(self) -> List["Node"]:
         """
         Recursively collect all dependencies of a node (including dependencies of dependencies).
 
         Returns:
-            List[PhenexNode]: A list of PhenexNode objects on which this PhenexNode depends.
+            List[Node]: A list of Node objects on which this Node depends.
         """
         return list(self._collect_all_dependencies().values())
 
-    def _collect_all_dependencies(
-        self, visited: Set[str] = None
-    ) -> Dict[str, "PhenexNode"]:
+    def _collect_all_dependencies(self, visited: Set[str] = None) -> Dict[str, "Node"]:
         if visited is None:
             visited = set()
 
@@ -192,7 +210,7 @@ class PhenexNode:
         lazy_execution: bool = False,
     ) -> Table:
         """
-        Executes the PhenexNode computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing PhenexNode's that have already executed.
+        Executes the Node computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing Node's that have already executed.
 
         Parameters:
             tables: A dictionary mapping domains to Table objects.
@@ -278,18 +296,18 @@ class PhenexNode:
         return f"node={self.name}"
 
 
-class PhenexExecutor:
+class Executor:
     """
-    A PhenexExecutor manages the execution of multiple PhenexNode's in the correct dependency order, with support for multithreaded execution while respecting dependencies.
+    An Executor manages the execution of multiple Node's in the correct dependency order, with support for multithreaded execution while respecting dependencies.
 
-    The graph ensures that dependencies are computed before their parent nodes, and allows N threads to compute PhenexNode's concurrently when their dependencies have been satisfied.
+    The Executor ensures that dependencies are computed before their parent nodes, and allows N threads to compute Node's concurrently when their dependencies have been satisfied.
 
     Parameters:
-        name: A short and descriptive name for the PhenexExecutor.
-        nodes: A list of PhenexNode objects to be computed. You only need to pass top-level nodes. Dependencies of the supplied list of PhenexNode's will detected and computed as needed.
+        name: A short and descriptive name for the Executor.
+        nodes: A list of Node objects to be computed. You only need to pass top-level nodes. Dependencies of the supplied list of Node's will detected and computed as needed.
     """
 
-    def __init__(self, name: str, nodes: List[PhenexNode]):
+    def __init__(self, name: str, nodes: List[Node]):
         self.name = name
         self.nodes = {node.name: node for node in nodes}
         self._auto_add_missing_dependencies()
@@ -352,8 +370,8 @@ class PhenexExecutor:
         return result
 
     def _collect_all_dependencies(
-        self, node: PhenexNode, visited: Set[str] = None
-    ) -> Dict[str, PhenexNode]:
+        self, node: Node, visited: Set[str] = None
+    ) -> Dict[str, Node]:
         """
         Recursively collect all dependencies of a node (including dependencies of dependencies).
 
@@ -362,7 +380,7 @@ class PhenexExecutor:
             visited: Set of already visited node names to avoid infinite loops
 
         Returns:
-            Dict[str, PhenexNode]: A dictionary mapping node names to node objects for all dependencies
+            Dict[str, Node]: A dictionary mapping node names to node objects for all dependencies
         """
         if visited is None:
             visited = set()
@@ -452,11 +470,11 @@ class PhenexExecutor:
         Execute all nodes in the graph in the correct dependency order using multithreading.
 
         Parameters:
-            tables: See PhenexNode.
-            con: See PhenexNode.
-            overwrite: See PhenexNode.
-            lazy_execution: See PhenexNode.
-            n_threads: Max number of PhenexNode's to execute simultaneously.
+            tables: See Node.
+            con: See Node.
+            overwrite: See Node.
+            lazy_execution: See Node.
+            n_threads: Max number of Node's to execute simultaneously.
 
         Returns:
             Dict[str, Table]: A dictionary mapping node names to their computed tables
@@ -591,10 +609,10 @@ class PhenexExecutor:
         Execute all nodes sequentially in topological order (for debugging/comparison).
 
         Parameters:
-            tables: See PhenexNode.
-            con: See PhenexNode.
-            overwrite: See PhenexNode.
-            lazy_execution: See PhenexNode.
+            tables: See Node.
+            con: See Node.
+            overwrite: See Node.
+            lazy_execution: See Node.
 
         Returns:
             Dict[str, Table]: A dictionary mapping node names to their computed tables
