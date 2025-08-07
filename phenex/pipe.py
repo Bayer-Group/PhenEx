@@ -256,7 +256,7 @@ class Node:
                     "A DatabaseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
                 )
 
-            # first time computing, _get_current_hash() will be None and execution will still be triggered
+            # first time computing, _get_last_hash() will be None and execution will still be triggered
             if self._get_current_hash() != self._get_last_hash():
                 logger.info(
                     f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
@@ -436,7 +436,7 @@ class Executor:
                         added_nodes[dep_name] = dep_node
                         new_deps_found = True
                         logger.info(
-                            f"Auto-adding missing dependency: '{dep_name}' required by '{node_name}'"
+                            f"Adding dependent node '{dep_name}' required by '{node_name}'"
                         )
 
             # If no new dependencies were found, we're done
@@ -445,9 +445,6 @@ class Executor:
 
         # Add all collected dependencies to the workflow
         if added_nodes:
-            logger.info(
-                f"Auto-added {len(added_nodes)} missing dependencies to workflow '{self.name}'"
-            )
             self.nodes.update(added_nodes)
             # Rebuild the dependency graphs with the new nodes
             self._dependency_graph = self._build_dependency_graph()

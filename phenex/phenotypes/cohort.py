@@ -325,8 +325,6 @@ class Cohort:
             + self.characteristics
             + self.outcomes
         )
-        for node in top_level_nodes:
-            logger.info(f"{node.name} dependencies: {node._collect_all_dependencies()}")
         all_nodes = top_level_nodes + sum([t.dependencies for t in top_level_nodes], [])
         # FIXME Person domain should not be HARD CODED; however, it IS hardcoded in SCORE phenotype. Remove hardcoding!
         domains = list(
@@ -346,7 +344,6 @@ class Cohort:
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
         """
         domains = self._get_domains()
-        logger.info(f"Domains: {domains}")
         return [
             SubsetTable(
                 name=f"{self.name}__{stage}_{domain}".upper(),
