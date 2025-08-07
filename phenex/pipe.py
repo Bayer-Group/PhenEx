@@ -137,6 +137,20 @@ class Node:
             graph[node] = node.children
         return dict(graph)
 
+    @property
+    def reverse_dependency_graph(self) -> Dict["Node", List["Node"]]:
+        """
+        Build a reverse dependency graph where each node maps to nodes that depend on it (parents).
+
+        Returns:
+            Dict[Node, List[Node]: A mapping of Node's to their parent Node's.
+        """
+        reverse_graph = defaultdict(set)
+        for parent, children in self.dependency_graph.items():
+            for child in children:
+                reverse_graph[child].add(parent)
+        return dict(reverse_graph)
+
     def _collect_all_dependencies(self, visited: Set[str] = None) -> Dict[str, "Node"]:
         if visited is None:
             visited = set()
