@@ -112,7 +112,7 @@ class Node:
         return self._children[:]
 
     @property
-    def dependencies(self) -> List["Node"]:
+    def dependencies(self) -> Set["Node"]:
         """
         Recursively collect all dependencies of a node (including dependencies of dependencies).
 
@@ -123,12 +123,12 @@ class Node:
         return list(self._collect_all_dependencies().values())
 
     @property
-    def dependency_graph(self) -> Dict["Node", List["Node"]]:
+    def dependency_graph(self) -> Dict["Node", Set["Node"]]:
         """
         Build a dependency graph where each node maps to its direct dependencies (children).
 
         Returns:
-            Dict[Node, List[Node]: A mapping of Node's to their children Node's.
+            Dict[Node, Set[Node]: A mapping of Node's to their children Node's.
         """
         graph = defaultdict(set)
         graph[self] = self.children
@@ -138,7 +138,7 @@ class Node:
         return dict(graph)
 
     @property
-    def reverse_dependency_graph(self) -> Dict["Node", List["Node"]]:
+    def reverse_dependency_graph(self) -> Dict["Node", Set["Node"]]:
         """
         Build a reverse dependency graph where each node maps to nodes that depend on it (parents).
 
