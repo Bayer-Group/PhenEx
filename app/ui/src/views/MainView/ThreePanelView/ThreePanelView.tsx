@@ -114,6 +114,29 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     }
   };
 
+  const renderLeftDivider = () => {
+    return (
+      <div
+          className={styles.divider}
+          onMouseDown={handleMouseDown('left')}
+          onClick={toggleLeftPanel}
+        >
+        <div
+          className={`${styles.leftDividerPadding} ${isLeftCollapsed ? styles.leftDividercollapsed : ''}`}
+        ></div>
+
+        <div className={styles.dividerLine} />
+
+        <button
+          className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
+        >
+          <span className={styles.arrow}>{'<<'}</span>
+          {/* {isLeftCollapsed ? '>' : '<'} */}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
       id="three-panel-container"
@@ -131,24 +154,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         {children[0]}
       </div>
 
-      <div
-        className={styles.divider}
-        onMouseDown={handleMouseDown('left')}
-        onClick={toggleLeftPanel}
-      >
-        <div
-          className={`${styles.leftDividerPadding} ${isLeftCollapsed ? styles.leftDividercollapsed : ''}`}
-        ></div>
-
-        <div className={styles.dividerLine} />
-
-        <button
-          className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
-        >
-          <span className={styles.arrow}>{'<<'}</span>
-          {/* {isLeftCollapsed ? '>' : '<'} */}
-        </button>
-      </div>
+      {renderLeftDivider()}
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
       <div
