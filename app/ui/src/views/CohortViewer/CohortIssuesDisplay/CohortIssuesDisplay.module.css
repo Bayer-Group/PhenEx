@@ -100,7 +100,7 @@
   width: 300px;
   z-index: 2;
   height: 65px;
-  border-radius: 0px;
+  border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) 0px 0px;
   transition: box-shadow 0.3s ease-in-out;
   transition: transform 0.3s ease-in-out;
   box-shadow: var(--box_shadow_selected_no_hover);
