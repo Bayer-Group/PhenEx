@@ -25,3 +25,11 @@
 .popover {
   z-index: 2;
 }
+
+.hasIssues{
+  pointer-events: all;
+}
+
+.noIssues{
+  pointer-events: none;
+}

@@ -65,9 +65,6 @@ export const CohortViewerHeader: FC<CohortViewerHeaderProps> = ({
           onSaveChanges={onSaveChanges}
         />
       </div>
-      {/* <div className={styles.controlsContainer}>
-        <Tabs width={400} height={25} tabs={tabs} onTabChange={onTabChange} active_tab_index={1} />
-      </div> */}
       <AppNavigationTabBar />
       <IssuesDisplayControl />
     </div>

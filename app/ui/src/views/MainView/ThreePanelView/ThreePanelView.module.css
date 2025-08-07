@@ -186,7 +186,7 @@
   position: absolute;
   margin-left: 10px;
   transition: all 0.2s ease;
-  border-left: var(--border);
+  border-left: 1px solid var(--color-accent-bright);
   box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.3);
 }
 

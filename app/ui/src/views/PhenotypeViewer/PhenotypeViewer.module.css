@@ -3,22 +3,18 @@
   display: flex;
   flex-direction: column;
   padding: 0px;
-  padding-top: 60px;
+  padding-top: 50px;
 }
 
 .header {
   margin-top: 0px;
-  margin-left: 0px;
+  margin-left: 5px;
   margin-right: 8px;
-  flex-shrink: 0;
-  background-color: white !important;
-  border-radius: 15px;
-  border: 1px solid;
+  height:calc(100vh - 50px);
   /* border: 1px solid var(--color-accent_2); */
-  box-shadow: var(--box_shadow);
   overflow: hidden;
-  max-width: 800px;
 }
+
 .title {
   padding-left: 5px;
   padding-right: 5px;

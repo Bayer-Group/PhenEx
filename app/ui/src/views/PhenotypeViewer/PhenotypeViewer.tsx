@@ -184,18 +184,18 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             }}
           />
         </div>
-      </div>
-      <div className={styles.bottomSection}>
-        <div className={styles.componentsTitleDiv}>
-          <span className={styles.components_title}>Component phenotypes</span>
-          <br></br>
-          <span className={styles.components_phenotype_name}> of {phenotypeName}</span>
-          <button className={styles.addButton} onClick={clickedOnAddButton}>
-            Add
-          </button>
-        </div>
-        <div className={`${styles.componentsContainer}`}>
-          <PhenotypeComponents />
+        <div className={styles.bottomSection}>
+          <div className={styles.componentsTitleDiv}>
+            <span className={styles.components_title}>Component phenotypes</span>
+            <br></br>
+            <span className={styles.components_phenotype_name}> of {phenotypeName}</span>
+            <button className={styles.addButton} onClick={clickedOnAddButton}>
+              Add
+            </button>
+          </div>
+          <div className={`${styles.componentsContainer}`}>
+            <PhenotypeComponents />
+          </div>
         </div>
       </div>
     </div>

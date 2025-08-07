@@ -89,9 +89,13 @@
   /* color: black; */
   margin-bottom: 0px;
   margin-right: 50px;
-  font-family: 'IBMPlexSans-bold';
+  font-family: 'IBMPlexSans-regular';
   font-size: 18px;
   line-height: 1.2;
+}
+
+.phenotypeSection.selected .phenotypeId{
+  font-family: "IBMPlexSans-bold";
 }
 
 .issuesList {
