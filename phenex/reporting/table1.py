@@ -80,6 +80,7 @@ class Table1(Reporter):
                 "CategoricalPhenotype",
                 "SexPhenotype",
                 "ArithmeticPhenotype",
+                "EventCountPhenotype",
                 "BinPhenotype",
             ]
         ]
