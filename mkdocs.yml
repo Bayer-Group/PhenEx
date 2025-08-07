@@ -29,7 +29,7 @@ nav:
           - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
           - Factory:
-            - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
+              - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
@@ -51,6 +51,7 @@ nav:
           - InExCounts: api/reporting/counts.md
           - TimeToEvent: api/reporting/time_to_event.md
       - Util:
+          - Pipeline Utilities: api/pipe.md
           - Serialization: api/util/serialization.md
   - License: LICENSE.md
 
