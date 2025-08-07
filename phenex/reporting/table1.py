@@ -61,7 +61,7 @@ class Table1(Reporter):
         if self.pretty_display:
             self.create_pretty_display()
 
-        self.df = self.df.sort_values(by="inex_order")
+        self.df = self.df.sort_values(by=["inex_order", "Name"])
         self.df = self.df.reset_index()[
             [x for x in self.df.columns if x not in ["index", "inex_order"]]
         ]
@@ -81,6 +81,7 @@ class Table1(Reporter):
                 "SexPhenotype",
                 "ArithmeticPhenotype",
                 "EventCountPhenotype",
+                "BinPhenotype",
             ]
         ]
 
@@ -93,8 +94,8 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
-                "ScorePhenotype",
                 "ArithmeticPhenotype",
+                "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
             ]
         ]
 
@@ -102,7 +103,13 @@ class Table1(Reporter):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ in ["CategoricalPhenotype", "SexPhenotype"]
+            if type(x).__name__
+            in [
+                "CategoricalPhenotype",
+                "SexPhenotype",
+                "ScorePhenotype",  # score is categorical; show number of patients in each score category
+                "BinPhenotype",
+            ]
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
