@@ -3,6 +3,7 @@ import json
 from typing import Dict, List, Set, Optional
 import pandas as pd
 import ibis
+from deepdiff import DeepDiff
 from ibis.expr.types.relations import Table
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
@@ -66,9 +67,8 @@ class Node:
         if not isinstance(children, list):
             children = [children]
         for child in children:
-            if not child in self.children:
-                if self._check_child_can_be_added(child):
-                    self._children.append(child)
+            if self._check_child_can_be_added(child):
+                self._children.append(child)
 
     def __rshift__(self, right):
         self.add_children(right)
@@ -78,18 +78,11 @@ class Node:
         """
         Checks that child node can be added to self.children. A child node must:
             1. Be of type Node
-            2. Not already be in self.children
-            3. Does not create a circular dependency and
-            4. Have a unique name from all other dependencies
+            2. Does not create a circular dependency and
+            3. Have a unique name from all other dependencies
         """
         if not isinstance(child, Node):
             raise ValueError("Dependent children must be of type Node!")
-
-        if child in self.children:
-            logger.warning(
-                f"Duplicate node found: '{child.name}' has already been added to list of children."
-            )
-            return False  # do not add the node
 
         # Check for circular dependencies: ensure that self is not already a dependency of child
         if self in child.dependencies:
@@ -98,8 +91,9 @@ class Node:
                 f"would create a circular dependency because '{self.name}' is already a dependency of '{child.name}'."
             )
 
+        # Do not allow nodes to have the same name; adding a Node twice is also an error
         for dep in self.dependencies:
-            if child.name == dep.name and child != dep:
+            if child.name == dep.name:
                 raise ValueError(
                     f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
                 )
@@ -319,6 +313,15 @@ class Node:
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
+
+    def __eq__(self, other) -> bool:
+        diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
+        if diff:
+            logger.debug(f"{self.__class__.__name__}s NOT equal")
+            return False
+        else:
+            logger.debug(f"{self.__class__.__name__}s are equal")
+            return True
 
     def to_dict(self):
         """
