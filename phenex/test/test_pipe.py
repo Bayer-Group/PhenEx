@@ -48,10 +48,15 @@ class TestPhenexNode:
     def test_add_children_duplicate(self):
         """Test that duplicate children are not added"""
         parent = Node("parent")
-        child = Node("child")
+        child1 = Node("child")
+        child2 = Node("child")
 
-        parent.add_children(child)
-        parent.add_children(child)  # Add same child again
+        parent.add_children(child1)
+        with pytest.raises(ValueError, match="Duplicate node found"):
+            parent.add_children(child1)  # Add same child again
+
+        with pytest.raises(ValueError, match="Duplicate node name found"):
+            parent.add_children(child2)  # Add child with same name
 
         assert len(parent.children) == 1
 

@@ -66,9 +66,8 @@ class Node:
         if not isinstance(children, list):
             children = [children]
         for child in children:
-            if not child in self.children:
-                if self._check_child_can_be_added(child):
-                    self._children.append(child)
+            if self._check_child_can_be_added(child):
+                self._children.append(child)
 
     def __rshift__(self, right):
         self.add_children(right)
@@ -85,11 +84,16 @@ class Node:
         if not isinstance(child, Node):
             raise ValueError("Dependent children must be of type Node!")
 
-        if child in self.children:
-            logger.warning(
-                f"Duplicate node found: '{child.name}' has already been added to list of children."
+        if any([c is child for c in self.children]):
+            # note to use IS and not IN since IN check __eq__ and you can have
+            # __eq__ nodes that are not the same. A bit pedantic of a point;
+            # anyway, the check on duplicate names will raise an error but it's
+            # useful for the user to know the difference, i.e., literally THIS
+            # object has already been added or an otherwise identical object has
+            # already been added
+            raise ValueError(
+                f"Duplicate node found: the node '{child.name}' has already been added to the list of children."
             )
-            return False  # do not add the node
 
         # Check for circular dependencies: ensure that self is not already a dependency of child
         if self in child.dependencies:
@@ -99,7 +103,7 @@ class Node:
             )
 
         for dep in self.dependencies:
-            if child.name == dep.name and child != dep:
+            if child.name == dep.name and child is not dep:
                 raise ValueError(
                     f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
                 )
@@ -319,6 +323,9 @@ class Node:
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
+
+    def __eq__(self, other) -> bool:
+        return hash(self) == hash(other)
 
     def to_dict(self):
         """

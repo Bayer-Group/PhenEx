@@ -126,15 +126,6 @@ class Phenotype(Node):
     def __invert__(self) -> "ComputationGraph":
         return ComputationGraph(self, None, "~")
 
-    def __eq__(self, other) -> bool:
-        diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
-        if diff:
-            logger.debug(f"{self.__class__.__name__}s NOT equal")
-            return False
-        else:
-            logger.debug(f"{self.__class__.__name__}s are equal")
-            return True
-
     def get_codelists(self, to_pandas=False):
         codelists = []
         for child in self.children:
@@ -242,7 +233,7 @@ class ComputationGraph:
         phenotypes = []
         phenotypes.extend(manage_node(self.left))
         phenotypes.extend(manage_node(self.right))
-        return phenotypes
+        return list(set(phenotypes))
 
     def get_value_expression(self, table, operate_on="boolean"):
         """
