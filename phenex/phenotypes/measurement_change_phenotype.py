@@ -58,6 +58,7 @@ class MeasurementChangePhenotype(Phenotype):
     ):
         super(MeasurementChangePhenotype, self).__init__(**kwargs)
         self.phenotype = phenotype
+        self.add_children(phenotype)
         self.min_change = min_change
         self.max_change = max_change
         self.direction = direction
@@ -66,7 +67,6 @@ class MeasurementChangePhenotype(Phenotype):
         self.component_date_select = component_date_select
         self.return_date = return_date
         self.return_value = return_value
-        self.children = [phenotype]
         if self.direction not in ["increase", "decrease"]:
             raise ValueError(
                 f"Invalid choice for direction: {direction}. Must be 'increase' or 'decrease'."

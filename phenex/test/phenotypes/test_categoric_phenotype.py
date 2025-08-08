@@ -36,6 +36,7 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "single_flag",
             "persons": [f"P{i}" for i in range(4)],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1"],
@@ -48,6 +49,7 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_or",
             "persons": [f"P{i}" for i in range(4)] + [f"P{i}" for i in range(6, 8)],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1", "y2"], column_name="z", domain="person"
@@ -62,6 +64,7 @@ class CategoricalPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_and",
             "persons": [f"P{i}" for i in range(2, 4)],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1"], column_name="z", domain="person"
@@ -119,6 +122,7 @@ class CategoricalPhenotypeWithDateTestGenerator(PhenotypeTestGenerator):
             "name": "single_flag",
             "persons": [f"P{i}" for i in range(3)],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1"],
@@ -134,6 +138,7 @@ class CategoricalPhenotypeWithDateTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_or",
             "persons": [f"P{i}" for i in range(3)],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1", "y2"], column_name="z", domain="person"
@@ -151,6 +156,7 @@ class CategoricalPhenotypeWithDateTestGenerator(PhenotypeTestGenerator):
             "name": "two_categorical_filter_and",
             "persons": ["P3"],
             "phenotype": CategoricalPhenotype(
+                name="categoric_pt",
                 domain="person",
                 categorical_filter=CategoricalFilter(
                     allowed_values=["z1"], column_name="z", domain="person"

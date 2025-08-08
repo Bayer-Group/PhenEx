@@ -47,6 +47,7 @@ class CategoricalPhenotype(Phenotype):
 
     def __init__(
         self,
+        name: str,
         domain: str,
         categorical_filter: CategoricalFilter,
         date_range: DateFilter = None,
@@ -56,7 +57,7 @@ class CategoricalPhenotype(Phenotype):
         return_date=None,
         **kwargs,
     ):
-        super(CategoricalPhenotype, self).__init__(**kwargs)
+        super(CategoricalPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
         if not check_categorical_filters_share_same_domain(
             categorical_filter, self.domain

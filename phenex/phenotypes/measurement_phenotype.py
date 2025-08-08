@@ -76,6 +76,10 @@ class MeasurementPhenotype(CodelistPhenotype):
         super(MeasurementPhenotype, self).__init__(
             **kwargs,
         )
+
+        if further_value_filter_phenotype is not None:
+            self.add_children(further_value_filter_phenotype)
+
         self.clean_nonphysiologicals_value_filter = clean_nonphysiologicals_value_filter
         self.clean_null_values = clean_null_values
         self.value_filter = value_filter
@@ -90,11 +94,8 @@ class MeasurementPhenotype(CodelistPhenotype):
                 "Min",
             ]:
                 raise ValueError(
-                    f"{self.name}: you have selected an aggregation of the entire time period while selecting a single date selection of {self.return_date}. Select a daily aggregator (DailyMean, DailyMedian, DailyMin, DailyMax) if selecting a specific return date."
+                    f"{self.name}: you have selected an aggregation of the entire time period ({self.value_aggregation.__class__.__name__}) while selecting a single date selection of {self.return_date}. Select a daily aggregator (DailyMean, DailyMedian, DailyMin, DailyMax) if selecting a specific return date."
                 )
-
-        if self.further_value_filter_phenotype is not None:
-            self.children.append(self.further_value_filter_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         # perform codelist filtering

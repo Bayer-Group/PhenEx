@@ -102,9 +102,7 @@ class CodelistPhenotype(Phenotype):
         categorical_filter: Optional["CategoricalFilter"] = None,
         **kwargs,
     ):
-        if name is None:
-            name = codelist.name
-        super(CodelistPhenotype, self).__init__(name=name, **kwargs)
+        super(CodelistPhenotype, self).__init__(name=name or codelist.name)
 
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
@@ -117,7 +115,6 @@ class CodelistPhenotype(Phenotype):
             "nearest",
             "all",
         ], f"Unknown return_date: {return_date}"
-        self.table: PhenotypeTable = None
         self.domain = domain
         if isinstance(relative_time_range, RelativeTimeRangeFilter):
             relative_time_range = [relative_time_range]
@@ -126,7 +123,7 @@ class CodelistPhenotype(Phenotype):
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
-                    self.children.append(rtr.anchor_phenotype)
+                    self.add_children(rtr.anchor_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]
@@ -134,7 +131,9 @@ class CodelistPhenotype(Phenotype):
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
-        return select_phenotype_columns(code_table)
+        code_table = select_phenotype_columns(code_table)
+        code_table = self._perform_final_processing(code_table)
+        return code_table
 
     def _perform_codelist_filtering(self, code_table):
         assert is_phenex_code_table(code_table)
