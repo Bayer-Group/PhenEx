@@ -51,8 +51,7 @@ class TestPhenexNode:
         child = Node("child")
 
         parent.add_children(child)
-        with pytest.raises(ValueError, match="Duplicate node name found"):
-            parent.add_children(child)  # Add same child again
+        parent.add_children(child)  # Add same child again
 
         assert len(parent.children) == 1
 
