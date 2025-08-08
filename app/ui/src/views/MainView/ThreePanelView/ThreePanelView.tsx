@@ -137,6 +137,30 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
     )
   }
 
+
+    const renderRightDivider = () => {
+    return (
+      <div
+        className={styles.divider}
+        onMouseDown={handleMouseDown('right')}
+        onClick={toggleRightPanel}
+      >
+        <div
+          className={`${styles.dividerLine} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
+        />
+        <div
+          className={`${styles.rightDividerPadding} ${isRightCollapsed ? styles.collapsed : ''}`}
+        ></div>
+
+        <button
+          className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
+        >
+          {'AI'}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
       id="three-panel-container"
@@ -157,25 +181,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       {renderLeftDivider()}
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
-      <div
-        className={styles.divider}
-        onMouseDown={handleMouseDown('right')}
-        onClick={toggleRightPanel}
-      >
-        <div
-          className={`${styles.dividerLine} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
-        />
-        <div
-          className={`${styles.rightDividerPadding} ${isRightCollapsed ? styles.collapsed : ''}`}
-        ></div>
-
-        <button
-          className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
-        >
-          {'AI'}
-        </button>
-      </div>
-
+      
+      {renderRightDivider()}
       <div
         className={`${styles.panel} ${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
       >

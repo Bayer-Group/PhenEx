@@ -38,7 +38,7 @@
 .noRows_section{
   font-family: "IBMPlexSans-bold";
   font-size: 18x;
-  color: var(--color-accent-bright);
+  color: black;
 }
 
 .noRowsCommentLine{

@@ -100,7 +100,12 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             <span className={styles.noRows_section}>How do you want to define your cohort?</span> 
           <br></br>
             <span className={styles.noRowsTopLine}>
-            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>entry criterion, inclusion and exclusion phenotypes</span>.
+            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add 
+              <ol>
+                <li>the cohort <span className={styles.noRows_section}>entry</span> criterion, which defines  <span className={styles.noRows_section}>index date</span></li>
+                <li><span className={styles.noRows_section}>inclusion</span> criteria, which all patients must fulfill</li>
+                <li><span className={styles.noRows_section}>exclusion</span> criteria, which patients may not fulfill</li>
+              </ol>
           </span>
           <br></br>
              <span className = {styles.noRowsCommentLine}>PhenEx can then generate your <span className={styles.noRows_action}>cohort</span> for you.</span>

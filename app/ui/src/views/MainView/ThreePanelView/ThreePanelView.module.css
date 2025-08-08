@@ -169,12 +169,12 @@
   margin-left: -12px;
   pointer-events: none;
   position: absolute;
-  border-right: var(--border);
+  border-right: 1px solid var(--color-accent-bright);
   box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1);
 }
 
 .divider:hover .collapseButton.left {
-  border-color: var(--color-accent);
+  /* border-color: var(--color-accent); */
 }
 
 .leftDividerPadding {
@@ -234,3 +234,14 @@
     opacity 0.2s ease;
   opacity: 1;
 }
+
+
+
+/* Remove transitions ONLY during drag */
+[data-dragging='true'] .leftPanel,
+[data-dragging='true'] .rightPanel {
+  transition: none !important;
+}
+
+
+
