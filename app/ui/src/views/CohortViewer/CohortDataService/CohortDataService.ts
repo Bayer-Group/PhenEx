@@ -208,7 +208,7 @@ export class CohortDataService {
     const newPhenotype: TableRow = {
       id: createID(),
       type: type,
-      name: 'New phenotype',
+      name: 'Unnamed Phenotype',
       class_name: 'CodelistPhenotype',
     };
     if (parentPhenotypeId) {

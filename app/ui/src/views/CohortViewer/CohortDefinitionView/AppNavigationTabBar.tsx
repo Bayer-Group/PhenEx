@@ -13,7 +13,7 @@ interface AppNavigationTabBarProps {
 import { CodelistsInfoDisplay } from '../../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
-  NewPhenotype = 'New Phenotype',
+  NewPhenotype = 'Add Phenotype',
   Database = 'Database',
   Constants = 'Constants',
   Codelists = 'Codelists',

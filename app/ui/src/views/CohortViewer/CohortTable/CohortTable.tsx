@@ -38,11 +38,12 @@ ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
 interface CohortTableProps {
   data: TableData;
+  currentlyViewing:string;
   onCellValueChanged?: (event: any) => void;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, onCellValueChanged }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged }, ref) => {
     const myTheme = themeQuartz.withParams({
       accentColor: '#FF00000',
       borderColor: 'var(--line-color-grid)',
@@ -63,6 +64,68 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       ref.current?.api?.resetRowHeights();
     };
 
+    const NoRowsOverlayOutcomes: FC = () => {
+      console.log("CALLING NO ROWS OUTCOMMMMMESSSSS", currentlyViewing, currentlyViewing==='outcome')
+      return (
+        <div className={styles.noRowsOverlay}>
+
+          <span className={styles.noRowsBottomLine}>
+            <span className={styles.noRows_section}>How do you want to assess post-index data?</span> 
+          <br></br>
+            <span className={styles.noRowsTopLine}>
+            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
+          </span>
+          <br></br>
+             <span className = {styles.noRowsCommentLine}>PhenEx can then perform <span className={styles.noRows_action}>time-to-event</span> and <span className={styles.noRows_action}>treatment pattern</span> analyses for you.</span>
+          </span>
+        </div>
+      );
+    };
+
+    const NoRowsOverlayText = () => {
+      if (currentlyViewing === 'outcomes'){
+        return NoRowsOverlayOutcomes;
+      } else if (currentlyViewing === 'baseline'){
+        return NoRowsOverlayCharacteristics;
+      }
+      return NoRowsOverlayCohort;
+
+    }
+    const NoRowsOverlayCohort: FC = () => {
+
+      return (
+        <div className={styles.noRowsOverlay}>
+
+          <span className={styles.noRowsBottomLine}>
+            <span className={styles.noRows_section}>How do you want to define your cohort?</span> 
+          <br></br>
+            <span className={styles.noRowsTopLine}>
+            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>entry criterion, inclusion and exclusion phenotypes</span>.
+          </span>
+          <br></br>
+             <span className = {styles.noRowsCommentLine}>PhenEx can then generate your <span className={styles.noRows_action}>cohort</span> for you.</span>
+          </span>
+        </div>
+      );
+    };
+    const NoRowsOverlayCharacteristics: FC = () => {
+
+      return (
+        <div className={styles.noRowsOverlay}>
+
+          <span className={styles.noRowsBottomLine}>
+            <span className={styles.noRows_section}>How do you want to assess patients at index date?</span> 
+          <br></br>
+            <span className={styles.noRowsTopLine}>
+            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>baseline phenotypes</span>.
+          </span>
+          <br></br>
+             <span className = {styles.noRowsCommentLine}>PhenEx can then create <span className={styles.noRows_action}>Table 1</span> for you.</span>
+          </span>
+        </div>
+      );
+    };
+
     useEffect(() => {
       if (ref.current?.api) {
         ref.current.api.resetRowHeights();
@@ -73,7 +136,12 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
         <ErrorBoundary>
           <AgGridReact
+            key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
+
             ref={ref}
+            noRowsOverlayComponent={
+              NoRowsOverlayText()
+            }  
             rowData={data.rows}
             theme={myTheme}
             onGridReady={onGridReady}
