@@ -1,0 +1,41 @@
+.popoverheader {
+  cursor: pointer;
+  font-size: 16px;
+  font-family: 'IBMPlexSans-regular';
+  margin-bottom: 0px;
+  /* margin: 4px; */
+  overflow: hidden;
+  text-wrap: wrap;
+  min-height: 40px;
+  background-color: white;
+  /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
+  border: var(--border-accent);
+  box-shadow: var(--box_shadow_selected_no_hover);
+  background-color: var(--color-accent-bright) !important;
+  transition:
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  position: relative;
+  color: var(--xbutton_color_orange_background);
+  padding: 10px 20px 10px 10px;
+  font-size: 24px;
+  font-family: "IBMPlexSans-bold";
+  /* line-height:var(--popover_font_size); */
+}
+
+.popoverheader:hover{
+    color: white;
+
+}
+
+.popoverheader:focus {
+  outline: none;
+}
+
+.popoverheader:focus-visible {
+  outline: none;
+}
+
+.popoverheader:hover .xButton{
+    color:white;
+}
