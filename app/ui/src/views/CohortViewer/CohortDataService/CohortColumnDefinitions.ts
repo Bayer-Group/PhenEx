@@ -30,7 +30,7 @@ export const defaultColumns = [
 {
     field: 'type',
     headerName: 'Type',
-    width: 80,
+    width: 100,
     pinned: 'left',
     editable: true,
     cellEditor: TypeSelectorCellEditor,
@@ -60,14 +60,6 @@ export const defaultColumns = [
       };
     },
   },
-  // {
-  //   field: 'count',
-  //   headerName: 'N',
-  //   width: 80,
-  //   editable: false,
-  //   cellRenderer: CountCellRenderer,
-  //   wrapText: false,
-  // },
   {
     field: 'description',
     headerName: 'Description',

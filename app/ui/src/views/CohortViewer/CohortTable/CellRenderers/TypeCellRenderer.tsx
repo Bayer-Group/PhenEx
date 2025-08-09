@@ -3,6 +3,14 @@ import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRendere
 
 const TypeCellRenderer = (props: any) => {
   const type = props.value;
+
+  const renderIndex = (phenotype) => {
+    return (
+      <span className = {styles.index}>
+        {phenotype.type != 'entry' && phenotype.index}
+      </span>
+    );
+  }
   const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
   return (
     <PhenexCellRenderer {...props}>
@@ -17,6 +25,7 @@ const TypeCellRenderer = (props: any) => {
           }}
         >
           {type}
+          {renderIndex(props.data)}
         </span>
       </div>
     </PhenexCellRenderer>

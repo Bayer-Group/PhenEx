@@ -48,7 +48,6 @@ export class CohortDataService {
   }
 
   public set cohort_name(value: string) {
-    console.log('setting cohort name IN DATRA SERVICE', value, this.cohort_data.name);
     this._cohort_name = value;
   }
 
@@ -96,7 +95,6 @@ export class CohortDataService {
 
       this._table_data = this.tableDataFromCohortData();
       this.notifyListeners(); // Notify listeners after loading data
-      console.log(this._table_data);
     } catch (error) {
       console.error('Error loading cohort data:', error);
     }
@@ -104,7 +102,6 @@ export class CohortDataService {
 
   public setDatabaseSettings(databaseConfig) {
     this._cohort_data.database_config = databaseConfig;
-    console.log(databaseConfig);
 
     // Update domain values based on mapper type
     const domainColumn = this.columns.find(col => col.field === 'domain');
@@ -118,7 +115,6 @@ export class CohortDataService {
 
   public setConstants(constants) {
     this._cohort_data.constants = constants;
-    console.log(constants);
     this.saveChangesToCohort(false, false);
   }
 
@@ -128,34 +124,27 @@ export class CohortDataService {
     */
     const fieldEdited = event.colDef.field;
     const rowIdEdited = event.data.id; // TODO consider giving all phenotypes an ID
-    console.log('onCellValueChanged', fieldEdited, rowIdEdited);
     let phenotypeEdited = this._cohort_data.phenotypes.find(
       (row: TableRow) => row.id === rowIdEdited
     );
     phenotypeEdited[fieldEdited] = event.newValue;
-    console.log('onCellValueChanged', phenotypeEdited);
     this.saveChangesToCohort(true, false);
   }
 
   public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid: boolean = true) {
-    console.log('SAHVE  COHORT', changesToCohort, refreshGrid);
     if (changesToCohort) {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
 
-    console.log('COHORT NAME', this._cohort_name, this._cohort_data.name);
     if (this._cohort_data.name != this._cohort_name) {
       this.notifyNameChangeListeners();
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     await updateCohort(this._cohort_data.id, this._cohort_data);
-    console.log('ABOUT TO UPDATE issues_service');
     this.issues_service.validateCohort();
-    console.log('SAVED CohorT NOW', this._cohort_data);
     if (refreshGrid) {
-      console.log('And table data...', this._table_data);
       this.notifyListeners();
     }
   }
@@ -165,17 +154,23 @@ export class CohortDataService {
     Sort phenotypes by type. # TODO sort phenotypes by index in type
     */
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
-
     let sortedPhenotypes: TableRow[] = [];
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
     for (const type of order) {
-      const phenotypesOfType = this._cohort_data.phenotypes.filter(
+      let phenotypesOfType = this._cohort_data.phenotypes.filter(
         (row: TableRow) => row.type === type
       );
+      // map over filtered phenotypes to assign index
+      phenotypesOfType = phenotypesOfType.map((phenotype: TableRow, index: number) => ({
+        ...phenotype,
+        index: index +1 // or index + 1 if you want to start from 1
+      }));
       sortedPhenotypes = sortedPhenotypes.concat(phenotypesOfType);
+
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
     this._table_data = this.tableDataFromCohortData();
+
   }
 
   private splitPhenotypesByType() {
@@ -216,7 +211,6 @@ export class CohortDataService {
     }
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
-    console.log('addPhenotype cohort data!!! ', type, parentPhenotypeId, this._cohort_data);
   }
 
   public deletePhenotype(id: string) {
@@ -272,7 +266,6 @@ export class CohortDataService {
   }
 
   private notifyListeners() {
-    console.log('DAT ASERVIC IS NOTIFYIN');
     this.listeners.forEach(listener => listener());
   }
 
@@ -347,7 +340,6 @@ export class CohortDataService {
         }
       );
 
-      console.log('GOT RESPONSE', response);
       this._cohort_data = response.cohort;
       this.preparePhenexCohortForUI();
       this.saveChangesToCohort();

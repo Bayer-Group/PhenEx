@@ -87,8 +87,9 @@
 
 .phenotypeId {
   /* color: black; */
-  margin-bottom: 0px;
-  margin-right: 50px;
+  /* padding-top:40px; */
+  /* margin-bottom: 0px; */
+  /* margin-right: 50px; */
   font-family: 'IBMPlexSans-regular';
   font-size: 18px;
   line-height: 1.2;
@@ -101,9 +102,9 @@
 .issuesList {
   margin: 0;
   margin-top: 0px;
-  padding-left: 3px;
+  padding-left: 80px;
   width: calc(100% - 50px);
-  font-size: 10px;
+  font-size: 14px;
 }
 
 .issueItem {
@@ -114,13 +115,48 @@
 }
 
 .phenotypeType {
-  position: absolute;
-  top: 7px;
-  right: 8px;
+  /* position: absolute; */
+  /* top: 7px;
+  left: 8px; */
   font-size: 12px;
   padding: 2px 6px;
   font-family: "IBMPlexSans-bolditalic";
   border-radius: 4px;
   background-color: #eee;
   color: var(--text-color-secondary);
+}
+
+.index {
+  /* margin-left:5px; */
+  /* font-size: 12px; */
+}
+
+
+.phenotypeId {
+  /* Add these properties */
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between type label and name */
+  font-family: 'IBMPlexSans-regular';
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.phenotypeType {
+  /* Add these properties */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px; /* Space between type and index */
+  font-size: 12px;
+  padding: 2px 6px;
+  font-family: "IBMPlexSans-bolditalic";
+  border-radius: 4px;
+  background-color: #eee;
+  color: var(--text-color-secondary);
+  /* Remove any width/display properties that might make it full width */
+}
+
+.index {
+  display: inline-block;
+  /* Add any specific styling for the index */
 }
