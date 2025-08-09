@@ -27,9 +27,17 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     props.api.startEditingCell(params);
     console.log('Edit delete clicked for row with ID:', props.data?.id);
   };
+  const colorClass = `rag-${props.data.type === 'entry' ? 'dark' : props.data.type === 'inclusion' ? 'blue' : props.data.type === 'exclusion' ? 'green' : props.data.type === 'baseline' ? 'coral' : props.data.type === 'outcome' ? 'red' : ''}-text`;
+
+  const renderCount = () => {
+    return props.data.count && <div className={`${styles.countdiv} ${colorClass}`}>
+       {props.data.count}
+    </div>;
+  };
   return (
     <div className={styles.container}>
-      <span className={styles.label}>{props.value}</span>
+      {renderCount()} <span className={styles.label}>{props.value}</span>
+             
       <div>
         <button className={styles.editButton} onClick={onClickEdit}>
           <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />

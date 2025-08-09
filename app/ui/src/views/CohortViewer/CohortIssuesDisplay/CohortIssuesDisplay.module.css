@@ -12,7 +12,7 @@
   font-family: 'IBMPlexSans-bold';
   /* padding: 0px 20px; */
   border-radius: 10px;
-  border: var(--border);
+  border: var(--border-accent);
   height: 52px;
   width: 190px;
   /* transition: all 0.3s ease-in-out; */
@@ -98,7 +98,7 @@
   background-color: var(--color-accent-bright);
   border-color: var(--color-accent_2) !important;
   color: var(--xbutton_color_orange_background);
-  width: 300px;
+  width: 400px;
   z-index: 2;
   height: 65px;
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) 0px 0px;
@@ -155,14 +155,16 @@
 
 .number.phenotypeIssues {
   margin-left: 5px;
+  font-size: 18px;
 }
 
 .labelSecondary {
   font-size: 12px;
-  font-family: "IBMPlexSans-regular"
+  font-family: "IBMPlexSans-bolditalic"
 }
 
 .totalIssues {
+  font-size: 18px;
   margin-right: 5px;
 }
 

@@ -16,7 +16,7 @@
 }
 
 .noRowsTopLine{
-  font-size:30px;
+  font-size:24px;
   font-family: "IBMPlexSans-regular";
 }
 
@@ -48,7 +48,7 @@
 
 .noRowsBottomLine{
   color: black !important;
-  font-size:30px;
+  font-size:24px;
 }
 
 .noRowsBottomLine.noRows_section{

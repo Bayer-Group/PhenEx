@@ -27,6 +27,19 @@ export const columnNameToApplicablePhenotypeMapping = {
 };
 
 export const defaultColumns = [
+{
+    field: 'type',
+    headerName: 'Type',
+    width: 80,
+    pinned: 'left',
+    editable: true,
+    cellEditor: TypeSelectorCellEditor,
+    cellEditorParams: {
+      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
+    },
+    cellRenderer: TypeCellRenderer,
+    cellEditorPopup: true,
+  },
   {
     field: 'name',
     headerName: 'Name',
@@ -47,27 +60,14 @@ export const defaultColumns = [
       };
     },
   },
-  {
-    field: 'type',
-    headerName: 'Type',
-    width: 80,
-    pinned: 'left',
-    editable: true,
-    cellEditor: TypeSelectorCellEditor,
-    cellEditorParams: {
-      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
-    },
-    cellRenderer: TypeCellRenderer,
-    cellEditorPopup: true,
-  },
-  {
-    field: 'count',
-    headerName: 'N',
-    width: 80,
-    editable: false,
-    cellRenderer: CountCellRenderer,
-    wrapText: false,
-  },
+  // {
+  //   field: 'count',
+  //   headerName: 'N',
+  //   width: 80,
+  //   editable: false,
+  //   cellRenderer: CountCellRenderer,
+  //   wrapText: false,
+  // },
   {
     field: 'description',
     headerName: 'Description',

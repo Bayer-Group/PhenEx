@@ -25,37 +25,70 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
     },
     {} as { [key in PhenotypeType]: CohortIssue[] }
   );
+
+  // Flatten all issues
+  const allIssues = Object.values(groupedIssues).flat();
+
   return (
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      {/* <div className = {styles.header}>
-        <CohortIssuesDisplay issues={issues}/>
-      </div> */}
       <div className={styles.body}>
-        {Object.entries(groupedIssues).map(([type, typeIssues]) => (
-          <div key={type} className={styles.section}>
-            {typeIssues.map((issue, index) => (
-              <div
-                key={`${issue.phenotype_id}-${index}`}
-                className={`${styles.phenotypeSection} ${selectedId === issue.phenotype.id ? styles.selected : ''}`}
-                onClick={event => {
-                  event.stopPropagation();
-                  setSelectedId(issue.phenotype.id);
-                  const cohortViewer = TwoPanelCohortViewerService.getInstance();
-                  cohortViewer.displayExtraContent('phenotype', issue.phenotype);
-                }}
-              >
-                <div className={styles.phenotypeId}>{issue.phenotype_name}</div>
-                <p className={styles.issuesList}>missing {issue.issues.join(', ')}</p>
-                <div
-                  className={`${styles.phenotypeType} rag-${issue.phenotype.type === 'entry' ? 'dark' : issue.phenotype.type === 'inclusion' ? 'blue' : issue.phenotype.type === 'exclusion' ? 'green' : issue.phenotype.type === 'baseline' ? 'coral' : issue.phenotype.type === 'outcome' ? 'red' : ''}-outer`}
-                >
-                  {issue.phenotype.type}
-                </div>
-              </div>
-            ))}
+        {allIssues.map((issue, index) => (
+          <div
+            key={`${issue.phenotype_id}-${index}`}
+            className={`${styles.phenotypeSection} ${selectedId === issue.phenotype.id ? styles.selected : ''}`}
+            onClick={event => {
+              event.stopPropagation();
+              setSelectedId(issue.phenotype.id);
+              const cohortViewer = TwoPanelCohortViewerService.getInstance();
+              cohortViewer.displayExtraContent('phenotype', issue.phenotype);
+            }}
+          >
+            <div className={styles.phenotypeId}>{index + 1}.{issue.phenotype_name}</div>
+            <p className={styles.issuesList}>missing {issue.issues.join(', ')}</p>
+            <div
+              className={`${styles.phenotypeType} rag-${issue.phenotype.type === 'entry' ? 'dark' : issue.phenotype.type === 'inclusion' ? 'blue' : issue.phenotype.type === 'exclusion' ? 'green' : issue.phenotype.type === 'baseline' ? 'coral' : issue.phenotype.type === 'outcome' ? 'red' : ''}-outer`}
+            >
+              {issue.phenotype.type}
+            </div>
           </div>
         ))}
       </div>
     </div>
   );
 };
+
+//   return (
+//     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
+//       {/* <div className = {styles.header}>
+//         <CohortIssuesDisplay issues={issues}/>
+//       </div> */}
+//       <div className={styles.body}>
+//         {Object.entries(groupedIssues).map(([type, typeIssues]) => (
+//           <div key={type} className={styles.section}>
+//             {typeIssues.map((issue, index) => (
+//               <div
+//                 key={`${issue.phenotype_id}-${index}`}
+//                 className={`${styles.phenotypeSection} ${selectedId === issue.phenotype.id ? styles.selected : ''}`}
+//                 onClick={event => {
+//                   event.stopPropagation();
+//                   setSelectedId(issue.phenotype.id);
+//                   const cohortViewer = TwoPanelCohortViewerService.getInstance();
+//                   cohortViewer.displayExtraContent('phenotype', issue.phenotype);
+//                 }}
+//               >
+
+//                 <div className={styles.phenotypeId}>{index}.{issue.phenotype_name}</div>
+//                 <p className={styles.issuesList}>missing {issue.issues.join(', ')}</p>
+//                 <div
+//                   className={`${styles.phenotypeType} rag-${issue.phenotype.type === 'entry' ? 'dark' : issue.phenotype.type === 'inclusion' ? 'blue' : issue.phenotype.type === 'exclusion' ? 'green' : issue.phenotype.type === 'baseline' ? 'coral' : issue.phenotype.type === 'outcome' ? 'red' : ''}-outer`}
+//                 >
+//                   {issue.phenotype.type}
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };

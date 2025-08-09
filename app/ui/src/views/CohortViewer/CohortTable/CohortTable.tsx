@@ -76,7 +76,12 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
           </span>
           <br></br>
-             <span className = {styles.noRowsCommentLine}>PhenEx can then perform a <span className={styles.noRows_action}>time-to-event</span> analysis for you.</span>
+          <br></br>
+          <br></br>
+          <br></br>
+          <br></br>
+          <br></br>
+                       <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>perform a time-to-event analysis</span></span>
           </span>
         </div>
       );
@@ -100,15 +105,15 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             <span className={styles.noRows_section}>How do you want to define your cohort?</span> 
           <br></br>
             <span className={styles.noRowsTopLine}>
-            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add 
+            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add : 
               <ol>
-                <li>the cohort <span className={styles.noRows_section}>entry</span> criterion, which defines  <span className={styles.noRows_section}>index date</span></li>
-                <li><span className={styles.noRows_section}>inclusion</span> criteria, which all patients must fulfill</li>
-                <li><span className={styles.noRows_section}>exclusion</span> criteria, which patients may not fulfill</li>
+                <li>the cohort <span className={styles.noRows_section}>entry</span> criterion, which defines the <span className={styles.noRows_section}>index date</span> for each patient i.e. the study entry date.</li>
+                <li><span className={styles.noRows_section}>inclusion</span> criteria, which all patients must fulfill at index date.</li>
+                <li><span className={styles.noRows_section}>exclusion</span> criteria, which patients may not fulfill at index date.</li>
               </ol>
           </span>
           <br></br>
-             <span className = {styles.noRowsCommentLine}>PhenEx can then generate your <span className={styles.noRows_action}>cohort</span> for you.</span>
+             <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>generate your cohort</span></span>
           </span>
         </div>
       );
@@ -125,7 +130,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>baseline phenotypes</span>.
           </span>
           <br></br>
-             <span className = {styles.noRowsCommentLine}>PhenEx can then create <span className={styles.noRows_action}>Table 1</span> for you.</span>
+          <br></br>
+          <br></br>
+          <br></br>
+          <br></br>
+          <br></br>
+
+             <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>create Table 1</span></span>
           </span>
         </div>
       );

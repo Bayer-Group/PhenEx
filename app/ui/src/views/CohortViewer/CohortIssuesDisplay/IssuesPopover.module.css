@@ -13,7 +13,7 @@
   border: 1px solid var(--color-accent-bright);
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  width: 300px;
+  width: 400px;
   /* z-index: 2; */
   max-height: calc(100vh - 50px);
   display: flex;
@@ -117,10 +117,10 @@
   position: absolute;
   top: 7px;
   right: 8px;
-  font-size: 8px;
+  font-size: 12px;
   padding: 2px 6px;
-
+  font-family: "IBMPlexSans-bolditalic";
   border-radius: 4px;
-  background-color: gray;
+  background-color: #eee;
   color: var(--text-color-secondary);
 }

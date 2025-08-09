@@ -30,7 +30,8 @@
 :global(.ag-cell) .missing {
   /* overflow: visible !important; */
   transition: background-color 0.2s ease;
-  background-color: var(--color-accent);
+  background-color: transparent;
+  border: var(--border-accent);
   border-radius: 10px;
 
   margin: 4px 4px;

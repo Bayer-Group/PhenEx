@@ -88,26 +88,47 @@
 }
 
 .rag-blue-outer {
-  background-color: var(--phenex-blue) !important;
-  color: #000 !important;
+  background-color: #79B239;/*var(--phenex-green) !important;*/
+  color: white !important;
 }
 
 .rag-green-outer {
-  background-color: var(--phenex-green) !important;
-  color: #000 !important;
+  background-color: #3D90D9 !important;
+  color: white !important;
 }
 
-.rag-coral-outer {
-  background-color: var(--phenex-coral) !important;
-  color: #000 !important;
+.rag-coral-outer { /*Baselin characteristics*/
+  background-color: #27607C !important;
+  color: white !important;
 }
 
 .rag-red-outer {
-  background-color: var(--phenex-red) !important;
-  color: #000 !important;
+  background-color: #EB4765 !important;
+  color: white !important;
 }
 
 .rag-dark-outer {
-  background-color: var(--phenex-dark) !important;
+  background-color: var(--color-accent-bright) !important;
   color: white !important;
 }
+
+.rag-blue-text {
+  color: #79B239;/*var(--phenex-green) !important;*/
+}
+
+.rag-green-text {
+  color: #3D90D9 !important;
+}
+
+.rag-coral-text { 
+  color: #27607C !important;
+}
+
+.rag-red-text {
+  color: #EB4765 !important;
+}
+
+.rag-dark-text {
+  color: var(--color-accent-bright) !important;
+}
+
