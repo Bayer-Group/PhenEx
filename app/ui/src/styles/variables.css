@@ -51,6 +51,7 @@
   /* --color-accent-bright: hsl(24, 90%, 60%); */
   --color-accent-bright: hsl(14, 100%, 63%);
   --phenex-dark: hsl(0, 40%, 5%);
+  --border-accent: 1px solid var(--color-accent-bright);
 
   --color-accent: var(--color-accent-bright);/*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);

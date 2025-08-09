@@ -8,5 +8,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   min-width: 150px;
   max-width: 300px;
-  border: var(--border);
+  border: var(--border-accent);
+  overflow:hidden;
 }

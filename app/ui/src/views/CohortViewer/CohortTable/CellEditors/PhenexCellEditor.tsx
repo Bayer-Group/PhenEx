@@ -3,6 +3,7 @@ import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { Portal } from '../../../../components/common/Portal';
 import stylesXbutton from './../../../../components/XButton/XButton.module.css';
+import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value?: any;
@@ -167,21 +168,24 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
         tabIndex={-1}
       >
-        <div className={styles.header} onClick={handleDone}>
-          <span className={styles.topLine}>
-            <span className={styles.filler}>editing</span>
-            <span className={styles.actionText}>{titleText}</span>
-          </span>
-          <br></br>
+        <PopoverHeader
+          onClick={handleDone}
+          title={'phenexheader'}
+          className={styles.popoverheader}
+        >
+          <div>
+            <span className={styles.topLine}>
+              <span className={styles.filler}>editing</span>
+              <span className={styles.actionText}>{titleText}</span>
+            </span>
+            <br></br>
 
-          <span className={styles.bottomLine}>
-            <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
-            <span className={`${styles.phenotypeName} ${styles.actionText}`}>{props.data.name}</span>
-          </span>
-          {renderXButton()}
-
-
+            <span className={styles.bottomLine}>
+              <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+              <span className={`${styles.phenotypeName} ${styles.actionText}`}>{props.data.name}</span>
+            </span>
         </div>
+        </ PopoverHeader>
         <div className={styles.content}>
           {React.Children.map(props.children, child =>
             React.isValidElement(child)

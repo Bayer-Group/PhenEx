@@ -8,7 +8,7 @@ export interface TypeSelectorEditorProps {
 }
 
 const types = [
-  { name: 'entry', info: 'Define the index of your study' },
+  { name: 'entry', info: 'Define the entry criterion of your study; this defines the index date. A cohort can have only one entry criterion.' },
   {
     name: 'inclusion',
     info: 'Specify conditions that must be met for patients to be included in the cohort',
@@ -19,11 +19,11 @@ const types = [
   },
   {
     name: 'baseline',
-    info: 'Define characteristics to be measured at the time of cohort entry',
+    info: 'Define phenotypes to be displayed in Table 1. Generally, these should assess patients during the baseline period.',
   },
   {
     name: 'outcome',
-    info: 'Define events or measurements to be tracked after cohort entry',
+    info: 'Define phenotypes for which a time to event analysis is desired',
   },
 ];
 

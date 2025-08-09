@@ -31,7 +31,7 @@
   min-height: 40px;
   background-color: white;
   /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
-  border: 1px solid var(--color-accent);
+  border: var(--border-accent);
   box-shadow: var(--box_shadow_selected_no_hover);
   background-color: var(--color-accent-bright) !important;
   transition:

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './CohortIssuesDisplay.module.css';
+import {XButton} from '../../../components/XButton/XButton'
 
 export interface CohortIssue {
   phenotype_id: string;
@@ -18,6 +19,7 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const totalIssueCount = (issues || []).reduce((sum, issue) => sum + issue.issues.length, 0);
   const phenotypesWithIssues = issues?.length || 0;
   const hasIssues = phenotypesWithIssues > 0;
+
 
   const renderLabel = () => {
     return (
@@ -38,6 +40,15 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
     );
   };
 
+  const renderXButton = () =>{
+    return (
+      <XButton
+        onClick = {undefined}
+        className = {styles.xButton}
+      />
+    )
+  }
+
   return (
     <div
       className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}
@@ -48,6 +59,7 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
       <div
         className={`${styles.statusDot} ${hasIssues ? styles.red : styles.green} ${selected ? styles.selected : ''}`}
       />
+      {selected && renderXButton()}
     </div>
   );
 };

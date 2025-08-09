@@ -248,12 +248,6 @@ export class CohortDataService {
       name: 'Name your cohort...',
       class_name: 'Cohort',
       phenotypes: [
-        {
-          id: createID(),
-          type: 'entry',
-          name: 'Entry criterion',
-          class_name: 'CodelistPhenotype',
-        },
       ],
       database_config: {},
     };

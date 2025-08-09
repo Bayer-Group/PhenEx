@@ -55,7 +55,7 @@
 
 .row.selected:hover {
   background-color: var(--color-accent-bright) !important;
-
+  color: white;
   /* border: 2px solid var(--color-accent); */
 }
 
@@ -97,7 +97,7 @@
 .row.selected {
   background-color: var(--color-accent-bright);
   border-color: var(--color-accent_2) !important;
-  color: white;
+  color: var(--xbutton_color_orange_background);
   width: 300px;
   z-index: 2;
   height: 65px;
@@ -106,6 +106,7 @@
   transition: transform 0.3s ease-in-out;
   box-shadow: var(--box_shadow_selected_no_hover);
 }
+
 
 /* .row.selected:hover {
   transform: translateY(-1px);
@@ -163,4 +164,9 @@
 
 .totalIssues {
   margin-right: 5px;
+}
+
+
+.row.selected:hover .xButton{
+    color:white;
 }

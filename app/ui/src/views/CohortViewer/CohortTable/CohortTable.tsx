@@ -76,7 +76,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
           </span>
           <br></br>
-             <span className = {styles.noRowsCommentLine}>PhenEx can then perform <span className={styles.noRows_action}>time-to-event</span> and <span className={styles.noRows_action}>treatment pattern</span> analyses for you.</span>
+             <span className = {styles.noRowsCommentLine}>PhenEx can then perform a <span className={styles.noRows_action}>time-to-event</span> analysis for you.</span>
           </span>
         </div>
       );

@@ -3,6 +3,7 @@ import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsBar/CustomizableDropdownButton';
 import { ItemList } from '../../../components/ItemList/ItemList';
 import { LoginDataService } from './LoginDataService';
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
 
 interface LoggedInProps {
 }
@@ -22,10 +23,11 @@ const items = [
   const renderUserPanel = () => {
     return (
       <div className={styles.container}>
-        <div className={styles.loginHeader} onClick={() => clickedOnHeader()}>
-          @ahartens
-          <span className={styles.loginHeaderButton}>Close</span>
-        </div>
+        <PopoverHeader
+          onClick = {clickedOnHeader}
+          title = {'@ahartens'}
+          className = {styles.popoverheader}
+        />
         <ItemList
             items={items}
             selectedName={undefined}
@@ -39,6 +41,7 @@ const items = [
     console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
     customizableDropdownButtonRef.current?.closeDropdown();
   };
+
   const handleItemSelect = async (itemName: string) => {
     if (itemName === 'Log Out') {
       const loginService = LoginDataService.getInstance();

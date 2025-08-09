@@ -87,7 +87,10 @@ export class HierarchicalLeftPanelDataService {
       fontSize: 18,
       fontFamily: "IBMPlexSans-bold",
       collapsed: false,
-      selected: false
+      selected: false,
+      hasButton: true,
+      buttonTitle: "New Cohort",
+      buttonOnClick: this.addNewCohort.bind(this)
 
 
       // renderer: CohortTreeRenderer
@@ -154,6 +157,7 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async addNewCohort() {
+    console.log("ADDING NEW COHORT", this)
     await this.dataService.createNewCohort();
 
     const newCohort: HierarchicalTreeNode = {

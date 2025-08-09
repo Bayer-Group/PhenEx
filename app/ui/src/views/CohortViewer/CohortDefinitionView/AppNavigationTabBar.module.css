@@ -113,11 +113,12 @@
 
 
 .addNewPhenotypeDropdownHeader {
-  margin: 10px 10px;
-  border-radius: 10px;
+  margin: 0px 0x;
+  border-radius: 10px 10px 0px 0px;
   font-family: 'IBMPlexSans-bold';
   padding: 10px 15px;
-  background-color: white;
+  color: white;
+  background-color: var(--color-accent-bright);
   border: 1px solid var(--color-accent_2);
   cursor: pointer;
   position: relative;

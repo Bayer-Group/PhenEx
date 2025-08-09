@@ -16,6 +16,8 @@
   right:5px;
   top:3px;
   font-family:"IBMPlexSans-bold";
+  color: var(--xbutton_color_orange_background);
+
 }
 
 .xButton:hover {

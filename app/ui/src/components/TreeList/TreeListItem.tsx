@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './TreeList.module.css';
+import { Button } from '../Button/Button'
 
 export interface TreeNode {
   displayName: string;
@@ -12,6 +13,9 @@ export interface TreeNode {
   collapsed?: boolean;  // Whether this node's children are collapsed/hidden
   fontSize?: number;  // Optional font size in pixels
   fontFamily?: string;  // Optional font family
+  hasButton?: boolean;
+  buttonTitle?:string;
+  buttonOnClick?: any;
 }
 
 export interface TreeItemRendererProps {
@@ -54,11 +58,19 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
     const { node } = this.props;
     return <div className={styles.defaultContent}>{node.displayName}</div>;
   }
+  
 
   render() {
     const { node } = this.props;
     const { isOpen } = this.state;
     const Renderer = node.renderer;
+
+    const clickedOnButton = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      node.buttonOnClick()
+      console.log("CLIKED VUTRONN");
+
+    }
 
     const content = Renderer ? (
       <Renderer 
@@ -117,6 +129,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 }}>
             {renderVerticalLines()}            
             {renderCaret()}
+            {node.hasButton && <Button title={node.buttonTitle} onClick={clickedOnButton} className={styles.button}/>}
             <div className={styles.content}>
               {content}
             </div>
@@ -132,7 +145,8 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
               />
             ))}
           </div>
-        )}
+        )}      
+
       </div>
     );
   }

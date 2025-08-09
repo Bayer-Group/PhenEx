@@ -1,6 +1,8 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AppNavigationTabBar.module.css';
 import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
+
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { ConstantsTable } from '../../SlideoverPanels/ConstantsPanel/ConstantsTable';
@@ -139,10 +141,11 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
   const renderAddNewPhenotypeDropdown = () => {
     return (
       <div className={styles.addNewPhenotypeDropdown}>
-        <div className={styles.addNewPhenotypeDropdownHeader} onClick={() => clickedOnHeader()}>
-          Add a new phenotype
-          <span className={styles.addNewPhenotypeDropdownHeaderButton}>Close</span>
-        </div>
+        <PopoverHeader
+          onClick = {clickedOnHeader}
+          title = {'Add a new phenotype'}
+          className = {styles.popoverheader}
+        />
         <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
       </div>
     );
