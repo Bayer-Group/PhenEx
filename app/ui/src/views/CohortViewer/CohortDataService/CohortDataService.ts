@@ -386,17 +386,34 @@ export class CohortDataService {
     this.notifyListeners();
   }
 
+  // public tableDataForComponentPhenotype(parentPhenotype): TableData {
+  //   let filteredPhenotypes = this._cohort_data.phenotypes || [];
+  //   if (this._currentFilter.length > 0) {
+  //     filteredPhenotypes = filteredPhenotypes.filter(
+  //       (phenotype: TableRow) =>
+  //         phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
+  //     );
+  //   }
+  //   return {
+  //     rows: filteredPhenotypes,
+  //     columns: this.columns,
+  //   };
+  // }
+
   public tableDataForComponentPhenotype(parentPhenotype): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
-      filteredPhenotypes = filteredPhenotypes.filter(
-        (phenotype: TableRow) =>
-          phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
-      );
+        filteredPhenotypes = filteredPhenotypes.filter(
+            (phenotype: TableRow) =>
+                phenotype.type === 'component' && 
+                phenotype.parentIds && // Check if parentIds exists
+                Array.isArray(phenotype.parentIds) && // Check if it's an array
+                phenotype.parentIds.includes(parentPhenotype.id)
+        );
     }
     return {
-      rows: filteredPhenotypes,
-      columns: this.columns,
+        rows: filteredPhenotypes,
+        columns: this.columns,
     };
-  }
+}
 }
