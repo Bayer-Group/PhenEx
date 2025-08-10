@@ -21,6 +21,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
   useEffect(() => {
     const updateTreeData = () => {
       const rawTreeData = dataService.current.getTreeData();
+      console.log("UPDATING TREE DATA", rawTreeData)
       setTreeData(rawTreeData);
     };
 

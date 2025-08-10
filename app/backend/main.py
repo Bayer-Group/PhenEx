@@ -24,10 +24,6 @@ from openai import AzureOpenAI, OpenAI
 
 # Required imports for authentication
 import os
-import json
-import bcrypt
-import jwt
-import logging
 import sys
 import traceback
 import threading
@@ -231,8 +227,147 @@ def get_cohort_path(cohort_id, provisional=False):
         return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.json")
 
 
+# Add this helper function
+def get_user_cohort_path(username: str, cohort_id: str, provisional: bool = False):
+    """Get the path to a user's cohort file"""
+    user_cohorts_dir = os.path.join(COHORTS_DIR, username)
+    # Ensure user directory exists
+    os.makedirs(user_cohorts_dir, exist_ok=True)
+    if provisional:
+        return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.provisional.json")
+    return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.json")
+
+# Modify the get_all_cohorts endpoint to accept username
 @app.get("/cohorts")
-async def get_all_cohorts():
+async def get_all_cohorts_for_user(username: str):
+    """
+    Retrieve a list of all available cohorts for a specific user.
+
+    Args:
+        username (str): The username whose cohorts to retrieve.
+
+    Returns:
+        dict: A list of cohort IDs and names for that user.
+    """
+    print("GETTING COHORTS FOR USER", username)
+    try:
+        user_cohorts_dir = os.path.join(COHORTS_DIR, username)
+        # Create directory if it doesn't exist
+        os.makedirs(user_cohorts_dir, exist_ok=True)
+        
+        # Get only files from user's directory
+        cohort_files = [
+            f for f in os.listdir(user_cohorts_dir)
+            if f.endswith(".json") and not f.endswith(".provisional.json")
+        ]
+        
+        cohorts = []
+        for cohort_file in cohort_files:
+            with open(os.path.join(user_cohorts_dir, cohort_file), "r") as f:
+                cohort = json.load(f)
+                cohort_id, cohort_name = cohort["id"], cohort["name"]
+                cohorts.append({"id": cohort_id, "name": cohort_name})
+        return cohorts
+    except Exception as e:
+        logger.error(f"Failed to retrieve cohorts for user {username}: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to retrieve cohorts for user {username}."
+        )
+
+# Modify the get_cohort endpoint to require username
+@app.get("/cohort")
+async def get_cohort_for_user(username: str, cohort_id: str, provisional: bool = False):
+    """
+    Retrieve a cohort by its ID for a specific user.
+
+    Args:
+        username (str): The username whose cohort to retrieve.
+        cohort_id (str): The ID of the cohort to retrieve.
+        provisional (bool): Whether to retrieve the provisional version of the cohort.
+
+    Returns:
+        dict: The cohort data.
+    """
+    try:
+        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
+        if not os.path.exists(cohort_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cohort not found for user {username}"
+            )
+        with open(cohort_path, "r") as f:
+            return json.load(f)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving cohort for user {username}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve cohort for user {username}"
+        )
+
+# Modify the update_cohort endpoint to require username
+@app.post("/cohort")
+async def update_cohort_for_user(
+    username: str,
+    cohort_id: str,
+    cohort: Dict = Body(...),
+    provisional: bool = False
+):
+    """
+    Update or create a cohort for a specific user.
+
+    Args:
+        username (str): The username whose cohort to update.
+        cohort_id (str): The ID of the cohort to update.
+        cohort (Dict): The complete JSON specification of the cohort.
+        provisional (bool): Whether to save the cohort as provisional.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    try:
+        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
+        with open(cohort_path, "w") as f:
+            json.dump(cohort, f, indent=4)
+        return {
+            "status": "success",
+            "message": f"Cohort updated successfully for user {username}."
+        }
+    except Exception as e:
+        logger.error(f"Failed to update cohort for user {username}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update cohort for user {username}"
+        )
+
+@app.delete("/cohort")
+async def delete_cohort_for_user(username: str, cohort_id: str):
+    """
+    Delete a cohort by its ID.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+        provisional (bool): Whether to retrieve the provisional version of the cohort.
+
+    Returns:
+        dict: The cohort data.
+    """
+    cohort_path = get_user_cohort_path(username, cohort_id)
+    if os.path.exists(cohort_path):
+        os.remove(cohort_path)
+    else:
+        logger.error(f"Failed to retrieve cohort {cohort_id}")
+        raise HTTPException(
+            status_code=404, detail=f"Failed to find cohort {cohort_id}."
+        )
+
+    return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
+
+
+@app.get("/publiccohorts")
+async def get_public_cohorts():
     """
     Retrieve a list of all available cohorts.
 
@@ -257,8 +392,8 @@ async def get_all_cohorts():
         raise HTTPException(status_code=500, detail="Failed to retrieve cohorts.")
 
 
-@app.get("/cohort")
-async def get_cohort(cohort_id: str, provisional: bool = False):
+@app.get("/publiccohort")
+async def get_public_cohort(cohort_id: str, provisional: bool = False):
     """
     Retrieve a cohort by its ID.
 
@@ -274,54 +409,6 @@ async def get_cohort(cohort_id: str, provisional: bool = False):
     with open(cohort_path, "r") as f:
         return json.load(f)
 
-
-@app.post("/cohort")
-async def update_cohort(
-    cohort_id: str, cohort: Dict = Body(...), provisional: bool = False
-):
-    """
-    Update or create a cohort.
-
-    Args:
-        cohort_id (str): The ID of the cohort to update.
-        cohort (Dict): The complete JSON specification of the cohort.
-        provisional (bool): Whether to save the cohort as provisional.
-
-    Returns:
-        dict: Status and message of the operation.
-    """
-    cohort_path = get_cohort_path(cohort_id, provisional)
-    try:
-        with open(cohort_path, "w") as f:
-            json.dump(cohort, f, indent=4)
-        return {"status": "success", "message": "Cohort updated successfully."}
-    except Exception as e:
-        logger.error(f"Failed to update cohort: {e}")
-        return {"status": "error", "message": "Failed to update cohort."}
-
-
-@app.delete("/cohort")
-async def delete_cohort(cohort_id: str):
-    """
-    Delete a cohort by its ID.
-
-    Args:
-        cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
-
-    Returns:
-        dict: The cohort data.
-    """
-    cohort_path = get_cohort_path(cohort_id)
-    if os.path.exists(cohort_path):
-        os.remove(cohort_path)
-    else:
-        logger.error(f"Failed to retrieve cohort {cohort_id}")
-        raise HTTPException(
-            status_code=404, detail=f"Failed to find cohort {cohort_id}."
-        )
-
-    return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
 
 
 @app.get("/cohort/accept_changes")

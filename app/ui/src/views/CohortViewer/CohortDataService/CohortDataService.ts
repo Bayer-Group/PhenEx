@@ -1,6 +1,6 @@
 import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
 import { executeStudy } from '../../../api/execute_cohort/route';
-import { getCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
+import { getUserCohort, getPublicCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
@@ -80,7 +80,7 @@ export class CohortDataService {
 
   public async loadCohortData(cohortIdentifiers: string): Promise<void> {
     try {
-      const cohortResponse = await getCohort(cohortIdentifiers.id);
+      const cohortResponse = await getUserCohort(cohortIdentifiers.id);
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
       this.sortPhenotypes();
@@ -156,6 +156,7 @@ export class CohortDataService {
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
     let sortedPhenotypes: TableRow[] = [];
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
+    console.log("THIS IS THE COHRT IN SORTY", this._cohort_data)
     for (const type of order) {
       let phenotypesOfType = this._cohort_data.phenotypes.filter(
         (row: TableRow) => row.type === type

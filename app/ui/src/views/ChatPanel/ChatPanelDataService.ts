@@ -2,7 +2,7 @@ import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataS
 
 import {
   textToCohort,
-  getCohort,
+  getUserCohort,
   acceptChanges,
   rejectChanges,
 } from '../../api/text_to_cohort/route';
@@ -152,7 +152,7 @@ class ChatPanelDataService {
       }
 
       console.log('Finalizing assistant response');
-      const response = await getCohort(this.cohortDataService.cohort_data.id, true);
+      const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
       console.log('Response from textToCohort:', response);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();

@@ -41,7 +41,7 @@ export const uploadCodelistFileToCohort = async (cohort_id: string, file: any) =
       `${BACKEND_URL}/upload_codelist_file_to_cohort?cohort_id=${cohort_id}`,
       file
     );
-    console.log('Received response from getCohorts:', response.data);
+    console.log('Received response from getPublicCohorts:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error in uploadCodelistFileToCohort:', error);

@@ -34,7 +34,8 @@ export class HierarchicalLeftPanelDataService {
   private dataService = CohortsDataService.getInstance();
   private loginService = LoginDataService.getInstance();
 
-  private cachedCohortNamesAndIds: CohortData[] = [];
+  private cachedPublicCohortNamesAndIds: CohortData[] = [];
+  private cachedUserCohortNamesAndIds: CohortData[] = [];
 
   private constructor() {
     this.treeData = [];
@@ -58,18 +59,7 @@ export class HierarchicalLeftPanelDataService {
     return HierarchicalLeftPanelDataService.instance;
   }
 
-  public async updateTreeData() {
-    const cohortData = await this.dataService.cohortNamesAndIds();
-    this.cachedCohortNamesAndIds = cohortData || [];
-    console.log(this.cachedCohortNamesAndIds, 'ARE THE LOADED CohorTS HERE');
-
-
-    const createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
-      // Only add children if we're at level 1
-      const children = level ===1 
-        ? this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, level+1))
-        : [];
-
+  private createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
       return {
         id: cohort.id,
         displayName: cohort.name,
@@ -82,13 +72,18 @@ export class HierarchicalLeftPanelDataService {
         collapsed: true,
         selected: false
       };
-    };
+  };
+
+  public async updateTreeData() {
+    this.cachedPublicCohortNamesAndIds = await this.dataService.publicCohortNamesAndIds() || [];
+    this.cachedUserCohortNamesAndIds = await this.dataService.userCohortNamesAndIds() || [];
+    console.log("UPDATING THE TREE DTATA")
 
     const createRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
       id,
       displayName,
       level: 0,
-      children: id != 'mycohorts'? createPublicCohorts():[],
+      children: id == 'mycohorts'? createUserCohorts():createPublicCohorts(),
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
       height: 60,
       fontSize: 18,
@@ -101,8 +96,13 @@ export class HierarchicalLeftPanelDataService {
     });
 
     const createPublicCohorts = () => {
-      return this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1));
+      return this.cachedPublicCohortNamesAndIds.map(cohort => this.createCohortNode(cohort, 1));
     }
+  
+    const createUserCohorts = () => {
+      return this.cachedUserCohortNamesAndIds.map(cohort => this.createCohortNode(cohort, 1));
+    }
+
     console.log("CALLING UPDATE TREE DATA")
     this.treeData = [];
     if (this.loginService.isLoggedIn()){
@@ -167,22 +167,24 @@ export class HierarchicalLeftPanelDataService {
 
   public async addNewCohort() {
     console.log("ADDING NEW COHORT", this)
-    await this.dataService.createNewCohort();
 
-    const newCohort: HierarchicalTreeNode = {
-      id: 'new-cohort',
-      displayName: 'New Cohort',
-      level: 1,
-      children: [],
-      viewInfo: { viewType: ViewType.NewCohort, data: '' },
-      renderer: CohortTreeRenderer
-    };
+    const newCohortData = await this.dataService.createNewCohort()
+
+    const newCohortNode = this.createCohortNode(newCohortData, 1)
 
     const cohortsNode = this.treeData.find(node => node.id === 'mycohorts');
     if (cohortsNode && cohortsNode.children) {
-      cohortsNode.children.push(newCohort);
+      console.log("ADDING THE NEW COHORT")
+      cohortsNode.children.push(newCohortNode);
     }
+      // Update the cache
+    this.cachedUserCohortNamesAndIds.push({
+      id: newCohortData.id,
+      name: newCohortData.name
+    });
+
+    await this.updateTreeData();
     this.notifyListeners();
-    return newCohort.viewInfo;
+    return ViewType.CohortDefinition;
   }
 }

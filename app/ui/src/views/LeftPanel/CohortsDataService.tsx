@@ -1,25 +1,37 @@
 import { createID } from '../../types/createID';
-import { getCohorts } from '../../api/text_to_cohort/route';
+import { getPublicCohorts, getUserCohort, getUserCohorts, updateCohort} from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
 export class CohortsDataService {
   private static instance: CohortsDataService;
-  private _cohortNamesAndIds = null;
+  private _publicCohortNamesAndIds = null;
+  private _userCohortNamesAndIds = null;
+
   private cohortDataService: CohortDataService;
 
-  public async cohortNamesAndIds() {
-    if (this._cohortNamesAndIds === null) {
-      this._cohortNamesAndIds = await getCohorts();
+  public async publicCohortNamesAndIds() {
+    if (this._publicCohortNamesAndIds === null) {
+      this._publicCohortNamesAndIds = await getPublicCohorts();
     }
-    return this._cohortNamesAndIds;
+    return this._publicCohortNamesAndIds;
+  }
+
+  public async userCohortNamesAndIds() {
+    if (this._userCohortNamesAndIds === null) {
+      this._userCohortNamesAndIds = await getUserCohorts();
+    }
+    return this._userCohortNamesAndIds;
   }
 
   private constructor() {
     this.cohortDataService = CohortDataService.getInstance();
     this.cohortDataService.addNameChangeListener(() => {
       // When cohort data changes, refresh the cohort names and IDs
-      this._cohortNamesAndIds = null;
-      this.cohortNamesAndIds();
+      this._publicCohortNamesAndIds = null;
+      this.publicCohortNamesAndIds();
+      this._userCohortNamesAndIds = null;
+      this.userCohortNamesAndIds();
+
       this.notifyListeners();
     });
   }
@@ -40,16 +52,15 @@ export class CohortsDataService {
       name: 'New Cohort',
       class_name: 'Cohort',
       phenotypes: [
-        {
-          id: createID(),
-          type: 'entry',
-          name: 'Entry criterion',
-          class_name: 'CodelistPhenotype',
-        },
       ],
       database_config: {},
     };
+
+
+    const newcohort = await updateCohort(newCohortData.id, newCohortData);
+
     this.notifyListeners(); // Notify listeners after initialization
+    return newCohortData
   }
 
   private listeners: Array<() => void> = [];

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { LoginDataService } from '../../views/LeftPanel/UserLogin/LoginDataService';
 
 let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 if (!BACKEND_URL) {
@@ -6,36 +7,66 @@ if (!BACKEND_URL) {
   BACKEND_URL = 'http://localhost:8000';
 }
 
-export const getCohorts = async () => {
+export const getPublicCohorts = async () => {
   try {
-    console.log('Sending request to getCohorts with data:');
-    const response = await axios.get(`${BACKEND_URL}/cohorts`);
-    console.log('Received response from getCohorts:', response.data);
+    console.log('Sending request to getPublicCohorts with data:');
+    const response = await axios.get(`${BACKEND_URL}/publiccohorts`);
+    console.log('Received response from getPublicCohorts:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in getCohorts:', error);
+    console.error('Error in getPublicCohorts:', error);
     throw error;
   }
 };
 
-export const getCohort = async (cohort_id: string, provisional: boolean = false) => {
+export const getPublicCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
-    console.log('Sending request to getCohorts with data:');
+    console.log('Sending request to getPublicCohort with data:');
     const response = await axios.get(
-      `${BACKEND_URL}/cohort?cohort_id=${cohort_id}&provisional=${provisional}`
+      `${BACKEND_URL}/publiccohort?cohort_id=${cohort_id}&provisional=${provisional}`
     );
-    console.log('Received response from getCohorts:', response.data);
+    console.log('Received response from getPublicCohort:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in getCohorts:', error);
+    console.error('Error in getPublicCohort:', error);
+    throw error;
+  }
+};
+
+export const getUserCohorts = async () => {
+  try {
+    const login_service = LoginDataService.getInstance()
+
+    console.log('Sending request to getUserCohorts with data:');
+    const response = await axios.get(`${BACKEND_URL}/cohorts?username=${login_service.getUsername()}`);
+    console.log('Received response from getUserCohorts:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in getUserCohorts:', error);
+    throw error;
+  }
+};
+
+export const getUserCohort = async (cohort_id: string, provisional: boolean = false) => {
+  try {
+    const login_service = LoginDataService.getInstance()
+    console.log('Sending request to getUserCohort with data:');
+    const response = await axios.get(
+      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}&provisional=${provisional}`
+    );
+    console.log('Received response from getUserCohort:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in getUserCohort:', error);
     throw error;
   }
 };
 
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
+      const login_service = LoginDataService.getInstance()
     console.log('Sending request to updateCohort with data:', cohort_data);
-    const response = await axios.post(`${BACKEND_URL}/cohort?cohort_id=${cohort_id}`, cohort_data);
+    const response = await axios.post(`${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`, cohort_data);
     console.log('Received response from updateCohort:', response.data);
     return response.data;
   } catch (error) {
@@ -46,8 +77,9 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
 
 export const deleteCohort = async (cohort_id: string) => {
   try {
+    const login_service = LoginDataService.getInstance()
     console.log('Sending request to deleteCohort with data:', cohort_id);
-    const response = await axios.delete(`${BACKEND_URL}/cohort?cohort_id=${cohort_id}`);
+    const response = await axios.delete(`${BACKEND_URL}/username=${login_service.getUsername()}&cohort?cohort_id=${cohort_id}`);
     console.log('Received response from deleteCohort:', response.data);
     return response.data;
   } catch (error) {
