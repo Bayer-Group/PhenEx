@@ -18,6 +18,7 @@
 import { ViewType } from '../MainView/MainView';
 import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
 import { CohortsDataService } from './CohortsDataService';
+import { LoginDataService } from './UserLogin/LoginDataService';
 
 interface CohortData {
   id: string;
@@ -31,6 +32,7 @@ export class HierarchicalLeftPanelDataService {
   private changeListeners: ChangeListener[] = [];
   private treeData: HierarchicalTreeNode[] = [];
   private dataService = CohortsDataService.getInstance();
+  private loginService = LoginDataService.getInstance();
 
   private cachedCohortNamesAndIds: CohortData[] = [];
 
@@ -39,6 +41,11 @@ export class HierarchicalLeftPanelDataService {
     this.updateTreeData();
 
     this.dataService.addListener(() => {
+      // When cohort data changes, refresh the cohort names and IDs
+      this.updateTreeData();
+    });
+
+    this.loginService.addListener(() => {
       // When cohort data changes, refresh the cohort names and IDs
       this.updateTreeData();
     });
@@ -81,25 +88,27 @@ export class HierarchicalLeftPanelDataService {
       id,
       displayName,
       level: 0,
-      children: this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1)),
+      children: id != 'mycohorts'? createPublicCohorts():[],
       viewInfo: { viewType: ViewType.CohortDefinition, data: null },
       height: 60,
       fontSize: 18,
       fontFamily: "IBMPlexSans-bold",
       collapsed: false,
       selected: false,
-      hasButton: true,
+      hasButton: id=='mycohorts'?true:false,
       buttonTitle: "New Cohort",
       buttonOnClick: this.addNewCohort.bind(this)
-
-
-      // renderer: CohortTreeRenderer
     });
 
-    this.treeData = [
-      createRootNode('mycohorts', 'My Cohorts'),
-      createRootNode('publiccohorts', 'Public Cohorts')
-    ];
+    const createPublicCohorts = () => {
+      return this.cachedCohortNamesAndIds.map(cohort => createCohortNode(cohort, 1));
+    }
+    console.log("CALLING UPDATE TREE DATA")
+    this.treeData = [];
+    if (this.loginService.isLoggedIn()){
+      this.treeData.push(createRootNode('mycohorts', 'My Cohorts'))
+    }
+    this.treeData.push(createRootNode('publiccohorts', 'Public Cohorts'))
 
     this.notifyListeners();
   }

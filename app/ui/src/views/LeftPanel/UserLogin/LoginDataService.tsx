@@ -5,6 +5,7 @@ interface UserData {
   email: string;
 }
 
+
 // export abstract class LoginDataService {
 export class LoginDataService {
   private static instance: LoginDataService;
@@ -12,6 +13,7 @@ export class LoginDataService {
   public loginUsername: string = '';
   private token: string | null = null;
   private currentUser: UserData | null = null;
+  private listeners: any[] = [];
 
   private constructor() {
     // Restore session from localStorage if it exists
@@ -47,6 +49,8 @@ export class LoginDataService {
         localStorage.setItem('username', username);
         
         await this.fetchUserData();
+        this.notifyListeners()
+
         return true;
       }
       return false;
@@ -67,6 +71,7 @@ export class LoginDataService {
       console.error('Registration failed:', error);
       throw error; // Propagate the error to show validation messages
     }
+    this.notifyListeners()
   }
 
   async logout(): Promise<void> {
@@ -79,6 +84,7 @@ export class LoginDataService {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('userData');
+    this.notifyListeners()
   }
 
   private async fetchUserData(): Promise<void> {
@@ -123,4 +129,21 @@ export class LoginDataService {
   getUsername(): string {
     return this.loginUsername;
   }
+
+   private notifyListeners() {
+    console.log("NOTIFYING LISTENRERS")
+    this.listeners.forEach(listener => listener());
+  }
+
+  addListener(listener) {
+    this.listeners.push(listener);
+  }
+
+  removeListener(listener) {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
 }
