@@ -88,7 +88,7 @@
 }
 
 .rag-blue-outer {
-  background-color: #79B239;/*var(--phenex-green) !important;*/
+  background-color: #79B239 !important;/*var(--phenex-green) !important;*/
   color: white !important;
 }
 

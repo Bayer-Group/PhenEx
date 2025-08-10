@@ -35,8 +35,8 @@
   border-radius: 10px;
 
   margin: 4px 4px;
-  width: calc(100% - 8px);
-  height: calc(100% - 8px);
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
 }
 
 .container {

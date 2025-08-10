@@ -14,7 +14,7 @@ export const LoggedIn: FC<LoggedInProps> = ({}) => {
 const items = [
   {
     name: 'Log Out',
-    info: 'Log out of your PhenEx account',
+    info: 'Log out of your PhenEx account. You can only edit cohorts when logged in.',
   },
 
 ];
@@ -25,17 +25,21 @@ const items = [
       <div className={styles.container}>
         <PopoverHeader
           onClick = {clickedOnHeader}
-          title = {'@ahartens'}
+          title = {`@${loginService.getUsername()}`}
           className = {styles.popoverheader}
         />
-        <ItemList
-            items={items}
-            selectedName={undefined}
-            onSelect={handleItemSelect}
-        />
+        <div className={styles.content}>
+          <ItemList
+              items={items}
+              selectedName={undefined}
+              onSelect={handleItemSelect}
+          />
+        </div>
       </div>
     );
   };
+  
+  const loginService = LoginDataService.getInstance();
 
   const clickedOnHeader = () => {
     console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
@@ -55,7 +59,7 @@ const items = [
   return (
     <CustomizableDropdownButton
             key={"login"}
-            label={"@ahartens"}
+            label={`@${loginService.getUsername()}`}
             content={renderUserPanel()}
             ref={customizableDropdownButtonRef}
             menuClassName={styles.userDropdownMenu}

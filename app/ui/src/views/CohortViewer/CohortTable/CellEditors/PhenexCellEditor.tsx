@@ -194,6 +194,14 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         style={portalStyle}
         ref={containerRef}
         className={styles.container}
+        onClick={(e) => {
+          e.stopPropagation();  // Stop click from bubbling
+          e.nativeEvent.stopImmediatePropagation();  // Stop other listeners
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();  // Stop mousedown from bubbling
+          e.nativeEvent.stopImmediatePropagation();
+        }}
         onKeyDown={e => {
           if (e.key === 'Tab') {
             e.nativeEvent.stopImmediatePropagation();

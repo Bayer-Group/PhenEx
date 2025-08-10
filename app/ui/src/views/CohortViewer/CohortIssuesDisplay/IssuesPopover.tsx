@@ -5,7 +5,7 @@ import { PhenotypeType } from '../../PhenotypeViewer/phenotype';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 
-import { group } from 'd3';
+import { color, group } from 'd3';
 
 interface IssuesPopoverProps {
   issues: CohortIssue[];
@@ -26,10 +26,18 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues }) => {
     {} as { [key in PhenotypeType]: CohortIssue[] }
   );
 
+  const colorClass = (phenotype) => {
+    return (
+      `rag-${phenotype.type === 'entry' ? 'dark' : phenotype.type === 'inclusion' ? 'blue' : phenotype.type === 'exclusion' ? 'green' : phenotype.type === 'baseline' ? 'coral' : phenotype.type === 'outcome' ? 'red' : ''}-outer`
+    );
+  }
+
   const renderTypeLabel = (issue, index) =>{
+
+    console.log("TYPE ISSSSS", colorClass(issue.phenotype))
     return (
       <div
-          className={`${styles.phenotypeType} rag-${issue.phenotype.type === 'entry' ? 'dark' : issue.phenotype.type === 'inclusion' ? 'blue' : issue.phenotype.type === 'exclusion' ? 'green' : issue.phenotype.type === 'baseline' ? 'coral' : issue.phenotype.type === 'outcome' ? 'red' : ''}-outer`}
+          className={`${styles.phenotypeType} ${colorClass(issue.phenotype)}`}
         >
           {issue.phenotype.type}
           {renderIndex(issue.phenotype)}

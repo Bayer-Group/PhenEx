@@ -104,11 +104,14 @@
   min-width: 400px !important;
   max-width: 500px !important;
   margin-top: 12px;
-  background-color: var(--color-accent-bright) !important;
 }
 
 .userDropdownMenu {
   min-width: 300px !important;
   max-width: 400px !important;
   margin-top: 12px;
+}
+
+.content{
+  padding: 5px;
 }

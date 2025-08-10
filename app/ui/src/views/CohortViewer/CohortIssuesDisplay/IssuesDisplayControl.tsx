@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { IssuesPopover } from './IssuesPopover';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import styles from './IssuesDisplayControl.module.css';
@@ -14,10 +14,10 @@ export const IssuesDisplayControl: React.FC = () => {
   const [issues, setIssues] = useState<CohortIssue[]>([]);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const issuesService = dataService.issues_service;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const listener = () => {
-      // issuesService.validateCohort();
       setIssues(issuesService.issues);
     };
     issuesService.addListener(listener);
@@ -27,18 +27,45 @@ export const IssuesDisplayControl: React.FC = () => {
     };
   }, [dataService]);
 
-  const handleClick = () => {
-    setShowPopover(!showPopover);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowPopover(false);
+      }
+    };
+
+    if (showPopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPopover]);
+
+  const handleClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!showPopover){
+      setShowPopover(!showPopover);
+    }
   };
+  const closePopover = () => {
+    setShowPopover(false)
+  }
 
   return (
     <div
-      className={`${styles.container} ${showPopover ? styles.showingPopover : ''} ${issues?.length? styles.hasIssues : styles.noIssues}`}
+      ref={containerRef}
+      className={`${styles.container} ${showPopover ? styles.showingPopover : ''} ${
+        issues?.length ? styles.hasIssues : styles.noIssues
+      }`}
       onClick={handleClick}
     >
-      <div className={styles.popover}>{showPopover && <IssuesPopover issues={issues} />}</div>
+      <div className={styles.popover}>
+        {showPopover && <IssuesPopover issues={issues} />}
+      </div>
       <div className={styles.issuesButton}>
-        <CohortIssuesDisplay issues={issues} selected={showPopover} />
+        <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
       </div>
     </div>
   );

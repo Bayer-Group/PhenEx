@@ -148,6 +148,33 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       }
     }, [data]);
 
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        
+        // Check if click is inside grid or editor
+        const gridElement = document.querySelector('.ag-theme-quartz');
+        const popupEditor = document.querySelector('.ag-popup-editor');
+        
+        // If we don't have either element, or don't have an active editor, don't do anything
+        if (!gridElement || !popupEditor) return;
+
+        // Check if the click is inside the grid or the popup editor
+        const isInsidePopup = popupEditor.contains(target);
+
+        // Only stop editing if click is outside both the grid AND the popup editor
+        if (!isInsidePopup) {
+          ref.current?.api?.stopEditing();
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
+
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
         <ErrorBoundary>

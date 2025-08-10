@@ -10,11 +10,13 @@ export interface CohortIssue {
 interface CohortIssuesDisplayProps {
   issues: CohortIssue[];
   selected?: boolean;
+  onClick;
 }
 
 export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   issues,
   selected = false,
+  onClick
 }) => {
   const totalIssueCount = (issues || []).reduce((sum, issue) => sum + issue.issues.length, 0);
   const phenotypesWithIssues = issues?.length || 0;
@@ -52,6 +54,7 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   return (
     <div
       className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}
+      onClick = {selected?onClick: undefined}
     >
       <span className={styles.text}>
         {hasIssues ? renderLabel() : <span className={styles.labelNoIssues}></span>}

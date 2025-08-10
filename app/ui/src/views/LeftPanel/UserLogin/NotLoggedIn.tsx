@@ -2,6 +2,7 @@ import { FC, useRef, useState } from 'react';
 import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsBar/CustomizableDropdownButton';
 import { LoginDataService } from './LoginDataService';
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
 
 interface NotLoggedInProps {
   onLoginSuccess?: () => void;
@@ -54,10 +55,12 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
   const renderLogin = () => {
     return (
       <div className={styles.container}>
-        <div className={styles.loginHeader} onClick={() => clickedOnHeader()}>
-          {isRegistering ? 'Register New Account' : 'Login to PhenEx!'}
-          <span className={styles.loginHeaderButton}>Close</span>
-        </div>
+        <PopoverHeader
+          onClick = {clickedOnHeader}
+          title = {isRegistering ? 'Register New Account' : 'Login to PhenEx!'}
+          className = {styles.popoverheader}
+        />
+  
         <div className={styles.loginForm}>
           <input
             type="text"
