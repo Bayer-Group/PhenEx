@@ -10,6 +10,24 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onValueChange?: (value: any) => void;
 }
 
+const getViewportDimensions = () => ({
+  width: window.innerWidth,
+  height: window.innerHeight
+});
+
+const getGridDimensions = (gridElement: HTMLElement | null) => {
+  if (!gridElement) return null;
+  const rect = gridElement.getBoundingClientRect();
+  return {
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+    bottom: rect.bottom,
+    right: rect.right
+  };
+};
+
 export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) => {
   const [currentValue, setCurrentValue] = useState(() => props.value);
 
@@ -96,44 +114,69 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     console.warn('Could not find grid cell element for editor positioning');
   }
   console.log(cellRect);
-  const gridContainer = props.eGridCell?.closest('.ag-root');
-  const gridScrollTop = gridContainer?.scrollTop || 0;
-  const gridScrollLeft = gridContainer?.scrollLeft || 0;
-  const gridHeight = gridContainer?.getBoundingClientRect().height || window.innerHeight;
-  const gridWidth = gridContainer?.getBoundingClientRect().width || window.innerWidth;
+  const calculatePosition = () => {
+    const viewport = getViewportDimensions();
+    const cellElement = props.eGridCell as HTMLElement;
+    const gridContainer = cellElement?.closest('.ag-root') as HTMLElement;
+    const gridDimensions = getGridDimensions(gridContainer);
+    const cellRect = cellElement?.getBoundingClientRect();
 
-  // Calculate positions relative to grid scroll
-  const scrollLeft = (window.pageXOffset || document.documentElement.scrollLeft) - gridScrollLeft;
-  const scrollTop = (window.pageYOffset || document.documentElement.scrollTop) - gridScrollTop;
+    if (!cellRect || !gridDimensions) {
+      console.warn('Could not find necessary elements for positioning');
+      return { left: 0, top: 0 };
+    }
 
-  // Calculate the editor height (500px as specified)
-  const editorHeight = 500;
-  const editorWidth = 300;
+    const editorWidth = 300;
+    const editorHeight = 500;
 
-  // Calculate the top position
-  let topPosition = cellRect.top;
-  const editorBottom = topPosition + editorHeight;
-  if (editorBottom > gridHeight) {
-    const overflow = editorBottom - gridHeight;
-    topPosition = Math.max(topPosition - overflow + 80, 0);
-  }
+    // Calculate initial position relative to cell
+    let left = cellRect.left;
+    let top = cellRect.top;
 
-  // Calculate the left position
-  let leftPosition = cellRect.left + scrollLeft;
-  if (leftPosition + editorWidth > gridWidth) {
-    leftPosition = Math.min(
-      leftPosition,
-      gridWidth - editorWidth - 20 + gridContainer?.getBoundingClientRect().left || 0
-    );
-  }
+    // Adjust for grid scroll
+    const gridScrollTop = gridContainer.scrollTop || 0;
+    const gridScrollLeft = gridContainer.scrollLeft || 0;
+
+    // Adjust position to stay within grid bounds
+    // First, try to position below the cell
+    if (top + editorHeight > gridDimensions.bottom) {
+      // If doesn't fit below, try above
+      top = Math.max(
+        gridDimensions.top,
+        Math.min(cellRect.top - editorHeight, viewport.height - editorHeight)
+      );
+    }
+
+    // Horizontal positioning
+    if (left + editorWidth > gridDimensions.right) {
+      // If doesn't fit to the right, try to the left
+      left = Math.max(
+        gridDimensions.left,
+        Math.min(cellRect.right - editorWidth, gridDimensions.right - editorWidth)
+      );
+    }
+
+    // Final viewport bounds check
+    left = Math.max(0, Math.min(left, viewport.width - editorWidth));
+    top = Math.max(0, Math.min(top, viewport.height - editorHeight));
+
+    return {
+      left: `${left}px`,
+      top: `${top}px`,
+      maxHeight: `${Math.min(500, viewport.height - top)}px`,
+      maxWidth: `${Math.min(300, viewport.width - left)}px`
+    };
+  };
 
   const portalStyle = {
     position: 'absolute',
-    left: `${cellRect.left + scrollLeft}px`,
-    top: `${topPosition}px`,
+    // left: `${cellRect.left + scrollLeft}px`,
+    // top: `${topPosition}px`,
     // minHeight: `${cellRect.height}px`,
     maxHeight: '500px',
     zIndex: 9999,
+    ...calculatePosition(),
+
   };
 
   const renderXButton = () => {
