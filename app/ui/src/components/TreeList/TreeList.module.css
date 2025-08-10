@@ -182,6 +182,7 @@
 
 .button{
   position: absolute;
-  right: 0px;
-  bottom : 0px;
+  right: 10px;
+  bottom : 5px;
+  padding: 2px 4px !important;
 }
