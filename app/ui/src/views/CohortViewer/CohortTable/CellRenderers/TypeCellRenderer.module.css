@@ -12,8 +12,18 @@
   text-align: left;
   font-size: inherit;
   font-family: "IBMPlexSans-bolditalic";
+  line-height: 20px;
 }
 
 .index {
   margin-left:5px;
+}
+
+.countdiv{
+  bottom: 5px;
+  right:20px;
+  padding: 0px;
+  margin:0px;
+
+  font-family: "IBMPlexSans-bolditalic";
 }

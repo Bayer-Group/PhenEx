@@ -29,7 +29,7 @@
   background: var(--button-color-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: var(--border);
+  border: var(--border-accent);
 }
 
 .editButton:focus,
@@ -50,6 +50,7 @@
 
 :global(.ag-row:hover) .editButton {
   opacity: 1;
+  border: var(--border-accent);
 }
 
 :global(.ag-row:hover) .deleteButton {
@@ -72,13 +73,4 @@
   margin: 0px;
   line-height: 1;
   padding-top: 10px;
-}
-
-.countdiv{
-  position: absolute;
-  bottom: 5px;
-  right:20px;
-  padding: 0px;
-  margin:0px;
-  font-family: "IBMPlexSans-bolditalic";
 }

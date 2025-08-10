@@ -11,6 +11,13 @@ const TypeCellRenderer = (props: any) => {
       </span>
     );
   }
+
+  const renderCount = () => {
+    return props.data.count && <div className={`${styles.countdiv} ${colorClassText}`}>
+       {props.data.count}
+    </div>;
+  };
+  const colorClassText = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-text`;
   const colorClass = `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
   return (
     <PhenexCellRenderer {...props}>
@@ -27,6 +34,7 @@ const TypeCellRenderer = (props: any) => {
           {type}
           {renderIndex(props.data)}
         </span>
+       {renderCount()}
       </div>
     </PhenexCellRenderer>
   );
