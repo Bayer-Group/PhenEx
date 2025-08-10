@@ -137,12 +137,11 @@ export class CohortDataService {
       this.splitPhenotypesByType();
     }
 
-    if (this._cohort_data.name != this._cohort_name) {
-      this.notifyNameChangeListeners();
-    }
+    console.log("SAVING HANGES TO COHORT", this._cohort_data.name)
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     await updateCohort(this._cohort_data.id, this._cohort_data);
+    this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     if (refreshGrid) {
       this.notifyListeners();

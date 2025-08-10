@@ -84,7 +84,6 @@ export class CohortIssuesService {
 
     for (const phenotype of this.dataService.cohort_data.phenotypes || []) {
       const issues = this.validatePhenotype(phenotype);
-      console.log("ISSUES", phenotype)
       if (issues.length > 0) {
         this.issues.push({
           id: phenotype.id,
@@ -96,7 +95,6 @@ export class CohortIssuesService {
         this.issueCount += issues.length;
       }
     }
-    console.log('VALIDATION ISSUES', this.issues);
     this.notifyListeners();
     return {
       issueCount: this.issueCount,

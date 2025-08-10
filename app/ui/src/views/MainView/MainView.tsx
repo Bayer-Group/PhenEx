@@ -73,7 +73,6 @@ export const MainView = () => {
   }, []);
 
   const renderView = () => {
-    console.log('RENDERING VIEW');
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
@@ -114,7 +113,6 @@ export const MainView = () => {
         <RightPanel>{renderView()}</RightPanel>
         <ChatPanel
           onTextEnter={text => {
-            console.log('Text entered:', text);
             // Handle the text input here
           }}
         ></ChatPanel>

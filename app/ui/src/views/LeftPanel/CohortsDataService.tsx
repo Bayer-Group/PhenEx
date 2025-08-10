@@ -17,9 +17,8 @@ export class CohortsDataService {
   }
 
   public async userCohortNamesAndIds() {
-    if (this._userCohortNamesAndIds === null) {
-      this._userCohortNamesAndIds = await getUserCohorts();
-    }
+    this._userCohortNamesAndIds = await getUserCohorts();
+    console.log("GETTING USER COHORTS Names and ids", this._userCohortNamesAndIds)
     return this._userCohortNamesAndIds;
   }
 

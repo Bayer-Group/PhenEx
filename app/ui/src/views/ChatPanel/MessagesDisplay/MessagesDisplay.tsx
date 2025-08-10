@@ -29,7 +29,6 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
   useEffect(() => {
     setMessages(chatPanelDataService.getMessages());
     const handleMessagesUpdated = (updatedMessages: Message[]) => {
-      console.log('UPDAGED MESSAGES', updatedMessages);
       setMessages(updatedMessages);
     };
 
@@ -85,7 +84,6 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
     };
   }, []);
 
-  console.log('MESSAGES', messages);
   return (
     <div
       className={`${styles.container} ${!isScrolledToBottom ? styles.scrolling : ''}`}

@@ -16,7 +16,6 @@ export class ReportDataService {
       { phenotype: 'race', N: 800, '%': '43.5%' },
       { phenotype: 'gender', N: 920, '%': '50.0%' },
     ];
-    console.log('Report row data:', this.row_data);
   }
 
   private updateReportData() {

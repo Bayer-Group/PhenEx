@@ -41,9 +41,7 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   }, []);
 
   const refreshGrid = () => {
-    console.log('REFRESHING GRID before', gridRef.current?.api);
     if (currentView === CohortDefinitionViewType.Cohort && gridRef.current?.api) {
-      console.log('REFRESHING GRID after', gridRef.current?.api);
       const api = gridRef.current.api;
       // Store current scroll position
       // const horizontalScroll = api.getHorizontalPixelRange();
@@ -132,7 +130,6 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
           : 0; // Default to the first tab if the currentView is not recognized or undefined
   };
 
-  console.log("INSIDE COHORT DEIFNITON FIEW", currentView)
   return (
     <div ref={containerRef} className={styles.cohortTableContainer}>
       <div className={styles.topSection}>

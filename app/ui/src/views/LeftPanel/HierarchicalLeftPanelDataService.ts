@@ -77,7 +77,7 @@ export class HierarchicalLeftPanelDataService {
   public async updateTreeData() {
     this.cachedPublicCohortNamesAndIds = await this.dataService.publicCohortNamesAndIds() || [];
     this.cachedUserCohortNamesAndIds = await this.dataService.userCohortNamesAndIds() || [];
-    console.log("UPDATING THE TREE DTATA")
+    console.log("UPDATING THE TREE DTATA, getting new tree data!", this.cachedUserCohortNamesAndIds)
 
     const createRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
       id,
@@ -174,7 +174,6 @@ export class HierarchicalLeftPanelDataService {
 
     const cohortsNode = this.treeData.find(node => node.id === 'mycohorts');
     if (cohortsNode && cohortsNode.children) {
-      console.log("ADDING THE NEW COHORT")
       cohortsNode.children.push(newCohortNode);
     }
       // Update the cache
