@@ -109,8 +109,27 @@ export const ExecutePanel: React.FC = () => {
     }
   };
 
+    const infoContent = () => {
+    return (
+      <span>
+        <i>Execute your study</i> using this panel. Execution:
+        <ul>
+          <li>Extracts the patients that belong to your cohort and generates the attrition table</li>
+          <li>Assesses the cohort at baseline and generates Table 1</li>
+          <li>Performs outcome analyses such as Time to Event</li>
+        </ul>
+        To setup your database in PhenEx :
+        <ol>
+          <li><em>Trigger execution</em> : <i>click</i> <code>Execute</code> below.</li>
+          <li><em>View results</em> : Counts of patients in the cohort that fulfill a phenotype are displayed directly in the cohort editing table in the 'type' column. Further results are found in the <em>Report</em> tab</li>
+        </ol>
+      </span>
+    )
+  }
+
+
   return (
-    <SlideoverPanel title="Execute">
+    <SlideoverPanel title="Execute" info={infoContent()}>
       <div className={styles.container}>
         <div className={styles.controls}>
           <button onClick={handleExecute} disabled={isExecuting} className={styles.executeButton}>

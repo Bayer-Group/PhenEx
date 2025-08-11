@@ -22,7 +22,7 @@ enum InfoTabType {
   Visibility = 'Visibility',
   Execute = 'Execute',
   Report = 'Report',
-  Info = 'i',
+  Info = 'Info',
 }
 
 export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
@@ -83,6 +83,19 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
     cohortViewer.displayExtraContent('constants');
   };
 
+  const showVisibility = () => {
+    console.log('showing constants');
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('visibility');
+  };
+
+  const showInfo = () => {
+    console.log('showing constants');
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('info');
+  };
+
+
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
@@ -90,27 +103,12 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
     if (index == 0) {
       setIsOpen(false);
     }
-    if (index == 1) {
-      showDatabase();
-      setCurrentTab(tabTypes[index]);
-      console.log("clicked database", isOpen)
-    }
-    if (index == 2) {
-      showConstants();
-      setCurrentTab(tabTypes[index]);
-    }
-    if (index == 3) {
-      showCodelists();
-      setCurrentTab(tabTypes[index]);
-    }
-    if (index == 6) {
-      showReport();
-      setCurrentTab(tabTypes[index]);
-    }
-    if (index == 5) {
-      // executeCohort();
-      showExecute();
-    }
+
+    const actions = [showDatabase, showConstants, showCodelists, showVisibility, showExecute, showReport, showInfo]
+
+    const action = actions[index-1]
+    action()
+  
     console.log("clicked",index, isOpen)
     if (!isOpen) {
       setIsOpen(true);
