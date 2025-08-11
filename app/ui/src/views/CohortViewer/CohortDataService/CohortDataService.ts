@@ -80,7 +80,14 @@ export class CohortDataService {
 
   public async loadCohortData(cohortIdentifiers: string): Promise<void> {
     try {
-      const cohortResponse = await getUserCohort(cohortIdentifiers.id);
+      let cohortResponse = undefined;
+      try{
+        cohortResponse = await getUserCohort(cohortIdentifiers.id);
+      } catch{
+        cohortResponse = await getPublicCohort(cohortIdentifiers.id);
+      }
+      
+
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
       this.sortPhenotypes();
@@ -137,7 +144,6 @@ export class CohortDataService {
       this.splitPhenotypesByType();
     }
 
-    console.log("SAVING HANGES TO COHORT", this._cohort_data.name)
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     await updateCohort(this._cohort_data.id, this._cohort_data);

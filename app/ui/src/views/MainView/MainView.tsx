@@ -16,6 +16,7 @@ export enum ViewType {
   Phenotypes = 'phenotypes',
   Databases = 'databases',
   CohortDefinition = 'sdef',
+  PublicCohortDefinition = 'psdef',
   CohortReport = 'sreport',
   ModalPhenotype = 'modalPhenotype',
   NewCohort = 'newCohort',
@@ -77,6 +78,8 @@ export const MainView = () => {
       case ViewType.Empty:
         return <SplashPage />;
       case ViewType.CohortDefinition:
+        return <TwoPanelCohortViewer data={currentView.data} />;
+      case ViewType.PublicCohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
         return <CohortViewer data={undefined} />;

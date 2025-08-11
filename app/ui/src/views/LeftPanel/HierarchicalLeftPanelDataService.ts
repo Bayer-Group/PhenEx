@@ -64,7 +64,7 @@ export class HierarchicalLeftPanelDataService {
         id: cohort.id,
         displayName: cohort.name,
         level: level,
-        viewInfo: { viewType: ViewType.CohortDefinition, data: cohort },
+        viewInfo: { viewType: ViewType.PublicCohortDefinition, data: cohort },
         children:[],
         height:30,
         fontSize: 20,
