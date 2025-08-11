@@ -1130,6 +1130,7 @@ def resolve_phenexui_codelist_file(phenexui_codelist):
         "class_name": "Codelist",
         "name": phenexui_codelist["codelist_name"],
         "codelist": phenex_codelist,
+        "use_code_type":False
     }
 
 
