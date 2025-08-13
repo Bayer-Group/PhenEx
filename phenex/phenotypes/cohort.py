@@ -291,7 +291,6 @@ class Cohort:
         #
         # Post-index / reporting stage
         #
-        # Create HStackNodes for characteristics and outcomes
         self.characteristics_node = None
         self.outcomes_node = None
         reporting_nodes = []
@@ -481,3 +480,35 @@ class Cohort:
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
         return to_dict(self)
+
+
+class Subcohort(Cohort):
+    """
+    A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.
+
+    Parameters:
+        name: A descriptive name for the subcohort.
+        cohort: The parent cohort from which this subcohort derives.
+        inclusions: Additional phenotypes that must evaluate to True for patients to be included in the subcohort.
+        exclusions: Additional phenotypes that must evaluate to False for patients to be included in the subcohort.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        cohort: "Cohort",
+        inclusions: Optional[List[Phenotype]] = None,
+        exclusions: Optional[List[Phenotype]] = None,
+    ):
+        # Initialize as a regular Cohort with Cohort index table as entry criterion
+        super(Subcohort, self).__init__(
+            name=name,
+            entry_criterion=cohort.index_table_node,
+            inclusions=inclusions,
+            exclusions=exclusions,
+        )
+        self.cohort = cohort
+
+        logger.info(
+            f"Subcohort '{self.name}' initialized based on parent cohort '{self.cohort.name}'"
+        )
