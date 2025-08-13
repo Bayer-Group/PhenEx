@@ -183,13 +183,15 @@ def dump_load_assertion(obj):
         pxjson.dump(obj, f, indent=4)
     with open(path, "r") as f:
         deserialized_obj = pxjson.load(f)
-    assert deserialized_obj == obj
+    # Cohort doesn't have __eq__ defined, so need to compare to_dict() output
+    assert deserialized_obj.to_dict() == obj.to_dict()
 
 
 def serialize_deserialize_assertion(obj):
     serialized_obj = obj.to_dict()
     deserialized_obj = from_dict(serialized_obj)
-    assert obj == deserialized_obj
+    # Cohort doesn't have __eq__ defined, so need to compare to_dict() output
+    assert obj.to_dict() == deserialized_obj.to_dict()
 
 
 def create_cohort():

@@ -61,6 +61,7 @@ class Node:
     def __init__(self, name: Optional[str] = None):
         self._name = name or type(self).__name__
         self._children = []
+        self.table = None  # populated upon call to execute()
 
     def add_children(self, children):
         if not isinstance(children, list):
