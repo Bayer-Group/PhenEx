@@ -7,8 +7,35 @@ from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
+from phenex.filters import DateFilter
 
 logger = create_logger(__name__)
+
+
+class DataPeriodFilterNode(Node):
+    """
+    A compute node that filters tables by the data period (date range).
+    This ensures phenotypes only have access to data within the specified date range.
+    """
+
+    def __init__(self, name: str, domain: str, date_filter: DateFilter):
+        super(DataPeriodFilterNode, self).__init__(name=name)
+        self.domain = domain
+        self.date_filter = date_filter
+
+    def _execute(self, tables: Dict[str, Table]) -> Table:
+        """
+        Apply date filter to the specified domain table.
+
+        Args:
+            tables: Dictionary of table names to Table objects
+
+        Returns:
+            Table: Filtered table with events only within the data period
+        """
+        table = tables[self.domain]
+        table = self.date_filter.filter(table)
+        return table
 
 
 class HStackNode(Node):
@@ -205,6 +232,7 @@ class Cohort:
         exclusions: A list of phenotypes that must evaluate to False for patients to be included in the cohort.
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
         outcomes: A list of phenotypes representing outcomes of the cohort.
+        date_range: Optional DateFilter to restrict the data period - the date range where phenotypes can access data.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -225,6 +253,7 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
+        date_range: Optional[DateFilter] = None,
     ):
         self.name = name
         self.table = None  # Will be set during execution
@@ -235,6 +264,9 @@ class Cohort:
         self.characteristics = characteristics if characteristics is not None else []
         self.derived_tables = derived_tables if derived_tables is not None else []
         self.outcomes = outcomes if outcomes is not None else []
+        self.date_range = date_range
+        self.data_period_stage = None
+        self.data_period_nodes = []
 
         #
         # Entry stage
@@ -308,6 +340,23 @@ class Cohort:
             reporting_nodes.append(self.outcomes_node)
 
         self.reporting_stage = Executor(name="reporting", nodes=reporting_nodes)
+
+        #
+        # Initialize data period filtering stage after all other components
+        #
+        if date_range is not None:
+            domains = self._get_domains()
+            self.data_period_nodes = [
+                DataPeriodFilterNode(
+                    name=f"{self.name}__data_period_{domain}".upper(),
+                    domain=domain,
+                    date_filter=date_range,
+                )
+                for domain in domains
+            ]
+            self.data_period_stage = Executor(
+                name="data_period", nodes=self.data_period_nodes
+            )
 
         self._table1 = None
         logger.info(
@@ -395,6 +444,24 @@ class Cohort:
             subset_tables_index[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_index
 
+    def get_filtered_tables_data_period(self, tables):
+        """
+        Get the tables after applying data period filtering.
+
+        Args:
+            tables: Original input tables
+
+        Returns:
+            dict: Tables filtered by data period if date_range is specified, otherwise original tables
+        """
+        if self.data_period_stage is None:
+            return tables
+
+        filtered_tables = tables.copy()
+        for node in self.data_period_nodes:
+            filtered_tables[node.domain] = node.table
+        return filtered_tables
+
     def execute(
         self,
         tables,
@@ -404,7 +471,7 @@ class Cohort:
         lazy_execution: Optional[bool] = False,
     ):
         """
-        The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
+        The execute method executes the full cohort in order of computation. The order is data period filtering (if specified) -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
 
         Parameters:
             tables: A dictionary mapping domains to Table objects
@@ -416,6 +483,23 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        # Apply data period filtering first if specified
+        if self.data_period_stage:
+            logger.info(
+                f"Cohort '{self.name}': executing data period filtering stage ..."
+            )
+            self.data_period_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
+            # Replace tables with filtered versions
+            for node in self.data_period_nodes:
+                tables[node.domain] = node.table
+            logger.info(f"Cohort '{self.name}': completed data period filtering stage.")
+
         if self.derived_tables_stage:
             logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
             self.derived_tables_stage.execute(
@@ -510,5 +594,6 @@ class Subcohort(Cohort):
             entry_criterion=cohort.entry_criterion,
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,
+            date_range=cohort.date_range,
         )
         self.cohort = cohort
