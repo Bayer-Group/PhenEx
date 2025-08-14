@@ -151,7 +151,7 @@ class ExclusionsTableNode(Node):
         return exclusions_table
 
 
-class IndexTableNode(Node):
+class IndexPhenotype(Phenotype):
     """
     Compute the index table form the individual inclusions / exclusions phenotypes.
     """
@@ -163,7 +163,7 @@ class IndexTableNode(Node):
         inclusion_table_node: Node,
         exclusion_table_node: Node,
     ):
-        super(IndexTableNode, self).__init__(name=name)
+        super(IndexPhenotype, self).__init__(name=name)
         self.add_children(entry_phenotype)
         if inclusion_table_node:
             self.add_children(inclusion_table_node)
@@ -176,6 +176,7 @@ class IndexTableNode(Node):
 
     def _execute(self, tables: Dict[str, Table]):
 
+        # index_table = self.entry_phenotype.table
         index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
 
         if self.inclusion_table_node:
@@ -273,7 +274,7 @@ class Cohort:
             )
             index_nodes.append(self.exclusions_table_node)
 
-        self.index_table_node = IndexTableNode(
+        self.index_table_node = IndexPhenotype(
             f"{self.name}__index".upper(),
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
@@ -462,6 +463,7 @@ class Cohort:
             n_threads=n_threads,
             lazy_execution=lazy_execution,
         )
+        logger.info(f"Cohort '{self.name}': completed reporting stage.")
 
         return self.index_table
 
@@ -501,14 +503,12 @@ class Subcohort(Cohort):
         exclusions: Optional[List[Phenotype]] = None,
     ):
         # Initialize as a regular Cohort with Cohort index table as entry criterion
+        additional_inclusions = inclusions or []
+        additional_exclusions = exclusions or []
         super(Subcohort, self).__init__(
             name=name,
-            entry_criterion=cohort.index_table_node,
-            inclusions=inclusions,
-            exclusions=exclusions,
+            entry_criterion=cohort.entry_criterion,
+            inclusions=cohort.inclusions + additional_inclusions,
+            exclusions=cohort.exclusions + additional_exclusions,
         )
         self.cohort = cohort
-
-        logger.info(
-            f"Subcohort '{self.name}' initialized based on parent cohort '{self.cohort.name}'"
-        )

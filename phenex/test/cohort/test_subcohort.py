@@ -63,6 +63,34 @@ class SubcohortTestGenerator(CohortTestGenerator):
             path = os.path.join(self.dirpaths["expected"], filename)
             df.to_csv(path, index=False, date_format=self.date_format)
 
+        # For debugging, useful:
+        #
+        # self.subcohort.execute(self.mapped_tables)
+        # self.subcohort.index_table.to_pandas().to_csv(
+        #     os.path.join(self.dirpaths["result"], "subcohort_index.csv"), index=False
+        # )
+        # if self.subcohort.inclusions_table is not None:
+        #     self.subcohort.inclusions_table.to_pandas().to_csv(
+        #         os.path.join(self.dirpaths["result"], "subcohort_inclusions.csv"), index=False
+        #     )
+        # if self.subcohort.exclusions_table is not None:
+        #     self.subcohort.exclusions_table.to_pandas().to_csv(
+        #         os.path.join(self.dirpaths["result"], "subcohort_exclusions.csv"), index=False
+        #     )
+
+        # self.cohort.execute(self.mapped_tables)
+        # self.cohort.index_table.to_pandas().to_csv(
+        #     os.path.join(self.dirpaths["result"], "cohort_index.csv"), index=False
+        # )
+        # if self.cohort.inclusions_table is not None:
+        #     self.cohort.inclusions_table.to_pandas().to_csv(
+        #         os.path.join(self.dirpaths["result"], "cohort_inclusions.csv"), index=False
+        #     )
+        # if self.cohort.exclusions_table is not None:
+        #     self.cohort.exclusions_table.to_pandas().to_csv(
+        #         os.path.join(self.dirpaths["result"], "cohort_exclusions.csv"), index=False
+        #     )
+
     def _run_tests(self):
         """Override to test both cohort and subcohort"""
         # Run parent cohort tests (which will also execute subcohorts)
@@ -89,12 +117,12 @@ class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
             codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
-                when="before", min_days=GreaterThanOrEqualTo(0)
+                anchor_phenotype=entry, when="before", min_days=GreaterThanOrEqualTo(0)
             ),
         )
 
         return Cohort(
-            name="test_simple_cohort_with_exclusion",
+            name="test_subcohort_simple_cohort_with_exclusion",
             entry_criterion=entry,
             exclusions=[e4],
         )
@@ -111,7 +139,7 @@ class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
         )
 
         return Subcohort(
-            name="test_simple_subcohort_with_additional_exclusion",
+            name="test_subcohort_simple_cohort_with_exclusion_subcohort",
             cohort=self.cohort,
             exclusions=[additional_exclusion],
         )
@@ -130,6 +158,14 @@ class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
             {
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
+            },
+            {
+                "name": "additional_drug",
+                "values": ["d4", "d5"],
+            },  # d4 for exclusion, d5 as non-exclusion
+            {
+                "name": "additional_drug_date",
+                "values": [datetime.date(2019, 6, 1)],
             },
         ]
 
@@ -155,10 +191,18 @@ class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
         df_drug_exclusion_exposure = pd.DataFrame(
             df_allvalues[["PATID", "prior_et_use", "prior_et_use_date"]]
         )
+        df_drug_additional_exposure = pd.DataFrame(
+            df_allvalues[["PATID", "additional_drug", "additional_drug_date"]]
+        )
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        df_drug_additional_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exposure = pd.concat(
-            [df_drug_exposure_entry, df_drug_exclusion_exposure]
+            [
+                df_drug_exposure_entry,
+                df_drug_exclusion_exposure,
+                df_drug_additional_exposure,
+            ]
         )
 
         schema_drug_exposure = {
@@ -177,17 +221,21 @@ class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
         }
 
     def define_expected_output(self):
+        # Only patients with entry=d1, no e4 exclusion, AND entry date within study period (2015-2020)
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0"]
+        df_expected_index["PERSON_ID"] = [
+            "P0",
+            "P4",
+        ]  # P0 and P4 have 2020-01-01 entry dates within study period
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0 has entry d1 but also has d4, so will be excluded from subcohort
+        # P0 has d4 (additional exclusion) so excluded, P4 has d5 (no exclusion) so included
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = []
+        df_expected_index["PERSON_ID"] = ["P4"]
         test_infos = {
             "subcohort_index": df_expected_index,
         }
@@ -219,12 +267,12 @@ class SimpleSubcohortWithExclusionAndStudyPeriodTestGenerator(
             codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
-                when="before", min_days=GreaterThanOrEqualTo(0)
+                anchor_phenotype=entry, when="before", min_days=GreaterThanOrEqualTo(0)
             ),
         )
 
         return Cohort(
-            name="test_simple_cohort_with_exclusion_and_study_period",
+            name="test_subcohort_simple_cohort_with_exclusion_and_study_period",
             entry_criterion=entry,
             exclusions=[e4],
         )
@@ -233,7 +281,7 @@ class SimpleSubcohortWithExclusionAndStudyPeriodTestGenerator(
         # Additional inclusion: patients must have had an observation in the last year
         additional_inclusion = CodelistPhenotype(
             name="recent_observation",
-            codelist=Codelist(["e1"]).copy(use_code_type=False),
+            codelist=Codelist(["d4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before",
@@ -243,7 +291,7 @@ class SimpleSubcohortWithExclusionAndStudyPeriodTestGenerator(
         )
 
         return Subcohort(
-            name="test_simple_subcohort_with_recent_observation",
+            name="test_subcohort_simple_cohort_with_exclusion_and_study_period_subcohort",
             cohort=self.cohort,
             inclusions=[additional_inclusion],
         )
@@ -263,8 +311,28 @@ class SimpleSubcohortWithExclusionAndStudyPeriodTestGenerator(
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
+            {
+                "name": "additional_drug",
+                "values": ["d4", "d5"],
+            },  # d4 for exclusion, d5 as non-exclusion
+            {
+                "name": "additional_drug_date",
+                "values": [datetime.date(2019, 6, 1)],
+            },
         ]
         return generate_dummy_cohort_data(values)
+
+    def define_expected_output(self):
+        # Only patients with entry=d1, no e4 exclusion, AND entry date within study period (2015-2020)
+        df_expected_index = pd.DataFrame()
+        df_expected_index["PERSON_ID"] = [
+            "P0",
+            "P4",
+        ]  # P0 and P4 have 2020-01-01 entry dates within study period
+        test_infos = {
+            "index": df_expected_index,
+        }
+        return test_infos
 
     def define_expected_subcohort_output(self):
         # P0 has entry within study period and recent observation (e1)
@@ -301,11 +369,11 @@ class SimpleSubcohortWithExclusionPostIndexTestGenerator(
             codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
-                when="before", min_days=GreaterThanOrEqualTo(0)
+                anchor_phenotype=entry, when="before", min_days=GreaterThanOrEqualTo(0)
             ),
         )
         return Cohort(
-            name="test_simple_cohort_with_exclusions_post_index",
+            name="test_subcohort_simple_cohort_with_exclusions_post_index",
             entry_criterion=entry,
             exclusions=[e4],
         )
@@ -317,6 +385,7 @@ class SimpleSubcohortWithExclusionPostIndexTestGenerator(
             codelist=Codelist(["d4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
+                anchor_phenotype=self.cohort.entry_criterion,
                 when="after",
                 min_days=GreaterThanOrEqualTo(0),
                 max_days=LessThanOrEqualTo(365),
@@ -324,7 +393,7 @@ class SimpleSubcohortWithExclusionPostIndexTestGenerator(
         )
 
         return Subcohort(
-            name="test_simple_subcohort_post_index_exclusion",
+            name="test_subcohort_simple_cohort_with_exclusions_post_index_subcohort",
             cohort=self.cohort,
             exclusions=[additional_exclusion],
         )
@@ -344,21 +413,29 @@ class SimpleSubcohortWithExclusionPostIndexTestGenerator(
                 "name": "prior_et_use_date",
                 "values": [datetime.date(2019, 4, 1), datetime.date(2021, 4, 1)],
             },
+            {
+                "name": "additional_drug",
+                "values": ["d4", "d5"],
+            },  # d4 for exclusion, d5 as non-exclusion
+            {
+                "name": "additional_drug_date",
+                "values": [datetime.date(2019, 6, 1)],
+            },
         ]
         return generate_dummy_cohort_data(values)
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0", "P8", "P12"]
+        df_expected_index["PERSON_ID"] = ["P0", "P8", "P12", "P16", "P24", "P28"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0, P8 should remain (no post-index d4), P12 might be excluded if has post-index d4
+        # All patients from cohort should remain in subcohort since none have post-index d4
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0", "P8"]
+        df_expected_index["PERSON_ID"] = ["P0", "P8", "P12", "P16", "P24", "P28"]
         test_infos = {
             "subcohort_index": df_expected_index,
         }
@@ -384,7 +461,7 @@ class SimpleSubcohortWithInclusionTestGenerator(
             ),
         )
         return Cohort(
-            name="test_simple_cohort_with_inclusions",
+            name="test_subcohort_simple_subcohort_with_additional_inclusion",
             entry_criterion=entry,
             inclusions=[i1],
         )
@@ -401,7 +478,7 @@ class SimpleSubcohortWithInclusionTestGenerator(
         )
 
         return Subcohort(
-            name="test_simple_subcohort_with_additional_inclusion",
+            name="test_subcohort_simple_subcohort_with_additional_inclusion_subcohort",
             cohort=self.cohort,
             inclusions=[additional_inclusion],
         )
@@ -443,7 +520,7 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
         )
 
         return Cohort(
-            name="test_simple_cohort_with_inclusions",
+            name="test_subcohort_simple_cohort_with_inclusions2",
             entry_criterion=entry,
             inclusions=[i1],
             exclusions=[e4],
@@ -460,9 +537,10 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
             ),
         )
 
+        # Change exclusion to e4 (which P0 doesn't have) instead of e1
         additional_exclusion = CodelistPhenotype(
-            name="subcohort_exclusion_e1",
-            codelist=Codelist(["e1"]).copy(use_code_type=False),
+            name="subcohort_exclusion_e4",
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -470,7 +548,7 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
         )
 
         return Subcohort(
-            name="test_simple_subcohort_with_additional_inex",
+            name="test_subcohort_simple_cohort_with_inclusions2_subcohort",
             cohort=self.cohort,
             inclusions=[additional_inclusion],
             exclusions=[additional_exclusion],
@@ -491,9 +569,15 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
                 "name": "exclusions_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
-            {"name": "inclusions", "values": ["i1", "i4"]},
+            # Include both i1 and i4 for the same patients by having multiple inclusion records
+            {"name": "inclusions_i1", "values": ["i1", "none"]},
             {
-                "name": "inclusions_date",
+                "name": "inclusions_i1_date",
+                "values": [datetime.date(2019, 4, 1)],
+            },
+            {"name": "inclusions_i4", "values": ["i4", "none"]},
+            {
+                "name": "inclusions_i4_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
         ]
@@ -508,10 +592,10 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0 needs i4 (additional inclusion) and must not have e1 (additional exclusion)
-        # Since P0 has e1, they will be excluded from subcohort
+        # P0 has entry=d1, i1 (cohort inclusion), i4 (subcohort inclusion), e1 (not e4)
+        # P0 qualifies for both cohort and subcohort
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = []
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "subcohort_index": df_expected_index,
         }
@@ -534,19 +618,28 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
         df_drug_exposure_entry = pd.DataFrame(
             df_allvalues[["PATID", "entry", "entry_date"]]
         )
-        df_drug_inclusion_exposure = pd.DataFrame(
-            df_allvalues[["PATID", "inclusions", "inclusions_date"]]
-        )
         df_drug_exclusion_exposure = pd.DataFrame(
             df_allvalues[["PATID", "exclusions", "exclusions_date"]]
         )
+        # Handle both i1 and i4 inclusions
+        df_drug_inclusion_i1 = df_allvalues[df_allvalues["inclusions_i1"] != "none"][
+            ["PATID", "inclusions_i1", "inclusions_i1_date"]
+        ]
+        df_drug_inclusion_i1.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+
+        df_drug_inclusion_i4 = df_allvalues[df_allvalues["inclusions_i4"] != "none"][
+            ["PATID", "inclusions_i4", "inclusions_i4_date"]
+        ]
+        df_drug_inclusion_i4.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+
         df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-        df_drug_inclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+
         df_drug_exposure = pd.concat(
             [
                 df_drug_exposure_entry,
-                df_drug_inclusion_exposure,
+                df_drug_inclusion_i1,
+                df_drug_inclusion_i4,
                 df_drug_exclusion_exposure,
             ]
         )
@@ -596,7 +689,7 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
         )
 
         return Cohort(
-            name="test_simple_cohort_with_inclusions",
+            name="test_subcohort_simple_cohort_with_inclusions",
             entry_criterion=entry,
             inclusions=[i1],
             exclusions=[e4],
@@ -613,9 +706,10 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
             ),
         )
 
+        # Change exclusion to e4 instead of e1 so P0 isn't excluded
         additional_exclusion = CodelistPhenotype(
             name="subcohort_drug_exclusion",
-            codelist=Codelist(["e1"]).copy(use_code_type=False),
+            codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
@@ -623,7 +717,7 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
         )
 
         return Subcohort(
-            name="test_simple_subcohort_separate_tables",
+            name="test_subcohort_simple_cohort_with_inclusions_subcohort",
             cohort=self.cohort,
             inclusions=[additional_inclusion],
             exclusions=[additional_exclusion],
@@ -644,9 +738,15 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
                 "name": "exclusions_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
-            {"name": "inclusions", "values": ["i1", "i4"]},
+            # Include both i1 and i4 for the same patients by having multiple inclusion records
+            {"name": "inclusions_i1", "values": ["i1", "none"]},
             {
-                "name": "inclusions_date",
+                "name": "inclusions_i1_date",
+                "values": [datetime.date(2019, 4, 1)],
+            },
+            {"name": "inclusions_i4", "values": ["i4", "none"]},
+            {
+                "name": "inclusions_i4_date",
                 "values": [datetime.date(2019, 4, 1)],
             },
         ]
@@ -662,9 +762,9 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
 
     def define_expected_subcohort_output(self):
         # P0 needs i4 from condition occurrence and must not have e1 from drug exposure
-        # If P0 has both i1 and i4 from conditions but has e1 from drugs, they'll be excluded
+        # Ensure P0 has both i1 and i4 from conditions and not excluded by e1
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = []
+        df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
             "subcohort_index": df_expected_index,
         }
@@ -697,165 +797,18 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
             [df_drug_exposure_entry, df_drug_exclusion_exposure]
         )
 
-        # create condition occurrence table
-        df_inclusion = pd.DataFrame(
-            df_allvalues[["PATID", "inclusions", "inclusions_date"]]
-        )
-        df_inclusion.columns = ["PATID", "MEDCODEID", "OBSDATE"]
-
-        schema_drug_exposure = {
-            "PATID": str,
-            "PRODCODEID": str,
-            "ISSUEDATE": datetime.date,
-        }
-        drug_exposure_table = DrugExposureTableForTests(
-            self.con.create_table(
-                "DRUG_EXPOSURE", df_drug_exposure, schema=schema_drug_exposure
-            )
-        )
-        schema_condition_occurrence = {
-            "PATID": str,
-            "MEDCODEID": str,
-            "OBSDATE": datetime.date,
-        }
-        condition_occurrence_table = ConditionOccurenceTableForTests(
-            self.con.create_table(
-                "CONDITION_OCCURRENCE", df_inclusion, schema=schema_condition_occurrence
-            )
-        )
-        return {
-            "PERSON": person_table,
-            "DRUG_EXPOSURE": drug_exposure_table,
-            "CONDITION_OCCURRENCE": condition_occurrence_table,
-        }
-
-
-class SimpleSubcohortWithContinuousCoverageInclusionTestGenerator(
-    SimpleSubcohortWithExclusionTestGenerator
-):
-    def define_cohort(self):
-        entry = CodelistPhenotype(
-            return_date="first",
-            codelist=Codelist(["d1"]).copy(use_code_type=False),
-            domain="DRUG_EXPOSURE",
-        )
-
-        i1 = CodelistPhenotype(
-            name="prior_et_usage",
-            codelist=Codelist(["i1"]).copy(use_code_type=False),
-            domain="CONDITION_OCCURRENCE",
-            relative_time_range=RelativeTimeRangeFilter(
-                when="before", min_days=GreaterThanOrEqualTo(0)
-            ),
-        )
-
-        e4 = CodelistPhenotype(
-            name="prior_et_usage",
-            codelist=Codelist(["e4"]).copy(use_code_type=False),
-            domain="DRUG_EXPOSURE",
-            relative_time_range=RelativeTimeRangeFilter(
-                when="before", min_days=GreaterThanOrEqualTo(0)
-            ),
-        )
-
-        return Cohort(
-            name="test_simple_cohort_with_inclusions",
-            entry_criterion=entry,
-            inclusions=[i1],
-            exclusions=[e4],
-        )
-
-    def define_subcohort(self):
-        # Additional continuous coverage requirement
-        continuous_coverage = CodelistPhenotype(
-            name="continuous_coverage",
-            codelist=Codelist(["i4"]).copy(use_code_type=False),
-            domain="CONDITION_OCCURRENCE",
-            relative_time_range=RelativeTimeRangeFilter(
-                when="before",
-                min_days=GreaterThanOrEqualTo(30),
-                max_days=LessThanOrEqualTo(365),
-            ),
-        )
-
-        return Subcohort(
-            name="test_simple_subcohort_continuous_coverage",
-            cohort=self.cohort,
-            inclusions=[continuous_coverage],
-        )
-
-    def generate_dummy_input_data(self):
-        values = [
-            {
-                "name": "entry",
-                "values": ["d1", "d4"],
-            },
-            {
-                "name": "entry_date",
-                "values": [datetime.date(2020, 1, 1), datetime.date(2010, 1, 1)],
-            },
-            {"name": "exclusions", "values": ["e1", "e4"]},
-            {
-                "name": "exclusions_date",
-                "values": [datetime.date(2019, 4, 1)],
-            },
-            {"name": "inclusions", "values": ["i1", "i4"]},
-            {
-                "name": "inclusions_date",
-                "values": [datetime.date(2019, 4, 1)],
-            },
+        # create condition occurrence table with both i1 and i4 inclusions
+        df_inclusion_i1 = df_allvalues[df_allvalues["inclusions_i1"] != "none"][
+            ["PATID", "inclusions_i1", "inclusions_i1_date"]
         ]
-        return generate_dummy_cohort_data(values)
+        df_inclusion_i1.columns = ["PATID", "MEDCODEID", "OBSDATE"]
 
-    def define_expected_output(self):
-        df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0"]
-        test_infos = {
-            "index": df_expected_index,
-        }
-        return test_infos
+        df_inclusion_i4 = df_allvalues[df_allvalues["inclusions_i4"] != "none"][
+            ["PATID", "inclusions_i4", "inclusions_i4_date"]
+        ]
+        df_inclusion_i4.columns = ["PATID", "MEDCODEID", "OBSDATE"]
 
-    def define_expected_subcohort_output(self):
-        # P0 needs continuous coverage (i4) within specific time window
-        df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0"]
-        test_infos = {
-            "subcohort_index": df_expected_index,
-        }
-        return test_infos
-
-    def define_mapped_tables(self):
-        self.con = ibis.duckdb.connect()
-        df_allvalues = self.generate_dummy_input_data()
-
-        # create dummy person table
-        df_person = pd.DataFrame(df_allvalues[["PATID"]])
-        df_person["YOB"] = 1
-        df_person["GENDER"] = 1
-        df_person["ACCEPTABLE"] = 1
-        schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
-        person_table = PersonTableForTests(
-            self.con.create_table("PERSON", df_person, schema=schema_person)
-        )
-        # create drug exposure table
-        df_drug_exposure_entry = pd.DataFrame(
-            df_allvalues[["PATID", "entry", "entry_date"]]
-        )
-        df_drug_exclusion_exposure = pd.DataFrame(
-            df_allvalues[["PATID", "exclusions", "exclusions_date"]]
-        )
-        df_drug_exposure_entry.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-        df_drug_exclusion_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
-
-        df_drug_exposure = pd.concat(
-            [df_drug_exposure_entry, df_drug_exclusion_exposure]
-        )
-
-        # create condition occurrence table
-        df_inclusion = pd.DataFrame(
-            df_allvalues[["PATID", "inclusions", "inclusions_date"]]
-        )
-        df_inclusion.columns = ["PATID", "MEDCODEID", "OBSDATE"]
+        df_inclusion = pd.concat([df_inclusion_i1, df_inclusion_i4])
 
         schema_drug_exposure = {
             "PATID": str,
@@ -914,16 +867,10 @@ def test_simple_subcohort_with_inclusions_and_exclusion_separate_table():
     g.run_tests()
 
 
-def test_simple_subcohort_with_continuous_coverage():
-    g = SimpleSubcohortWithContinuousCoverageInclusionTestGenerator()
-    g.run_tests()
-
-
 if __name__ == "__main__":
-    # test_simple_subcohort_with_exclusion()
-    # test_simple_subcohort_with_exclusion_and_study_period()
-    # test_simple_subcohort_with_exclusions_postindex()
-    # test_simple_subcohort_with_inclusions_postindex()
-    # test_simple_subcohort_with_inclusions_and_exclusions()
-    # test_simple_subcohort_with_inclusions_and_exclusion_separate_table()
-    test_simple_subcohort_with_continuous_coverage()
+    test_simple_subcohort_with_exclusion()
+    test_simple_subcohort_with_exclusion_and_study_period()
+    test_simple_subcohort_with_exclusions_postindex()
+    test_simple_subcohort_with_inclusions_postindex()
+    test_simple_subcohort_with_inclusions_and_exclusions()
+    test_simple_subcohort_with_inclusions_and_exclusion_separate_table()
