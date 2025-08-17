@@ -61,12 +61,27 @@
 }
 
 .collapsed {
-  width: 0;
-  overflow: hidden;
+  /* width: 0; */
+  /* overflow: hidden; */
 }
 
-.collapseButton {
+.collapseButton{
+  z-index: 10000;
   position: absolute;
+  pointer-events: all;
+  padding:2px 10px;
+  margin-left:10px;
+  margin-top:5px;
+  font-size:22px;
+  font-family: 'SNPro-black' !important;
+  border-radius: var(--border-radius);
+  cursor:pointer;
+}
+
+
+
+.collapseButton {
+  /* position: absolute;
   padding: 4px;
   background-color: var(--background-color);
   border: 1px solid var(--border-color);
@@ -90,11 +105,10 @@
   border: transparent 1px solid;
   background-color: transparent;
   color: black;
-  user-select: none;
+  user-select: none; */
 }
 
 .arrow {
-  margin-left: -3px;
 }
 
 .collapseButton:hover {
@@ -113,14 +127,7 @@
 }
 
 .collapseButton.left {
-  left: -45px;
-  top: 8px;
-  font-size: 20px;
 
-  font-family: 'SNPro-black';
-  width: 30px;
-  height: 30px;
-  bottom: 1px;
 }
 
 .collapseButton.left:hover {
@@ -131,16 +138,18 @@
 }
 
 .collapseButton.left.collapsed {
-  left: 10px;
-  top: 10px;
-  border: 1px solid transparent;
+  transform: rotate(180deg) !important;
+
+  /* left: 10px;
+  top: 10px; */
+  /* border: 1px solid transparent;
   box-shadow: none;
   font-family: 'SNPro-black';
-  transform: rotate(180deg) !important;
+  transform: rotate(180deg) !important; */
 }
 
 .collapseButton.right {
-  font-family: 'SNPro-black';
+  /* font-family: 'SNPro-black';
   font-size: 30px;
   padding-left: 2px;
   left: -60px;
@@ -149,11 +158,11 @@
   height: 50px;
   border: var(--border);
   background-color: white;
-  border-radius: 50%;
+  border-radius: 50%; */
   /* border: 2px solid var(--color-accent); */
 }
 
-.collapseButton.right:hover {
+/* .collapseButton.right:hover {
   border-color: var(--color-accent);
 }
 
@@ -161,12 +170,11 @@
 }
 
 .collapseButton.left.collapsed {
-  /* transform: rotate(180deg); */
   transition: none;
 }
 .collapseButton.left {
   transform: none !important;
-}
+} */
 
 .panel.collapsed {
   width: 0 !important;
