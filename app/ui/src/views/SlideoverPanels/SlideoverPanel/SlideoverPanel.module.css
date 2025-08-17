@@ -11,9 +11,9 @@
 .title {
   font-size: 24px;
   font-family: 'IBMPlexSans-bold';
-  padding-left: 20px;
-  margin-top: 6px;
-  margin-left: 30px;
+  margin-left: 20px;
+  margin-top:40px;
+  /* margin-left: 30px; */
 }
 
 .controls {

@@ -1,3 +1,6 @@
+:root {
+  --margin_top_right_panel: 15px;
+}
 .container {
   display: flex;
   width: 100%;
@@ -34,7 +37,8 @@
 }
 
 .rightPanel {
-  background-color: var(--background-color) !important;
+  border-radius: 20px 0px 0px 20px;
+  background-color: red;/*var(--background-color) !important;*/
 }
 
 .divider {
@@ -43,8 +47,6 @@
   /* background-color: var(--background-color) !important; */
   cursor: col-resize;
   position: absolute;
-  box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.1);
-  border-left: 1px solid var(--color-accent-bright);
   background-color: transparent;
   z-index: 5000;
   top: 0px;
@@ -56,6 +58,14 @@
   height: 100%;
   width: 100%;
   z-index: 0;
+    border-radius: 20px 0px 0px 20px;
+  background-color: var(--background-color) !important;
+  border-left: 1px solid var(--line-color);
+    border-top: 1px solid var(--line-color);
+
+  box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.1);
+  margin-top:var(--margin_top_right_panel);
+
 }
 .divider.collapsed {
   width: 0;
@@ -112,6 +122,7 @@
   user-select: none;
   font-family: 'SNPro-black';
   font-size: 20px;
+  margin-top: var(--margin_top_right_panel);
 }
 
 .collapseButton:hover {
