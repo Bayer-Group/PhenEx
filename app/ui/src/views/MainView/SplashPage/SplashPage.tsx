@@ -22,8 +22,16 @@ export const SplashPage = () => {
             also included.
           </p>
           <p>
-            To get started, <emph>create a cohort</emph> or select an existing one in the left
-            navigation area, or generate one with AI.
+            <emph>To get started</emph> with PhenEx :
+            <ol>
+              <li>Register or Login</li>
+              <li>Add a cohort bye
+                <ul>
+                  <li><span className={styles.buttonAppearance}>New Cohort</span> or select an existing one the left navigation area</li>
+                  <li>try generating a cohort with AI.</li>
+                </ul>
+              </li>
+            </ol>
           </p>
         </div>
       </div>

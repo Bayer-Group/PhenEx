@@ -1,5 +1,5 @@
 :root {
-  --margin_top_right_panel: 10px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --margin_top_right_panel: 20px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
   --border_radius_right_panel: 8px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
 
 }
@@ -104,28 +104,20 @@
   border: 1px solid transparent;
   cursor: pointer;
   z-index: 1;
-  width: 30px;
-  height: 30px;
+  /* width: 30px;
+  height: 30px; */
   border-radius: 50%;
   background-color: transparent;
   display: flex;
-  align-items: center;
-  font-size: 22px;
-  font-family: 'IBMPlexSans-bold';
   color: hsl(0, 0%, 60%);
-  justify-content: center;
-  cursor: pointer;
   z-index: 1000;
-  top: 10px;
+  
   right: 20px;
 
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
-  font-family: 'SNPro-black';
-  font-size: 20px;
   margin-top: var(--margin_top_right_panel);
-  margin-left:20px;
 }
 
 .collapseButton:hover {

@@ -117,7 +117,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const renderLeftDivider = () => {
     return (
       <div
-        className={styles.divider}
+        className={`${styles.divider} ${styles.left}`}
         onMouseDown={handleMouseDown('left')}
         onClick={toggleLeftPanel}
       >
@@ -126,21 +126,36 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         ></div>
 
         <div className={styles.dividerLine} />
+      </div>
+    );
+  };
 
-        <button
+  const renderLeftCollapseButton = () => {
+    return (
+       <button
           className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         >
           <span className={styles.arrow}>{'<<'}</span>
           {/* {isLeftCollapsed ? '>' : '<'} */}
         </button>
-      </div>
     );
-  };
 
+  }
+
+    const renderRightCollapseButton = () => {
+    return (
+        <button
+          className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
+        >
+          {'AI'}
+        </button>
+    );
+
+  }
   const renderRightDivider = () => {
     return (
       <div
-        className={styles.divider}
+        className={`${styles.divider} ${styles.right}`}
         onMouseDown={handleMouseDown('right')}
         onClick={toggleRightPanel}
       >
@@ -150,12 +165,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         <div
           className={`${styles.rightDividerPadding} ${isRightCollapsed ? styles.collapsed : ''}`}
         ></div>
-
-        <button
-          className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
-        >
-          {'AI'}
-        </button>
       </div>
     );
   };
@@ -175,17 +184,20 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}
       >
         {children[0]}
+      {renderLeftDivider()}
       </div>
 
-      {renderLeftDivider()}
+      {renderLeftCollapseButton()}
+
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
 
-      {renderRightDivider()}
+      {renderRightCollapseButton()}
       <div
         className={`${styles.panel} ${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
       >
         {children[2]}
+        {renderRightDivider()}
       </div>
     </div>
   );

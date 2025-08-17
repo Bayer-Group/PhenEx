@@ -20,12 +20,24 @@
 
 .divider {
   width: 15px;
-  background-color: var(--background-color);
+  top: 0px;
+  height:100vh;
   cursor: col-resize;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* position: absolute; */
+  z-index: 100000;
+  /* display: flex;
+  align-items: center; */
+  /* justify-content: center; */
+}
+
+.divider.left{
+  position: absolute;
+  right:0px;
+  background-color: transparent !important;
+
+}
+
+.divider.right{
 }
 
 .dividerLine {
@@ -38,14 +50,14 @@
 }
 
 .divider:hover .dividerLine {
-  background-color: var(--color-accent);
+  /* background-color: var(--color-accent); */
   width: 1px;
 }
 
 .divider:hover .dividerLine.right.collapsed {
-  width: 3px;
+  /* width: 3px;
   pointer-events: none;
-  cursor: default;
+  cursor: default; */
 }
 
 .collapsed {
@@ -165,8 +177,8 @@
 .rightDividerPadding {
   width: 9px;
   height: 100%;
-  background-color: var(--background-color);
-  margin-left: -12px;
+  background-color: blue !important;/*var(--background-color);*/
+  /* margin-left: -12px; */
   pointer-events: none;
   position: absolute;
   /* border-right: 1px solid var(--line-color); */
@@ -212,7 +224,9 @@
 
 .leftPanel {
   width: 100%;
+  background-color: blue!important;
   max-width: var(--initial-left-width);
+  /* padding-right:10px; */
 }
 
 .rightPanel {

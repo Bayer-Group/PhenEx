@@ -164,7 +164,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       left: `${left}px`,
       top: `${top}px`,
       maxHeight: `${Math.min(500, viewport.height - top)}px`,
-      maxWidth: `${Math.min(300, viewport.width - left)}px`,
+      maxWidth: `${Math.min(500, viewport.width - left)}px`, // DETERMINE WIDTH PHENEXCELLEDITOR
     };
   };
 

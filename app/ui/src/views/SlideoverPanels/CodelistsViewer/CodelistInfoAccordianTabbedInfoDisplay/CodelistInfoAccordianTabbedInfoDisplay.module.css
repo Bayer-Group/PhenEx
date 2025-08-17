@@ -3,11 +3,11 @@
 }
 
 .accordianContainer {
-  margin-left:var(--margin_left_slideover_panel);
-  margin-right:var(--margin_left_slideover_panel);
+  margin-left:10px;
+  margin-right:20px;
   background-color: red;
   border: var(--accordian_container_border_width) solid transparent;
-  border-radius: 15px;
+  border-radius: 10px;
   background-color: transparent;
   user-select: none;
   transition:
@@ -26,7 +26,6 @@
   margin-bottom: 20px !important;
   margin-top: 20px !important;
   border-color: var(--color-accent);
-  background-color: white;
 }
 
 .header {

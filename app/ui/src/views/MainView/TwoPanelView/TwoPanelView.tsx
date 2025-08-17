@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
-
+import stylesXButton from '../../../components/XButton/XButton.module.css'
 interface TwoPanelViewProps {
   split: 'vertical';
   initialSizeLeft: number;
@@ -118,13 +118,13 @@ export const TwoPanelView = React.forwardRef<
         style={{ width: isRightCollapsed ? 0 : rightWidth }}
       >
         <div className={styles.rightPanelContent}>{children[1]}</div>
-        <button
-          className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
+        <div
+          className={`${styles.collapseButton} ${stylesXButton.xButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}
         >
           {/* {'×'} */}
-          {'>>'}
-        </button>
+          {'×'}
+        </div>
         <div
           className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
           onMouseDown={handleMouseDown}
