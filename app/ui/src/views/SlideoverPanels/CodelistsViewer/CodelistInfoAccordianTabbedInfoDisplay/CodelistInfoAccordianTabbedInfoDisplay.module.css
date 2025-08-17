@@ -3,21 +3,18 @@
 }
 
 .accordianContainer {
+  margin-left:var(--margin_left_slideover_panel);
+  margin-right:var(--margin_left_slideover_panel);
+  background-color: red;
   border: var(--accordian_container_border_width) solid transparent;
   border-radius: 15px;
-  margin-bottom: 1rem;
-  margin: 5px 20px;
   background-color: transparent;
   user-select: none;
   transition:
     max-height 0.3s ease-in-out,
     height 0.3s ease-in-out;
   overflow: hidden;
-  margin-bottom: 0px !important;
-  margin-top: 4px !important;
-  margin-left: 0px;
   max-width: 800px;
-  margin-right: 0px;
 }
 
 .accordianContainer.opened {
@@ -47,7 +44,7 @@
 
 .header.closed h2 {
   padding-top: 2px;
-  margin-left: 10px;
+  margin-left: var(--margin_left_slideover_panel);
 }
 
 .toggleButton {

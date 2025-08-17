@@ -1,3 +1,7 @@
+:root{
+  --margin_left_slideover_panel: 20px;
+  --margin_top_right_panel_title: 25px;
+}
 .container {
   height: 100%;
   display: flex;
@@ -9,10 +13,10 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 28px;
   font-family: 'IBMPlexSans-bold';
-  margin-left: 20px;
-  margin-top:40px;
+  margin-left: var(--margin_left_slideover_panel);
+  margin-top:var(--margin_top_right_panel_title);
   /* margin-left: 30px; */
 }
 
@@ -94,8 +98,12 @@ code {
 }
 
 .infobox {
-  margin: 0px 0px 0px 10px;
-  padding: 10px 10px 10px 20px;
+  margin-right:20px;
+  margin-bottom: 30px;
+  margin-left:20px;
+  /* margin: 0px 0px 0px 10px; */
+  /* padding: 10px 10px 10px 20px; */
+  padding: 10px;
   background-color: white;
   border-radius: 10px;
   font-size: 14px;
@@ -109,24 +117,28 @@ code {
 }
 
 .infobox.open {
-  max-height: 500px; /* Arbitrary value, adjust as needed */
+  max-height: 400px; /* Arbitrary value, adjust as needed */
   opacity: 1; /* Fully visible when open */
-  margin: 20px 20px 40px 20px;
+  /* margin: 20px 20px 40px 20px; */
   background-color: var(--button-background-color-selected) !important;
   border: 1px solid var(--button-border-color-selected);
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
 }
 
 .infobox.closed {
-  padding: 0px;
+  /* padding: 0px; */
   max-height: 0; /* Closed state */
   opacity: 0; /* Hidden */
 }
 
+.infobox.closed{
+  margin:0px;
+}
 .infoButton {
   position: absolute !important;
-  right: 10px;
+  right: 60px;
   top: 10px;
 }
 
@@ -141,3 +153,45 @@ code {
 }
 
 
+
+
+
+
+.infobox {
+  margin-right: 20px;
+  margin-bottom: 30px;
+  margin-left: 20px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    margin 0.3s ease; /* Add margin to transition properties */
+  max-height: 0; /* Start closed */
+  opacity: 0; /* Start hidden */
+  overflow: hidden; /* Prevent overflow when closed */
+}
+
+.infobox.open {
+  max-height: 400px; /* Arbitrary value, adjust as needed */
+  opacity: 1; /* Fully visible when open */
+  margin-right: 20px;
+  margin-bottom: 30px;
+  margin-left: 20px;
+  background-color: var(--button-background-color-selected) !important;
+  border: 1px solid var(--button-border-color-selected);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.infobox.closed {
+  max-height: 0; /* Closed state */
+  opacity: 0; /* Hidden */
+  margin: 0; /* No margin when closed */
+  padding-top: 0;
+  padding-bottom: 0;
+  border: none; /* Remove border when closed */
+}

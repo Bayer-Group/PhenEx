@@ -169,8 +169,8 @@
   margin-left: -12px;
   pointer-events: none;
   position: absolute;
-  border-right: 1px solid var(--color-accent-bright);
-  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1);
+  /* border-right: 1px solid var(--line-color); */
+  /* box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1); */
 }
 
 .divider:hover .collapseButton.left {
@@ -197,7 +197,7 @@
 }
 
 .rightDividerPadding.collapsed {
-  background-color: var(--background-color);
+  background-color: transparent;
   width: 100px;
 }
 
