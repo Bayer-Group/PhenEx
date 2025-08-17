@@ -118,12 +118,12 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
       setIsOpen(true);
       setCurrentTab(tabTypes[index]);
     } else {
-      if (index === currentTabIndex) {
-        setIsOpen(false);
-        const cohortViewer = TwoPanelCohortViewerService.getInstance();
-        cohortViewer.hideExtraContent();
-        setCurrentTab(tabTypes[index]);
-      }
+      // if (index === currentTabIndex) {
+      //   setIsOpen(false);
+      //   const cohortViewer = TwoPanelCohortViewerService.getInstance();
+      //   cohortViewer.hideExtraContent();
+      //   setCurrentTab(tabTypes[index]);
+      // }
     }
   };
 
