@@ -12,7 +12,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
 
 const getViewportDimensions = () => ({
   width: window.innerWidth,
-  height: window.innerHeight
+  height: window.innerHeight,
 });
 
 const getGridDimensions = (gridElement: HTMLElement | null) => {
@@ -24,7 +24,7 @@ const getGridDimensions = (gridElement: HTMLElement | null) => {
     width: rect.width,
     height: rect.height,
     bottom: rect.bottom,
-    right: rect.right
+    right: rect.right,
   };
 };
 
@@ -164,7 +164,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       left: `${left}px`,
       top: `${top}px`,
       maxHeight: `${Math.min(500, viewport.height - top)}px`,
-      maxWidth: `${Math.min(300, viewport.width - left)}px`
+      maxWidth: `${Math.min(300, viewport.width - left)}px`,
     };
   };
 
@@ -176,17 +176,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     maxHeight: '500px',
     zIndex: 9999,
     ...calculatePosition(),
-
   };
 
   const renderXButton = () => {
-    return (
-        <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>
-    )
+    return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   };
-
-
-
 
   return (
     <Portal>
@@ -194,12 +188,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         style={portalStyle}
         ref={containerRef}
         className={styles.container}
-        onClick={(e) => {
-          e.stopPropagation();  // Stop click from bubbling
-          e.nativeEvent.stopImmediatePropagation();  // Stop other listeners
+        onClick={e => {
+          e.stopPropagation(); // Stop click from bubbling
+          e.nativeEvent.stopImmediatePropagation(); // Stop other listeners
         }}
-        onMouseDown={(e) => {
-          e.stopPropagation();  // Stop mousedown from bubbling
+        onMouseDown={e => {
+          e.stopPropagation(); // Stop mousedown from bubbling
           e.nativeEvent.stopImmediatePropagation();
         }}
         onKeyDown={e => {
@@ -219,11 +213,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
         tabIndex={-1}
       >
-        <PopoverHeader
-          onClick={handleDone}
-          title={'phenexheader'}
-          className={styles.popoverheader}
-        >
+        <PopoverHeader onClick={handleDone} title={'phenexheader'} className={styles.popoverheader}>
           <div>
             <span className={styles.topLine}>
               <span className={styles.filler}>editing</span>
@@ -233,10 +223,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
             <span className={styles.bottomLine}>
               <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
-              <span className={`${styles.phenotypeName} ${styles.actionText}`}>{props.data.name}</span>
+              <span className={`${styles.phenotypeName} ${styles.actionText}`}>
+                {props.data.name}
+              </span>
             </span>
-        </div>
-        </ PopoverHeader>
+          </div>
+        </PopoverHeader>
         <div className={styles.content}>
           {React.Children.map(props.children, child =>
             React.isValidElement(child)

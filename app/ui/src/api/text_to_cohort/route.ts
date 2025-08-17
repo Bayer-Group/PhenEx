@@ -31,9 +31,11 @@ export const getPublicCohort = async (cohort_id: string, provisional: boolean = 
 
 export const getUserCohorts = async () => {
   try {
-    const login_service = LoginDataService.getInstance()
+    const login_service = LoginDataService.getInstance();
 
-    const response = await axios.get(`${BACKEND_URL}/cohorts?username=${login_service.getUsername()}`);
+    const response = await axios.get(
+      `${BACKEND_URL}/cohorts?username=${login_service.getUsername()}`
+    );
     return response.data;
   } catch (error) {
     console.error('Error in getUserCohorts:', error);
@@ -43,7 +45,7 @@ export const getUserCohorts = async () => {
 
 export const getUserCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
-    const login_service = LoginDataService.getInstance()
+    const login_service = LoginDataService.getInstance();
     const response = await axios.get(
       `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}&provisional=${provisional}`
     );
@@ -56,8 +58,11 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
-      const login_service = LoginDataService.getInstance()
-    const response = await axios.post(`${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`, cohort_data);
+    const login_service = LoginDataService.getInstance();
+    const response = await axios.post(
+      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`,
+      cohort_data
+    );
     return response.data;
   } catch (error) {
     console.error('Error in updateCohort:', error);
@@ -67,8 +72,10 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
 
 export const deleteCohort = async (cohort_id: string) => {
   try {
-    const login_service = LoginDataService.getInstance()
-    const response = await axios.delete(`${BACKEND_URL}/username=${login_service.getUsername()}&cohort?cohort_id=${cohort_id}`);
+    const login_service = LoginDataService.getInstance();
+    const response = await axios.delete(
+      `${BACKEND_URL}/username=${login_service.getUsername()}&cohort?cohort_id=${cohort_id}`
+    );
     return response.data;
   } catch (error) {
     console.error('Error in deleteCohort:', error);

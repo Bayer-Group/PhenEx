@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AppNavigationTabBar.module.css';
 import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
-import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
@@ -25,10 +25,7 @@ enum InfoTabType {
   Info = 'Info',
 }
 
-export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
-  title,
-  infoContent,
-}) => {
+export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoContent }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
@@ -95,7 +92,6 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
     cohortViewer.displayExtraContent('info');
   };
 
-
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
@@ -104,17 +100,25 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
       setIsOpen(false);
     }
 
-    const actions = [showDatabase, showConstants, showCodelists, showVisibility, showExecute, showReport, showInfo]
+    const actions = [
+      showDatabase,
+      showConstants,
+      showCodelists,
+      showVisibility,
+      showExecute,
+      showReport,
+      showInfo,
+    ];
 
-    const action = actions[index-1]
-    action()
-  
-    console.log("clicked",index, isOpen)
+    const action = actions[index - 1];
+    action();
+
+    console.log('clicked', index, isOpen);
     if (!isOpen) {
       setIsOpen(true);
       setCurrentTab(tabTypes[index]);
-    } else{
-      if (index === currentTabIndex){
+    } else {
+      if (index === currentTabIndex) {
         setIsOpen(false);
         const cohortViewer = TwoPanelCohortViewerService.getInstance();
         cohortViewer.hideExtraContent();
@@ -122,7 +126,6 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
       }
     }
   };
-
 
   const executeCohort = async () => {
     await dataService.executeCohort();
@@ -140,9 +143,9 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
     return (
       <div className={styles.addNewPhenotypeDropdown}>
         <PopoverHeader
-          onClick = {clickedOnHeader}
-          title = {'Add a new phenotype'}
-          className = {styles.popoverheader}
+          onClick={clickedOnHeader}
+          title={'Add a new phenotype'}
+          className={styles.popoverheader}
         />
         <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
       </div>

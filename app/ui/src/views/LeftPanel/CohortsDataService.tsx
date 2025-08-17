@@ -1,5 +1,10 @@
 import { createID } from '../../types/createID';
-import { getPublicCohorts, getUserCohort, getUserCohorts, updateCohort} from '../../api/text_to_cohort/route';
+import {
+  getPublicCohorts,
+  getUserCohort,
+  getUserCohorts,
+  updateCohort,
+} from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
 export class CohortsDataService {
@@ -18,7 +23,7 @@ export class CohortsDataService {
 
   public async userCohortNamesAndIds() {
     this._userCohortNamesAndIds = await getUserCohorts();
-    console.log("GETTING USER COHORTS Names and ids", this._userCohortNamesAndIds)
+    console.log('GETTING USER COHORTS Names and ids', this._userCohortNamesAndIds);
     return this._userCohortNamesAndIds;
   }
 
@@ -50,16 +55,14 @@ export class CohortsDataService {
       id: createID(),
       name: 'New Cohort',
       class_name: 'Cohort',
-      phenotypes: [
-      ],
+      phenotypes: [],
       database_config: {},
     };
-
 
     const newcohort = await updateCohort(newCohortData.id, newCohortData);
 
     this.notifyListeners(); // Notify listeners after initialization
-    return newCohortData
+    return newCohortData;
   }
 
   private listeners: Array<() => void> = [];

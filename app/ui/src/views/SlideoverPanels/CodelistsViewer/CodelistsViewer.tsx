@@ -66,22 +66,38 @@ export const CodelistsViewer: React.FC = () => {
         <i>Access codelists from CSV or Excel files</i> using this panel. Codelist files must :
         <ul>
           <li>contain one row per medical code</li>
-          <li>a minimum of three columns : <ul>
-            <li><em>code</em> : the medical code such as 'E38.2'</li>
-            <li><em>code_type</em> : also known as known as 'ontology' or 'vocabulary', such as ICD10CM</li>
-            <li><em>codelist</em> : defines what entity the code in that row belongs to.</li>
-          </ul> 
+          <li>
+            a minimum of three columns :{' '}
+            <ul>
+              <li>
+                <em>code</em> : the medical code such as 'E38.2'
+              </li>
+              <li>
+                <em>code_type</em> : also known as known as 'ontology' or 'vocabulary', such as
+                ICD10CM
+              </li>
+              <li>
+                <em>codelist</em> : defines what entity the code in that row belongs to.
+              </li>
+            </ul>
           </li>
         </ul>
         To use these files with PhenEx :
         <ol>
-          <li><em>Upload a file</em> : <i>drag and drop a file into this panel</i>.</li>
-          <li><em>Map necessary columns</em> : map the three columns defined above.</li>
-          <li><em>Use the codelist entities</em> : codelists are available in the codelist column in any phenotype editing area.</li>
-        </ol>  
+          <li>
+            <em>Upload a file</em> : <i>drag and drop a file into this panel</i>.
+          </li>
+          <li>
+            <em>Map necessary columns</em> : map the three columns defined above.
+          </li>
+          <li>
+            <em>Use the codelist entities</em> : codelists are available in the codelist column in
+            any phenotype editing area.
+          </li>
+        </ol>
       </span>
-    )
-  }
+    );
+  };
 
   return (
     <FileDropZone onFileDrop={handleFileDrop}>

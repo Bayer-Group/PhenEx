@@ -8,12 +8,14 @@
   cursor: pointer;
   padding: 4px 30px 8px 8px;
   border-radius: 8px;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
   outline: none;
 
   color: var(--button-text-color-default);
   background-color: var(--button-background-color-default);
-  font-family: var(--button-font-family-default)!important;
+  font-family: var(--button-font-family-default) !important;
   border: 1px solid var(--button-border-color-default);
   user-select: none;
 }
@@ -29,12 +31,9 @@
   background-color: var(--color-accent-hover);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
-
 }
 
-
 .selected {
-  
   color: var(--button-text-color-selected);
   background-color: var(--button-background-color-selected);
   font-family: var(--button-font-family-selected);
@@ -44,15 +43,15 @@
 }
 
 .itemName {
-    /* font-family:"IBMPlexSans-Bold"; */
+  /* font-family:"IBMPlexSans-Bold"; */
   font-size: 18px;
   line-height: 1.2;
 }
-.listItem:hover .itemName{
+.listItem:hover .itemName {
   font-family: var(--button-font-family-hover);
 }
 
-.listItem.selected .itemName{
+.listItem.selected .itemName {
   font-family: var(--button-font-family-selected);
 }
 
@@ -61,8 +60,8 @@
   margin-top: 0px;
   padding-left: 3px;
   font-size: 12px;
-  font-family: "IBMPlexSans-Regular";
-  color:rgb(100,100,100) ;
+  font-family: 'IBMPlexSans-Regular';
+  color: rgb(100, 100, 100);
 }
 
 /* .listItem:hover .itemInfo{

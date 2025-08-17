@@ -45,13 +45,13 @@ export const IssuesDisplayControl: React.FC = () => {
 
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
-    if (!showPopover){
+    if (!showPopover) {
       setShowPopover(!showPopover);
     }
   };
   const closePopover = () => {
-    setShowPopover(false)
-  }
+    setShowPopover(false);
+  };
 
   return (
     <div
@@ -61,9 +61,7 @@ export const IssuesDisplayControl: React.FC = () => {
       }`}
       onClick={handleClick}
     >
-      <div className={styles.popover}>
-        {showPopover && <IssuesPopover issues={issues} />}
-      </div>
+      <div className={styles.popover}>{showPopover && <IssuesPopover issues={issues} />}</div>
       <div className={styles.issuesButton}>
         <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
       </div>

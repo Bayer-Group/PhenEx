@@ -2,7 +2,7 @@ import { FC, useRef, useState } from 'react';
 import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsBar/CustomizableDropdownButton';
 import { LoginDataService } from './LoginDataService';
-import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
 interface NotLoggedInProps {
   onLoginSuccess?: () => void;
@@ -56,18 +56,18 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
     return (
       <div className={styles.container}>
         <PopoverHeader
-          onClick = {clickedOnHeader}
-          title = {isRegistering ? 'Register New Account' : 'Login to PhenEx!'}
-          className = {styles.popoverheader}
+          onClick={clickedOnHeader}
+          title={isRegistering ? 'Register New Account' : 'Login to PhenEx!'}
+          className={styles.popoverheader}
         />
-  
+
         <div className={styles.loginForm}>
           <input
             type="text"
             placeholder="Username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setUsername(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 isRegistering ? handleRegister() : handleLogin();
@@ -79,8 +79,8 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 isRegistering ? handleRegister() : handleLogin();
@@ -93,8 +93,8 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => {
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleRegister();
@@ -107,14 +107,18 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
           <div className={styles.loginButtons}>
             {isRegistering ? (
               <>
-                <button onClick={handleRegister} className={styles.loginButton}>Register</button>
+                <button onClick={handleRegister} className={styles.loginButton}>
+                  Register
+                </button>
                 <button onClick={() => setIsRegistering(false)} className={styles.loginButton}>
                   Back to Login
                 </button>
               </>
             ) : (
               <>
-                <button onClick={handleLogin} className={styles.loginButton}>Login</button>
+                <button onClick={handleLogin} className={styles.loginButton}>
+                  Login
+                </button>
                 <button onClick={() => setIsRegistering(true)} className={styles.loginButton}>
                   Create Account
                 </button>
@@ -132,8 +136,8 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
 
   return (
     <CustomizableDropdownButton
-      key={"login"}
-      label={"Login"}
+      key={'login'}
+      label={'Login'}
       content={renderLogin()}
       ref={customizableDropdownButtonRef}
       menuClassName={styles.loginDropdownMenu}

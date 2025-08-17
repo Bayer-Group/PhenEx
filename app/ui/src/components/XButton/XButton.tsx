@@ -6,15 +6,9 @@ interface XButtonProps {
   className?: string;
 }
 
-export const XButton: FC<XButtonProps> = ({ 
-  onClick, 
-  className = '' 
-}) => {
+export const XButton: FC<XButtonProps> = ({ onClick, className = '' }) => {
   return (
-    <button
-      className={`${styles.xButton} ${className}`}
-      onClick={onClick}
-    >
+    <button className={`${styles.xButton} ${className}`} onClick={onClick}>
       ×
     </button>
   );

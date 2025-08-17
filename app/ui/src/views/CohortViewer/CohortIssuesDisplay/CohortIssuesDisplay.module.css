@@ -107,7 +107,6 @@
   box-shadow: var(--box_shadow_selected_no_hover);
 }
 
-
 /* .row.selected:hover {
   transform: translateY(-1px);
 
@@ -118,7 +117,6 @@
   background-color: var(--phenex-green);
   border-color: var(--phenex-green);
 }
-
 
 .labelMain {
   margin-left: 0px;
@@ -160,7 +158,7 @@
 
 .labelSecondary {
   font-size: 12px;
-  font-family: "IBMPlexSans-bolditalic"
+  font-family: 'IBMPlexSans-bolditalic';
 }
 
 .totalIssues {
@@ -168,7 +166,6 @@
   margin-right: 5px;
 }
 
-
-.row.selected:hover .xButton{
-    color:white;
+.row.selected:hover .xButton {
+  color: white;
 }

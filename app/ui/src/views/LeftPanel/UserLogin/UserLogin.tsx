@@ -4,8 +4,7 @@ import { LoggedIn } from './LoggedIn';
 import { NotLoggedIn } from './NotLoggedIn';
 import { LoginDataService } from './LoginDataService';
 
-interface UserLoginProps {
-}
+interface UserLoginProps {}
 
 export const UserLogin: FC<UserLoginProps> = ({}) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -22,11 +21,7 @@ export const UserLogin: FC<UserLoginProps> = ({}) => {
 
   return (
     <div className={styles.controls}>
-      {isLoggedIn ? (
-        <LoggedIn />
-      ) : (
-        <NotLoggedIn onLoginSuccess={handleLoginSuccess} />
-      )}
+      {isLoggedIn ? <LoggedIn /> : <NotLoggedIn onLoginSuccess={handleLoginSuccess} />}
     </div>
   );
 };

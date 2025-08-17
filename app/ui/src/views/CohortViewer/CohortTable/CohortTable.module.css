@@ -4,55 +4,50 @@
   margin-right: 0px;
 }
 
-
-.noRowsOverlay{
-  font-family: "IBMPlexSans-regular";
+.noRowsOverlay {
+  font-family: 'IBMPlexSans-regular';
   font-size: 18px;
   position: absolute;
-  top:80px;
-  left:20px;
+  top: 80px;
+  left: 20px;
   line-height: 50px;
   text-align: left;
 }
 
-.noRowsTopLine{
-  font-size:24px;
-  font-family: "IBMPlexSans-regular";
+.noRowsTopLine {
+  font-size: 24px;
+  font-family: 'IBMPlexSans-regular';
 }
 
-
-.buttonAppearance{
+.buttonAppearance {
   border: 1px solid var(--color-accent-bright);
   border-radius: 10px;
   padding: 4px 8px;
   margin: 0px 3px;
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
 }
 
-.noRows_action{
-  font-family: "IBMPlexSans-bolditalic";
-  color:var(--color-accent-bright);
+.noRows_action {
+  font-family: 'IBMPlexSans-bolditalic';
+  color: var(--color-accent-bright);
   margin: 0px 2px;
 }
 
-.noRows_section{
-  font-family: "IBMPlexSans-bold";
+.noRows_section {
+  font-family: 'IBMPlexSans-bold';
   font-size: 18x;
   color: black;
 }
 
-.noRowsCommentLine{
-  font-family:"IBMPlexSans-italic";
+.noRowsCommentLine {
+  font-family: 'IBMPlexSans-italic';
 }
 
-
-.noRowsBottomLine{
+.noRowsBottomLine {
   color: black !important;
-  font-size:24px;
+  font-size: 24px;
 }
 
-.noRowsBottomLine.noRows_section{
+.noRowsBottomLine.noRows_section {
   color: black !important;
-
-
 }

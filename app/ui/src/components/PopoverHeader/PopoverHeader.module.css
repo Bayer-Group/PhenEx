@@ -19,13 +19,12 @@
   color: var(--xbutton_color_orange_background);
   padding: 10px 20px 10px 10px;
   font-size: 24px;
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
   /* line-height:var(--popover_font_size); */
 }
 
-.popoverheader:hover{
-    color: white;
-
+.popoverheader:hover {
+  color: white;
 }
 
 .popoverheader:focus {
@@ -36,6 +35,6 @@
   outline: none;
 }
 
-.popoverheader:hover .xButton{
-    color:white;
+.popoverheader:hover .xButton {
+  color: white;
 }

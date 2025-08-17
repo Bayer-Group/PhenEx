@@ -1,15 +1,15 @@
-.nodeName{
+.nodeName {
   padding: 3px 10px;
   transition: all 0.2s ease;
   border: 1px solid transparent;
   border-radius: var(--border-radius);
   font-size: var(--button-size-default);
 
-  white-space: nowrap;        /* Prevents text from wrapping */
-  overflow: hidden;           /* Hides any overflow content */
-  text-overflow: ellipsis;    /* Shows ... for overflow text */
-  height: 1.5em;             /* Fixed height - adjust value as needed */
-  line-height: 1.5em;        /* Matches height for vertical centering */
+  white-space: nowrap; /* Prevents text from wrapping */
+  overflow: hidden; /* Hides any overflow content */
+  text-overflow: ellipsis; /* Shows ... for overflow text */
+  height: 1.5em; /* Fixed height - adjust value as needed */
+  line-height: 1.5em; /* Matches height for vertical centering */
 }
 .content:hover .nodeName {
   color: white;
@@ -20,12 +20,12 @@
   background-color: var(----color-accent-hover);
 }
 
-.nodeName.selected{
+.nodeName.selected {
   color: white;
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
   color: var(--color-accent);
   background-color: var(----color-accent-hover);
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
 }

@@ -68,7 +68,7 @@ export const MainView = () => {
     const updateView = (viewInfo: ViewInfo) => {
       setCurrentView(viewInfo);
     };
-    
+
     service.addListener(updateView);
     return () => service.removeListener(updateView);
   }, []);

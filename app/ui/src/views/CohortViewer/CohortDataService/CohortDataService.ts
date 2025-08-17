@@ -1,6 +1,11 @@
 import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
 import { executeStudy } from '../../../api/execute_cohort/route';
-import { getUserCohort, getPublicCohort, updateCohort, deleteCohort } from '../../../api/text_to_cohort/route';
+import {
+  getUserCohort,
+  getPublicCohort,
+  updateCohort,
+  deleteCohort,
+} from '../../../api/text_to_cohort/route';
 import { defaultColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
@@ -81,12 +86,11 @@ export class CohortDataService {
   public async loadCohortData(cohortIdentifiers: string): Promise<void> {
     try {
       let cohortResponse = undefined;
-      try{
+      try {
         cohortResponse = await getUserCohort(cohortIdentifiers.id);
-      } catch{
+      } catch {
         cohortResponse = await getPublicCohort(cohortIdentifiers.id);
       }
-      
 
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
@@ -161,7 +165,7 @@ export class CohortDataService {
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
     let sortedPhenotypes: TableRow[] = [];
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
-    console.log("THIS IS THE COHRT IN SORTY", this._cohort_data)
+    console.log('THIS IS THE COHRT IN SORTY', this._cohort_data);
     for (const type of order) {
       let phenotypesOfType = this._cohort_data.phenotypes.filter(
         (row: TableRow) => row.type === type
@@ -169,14 +173,12 @@ export class CohortDataService {
       // map over filtered phenotypes to assign index
       phenotypesOfType = phenotypesOfType.map((phenotype: TableRow, index: number) => ({
         ...phenotype,
-        index: index +1 // or index + 1 if you want to start from 1
+        index: index + 1, // or index + 1 if you want to start from 1
       }));
       sortedPhenotypes = sortedPhenotypes.concat(phenotypesOfType);
-
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
     this._table_data = this.tableDataFromCohortData();
-
   }
 
   private splitPhenotypesByType() {
@@ -247,8 +249,7 @@ export class CohortDataService {
       id: createID(),
       name: 'Name your cohort...',
       class_name: 'Cohort',
-      phenotypes: [
-      ],
+      phenotypes: [],
       database_config: {},
     };
     this._cohort_name = this._cohort_data.name;
@@ -409,17 +410,17 @@ export class CohortDataService {
   public tableDataForComponentPhenotype(parentPhenotype): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
-        filteredPhenotypes = filteredPhenotypes.filter(
-            (phenotype: TableRow) =>
-                phenotype.type === 'component' && 
-                phenotype.parentIds && // Check if parentIds exists
-                Array.isArray(phenotype.parentIds) && // Check if it's an array
-                phenotype.parentIds.includes(parentPhenotype.id)
-        );
+      filteredPhenotypes = filteredPhenotypes.filter(
+        (phenotype: TableRow) =>
+          phenotype.type === 'component' &&
+          phenotype.parentIds && // Check if parentIds exists
+          Array.isArray(phenotype.parentIds) && // Check if it's an array
+          phenotype.parentIds.includes(parentPhenotype.id)
+      );
     }
     return {
-        rows: filteredPhenotypes,
-        columns: this.columns,
+      rows: filteredPhenotypes,
+      columns: this.columns,
     };
-}
+  }
 }

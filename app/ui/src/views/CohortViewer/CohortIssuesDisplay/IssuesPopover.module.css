@@ -11,7 +11,8 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--color-accent-bright);
-  border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
+  border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top)
+    var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 400px;
   /* z-index: 2; */
@@ -95,8 +96,8 @@
   line-height: 1.2;
 }
 
-.phenotypeSection.selected .phenotypeId{
-  font-family: "IBMPlexSans-bold";
+.phenotypeSection.selected .phenotypeId {
+  font-family: 'IBMPlexSans-bold';
 }
 
 .issuesList {
@@ -120,7 +121,7 @@
   left: 8px; */
   font-size: 12px;
   padding: 2px 6px;
-  font-family: "IBMPlexSans-bolditalic";
+  font-family: 'IBMPlexSans-bolditalic';
   border-radius: 4px;
 }
 
@@ -128,7 +129,6 @@
   /* margin-left:5px; */
   /* font-size: 12px; */
 }
-
 
 .phenotypeId {
   /* Add these properties */
@@ -147,7 +147,7 @@
   gap: 4px; /* Space between type and index */
   font-size: 12px;
   padding: 2px 6px;
-  font-family: "IBMPlexSans-bolditalic";
+  font-family: 'IBMPlexSans-bolditalic';
   border-radius: 4px;
   background-color: #eee;
   color: var(--text-color-secondary);

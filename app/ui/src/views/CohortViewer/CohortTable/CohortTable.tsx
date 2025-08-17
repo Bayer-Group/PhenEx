@@ -38,7 +38,7 @@ ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
 interface CohortTableProps {
   data: TableData;
-  currentlyViewing:string;
+  currentlyViewing: string;
   onCellValueChanged?: (event: any) => void;
 }
 
@@ -65,78 +65,100 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
-      console.log("CALLING NO ROWS OUTCOMMMMMESSSSS", currentlyViewing, currentlyViewing==='outcome')
+      console.log(
+        'CALLING NO ROWS OUTCOMMMMMESSSSS',
+        currentlyViewing,
+        currentlyViewing === 'outcome'
+      );
       return (
         <div className={styles.noRowsOverlay}>
-
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>How do you want to assess post-index data?</span> 
-          <br></br>
+            <span className={styles.noRows_section}>
+              How do you want to assess post-index data?
+            </span>
+            <br></br>
             <span className={styles.noRowsTopLine}>
-            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
-          </span>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
-                       <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>perform a time-to-event analysis</span></span>
+              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
+              above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
+            </span>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <span className={styles.noRowsCommentLine}>
+              PhenEx can then{' '}
+              <span className={styles.noRows_action}>perform a time-to-event analysis</span>
+            </span>
           </span>
         </div>
       );
     };
 
     const NoRowsOverlayText = () => {
-      if (currentlyViewing === 'outcomes'){
+      if (currentlyViewing === 'outcomes') {
         return NoRowsOverlayOutcomes;
-      } else if (currentlyViewing === 'baseline'){
+      } else if (currentlyViewing === 'baseline') {
         return NoRowsOverlayCharacteristics;
       }
       return NoRowsOverlayCohort;
-
-    }
+    };
     const NoRowsOverlayCohort: FC = () => {
-
       return (
         <div className={styles.noRowsOverlay}>
-
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>How do you want to define your cohort?</span> 
-          <br></br>
+            <span className={styles.noRows_section}>How do you want to define your cohort?</span>
+            <br></br>
             <span className={styles.noRowsTopLine}>
-            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add : 
+              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
+              above to add :
               <ol>
-                <li>the cohort <span className={styles.noRows_section}>entry</span> criterion, which defines the <span className={styles.noRows_section}>index date</span> for each patient i.e. the study entry date.</li>
-                <li><span className={styles.noRows_section}>inclusion</span> criteria, which all patients must fulfill at index date.</li>
-                <li><span className={styles.noRows_section}>exclusion</span> criteria, which patients may not fulfill at index date.</li>
+                <li>
+                  the cohort <span className={styles.noRows_section}>entry</span> criterion, which
+                  defines the <span className={styles.noRows_section}>index date</span> for each
+                  patient i.e. the study entry date.
+                </li>
+                <li>
+                  <span className={styles.noRows_section}>inclusion</span> criteria, which all
+                  patients must fulfill at index date.
+                </li>
+                <li>
+                  <span className={styles.noRows_section}>exclusion</span> criteria, which patients
+                  may not fulfill at index date.
+                </li>
               </ol>
-          </span>
-          <br></br>
-             <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>generate your cohort</span></span>
+            </span>
+            <br></br>
+            <span className={styles.noRowsCommentLine}>
+              PhenEx can then <span className={styles.noRows_action}>generate your cohort</span>
+            </span>
           </span>
         </div>
       );
     };
     const NoRowsOverlayCharacteristics: FC = () => {
-
       return (
         <div className={styles.noRowsOverlay}>
-
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>How do you want to assess patients at index date?</span> 
-          <br></br>
+            <span className={styles.noRows_section}>
+              How do you want to assess patients at index date?
+            </span>
+            <br></br>
             <span className={styles.noRowsTopLine}>
-            Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar above to add <span className={styles.noRows_section}>baseline phenotypes</span>.
-          </span>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
-          <br></br>
+              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
+              above to add <span className={styles.noRows_section}>baseline phenotypes</span>.
+            </span>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
 
-             <span className = {styles.noRowsCommentLine}>PhenEx can then <span className={styles.noRows_action}>create Table 1</span></span>
+            <span className={styles.noRowsCommentLine}>
+              PhenEx can then <span className={styles.noRows_action}>create Table 1</span>
+            </span>
           </span>
         </div>
       );
@@ -151,11 +173,11 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
-        
+
         // Check if click is inside grid or editor
         const gridElement = document.querySelector('.ag-theme-quartz');
         const popupEditor = document.querySelector('.ag-popup-editor');
-        
+
         // If we don't have either element, or don't have an active editor, don't do anything
         if (!gridElement || !popupEditor) return;
 
@@ -180,11 +202,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         <ErrorBoundary>
           <AgGridReact
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
-
             ref={ref}
-            noRowsOverlayComponent={
-              NoRowsOverlayText()
-            }  
+            noRowsOverlayComponent={NoRowsOverlayText()}
             rowData={data.rows}
             theme={myTheme}
             onGridReady={onGridReady}

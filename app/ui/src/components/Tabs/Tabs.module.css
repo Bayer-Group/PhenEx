@@ -24,7 +24,6 @@
   color: var(--button-text-color-default);
   border: 1px solid var(--button-border-color-default);
   font-family: var(--button-font-family-default);
-
 }
 
 .tab:hover {
@@ -41,7 +40,6 @@
   color: var(--button-text-color-selected);
   border: 1px solid var(--button-border-color-selected);
   font-family: var(--button-font-family-selected);
-
 
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);

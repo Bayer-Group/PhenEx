@@ -26,10 +26,10 @@
   z-index: 2;
 }
 
-.hasIssues{
+.hasIssues {
   pointer-events: all;
 }
 
-.noIssues{
+.noIssues {
   pointer-events: none;
 }

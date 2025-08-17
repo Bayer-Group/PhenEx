@@ -46,14 +46,14 @@
   --phenex-red-active: hsl(0, 90%, 80%);
   /* --color-accent-hover: hsl(0, 30%, 96%); */
   /* --color-accent-hover: hsl(24, 80%, 94%); */
-  --color-accent-hover: rgb(240,240,240);
+  --color-accent-hover: rgb(240, 240, 240);
 
   /* --color-accent-bright: hsl(24, 90%, 60%); */
   --color-accent-bright: hsl(14, 100%, 63%);
   --phenex-dark: hsl(0, 40%, 5%);
   --border-accent: 1px solid var(--color-accent-bright);
 
-  --color-accent: var(--color-accent-bright);/*var(--phenex-dark); /* #03396c;/*#fa934f;*/
+  --color-accent: var(--color-accent-bright); /*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
   --box_shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -81,29 +81,29 @@
   --button-border-color-default: transparent;
   --button-border-color-hover: var(--color-accent-bright);
 
-  --button-font-family-selected: "IBMPlexSans-bold";
-  --button-font-family-default: "IBMPlexSans-regular";
-  --button-font-family-hover: "IBMPlexSans-regular";
-
+  --button-font-family-selected: 'IBMPlexSans-bold';
+  --button-font-family-default: 'IBMPlexSans-regular';
+  --button-font-family-hover: 'IBMPlexSans-regular';
 }
 
 .rag-blue-outer {
-  background-color: #79B239 !important;/*var(--phenex-green) !important;*/
+  background-color: #79b239 !important; /*var(--phenex-green) !important;*/
   color: white !important;
 }
 
 .rag-green-outer {
-  background-color: #3D90D9 !important;
+  background-color: #3d90d9 !important;
   color: white !important;
 }
 
-.rag-coral-outer { /*Baselin characteristics*/
-  background-color: #27607C !important;
+.rag-coral-outer {
+  /*Baselin characteristics*/
+  background-color: #27607c !important;
   color: white !important;
 }
 
 .rag-red-outer {
-  background-color: #EB4765 !important;
+  background-color: #eb4765 !important;
   color: white !important;
 }
 
@@ -113,22 +113,21 @@
 }
 
 .rag-blue-text {
-  color: #79B239;/*var(--phenex-green) !important;*/
+  color: #79b239; /*var(--phenex-green) !important;*/
 }
 
 .rag-green-text {
-  color: #3D90D9 !important;
+  color: #3d90d9 !important;
 }
 
-.rag-coral-text { 
-  color: #27607C !important;
+.rag-coral-text {
+  color: #27607c !important;
 }
 
 .rag-red-text {
-  color: #EB4765 !important;
+  color: #eb4765 !important;
 }
 
 .rag-dark-text {
   color: var(--color-accent-bright) !important;
 }
-

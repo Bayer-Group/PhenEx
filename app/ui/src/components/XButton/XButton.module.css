@@ -9,15 +9,16 @@
   background: transparent;
   cursor: pointer;
   font-size: 40px;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   padding: 0;
   line-height: 1;
   position: absolute;
-  right:5px;
-  top:3px;
-  font-family:"IBMPlexSans-bold";
+  right: 5px;
+  top: 3px;
+  font-family: 'IBMPlexSans-bold';
   color: var(--xbutton_color_orange_background);
-
 }
 
 .xButton:hover {

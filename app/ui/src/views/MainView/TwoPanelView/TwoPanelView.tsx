@@ -117,9 +117,7 @@ export const TwoPanelView = React.forwardRef<
         className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
         style={{ width: isRightCollapsed ? 0 : rightWidth }}
       >
-        <div className={styles.rightPanelContent}>
-          {children[1]}
-        </div>
+        <div className={styles.rightPanelContent}>{children[1]}</div>
         <button
           className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}

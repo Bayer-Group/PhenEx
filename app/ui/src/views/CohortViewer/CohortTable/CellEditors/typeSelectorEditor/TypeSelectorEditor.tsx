@@ -8,7 +8,10 @@ export interface TypeSelectorEditorProps {
 }
 
 const types = [
-  { name: 'entry', info: 'Define the entry criterion of your study; this defines the index date. A cohort can have only one entry criterion.' },
+  {
+    name: 'entry',
+    info: 'Define the entry criterion of your study; this defines the index date. A cohort can have only one entry criterion.',
+  },
   {
     name: 'inclusion',
     info: 'Specify conditions that must be met for patients to be included in the cohort',

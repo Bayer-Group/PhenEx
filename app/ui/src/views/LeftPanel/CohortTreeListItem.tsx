@@ -9,19 +9,16 @@ export interface HierarchicalTreeNode extends TreeNode {
   viewInfo?: ViewInfo;
 }
 
-export const CohortTreeRenderer: React.FC<TreeItemRendererProps> = ({ 
-  node,
-  additionalProps
-}) => {
+export const CohortTreeRenderer: React.FC<TreeItemRendererProps> = ({ node, additionalProps }) => {
   const { onClickAdd } = additionalProps || {};
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const hierarchicalNode = node as HierarchicalTreeNode;
-    
+
     // First handle selection
     const dataService = HierarchicalLeftPanelDataService.getInstance();
     dataService.selectNode(hierarchicalNode.id);
-    
+
     // Then handle navigation if there's a viewInfo
     if (hierarchicalNode.viewInfo) {
       const mainViewService = MainViewService.getInstance();

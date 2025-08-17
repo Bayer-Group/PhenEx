@@ -235,13 +235,8 @@
   opacity: 1;
 }
 
-
-
 /* Remove transitions ONLY during drag */
 [data-dragging='true'] .leftPanel,
 [data-dragging='true'] .rightPanel {
   transition: none !important;
 }
-
-
-

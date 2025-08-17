@@ -31,7 +31,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   return (
     <div className={styles.container}>
       <span className={styles.label}>{props.value}</span>
-             
+
       <div>
         <button className={styles.editButton} onClick={onClickEdit}>
           <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />

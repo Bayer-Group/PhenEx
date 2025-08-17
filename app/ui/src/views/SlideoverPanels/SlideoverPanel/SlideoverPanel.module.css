@@ -1,19 +1,19 @@
 .container {
   height: 100%;
-  display: flex; 
+  display: flex;
   flex-direction: column;
   padding: 0px 0px 0px 0px;
   margin: 0;
   overflow: hidden; /* Prevent container from growing */
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .title {
   font-size: 24px;
   font-family: 'IBMPlexSans-bold';
   padding-left: 20px;
-  margin-top:6px;
-  margin-left:30px;
+  margin-top: 6px;
+  margin-left: 30px;
 }
 
 .controls {
@@ -49,51 +49,27 @@
   flex: 1;
   overflow: auto; /* Allow content to scroll if needed */
   padding: 0px;
-
 }
 
-
-.divider.right{
+.divider.right {
   position: absolute !important;
-  left:0px!important;
-  top:0px!important;
-  height: 100vh!important;
-  width:15px!important;
-  background-color: red!important;
-  z-index: 1000!important;
+  left: 0px !important;
+  top: 0px !important;
+  height: 100vh !important;
+  width: 15px !important;
+  background-color: red !important;
+  z-index: 1000 !important;
 }
 
 i {
-  color:var(--color-accent-bright);
-  font-family: "IBMPlexSans-bolditalic";
-  font-size:20px;
-}
-
-em{
-  font-family: "IBMPlexSans-bold";
-}
-
-.infobox{
-  margin: 0px 0px 0px 10px;
-  padding: 10px 10px 10px 20px;
-  background-color: white;
-  border-radius:10px;
-  font-size: 14px;
-  border: var(--border);
-}
-
-ol, ul{
-  margin-top: 0px;
-}
-
-code{
-  padding: 2px 10px;
-  font-family: "IBMPlexSans-bold";
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-bolditalic';
   font-size: 20px;
-  border-radius: 8px;
-  border: var(--border);
 }
 
+em {
+  font-family: 'IBMPlexSans-bold';
+}
 
 .infobox {
   margin: 0px 0px 0px 10px;
@@ -102,7 +78,31 @@ code{
   border-radius: 10px;
   font-size: 14px;
   border: var(--border);
-  transition: max-height 0.3s ease, opacity 0.3s ease; /* Animation for opening and closing */
+}
+
+ol,
+ul {
+  margin-top: 0px;
+}
+
+code {
+  padding: 2px 10px;
+  font-family: 'IBMPlexSans-bold';
+  font-size: 20px;
+  border-radius: 8px;
+  border: var(--border);
+}
+
+.infobox {
+  margin: 0px 0px 0px 10px;
+  padding: 10px 10px 10px 20px;
+  background-color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease; /* Animation for opening and closing */
   max-height: 0; /* Start closed */
   opacity: 0; /* Start hidden */
   overflow: hidden; /* Prevent overflow when closed */
@@ -115,12 +115,12 @@ code{
 }
 
 .infobox.closed {
-  padding:0px;
+  padding: 0px;
   max-height: 0; /* Closed state */
   opacity: 0; /* Hidden */
 }
 
-.infoButton{
+.infoButton {
   position: absolute !important;
   right: 10px;
   top: 10px;

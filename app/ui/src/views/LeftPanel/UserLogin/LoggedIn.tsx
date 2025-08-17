@@ -1,44 +1,37 @@
-import { FC, useRef} from 'react';
+import { FC, useRef } from 'react';
 import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsBar/CustomizableDropdownButton';
 import { ItemList } from '../../../components/ItemList/ItemList';
 import { LoginDataService } from './LoginDataService';
-import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader'
+import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
-interface LoggedInProps {
-}
+interface LoggedInProps {}
 
 export const LoggedIn: FC<LoggedInProps> = ({}) => {
   const customizableDropdownButtonRef = useRef(null);
 
-const items = [
-  {
-    name: 'Log Out',
-    info: 'Log out of your PhenEx account. You can only edit cohorts when logged in.',
-  },
-
-];
-
+  const items = [
+    {
+      name: 'Log Out',
+      info: 'Log out of your PhenEx account. You can only edit cohorts when logged in.',
+    },
+  ];
 
   const renderUserPanel = () => {
     return (
       <div className={styles.container}>
         <PopoverHeader
-          onClick = {clickedOnHeader}
-          title = {`@${loginService.getUsername()}`}
-          className = {styles.popoverheader}
+          onClick={clickedOnHeader}
+          title={`@${loginService.getUsername()}`}
+          className={styles.popoverheader}
         />
         <div className={styles.content}>
-          <ItemList
-              items={items}
-              selectedName={undefined}
-              onSelect={handleItemSelect}
-          />
+          <ItemList items={items} selectedName={undefined} onSelect={handleItemSelect} />
         </div>
       </div>
     );
   };
-  
+
   const loginService = LoginDataService.getInstance();
 
   const clickedOnHeader = () => {
@@ -55,14 +48,13 @@ const items = [
     }
   };
 
-
   return (
     <CustomizableDropdownButton
-            key={"login"}
-            label={`@${loginService.getUsername()}`}
-            content={renderUserPanel()}
-            ref={customizableDropdownButtonRef}
-            menuClassName={styles.userDropdownMenu}
+      key={'login'}
+      label={`@${loginService.getUsername()}`}
+      content={renderUserPanel()}
+      ref={customizableDropdownButtonRef}
+      menuClassName={styles.userDropdownMenu}
     />
   );
 };

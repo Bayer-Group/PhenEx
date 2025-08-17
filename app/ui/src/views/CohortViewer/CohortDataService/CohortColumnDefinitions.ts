@@ -27,7 +27,7 @@ export const columnNameToApplicablePhenotypeMapping = {
 };
 
 export const defaultColumns = [
-{
+  {
     field: 'type',
     headerName: 'Type',
     width: 100,

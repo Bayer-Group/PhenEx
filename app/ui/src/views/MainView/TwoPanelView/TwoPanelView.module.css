@@ -15,15 +15,14 @@
 
 .rightPanel {
   position: relative;
-  transition:none;
+  transition: none;
   background-color: var(--background-color) !important;
 }
 
-.rightPanel.collapsed{
+.rightPanel.collapsed {
   transition:
     width 0.2s ease,
     opacity 0.2s ease;
-
 }
 
 .rightPanel.collapsed {
@@ -40,7 +39,7 @@
 
 .divider {
   width: 15px;
-  height:100%;
+  height: 100%;
   /* background-color: var(--background-color) !important; */
   cursor: col-resize;
   position: absolute;
@@ -48,9 +47,8 @@
   border-left: 1px solid var(--color-accent-bright);
   background-color: transparent;
   z-index: 5000;
-  top:0px;
-  left:0px;
-
+  top: 0px;
+  left: 0px;
 }
 
 .rightPanelContent {
@@ -67,7 +65,6 @@
 .divider:hover {
   border-color: var(--color-accent);
 }
-
 
 .divider:hover .dividerLine {
   width: 3px;
@@ -148,8 +145,6 @@
   user-select: none;
 }
 
-
-
 .container {
   display: flex;
   width: 100%;
@@ -160,13 +155,17 @@
 
 .leftPanel {
   background-color: var(--background-color) !important;
-  transition: width 0.2s ease, opacity 0.2s ease;
+  transition:
+    width 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .rightPanel {
   position: relative;
   background-color: var(--background-color) !important;
-  transition: width 0.2s ease, opacity 0.2s ease;
+  transition:
+    width 0.2s ease,
+    opacity 0.2s ease;
 }
 
 /* Remove transitions ONLY during drag */

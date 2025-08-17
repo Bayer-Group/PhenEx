@@ -5,7 +5,6 @@ interface UserData {
   email: string;
 }
 
-
 // export abstract class LoginDataService {
 export class LoginDataService {
   private static instance: LoginDataService;
@@ -43,13 +42,13 @@ export class LoginDataService {
         this.token = response.access_token;
         this.loggedIn = true;
         this.loginUsername = username;
-        
+
         // Save to localStorage
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('username', username);
-        
+
         await this.fetchUserData();
-        this.notifyListeners()
+        this.notifyListeners();
 
         return true;
       }
@@ -71,7 +70,7 @@ export class LoginDataService {
       console.error('Registration failed:', error);
       throw error; // Propagate the error to show validation messages
     }
-    this.notifyListeners()
+    this.notifyListeners();
   }
 
   async logout(): Promise<void> {
@@ -79,12 +78,12 @@ export class LoginDataService {
     this.currentUser = null;
     this.loggedIn = false;
     this.loginUsername = '';
-    
+
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('userData');
-    this.notifyListeners()
+    this.notifyListeners();
   }
 
   private async fetchUserData(): Promise<void> {
@@ -100,9 +99,9 @@ export class LoginDataService {
       // this.currentUser = response.data;
       this.currentUser = {
         username: this.loginUsername,
-        email: ''  // Will be populated when the endpoint is available
+        email: '', // Will be populated when the endpoint is available
       };
-      
+
       // Save user data to localStorage
       localStorage.setItem('userData', JSON.stringify(this.currentUser));
     } catch (error) {
@@ -130,8 +129,8 @@ export class LoginDataService {
     return this.loginUsername;
   }
 
-   private notifyListeners() {
-    console.log("NOTIFYING LISTENRERS")
+  private notifyListeners() {
+    console.log('NOTIFYING LISTENRERS');
     this.listeners.forEach(listener => listener());
   }
 
@@ -145,5 +144,4 @@ export class LoginDataService {
       this.listeners.splice(index, 1);
     }
   }
-
 }

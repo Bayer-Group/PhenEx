@@ -1,6 +1,6 @@
-import { FC, useRef} from 'react';
+import { FC, useRef } from 'react';
 import styles from './LeftPanel.module.css';
-import { UserLogin } from './UserLogin/UserLogin'
+import { UserLogin } from './UserLogin/UserLogin';
 
 interface LeftPanelProps {
   isVisible: boolean;
@@ -11,15 +11,13 @@ interface LeftPanelProps {
 }
 
 export const LeftPanel: FC<LeftPanelProps> = ({ isVisible, width, children, onPathClick }) => {
-
-
   return (
     <div
       className={`${styles.leftPanel} ${isVisible ? styles.visible : styles.hidden}`}
       style={{ width: `${width}px` }}
     >
-      <div className = {styles.controls}>
-        <UserLogin/>
+      <div className={styles.controls}>
+        <UserLogin />
       </div>
       <div className={styles.content}>{children}</div>
     </div>

@@ -11,9 +11,7 @@ interface HierarchicalLeftPanelProps {
   isVisible: boolean;
 }
 
-export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
-  isVisible
-}) => {
+export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisible }) => {
   const [treeData, setTreeData] = useState<HierarchicalTreeNode[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const dataService = useRef(HierarchicalLeftPanelDataService.getInstance());
@@ -33,8 +31,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
     return () => dataService.current.removeListener(updateTreeData);
   }, []);
 
-
-
   const onClickAdd = async (name: string) => {
     if (name === 'Cohorts') {
       const newCohortViewInfo = await dataService.current.addNewCohort();
@@ -45,16 +41,16 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({
     }
   };
 
-  const clickedOnItem = () => {
-    
-  }
+  const clickedOnItem = () => {};
 
   return (
     <LeftPanel isVisible={isVisible} width={280}>
-      <div className={styles.treeContainer} style={{ width: '100%', height: '100%' }} ref={containerRef}>
-        <TreeList
-          data={treeData}
-        />
+      <div
+        className={styles.treeContainer}
+        style={{ width: '100%', height: '100%' }}
+        ref={containerRef}
+      >
+        <TreeList data={treeData} />
       </div>
     </LeftPanel>
   );

@@ -19,17 +19,16 @@
   overflow: hidden;
   position: absolute;
   top: 5px;
-  padding:0px;
+  padding: 0px;
   right: 10px;
-  height:33px;
-  padding-top:3px;
-  padding-left:3px;
+  height: 33px;
+  padding-top: 3px;
+  padding-left: 3px;
   z-index: 999;
   transition: border 0.3s ease-in-out;
-
 }
 
-.accordianContainer:hover{
+.accordianContainer:hover {
   background-color: var(--color-accent-hover) !important;
   border: 1px solid var(--color-accent-bright);
 
@@ -50,7 +49,6 @@
 .accordianContainer.opened {
   border-color: var(--color-accent_2);
 }
-
 
 .toggleButton {
   position: absolute;
@@ -95,13 +93,11 @@
   outline: none;
 }
 
-
-
 .tabsContainer {
-  margin-top:0px;
-  padding:0px;
-  padding-right:3px;
-  margin:0px;
+  margin-top: 0px;
+  padding: 0px;
+  padding-right: 3px;
+  margin: 0px;
   transition: 0.2s ease;
   z-index: 1000;
   background-color: transparent;
@@ -110,8 +106,6 @@
 .tabsContainer.closed {
   /* margin-top: 2px; */
 }
-
-
 
 .addNewPhenotypeDropdownHeader {
   margin: 0px 0x;
