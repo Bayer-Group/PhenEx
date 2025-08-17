@@ -111,7 +111,11 @@ code {
 .infobox.open {
   max-height: 500px; /* Arbitrary value, adjust as needed */
   opacity: 1; /* Fully visible when open */
-  margin-bottom: 20px;
+  margin: 20px 20px 40px 20px;
+  background-color: var(--button-background-color-selected) !important;
+  border: 1px solid var(--button-border-color-selected);
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .infobox.closed {
@@ -125,3 +129,15 @@ code {
   right: 10px;
   top: 10px;
 }
+
+.infoButton.open {
+  color: var(--color-accent-bright);
+  background-color: var(--button-background-color-selected) !important;
+  color: var(--button-text-color-selected);
+  border: 1px solid var(--button-border-color-selected);
+  font-family: var(--button-font-family-selected);
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
