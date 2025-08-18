@@ -46,6 +46,14 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const renderViewContent = () => {
     switch (currentView) {
       case CohortReportViewType.Attrition:
+        dataService.report_service.setCurrentDataKey('waterfall');
+        return (
+          <>
+            <ReportTable dataService={dataService.report_service} />
+          </>
+        );
+      case CohortReportViewType.Table1:
+        dataService.report_service.setCurrentDataKey('table1');
         return (
           <>
             <ReportTable dataService={dataService.report_service} />
@@ -70,7 +78,8 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const infoContent = () => {
     return (
       <span>
-        <i>View results of cohort execution</i>
+        <i>View results of cohort execution</i><br></br>
+        After you've resolved all issues and executed your cohort, you can view the results of the most recent execution here.
         <ul>
           <li>
             <em>Attrition diagrams</em> : Click the attrition tab to see how your entry, inclusion and exclusion criteria interact to build your final cohort. Phenotypes are run in order they are displayed in the cohort phenotype editor. 

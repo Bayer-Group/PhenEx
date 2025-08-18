@@ -4,23 +4,21 @@ export class ReportDataService {
   public columns: string[];
   public row_data: any[];
   private cohortDataService: any;
+  private current_data_key: string = 'waterfall';
 
   public constructor() {
-    this.columns = [
-      { field: 'phenotype', headerName: 'Phenotype', sortable: true, filter: true, width: 120 },
-      { field: 'N', headerName: 'N', sortable: true, filter: true, width: 100 },
-      { field: '%', headerName: '%', sortable: true, filter: true, width: 100 },
-    ];
-    this.row_data = [
-      { phenotype: 'age', N: 1200, '%': '65.2%' },
-      { phenotype: 'race', N: 800, '%': '43.5%' },
-      { phenotype: 'gender', N: 920, '%': '50.0%' },
-    ];
+    this.columns = [];
+    this.row_data = [];
+  }
+
+  public setCurrentDataKey(key: string) {
+    this.current_data_key = key;
+    this.updateReportData();
   }
 
   private updateReportData() {
-    if (this.cohortDataService.cohort_data?.waterfall) {
-      const { columns, data } = this.cohortDataService.cohort_data.waterfall;
+    if (this.cohortDataService?.cohort_data?.[this.current_data_key]) {
+      const { columns, data } = this.cohortDataService.cohort_data[this.current_data_key];
 
       // Transform array data into dictionaries using column names as keys
       this.row_data = data.map(row => {
