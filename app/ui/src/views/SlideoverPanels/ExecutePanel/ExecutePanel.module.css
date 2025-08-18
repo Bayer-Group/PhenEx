@@ -15,38 +15,8 @@
 }
 
 .controls {
-  border: var(--accordian_container_border_width) solid transparent;
-  border-radius: 8px;
-  user-select: none;
-  transition:
-    max-height 0.3s ease-in-out,
-    height 0.3s ease-in-out;
-  margin-bottom: 0px !important;
-  margin-top: 0px !important;
   margin-left: 12px;
-  max-width: 293px;
-  background-color: var(--background_color_translucent);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--line-color);
-  -webkit-backdrop-filter: blur(10px);
-  overflow: hidden;
-  top: calc(var(--top_app_navigation_tab_bar) + 0px);
-  padding: 0px;
-  right: 10px;
-  height: 33px;
-  padding-top: 3px;
-  padding-left: 3px;
-  z-index: 999;
-  transition: border 0.3s ease-in-out;
-}
-
-.controls:hover {
-  background-color: var(--color-accent-hover) !important;
-  border: 1px solid var(--color-accent-bright);
-
-  /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: translateY 0.3s ease-in-out;
+  background-color: transparent;
 }
 
 .filterSelect {

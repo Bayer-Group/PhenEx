@@ -142,20 +142,22 @@ export const ExecutePanel: React.FC = () => {
 
   const renderFilterDropdown = () => {
     return (
-      <div className={styles.filterDropdown}>
-        <select
-          value={logFilter}
-          onChange={e => setLogFilter(e.target.value)}
-          className={styles.filterSelect}
-        >
-          <option value="all">All Logs</option>
-          <option value="info">Info</option>
-          <option value="warning">Warnings</option>
-          <option value="error">Errors</option>
-          <option value="debug">Debug</option>
-        </select>
-      </div>
+      <div></div>
     );
+    //   <div className={styles.filterDropdown}>
+    //     <select
+    //       value={logFilter}
+    //       onChange={e => setLogFilter(e.target.value)}
+    //       className={styles.filterSelect}
+    //     >
+    //       <option value="all">All Logs</option>
+    //       <option value="info">Info</option>
+    //       <option value="warning">Warnings</option>
+    //       <option value="error">Errors</option>
+    //       <option value="debug">Debug</option>
+    //     </select>
+    //   </div>
+    // );
   };
 
   const renderControls = () => {
@@ -180,7 +182,7 @@ export const ExecutePanel: React.FC = () => {
       <div className={styles.controls}>
         <TabsWithDropdown
           width={400}
-          height={35}
+          height={25}
           tabs={tabs}
           onTabChange={handleTabChange}
           dropdown_items={{ 2: renderFilterDropdown() }}

@@ -4,7 +4,7 @@ import { CohortDataService } from './CohortDataService/CohortDataService';
 
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
-import { AppNavigationTabBar } from './CohortDefinitionView/AppNavigationTabBar';
+import { AppNavigationTabBar } from './AppNavigationTabBar';
 import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 

@@ -4,20 +4,21 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 import { ReportTable } from './ReportTable';
-
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs'
 interface CohortReportViewProps {
   data?: string;
 }
 
 enum CohortReportViewType {
-  Cohort = 'cohort',
-  Baseline = 'baseline',
+  Attrition = 'attrition',
+  Table1 = 'table1',
   Outcomes = 'outcomes',
+  KaplanMeier = 'KaplanMeier'
 }
 
 export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
-  const [currentView, setCurrentView] = useState<CohortReportViewType>(CohortReportViewType.Cohort);
+  const [currentView, setCurrentView] = useState<CohortReportViewType>(CohortReportViewType.Attrition);
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
 
   const renderViewContent = () => {
     switch (currentView) {
-      case CohortReportViewType.Cohort:
+      case CohortReportViewType.Attrition:
         return (
           <>
             <ReportTable dataService={dataService.report_service} />
@@ -94,20 +95,16 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   return (
     <SlideoverPanel title="Report" info={infoContent()}>
       <div className={styles.container}>
-        {/* <div className={styles.topSection}>
-          <div className={styles.controlsContainer}>
-            <Tabs
-              width={400}
-              height={25}
-              tabs={tabs}
-              onTabChange={onTabChange}
-              active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
-            />
-          </div>
-        </div> */}
-        {/* <div className={styles.bottomSection}> */}
-        <div className={styles.viewContainer}>{renderViewContent()}</div>
-        {/* </div> */}
+        <div className={styles.controlsContainer}>
+          <Tabs
+            width={400}
+            height={25}
+            tabs={tabs}
+            onTabChange={onTabChange}
+            active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
+          />
+        </div>
+        <div className={styles.bottomSection}>{renderViewContent()}</div>
       </div>
     </SlideoverPanel>
   );

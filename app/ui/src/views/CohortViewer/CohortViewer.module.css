@@ -91,29 +91,8 @@
 
 
 .sectionTabsContainer {
-  /* display: flex;
-  justify-content: space-between;
-  align-items: center; */
-  gap: 16px;
-  margin-left: 40px;
-  border: var(--border);
-  /* padding: 3px 3px 3px 3px !important; */
-  border-radius: 8px !important;
-  min-width: 503px;
+  margin-left: 10px;
   position: absolute;
   top: var(--top_app_navigation_tab_bar);
-  overflow: hidden;
-  height: 33px;
-  padding-top: 3px;
-  padding-left: 3px;
-  padding-right: 3px;
-}
-
-.sectionTabsContainer:hover {
-  background-color: var(--color-accent-hover) !important;
-  border: 1px solid var(--color-accent-bright);
-
-  /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: translateY 0.3s ease-in-out;
+  background-color: transparent;
 }

@@ -8,14 +8,6 @@
   position: relative;
 }
 
-.topSection {
-  padding: 0px;
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background-color: white;
-}
 
 .controlsContainer {
   display: flex;
@@ -32,16 +24,16 @@
   display: flex;
   overflow-y: auto;
   padding: 0px;
-  padding-top: 50px;
+  padding-top: 20px;
 }
 
-.viewContainer {
+/* .viewContainer {
   width: 100%;
   padding-bottom: 100px;
   padding-top: 30px;
   height: 100%;
   background-color: red;
-}
+} */
 
 .viewContainer h2 {
   margin-top: 0;
