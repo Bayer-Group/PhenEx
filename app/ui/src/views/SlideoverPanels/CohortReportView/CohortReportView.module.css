@@ -39,8 +39,8 @@
   width: 100%;
   padding-bottom: 100px;
   padding-top: 30px;
-  height: auto;
-  min-height: fit-content;
+  height: 100%;
+  background-color: red;
 }
 
 .viewContainer h2 {

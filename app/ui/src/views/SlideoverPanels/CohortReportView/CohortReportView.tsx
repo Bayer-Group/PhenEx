@@ -1,11 +1,10 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import styles from './CohortReportView.module.css';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
-import { TableData } from '../tableTypes';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
-import { ReportCard } from './ReportCard';
+import { ReportTable } from './ReportTable';
+
 interface CohortReportViewProps {
   data?: string;
 }
@@ -19,6 +18,18 @@ enum CohortReportViewType {
 export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortReportViewType>(CohortReportViewType.Cohort);
+  const [, forceUpdate] = useState({});
+
+  useEffect(() => {
+    const handleDataServiceUpdate = () => {
+      forceUpdate({});  // Trigger a re-render when dataService changes
+    };
+
+    dataService.addListener(handleDataServiceUpdate);
+    return () => {
+      dataService.removeListener(handleDataServiceUpdate);
+    };
+  }, [dataService]);
 
   const tabs = Object.values(CohortReportViewType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
@@ -36,7 +47,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
       case CohortReportViewType.Cohort:
         return (
           <>
-            <ReportCard title={'Attrition Table'} dataService={dataService.report_service} />
+            <ReportTable dataService={dataService.report_service} />
           </>
         );
       // case CohortReportViewType.Baseline:
