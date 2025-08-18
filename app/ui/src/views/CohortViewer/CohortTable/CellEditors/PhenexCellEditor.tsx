@@ -4,6 +4,7 @@ import styles from './PhenexCellEditor.module.css';
 import { Portal } from '../../../../components/common/Portal';
 import stylesXbutton from './../../../../components/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
+import { color } from 'd3';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value?: any;
@@ -181,13 +182,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const renderXButton = () => {
     return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   };
+  const colorClass = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-outer`;
+  const colorBorder = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-border`;
+
+  console.log("COLOR CLASS FoR PHENCE EDIOTR", colorBorder)
 
   return (
     <Portal>
       <div
         style={portalStyle}
         ref={containerRef}
-        className={styles.container}
+        className={`${styles.container} ${colorBorder}`}
         onClick={e => {
           e.stopPropagation(); // Stop click from bubbling
           e.nativeEvent.stopImmediatePropagation(); // Stop other listeners
@@ -213,7 +218,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
         tabIndex={-1}
       >
-        <PopoverHeader onClick={handleDone} title={'phenexheader'} className={styles.popoverheader}>
+        <PopoverHeader onClick={handleDone} title={'phenexheader'} className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}>
           <div>
             <span className={styles.topLine}>
               <span className={styles.filler}>editing</span>
@@ -229,7 +234,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             </span>
           </div>
         </PopoverHeader>
-        <div className={styles.content}>
+        <div className={`${styles.content}`}>
           {React.Children.map(props.children, child =>
             React.isValidElement(child)
               ? React.cloneElement(child, {

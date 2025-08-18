@@ -11,7 +11,7 @@
   /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
   border: var(--border-accent);
   box-shadow: var(--box_shadow_selected_no_hover);
-  background-color: var(--color-accent-bright) !important;
+  background-color: var(--color-accent-bright);
   transition:
     box-shadow 0.2s ease-in-out,
     transform 0.2s ease-in-out;

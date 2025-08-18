@@ -72,7 +72,7 @@ export const defaultColumns = [
   {
     field: 'class_name',
     headerName: 'Phenotype',
-    width: 100,
+    width: 130,
     editable: true,
     cellRenderer: PhenotypeCellRenderer,
     cellEditor: PhenotypeSelectorCellEditor,
@@ -93,7 +93,7 @@ export const defaultColumns = [
   {
     field: 'domain',
     headerName: 'Domain',
-    width: 120,
+    width: 180,
     editable: true,
     cellRenderer: DomainCellRenderer,
     cellEditor: DomainSelectorCellEditor,
