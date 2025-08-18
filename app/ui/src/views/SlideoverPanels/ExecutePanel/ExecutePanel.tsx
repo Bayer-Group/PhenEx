@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './ExecutePanel.module.css';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
+import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 
 export const ExecutePanel: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
@@ -115,23 +115,25 @@ export const ExecutePanel: React.FC = () => {
   const infoContent = () => {
     return (
       <span>
-        <i>Execute your study</i> using this panel. Execution:
+        <i>Execute your cohort.</i>
         <ul>
           <li>
-            Extracts the patients that belong to your cohort and generates the attrition table
+            Extract the patients that belong to your cohort and generate the attrition table
           </li>
-          <li>Assesses the cohort at baseline and generates Table 1</li>
-          <li>Performs outcome analyses such as Time to Event</li>
+          <li>Assess the cohort at baseline and generate Table 1</li>
+          <li>Perform outcome analyses such as Time to Event</li>
         </ul>
-        To setup your database in PhenEx :
+        When you are finished defining your cohort :
         <ol>
           <li>
-            <em>Trigger execution</em> : <i>click</i> <code>Execute</code> below.
+            <em>Trigger execution</em> : <i>click</i> <code>Execute Cohort</code> below. You can watch the execution in real time in this panel; the logs are streamed to you. This allows you to monitor the progress and see any issues as they arise.
           </li>
           <li>
-            <em>View results</em> : Counts of patients in the cohort that fulfill a phenotype are
-            displayed directly in the cohort editing table in the 'type' column. Further results are
-            found in the <em>Report</em> tab
+            <em>View results</em> : 
+              <ul>
+                <li>Counts of patients in the cohort that fulfill a phenotype are displayed directly in the cohort editing table in the 'type' column.</li>
+                <li>Further results are found in the <code>Report</code> tab</li>
+              </ul>
           </li>
         </ol>
       </span>

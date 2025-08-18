@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './TreeList.module.css';
-import { Button } from '../Button/Button';
+import { Button } from '../ButtonsAndTabs/Button/Button';
 
 export interface TreeNode {
   displayName: string;

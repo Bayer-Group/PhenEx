@@ -122,14 +122,9 @@
 
 .collapseButton:hover {
   transition: transform 0.2s ease;
-  transform: translateY(-1px);
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: var(--color-accent);
+  color: var(--color-accent-bright);
   outline: none;
-  border-radius: var(--border-radius);
-  background-color: var(--background-color-deeper);
-  color: var(--background-color-deeper-text);
-  border-color: var(--background-color-deeper) !important;
 }
 
 .collapseButton.collapsed {

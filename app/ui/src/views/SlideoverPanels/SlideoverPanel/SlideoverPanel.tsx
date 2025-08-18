@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './SlideoverPanel.module.css';
-import { Button } from '../../../components/Button/Button';
+import { Button } from '../../../components/ButtonsAndTabs/Button/Button';
 
 interface SlideoverPanelProps {
   title: string;
@@ -15,8 +15,12 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({ title, info = ''
     setIsOpen(prevState => !prevState);
   };
 
+  const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onClick={onClick}>
       <div className={styles.title}>
         {title}
         <Button title='Help' onClick={toggleInfobox} className={`${styles.infoButton} ${isOpen ? styles.open : styles.closed}`} />

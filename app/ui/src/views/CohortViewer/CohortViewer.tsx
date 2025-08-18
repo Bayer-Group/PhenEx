@@ -6,7 +6,7 @@ import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { AppNavigationTabBar } from './CohortDefinitionView/AppNavigationTabBar';
 import { CohortTable } from './CohortTable/CohortTable';
-import { Tabs } from '../../components/Tabs/Tabs';
+import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',

@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import styles from './AppNavigationTabBar.module.css';
-import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
+import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
 import { CohortDataService } from '../CohortDataService/CohortDataService';

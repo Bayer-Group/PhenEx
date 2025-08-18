@@ -1,6 +1,6 @@
 import { FC, useRef } from 'react';
 import styles from './UserLogin.module.css';
-import { CustomizableDropdownButton } from '../../../components/ButtonsBar/CustomizableDropdownButton';
+import { CustomizableDropdownButton } from '../../../components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { ItemList } from '../../../components/ItemList/ItemList';
 import { LoginDataService } from './LoginDataService';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';

@@ -10,12 +10,12 @@
   position: absolute;
   top: 80px;
   left: 20px;
-  line-height: 50px;
+  line-height: 30px;
   text-align: left;
 }
 
 .noRowsTopLine {
-  font-size: 24px;
+  font-size: 20px;
   font-family: 'IBMPlexSans-regular';
 }
 
@@ -45,7 +45,7 @@
 
 .noRowsBottomLine {
   color: black !important;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .noRowsBottomLine.noRows_section {

@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import styles from './PopoverHeader.module.css';
-import { XButton } from '../XButton/XButton';
+import { XButton } from '../ButtonsAndTabs/XButton/XButton';
 
 interface PopoverHeader {
   onClick: () => void;

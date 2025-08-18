@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { Portal } from '../../../../components/common/Portal';
-import stylesXbutton from './../../../../components/XButton/XButton.module.css';
+import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { color } from 'd3';
 

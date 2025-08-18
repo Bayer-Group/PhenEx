@@ -4,7 +4,7 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 import { TableData } from '../tableTypes';
-import { Tabs } from '../../../components/Tabs/Tabs';
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { ReportCard } from './ReportCard';
 interface CohortReportViewProps {
   data?: string;

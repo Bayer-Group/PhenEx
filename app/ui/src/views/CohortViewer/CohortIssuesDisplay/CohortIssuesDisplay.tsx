@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './CohortIssuesDisplay.module.css';
-import { XButton } from '../../../components/XButton/XButton';
+import { XButton } from '../../../components/ButtonsAndTabs/XButton/XButton';
 
 export interface CohortIssue {
   phenotype_id: string;

@@ -65,11 +65,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
-      console.log(
-        'CALLING NO ROWS OUTCOMMMMMESSSSS',
-        currentlyViewing,
-        currentlyViewing === 'outcome'
-      );
       return (
         <div className={styles.noRowsOverlay}>
           <span className={styles.noRowsBottomLine}>

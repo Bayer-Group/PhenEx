@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { ButtonsBar } from '../../../components/ButtonsBar/ButtonsBar';
+import { ButtonsBar } from '../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 import styles from './InteractionBar.module.css';
 
 type InteractionState = 'empty' | 'thinking' | 'interactive' | 'retry';
