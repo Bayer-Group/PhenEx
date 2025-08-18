@@ -18,22 +18,12 @@ export const SplashPage = () => {
           </p>
           <p>
             Define your study using PhenEx phenotypes, and the code to extract analysis-ready
-            datasets is <emph>automatically generated</emph>. Table1 and time to event analyses are
+            datasets is <em>automatically generated</em>. Table1 and time to event analyses are
             also included.
           </p>
           <p>
-            <emph>To get started</emph> with PhenEx :
-                  </p>
-
-            <ol>
-              <li>Register or Login</li>
-              <li>Add a cohort bye
-                <ul>
-                  <li><span className={styles.buttonAppearance}>New Cohort</span> or select an existing one the left navigation area</li>
-                  <li>try generating a cohort with AI.</li>
-                </ul>
-              </li>
-            </ol>
+            <em>To get started</em> with PhenEx, just select a cohort from the left navigation area. Log in or register if you want to create cohorts.
+          </p>
         </div>
       </div>
       <div className={`${styles.label} ${styles.bottomRight}`}></div>

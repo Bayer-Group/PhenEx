@@ -27,7 +27,7 @@
   margin-top: 190px;
 }
 
-.content emph {
+.content em {
   color: var(--color-accent-bright);
   font-family: 'IBMPlexSans-Bold';
 }
