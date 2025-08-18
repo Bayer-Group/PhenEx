@@ -8,7 +8,7 @@ export const DatabasePanel: React.FC = () => {
   const infoContent = () => {
     return (
       <span>
-        <i>Set up your database connection</i> using this panel. To setup your database in PhenEx :
+        <i>Set up your database connection.</i> To setup your database in PhenEx :
         <ol>
           <li>
             <em>Select a mapper</em> : what format is your data in? Currently supported in PhenEx UI

@@ -1,5 +1,6 @@
 :root {
   --accordian_container_border_width: 1px;
+  --top_app_navigation_tab_bar: 60px;
 }
 .accordianContainer {
   border: var(--accordian_container_border_width) solid transparent;
@@ -18,7 +19,7 @@
   -webkit-backdrop-filter: blur(10px);
   overflow: hidden;
   position: absolute;
-  top: 65px;
+  top: calc(var(--top_app_navigation_tab_bar) + 0px);
   padding: 0px;
   right: 10px;
   height: 33px;

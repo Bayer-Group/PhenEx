@@ -7,17 +7,17 @@
   background-color: var(--background-color);
 }
 
+.topSection{
+  height: calc(var(--top_app_navigation_tab_bar) + 70px);
+}
+
 .bottomSection {
-  flex: 1;
-  display: flex;
-  position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
   height: 100%;
   width: 100%;
-  margin: 0px;
-  padding: 0px;
-  padding-top:10px;
+  display: flex;
+  flex-direction: column;
+  padding-top:0px;
+
 }
 
 .visible {
@@ -70,7 +70,7 @@
 
 .cohortNameContainer {
   width: 100%;
-  margin-bottom: 3px;
+  margin-bottom: 20px;
   height:40px;
 }
 
@@ -82,9 +82,38 @@
   width: 60%;
   font-family: 'IBMPlexSans-Bold';
   margin-left: 60px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .cohortNameInput::placeholder {
   color: var(--text-color-secondary);
+}
+
+
+.sectionTabsContainer {
+  /* display: flex;
+  justify-content: space-between;
+  align-items: center; */
+  gap: 16px;
+  margin-left: 40px;
+  border: var(--border);
+  /* padding: 3px 3px 3px 3px !important; */
+  border-radius: 8px !important;
+  min-width: 503px;
+  position: absolute;
+  top: var(--top_app_navigation_tab_bar);
+  overflow: hidden;
+  height: 33px;
+  padding-top: 3px;
+  padding-left: 3px;
+  padding-right:3px;
+}
+
+.sectionTabsContainer:hover {
+  background-color: var(--color-accent-hover) !important;
+  border: 1px solid var(--color-accent-bright);
+
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: translateY 0.3s ease-in-out;
 }

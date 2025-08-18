@@ -23,6 +23,8 @@ export const SplashPage = () => {
           </p>
           <p>
             <emph>To get started</emph> with PhenEx :
+                  </p>
+
             <ol>
               <li>Register or Login</li>
               <li>Add a cohort bye
@@ -32,7 +34,6 @@ export const SplashPage = () => {
                 </ul>
               </li>
             </ol>
-          </p>
         </div>
       </div>
       <div className={`${styles.label} ${styles.bottomRight}`}></div>

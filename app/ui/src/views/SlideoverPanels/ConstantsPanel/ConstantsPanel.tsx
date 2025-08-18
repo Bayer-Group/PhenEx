@@ -12,7 +12,7 @@ export const ConstantsPanel: React.FC = () => {
   const infoContent = () => {
     return (
       <span>
-        <i>Define constants used throughout your cohort</i> using this panel.
+        <i>Define constants used throughout your cohort.</i>
         <ul>
           <li>
             Constants are variables that you define, with some provided by default by PhenEx. These

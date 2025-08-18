@@ -63,7 +63,7 @@ export const CodelistsViewer: React.FC = () => {
   const infoContent = () => {
     return (
       <span>
-        <i>Access codelists from CSV or Excel files</i> using this panel. Codelist files must :
+        <i>Access codelists from CSV or Excel files.</i> Codelist files must :
         <ul>
           <li>contain one row per medical code</li>
           <li>
@@ -85,13 +85,13 @@ export const CodelistsViewer: React.FC = () => {
         To use these files with PhenEx :
         <ol>
           <li>
-            <em>Upload a file</em> : <i>drag and drop a file into this panel</i>.
+            <em>Upload a file</em> : <i>drag and drop a file into this panel</i>
           </li>
           <li>
-            <em>Map necessary columns</em> : map the three columns defined above.
+            <em>Map necessary columns</em> : map the three columns defined above
           </li>
           <li>
-            <em>Use the codelist entities</em> : codelists are available in the codelist column in
+            <em>Use the codelist entities</em> : codelists in the codelist column are available in the codelist column in
             any phenotype editing area.
           </li>
         </ol>
