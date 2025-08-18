@@ -1,13 +1,13 @@
 :root {
   --accordian_container_border_width: 1px;
-  --top_app_navigation_tab_bar: 60px;
+  --top_app_navigation_tab_bar: 55px;
 }
 .tabsContainer {
   background-color: transparent;
   position: absolute;
   top: calc(var(--top_app_navigation_tab_bar) + 0px);
-  right: 20px;
-  z-index: 999;
+  left: 10px;
+  /* z-index: 10; */
 }
 
 .toggleButton {

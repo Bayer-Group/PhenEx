@@ -29,9 +29,9 @@ export const IssuesDisplayControl: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowPopover(false);
-      }
+      // if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      //   setShowPopover(false);
+      // }
     };
 
     if (showPopover) {
@@ -61,7 +61,7 @@ export const IssuesDisplayControl: React.FC = () => {
       }`}
       onClick={handleClick}
     >
-      <div className={styles.popover}>{showPopover && <IssuesPopover issues={issues} />}</div>
+      <div className={styles.popover}>{showPopover && <IssuesPopover issues={issues} onClick={closePopover}/>}</div>
       <div className={styles.issuesButton}>
         <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
       </div>

@@ -17,10 +17,12 @@
   /* transition: all 0.3s ease-in-out; */
   z-index: 1;
   transition: color 0.3s ease-in-out !important;
+  margin-top:0px;
 }
 
 .row.selected{
   margin-right:var(--issue_popover_margin);
+  opacity: 0;
 }
 
 
@@ -45,7 +47,6 @@
 }
 
 .row:hover .statusDot{
-  background-color: red;
 
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -76,7 +77,7 @@
   height: 45px;
   border-radius: 50%;
   position: absolute;
-  top: -10px;
+  top: 5px;
   right: 10px;
   box-shadow: none;
   display: flex;
@@ -134,54 +135,6 @@
   border-color: var(--phenex-green);
 }
 
-.labelMain {
-  margin-left: 0px;
-  height: 20px;
-  position: absolute;
-  top: 8px;
-  font-size: 14px;
-  line-height: 20px;
-  width: calc(100% - 80px);
-  text-wrap: wrap;
-  text-align: right;
-  /* transition: all 0.3s ease-in-out; */
-}
-
-.row.selected .labelMain {
-  text-align: left;
-  /* transition: all 0.3s ease-in-out; */
-  background-color: transparent !important;
-  /* top: 14px; */
-  padding-left: 20px;
-}
-
-.labelNoIssues {
-  margin-left: 45px;
-  height: 20px;
-  position: absolute;
-  top: 8px;
-  font-size: 20px;
-  color: var(--phenex-green);
-}
-
-.labelMain .number {
-}
-
-.number.phenotypeIssues {
-  margin-left: 5px;
-  font-size: 18px;
-}
-
-.labelSecondary {
-  font-size: 12px;
-  font-family: 'IBMPlexSans-bolditalic';
-}
-
-.totalIssues {
-  font-size: 18px;
-  margin-right: 5px;
-}
-
 .row.selected:hover .xButton {
   color: white;
 }
@@ -190,7 +143,7 @@
 .labelUnselected{
   font-family: "IBMPlexSans-bold";
   font-size:24px;
-  margin-top: -5px;
+  margin-top: 10px;
   text-align: right;
   position:absolute;
   padding-left:20px;

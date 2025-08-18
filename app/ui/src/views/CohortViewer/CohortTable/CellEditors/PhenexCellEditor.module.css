@@ -3,6 +3,8 @@
   --popover_border_radius_bottom: 10px;
   --popover_border_radius_top: 10px;
   --popover_font_size: 20px;
+  --padding_custom_two_line_header: 5px 10px 20px 10px;
+
 }
 :global(.ag-popup-editor) {
   background-color: transparent !important;
@@ -141,4 +143,9 @@
 
 .header:hover .xButton {
   color: white;
+}
+
+
+.popoverHeader{
+  padding: var(--padding_custom_two_line_header);
 }

@@ -122,8 +122,8 @@ export const TwoPanelView = React.forwardRef<
           className={`${styles.collapseButton} ${stylesXButton.xButton} ${isRightCollapsed ? styles.collapsed : ''}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}
         >
+          {'>>'}
           {/* {'×'} */}
-          {'×'}
         </div>
         <div
           className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}

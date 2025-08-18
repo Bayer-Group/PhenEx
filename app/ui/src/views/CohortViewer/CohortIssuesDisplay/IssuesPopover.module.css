@@ -1,5 +1,5 @@
 :root {
-  --issue_popover_margin: 13px;
+  --issue_popover_margin: 10px;
   --issue_popover_radius: 0px;
   --background_color_translucent: rgba(248, 249, 250, 0.8);
 }
@@ -20,6 +20,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: var(--background-color);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.headerContent {
+  padding: 0px 20px;
+  font-family: var(--font-family-bold);
+  font-size: 16px;
+  color: var(--text-color);
 }
 
 .popover.noIssues {
@@ -30,15 +40,15 @@
   position: sticky;
   top: 0;
   background: var(--background-color);
-  padding: 20px 10px 12px 20px;
+  padding: 0px;
   border-bottom: 1px solid var(--line-color);
 }
 
 .body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 15px 30px 10px;
-  margin-top: 65px;
+  padding: 10px 15px 30px 10px;
+  margin-top: 0px;
 }
 
 .section {
@@ -157,4 +167,37 @@
 .index {
   display: inline-block;
   /* Add any specific styling for the index */
+}
+
+
+/* 
+.labelMain {
+  text-align: left;
+  background-color: transparent !important;
+
+  padding-left: 20px;
+} */
+
+.labelMain .number {
+}
+
+.number.phenotypeIssues {
+  margin-left: 5px;
+  font-size: 18px;
+}
+
+.labelSecondary {
+  font-size: 12px;
+  font-family: 'IBMPlexSans-bolditalic';
+}
+
+.totalIssues {
+  font-size: 18px;
+  margin-right: 5px;
+}
+
+
+.titleLabelDiv{
+  line-height: 1em;
+  padding: 5px 10px 0px 10px;
 }

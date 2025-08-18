@@ -112,12 +112,14 @@
   color: hsl(0, 0%, 60%);
   z-index: 1000;
   
-  right: 20px;
+  left: 20px;
 
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
   margin-top: var(--margin_top_right_panel);
+  font-family: "SNPro-black";
+  font-size:22px;
 }
 
 .collapseButton:hover {

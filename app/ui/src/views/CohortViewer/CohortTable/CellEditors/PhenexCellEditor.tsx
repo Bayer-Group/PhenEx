@@ -219,7 +219,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         tabIndex={-1}
       >
         <PopoverHeader onClick={handleDone} title={'phenexheader'} className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}>
-          <div>
+          <div className = {styles.popoverHeader}>
             <span className={styles.topLine}>
               <span className={styles.filler}>editing</span>
               <span className={styles.actionText}>{titleText}</span>

@@ -17,14 +17,14 @@ export const PopoverHeader: FC<PopoverHeader> = ({
 }) => {
   return (
     <div
-      className={`${styles.popoverheader} ${className}`}
+      className={`${styles.popoverheader} ${className} ${children && styles.hasChildren}`}
       onClick={onClick}
       title={title}
       aria-label={title}
     >
       {!children && title}
       {children && <div className={styles.content}>{children}</div>}
-      <XButton onClick={undefined} className={styles.xButton} />
+      <XButton onClick={onClick} className={styles.xButton} />
     </div>
   );
 };

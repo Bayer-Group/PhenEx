@@ -1,6 +1,6 @@
 :root{
-  --margin_left_slideover_panel: 20px;
-  --margin_top_right_panel_title: 10px;
+  --margin_left_slideover_panel: 80px;
+  --margin_top_right_panel_title: 0px;
 }
 .container {
   height: 100%;

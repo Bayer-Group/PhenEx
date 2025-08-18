@@ -9,11 +9,17 @@
 }
 
 .showingPopover {
-  top: 4px;
+  /* top: 4px; */
   right: 8px;
 }
 
 .issuesButton {
+  position: absolute;
+  top:0px!important;
+  right:0px;
+  margin:0px!important;
+  padding: 0px !important;
+  background-color:transparent;
   z-index: 1000;
 }
 

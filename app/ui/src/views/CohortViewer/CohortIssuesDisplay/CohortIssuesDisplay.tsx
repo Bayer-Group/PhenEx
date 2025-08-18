@@ -22,25 +22,6 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const phenotypesWithIssues = issues?.length || 0;
   const hasIssues = phenotypesWithIssues > 0;
 
-  const renderTitleLabel = () => {
-    return (
-      <p>
-        <span className={styles.labelMain}>
-          <span className={styles.issuesText}>Issues</span>
-          <br></br>
-          <span className={styles.labelSecondary}>
-            <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
-            in
-            <span className={`${styles.number} ${styles.phenotypeIssues}`}>
-              {phenotypesWithIssues}
-            </span>{' '}
-            phenotypes
-          </span>
-        </span>
-      </p>
-    );
-  };
-
     const renderUnselectedTitleLabel = () => {
     return (
       <p>
@@ -57,9 +38,6 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   };
 
   const renderText = () => {
-    if (selected === true){
-      return renderTitleLabel();
-    }
     return renderUnselectedTitleLabel()
   }
 

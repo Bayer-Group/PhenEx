@@ -38,3 +38,12 @@
 .popoverheader:hover .xButton {
   color: white;
 }
+
+.xButton{
+  cursor: pointer !important;
+  pointer-events: none !important;
+}
+
+.hasChildren{
+  padding: 0px !important;
+}

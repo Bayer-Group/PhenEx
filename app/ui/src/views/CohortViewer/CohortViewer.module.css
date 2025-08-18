@@ -8,7 +8,7 @@
 }
 
 .topSection{
-  height: calc(var(--top_app_navigation_tab_bar) + 70px);
+  height: calc(var(--top_app_navigation_tab_bar) + 100px);
 }
 
 .bottomSection {
@@ -93,6 +93,6 @@
 .sectionTabsContainer {
   margin-left: 10px;
   position: absolute;
-  top: var(--top_app_navigation_tab_bar);
+  top: calc(var(--top_app_navigation_tab_bar) + 40px);
   background-color: transparent;
 }
