@@ -44,19 +44,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     setCurrentView(viewType);
   };
 
-  const renderView = () => {
-    switch (currentView) {
-      case CohortViewType.CohortDefinition:
-        return <CohortDefinitionView data={data} />;
-      case CohortViewType.Info:
-        return <CohortInfo />;
-      case CohortViewType.Report:
-        return <CohortReportView data={data} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className={styles.cohortTableContainer}>
       <CohortViewerHeader
@@ -66,7 +53,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         }}
         navigateTo={navigateTo}
       />
-      <div className={styles.bottomSection}>{renderView()}</div>
+      <div className={styles.bottomSection}>
+        <CohortDefinitionView data={data} />
+      </div>
     </div>
   );
 };

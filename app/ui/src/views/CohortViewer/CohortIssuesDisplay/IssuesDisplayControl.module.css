@@ -1,23 +1,18 @@
 .container {
-  /* display: flex;
-  flex-direction: column;
-  align-items: flex-start; */
-  /* max-width: 250px; */
-  gap: 4px;
   position: absolute;
-  right: 10px;
-  top: 48px;
   user-select: none;
+  right:10px;
+  top:0px;
   transition: all 0.3s ease;
   z-index: 1001;
-  /* max-height: 400px; */
-  /* overflow-y: auto; */
+
 }
 
 .showingPopover {
   top: 4px;
   right: 8px;
 }
+
 .issuesButton {
   z-index: 1000;
 }

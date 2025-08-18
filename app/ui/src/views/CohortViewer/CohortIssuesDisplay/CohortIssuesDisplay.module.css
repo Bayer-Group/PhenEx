@@ -4,22 +4,25 @@
 }
 
 .row {
-  /* display: flex; */
-
+  padding:0px !important;
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   font-family: 'IBMPlexSans-bold';
   /* padding: 0px 20px; */
   border-radius: 10px;
-  border: var(--border-accent);
-  height: 52px;
-  width: 190px;
+  /* border: var(--border-accent); */
+  height: 40px;
+  width: 160px;
   /* transition: all 0.3s ease-in-out; */
-  position: relative;
   z-index: 1;
   transition: color 0.3s ease-in-out !important;
 }
+
+.row.selected{
+  margin-right:var(--issue_popover_margin);
+}
+
 
 .row.hasIssues {
   /* border-color:var(--color-accent); */
@@ -41,16 +44,21 @@
   font-family: 'IBMPlexSans-Bold';
 }
 
-.row:hover {
-  background-color: var(--color-accent-hover) !important;
-  color: var(--color-accent);
+.row:hover .statusDot{
+  background-color: red;
 
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: translateY 0.3s ease-in-out;
-  transition: border 0.3s ease-in-out;
 
   /* border: 2px solid var(--color-accent); */
+}
+
+.row.selected .statusDot{
+  opacity:0;
+}
+
+.row.selected:hover .statusDot{
+  background-color: transparent;
 }
 
 .row.selected:hover {
@@ -64,12 +72,20 @@
 }
 
 .statusDot {
-  width: 24px;
-  height: 24px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   position: absolute;
-  top: 12px;
+  top: -5px;
   right: 10px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "IBMPlexSans-bold";
+  font-size: 24px;
+  line-height: 1;
+  color:white;
 }
 
 .row.noIssues .statusDot.green {
@@ -98,7 +114,7 @@
   background-color: var(--color-accent-bright);
   border-color: var(--color-accent_2) !important;
   color: var(--xbutton_color_orange_background);
-  width: 400px;
+  width: 402px;
   z-index: 2;
   height: 65px;
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) 0px 0px;
@@ -125,7 +141,7 @@
   top: 8px;
   font-size: 14px;
   line-height: 20px;
-  width: calc(100% - 45px);
+  width: calc(100% - 80px);
   text-wrap: wrap;
   text-align: right;
   /* transition: all 0.3s ease-in-out; */
@@ -135,7 +151,7 @@
   text-align: left;
   /* transition: all 0.3s ease-in-out; */
   background-color: transparent !important;
-  top: 14px;
+  /* top: 14px; */
   padding-left: 20px;
 }
 
@@ -168,4 +184,14 @@
 
 .row.selected:hover .xButton {
   color: white;
+}
+
+
+.labelUnselected{
+  font-family: "IBMPlexSans-bold";
+  font-size:24px;
+  margin-top: 0px;
+  text-align: right;
+  position:absolute;
+  padding-left:20px;
 }

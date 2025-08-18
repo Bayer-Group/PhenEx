@@ -1,5 +1,5 @@
 :root {
-  --margin_top_right_panel: 20px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --margin_top_right_panel: 10px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
   --border_radius_right_panel: 8px;/* this keeps together the rightpanelcontent, the collapse button, and the info button*/
 
 }

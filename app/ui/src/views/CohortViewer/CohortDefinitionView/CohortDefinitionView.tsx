@@ -3,7 +3,6 @@ import styles from './CohortDefinitionView.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortTable } from '../CohortTable/CohortTable';
 import { Tabs } from '../../../components/Tabs/Tabs';
-import { AppNavigationTabBar } from './AppNavigationTabBar';
 
 interface CohortDefinitionViewProps {
   data?: string;
@@ -15,6 +14,7 @@ enum CohortDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
   Outcomes = 'outcomes',
+  All='all',
 }
 
 export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) => {
