@@ -26,19 +26,19 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
   );
   const [isNarrow, setIsNarrow] = useState(false);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  // useEffect(() => {
+  //   const container = containerRef.current;
+  //   if (!container) return;
 
-    const observer = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setIsNarrow(entry.contentRect.width < 500);
-      }
-    });
+  //   const observer = new ResizeObserver(entries => {
+  //     for (const entry of entries) {
+  //       setIsNarrow(entry.contentRect.width < 500);
+  //     }
+  //   });
 
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
+  //   observer.observe(container);
+  //   return () => observer.disconnect();
+  // }, []);
 
   const refreshGrid = () => {
     if (currentView === CohortDefinitionViewType.Cohort && gridRef.current?.api) {
@@ -130,9 +130,8 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
           : 0; // Default to the first tab if the currentView is not recognized or undefined
   };
 
-  return (
-    <div ref={containerRef} className={styles.cohortTableContainer}>
-      <div className={styles.topSection}>
+  const renderSectionTabs = () => {
+      return (
         <div className={styles.controlsContainer}>
           <Tabs
             width={400}
@@ -142,6 +141,13 @@ export const CohortDefinitionView: FC<CohortDefinitionViewProps> = ({ data }) =>
             active_tab_index={determineTabIndex()}
           />
         </div>
+      );
+  }
+
+  return (
+    <div ref={containerRef} className={styles.cohortTableContainer}>
+      <div className={styles.topSection}>
+        {renderSectionTabs()}
       </div>
       <div className={styles.bottomSection}>
         <div className={styles.tableBox}>

@@ -66,3 +66,25 @@
   background-color: #b7e1cd;
   color: #000;
 }
+
+
+.cohortNameContainer {
+  width: 100%;
+  margin-bottom: 3px;
+  height:40px;
+}
+
+.cohortNameInput {
+  border: none;
+  padding: 0px;
+  font-size: 30px;
+  outline: none;
+  width: 60%;
+  font-family: 'IBMPlexSans-Bold';
+  margin-left: 60px;
+  margin-top: 10px;
+}
+
+.cohortNameInput::placeholder {
+  color: var(--text-color-secondary);
+}
