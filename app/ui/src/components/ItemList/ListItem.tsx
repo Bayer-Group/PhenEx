@@ -6,12 +6,17 @@ export interface ListItemProps {
   info: string;
   selected?: boolean;
   onClick?: () => void;
+  classNameListItem?: string;
+  classNameListItemSelected?: string;
+
 }
 
-export const ListItem: React.FC<ListItemProps> = ({ name, info, selected, onClick }) => {
+export const ListItem: React.FC<ListItemProps> = ({ name, info, selected, onClick, classNameListItem , classNameListItemSelected}) => {
+
+  console.log("LIST ITEM",classNameListItemSelected)
   return (
     <div
-      className={`${styles.listItem} ${selected ? styles.selected : ''}`}
+      className={`${styles.listItem} ${selected ? styles.selected : ''} ${classNameListItem} ${selected ? classNameListItemSelected : ''}`}
       onClick={onClick}
       tabIndex={0}
       role="button"

@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './PhenotypeSelectorEditor.module.css';
 import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
+import typeStyles from '../../../../../styles/study_types.module.css'
 
 export interface PhenotypeSelectorEditorProps {
   value?: any;
@@ -60,6 +61,8 @@ export const PhenotypeSelectorEditor: React.FC<PhenotypeSelectorEditorProps> = p
         items={phenotypes}
         selectedName={selectedPhenotype || undefined}
         onSelect={handlePhenotypeSelect}
+        classNameListItem={typeStyles[`${props.data.type}_list_item`]}
+        classNameListItemSelected={`${typeStyles[`${props.data.type}_list_item_selected`]}`}
       />
     </div>
   );

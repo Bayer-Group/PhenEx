@@ -6,9 +6,12 @@ export interface ItemListProps {
   items: ListItemProps[];
   selectedName?: string;
   onSelect?: (name: string) => void;
+  classNameListItem?: string;
+  classNameListItemSelected?: string;
+
 }
 
-export const ItemList: React.FC<ItemListProps> = ({ items, selectedName, onSelect }) => {
+export const ItemList: React.FC<ItemListProps> = ({ items, selectedName, onSelect, classNameListItem, classNameListItemSelected }) => {
   return (
     <div className={styles.container}>
       {items.map(item => (
@@ -17,6 +20,8 @@ export const ItemList: React.FC<ItemListProps> = ({ items, selectedName, onSelec
           {...item}
           selected={selectedName === item.name}
           onClick={() => onSelect?.(item.name)}
+          classNameListItem={classNameListItem}
+          classNameListItemSelected={classNameListItemSelected}
         />
       ))}
     </div>

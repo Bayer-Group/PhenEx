@@ -38,7 +38,6 @@
   background-color: var(--button-background-color-selected);
   font-family: var(--button-font-family-selected);
   border: 1px solid var(--button-border-color-selected);
-
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 

@@ -162,6 +162,7 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
           onTabChange={onTabChange}
           active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
           customizableDropdownButtonRef={customizableDropdownButtonRef}
+          outline_tab_index={0}
         />
       </div>
     </div>

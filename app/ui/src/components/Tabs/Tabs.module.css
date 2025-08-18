@@ -52,3 +52,14 @@
 .tab:focus-visible {
   outline: none;
 }
+
+.outline{
+  font-family: "IBMPlexSans-bold";
+  border: var(--border);
+}
+
+.tab.outline:hover{
+    font-family: "IBMPlexSans-bold";
+
+
+}

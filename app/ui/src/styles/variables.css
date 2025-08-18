@@ -84,6 +84,13 @@
   --button-font-family-selected: 'IBMPlexSans-bold';
   --button-font-family-default: 'IBMPlexSans-regular';
   --button-font-family-hover: 'IBMPlexSans-regular';
+
+  --color_inclusion: #79b239; 
+  --color_exclusion: #3d90d9;
+  --color_baseline: #27607c;
+  --color_outcome: #eb4765;
+  --color_entry: var(--color-accent-bright);
+  --color_component: gray;
 }
 
 .rag-blue-outer {

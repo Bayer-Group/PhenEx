@@ -1,0 +1,54 @@
+.inclusion_list_item:hover{
+  border-color: var(--color_inclusion);
+}
+
+.exclusion_list_item:hover{
+  border-color: var(--color_exclusion);
+}
+
+.outcome_list_item:hover{
+  border-color: var(--color_outcome);
+}
+
+.entry_list_item:hover{
+  border-color: var(--color_entry);
+}
+
+.baseline_list_item:hover{
+  border-color: var(--color_baseline);
+}
+
+.component_list_item:hover{
+  border-color: var(--color_component);
+}
+
+
+.inclusion_list_item_selected{
+  border-color: var(--color_inclusion) !important;
+  color: var(--color_inclusion);
+}
+
+.exclusion_list_item_selected{
+  border-color: var(--color_exclusion) !important;
+  color: var(--color_exclusion);
+}
+
+.outcome_list_item_selected{
+  border-color: var(--color_outcome) !important;
+  color: var(--color_outcome);
+}
+
+.entry_list_item_selected{
+  border-color: var(--color_entry) !important;
+  color: var(--color_entry);
+}
+
+.baseline_list_item_selected{
+  border-color: var(--color_baseline) !important;
+  color: var(--color_baseline); 
+}
+
+.component_list_item_selected{
+  border-color: var(--color_component) !important;
+  color: var(--color_component);
+}

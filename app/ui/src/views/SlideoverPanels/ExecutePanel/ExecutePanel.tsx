@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './ExecutePanel.module.css';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
+import { TabsWithDropdown } from '../../../components/Tabs/TabsWithDropdown';
 
 export const ExecutePanel: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
@@ -10,10 +11,12 @@ export const ExecutePanel: React.FC = () => {
   >([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [logFilter, setLogFilter] = useState<string>('all'); // 'all', 'info', 'warning', 'error', 'debug'
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -135,57 +138,107 @@ export const ExecutePanel: React.FC = () => {
     );
   };
 
+  const renderFilterDropdown = () => {
+    return (
+      <div className={styles.filterDropdown}>
+        <select
+          value={logFilter}
+          onChange={e => setLogFilter(e.target.value)}
+          className={styles.filterSelect}
+        >
+          <option value="all">All Logs</option>
+          <option value="info">Info</option>
+          <option value="warning">Warnings</option>
+          <option value="error">Errors</option>
+          <option value="debug">Debug</option>
+        </select>
+      </div>
+    );
+  };
+
+  const renderControls = () => {
+    const tabs = [
+      isExecuting ? 'Executing...' : 'Execute Cohort',
+      'Clear Logs',
+      'Filter'
+    ];
+
+    const handleTabChange = (index: number) => {
+      switch(index) {
+        case 0:
+          handleExecute();
+          break;
+        case 1:
+          clearLogs();
+          break;
+      }
+    };
+
+    return (
+      <div className={styles.controls}>
+        <TabsWithDropdown
+          width={400}
+          height={35}
+          tabs={tabs}
+          onTabChange={handleTabChange}
+          dropdown_items={{ 2: renderFilterDropdown() }}
+          active_tab_index={-1}
+          outline_tab_index={0}
+        />
+      </div>
+    );
+  }
+
+
+  const renderLogs = () => {
+    return (
+      <div className={styles.logsContainer} ref={logsContainerRef}>
+        {logs.length === 0 ? (
+          renderEmptyLogs()
+        ) : (
+          renderLogMessages()
+        )}
+      </div>
+    );
+  }
+
+  const renderEmptyLogs = () =>{
+    return (
+        <div className={styles.emptyState}>
+        </div>
+    );
+  }
+
+  const renderLogMessages = () =>{
+    return (
+      logs
+        .filter(log => shouldShowLog(log.message))
+        .map((log, index) => {
+          // Format message for display
+          const displayMessage =
+            typeof log.message === 'string'
+              ? log.message
+              : JSON.stringify(log.message, null, 2);
+
+          return (
+            <div
+              key={index}
+              className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}
+            >
+              <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
+              <span className={styles.logMessage}>{displayMessage}</span>
+            </div>
+          );
+        })
+    );
+  }
+
   return (
     <SlideoverPanel title="Execute" info={infoContent()}>
       <div className={styles.container}>
-        <div className={styles.controls}>
-          <button onClick={handleExecute} disabled={isExecuting} className={styles.executeButton}>
-            {isExecuting ? 'Executing...' : 'Execute Cohort'}
-          </button>
-          <button onClick={clearLogs} className={styles.clearButton}>
-            Clear Logs
-          </button>
-          <select
-            value={logFilter}
-            onChange={e => setLogFilter(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="all">All Logs</option>
-            <option value="info">Info</option>
-            <option value="warning">Warnings</option>
-            <option value="error">Errors</option>
-            <option value="debug">Debug</option>
-          </select>
-        </div>
+        {renderControls()}
         <div className={styles.content}>
-          <div className={styles.logsContainer}>
-            {logs.length === 0 ? (
-              <div className={styles.emptyState}>
-                Click "Execute Cohort" to see real-time execution logs
-              </div>
-            ) : (
-              logs
-                .filter(log => shouldShowLog(log.message))
-                .map((log, index) => {
-                  // Format message for display
-                  const displayMessage =
-                    typeof log.message === 'string'
-                      ? log.message
-                      : JSON.stringify(log.message, null, 2);
-
-                  return (
-                    <div
-                      key={index}
-                      className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}
-                    >
-                      <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
-                      <span className={styles.logMessage}>{displayMessage}</span>
-                    </div>
-                  );
-                })
-            )}
-            <div ref={logsEndRef} />
-          </div>
+          {renderLogs()}
         </div>
       </div>
     </SlideoverPanel>

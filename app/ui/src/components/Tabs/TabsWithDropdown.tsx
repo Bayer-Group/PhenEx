@@ -8,6 +8,7 @@ interface TabsWithDropdownProps {
   tabs: string[];
   dropdown_items: Record<number, React.ReactNode>;
   active_tab_index?: number;
+  outline_tab_index?: number;
   onTabChange?: (index: number) => void;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
 }
@@ -18,6 +19,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
   tabs,
   dropdown_items,
   active_tab_index = 0,
+  outline_tab_index = -1,
   onTabChange,
   customizableDropdownButtonRef,
 }) => {
@@ -52,13 +54,14 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
               label={tab}
               content={dropdown_items[index]}
               ref={customizableDropdownButtonRef}
+              outline={index === outline_tab_index}
             />
           );
         } else {
           return (
             <button
               key={index}
-              className={`${styles.tab} ${index === activeTab ? styles.active : ''}`}
+              className={`${styles.tab} ${index === activeTab ? styles.active : ''}  ${index === outline_tab_index ? styles.outline : ''}`}
               onClick={() => handleTabClick(index)}
             >
               {tab}

@@ -3,6 +3,7 @@ import styles from './DomainSelectorEditor.module.css';
 import { MapperDomains, DomainInfo } from '../../../../../types/mappers';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
+import typeStyles from '../../../../../styles/study_types.module.css'
 
 export interface DomainSelectorEditorProps {
   value?: any;
@@ -30,7 +31,9 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
     setSelectedDomain(domainName);
     props.onValueChange?.(domainName);
   };
+    
 
+  console.log(props)
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -44,6 +47,8 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
           items={domains}
           selectedName={selectedDomain || undefined}
           onSelect={handleDomainSelect}
+          classNameListItem={typeStyles[`${props.data.type}_list_item`]}
+          classNameListItemSelected={`${typeStyles[`${props.data.type}_list_item_selected`]}`}
         />
       </div>
     </div>

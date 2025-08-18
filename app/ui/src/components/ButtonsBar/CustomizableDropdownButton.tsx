@@ -7,6 +7,7 @@ import { Portal } from '../common/Portal';
 interface CustomizableDropdownButtonProps {
   label: string;
   content: React.ReactNode;
+  outline?: boolean;
   menuClassName?: string;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
 }
@@ -14,7 +15,7 @@ interface CustomizableDropdownButtonProps {
 export const CustomizableDropdownButton = forwardRef<
   { closeDropdown: () => void },
   CustomizableDropdownButtonProps
->(({ label, content, menuClassName = 'dropdownMenu' }, customizableDropdownButtonRef) => {
+>(({ label, content, menuClassName = 'dropdownMenu', outline=false }, customizableDropdownButtonRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -39,7 +40,7 @@ export const CustomizableDropdownButton = forwardRef<
 
   return (
     <div className={styles.dropdownContainer} ref={dropdownRef}>
-      <button className={buttonStyles.button} onClick={() => setIsOpen(!isOpen)}>
+      <button className={`${buttonStyles.button} ${outline ? buttonStyles.outline : ''}`} onClick={() => setIsOpen(!isOpen)}>
         {label}
       </button>
       {isOpen && (
