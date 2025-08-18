@@ -24,4 +24,7 @@
 
 .tabsContainer {
   margin-left: 20px;
+  background-color: red;
+  padding: 0px !important;
+  margin: 0px !important;
 }

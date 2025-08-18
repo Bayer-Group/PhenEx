@@ -11,6 +11,7 @@
   /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: blur(10px);
   user-select: none;
+  /* background-color: yellow; */
 }
 
 .tabsContainer:hover {

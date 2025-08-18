@@ -1,6 +1,6 @@
 :root{
-  --margin_left_slideover_panel: 80px;
-  --margin_top_right_panel_title: 0px;
+  --margin_left_slideover_panel: 70px;
+  --margin_top_right_panel_title: 10px;
 }
 .container {
   height: 100%;
@@ -138,7 +138,7 @@ code {
 }
 .infoButton {
   position: absolute !important;
-  right: 60px;
+  right: 20px;
   top: 10px;
 }
 

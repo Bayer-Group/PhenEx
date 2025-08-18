@@ -28,24 +28,6 @@
   border-color: var(--color-accent);
 }
 
-.header {
-  display: flex;
-}
-
-.header h2 {
-  margin: 0;
-  padding-top: 13px;
-  font-size: 22px;
-  font-family: 'IBMPlexSans-bold';
-  margin-left: 80px;
-  transition: 0.2s ease;
-}
-
-.header.closed h2 {
-  padding-top: 2px;
-  margin-left: var(--margin_left_slideover_panel);
-}
-
 .toggleButton {
   position: absolute;
   padding: 0px 0px;

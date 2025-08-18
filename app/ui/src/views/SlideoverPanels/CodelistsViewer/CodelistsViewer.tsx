@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './CodelistsViewer.module.css';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';
@@ -104,9 +104,9 @@ export const CodelistsViewer: React.FC = () => {
       <SlideoverPanel title="Codelists" info={infoContent()}>
         <div className={styles.container}>
           <div className={styles.tabsContainer}>
-            <Tabs
-              width="100%"
-              height={40}
+            <TabsWithDropdown
+              width={"100%"}
+              height={"100%"}
               tabs={tabs}
               active_tab_index={activeTab}
               onTabChange={handleTabChange}
