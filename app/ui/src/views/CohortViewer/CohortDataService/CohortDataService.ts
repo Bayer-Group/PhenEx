@@ -330,12 +330,10 @@ export class CohortDataService {
 
   public updateCohortFromChat(newCohort) {
     this._cohort_data = newCohort;
-    console.log('UPDATED COHROT DATA', newCohort);
     this.sortPhenotypes();
     this.splitPhenotypesByType();
     // this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
-    console.log('UPDATED COHROT DATA', this._table_data);
     this.notifyListeners();
   }
 
@@ -407,20 +405,6 @@ export class CohortDataService {
     console.log(this._table_data)
     this.notifyListeners();
   }
-
-  // public tableDataForComponentPhenotype(parentPhenotype): TableData {
-  //   let filteredPhenotypes = this._cohort_data.phenotypes || [];
-  //   if (this._currentFilter.length > 0) {
-  //     filteredPhenotypes = filteredPhenotypes.filter(
-  //       (phenotype: TableRow) =>
-  //         phenotype.type === 'component' && phenotype.parentIds.includes(parentPhenotype.id)
-  //     );
-  //   }
-  //   return {
-  //     rows: filteredPhenotypes,
-  //     columns: this.columns,
-  //   };
-  // }
 
   public tableDataForComponentPhenotype(parentPhenotype): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
