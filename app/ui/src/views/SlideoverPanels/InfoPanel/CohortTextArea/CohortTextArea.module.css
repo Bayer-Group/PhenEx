@@ -19,16 +19,21 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px;
+  background: var(--background-color);
+  border-radius: 8px;
+  padding: 4px;
   margin-bottom: 0px !important; /* Remove bottom margin to test */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
 }
+
+/* Override Quill's default toolbar styles */
+.stickyToolbar:global(.ql-toolbar) {
+  border: var(--border) !important;
+}
+
 
 /* Show toolbar when focused */
 .quillEditor.focused .stickyToolbar {
@@ -41,7 +46,6 @@
 .stickyToolbar select {
   margin: 2px;
   padding: 6px 8px;
-  border: 1px solid #ccc;
   border-radius: 4px;
   background: white;
   cursor: pointer;
@@ -91,7 +95,6 @@
   border: none !important;
   box-shadow: none !important;
   border-radius: 4px;
-  background-color: white; /* Remove debug color */
 }
 
 .editorContent :global(.ql-editor:focus) {
