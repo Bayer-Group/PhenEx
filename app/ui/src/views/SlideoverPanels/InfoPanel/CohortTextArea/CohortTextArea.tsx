@@ -10,26 +10,24 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
   const dataService = CohortDataService.getInstance();
 
   useEffect(() => {
     let quillInstance: Quill | null = null;
 
-    if (editorRef.current) {
+    if (editorRef.current && toolbarRef.current) {
       // Clean up any existing content
       while (editorRef.current.firstChild) {
         editorRef.current.removeChild(editorRef.current.firstChild);
       }
+      while (toolbarRef.current.firstChild) {
+        toolbarRef.current.removeChild(toolbarRef.current.firstChild);
+      }
 
-      const toolbarContainer = document.createElement('div');
       const editorContainer = document.createElement('div');
-      
-      // Add classes for styling
-      toolbarContainer.className = styles.floatingToolbar;
       editorContainer.className = styles.editorContent;
-      
-      editorRef.current.appendChild(toolbarContainer);
       editorRef.current.appendChild(editorContainer);
 
       quillInstance = new Quill(editorContainer, {
@@ -46,10 +44,10 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
         },
       });
 
-      // Move the toolbar to our floating container after Quill creates it
+      // Move the toolbar to our separate toolbar container
       const quillToolbar = editorContainer.querySelector('.ql-toolbar');
       if (quillToolbar) {
-        toolbarContainer.appendChild(quillToolbar);
+        toolbarRef.current.appendChild(quillToolbar);
       }
 
       quillRef.current = quillInstance;
@@ -111,12 +109,18 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
           editorRef.current.removeChild(editorRef.current.firstChild);
         }
       }
+      if (toolbarRef.current) {
+        while (toolbarRef.current.firstChild) {
+          toolbarRef.current.removeChild(toolbarRef.current.firstChild);
+        }
+      }
       dataService.removeListener(updateText);
     };
   }, []); // Remove dataService.cohort_data from dependencies
 
   return (
     <div className={styles.textAreaContainer}>
+      <div className={`${styles.floatingToolbar} ${isFocused ? styles.visible : ''}`} ref={toolbarRef} />
       <div ref={editorRef} className={`${styles.editor} ${isFocused ? styles.focused : ''}`} />
     </div>
   );
