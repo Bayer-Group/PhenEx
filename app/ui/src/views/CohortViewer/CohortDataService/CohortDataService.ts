@@ -243,6 +243,56 @@ export class CohortDataService {
     return null;
   }
 
+  public updateRowOrder(newRowData: TableRow[]) {
+    // Get all phenotypes (including those not currently visible due to filter)
+    const allPhenotypes = [...this._cohort_data.phenotypes];
+    
+    // Group the reordered visible phenotypes by type
+    const reorderedVisibleByType: { [key: string]: TableRow[] } = {};
+    newRowData.forEach(row => {
+      if (!reorderedVisibleByType[row.type]) {
+        reorderedVisibleByType[row.type] = [];
+      }
+      reorderedVisibleByType[row.type].push(row);
+    });
+
+    // Create a map of visible phenotype IDs for quick lookup
+    const visiblePhenotypeIds = new Set(newRowData.map(row => row.id));
+    
+    // Separate hidden phenotypes by type
+    const hiddenPhenotypesByType: { [key: string]: TableRow[] } = {};
+    allPhenotypes.forEach(phenotype => {
+      if (!visiblePhenotypeIds.has(phenotype.id)) {
+        if (!hiddenPhenotypesByType[phenotype.type]) {
+          hiddenPhenotypesByType[phenotype.type] = [];
+        }
+        hiddenPhenotypesByType[phenotype.type].push(phenotype);
+      }
+    });
+
+    // Rebuild the complete phenotypes array maintaining order within each type
+    const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
+    let newCompleteOrder: TableRow[] = [];
+    
+    for (const type of order) {
+      // Combine reordered visible phenotypes with hidden phenotypes for this type
+      const visibleOfType = reorderedVisibleByType[type] || [];
+      const hiddenOfType = hiddenPhenotypesByType[type] || [];
+      const allOfType = [...visibleOfType, ...hiddenOfType];
+      
+      // Update indices within each type
+      allOfType.forEach((phenotype, index) => {
+        phenotype.index = index + 1;
+      });
+      
+      newCompleteOrder = newCompleteOrder.concat(allOfType);
+    }
+
+    // Update the cohort data with the complete new order
+    this._cohort_data.phenotypes = newCompleteOrder;
+    this.saveChangesToCohort(true, true);
+  }
+
   private isNewCohort: boolean = false;
 
   public isNewCohortCreation(): boolean {

@@ -120,13 +120,18 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         dataService.onCellValueChanged(event);
         // setTableData(dataService.table_data);
       }
-  
+
       if (['description', 'class_name'].includes(event.colDef.field)) {
         refreshGrid();
       }
     };
-  
-    const tabs = Object.values(CohortDefinitionViewType).map(value => {
+
+    const onRowDragEnd = (newRowData: any[]) => {
+      // Update the data service with the new row order
+      dataService.updateRowOrder(newRowData);
+      // Refresh the grid to reflect the changes
+      refreshGrid();
+    };    const tabs = Object.values(CohortDefinitionViewType).map(value => {
       return sectionDisplayNames[value]
     });
   
@@ -199,6 +204,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         data={dataService.table_data}
         currentlyViewing={currentView}
         onCellValueChanged={onCellValueChanged}
+        onRowDragEnd={onRowDragEnd}
         ref={gridRef}
       />
     );

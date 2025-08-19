@@ -1,4 +1,4 @@
-import { FC, forwardRef, ForwardedRef, useEffect, useRef, Component } from 'react';
+import { FC, forwardRef, useEffect, Component } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 
 class ErrorBoundary extends Component {
@@ -31,7 +31,6 @@ import { ModuleRegistry } from '@ag-grid-community/core';
 
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import { TableData, TableRow } from '../tableTypes';
-import { ColDef, ColGroupDef } from '@ag-grid-community/core';
 
 // Register AG Grid Modules
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
@@ -40,10 +39,11 @@ interface CohortTableProps {
   data: TableData;
   currentlyViewing: string;
   onCellValueChanged?: (event: any) => void;
+  onRowDragEnd?: (newRowData: any[]) => void;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd }, ref) => {
     const myTheme = themeQuartz.withParams({
       accentColor: 'var(--color-accent-bright)',
       borderColor: 'var(--line-color-grid)',
@@ -61,7 +61,68 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     });
 
     const onGridReady = () => {
-      ref.current?.api?.resetRowHeights();
+      if (ref && typeof ref === 'object' && ref.current?.api) {
+        ref.current.api.resetRowHeights();
+      }
+    };
+
+    const handleRowDragEnd = () => {
+      if (!onRowDragEnd) return;
+      
+      // Get the current order from the grid and update indices
+      const newRowData: any[] = [];
+      if (ref && typeof ref === 'object' && ref.current?.api) {
+        ref.current.api.forEachNode((node: any) => {
+          newRowData.push(node.data);
+        });
+      }
+      
+      // Validate that phenotypes haven't moved between type sections
+      // Group by type and check if all phenotypes are still in correct sections
+      const groupedByType: { [key: string]: any[] } = {};
+      const originalGroupedByType: { [key: string]: any[] } = {};
+      
+      // Group new data by type
+      newRowData.forEach(row => {
+        if (!groupedByType[row.type]) {
+          groupedByType[row.type] = [];
+        }
+        groupedByType[row.type].push(row);
+      });
+      
+      // Group original data by type
+      data.rows.forEach(row => {
+        if (!originalGroupedByType[row.type]) {
+          originalGroupedByType[row.type] = [];
+        }
+        originalGroupedByType[row.type].push(row);
+      });
+      
+      // Check if any phenotype moved to a different type section
+      let validMove = true;
+      Object.keys(groupedByType).forEach(type => {
+        if (groupedByType[type].length !== originalGroupedByType[type]?.length) {
+          validMove = false;
+        }
+      });
+      
+      // If it's not a valid move, reset the grid and return
+      if (!validMove) {
+        if (ref && typeof ref === 'object' && ref.current?.api) {
+          ref.current.api.setGridOption('rowData', data.rows);
+        }
+        return;
+      }
+
+      // Update indices within each type
+      Object.keys(groupedByType).forEach(type => {
+        groupedByType[type].forEach((phenotype, index) => {
+          phenotype.index = index + 1;
+        });
+      });
+      
+      // Call the parent callback with the reordered data
+      onRowDragEnd(newRowData);
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
@@ -160,7 +221,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     useEffect(() => {
-      if (ref.current?.api) {
+      if (ref && typeof ref === 'object' && ref.current?.api) {
         ref.current.api.resetRowHeights();
       }
     }, [data]);
@@ -181,7 +242,9 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
         // Only stop editing if click is outside both the grid AND the popup editor
         if (!isInsidePopup) {
-          ref.current?.api?.stopEditing();
+          if (ref && typeof ref === 'object' && ref.current?.api) {
+            ref.current.api.stopEditing();
+          }
         }
       };
 
@@ -212,9 +275,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             }}
             suppressColumnVirtualisation={true}
             onCellValueChanged={onCellValueChanged}
+            onRowDragEnd={handleRowDragEnd}
+            rowDragManaged={true}
             loadThemeGoogleFonts={true}
-            animateRows={false}
-            animateColumns={false}
+            animateRows={true}
             getRowHeight={params => {
               // Calculate height of CODELISTS
               let current_max_height = 48;

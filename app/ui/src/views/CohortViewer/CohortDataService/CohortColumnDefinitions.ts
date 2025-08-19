@@ -28,6 +28,17 @@ export const columnNameToApplicablePhenotypeMapping = {
 
 export const defaultColumns = [
   {
+    field: 'rowDrag',
+    headerName: '',
+    width: 20,
+    pinned: 'left',
+    rowDrag: true,
+    suppressMenu: true,
+    suppressSorting: true,
+    suppressFilter: true,
+    cellClass: 'row-drag-handle',
+  },
+  {
     field: 'type',
     headerName: 'Type',
     width: 100,
