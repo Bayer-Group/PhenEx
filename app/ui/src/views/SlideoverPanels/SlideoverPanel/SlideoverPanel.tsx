@@ -4,7 +4,7 @@ import { Button } from '../../../components/ButtonsAndTabs/Button/Button';
 
 interface SlideoverPanelProps {
   title: string;
-  info: string | undefined;
+  info: string | React.ReactNode | undefined;
   children: React.ReactNode;
 }
 

@@ -10,10 +10,11 @@ export interface ColumnDefinition {
   sortable?: boolean;
   filter?: boolean;
   resizable?: boolean;
-  pinned?: string;
+  pinned?: 'left' | 'right' | boolean | null;
   editable?: boolean;
   cellEditor?: any;
   cellEditorParams?: any;
+  cellRenderer?: any;
 }
 
 export interface TableData {

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 // import styles from './ConstantsPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
-// import { VisibilityTable } from './ConstantsTable';
+import { VisibilityTable } from './VisibilityTable';
 
 export const VisibilityPanel: React.FC = () => {
   const infoContent = () => {
@@ -31,8 +31,9 @@ export const VisibilityPanel: React.FC = () => {
 
   return (
     <SlideoverPanel title="Visibility" info={infoContent()}>
-      <div></div>
-      {/* <ConstantsTable /> */}
+      <div>
+        <VisibilityTable />
+      </div>
     </SlideoverPanel>
   );
 };
