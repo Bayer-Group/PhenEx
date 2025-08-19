@@ -19,7 +19,6 @@ export const CodelistsViewer: React.FC = () => {
   useEffect(() => {
     const handleFilenamesChange = () => {
       // setGridData(dataService.codelists_service.prepareAllCodelistsData());
-      console.log(dataService.codelists_service._filenames, 'HANDLE FiLENAMES');
       setTabs(['All Codelists', ...(dataService.codelists_service._filenames || [])]);
     };
 

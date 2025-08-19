@@ -13,7 +13,6 @@ export interface ListItemProps {
 
 export const ListItem: React.FC<ListItemProps> = ({ name, info, selected, onClick, classNameListItem , classNameListItemSelected}) => {
 
-  console.log("LIST ITEM",classNameListItemSelected)
   return (
     <div
       className={`${styles.listItem} ${selected ? styles.selected : ''} ${classNameListItem} ${selected ? classNameListItemSelected : ''}`}

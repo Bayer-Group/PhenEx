@@ -23,7 +23,6 @@ export class CohortsDataService {
 
   public async userCohortNamesAndIds() {
     this._userCohortNamesAndIds = await getUserCohorts();
-    console.log('GETTING USER COHORTS Names and ids', this._userCohortNamesAndIds);
     return this._userCohortNamesAndIds;
   }
 

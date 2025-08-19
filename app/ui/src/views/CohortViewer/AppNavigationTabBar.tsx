@@ -10,6 +10,7 @@ import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor
 interface AppNavigationTabBarProps {
   title: string;
   infoContent?: string;
+  onSectionTabChange?: (index: number) => void;
 }
 
 import { CodelistsInfoDisplay } from '../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
@@ -25,7 +26,7 @@ enum InfoTabType {
   NewPhenotype = 'Add Phenotype',
 }
 
-export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoContent }) => {
+export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoContent, onSectionTabChange }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
@@ -134,8 +135,21 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
     customizableDropdownButtonRef.current?.closeDropdown();
   };
 
-  const handleAddNewPhenotypeDropdownSelection = type => {
+  const handleAddNewPhenotypeDropdownSelection = (type: string) => {
     dataService.addPhenotype(type);
+    console.log("handleAddNewPhenotypeDropdownSelection", onSectionTabChange)
+    // Switch to the appropriate section tab based on phenotype type
+    if (onSectionTabChange) {
+      console.log("HAS A Handler and the current type is", type)
+      if (type === 'baseline') {
+        onSectionTabChange(1); // Baseline characteristics tab
+      } else if (type === 'outcome') {
+        onSectionTabChange(2); // Outcomes tab
+      } else if (['entry', 'inclusion', 'exclusion'].includes(type)) {
+        onSectionTabChange(0); // Cohort definition tab
+      }
+    }
+
     setIsOpen(false);
   };
 

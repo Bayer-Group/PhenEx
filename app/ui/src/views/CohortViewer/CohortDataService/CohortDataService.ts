@@ -77,7 +77,6 @@ export class CohortDataService {
         this._currentFilter.includes(phenotype.type)
       );
     }
-    console.log("TABLE DATA GOOD")
     return {
       rows: filteredPhenotypes,
       columns: this.columns,
@@ -166,7 +165,6 @@ export class CohortDataService {
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
     let sortedPhenotypes: TableRow[] = [];
     // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
-    console.log('THIS IS THE COHRT IN SORTY', this._cohort_data);
     for (const type of order) {
       let phenotypesOfType = this._cohort_data.phenotypes.filter(
         (row: TableRow) => row.type === type
