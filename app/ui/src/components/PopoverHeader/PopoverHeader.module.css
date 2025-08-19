@@ -1,5 +1,5 @@
 .popoverheader {
-  cursor: pointer;
+  cursor: pointer !important;
   font-size: 16px;
   font-family: 'IBMPlexSans-regular';
   margin-bottom: 0px;

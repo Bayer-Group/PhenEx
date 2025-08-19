@@ -3,7 +3,7 @@ import styles from './PopoverHeader.module.css';
 import { XButton } from '../ButtonsAndTabs/XButton/XButton';
 
 interface PopoverHeader {
-  onClick: () => void;
+  onClick: (event?: React.MouseEvent) => void;
   title?: string; // for accessibility and tooltips
   className?: string;
   children?: React.ReactNode;
@@ -18,7 +18,7 @@ export const PopoverHeader: FC<PopoverHeader> = ({
   return (
     <div
       className={`${styles.popoverheader} ${className} ${children && styles.hasChildren}`}
-      onClick={onClick}
+      onClick={(event) => onClick(event)}
       title={title}
       aria-label={title}
     >

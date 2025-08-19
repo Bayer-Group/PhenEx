@@ -6,7 +6,7 @@
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
-  top: var(--issue_popover_margin);
+  top: calc(var(--issue_popover_margin) + 8px);
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -15,7 +15,6 @@
     var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 400px;
-  /* z-index: 2; */
   max-height: calc(100vh - 50px);
   display: flex;
   flex-direction: column;
@@ -25,23 +24,8 @@
   overflow: hidden;
 }
 
-.headerContent {
-  padding: 0px 20px;
-  font-family: var(--font-family-bold);
-  font-size: 16px;
-  color: var(--text-color);
-}
-
 .popover.noIssues {
   border-color: var(--phenex-green);
-}
-
-.header {
-  position: sticky;
-  top: 0;
-  background: var(--background-color);
-  padding: 0px;
-  border-bottom: 1px solid var(--line-color);
 }
 
 .body {
@@ -62,7 +46,6 @@
   font-size: 14px;
   font-weight: 600;
   margin: 0 2 8px 0;
-  /* color: #333; */
 }
 
 .phenotypeSection {
@@ -80,10 +63,6 @@
   border-color: var(--line-color);
   background-color: var(--color-accent-hover) !important;
 }
-/* 
-.phenotypeSection:hover .phenotypeType{
-  background-color: var(--color-accent);
-} */
 
 .phenotypeSection.selected {
   background-color: var(--color-accent-hover) !important;
@@ -97,10 +76,6 @@
 }
 
 .phenotypeId {
-  /* color: black; */
-  /* padding-top:40px; */
-  /* margin-bottom: 0px; */
-  /* margin-right: 50px; */
   font-family: 'IBMPlexSans-regular';
   font-size: 18px;
   line-height: 1.2;
@@ -126,22 +101,14 @@
 }
 
 .phenotypeType {
-  /* position: absolute; */
-  /* top: 7px;
-  left: 8px; */
   font-size: 12px;
   padding: 2px 6px;
   font-family: 'IBMPlexSans-bolditalic';
   border-radius: 4px;
 }
 
-.index {
-  /* margin-left:5px; */
-  /* font-size: 12px; */
-}
 
 .phenotypeId {
-  /* Add these properties */
   display: flex;
   align-items: center;
   gap: 8px; /* Space between type label and name */
@@ -151,34 +118,19 @@
 }
 
 .phenotypeType {
-  /* Add these properties */
   display: inline-flex;
   align-items: center;
-  gap: 4px; /* Space between type and index */
+  gap: 4px;
   font-size: 12px;
   padding: 2px 6px;
   font-family: 'IBMPlexSans-bolditalic';
   border-radius: 4px;
   background-color: #eee;
   color: var(--text-color-secondary);
-  /* Remove any width/display properties that might make it full width */
 }
 
 .index {
   display: inline-block;
-  /* Add any specific styling for the index */
-}
-
-
-/* 
-.labelMain {
-  text-align: left;
-  background-color: transparent !important;
-
-  padding-left: 20px;
-} */
-
-.labelMain .number {
 }
 
 .number.phenotypeIssues {
@@ -200,4 +152,5 @@
 .titleLabelDiv{
   line-height: 1em;
   padding: 5px 10px 0px 10px;
+  height:50px;
 }
