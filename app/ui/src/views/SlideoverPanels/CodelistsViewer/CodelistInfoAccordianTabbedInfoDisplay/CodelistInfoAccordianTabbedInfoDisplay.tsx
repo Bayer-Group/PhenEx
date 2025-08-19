@@ -60,10 +60,10 @@ export const CodelistInfoAccordianTabbedInfoDisplay: FC<
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close panel' : 'Open panel'}
         >
-          {'>'}
+          {'×'}
         </button>
       </div>
-      <div className={`${styles.tabsContainer}`}>
+      <div className={`${styles.tabsContainer} ${!isOpen ? styles.closed : ''}`}>
         <Tabs
           width={200}
           height={25}

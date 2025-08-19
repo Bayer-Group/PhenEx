@@ -2,10 +2,10 @@
   flex: 1;
 }
 .bottomSection {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
+  /* height: 100%;
+  width: 100%; */
+  /* display: flex;
+  flex-direction: column; */
 }
 
 .container {
@@ -23,8 +23,7 @@
 }
 
 .tabsContainer {
-  margin-left: 20px;
-  background-color: red;
-  padding: 0px !important;
-  margin: 0px !important;
+  margin-left: 10px;
+  flex-shrink: 0;
+  width: fit-content;
 }

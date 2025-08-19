@@ -22,7 +22,7 @@ export const SplashPage = () => {
             also included.
           </p>
           <p>
-            <em>To get started</em> with PhenEx, just select a cohort from the left navigation area. Log in or register if you want to create cohorts.
+            <em>To get started</em> with PhenEx, select a cohort from the left navigation area. Log in or register if you want to create cohorts.
           </p>
         </div>
       </div>

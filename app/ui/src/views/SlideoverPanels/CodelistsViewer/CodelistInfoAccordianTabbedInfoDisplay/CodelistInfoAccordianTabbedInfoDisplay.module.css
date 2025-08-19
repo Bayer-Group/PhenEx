@@ -38,33 +38,33 @@
   font-family: 'IBMPlexSans-bold';
   color: black;
   transform: rotate(-90deg);
-  left: 10px;
-  background-color: white;
-  margin-top: 8px;
+  right: 40px;
+  background-color: transparent;
+  margin-top: 4px;
   border: var(--accordian_container_border_width) solid transparent;
   opacity: 1;
   transition: 0.2s ease;
+  border: none;
+  font-size: 40px;
 }
 
 .toggleButton:hover {
-  transition: transform 0.2s ease;
-  transform: rotate(-90deg) translateX(1px);
+  color: var(--color-accent-bright);
   outline: none;
-  box-shadow: -2px 0px 4px rgba(0, 0, 0, 0.1);
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+  border: none;
 }
 
 .toggleButton.closed {
-  transform: translateY(-24px);
-  transform: rotate(90deg);
   border: var(--border);
   opacity: 0;
 }
 
 .toggleButton:focus {
   outline: none;
+  border: none;
+
 }
+
 
 .content {
   padding: 5px 0px 0px 0px;
@@ -88,9 +88,12 @@
 .tabsContainer {
   position: relative !important;
   margin-bottom: 0px;
-  margin-top: 15px;
-  margin-left: 20px;
+  margin-top: 5px;
+  margin-left: 5px;
   transition: 0.2s ease;
+  flex-shrink: 0;
+  width: fit-content;
+
 }
 
 .tabsContainer.closed {

@@ -75,14 +75,7 @@ em {
   font-family: 'IBMPlexSans-bold';
 }
 
-.infobox {
-  margin: 0px 0px 0px 10px;
-  padding: 10px 10px 10px 20px;
-  background-color: white;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-}
+
 
 ol,
 ul {
@@ -97,26 +90,10 @@ code {
   border: var(--border);
 }
 
-.infobox {
-  margin-right:20px;
-  margin-bottom: 30px;
-  margin-left:10px;
-  /* margin: 0px 0px 0px 10px; */
-  /* padding: 10px 10px 10px 20px; */
-  padding: 10px;
-  background-color: white;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  transition:
-    max-height 0.3s ease,
-    opacity 0.3s ease; /* Animation for opening and closing */
-  max-height: 0; /* Start closed */
-  opacity: 0; /* Start hidden */
-  overflow: hidden; /* Prevent overflow when closed */
-}
+
 
 .infobox.open {
+  margin-top:20px;
   max-height: 400px; /* Arbitrary value, adjust as needed */
   opacity: 1; /* Fully visible when open */
   /* margin: 20px 20px 40px 20px; */
@@ -156,8 +133,29 @@ code {
 
 
 
-
 .infobox {
+  margin: 0px 0px 0px 10px;
+  padding: 10px 10px 10px 20px;
+  background-color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  margin-right:20px;
+  margin-bottom: 30px;
+  margin-left:10px;
+  /* margin: 0px 0px 0px 10px; */
+  /* padding: 10px 10px 10px 20px; */
+  padding: 10px;
+  background-color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease; /* Animation for opening and closing */
+  max-height: 0; /* Start closed */
+  opacity: 0; /* Start hidden */
+  overflow: hidden; /* Prevent overflow when closed */
   margin-right: 10px;
   margin-bottom: 30px;
   margin-left: 10px;
@@ -187,7 +185,7 @@ code {
 }
 
 .infobox.closed {
-  max-height: 0; /* Closed state */
+  max-height: 20; /* Closed state */
   opacity: 0; /* Hidden */
   margin-bottom:0px; /* No margin when closed */
   padding-top: 0;

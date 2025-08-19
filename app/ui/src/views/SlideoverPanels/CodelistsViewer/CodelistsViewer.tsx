@@ -105,8 +105,8 @@ export const CodelistsViewer: React.FC = () => {
         <div className={styles.container}>
           <div className={styles.tabsContainer}>
             <TabsWithDropdown
-              width={"100%"}
-              height={"100%"}
+              width="auto"
+              height="auto"
               tabs={tabs}
               active_tab_index={activeTab}
               onTabChange={handleTabChange}
