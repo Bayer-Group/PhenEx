@@ -24,6 +24,11 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
 
       const toolbarContainer = document.createElement('div');
       const editorContainer = document.createElement('div');
+      
+      // Add classes for styling
+      toolbarContainer.className = styles.floatingToolbar;
+      editorContainer.className = styles.editorContent;
+      
       editorRef.current.appendChild(toolbarContainer);
       editorRef.current.appendChild(editorContainer);
 
@@ -40,6 +45,12 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
           ],
         },
       });
+
+      // Move the toolbar to our floating container after Quill creates it
+      const quillToolbar = editorContainer.querySelector('.ql-toolbar');
+      if (quillToolbar) {
+        toolbarContainer.appendChild(quillToolbar);
+      }
 
       quillRef.current = quillInstance;
 
