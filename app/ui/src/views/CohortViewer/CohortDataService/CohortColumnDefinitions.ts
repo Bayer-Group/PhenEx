@@ -33,9 +33,11 @@ export const defaultColumns = [
     width: 40,
     pinned: 'left',
     rowDrag: true,
+    filter: false,
     suppressMenu: true,
     suppressSorting: true,
     suppressFilter: true,
+    suppressHeaderMenuButton: true,
     cellClass: 'row-drag-handle',
   },
   {
