@@ -2,6 +2,7 @@ import { TableData, ColumnDefinition } from '../../CohortViewer/tableTypes';
 import { themeQuartz } from 'ag-grid-community';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { VisibilityCellRenderer } from './VisibilityCellRenderer';
 
 const visibilityColumns: ColumnDefinition[] = [
   {
@@ -25,11 +26,10 @@ const visibilityColumns: ColumnDefinition[] = [
   {
     field: 'visible',
     headerName: 'Visible',
-    width: 10,
+    width: 60,
     flex: 0,
-    editable: true,
-    cellEditor: 'agCheckboxCellEditor',
-    cellRenderer: 'agCheckboxCellRenderer',
+    editable: false, // Changed to false since the renderer handles the interaction
+    cellRenderer: VisibilityCellRenderer,
   },
   {
     field: 'description',
