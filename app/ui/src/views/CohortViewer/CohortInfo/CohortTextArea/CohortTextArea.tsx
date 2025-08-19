@@ -59,17 +59,22 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
     // Subscribe to data service changes
     const updateText = () => {
       const delta = dataService.cohort_data.description || null;
-      if (delta && quillRef.current) {
-        // Get current selection to preserve cursor position
-        const selection = quillRef.current.getSelection();
-        // Only update if content is actually different
-        const currentContents = quillRef.current.getContents();
-        if (JSON.stringify(currentContents) !== JSON.stringify(delta)) {
-          quillRef.current.setContents(delta);
-          // Restore selection if it was preserved
-          if (selection) {
-            quillRef.current.setSelection(selection);
+      if (quillRef.current) {
+        if (delta) {
+          // Get current selection to preserve cursor position
+          const selection = quillRef.current.getSelection();
+          // Only update if content is actually different
+          const currentContents = quillRef.current.getContents();
+          if (JSON.stringify(currentContents) !== JSON.stringify(delta)) {
+            quillRef.current.setContents(delta);
+            // Restore selection if it was preserved
+            if (selection) {
+              quillRef.current.setSelection(selection);
+            }
           }
+        } else {
+          // Clear the editor when data is null
+          quillRef.current.setText('');
         }
       }
     };
