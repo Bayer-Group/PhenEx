@@ -77,6 +77,7 @@ export class CohortDataService {
         this._currentFilter.includes(phenotype.type)
       );
     }
+    console.log("TABLE DATA GOOD")
     return {
       rows: filteredPhenotypes,
       columns: this.columns,
@@ -390,6 +391,13 @@ export class CohortDataService {
   public filterType(type: string | string[]): void {
     this._currentFilter = Array.isArray(type) ? type : [type];
     this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  public updateColumns(newColumns: ColumnDefinition[]): void {
+    this.columns = newColumns;
+    this._table_data = this.tableDataFromCohortData();
+    console.log(this._table_data)
     this.notifyListeners();
   }
 

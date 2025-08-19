@@ -1,6 +1,7 @@
 import { TableData, ColumnDefinition } from '../../CohortViewer/tableTypes';
 import { themeQuartz } from 'ag-grid-community';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 
 const visibilityColumns: ColumnDefinition[] = [
   {
@@ -73,6 +74,9 @@ export class VisibilityDataService {
 
     this.updateIndices(rows);
 
+    // Update the CohortDataService with initial column configuration
+    setTimeout(() => this.updateCohortDataServiceColumns(), 0);
+
     return {
       rows,
       columns: visibilityColumns,
@@ -113,6 +117,7 @@ export class VisibilityDataService {
       }
       
       this.sortRowsByVisibility();
+      // Note: updateCohortDataServiceColumns() is called in sortRowsByVisibility()
     }
   }
 
@@ -130,6 +135,32 @@ export class VisibilityDataService {
       }
       return b.visible ? 1 : -1; // visible (true) rows come first
     });
+    
+    // Update the CohortDataService with the new column visibility and order
+    this.updateCohortDataServiceColumns();
+  }
+
+  private updateCohortDataServiceColumns(): void {
+    const cohortDataService = CohortDataService.getInstance();
+    
+    // Get the ordered list of visible column names
+    const visibleColumnNames = this.getOrderedVisibleColumns();
+    
+    // Filter and reorder defaultColumns based on visibility and order
+    const visibleColumns = visibleColumnNames
+      .map(columnName => {
+        // Find the column in defaultColumns by matching headerName or field
+        return defaultColumns.find(col => 
+          (col.headerName && col.headerName === columnName) || 
+          col.field === columnName
+        );
+      })
+      .filter(col => col !== undefined) as ColumnDefinition[];
+    
+    console.log('Updating CohortDataService columns:', visibleColumns);
+    
+    // Update the cohort data service columns using the public method
+    cohortDataService.updateColumns(visibleColumns);
   }
 
   private updateIndices(rows: VisibilityRow[]): void {

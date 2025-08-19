@@ -73,7 +73,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
 
     const refreshGrid = () => {
-      if (currentView === CohortDefinitionViewType.Cohort && gridRef.current?.api) {
+      console.log("REFERSHING GRID")
+      if (gridRef.current?.api) {
+        console.log("IN REFRESH GRID", dataService.table_data['columns'])
         const api = gridRef.current.api;
         // Store current scroll position
         // const horizontalScroll = api.getHorizontalPixelRange();
@@ -82,7 +84,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   
         // Update grid data
         api.setGridOption('rowData', dataService.table_data['rows']);
-  
+        api.setGridOption('columnDefs', dataService.table_data['columns']); // Changed from 'columns' to 'columnDefs'
+
         // Restore scroll position after data update
         requestAnimationFrame(() => {
           // api.ensureIndexVisible(firstRow, 'top');
@@ -97,6 +100,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       // Add listener for data service updates
       const listener = () => {
         refreshGrid();
+        console.log("REFRESHING GRID")
       };
       dataService.addListener(listener);
   
