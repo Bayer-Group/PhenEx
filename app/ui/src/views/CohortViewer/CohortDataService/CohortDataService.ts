@@ -207,6 +207,15 @@ export class CohortDataService {
   }
 
   public addPhenotype(type: string = 'NA', parentPhenotypeId: string | null = null) {
+    // ensure that cohort only has one entry phenotype
+    if (type === 'entry'){
+      const existingEntryPhenotype = this._cohort_data.phenotypes.find(
+        (row: TableRow) => row.type === 'entry'
+      );
+      if (existingEntryPhenotype) {
+        return;
+      }
+    }
     const newPhenotype: TableRow = {
       id: createID(),
       type: type,

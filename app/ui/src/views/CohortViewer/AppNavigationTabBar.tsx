@@ -137,10 +137,8 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
 
   const handleAddNewPhenotypeDropdownSelection = (type: string) => {
     dataService.addPhenotype(type);
-    console.log("handleAddNewPhenotypeDropdownSelection", onSectionTabChange)
     // Switch to the appropriate section tab based on phenotype type
     if (onSectionTabChange) {
-      console.log("HAS A Handler and the current type is", type)
       if (type === 'baseline') {
         onSectionTabChange(1); // Baseline characteristics tab
       } else if (type === 'outcome') {
