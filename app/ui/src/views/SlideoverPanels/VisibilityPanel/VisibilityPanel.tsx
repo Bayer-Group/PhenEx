@@ -1,5 +1,5 @@
 import React from 'react';
-// import styles from './ConstantsPanel.module.css';
+import styles from './VisibilityPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 import { VisibilityTable } from './VisibilityTable';
@@ -31,7 +31,7 @@ export const VisibilityPanel: React.FC = () => {
 
   return (
     <SlideoverPanel title="Visibility" info={infoContent()}>
-      <div>
+      <div className={styles.container}>
         <VisibilityTable />
       </div>
     </SlideoverPanel>

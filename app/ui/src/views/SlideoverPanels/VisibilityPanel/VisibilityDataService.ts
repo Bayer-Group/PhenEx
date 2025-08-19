@@ -6,7 +6,9 @@ const visibilityColumns: ColumnDefinition[] = [
   {
     field: 'dragHandle',
     headerName: '',
-    width: 1000,
+    width: 10,
+    flex: 0,
+    resizable: false, // Prevent resizing to maintain fixed width
     pinned: 'left',
     editable: false,
     cellRenderer: 'agRowDragCellRenderer',
@@ -16,12 +18,14 @@ const visibilityColumns: ColumnDefinition[] = [
     field: 'column',
     headerName: 'Column',
     width: 200,
+    flex: 0,
     editable: false,
   },
   {
     field: 'visible',
     headerName: 'Visible',
-    width: 50,
+    width: 10,
+    flex: 0,
     editable: true,
     cellEditor: 'agCheckboxCellEditor',
     cellRenderer: 'agCheckboxCellRenderer',
@@ -30,7 +34,7 @@ const visibilityColumns: ColumnDefinition[] = [
     field: 'description',
     headerName: 'Description',
     editable: false,
-    width: 300,
+    width: 10,
     flex: 1,
   },
 ];
@@ -67,8 +71,6 @@ export class VisibilityDataService {
       index: index,
     }));
 
-    // Sort initially by column name since all are visible, then update indices
-    rows.sort((a, b) => a.column.localeCompare(b.column));
     this.updateIndices(rows);
 
     return {
@@ -82,7 +84,21 @@ export class VisibilityDataService {
   }
 
   public getTheme() {
-    return themeQuartz;
+    return themeQuartz.withParams({
+      accentColor: 'var(--color-accent-bright)',
+      borderColor: 'var(--line-color-grid)',
+      browserColorScheme: 'light',
+      columnBorder: true,
+      headerFontSize: 14,
+      headerFontWeight: 'bold',
+      // headerRowBorder: false,
+      cellHorizontalPadding: 10,
+      headerBackgroundColor: 'var(--background-color, red)',
+      // rowBorder: true,
+      spacing: 8,
+      wrapperBorder: false,
+      backgroundColor: 'var(--color-background)',
+    });
   }
 
   public updateVisibility(columnName: string, visible: boolean): void {

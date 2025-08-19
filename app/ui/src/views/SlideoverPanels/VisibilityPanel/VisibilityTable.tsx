@@ -46,7 +46,7 @@ export const VisibilityTable: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', height: '400px' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <AgGridReact
         rowData={dataService.tableData.rows}
         columnDefs={dataService.tableData.columns as any}

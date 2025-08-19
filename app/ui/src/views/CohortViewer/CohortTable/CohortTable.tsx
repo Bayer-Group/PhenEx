@@ -45,7 +45,7 @@ interface CohortTableProps {
 export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, currentlyViewing, onCellValueChanged }, ref) => {
     const myTheme = themeQuartz.withParams({
-      accentColor: '#FF00000',
+      accentColor: 'var(--color-accent-bright)',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: true,
