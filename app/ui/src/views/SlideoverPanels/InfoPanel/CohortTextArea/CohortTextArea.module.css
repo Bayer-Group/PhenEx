@@ -23,7 +23,7 @@
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 0px !important; /* Remove bottom margin to test */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -64,6 +64,8 @@
   flex-direction: column;
   min-height: 0;
   border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Override Quill's default styles */
@@ -73,6 +75,8 @@
   flex-direction: column;
   border: none !important;
   font-family: inherit;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .editorContent :global(.ql-container.ql-snow) {
@@ -82,16 +86,36 @@
 .editorContent :global(.ql-editor) {
   flex: 1;
   overflow-y: auto;
-  padding: 15px;
+  padding: 15px !important; /* Restore proper padding */
+  margin: 0 !important;
   border: none !important;
   box-shadow: none !important;
   border-radius: 4px;
+  background-color: white; /* Remove debug color */
 }
 
 .editorContent :global(.ql-editor:focus) {
   outline: none;
   border: none !important;
   box-shadow: none !important;
+}
+
+/* DEBUG: Remove any default spacing from Quill's elements */
+.editorContent :global(.ql-editor *) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove default margins from first element in editor */
+.editorContent :global(.ql-editor > *:first-child) {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove default margins from paragraphs at the top */
+.editorContent :global(.ql-editor p:first-child) {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Custom header styles for Quill editor */
@@ -135,4 +159,23 @@
   font-weight: 500;
   margin-bottom: 0.1em;
   color: var(--text-color-primary);
+}
+
+/* List styles for Quill editor */
+.quillEditor :global(.ql-editor ul) {
+  margin-left: -20px;
+  padding-left: 0;
+}
+
+.quillEditor :global(.ql-editor ol) {
+  margin-left: 0px;
+  padding-left: 0;
+}
+
+.quillEditor :global(.ql-editor ul li) {
+  margin-bottom: 0.25em;
+}
+
+.quillEditor :global(.ql-editor ol li) {
+  margin-bottom: 0.25em;
 }
