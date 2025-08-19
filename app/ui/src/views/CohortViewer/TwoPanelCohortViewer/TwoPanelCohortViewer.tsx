@@ -9,6 +9,8 @@ import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
 import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
+import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
+
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -106,7 +108,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
     } else if (viewType === 'visibility') {
       return <VisibilityPanel />;
     } else if (viewType === 'info') {
-      return <CodelistsViewer />;
+      return <InfoPanel />;
     } else if (viewType === 'codelists') {
       return <CodelistsViewer />;
     }
