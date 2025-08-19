@@ -6,7 +6,7 @@ const visibilityColumns: ColumnDefinition[] = [
   {
     field: 'dragHandle',
     headerName: '',
-    width: 50,
+    width: 1000,
     pinned: 'left',
     editable: false,
     cellRenderer: 'agRowDragCellRenderer',
@@ -16,13 +16,12 @@ const visibilityColumns: ColumnDefinition[] = [
     field: 'column',
     headerName: 'Column',
     width: 200,
-    pinned: 'left',
     editable: false,
   },
   {
     field: 'visible',
     headerName: 'Visible',
-    width: 120,
+    width: 50,
     editable: true,
     cellEditor: 'agCheckboxCellEditor',
     cellRenderer: 'agCheckboxCellRenderer',
@@ -143,6 +142,8 @@ export class VisibilityDataService {
     visibleRows.forEach((row, index) => {
       row.index = index;
     });
+
+    console.log(visibleRows)
   }
 
   public getVisibleColumns(): string[] {
@@ -162,5 +163,29 @@ export class VisibilityDataService {
       .filter(row => row.visible)
       .sort((a, b) => a.index - b.index)
       .map(row => row.column);
+  }
+
+  public resortAllRows(): void {
+    console.log("resortAllRows")
+    // Simply call the existing sort method to maintain visible/invisible separation
+    this.sortRowsByVisibility();
+  }
+
+  public updateRowOrder(newRowData: VisibilityRow[]): void {
+    console.log("updateRowOrder called with:", newRowData);
+    
+    // Update our internal data with the new order
+    this._tableData.rows = newRowData;
+    
+    // Update indices for visible rows based on their new positions
+    const visibleRows = newRowData.filter(row => row.visible);
+    visibleRows.forEach((row, index) => {
+      row.index = index;
+    });
+    
+    console.log("Updated visible rows with new indices:", visibleRows);
+    
+    // Then sort to maintain visible/invisible separation
+    this.sortRowsByVisibility();
   }
 }

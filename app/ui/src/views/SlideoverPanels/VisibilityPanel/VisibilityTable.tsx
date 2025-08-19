@@ -17,20 +17,31 @@ export const VisibilityTable: React.FC = () => {
     }
   };
 
-  const onRowDragEnd = (event: any) => {
-    const movingNode = event.node;
-    const overNode = event.overNode;
+  const onRowDragEnd = () => {
+    console.log("ON ROW DRAG END");
     
-    if (movingNode && overNode && movingNode !== overNode) {
-      const fromIndex = movingNode.rowIndex;
-      const toIndex = overNode.rowIndex;
-      
-      dataService.reorderRows(fromIndex, toIndex);
-      
-      // Refresh the grid
-      if (gridRef.current?.api) {
-        gridRef.current.api.setGridOption('rowData', dataService.tableData.rows);
-      }
+    // Just get the current order from the grid and update indices
+    const newRowData: any[] = [];
+    if (gridRef.current?.api) {
+      gridRef.current.api.forEachNode((node: any) => {
+        newRowData.push(node.data);
+      });
+    }
+    
+    // Update indices for visible rows based on their current positions
+    const visibleRows = newRowData.filter(row => row.visible);
+    visibleRows.forEach((row, index) => {
+      row.index = index;
+    });
+    
+    console.log("Updated visible rows:", visibleRows);
+    
+    // Update the service data using the public method
+    dataService.updateRowOrder(newRowData);
+    
+    // Refresh the grid
+    if (gridRef.current?.api) {
+      gridRef.current.api.setGridOption('rowData', dataService.tableData.rows);
     }
   };
 
