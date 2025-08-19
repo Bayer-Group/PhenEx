@@ -80,7 +80,10 @@ export class VisibilityDataService {
   }
 
   private initializeTableData(): TableData {
-    const rows: VisibilityRow[] = defaultColumns.map((column, index) => ({
+    // Filter out the rowDrag column - users shouldn't see or control it
+    const filteredColumns = defaultColumns.filter(column => column.field !== 'rowDrag');
+    
+    const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
       column: column.headerName || column.field,
       visible: true,
@@ -159,6 +162,9 @@ export class VisibilityDataService {
   private updateCohortDataServiceColumns(): void {
     const cohortDataService = CohortDataService.getInstance();
     
+    // Always get the rowDrag column first (it should always be present)
+    const rowDragColumn = defaultColumns.find(col => col.field === 'rowDrag');
+    
     // Get the ordered list of visible column names
     const visibleColumnNames = this.getOrderedVisibleColumns();
     
@@ -171,12 +177,15 @@ export class VisibilityDataService {
           col.field === columnName
         );
       })
-      .filter(col => col !== undefined) as ColumnDefinition[];
+      .filter(col => col !== undefined);
     
-    console.log('Updating CohortDataService columns:', visibleColumns);
+    // Combine rowDrag column (if it exists) with visible columns
+    const finalColumns = rowDragColumn ? [rowDragColumn, ...visibleColumns] : visibleColumns;
+    
+    console.log('Updating CohortDataService columns:', finalColumns);
     
     // Update the cohort data service columns using the public method
-    cohortDataService.updateColumns(visibleColumns);
+    cohortDataService.updateColumns(finalColumns as ColumnDefinition[]);
   }
 
   private updateIndices(rows: VisibilityRow[]): void {
