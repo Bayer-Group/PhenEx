@@ -7,48 +7,65 @@ import 'quill/dist/quill.snow.css';
 interface CohortTextAreaProps {}
 
 export const CohortTextArea: FC<CohortTextAreaProps> = () => {
-  const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
   const dataService = CohortDataService.getInstance();
 
   useEffect(() => {
     let quillInstance: Quill | null = null;
 
-    if (editorRef.current && toolbarRef.current) {
+    if (editorRef.current) {
       // Clean up any existing content
       while (editorRef.current.firstChild) {
         editorRef.current.removeChild(editorRef.current.firstChild);
       }
-      while (toolbarRef.current.firstChild) {
-        toolbarRef.current.removeChild(toolbarRef.current.firstChild);
-      }
 
+      // Create toolbar container HTML
+      const toolbarContainer = document.createElement('div');
+      toolbarContainer.id = 'toolbar-' + Math.random().toString(36).substr(2, 9);
+      toolbarContainer.className = styles.stickyToolbar;
+      toolbarContainer.innerHTML = `
+        <button class="ql-bold"></button>
+        <button class="ql-italic"></button>
+        <button class="ql-underline"></button>
+        <button class="ql-list" value="ordered"></button>
+        <button class="ql-list" value="bullet"></button>
+        <button class="ql-indent" value="-1"></button>
+        <button class="ql-indent" value="+1"></button>
+        <select class="ql-header">
+          <option selected></option>
+          <option value="1"></option>
+          <option value="2"></option>
+          <option value="3"></option>
+          <option value="4"></option>
+          <option value="5"></option>
+          <option value="6"></option>
+        </select>
+        <select class="ql-color">
+          <option selected></option>
+        </select>
+        <select class="ql-background">
+          <option selected></option>
+        </select>
+      `;
+
+      // Create editor container
       const editorContainer = document.createElement('div');
       editorContainer.className = styles.editorContent;
+
+      // Add both to the main container
+      editorRef.current.appendChild(toolbarContainer);
       editorRef.current.appendChild(editorContainer);
 
+      // Initialize Quill with the custom toolbar
       quillInstance = new Quill(editorContainer, {
         theme: 'snow',
         placeholder: 'Enter cohort description...',
         modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            [{ indent: '-1' }, { indent: '+1' }],
-            [{ header: [1, 2, 3, 4, 5, 6, false] }],
-            [{ color: [] }, { background: [] }],
-          ],
+          toolbar: `#${toolbarContainer.id}`,
         },
       });
-
-      // Move the toolbar to our separate toolbar container
-      const quillToolbar = editorContainer.querySelector('.ql-toolbar');
-      if (quillToolbar) {
-        toolbarRef.current.appendChild(quillToolbar);
-      }
 
       quillRef.current = quillInstance;
 
@@ -109,19 +126,13 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
           editorRef.current.removeChild(editorRef.current.firstChild);
         }
       }
-      if (toolbarRef.current) {
-        while (toolbarRef.current.firstChild) {
-          toolbarRef.current.removeChild(toolbarRef.current.firstChild);
-        }
-      }
       dataService.removeListener(updateText);
     };
   }, []); // Remove dataService.cohort_data from dependencies
 
   return (
     <div className={styles.textAreaContainer}>
-      <div className={`${styles.floatingToolbar} ${isFocused ? styles.visible : ''}`} ref={toolbarRef} />
-      <div ref={editorRef} className={`${styles.editor} ${isFocused ? styles.focused : ''}`} />
+      <div ref={editorRef} className={`${styles.quillEditor} ${isFocused ? styles.focused : ''}`} />
     </div>
   );
 };
