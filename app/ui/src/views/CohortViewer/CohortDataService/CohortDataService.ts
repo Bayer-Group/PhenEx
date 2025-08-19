@@ -243,9 +243,14 @@ export class CohortDataService {
     return null;
   }
 
-  public updateRowOrder(newRowData: TableRow[]) {
+  public async updateRowOrder(newRowData: TableRow[]) {
+    console.log('=== updateRowOrder START ===');
+    console.log('newRowData received:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+    console.log('Current filter:', this._currentFilter);
+    
     // Get all phenotypes (including those not currently visible due to filter)
     const allPhenotypes = [...this._cohort_data.phenotypes];
+    console.log('All phenotypes before reorder:', allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index })));
     
     // Group the reordered visible phenotypes by type
     const reorderedVisibleByType: { [key: string]: TableRow[] } = {};
@@ -255,9 +260,11 @@ export class CohortDataService {
       }
       reorderedVisibleByType[row.type].push(row);
     });
+    console.log('Reordered visible by type:', reorderedVisibleByType);
 
     // Create a map of visible phenotype IDs for quick lookup
     const visiblePhenotypeIds = new Set(newRowData.map(row => row.id));
+    console.log('Visible phenotype IDs:', Array.from(visiblePhenotypeIds));
     
     // Separate hidden phenotypes by type
     const hiddenPhenotypesByType: { [key: string]: TableRow[] } = {};
@@ -269,6 +276,7 @@ export class CohortDataService {
         hiddenPhenotypesByType[phenotype.type].push(phenotype);
       }
     });
+    console.log('Hidden phenotypes by type:', hiddenPhenotypesByType);
 
     // Rebuild the complete phenotypes array maintaining order within each type
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
@@ -280,6 +288,8 @@ export class CohortDataService {
       const hiddenOfType = hiddenPhenotypesByType[type] || [];
       const allOfType = [...visibleOfType, ...hiddenOfType];
       
+      console.log(`Type ${type}: visible=${visibleOfType.length}, hidden=${hiddenOfType.length}, total=${allOfType.length}`);
+      
       // Update indices within each type
       allOfType.forEach((phenotype, index) => {
         phenotype.index = index + 1;
@@ -288,9 +298,26 @@ export class CohortDataService {
       newCompleteOrder = newCompleteOrder.concat(allOfType);
     }
 
+    console.log('New complete order:', newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index })));
+
     // Update the cohort data with the complete new order
     this._cohort_data.phenotypes = newCompleteOrder;
-    this.saveChangesToCohort(true, true);
+    console.log('Updated _cohort_data.phenotypes length:', this._cohort_data.phenotypes.length);
+    
+    // Update table data before saving - do this manually to avoid sorting
+    this._table_data = this.tableDataFromCohortData();
+    console.log('Updated _table_data rows length:', this._table_data.rows.length);
+    console.log('Table data rows:', this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+    
+    console.log('=== updateRowOrder END ===');
+    
+    // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
+    this.splitPhenotypesByType();
+    this._cohort_data.name = this._cohort_name;
+    await updateCohort(this._cohort_data.id, this._cohort_data);
+    this.notifyNameChangeListeners();
+    this.issues_service.validateCohort();
+    this.notifyListeners();
   }
 
   private isNewCohort: boolean = false;

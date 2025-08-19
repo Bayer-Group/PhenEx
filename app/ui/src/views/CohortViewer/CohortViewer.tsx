@@ -73,6 +73,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
 
     const refreshGrid = () => {
+      console.log('=== refreshGrid START ===');
+      console.log('Current dataService.table_data.rows:', dataService.table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+      
       if (gridRef.current?.api) {
         const api = gridRef.current.api;
         // Store current scroll position
@@ -80,6 +83,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         const firstRow = api.getFirstDisplayedRow();
         const lastRow = api.getLastDisplayedRow();
   
+        console.log('Setting grid rowData to:', dataService.table_data['rows'].map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
         // Update grid data
         api.setGridOption('rowData', dataService.table_data['rows']);
         api.setGridOption('columnDefs', dataService.table_data['columns']); // Changed from 'columns' to 'columnDefs'
@@ -88,13 +92,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         requestAnimationFrame(() => {
           // api.ensureIndexVisible(firstRow, 'top');
           api.ensureIndexVisible(lastRow, 'bottom');
-  
+
           // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
         });
       }
-    };
-  
-    useEffect(() => {
+      console.log('=== refreshGrid END ===');
+    };    useEffect(() => {
       // Add listener for data service updates
       const listener = () => {
         refreshGrid();
@@ -126,11 +129,19 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       }
     };
 
-    const onRowDragEnd = (newRowData: any[]) => {
+    const onRowDragEnd = async (newRowData: any[]) => {
+      console.log('=== CohortViewer onRowDragEnd START ===');
+      console.log('Received newRowData:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+      console.log('Current table data before update:', dataService.table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+      
       // Update the data service with the new row order
-      dataService.updateRowOrder(newRowData);
+      await dataService.updateRowOrder(newRowData);
+      
+      console.log('After updateRowOrder, table data:', dataService.table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+      
       // Refresh the grid to reflect the changes
       refreshGrid();
+      console.log('=== CohortViewer onRowDragEnd END ===');
     };    const tabs = Object.values(CohortDefinitionViewType).map(value => {
       return sectionDisplayNames[value]
     });

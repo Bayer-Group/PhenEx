@@ -67,7 +67,11 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const handleRowDragEnd = () => {
-      if (!onRowDragEnd) return;
+      console.log('=== handleRowDragEnd START ===');
+      if (!onRowDragEnd) {
+        console.log('No onRowDragEnd callback provided');
+        return;
+      }
       
       // Get the current order from the grid and update indices
       const newRowData: any[] = [];
@@ -77,12 +81,24 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       }
       
-      // Validate that phenotypes haven't moved between type sections
-      // Group by type and check if all phenotypes are still in correct sections
-      const groupedByType: { [key: string]: any[] } = {};
-      const originalGroupedByType: { [key: string]: any[] } = {};
+      console.log('Current row data from grid:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+      console.log('Original data rows:', data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
       
-      // Group new data by type
+      // Simple validation: ensure we have data and all items have the required properties
+      if (newRowData.length === 0) {
+        console.log('No row data found, skipping drag operation');
+        return;
+      }
+
+      // Validate that all rows have required properties
+      const invalidRows = newRowData.filter(row => !row.id || !row.type);
+      if (invalidRows.length > 0) {
+        console.log('Invalid rows detected:', invalidRows);
+        return;
+      }
+
+      // Update indices within each type for the new data
+      const groupedByType: { [key: string]: any[] } = {};
       newRowData.forEach(row => {
         if (!groupedByType[row.type]) {
           groupedByType[row.type] = [];
@@ -90,30 +106,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         groupedByType[row.type].push(row);
       });
       
-      // Group original data by type
-      data.rows.forEach(row => {
-        if (!originalGroupedByType[row.type]) {
-          originalGroupedByType[row.type] = [];
-        }
-        originalGroupedByType[row.type].push(row);
-      });
+      console.log('New grouped by type:', groupedByType);
       
-      // Check if any phenotype moved to a different type section
-      let validMove = true;
-      Object.keys(groupedByType).forEach(type => {
-        if (groupedByType[type].length !== originalGroupedByType[type]?.length) {
-          validMove = false;
-        }
-      });
-      
-      // If it's not a valid move, reset the grid and return
-      if (!validMove) {
-        if (ref && typeof ref === 'object' && ref.current?.api) {
-          ref.current.api.setGridOption('rowData', data.rows);
-        }
-        return;
-      }
-
       // Update indices within each type
       Object.keys(groupedByType).forEach(type => {
         groupedByType[type].forEach((phenotype, index) => {
@@ -121,8 +115,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       });
       
+      console.log('Calling onRowDragEnd with:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
       // Call the parent callback with the reordered data
       onRowDragEnd(newRowData);
+      console.log('=== handleRowDragEnd END ===');
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
