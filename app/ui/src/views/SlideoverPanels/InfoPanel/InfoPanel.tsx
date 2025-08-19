@@ -56,7 +56,6 @@ export const InfoPanel: React.FC = () => {
   const renderSharing = () => {
     return (
       <div>
-        <h3>Sharing</h3>
         <p>This is the sharing content for the Info panel.</p>
       </div>
     );
@@ -65,7 +64,6 @@ export const InfoPanel: React.FC = () => {
   const renderSettings = () => {
     return (
       <div>
-        <h3>Settings</h3>
         <p>This is the settings content for the Info panel.</p>
       </div>
     );
