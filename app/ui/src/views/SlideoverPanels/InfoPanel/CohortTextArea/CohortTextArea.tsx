@@ -83,12 +83,45 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
       });
 
       // Handle focus/blur events for toolbar visibility
+      let hideTimeoutId: number | null = null;
+
       quillInstance.on('selection-change', (range) => {
         if (range) {
+          // Focus gained
+          if (hideTimeoutId) {
+            clearTimeout(hideTimeoutId);
+            hideTimeoutId = null;
+          }
           setIsFocused(true);
         } else {
-          setIsFocused(false);
+          // Focus lost - but delay hiding to check if click was on toolbar
+          hideTimeoutId = setTimeout(() => {
+            // Check if the active element is within the toolbar
+            const activeElement = document.activeElement;
+            const isToolbarClick = activeElement && toolbarContainer.contains(activeElement);
+            
+            if (!isToolbarClick) {
+              setIsFocused(false);
+            }
+            hideTimeoutId = null;
+          }, 100); // Small delay to allow toolbar clicks to be detected
         }
+      });
+
+      // Prevent toolbar from losing focus when clicking toolbar elements
+      toolbarContainer.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent focus loss
+        if (hideTimeoutId) {
+          clearTimeout(hideTimeoutId);
+          hideTimeoutId = null;
+        }
+        // Keep the toolbar visible
+        setIsFocused(true);
+        
+        // Re-focus the editor after a brief delay to allow toolbar action
+        setTimeout(() => {
+          quillInstance?.focus();
+        }, 50);
       });
     }
 
