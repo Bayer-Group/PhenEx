@@ -30,7 +30,7 @@ export const defaultColumns = [
   {
     field: 'rowDrag',
     headerName: '',
-    width: 20,
+    width: 40,
     pinned: 'left',
     rowDrag: true,
     suppressMenu: true,
