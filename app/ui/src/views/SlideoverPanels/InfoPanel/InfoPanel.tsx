@@ -73,7 +73,7 @@ export const InfoPanel: React.FC = () => {
     <SlideoverPanel title="Info" info={infoContent()}>
       <div className={styles.container}>
         {renderTabs()}
-        <div className={styles.editorWrapper}>
+        <div className={styles.bottomContainer}>
           {activeTabIndex === 0 && renderDescription()}
           {activeTabIndex === 1 && renderSharing()}
           {activeTabIndex === 2 && renderSettings()}

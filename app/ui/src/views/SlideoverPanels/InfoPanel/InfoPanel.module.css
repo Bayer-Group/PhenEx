@@ -21,8 +21,8 @@
   color: #333;
 }
 
-.tabsContainer {
+.bottomContainer {
   margin-left: 0px;
   flex-shrink: 0;
-  width: fit-content;
+  width: 100%;
 }
