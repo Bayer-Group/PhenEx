@@ -4,12 +4,14 @@
   flex-direction: column;
   padding: 0px;
   background-color: transparent;
+  border: none;
 }
 
 .quillEditor {
   height: 100%;
   display: flex;
   flex-direction: column;
+  border: none;
 }
 
 /* Sticky toolbar at the top */
@@ -61,6 +63,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  border: none !important;
 }
 
 /* Override Quill's default styles */
@@ -68,23 +71,27 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: none;
+  border: none !important;
   font-family: inherit;
+}
+
+.editorContent :global(.ql-container.ql-snow) {
+  border: none !important;
 }
 
 .editorContent :global(.ql-editor) {
   flex: 1;
   overflow-y: auto;
   padding: 15px;
-  border: 1px solid #e0e0e0;
+  border: none !important;
+  box-shadow: none !important;
   border-radius: 4px;
-  background-color: white;
-  min-height: 200px;
 }
 
 .editorContent :global(.ql-editor:focus) {
-  border-color: #007acc;
   outline: none;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Custom header styles for Quill editor */
