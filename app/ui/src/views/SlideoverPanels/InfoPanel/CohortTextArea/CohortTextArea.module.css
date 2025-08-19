@@ -1,11 +1,8 @@
 .textAreaContainer {
-  height: calc(100% - 100px);
+  /* height: calc(100% - 100px); */
   padding: 0px;
-  margin-left: 20px;
-  margin-right: 20px;
-  border: 2px solid var(--color-accent);
   background-color: transparent;
-  border-radius: var(--border-radius);
+  /* border-radius: var(--border-radius); */
 }
 
 .title {
@@ -29,7 +26,7 @@
   border-top-right-radius: 4px;
   background-color: transparent;
   border: transparent !important;
-  /* opacity: 0; */
+  opacity: 0;
   position: sticky;
   top: 0;
   left: 0;
@@ -38,10 +35,10 @@
   margin-left: 10px;
   transition: opacity 0.2s ease;
 }
-/* 
-.editor:focus-within :global(.ql-toolbar) {
+
+.editor.focused :global(.ql-toolbar) {
   opacity: 1;
-} */
+}
 :global(.ql-toolbar.ql-snow) {
   border: none;
   padding: 8px;

@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './InfoPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { CohortTextArea } from '../../CohortViewer/CohortInfo/CohortTextArea/CohortTextArea';
+import { CohortTextArea } from './CohortTextArea/CohortTextArea';
 
 export const InfoPanel: React.FC = () => {
   const infoContent = () => {

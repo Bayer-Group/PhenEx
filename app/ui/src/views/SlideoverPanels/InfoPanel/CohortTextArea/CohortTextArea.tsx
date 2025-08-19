@@ -8,8 +8,9 @@ interface CohortTextAreaProps {}
 
 export const CohortTextArea: FC<CohortTextAreaProps> = () => {
   const [text, setText] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
-  const quillRef = useRef<Quill>();
+  const quillRef = useRef<Quill | null>(null);
   const dataService = CohortDataService.getInstance();
 
   useEffect(() => {
@@ -54,6 +55,15 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
         dataService.cohort_data.description = delta;
         dataService.saveChangesToCohort();
       });
+
+      // Handle focus/blur events for toolbar visibility
+      quillInstance.on('selection-change', (range) => {
+        if (range) {
+          setIsFocused(true);
+        } else {
+          setIsFocused(false);
+        }
+      });
     }
 
     // Subscribe to data service changes
@@ -83,6 +93,7 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
     return () => {
       if (quillInstance) {
         quillInstance.off('text-change');
+        quillInstance.off('selection-change');
       }
       if (editorRef.current) {
         while (editorRef.current.firstChild) {
@@ -95,8 +106,7 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
 
   return (
     <div className={styles.textAreaContainer}>
-      <h1 className={styles.title}>Description</h1>
-      <div ref={editorRef} className={styles.editor} />
+      <div ref={editorRef} className={`${styles.editor} ${isFocused ? styles.focused : ''}`} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import styles from './CohortInfo.module.css';
-import { CohortTextArea } from './CohortTextArea/CohortTextArea';
+import { CohortTextArea } from '../../SlideoverPanels/InfoPanel/CohortTextArea/CohortTextArea';
 import { CohortInfoAccordianDisplayView } from './CohortInfoAccordianDisplay/CohortInfoAccordianDisplay';
 
 interface CohortInfoProps {}
