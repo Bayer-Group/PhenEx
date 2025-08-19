@@ -15,6 +15,7 @@ export interface ColumnDefinition {
   cellEditor?: any;
   cellEditorParams?: any;
   cellRenderer?: any;
+  rowDrag?: boolean | ((params: any) => boolean);
 }
 
 export interface TableData {
