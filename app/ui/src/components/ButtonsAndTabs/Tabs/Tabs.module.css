@@ -2,7 +2,6 @@
   display: flex;
   /* flex-wrap: wrap; */
   gap: 4px 6px;
-  padding: 2px;
   border-radius: 8px;
   border: var(--border);
   padding: 4px;

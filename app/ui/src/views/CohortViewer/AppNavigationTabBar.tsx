@@ -15,7 +15,6 @@ interface AppNavigationTabBarProps {
 import { CodelistsInfoDisplay } from '../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
-  NewPhenotype = 'Add Phenotype',
   Database = 'Database',
   Constants = 'Constants',
   Codelists = 'Codelists',
@@ -23,6 +22,7 @@ enum InfoTabType {
   Execute = 'Execute',
   Report = 'Report',
   Info = 'Info',
+  NewPhenotype = 'Add Phenotype',
 }
 
 export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoContent }) => {
@@ -110,7 +110,7 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
       showInfo,
     ];
 
-    const action = actions[index - 1];
+    const action = actions[index];
     action();
 
     console.log('clicked', index, isOpen);
@@ -157,11 +157,11 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
           width={'100%'}
           height={'100%'}
           tabs={tabs}
-          dropdown_items={{ 0: renderAddNewPhenotypeDropdown() }}
+          dropdown_items={{ 7: renderAddNewPhenotypeDropdown() }}
           onTabChange={onTabChange}
           active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
           customizableDropdownButtonRef={customizableDropdownButtonRef}
-          outline_tab_index={0}
+          outline_tab_index={7}
         />
     </div>
   );
