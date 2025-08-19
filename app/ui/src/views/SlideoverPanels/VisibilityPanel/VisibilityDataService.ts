@@ -5,29 +5,45 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { VisibilityCellRenderer } from './VisibilityCellRenderer';
 
 const visibilityColumns: ColumnDefinition[] = [
+  // {
+  //   field: 'dragHandle',
+  //   headerName: '',
+  //   width: 10,
+  //   flex: 0,
+  //   resizable: false, // Prevent resizing to maintain fixed width
+  //   pinned: 'left',
+  //   editable: false,
+  //   cellRenderer: 'agRowDragCellRenderer',
+  //   rowDrag: (params: any) => params.data.visible, // Only allow dragging visible rows
+  // },
   {
     field: 'dragHandle',
     headerName: '',
-    width: 10,
+    maxWidth: 40,
+    minWidth: 40,
+    width: 40,
     flex: 0,
-    resizable: false, // Prevent resizing to maintain fixed width
     pinned: 'left',
-    editable: false,
-    cellRenderer: 'agRowDragCellRenderer',
-    rowDrag: (params: any) => params.data.visible, // Only allow dragging visible rows
+    rowDrag: true,
+    suppressMenu: true,
+    suppressSorting: true,
+    suppressFilter: true,
+    cellClass: 'row-drag-handle',
   },
   {
     field: 'column',
     headerName: 'Column',
-    width: 200,
+    width: 150,
     flex: 0,
+    pinned: 'left',
     editable: false,
   },
   {
     field: 'visible',
     headerName: 'Visible',
-    width: 60,
+    width: 70,
     flex: 0,
+    pinned: 'left',
     editable: false, // Changed to false since the renderer handles the interaction
     cellRenderer: VisibilityCellRenderer,
   },
@@ -35,7 +51,7 @@ const visibilityColumns: ColumnDefinition[] = [
     field: 'description',
     headerName: 'Description',
     editable: false,
-    width: 10,
+    width: 200,
     flex: 1,
   },
 ];

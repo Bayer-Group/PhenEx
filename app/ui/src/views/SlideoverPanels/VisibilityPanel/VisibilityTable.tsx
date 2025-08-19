@@ -58,7 +58,7 @@ export const VisibilityTable: React.FC = () => {
         rowDragManaged={true}
         defaultColDef={{
           flex: 1,
-          minWidth: 100,
+          minWidth: 20,
           resizable: true,
         }}
       />
