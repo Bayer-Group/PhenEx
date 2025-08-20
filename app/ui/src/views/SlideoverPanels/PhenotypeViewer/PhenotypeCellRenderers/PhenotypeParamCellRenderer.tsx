@@ -2,7 +2,7 @@ import React from 'react';
 import {
   PhenexCellRenderer,
   PhenexCellRendererProps,
-} from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+} from '../../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 import styles from './PhenotypeParamCellRenderer.module.css';
 
 export interface PhenotypeParamCellRendererProps extends PhenexCellRendererProps {}

@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
-import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
+import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
+import typeStyles from '../../../styles/study_types.module.css'
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -112,7 +113,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   return (
     <div className={styles.container}>
       <div className={`${styles.header}`}>
-        <div className={styles.title}>
+        {/* <div className={`${styles.title} ${typeStyles[`${data.type}_color_block`]}`}>
           <EditableTextField
             value={phenotypeName}
             placeholder="Name your cohort..."
@@ -122,7 +123,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             }}
             onSaveChanges={onSaveNameChanges}
           />
-        </div>
+        </div> */}
         <div className={styles.paramsContainer}>
           <AgGridReact
             rowData={dataService.rowData}

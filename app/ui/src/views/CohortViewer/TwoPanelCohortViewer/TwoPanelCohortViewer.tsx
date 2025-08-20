@@ -2,7 +2,6 @@ import React, { FC, useState } from 'react';
 import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
-import { PhenotypeViewer } from '../../PhenotypeViewer/PhenotypeViewer';
 import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
 import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
 import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
@@ -10,6 +9,7 @@ import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel
 import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
+import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
 
 
 interface TwoPanelCohortViewerProps {
@@ -96,7 +96,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
 
   const renderRightPanel = () => {
     if (viewType === 'phenotype') {
-      return <PhenotypeViewer data={extraData} />;
+      return <PhenotypePanel data={extraData} />;
     } else if (viewType === 'report') {
       return <CohortReportView />;
     } else if (viewType === 'execute') {

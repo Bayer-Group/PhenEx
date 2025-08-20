@@ -1,6 +1,6 @@
 import { FC, useState } from 'react';
 import styles from './PhenotypeAccordianInfo.module.css';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { Tabs } from '../../../../components/ButtonsAndTabs/Tabs/Tabs';
 // import { CodelistColumnMapping } from '../CodelistsInfoDisplay/CodelistColumnMapping';
 // import { CodelistFileContent } from '../CodelistsInfoDisplay/CodelistFileContent';
 

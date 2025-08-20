@@ -23,6 +23,7 @@
 }
 
 
+/* A list item; border and text is colored */
 .inclusion_list_item_selected{
   border-color: var(--color_inclusion) !important;
   color: var(--color_inclusion);
@@ -51,4 +52,36 @@
 .component_list_item_selected{
   border-color: var(--color_component) !important;
   color: var(--color_component);
+}
+
+
+/* A color block : background is colored and text is white */
+.inclusion_color_block{
+  background-color: var(--color_inclusion) !important;
+  color: white;
+}
+
+.exclusion_color_block{
+  background-color: var(--color_exclusion) !important;
+  color: white;
+}
+
+.outcome_color_block{
+  background-color: var(--color_outcome) !important;
+  color: white;
+}
+
+.entry_color_block{
+  background-color: var(--color_entry) !important;
+  color: white;
+}
+
+.baseline_color_block{
+  background-color: var(--color_baseline) !important;
+  color: white; 
+}
+
+.component_color_block{
+  background-color: var(--color_component) !important;
+  color: white;
 }

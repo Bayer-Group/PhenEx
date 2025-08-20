@@ -147,15 +147,26 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         </div>
       );
     };
+  
+    const NoRowsOverlayComponents: FC = () => {
+      return (
+        <div className={styles.noRowsOverlayComponents}>
+         
+        </div>
+      );
+    };
 
     const NoRowsOverlayText = () => {
       if (currentlyViewing === 'outcomes') {
         return NoRowsOverlayOutcomes;
       } else if (currentlyViewing === 'baseline') {
         return NoRowsOverlayCharacteristics;
+      } else if (currentlyViewing === 'components'){
+        return NoRowsOverlayComponents;
       }
       return NoRowsOverlayCohort;
     };
+
     const NoRowsOverlayCohort: FC = () => {
       return (
         <div className={styles.noRowsOverlay}>

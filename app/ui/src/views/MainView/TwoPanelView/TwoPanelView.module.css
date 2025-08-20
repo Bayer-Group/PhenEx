@@ -67,7 +67,7 @@
   margin-right:10px !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-top:var(--margin_top_right_panel);
-
+  overflow: hidden;
 }
 .divider.collapsed {
   width: 0;
@@ -117,7 +117,7 @@
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
-  margin-top: 20px;
+  margin-top: 17px;
   font-family: "SNPro-black";
   font-size:22px;
 }

@@ -1,7 +1,7 @@
 import { themeQuartz } from 'ag-grid-community';
-import classDefinitions from '../../assets/class_definitions.json';
+import classDefinitions from '../../../assets/class_definitions.json';
 import { defaultColumns } from './PhenotypeColumnDefinitions';
-import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 export interface Phenotype {
   name: string;
   description?: string;
@@ -104,7 +104,7 @@ export class PhenotypeDataService {
 
       const requiredParams = paramDefinitions.filter(paramDef => paramDef.required);
       const nonRequiredParams = paramDefinitions.filter(paramDef => !paramDef.required);
-      const sharedParams = ['type', 'class_name'].map(param => ({
+      const sharedParams = ['name', 'type', 'class_name'].map(param => ({
         parameter: param,
         value: this.currentPhenotype![param] || 'Not set',
         ...this.currentPhenotype,

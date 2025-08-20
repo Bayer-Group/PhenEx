@@ -1,6 +1,6 @@
 :root{
   --margin_left_slideover_panel: 70px;
-  --margin_top_right_panel_title: 10px;
+  --margin_top_right_panel_title: 5px;
 }
 .container {
   height: 100%;
@@ -19,7 +19,9 @@
   margin-left: var(--margin_left_slideover_panel);
   margin-top:var(--margin_top_right_panel_title);
   /* margin-left: 30px; */
-  /* background-color: blue; */
+}
+
+.header{
 }
 
 .controls {
@@ -124,7 +126,8 @@ code {
   /* margin: 0px 0px 0px 10px; */
   /* padding: 10px 10px 10px 20px; */
   padding: 10px;
-  background-color: white;
+  background-color: var(--background-color) !important;
+  color: black !important;
   border-radius: 10px;
   font-size: 14px;
   border: var(--border);
@@ -138,7 +141,6 @@ code {
   margin-bottom: 0px;
   margin-left: 10px;
   padding: 10px;
-  background-color: white;
   border-radius: 10px;
   font-size: 14px;
   border: var(--border);
@@ -154,16 +156,15 @@ code {
 }
 
 .infobox.open {
-  border: 1px solid var(--button-border-color-selected);
   /* transform: translateY(-1px); */
   max-height: 400px; /* Arbitrary value, adjust as needed */
   opacity: 1; /* Fully visible when open */
   margin-right: 20px;
   margin-bottom: 10px;
   margin-top:10px;
-
-  background-color: var(--button-background-color-selected) !important;
-  border: 1px solid var(--button-border-color-selected);
+  
+  background-color: transparent !important;
+  /* border: 1px solid var(--button-border-color-selected); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   overflow: auto;
 }

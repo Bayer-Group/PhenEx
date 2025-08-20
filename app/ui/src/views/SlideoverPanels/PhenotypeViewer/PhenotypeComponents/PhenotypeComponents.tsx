@@ -1,7 +1,7 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import styles from './PhenotypeComponents.module.css';
 import { PhenotypeDataService } from '../PhenotypeDataService';
-import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
+import { CohortTable } from '../../../CohortViewer/CohortTable/CohortTable';
 
 interface PhenotypeComponentsProps {
   data?: string;
@@ -73,6 +73,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           data={dataService.componentPhenotypeTableData}
           onCellValueChanged={onCellValueChanged}
           ref={gridRef}
+          currentlyViewing = {'components'}
         />
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
-import { PhenotypeType } from '../../PhenotypeViewer/phenotype';
+import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 
