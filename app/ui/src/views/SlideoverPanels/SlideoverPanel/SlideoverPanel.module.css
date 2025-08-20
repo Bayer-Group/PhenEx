@@ -10,6 +10,7 @@
   margin: 0;
   overflow: hidden; /* Prevent container from growing */
   box-sizing: border-box;
+  background-color: red;
 }
 
 .title {
@@ -18,6 +19,7 @@
   margin-left: var(--margin_left_slideover_panel);
   margin-top:var(--margin_top_right_panel_title);
   /* margin-left: 30px; */
+  background-color: blue;
 }
 
 .controls {
@@ -53,6 +55,7 @@
   flex: 1;
   overflow: auto; /* Allow content to scroll if needed */
   padding: 0px;
+  background-color: green;
 }
 
 .divider.right {
@@ -92,17 +95,7 @@ code {
 
 
 
-.infobox.open {
-  margin-top:20px;
-  max-height: 400px; /* Arbitrary value, adjust as needed */
-  opacity: 1; /* Fully visible when open */
-  /* margin: 20px 20px 40px 20px; */
-  background-color: var(--button-background-color-selected) !important;
-  border: 1px solid var(--button-border-color-selected);
-  /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow: auto;
-}
+
 
 .infobox.closed {
   /* padding: 0px; */
@@ -140,9 +133,6 @@ code {
   border-radius: 10px;
   font-size: 14px;
   border: var(--border);
-  margin-right:20px;
-  margin-bottom: 30px;
-  margin-left:10px;
   /* margin: 0px 0px 0px 10px; */
   /* padding: 10px 10px 10px 20px; */
   padding: 10px;
@@ -157,7 +147,7 @@ code {
   opacity: 0; /* Start hidden */
   overflow: hidden; /* Prevent overflow when closed */
   margin-right: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 0px;
   margin-left: 10px;
   padding: 10px;
   background-color: white;
@@ -174,10 +164,14 @@ code {
 }
 
 .infobox.open {
+  border: 1px solid var(--button-border-color-selected);
+  /* transform: translateY(-1px); */
   max-height: 400px; /* Arbitrary value, adjust as needed */
   opacity: 1; /* Fully visible when open */
   margin-right: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+  margin-top:10px;
+
   background-color: var(--button-background-color-selected) !important;
   border: 1px solid var(--button-border-color-selected);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
