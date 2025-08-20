@@ -14,20 +14,23 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const infoContent = () => {
     return (
       <span className = {styles.whiteText}>
-        <i className = {styles.whiteText}>Edit a single phenotype</i> using this panel. 
+        <i className = {styles.whiteText}>Edit a single phenotype</i>
+        <br></br>
+        Currently editing : <strong>{data.name}</strong>
         <br></br>
         <ul>
-          <li>Phenotypes are editable in the left cohort editing table, or this single phenotype panel.</li>
+          <li>{data.name} is currently a <strong>{data?.class_name}</strong>.</li>
           <li>
-            All parameters available for the phenotype you have selected, in this case <strong>{data?.class_name}</strong>, are displayed and editable in this table.
+            All parameters available for <strong>{data?.class_name}</strong> are displayed and editable in this table.
           </li>
+          <li>Add component phenotypes if necessary</li>
         </ul>
       </span>
     );
   };
 
   return (
-    <SlideoverPanel title="Edit phenotype" info={infoContent()} classNameHeader={typeStyles[`${data.type}_color_block`]} classNameButton={styles.whiteText}>
+    <SlideoverPanel title="Phenotype Editor" info={infoContent()} classNameHeader={typeStyles[`${data.type}_color_block`]} classNameButton={styles.whiteText}>
       <div>
         <PhenotypeViewer data={data} />
       </div>
