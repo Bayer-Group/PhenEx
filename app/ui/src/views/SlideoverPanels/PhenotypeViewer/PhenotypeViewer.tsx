@@ -178,14 +178,13 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
-
   return (
     <div className={styles.container}>
       <div className={`${styles.header}`}>
         <div className={styles.paramsContainer}>
           {renderPhenotypeEditorTable()}
         </div>
-        <div className={styles.bottomSection}>
+        {/* <div className={styles.bottomSection}>
           <div className={styles.componentsTitleDiv}>
             <span className={styles.components_title}>Component phenotypes</span>
             <br></br>
@@ -197,7 +196,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
           <div className={`${styles.componentsContainer}`}>
             <PhenotypeComponents />
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
