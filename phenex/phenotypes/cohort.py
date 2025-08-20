@@ -3,6 +3,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.pipe import Node, Executor
 import ibis
 from ibis.expr.types.relations import Table
+from phenex.tables import PhenexTable
 from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 from phenex.util.serialization.to_dict import to_dict
@@ -427,7 +428,7 @@ class Cohort:
             )
             logger.info(f"Cohort '{self.name}': completed derived tables stage.")
             for node in self.derived_tables:
-                tables[node.name] = node.table
+                tables[node.name] = PhenexTable(node.table)
 
         logger.info(f"Cohort '{self.name}': executing entry stage ...")
 
