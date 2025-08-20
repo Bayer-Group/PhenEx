@@ -74,7 +74,7 @@ export const deleteCohort = async (cohort_id: string) => {
   try {
     const login_service = LoginDataService.getInstance();
     const response = await axios.delete(
-      `${BACKEND_URL}/username=${login_service.getUsername()}&cohort?cohort_id=${cohort_id}`
+      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`
     );
     return response.data;
   } catch (error) {

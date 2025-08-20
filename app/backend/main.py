@@ -355,7 +355,9 @@ async def delete_cohort_for_user(username: str, cohort_id: str):
         dict: The cohort data.
     """
     cohort_path = get_user_cohort_path(username, cohort_id)
+    print(cohort_path)
     if os.path.exists(cohort_path):
+        print("PATH EXISTS")
         os.remove(cohort_path)
     else:
         logger.error(f"Failed to retrieve cohort {cohort_id}")

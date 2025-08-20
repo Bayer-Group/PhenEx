@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import styles from './InfoPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import { CohortTextArea } from './CohortTextArea/CohortTextArea';
+import { CohortSettingsEditor } from './CohortSettingsEditor/CohortSettingsEditor';
 import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 
 export const InfoPanel: React.FC = () => {
-  const [tabs] = useState<string[]>(['Description', 'Sharing', 'Settings']);
+  const [tabs] = useState<string[]>(['Description', 'Settings']);
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
   const handleTabChange = (index: number) => {
@@ -53,18 +54,10 @@ export const InfoPanel: React.FC = () => {
     );
   };
 
-  const renderSharing = () => {
-    return (
-      <div>
-        <p>This is the sharing content for the Info panel.</p>
-      </div>
-    );
-  };
-
   const renderSettings = () => {
     return (
       <div>
-        <p>This is the settings content for the Info panel.</p>
+        <CohortSettingsEditor />
       </div>
     );
   };
@@ -75,8 +68,7 @@ export const InfoPanel: React.FC = () => {
         {renderTabs()}
         <div className={styles.bottomContainer}>
           {activeTabIndex === 0 && renderDescription()}
-          {activeTabIndex === 1 && renderSharing()}
-          {activeTabIndex === 2 && renderSettings()}
+          {activeTabIndex === 1 && renderSettings()}
         </div>
       </div>
     </SlideoverPanel>
