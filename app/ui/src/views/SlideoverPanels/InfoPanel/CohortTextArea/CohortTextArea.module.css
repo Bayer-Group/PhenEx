@@ -16,23 +16,36 @@
 
 /* Sticky toolbar at the top */
 .stickyToolbar {
-  position: sticky;
-  top: 0;
+  position: absolute;
+  top: 0px;
   z-index: 10;
   background: var(--background-color);
   border-radius: 8px;
-  padding: 4px;
+  /* padding: 4px;
+  margin-right:10px; */
+  margin-left:10px;
   margin-bottom: 0px !important; /* Remove bottom margin to test */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  flex-shrink: 0;
+  width: fit-content;
+  border: var(--border) !important;
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
 }
 
-/* Override Quill's default toolbar styles */
-.stickyToolbar:global(.ql-toolbar) {
-  border: var(--border) !important;
+.stickyToolbar:hover{
+  background-color: var(--color-accent-hover) !important;
+  border: 1px solid var(--color-accent-bright) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Override Quill's default toolbar styles */
+/* .stickyToolbar:global(.ql-toolbar) {
+  border: var(--border) !important;
+} */
+
+
 
 
 /* Show toolbar when focused */
@@ -57,7 +70,7 @@
 }
 
 .stickyToolbar button.ql-active {
-  background: #06c;
+  background: red !important;
   color: white;
 }
 
@@ -166,13 +179,15 @@
 
 /* List styles for Quill editor */
 .quillEditor :global(.ql-editor ul) {
-  margin-left: -20px;
-  padding-left: 0;
+  padding-left: 10px!important;
+  margin-left: 10px!important;
+  background-color: red;
 }
 
 .quillEditor :global(.ql-editor ol) {
-  margin-left: 0px;
-  padding-left: 0;
+  padding-left: 10px !important;
+  margin-left: 10px!important;
+
 }
 
 .quillEditor :global(.ql-editor ul li) {

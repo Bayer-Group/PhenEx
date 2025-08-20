@@ -5,7 +5,6 @@
   margin: 0;
   overflow: hidden;
   min-height: 0;
-  padding: 10px;
   position: relative;
 }
 
@@ -13,11 +12,14 @@
   position: sticky;
   top: 0;
   flex-shrink: 0;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
+  margin-left: 10px;
   width: 100%;
   z-index: 10;
   background: white;
-  padding-bottom: 5px;
+  flex-shrink: 0;
+  width: fit-content;
+
 }
 
 .bottomContainer {
@@ -25,6 +27,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  padding-left:0px;
   height: 0; /* Forces flex to calculate remaining height */
 }
 

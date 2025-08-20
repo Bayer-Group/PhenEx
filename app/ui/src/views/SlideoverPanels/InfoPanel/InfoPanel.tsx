@@ -15,16 +15,16 @@ export const InfoPanel: React.FC = () => {
   const infoContent = () => {
     return (
       <span>
-        <i>Information panel with rich text editor</i>
+        <i>Document your cohort and access settings</i>
         <ul>
           <li>
-            Use this panel to <em>create and edit notes</em> with rich text formatting
+            <em>Document your cohort</em> in the description tab using the the rich text editor. You can even ask AI to check that your description is properly implemented.
           </li>
           <li>
-            The editor supports <em>bold, italic, lists, headers</em> and more formatting options
+            <em>Share and export your cohort</em> in the share tab.
           </li>
           <li>
-            Perfect for <em>documentation, notes, or detailed information</em> that needs formatting
+            <em>Delete your cohort</em> in the settings tab.
           </li>
         </ul>
       </span>
