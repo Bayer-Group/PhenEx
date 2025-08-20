@@ -467,6 +467,7 @@ export class CohortDataService {
       this._cohort_name = '';
       this._table_data = { rows: [], columns: this.columns };
       this.notifyListeners();
+      this.notifyNameChangeListeners();
     }
   }
 

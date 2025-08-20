@@ -84,7 +84,7 @@ export const MainView = () => {
       case ViewType.NewCohort:
         return <CohortViewer data={undefined} />;
       default:
-        return null;
+        return <SplashPage />;
     }
   };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './CohortSettingsEditor.module.css';
 import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
 import { ItemList } from '../../../../components/ItemList/ItemList';
+import { MainViewService } from '../../../MainView/MainView';
 
 export interface CohortSettingsEditorProps {
   value?: any;
@@ -79,6 +80,8 @@ export const CohortSettingsEditor: React.FC<CohortSettingsEditorProps> = props =
     // Call the deleteCohort method from the data service
     await dataService.deleteCohort();
     console.log('Cohort deleted successfully');
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo('empty');
   };
 
   return (
