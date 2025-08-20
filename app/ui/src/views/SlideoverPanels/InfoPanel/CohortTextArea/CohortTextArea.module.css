@@ -21,10 +21,7 @@
   z-index: 10;
   background: var(--background-color);
   border-radius: 8px;
-  /* padding: 4px;
-  margin-right:10px; */
   margin-left:10px;
-  margin-bottom: 0px !important; /* Remove bottom margin to test */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -62,16 +59,8 @@
   border-radius: 4px;
   background: white;
   cursor: pointer;
-}
+  color: var(--color-accent-bright) !important;
 
-.stickyToolbar button:hover,
-.stickyToolbar select:hover {
-  background: #f0f0f0;
-}
-
-.stickyToolbar button.ql-active {
-  background: red !important;
-  color: white;
 }
 
 /* Editor content area */

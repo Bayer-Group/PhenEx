@@ -94,18 +94,6 @@ code {
 }
 
 
-
-
-
-.infobox.closed {
-  /* padding: 0px; */
-  max-height: 0; /* Closed state */
-  opacity: 0; /* Hidden */
-}
-
-.infobox.closed{
-  margin:0px;
-}
 .infoButton {
   position: absolute !important;
   right: 20px;

@@ -28,7 +28,7 @@
   overflow-x: hidden;
   min-height: 0;
   padding-left:0px;
-  height: 0; /* Forces flex to calculate remaining height */
+  margin-bottom:10px;
 }
 
 .bottomContainer > div {
