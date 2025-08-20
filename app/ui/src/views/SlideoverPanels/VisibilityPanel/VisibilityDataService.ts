@@ -80,8 +80,12 @@ export class VisibilityDataService {
   }
 
   private initializeTableData(): TableData {
-    // Filter out the rowDrag column - users shouldn't see or control it
-    const filteredColumns = defaultColumns.filter(column => column.field !== 'rowDrag');
+    // Filter out the rowDrag, type, and name columns - users shouldn't see or control them
+    const filteredColumns = defaultColumns.filter(column => 
+      column.field !== 'rowDrag' && 
+      column.field !== 'type' && 
+      column.field !== 'name'
+    );
     
     const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
@@ -162,8 +166,10 @@ export class VisibilityDataService {
   private updateCohortDataServiceColumns(): void {
     const cohortDataService = CohortDataService.getInstance();
     
-    // Always get the rowDrag column first (it should always be present)
+    // Always get the rowDrag, type, and name columns first (they should always be present)
     const rowDragColumn = defaultColumns.find(col => col.field === 'rowDrag');
+    const typeColumn = defaultColumns.find(col => col.field === 'type');
+    const nameColumn = defaultColumns.find(col => col.field === 'name');
     
     // Get the ordered list of visible column names
     const visibleColumnNames = this.getOrderedVisibleColumns();
@@ -179,8 +185,9 @@ export class VisibilityDataService {
       })
       .filter(col => col !== undefined);
     
-    // Combine rowDrag column (if it exists) with visible columns
-    const finalColumns = rowDragColumn ? [rowDragColumn, ...visibleColumns] : visibleColumns;
+    // Combine required columns (rowDrag, type, name) with visible columns
+    const requiredColumns = [rowDragColumn, typeColumn, nameColumn].filter(col => col !== undefined);
+    const finalColumns = [...requiredColumns, ...visibleColumns];
     
     console.log('Updating CohortDataService columns:', finalColumns);
     
