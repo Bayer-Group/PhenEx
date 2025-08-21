@@ -288,20 +288,20 @@ class Cohort:
         # Post-index / reporting stage
         #
         # Create HStackNodes for characteristics and outcomes
-        self.characteristics_node = None
-        self.outcomes_node = None
+        self.characteristics_table_node = None
+        self.outcomes_table_node = None
         reporting_nodes = []
         if self.characteristics:
-            self.characteristics_node = HStackNode(
+            self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
                 phenotypes=self.characteristics,
             )
-            reporting_nodes.append(self.characteristics_node)
+            reporting_nodes.append(self.characteristics_table_node)
         if self.outcomes:
-            self.outcomes_node = HStackNode(
+            self.outcomes_table_node = HStackNode(
                 name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
             )
-            reporting_nodes.append(self.outcomes_node)
+            reporting_nodes.append(self.outcomes_table_node)
 
         self.reporting_stage = Executor(name="reporting", nodes=reporting_nodes)
 
@@ -365,12 +365,12 @@ class Cohort:
 
     @property
     def characteristics_table(self):
-        if self.characteristics_node:
+        if self.characteristics_table_node:
             return self.characteristics_table_node.table
 
     @property
     def outcomes_table(self):
-        if self.outcomes_node:
+        if self.outcomes_table_node:
             return self.outcomes_table_node.table
 
     def get_subset_tables_entry(self, tables):
