@@ -63,8 +63,8 @@ export const IssuesDisplayControl: React.FC = () => {
       onClick={handleClick}
     >
             {showPopover && (
-        <PositionedPortal triggerRef={containerRef} position="below" offsetY={5}>
-          <div className={styles.popover}>
+<PositionedPortal triggerRef={containerRef} position="below" offsetY={5} alignment="right">
+            <div className={styles.popover}>
             <IssuesPopover issues={issues} onClick={closePopover}/>
           </div>
         </PositionedPortal>

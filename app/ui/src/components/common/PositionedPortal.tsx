@@ -7,6 +7,7 @@ interface PositionedPortalProps {
   offsetX?: number;
   offsetY?: number;
   position?: 'below' | 'above' | 'right' | 'left';
+  alignment?: 'left' | 'center' | 'right'; // New prop for X alignment
 }
 
 export const PositionedPortal: React.FC<PositionedPortalProps> = ({ 
@@ -14,7 +15,8 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
   triggerRef, 
   offsetX = 0, 
   offsetY = 0,
-  position = 'below'
+  position = 'below',
+  alignment = 'left'
 }) => {
   const [container] = useState(() => document.createElement('div'));
 
@@ -35,23 +37,32 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     const updatePosition = () => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        let x = rect.left + offsetX;
-        let y = rect.bottom + offsetY;
+        
+        // Calculate X position based on alignment
+        let baseX = rect.left + window.scrollX;
+        if (alignment === 'center') {
+          baseX = rect.left + window.scrollX + (rect.width / 2);
+        } else if (alignment === 'right') {
+          baseX = rect.right + window.scrollX;
+        }
+        
+        let x = baseX + offsetX;
+        let y = rect.bottom + window.scrollY + offsetY;
 
         switch (position) {
           case 'above':
-            y = rect.top - offsetY;
+            y = rect.top + window.scrollY - offsetY;
             break;
           case 'below':
-            y = rect.bottom + offsetY;
+            y = rect.bottom + window.scrollY + offsetY;
             break;
           case 'right':
-            x = rect.right + offsetX;
-            y = rect.top + offsetY;
+            x = rect.right + window.scrollX + offsetX;
+            y = rect.top + window.scrollY + offsetY;
             break;
           case 'left':
-            x = rect.left - offsetX;
-            y = rect.top + offsetY;
+            x = rect.left + window.scrollX - offsetX;
+            y = rect.top + window.scrollY + offsetY;
             break;
         }
 
@@ -74,7 +85,7 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
     };
-  }, [triggerRef, offsetX, offsetY, position, container]);
+  }, [triggerRef, offsetX, offsetY, position, alignment, container]);
 
   // Re-enable pointer events on the portal content
   const portalContent = (
