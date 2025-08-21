@@ -65,9 +65,30 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
       dataService.onCellValueChanged(event);
     }
   };
-
+        {/* <div className={styles.bottomSection}>
+          <div className={styles.componentsTitleDiv}>
+            <span className={styles.components_title}>Component phenotypes</span>
+            <br></br>
+            <span className={styles.components_phenotype_name}> of {phenotypeName}</span>
+            <button className={styles.addButton} onClick={clickedOnAddButton}>
+              Add
+            </button>
+          </div>
+          <div className={`${styles.componentsContainer}`}>
+            <PhenotypeComponents />
+          </div>
+        </div> */}
+  const clickedOnAddButton = (e: React.MouseEvent) => {
+    dataService.addNewComponentPhenotype();
+  };
+  
   return (
     <div className={styles.phenotypeContainer}>
+      <div className={styles.header}>
+        <button className={styles.addButton} onClick={clickedOnAddButton}>
+              Add
+            </button>
+      </div>
       <div className={styles.tableBox}>
         <CohortTable
           data={dataService.componentPhenotypeTableData}
