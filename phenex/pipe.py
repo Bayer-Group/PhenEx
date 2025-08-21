@@ -213,10 +213,11 @@ class Node:
         # Use json.dumps to get a string, enforce sorted keys for deterministic ordering
         encoded = json.dumps(as_dict, sort_keys=True).encode()
         dhash.update(encoded)
-        return hash(dhash.hexdigest())
+        return int(dhash.hexdigest()[:8], 16)
 
     def __hash__(self):
         # For python built-in function hash().
+        # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
     def _update_current_hash(self):
