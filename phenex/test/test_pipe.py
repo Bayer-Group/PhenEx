@@ -583,11 +583,11 @@ class TestPhenexExecutor:
 
         # Mock that nodes haven't been computed before
         child._get_last_hash = Mock(return_value=None)
-        child._get_current_hash = Mock(return_value="child_hash")
+        child._get_current_hash = Mock(return_value=2345)
         child._update_current_hash = Mock(return_value=True)
 
         parent._get_last_hash = Mock(return_value=None)
-        parent._get_current_hash = Mock(return_value="parent_hash")
+        parent._get_current_hash = Mock(return_value=1234)
         parent._update_current_hash = Mock(return_value=True)
 
         executor = Executor("test", [parent])
