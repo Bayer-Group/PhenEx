@@ -62,19 +62,25 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   
   return (
     <SlideoverPanel title="Phenotype Editor" info={infoContent()} classNameHeader={typeStyles[`${data.type}_color_block`]} classNameButton={styles.whiteText}>
-      <div className={styles.mainContainer}>
-        <div className={styles.controlsContainer}>
-          <Tabs
-            width={400}
-            height={25}
-            tabs={tabs}
-            onTabChange={onTabChange}
-            active_tab_index={activeTabIndex}
-          />
+      <div className={styles.wrapper}>
+        <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
+          {data.name}
         </div>
-        <div className={styles.bottomSection}>
-          {currentView === PhenotypePanelViewType.Parameters && data && <PhenotypeViewer data={data} />}
-          {currentView === PhenotypePanelViewType.ComponentPhenotypes && <PhenotypeComponents data={data} />}
+        <div className={styles.mainContainer}>
+          <div className={styles.controlsContainer}>
+            <Tabs
+              width={400}
+              height={25}
+              tabs={tabs}
+              onTabChange={onTabChange}
+              active_tab_index={activeTabIndex}
+              accentColor={`var(--color_${data.type})`}
+            />
+          </div>
+          <div className={styles.bottomSection}>
+            {currentView === PhenotypePanelViewType.Parameters && data && <PhenotypeViewer data={data} />}
+            {currentView === PhenotypePanelViewType.ComponentPhenotypes && <PhenotypeComponents data={data} />}
+          </div>
         </div>
       </div>
     </SlideoverPanel>

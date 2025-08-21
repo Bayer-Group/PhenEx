@@ -2,7 +2,7 @@ import { FC, useState, useRef, useEffect } from 'react';
 import styles from './PhenotypeComponents.module.css';
 import { PhenotypeDataService } from '../PhenotypeDataService';
 import { CohortTable } from '../../../CohortViewer/CohortTable/CohortTable';
-
+import buttonStyles from '../../../../components/ButtonsAndTabs/Button/Button.module.css'
 interface PhenotypeComponentsProps {
   data?: string;
 }
@@ -85,7 +85,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.header}>
-        <button className={styles.addButton} onClick={clickedOnAddButton}>
+        <button className={`${styles.addButton} ${buttonStyles.button}`} onClick={clickedOnAddButton}>
               Add
             </button>
       </div>

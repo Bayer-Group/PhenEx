@@ -74,66 +74,67 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <AgGridReact
-        rowData={dataService.rowData}
-        columnDefs={dataService.getColumnDefs()}
-        ref={gridRef}
-        theme={dataService.getTheme()}
-        onCellValueChanged={onCellValueChanged}
-        animateRows={false}
-        domLayout="autoHeight"
-        defaultColDef={{
-          flex: 1,
-          minWidth: 100,
-          resizable: true,
-        }}
-        getRowHeight={params => {
-          // Calculate height of CODELISTS
-          let current_max_height = 44;
+      <div style={{ height: '100%' }}>
+        <AgGridReact
+          rowData={dataService.rowData}
+          columnDefs={dataService.getColumnDefs()}
+          ref={gridRef}
+          theme={dataService.getTheme()}
+          onCellValueChanged={onCellValueChanged}
+          animateRows={false}
+          defaultColDef={{
+            flex: 1,
+            minWidth: 100,
+            resizable: true,
+          }}
+          getRowHeight={params => {
+            // Calculate height of CODELISTS
+            let current_max_height = 100;
 
-          if (params.data?.parameter == 'codelist' && params.data.codelist?.codelist) {
-            const numEntries = Object.keys(params.data.codelist.codelist).length;
-            const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
-            current_max_height = Math.max(current_max_height, codelist_phenotype_height);
-            return current_max_height;
-          }
-
-          if (params.data?.parameter == 'categorical_filter') {
-            return current_max_height * 2;
-          }
-
-          // Calculate height of RELATIVE TIME RANGES
-          if (
-            params.data?.parameter == 'relative_time_range' &&
-            params.data?.relative_time_range
-          ) {
-            if (
-              params.data?.relative_time_range &&
-              Array.isArray(params.data.relative_time_range)
-            ) {
-              const numEntries = params.data.relative_time_range.length;
-              const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
-              current_max_height = Math.max(current_max_height, time_range_phenotype_height);
-            }
-          }
-
-          if (params.data?.parameter == 'description') {
-            if (!params.data?.value) {
-              current_max_height = 30;
+            if (params.data?.parameter == 'codelist' && params.data.codelist?.codelist) {
+              const numEntries = Object.keys(params.data.codelist.codelist).length;
+              const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
+              current_max_height = Math.max(current_max_height, codelist_phenotype_height);
               return current_max_height;
             }
 
-            const descriptionCol = params.api.getColumnDef('description');
-            // if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
-            const descWidth = 200;
-            const charPerLine = Math.floor(descWidth / 8);
-            const lines = Math.ceil(params.data?.value.length / charPerLine);
-            return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
-          }
+            if (params.data?.parameter == 'categorical_filter') {
+              return current_max_height * 2;
+            }
 
-          return current_max_height;
-        }}
-      />
+            // Calculate height of RELATIVE TIME RANGES
+            if (
+              params.data?.parameter == 'relative_time_range' &&
+              params.data?.relative_time_range
+            ) {
+              if (
+                params.data?.relative_time_range &&
+                Array.isArray(params.data.relative_time_range)
+              ) {
+                const numEntries = params.data.relative_time_range.length;
+                const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
+                current_max_height = Math.max(current_max_height, time_range_phenotype_height);
+              }
+            }
+
+            if (params.data?.parameter == 'description') {
+              if (!params.data?.value) {
+                current_max_height = 30;
+                return current_max_height;
+              }
+
+              const descriptionCol = params.api.getColumnDef('description');
+              // if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
+              const descWidth = 200;
+              const charPerLine = Math.floor(descWidth / 8);
+              const lines = Math.ceil(params.data?.value.length / charPerLine);
+              return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
+            }
+
+            return current_max_height;
+          }}
+        />
+      </div>
     );
   }
 

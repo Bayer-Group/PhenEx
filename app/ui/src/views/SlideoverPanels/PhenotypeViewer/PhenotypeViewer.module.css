@@ -10,9 +10,16 @@
   margin-top: 0px;
   margin-left: 0px;
   margin-right: 0px;
-  height: calc(100vh - 50px);
+  flex: 1;
   /* border: 1px solid var(--color-accent_2); */
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.paramsContainer {
+  flex: 1;
+  min-height: 0;
 }
 
 .title {

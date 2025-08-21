@@ -11,5 +11,17 @@
   flex: 1;
   height: 100%;
   width: 100%;
-  margin-bottom: 60px;
+}
+
+
+.header{
+  margin-top:5px;
+  margin-bottom:3px;
+  height:40px;
+
+}
+
+.addButton{
+position: absolute;
+right:20px;
 }

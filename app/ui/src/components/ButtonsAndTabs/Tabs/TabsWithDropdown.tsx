@@ -1,16 +1,18 @@
 import { FC, useState, useEffect } from 'react';
+import { Tabs } from './Tabs';
 import styles from './Tabs.module.css';
 import { CustomizableDropdownButton } from '../ButtonsBar/CustomizableDropdownButton';
 
 interface TabsWithDropdownProps {
-  width: string | number;
-  height: string | number;
+  width?: string | number;
+  height?: string | number;
   tabs: string[];
   dropdown_items?: Record<number, React.ReactNode>;
   active_tab_index?: number;
   outline_tab_index?: number;
   onTabChange?: (index: number) => void;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
+  accentColor?: string;
 }
 
 export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
@@ -22,6 +24,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
   outline_tab_index = -1,
   onTabChange,
   customizableDropdownButtonRef,
+  accentColor,
 }) => {
   const [activeTab, setActiveTab] = useState(active_tab_index);
 
@@ -38,13 +41,31 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
     }
   };
 
+  // If no dropdown items, just use the base Tabs component
+  if (!dropdown_items || Object.keys(dropdown_items).length === 0) {
+    return (
+      <Tabs
+        width={width}
+        height={height}
+        tabs={tabs}
+        active_tab_index={active_tab_index}
+        onTabChange={onTabChange}
+        accentColor={accentColor}
+      />
+    );
+  }
+
+  // Create CSS custom properties for dynamic accent color
+  const containerStyle = {
+    '--dynamic-accent-color': accentColor || 'var(--color-accent-bright)',
+    width: typeof width === 'number' ? `${width}px` : width,
+    height: typeof height === 'number' ? `${height}px` : height,
+  } as React.CSSProperties;
+
   return (
     <div
       className={styles.tabsContainer}
-      style={{
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
-      }}
+      style={containerStyle}
     >
       {tabs.map((tab, index) => {
         if (dropdown_items && index in dropdown_items) {
@@ -61,7 +82,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
           return (
             <button
               key={index}
-              className={`${styles.tab} ${index === activeTab ? styles.active : ''}  ${index === outline_tab_index ? styles.outline : ''}`}
+              className={`${styles.tab} ${index === activeTab ? styles.active : ''} ${index === outline_tab_index ? styles.outline : ''}`}
               onClick={() => handleTabClick(index)}
             >
               {tab}

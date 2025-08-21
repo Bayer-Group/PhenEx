@@ -15,7 +15,7 @@
 
 .tabsContainer:hover {
   background-color: var(--color-accent-hover) !important;
-  border: 1px solid var(--color-accent-bright);
+  border: 1px solid var(--dynamic-accent-color, var(--color-accent-bright));
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -45,15 +45,15 @@
   /* transform: translateY(-1px); */
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
   background-color: var(--button-background-color-hover);
-  color: var(--button-text-color-hover);
-  border: 1px solid var(--button-border-color-hover);
+  color: var(--dynamic-accent-color, var(--button-text-color-hover));
+  border: 1px solid var(--dynamic-accent-color, var(--button-border-color-hover));
   font-family: var(--button-font-family-hover);
 }
 
 .tab.active {
   background-color: var(--button-background-color-selected) !important;
-  color: var(--button-text-color-selected);
-  border: 1px solid var(--button-border-color-selected);
+  color: var(--dynamic-accent-color, var(--button-text-color-selected));
+  border: 1px solid var(--dynamic-accent-color, var(--button-border-color-selected));
   font-family: var(--button-font-family-selected);
 
   /* transform: translateY(-1px); */
@@ -68,13 +68,11 @@
   outline: none;
 }
 
-.outline{
+.outline {
   font-family: "IBMPlexSans-bold";
   border: var(--border);
 }
 
-.tab.outline:hover{
-    font-family: "IBMPlexSans-bold";
-
-
+.tab.outline:hover {
+  font-family: "IBMPlexSans-bold";
 }

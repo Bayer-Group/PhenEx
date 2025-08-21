@@ -29,6 +29,7 @@
   color: var(--color_inclusion);
 }
 
+
 .exclusion_list_item_selected{
   border-color: var(--color_exclusion) !important;
   color: var(--color_exclusion);
@@ -36,22 +37,22 @@
 
 .outcome_list_item_selected{
   border-color: var(--color_outcome) !important;
-  color: var(--color_outcome);
+  color: var(--color_outcome) !important;
 }
 
 .entry_list_item_selected{
   border-color: var(--color_entry) !important;
-  color: var(--color_entry);
+  color: var(--color_entry) !important;
 }
 
 .baseline_list_item_selected{
   border-color: var(--color_baseline) !important;
-  color: var(--color_baseline); 
+  color: var(--color_baseline) !important;
 }
 
 .component_list_item_selected{
   border-color: var(--color_component) !important;
-  color: var(--color_component);
+  color: var(--color_component) !important;
 }
 
 
