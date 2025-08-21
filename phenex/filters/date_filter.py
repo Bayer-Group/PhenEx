@@ -11,11 +11,11 @@ class Date(Value):
     Attributes:
         operator (str): The comparison operator, one of '>', '>=', '<', '<=', '='.
         value (Union[date, str]): The date value, which can be a `date` object or a string in 'YYYY-MM-DD' format.
-        date_format (str): The format to use for parsing date strings (default is 'YYYY-MM-DD').
+        date_format (str): The format to use for parsing date strings (default is '%Y-%m-%d').
     """
 
     def __init__(
-        self, operator: str, value: Union[date, str], date_format="YYYY-MM-DD"
+        self, operator: str, value: Union[date, str], date_format="%Y-%m-%d"
     ):
         if isinstance(value, str):
             value = datetime.strptime(value, date_format).date()
