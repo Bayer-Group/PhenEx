@@ -306,6 +306,10 @@ class Cohort:
         self.reporting_stage = Executor(name="reporting", nodes=reporting_nodes)
 
         self._table1 = None
+
+        # Validate that all nodes are unique across all stages
+        self._validate_node_uniqueness()
+
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
@@ -477,3 +481,47 @@ class Cohort:
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
         return to_dict(self)
+
+    def _validate_node_uniqueness(self):
+        """
+        Validate that all nodes and dependencies are unique according to the rule:
+        node1.name == node2.name implies hash(node1) == hash(node2)
+
+        This ensures that nodes with the same name have identical parameters (same hash).
+        """
+        name_to_hash = {}
+
+        # Collect all nodes from all stages
+        all_nodes = []
+
+        # Add nodes from entry stage
+        if hasattr(self, "entry_stage") and self.entry_stage:
+            all_nodes += list(self.entry_stage.nodes.values())
+
+        # Add nodes from derived tables stage
+        if hasattr(self, "derived_tables_stage") and self.derived_tables_stage:
+            all_nodes += list(self.derived_tables_stage.nodes.values())
+
+        # Add nodes from index stage
+        if hasattr(self, "index_stage") and self.index_stage:
+            all_nodes += list(self.index_stage.nodes.values())
+
+        # Add nodes from reporting stage
+        if hasattr(self, "reporting_stage") and self.reporting_stage:
+            all_nodes += list(self.reporting_stage.nodes.values())
+
+        for node in all_nodes:
+            node_name = node.name
+            node_hash = hash(node)
+
+            # Check if we've seen this name before
+            if node_name in name_to_hash:
+                existing_hash = name_to_hash[node_name]
+                if existing_hash != node_hash:
+                    raise ValueError(
+                        f"Duplicate node name found: '{node_name}'."
+                        f"Nodes with the same name must have identical parameters."
+                    )
+            else:
+                existing_hash = None
+                name_to_hash[node_name] = node_hash

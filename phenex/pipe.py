@@ -354,8 +354,33 @@ class Executor:
         self.name = name
         self.nodes = {node.name: node for node in nodes}
         self._auto_add_missing_dependencies()
+        self._validate_node_uniqueness()
         self._dependency_graph = self._build_dependency_graph()
         self._reverse_graph = self._build_reverse_graph()
+
+    def _validate_node_uniqueness(self):
+        """
+        Validate that all nodes and dependencies are unique according to the rule:
+        node1.name == node2.name implies hash(node1) == hash(node2)
+
+        This ensures that nodes with the same name have identical parameters (same hash).
+        """
+        name_to_hash = {}
+
+        for node_name, node in self.nodes.items():
+            node_hash = hash(node)
+
+            # Check if we've seen this name before
+            if node_name in name_to_hash:
+                existing_hash = name_to_hash[node_name]
+                if existing_hash != node_hash:
+                    raise ValueError(
+                        f"Node uniqueness violation: Found nodes with the same name '{node_name}' "
+                        f"but different hashes ({existing_hash} vs {node_hash}). "
+                        f"Nodes with the same name must have identical parameters."
+                    )
+            else:
+                name_to_hash[node_name] = node_hash
 
     def _build_dependency_graph(self) -> Dict[str, Set[str]]:
         """
@@ -475,6 +500,8 @@ class Executor:
         # Add all collected dependencies to the workflow
         if added_nodes:
             self.nodes.update(added_nodes)
+            # Validate uniqueness of all nodes (including newly added dependencies)
+            self._validate_node_uniqueness()
             # Rebuild the dependency graphs with the new nodes
             self._dependency_graph = self._build_dependency_graph()
             self._reverse_graph = self._build_reverse_graph()
