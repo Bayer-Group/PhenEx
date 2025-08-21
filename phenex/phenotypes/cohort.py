@@ -64,13 +64,8 @@ class InclusionsTableNode(Node):
         self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
     ):
         super(InclusionsTableNode, self).__init__(name=name)
-        logger.info(phenotypes)
-        logger.info(index_phenotype)
-        logger.info(self.dependencies)
         self.add_children(phenotypes)
-        logger.info(self.dependencies)
         self.add_children(index_phenotype)
-        logger.info(self.dependencies)
         self.phenotypes = phenotypes
         self.index_phenotype = index_phenotype
 

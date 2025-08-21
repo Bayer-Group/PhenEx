@@ -116,6 +116,8 @@ class ComputationGraphPhenotype(Phenotype):
         schema = joined_table.schema()
         if "VALUE" not in schema.names:
             joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
+        if "BOOLEAN" not in schema.names:
+            joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
         return joined_table
 

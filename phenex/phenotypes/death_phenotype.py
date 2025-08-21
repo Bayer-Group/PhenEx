@@ -48,5 +48,6 @@ class DeathPhenotype(Phenotype):
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
-        death_table = death_table.mutate(VALUE=ibis.null())
-        return death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
+        death_table = death_table.mutate(VALUE=ibis.null("int32"))
+        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
+        return death_table.select(["PERSON_ID", "EVENT_DATE", "VALUE"])
