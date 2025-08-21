@@ -49,5 +49,6 @@ class DeathPhenotype(Phenotype):
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
         death_table = death_table.mutate(VALUE=ibis.null("int32"))
+        death_table = death_table.mutate(BOOLEAN=True)
         death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
         return death_table.select(["PERSON_ID", "EVENT_DATE", "VALUE"])
