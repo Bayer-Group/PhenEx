@@ -1,38 +1,41 @@
 .inclusion_list_item:hover{
-  border-color: var(--color_inclusion);
+  border-color: var(--color_inclusion) !important;
 }
 
 .exclusion_list_item:hover{
-  border-color: var(--color_exclusion);
+  border-color: var(--color_exclusion) !important;
 }
 
 .outcome_list_item:hover{
-  border-color: var(--color_outcome);
+  border-color: var(--color_outcome) !important;
+  
 }
 
 .entry_list_item:hover{
-  border-color: var(--color_entry);
+  border-color: var(--color_entry) !important;
 }
 
 .baseline_list_item:hover{
-  border-color: var(--color_baseline);
+  border-color: var(--color_baseline) !important;
 }
 
 .component_list_item:hover{
-  border-color: var(--color_component);
+  border-color: var(--color_component) !important;
 }
+
+
 
 
 /* A list item; border and text is colored */
 .inclusion_list_item_selected{
   border-color: var(--color_inclusion) !important;
-  color: var(--color_inclusion);
+  color: var(--color_inclusion) !important;
 }
 
 
 .exclusion_list_item_selected{
   border-color: var(--color_exclusion) !important;
-  color: var(--color_exclusion);
+  color: var(--color_exclusion) !important;
 }
 
 .outcome_list_item_selected{
@@ -85,4 +88,37 @@
 .component_color_block{
   background-color: var(--color_component) !important;
   color: white;
+}
+
+
+/* color both text and border on hover*/
+.inclusion_color_text_and_border_on_hover:hover{
+  border-color: var(--color_inclusion) !important;
+  color: var(--color_inclusion) !important;
+}
+
+
+.exclusion_color_text_and_border_on_hover:hover{
+  border-color: var(--color_exclusion) !important;
+  color: var(--color_exclusion) !important;
+}
+
+.outcome_color_text_and_border_on_hover:hover{
+  border-color: var(--color_outcome) !important;
+  color: var(--color_outcome) !important;
+}
+
+.entry_color_text_and_border_on_hover:hover{
+  border-color: var(--color_entry) !important;
+  color: var(--color_entry) !important;
+}
+
+.baseline_color_text_and_border_on_hover:hover{
+  border-color: var(--color_baseline) !important;
+  color: var(--color_baseline) !important;
+}
+
+.component_color_text_and_border_on_hover:hover{
+  border-color: var(--color_component) !important;
+  color: var(--color_component) !important;
 }

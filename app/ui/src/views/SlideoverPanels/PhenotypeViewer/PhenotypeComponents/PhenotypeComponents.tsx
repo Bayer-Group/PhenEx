@@ -2,7 +2,8 @@ import { FC, useState, useRef, useEffect } from 'react';
 import styles from './PhenotypeComponents.module.css';
 import { PhenotypeDataService } from '../PhenotypeDataService';
 import { CohortTable } from '../../../CohortViewer/CohortTable/CohortTable';
-import buttonStyles from '../../../../components/ButtonsAndTabs/Button/Button.module.css'
+import typeStyles from '../../../../styles/study_types.module.css';
+
 interface PhenotypeComponentsProps {
   data?: string;
 }
@@ -10,6 +11,7 @@ interface PhenotypeComponentsProps {
 export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => PhenotypeDataService.getInstance());
+  const [tableData, setTableData] = useState(dataService.componentPhenotypeTableData);
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -48,6 +50,9 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
         refreshPhenotypeGrid,
         dataService.componentPhenotypeTableData
       );
+      // Update the state to trigger re-render
+      setTableData(dataService.componentPhenotypeTableData);
+      
       if (refreshPhenotypeGrid) {
         refreshGrid();
       }
@@ -60,24 +65,37 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     };
   }, []);
 
+  useEffect(() => {
+      const listener = (refreshPhenotypeGrid: boolean = false) => {
+        if (refreshPhenotypeGrid) {
+          refreshGrid();
+        }
+      };
+      dataService.addListener(listener);
+  
+      if (data) {
+        console.log("SETTING DATA", data)
+        dataService.setData(data);
+      }
+  
+      return () => {
+        dataService.removeListener(listener);
+      };
+    }, [data]);
+
+  // Update table data when the phenotype data changes
+  useEffect(() => {
+    setTableData(dataService.componentPhenotypeTableData);
+  }, [data]);
+
+
+
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
-      dataService.onCellValueChanged(event);
+      dataService.valueChanged(event.data, event.newValue);
     }
   };
-        {/* <div className={styles.bottomSection}>
-          <div className={styles.componentsTitleDiv}>
-            <span className={styles.components_title}>Component phenotypes</span>
-            <br></br>
-            <span className={styles.components_phenotype_name}> of {phenotypeName}</span>
-            <button className={styles.addButton} onClick={clickedOnAddButton}>
-              Add
-            </button>
-          </div>
-          <div className={`${styles.componentsContainer}`}>
-            <PhenotypeComponents />
-          </div>
-        </div> */}
+
   const clickedOnAddButton = (e: React.MouseEvent) => {
     dataService.addNewComponentPhenotype();
   };
@@ -85,13 +103,13 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.header}>
-        <button className={`${styles.addButton} ${buttonStyles.button}`} onClick={clickedOnAddButton}>
-              Add
+        <button className={`${styles.addButton} ${typeStyles[`${data.type}_color_text_and_border_on_hover`]}`} onClick={clickedOnAddButton}>
+              Add Component
             </button>
       </div>
       <div className={styles.tableBox}>
         <CohortTable
-          data={dataService.componentPhenotypeTableData}
+          data={tableData}
           onCellValueChanged={onCellValueChanged}
           ref={gridRef}
           currentlyViewing = {'components'}

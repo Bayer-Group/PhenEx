@@ -51,6 +51,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     dataService.addListener(listener);
 
     if (data) {
+      console.log("SETTING DATA", data)
       dataService.setData(data);
       setPhenotypeName(data.name);
     }

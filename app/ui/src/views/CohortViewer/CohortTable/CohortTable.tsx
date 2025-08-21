@@ -150,8 +150,24 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
   
     const NoRowsOverlayComponents: FC = () => {
       return (
-        <div className={styles.noRowsOverlayComponents}>
-         
+        <div className={styles.noRowsOverlay}>
+          <div className={styles.noRowsOverlayComponents}>
+            <span className={styles.noRowsBottomLine}>
+              <span className={styles.noRows_section}>Add a component phenotype</span>
+              <br></br>
+              <span className={styles.noRowsTopLine}>
+                <ul>
+                  <li>
+                    Click <span className={styles.buttonAppearance}>Add Component</span> in right above this table to add a component phenotype.
+                  </li>
+                  <li>
+                    Component phenotypes can then be accessed by Composite Phenotypes such as LogicPhenotype, ScorePhenotype, ArithemticPhenotype, etc.
+                  </li>
+                </ul>
+              </span>
+              <br></br>
+            </span>
+          </div>
         </div>
       );
     };

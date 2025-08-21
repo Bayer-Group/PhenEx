@@ -8,7 +8,6 @@
   flex-direction: column;
   padding: 0px 0px 0px 0px;
   margin: 0;
-  overflow: hidden; /* Prevent container from growing */
   box-sizing: border-box;
   /* background-color: red; */
 }

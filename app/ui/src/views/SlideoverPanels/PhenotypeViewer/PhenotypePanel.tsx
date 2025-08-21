@@ -37,20 +37,15 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       <span className = {styles.whiteText}>
         <i className = {styles.whiteText}>Edit a single phenotype</i>
         <br></br>
-        Currently editing : <strong>{data.name}</strong>
-        <br></br>
         <ul>
-          <li>{data.name} is currently a <strong>{data?.class_name}</strong>.</li>
           <li>
-            All parameters available for <strong>{data?.class_name}</strong> are displayed and editable in this table.
+            All parameters available for a single phenotype are displayed and editable in this table.
           </li>
-          <li>Add component phenotypes if necessary</li>
+          <li>Click the Component phenotypes tab to add component phenotypes.</li>
         </ul>
       </span>
     );
   };
-  
-  console.log("PHENOTYPE PANEL", currentView, "data:", data)
   
   if (!data) {
     return (
@@ -64,7 +59,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     <SlideoverPanel title="Phenotype Editor" info={infoContent()} classNameHeader={typeStyles[`${data.type}_color_block`]} classNameButton={styles.whiteText}>
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
-          {data.name}
+          <span className={styles.fillerText}>for</span> {data.name}
         </div>
         <div className={styles.mainContainer}>
           <div className={styles.controlsContainer}>

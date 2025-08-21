@@ -17,7 +17,7 @@
 /* Sticky toolbar at the top */
 .stickyToolbar {
   position: absolute;
-  top: 0px;
+  top: -20px;
   z-index: 10;
   background: var(--background-color);
   border-radius: 8px;
