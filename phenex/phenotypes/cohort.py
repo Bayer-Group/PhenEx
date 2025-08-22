@@ -496,19 +496,19 @@ class Cohort:
 
         # Add nodes from entry stage
         if hasattr(self, "entry_stage") and self.entry_stage:
-            all_nodes += list(self.entry_stage.nodes.values())
+            all_nodes += list(self.entry_stage.dependencies)
 
         # Add nodes from derived tables stage
         if hasattr(self, "derived_tables_stage") and self.derived_tables_stage:
-            all_nodes += list(self.derived_tables_stage.nodes.values())
+            all_nodes += list(self.derived_tables_stage.dependencies)
 
         # Add nodes from index stage
         if hasattr(self, "index_stage") and self.index_stage:
-            all_nodes += list(self.index_stage.nodes.values())
+            all_nodes += list(self.index_stage.dependencies)
 
         # Add nodes from reporting stage
         if hasattr(self, "reporting_stage") and self.reporting_stage:
-            all_nodes += list(self.reporting_stage.nodes.values())
+            all_nodes += list(self.reporting_stage.dependencies)
 
         for node in all_nodes:
             node_name = node.name

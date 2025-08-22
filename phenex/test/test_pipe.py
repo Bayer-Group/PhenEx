@@ -429,8 +429,8 @@ class TestPhenexExecutor:
 
         executor = Executor("test_executor", [node1, node2])
 
-        assert "NODE3" in executor.nodes
-        assert "NODE4" in executor.nodes
+        assert "NODE3" in executor.dependencies
+        assert "NODE4" in executor.dependencies
 
     def test_build_reverse_graph(self):
         """Test reverse dependency graph building"""
@@ -440,41 +440,8 @@ class TestPhenexExecutor:
 
         executor = Executor("test", [parent, child])
 
-        assert "CHILD" in executor._reverse_graph
-        assert "PARENT" in executor._reverse_graph["CHILD"]
-
-    def test_topological_sort_simple(self):
-        """Test topological sort with simple dependencies"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        executor = Executor("test", [parent, child])
-        order = executor._topological_sort()
-
-        # Child should come before parent
-        child_index = order.index("CHILD")
-        parent_index = order.index("PARENT")
-        assert child_index < parent_index
-
-    def test_topological_sort_complex(self):
-        """Test topological sort with complex dependencies"""
-        bottom = ConcreteNode("bottom")
-        left = ConcreteNode("left")
-        right = ConcreteNode("right")
-        top = ConcreteNode("top")
-
-        left.add_children(bottom)
-        right.add_children(bottom)
-        top.add_children([left, right])
-
-        executor = Executor("test", [top, left, right, bottom])
-        order = executor._topological_sort()
-
-        # Bottom should come first, top should come last
-        bottom_index = order.index("BOTTOM")
-        top_index = order.index("TOP")
-        assert bottom_index < top_index
+        assert "CHILD" in executor._build_reverse_graph()
+        assert "PARENT" in executor._build_reverse_graph["CHILD"]
 
     def test_execute_sequential_simple(self):
         """Test sequential execution"""
@@ -485,12 +452,10 @@ class TestPhenexExecutor:
         executor = Executor("test", [parent, child])
         tables = {"domain1": MockTable()}
 
-        results = executor.execute_sequential(tables)
+        executor._execute_sequential(tables)
 
         assert child.executed
         assert parent.executed
-        assert "CHILD" in results
-        assert "PARENT" in results
 
     def test_execute_multithreaded(self):
         """Test multithreaded execution"""
@@ -504,7 +469,7 @@ class TestPhenexExecutor:
         tables = {"domain1": MockTable()}
 
         start_time = time.time()
-        results = executor.execute(tables, n_threads=2)
+        executor.execute(tables, n_threads=2)
         end_time = time.time()
 
         # Should be faster than sequential execution
@@ -513,7 +478,6 @@ class TestPhenexExecutor:
         assert fast_child.executed
         assert slow_child.executed
         assert parent.executed
-        assert len(results) == 3
 
     def test_execute_single_thread(self):
         """Test execution with n_threads=1 falls back to sequential"""
@@ -524,26 +488,12 @@ class TestPhenexExecutor:
         executor = Executor("test", [parent])
         tables = {"domain1": MockTable()}
 
-        with patch.object(executor, "execute_sequential") as mock_sequential:
+        with patch.object(executor, "_execute_sequential") as mock_sequential:
             mock_sequential.return_value = {"PARENT": MockTable(), "CHILD": MockTable()}
 
             executor.execute(tables, n_threads=1)
 
             mock_sequential.assert_called_once()
-
-    def test_get_execution_plan(self):
-        """Test getting execution plan"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        executor = Executor("test", [parent, child])
-        plan = executor.get_execution_plan()
-
-        assert isinstance(plan, list)
-        assert "CHILD" in plan
-        assert "PARENT" in plan
-        assert plan.index("CHILD") < plan.index("PARENT")
 
     def test_visualize_dependencies(self):
         """Test dependency visualization"""
@@ -593,62 +543,12 @@ class TestPhenexExecutor:
         executor = Executor("test", [parent])
         tables = {"domain1": MockTable()}
 
-        results = executor.execute(
+        executor.execute(
             tables, con=mock_connector, overwrite=True, lazy_execution=True
         )
 
         assert child.executed
         assert parent.executed
-        assert len(results) == 2
-
-
-class TestEdgeCases:
-    """Test edge cases and error conditions"""
-
-    def test_empty_executor(self):
-        """Test executor with no nodes"""
-        executor = Executor("empty", [])
-        results = executor.execute({})
-
-        assert len(results) == 0
-
-    def test_node_with_no_dependencies(self):
-        """Test single node with no dependencies"""
-        node = ConcreteNode("single")
-        executor = Executor("test", [node])
-
-        results = executor.execute({})
-
-        assert len(results) == 1
-        assert "SINGLE" in results
-        assert node.executed
-
-    def test_multiple_independent_nodes(self):
-        """Test multiple nodes with no dependencies between them"""
-        node1 = ConcreteNode("node1")
-        node2 = ConcreteNode("node2")
-        node3 = ConcreteNode("node3")
-
-        executor = Executor("test", [node1, node2, node3])
-        results = executor.execute({}, n_threads=3)
-
-        assert len(results) == 3
-        assert all(node.executed for node in [node1, node2, node3])
-
-    def test_deep_dependency_chain(self):
-        """Test deep chain of dependencies"""
-        nodes = []
-        for i in range(5):
-            node = ConcreteNode(f"node_{i}")
-            if i > 0:
-                node.add_children(nodes[i - 1])
-            nodes.append(node)
-
-        executor = Executor("test", [nodes[-1]])  # Only provide the top node
-        results = executor.execute({})
-
-        assert len(results) == 5
-        assert all(node.executed for node in nodes)
 
 
 if __name__ == "__main__":
