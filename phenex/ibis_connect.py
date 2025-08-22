@@ -112,11 +112,7 @@ class SnowflakeConnector:
         ]
         self._check_env_vars(required_vars)
         self._check_source_dest()
-        self.source_connection = self.connect_source()
-        if self.SNOWFLAKE_DEST_DATABASE:
-            self.dest_connection = self.connect_dest()
-        else:
-            self.dest_connection = None
+        self.source_connection = self.dest_connection = self.connect_source()
 
     def _check_env_vars(self, required_vars: List[str]):
         for var in required_vars:
@@ -214,7 +210,7 @@ class SnowflakeConnector:
         Returns:
             Table: Ibis table object from the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.table(
             name_table, database=self.SNOWFLAKE_DEST_DATABASE
@@ -239,51 +235,53 @@ class SnowflakeConnector:
         Returns:
             View: Ibis view object created in the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         name_table = name_table or self._get_output_table_name(table)
 
         # Check if the destination database exists, if not, create it
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases():
+        if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_view(
             name=name_table.upper(),
-            database=database,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite,
             schema=table.schema(),
         )
 
-    def create_table(self, table, name_table=None, overwrite=False):
+    def create_table(self, table, name_table=None, overwrite=False, comment=None):
         """
         Materialize a table in the destination Snowflake database.
 
         Args:
-            table (Table): Ibis table object to materialize.
+            table: Ibis table object to materialize.
             name_table (str, optional): Name of the table to create. Defaults to None.
-            overwrite (bool, optional): Whether to overwrite the table if it exists. Defaults to False.
+            overwrite: Whether to overwrite the table if it exists. Defaults to False.
+            comment: Add a comment about the table.
 
         Returns:
             Table: Ibis table object created in the destination Snowflake database.
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
 
         name_table = name_table or self._get_output_table_name(table)
 
         # Check if the destination database exists, if not, create it
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases():
+        if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
 
         return self.dest_connection.create_table(
             name=name_table.upper(),
-            database=database,
+            database=self.SNOWFLAKE_DEST_DATABASE,
             obj=table,
             overwrite=overwrite,
             schema=table.schema(),
+            comment=comment,
         )
 
     def drop_table(self, name_table):
@@ -296,7 +294,7 @@ class SnowflakeConnector:
         Returns:
             None
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_table(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
@@ -312,7 +310,7 @@ class SnowflakeConnector:
         Returns:
             None
         """
-        if self.dest_connection is None:
+        if self.SNOWFLAKE_DEST_DATABASE is None:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         return self.dest_connection.drop_view(
             name=name_table, database=self.SNOWFLAKE_DEST_DATABASE
@@ -386,9 +384,12 @@ class DuckDBConnector:
         self.DUCKDB_DEST_DATABASE = (
             DUCKDB_DEST_DATABASE or os.environ.get("DUCKDB_DEST_DATABASE") or ":memory:"
         )
-        required_vars = ["DUCKDB_SOURCE_DATABASE"]
+        required_vars = []
         self._check_env_vars(required_vars)
-        self.source_connection = self.connect_source()
+        if self.DUCKDB_SOURCE_DATABASE:
+            self.source_connection = self.connect_source()
+        else:
+            self.source_connection = None
         if self.DUCKDB_DEST_DATABASE:
             self.dest_connection = self.connect_dest()
         else:
