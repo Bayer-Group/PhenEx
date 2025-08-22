@@ -9,8 +9,8 @@ from phenex.util import create_logger
 from phenex.ibis_connect import DuckDBConnector
 import threading
 import queue
-from collections import defaultdict, deque
-
+from deepdiff import DeepDiff
+from collections import defaultdict
 
 logger = create_logger(__name__)
 
@@ -548,8 +548,11 @@ class Node:
         """
         raise NotImplementedError()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: "Node") -> bool:
         return hash(self) == hash(other)
+
+    def diff(self, other: "Node"):
+        return DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
 
     def to_dict(self):
         """
