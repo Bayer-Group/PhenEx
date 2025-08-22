@@ -12,183 +12,6 @@ from phenex.util import create_logger
 logger = create_logger(__name__)
 
 
-class HStackNode(Node):
-    """
-    A compute node that horizontally stacks (joins) multiple phenotypes into a single table. Used for computing characteristics and outcomes tables in cohorts.
-    """
-
-    def __init__(
-        self, name: str, phenotypes: List[Phenotype], join_table: Optional[Table] = None
-    ):
-        super(HStackNode, self).__init__(name=name)
-        self.add_children(phenotypes)
-        self.phenotypes = phenotypes
-        self.join_table = join_table
-
-    def _execute(self, tables: Dict[str, Table]) -> Table:
-        """
-        Execute all phenotypes and horizontally stack their results.
-
-        Args:
-            tables: Dictionary of table names to Table objects
-
-        Returns:
-            Table: Horizontally stacked table with all phenotype results
-        """
-        # Stack the phenotype tables horizontally
-        return hstack(self.phenotypes, join_table=self.join_table)
-
-
-class SubsetTable(Node):
-    def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
-        super(SubsetTable, self).__init__(name=name)
-        self.add_children(index_phenotype)
-        self.index_phenotype = index_phenotype
-        self.domain = domain
-
-    def _execute(self, tables: Dict[str, Table]):
-        table = tables[self.domain]
-        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
-        columns = list(set(["INDEX_DATE"] + table.columns))
-        subset_table = table.inner_join(index_table, "PERSON_ID")
-        subset_table = subset_table.select(columns)
-        return subset_table
-
-
-class InclusionsTableNode(Node):
-    """
-    Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
-    """
-
-    def __init__(
-        self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
-    ):
-        super(InclusionsTableNode, self).__init__(name=name)
-        self.add_children(phenotypes)
-        self.add_children(index_phenotype)
-        self.phenotypes = phenotypes
-        self.index_phenotype = index_phenotype
-
-    def _execute(self, tables: Dict[str, Table]):
-
-        inclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
-
-        for pt in self.phenotypes:
-            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
-                **{
-                    f"{pt.name}_BOOLEAN": "BOOLEAN",
-                }
-            )
-            inclusions_table = inclusions_table.left_join(pt_table, ["PERSON_ID"])
-            columns = inclusions_table.columns
-            columns.remove("PERSON_ID_right")
-            inclusions_table = inclusions_table.select(columns)
-
-        # fill all nones with False
-        boolean_columns = [col for col in inclusions_table.columns if "BOOLEAN" in col]
-        for col in boolean_columns:
-            inclusions_table = inclusions_table.mutate(
-                {col: inclusions_table[col].fill_null(False)}
-            )
-
-        inclusions_table = inclusions_table.mutate(
-            BOOLEAN=ibis.least(
-                *[inclusions_table[f"{x.name}_BOOLEAN"] for x in self.phenotypes]
-            )
-        )
-
-        return inclusions_table
-
-
-class ExclusionsTableNode(Node):
-    """
-    Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
-    """
-
-    def __init__(
-        self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
-    ):
-        super(ExclusionsTableNode, self).__init__(name=name)
-        self.add_children(phenotypes)
-        self.add_children(index_phenotype)
-        self.phenotypes = phenotypes
-        self.index_phenotype = index_phenotype
-
-    def _execute(self, tables: Dict[str, Table]):
-
-        exclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
-
-        for pt in self.phenotypes:
-            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
-                **{
-                    f"{pt.name}_BOOLEAN": "BOOLEAN",
-                }
-            )
-            exclusions_table = exclusions_table.left_join(pt_table, ["PERSON_ID"])
-            columns = exclusions_table.columns
-            columns.remove("PERSON_ID_right")
-            exclusions_table = exclusions_table.select(columns)
-
-        # fill all nones with False
-        boolean_columns = [col for col in exclusions_table.columns if "BOOLEAN" in col]
-        for col in boolean_columns:
-            exclusions_table = exclusions_table.mutate(
-                {col: exclusions_table[col].fill_null(False)}
-            )
-
-        # create the boolean inclusions column
-        # this is true only if all inclusions criteria are true
-        exclusions_table = exclusions_table.mutate(
-            BOOLEAN=ibis.greatest(
-                *[exclusions_table[f"{x.name}_BOOLEAN"] for x in self.phenotypes]
-            )
-        )
-
-        return exclusions_table
-
-
-class IndexTableNode(Node):
-    """
-    Compute the index table form the individual inclusions / exclusions phenotypes.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        entry_phenotype: Phenotype,
-        inclusion_table_node: Node,
-        exclusion_table_node: Node,
-    ):
-        super(IndexTableNode, self).__init__(name=name)
-        self.add_children(entry_phenotype)
-        if inclusion_table_node:
-            self.add_children(inclusion_table_node)
-        if exclusion_table_node:
-            self.add_children(exclusion_table_node)
-
-        self.entry_phenotype = entry_phenotype
-        self.inclusion_table_node = inclusion_table_node
-        self.exclusion_table_node = exclusion_table_node
-
-    def _execute(self, tables: Dict[str, Table]):
-
-        index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
-
-        if self.inclusion_table_node:
-            include = self.inclusion_table_node.table.filter(
-                self.inclusion_table_node.table["BOOLEAN"] == True
-            ).select(["PERSON_ID"])
-            index_table = index_table.inner_join(include, ["PERSON_ID"])
-
-        if self.exclusion_table_node:
-            exclude = self.exclusion_table_node.table.filter(
-                self.exclusion_table_node.table["BOOLEAN"] == False
-            ).select(["PERSON_ID"])
-            index_table = index_table.inner_join(exclude, ["PERSON_ID"])
-
-        return index_table
-
-
 class Cohort:
     """
     The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
@@ -525,3 +348,185 @@ class Cohort:
             else:
                 existing_hash = None
                 name_to_hash[node_name] = node_hash
+
+
+#
+# Helper Nodes -- FIXME move to separate file / namespace
+#
+
+
+class HStackNode(Node):
+    """
+    A compute node that horizontally stacks (joins) multiple phenotypes into a single table. Used for computing characteristics and outcomes tables in cohorts.
+    """
+
+    def __init__(
+        self, name: str, phenotypes: List[Phenotype], join_table: Optional[Table] = None
+    ):
+        super(HStackNode, self).__init__(name=name)
+        self.add_children(phenotypes)
+        self.phenotypes = phenotypes
+        self.join_table = join_table
+
+    def _execute(self, tables: Dict[str, Table]) -> Table:
+        """
+        Execute all phenotypes and horizontally stack their results.
+
+        Args:
+            tables: Dictionary of table names to Table objects
+
+        Returns:
+            Table: Horizontally stacked table with all phenotype results
+        """
+        # Stack the phenotype tables horizontally
+        return hstack(self.phenotypes, join_table=self.join_table)
+
+
+class SubsetTable(Node):
+    def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
+        super(SubsetTable, self).__init__(name=name)
+        self.add_children(index_phenotype)
+        self.index_phenotype = index_phenotype
+        self.domain = domain
+
+    def _execute(self, tables: Dict[str, Table]):
+        table = tables[self.domain]
+        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
+        columns = list(set(["INDEX_DATE"] + table.columns))
+        subset_table = table.inner_join(index_table, "PERSON_ID")
+        subset_table = subset_table.select(columns)
+        return subset_table
+
+
+class InclusionsTableNode(Node):
+    """
+    Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
+    """
+
+    def __init__(
+        self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
+    ):
+        super(InclusionsTableNode, self).__init__(name=name)
+        self.add_children(phenotypes)
+        self.add_children(index_phenotype)
+        self.phenotypes = phenotypes
+        self.index_phenotype = index_phenotype
+
+    def _execute(self, tables: Dict[str, Table]):
+
+        inclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
+
+        for pt in self.phenotypes:
+            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+                **{
+                    f"{pt.name}_BOOLEAN": "BOOLEAN",
+                }
+            )
+            inclusions_table = inclusions_table.left_join(pt_table, ["PERSON_ID"])
+            columns = inclusions_table.columns
+            columns.remove("PERSON_ID_right")
+            inclusions_table = inclusions_table.select(columns)
+
+        # fill all nones with False
+        boolean_columns = [col for col in inclusions_table.columns if "BOOLEAN" in col]
+        for col in boolean_columns:
+            inclusions_table = inclusions_table.mutate(
+                {col: inclusions_table[col].fill_null(False)}
+            )
+
+        inclusions_table = inclusions_table.mutate(
+            BOOLEAN=ibis.least(
+                *[inclusions_table[f"{x.name}_BOOLEAN"] for x in self.phenotypes]
+            )
+        )
+
+        return inclusions_table
+
+
+class ExclusionsTableNode(Node):
+    """
+    Compute the inclusions / exclusions table from the individual inclusions / exclusions phenotypes.
+    """
+
+    def __init__(
+        self, name: str, index_phenotype: Phenotype, phenotypes: List[Phenotype]
+    ):
+        super(ExclusionsTableNode, self).__init__(name=name)
+        self.add_children(phenotypes)
+        self.add_children(index_phenotype)
+        self.phenotypes = phenotypes
+        self.index_phenotype = index_phenotype
+
+    def _execute(self, tables: Dict[str, Table]):
+
+        exclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
+
+        for pt in self.phenotypes:
+            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+                **{
+                    f"{pt.name}_BOOLEAN": "BOOLEAN",
+                }
+            )
+            exclusions_table = exclusions_table.left_join(pt_table, ["PERSON_ID"])
+            columns = exclusions_table.columns
+            columns.remove("PERSON_ID_right")
+            exclusions_table = exclusions_table.select(columns)
+
+        # fill all nones with False
+        boolean_columns = [col for col in exclusions_table.columns if "BOOLEAN" in col]
+        for col in boolean_columns:
+            exclusions_table = exclusions_table.mutate(
+                {col: exclusions_table[col].fill_null(False)}
+            )
+
+        # create the boolean inclusions column
+        # this is true only if all inclusions criteria are true
+        exclusions_table = exclusions_table.mutate(
+            BOOLEAN=ibis.greatest(
+                *[exclusions_table[f"{x.name}_BOOLEAN"] for x in self.phenotypes]
+            )
+        )
+
+        return exclusions_table
+
+
+class IndexTableNode(Node):
+    """
+    Compute the index table form the individual inclusions / exclusions phenotypes.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        entry_phenotype: Phenotype,
+        inclusion_table_node: Node,
+        exclusion_table_node: Node,
+    ):
+        super(IndexTableNode, self).__init__(name=name)
+        self.add_children(entry_phenotype)
+        if inclusion_table_node:
+            self.add_children(inclusion_table_node)
+        if exclusion_table_node:
+            self.add_children(exclusion_table_node)
+
+        self.entry_phenotype = entry_phenotype
+        self.inclusion_table_node = inclusion_table_node
+        self.exclusion_table_node = exclusion_table_node
+
+    def _execute(self, tables: Dict[str, Table]):
+
+        index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
+
+        if self.inclusion_table_node:
+            include = self.inclusion_table_node.table.filter(
+                self.inclusion_table_node.table["BOOLEAN"] == True
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(include, ["PERSON_ID"])
+
+        if self.exclusion_table_node:
+            exclude = self.exclusion_table_node.table.filter(
+                self.exclusion_table_node.table["BOOLEAN"] == False
+            ).select(["PERSON_ID"])
+            index_table = index_table.inner_join(exclude, ["PERSON_ID"])
+
+        return index_table
