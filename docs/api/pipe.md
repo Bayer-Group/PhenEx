@@ -2,8 +2,8 @@
 
 ## Node
 
-::: phenex.pipe.Node
+::: phenex.node.Node
 
 ## NodeGroup
 
-::: phenex.pipe.NodeGroup
+::: phenex.node.NodeGroup

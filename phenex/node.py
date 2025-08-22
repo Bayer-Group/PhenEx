@@ -316,12 +316,11 @@ class Node:
                 )
                 self.table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                if self.table is not None:
-                    con.create_table(
-                        self.table,
-                        self.name,
-                        overwrite=overwrite,
-                    )
+                con.create_table(
+                    self.table,
+                    self.name,
+                    overwrite=overwrite,
+                )
                 self._update_current_hash()
             else:
                 logger.info(
@@ -331,7 +330,7 @@ class Node:
 
         else:
             self.table = self._execute(tables)
-            if con and self.table is not None:
+            if con:
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
                 con.create_table(
                     self.table,
@@ -606,7 +605,16 @@ class NodeGroup(Node):
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
-        Execute all children nodes and return None (NodeGroup doesn't produce a table).
+        Execute all children nodes and return a table with information about dependencies.
         The execution logic is handled by the parent Node class.
         """
-        return None
+        # Create a table with NODE_NAME and NODE_PARAMS for each dependency
+        data = []
+        for node in self.dependencies:
+            data.append(
+                {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
+            )
+
+        # Create a pandas DataFrame and convert to ibis memtable
+        df = pd.DataFrame(data)
+        return ibis.memtable(df)

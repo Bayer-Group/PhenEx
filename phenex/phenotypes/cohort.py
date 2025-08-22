@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.pipe import Node, NodeGroup
+from phenex.node import Node, NodeGroup
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenexTable
