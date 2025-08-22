@@ -6,7 +6,7 @@ import pandas as pd
 
 from phenex.pipe import (
     Node,
-    Executor,
+    NodeGroup,
     NODE_STATES_TABLE_NAME,
 )
 
@@ -415,11 +415,11 @@ class TestPhenexNodeExecution:
             node_b.add_children(node_a)
 
 
-class TestPhenexExecutor:
-    """Test Executor class"""
+class TestPhenexNodeGroup:
+    """Test NodeGroup class"""
 
     def test_autoadd_dependencies(self):
-        """Test Executor initialization"""
+        """Test NodeGroup initialization"""
         node1 = ConcreteNode("node1")
         node2 = ConcreteNode("node2")
         node3 = ConcreteNode("node3")
@@ -427,10 +427,10 @@ class TestPhenexExecutor:
         node2.add_children(node3)
         node3.add_children(node4)
 
-        executor = Executor("test_executor", [node1, node2])
+        NodeGroup = NodeGroup("test_NodeGroup", [node1, node2])
 
-        assert "NODE3" in executor.dependencies
-        assert "NODE4" in executor.dependencies
+        assert node3 in NodeGroup.dependencies
+        assert node4 in NodeGroup.dependencies
 
     def test_build_reverse_graph(self):
         """Test reverse dependency graph building"""
@@ -438,10 +438,19 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
+        NodeGroup = NodeGroup("test", [parent, child])
 
-        assert "CHILD" in executor._build_reverse_graph()
-        assert "PARENT" in executor._build_reverse_graph["CHILD"]
+        # Build dependency graph first
+        all_deps = NodeGroup.dependencies
+        nodes = {node.name: node for node in all_deps}
+        nodes[NodeGroup.name] = NodeGroup
+        dependency_graph = NodeGroup._build_dependency_graph(nodes)
+
+        # Then build reverse graph
+        reverse_graph = NodeGroup._build_reverse_graph(dependency_graph)
+
+        assert "CHILD" in reverse_graph
+        assert "PARENT" in reverse_graph["CHILD"]
 
     def test_execute_sequential_simple(self):
         """Test sequential execution"""
@@ -449,10 +458,10 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
+        NodeGroup = NodeGroup("test", [parent, child])
         tables = {"domain1": MockTable()}
 
-        executor._execute_sequential(tables)
+        NodeGroup._execute_sequential(tables)
 
         assert child.executed
         assert parent.executed
@@ -465,11 +474,11 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children([fast_child, slow_child])
 
-        executor = Executor("test", [parent])
+        NodeGroup = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
         start_time = time.time()
-        executor.execute(tables, n_threads=2)
+        NodeGroup.execute(tables, n_threads=2)
         end_time = time.time()
 
         # Should be faster than sequential execution
@@ -485,13 +494,13 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent])
+        NodeGroup = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
-        with patch.object(executor, "_execute_sequential") as mock_sequential:
+        with patch.object(NodeGroup, "_execute_sequential") as mock_sequential:
             mock_sequential.return_value = {"PARENT": MockTable(), "CHILD": MockTable()}
 
-            executor.execute(tables, n_threads=1)
+            NodeGroup.execute(tables, n_threads=1)
 
             mock_sequential.assert_called_once()
 
@@ -501,8 +510,8 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
-        viz = executor.visualize_dependencies()
+        NodeGroup = NodeGroup("test", [parent, child])
+        viz = NodeGroup.visualize_dependencies()
 
         assert isinstance(viz, str)
         assert "PARENT" in viz
@@ -515,17 +524,20 @@ class TestPhenexExecutor:
     #     parent = ConcreteNode("parent")
     #     parent.add_children(failing_child)
 
-    #     executor = Executor("test", [parent])
+    #     NodeGroup = NodeGroup("test", [parent])
     #     tables = {"domain1": MockTable()}
 
     #     with pytest.raises(RuntimeError, match="Node FAILING_CHILD failed"):
-    #         executor.execute(tables)
+    #         NodeGroup.execute(tables)
 
     @patch("phenex.pipe.DuckDBConnector")
     def test_execute_with_lazy_execution(self, mock_connector_class):
         """Test execution with lazy execution enabled"""
         mock_connector = Mock()
         mock_connector_class.return_value = mock_connector
+
+        # Configure the mock connector to handle list_tables() calls
+        mock_connector.dest_connection.list_tables.return_value = []
 
         child = ConcreteNode("child")
         parent = ConcreteNode("parent")
@@ -540,10 +552,10 @@ class TestPhenexExecutor:
         parent._get_current_hash = Mock(return_value=1234)
         parent._update_current_hash = Mock(return_value=True)
 
-        executor = Executor("test", [parent])
+        NodeGroup = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
-        executor.execute(
+        NodeGroup.execute(
             tables, con=mock_connector, overwrite=True, lazy_execution=True
         )
 

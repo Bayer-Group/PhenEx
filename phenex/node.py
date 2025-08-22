@@ -316,11 +316,12 @@ class Node:
                 )
                 self.table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                con.create_table(
-                    self.table,
-                    self.name,
-                    overwrite=overwrite,
-                )
+                if self.table is not None:
+                    con.create_table(
+                        self.table,
+                        self.name,
+                        overwrite=overwrite,
+                    )
                 self._update_current_hash()
             else:
                 logger.info(
@@ -330,7 +331,7 @@ class Node:
 
         else:
             self.table = self._execute(tables)
-            if con:
+            if con and self.table is not None:
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
                 con.create_table(
                     self.table,
@@ -588,24 +589,24 @@ class Node:
         return "\n".join(lines)
 
 
-class Executor(Node):
+class NodeGroup(Node):
     """
-    An Executor manages the execution of multiple Node's in the correct dependency order, with support for multithreaded execution while respecting dependencies.
+    A NodeGroup is a simple grouping mechanism for nodes that should run together. It is a no-op node that returns no table and is simply used to enforce dependencies and organize related nodes.
 
-    The Executor ensures that dependencies are computed before their parent nodes, and allows N threads to compute Node's concurrently when their dependencies have been satisfied.
+    The NodeGroup acts as a container that ensures all its child nodes are executed when the group is executed. It does not perform any computation itself and returns None from its _execute method.
 
     Parameters:
-        name: A short and descriptive name for the Executor.
-        nodes: A list of Node objects to be computed. You only need to pass top-level nodes. Dependencies of the supplied list of Node's will detected and computed as needed.
+        name: A short and descriptive name for the NodeGroup.
+        nodes: A list of Node objects to be grouped together. When the NodeGroup is executed, all these nodes (and their dependencies) will be executed.
     """
 
     def __init__(self, name: str, nodes: List[Node]):
-        super(Executor, self).__init__(name=name)
+        super(NodeGroup, self).__init__(name=name)
         self.add_children(nodes)
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
-        Execute all children nodes and return None (Executor doesn't produce a table).
+        Execute all children nodes and return None (NodeGroup doesn't produce a table).
         The execution logic is handled by the parent Node class.
         """
         return None

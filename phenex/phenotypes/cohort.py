@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.pipe import Node, Executor
+from phenex.pipe import Node, NodeGroup
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenexTable
@@ -237,14 +237,14 @@ class Cohort:
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
             stage="subset_entry", index_phenotype=entry_criterion
         )
-        self.entry_stage = Executor(name="entry", nodes=self.subset_tables_entry_nodes)
+        self.entry_stage = NodeGroup(name="entry", nodes=self.subset_tables_entry_nodes)
 
         #
         # Derived tables stage
         #
         self.derived_tables_stage = None
         if derived_tables:
-            self.derived_tables_stage = Executor(
+            self.derived_tables_stage = NodeGroup(
                 name="entry", nodes=self.derived_tables
             )
 
@@ -279,7 +279,7 @@ class Cohort:
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
             stage="subset_index", index_phenotype=self.index_table_node
         )
-        self.index_stage = Executor(
+        self.index_stage = NodeGroup(
             name="index",
             nodes=self.subset_tables_index_nodes + index_nodes,
         )
@@ -303,7 +303,7 @@ class Cohort:
             )
             reporting_nodes.append(self.outcomes_table_node)
 
-        self.reporting_stage = Executor(name="reporting", nodes=reporting_nodes)
+        self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
 
         self._table1 = None
 

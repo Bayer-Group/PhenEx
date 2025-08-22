@@ -4,6 +4,6 @@
 
 ::: phenex.pipe.Node
 
-## Executor
+## NodeGroup
 
-::: phenex.pipe.Executor
+::: phenex.pipe.NodeGroup

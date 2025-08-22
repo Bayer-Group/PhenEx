@@ -1,3 +1,3 @@
-from .pipe import Node, Executor
+from .pipe import Node, NodeGroup
 
 __version__ = "v0.5.0"
