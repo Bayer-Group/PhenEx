@@ -2,7 +2,7 @@ import { FC, useState, useRef, useEffect, forwardRef, useImperativeHandle } from
 import styles from './CustomizableDropdownButton.module.css';
 import buttonStyles from './ButtonsBar.module.css';
 
-import { Portal } from '../../common/Portal';
+import { Portal } from '../../Portal/Portal';
 
 interface CustomizableDropdownButtonProps {
   label: string;

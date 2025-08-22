@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { IssuesPopover } from './IssuesPopover';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
-import { PositionedPortal } from '../../../components/common/PositionedPortal';
+import { PositionedPortal } from '../../../components/Portal/PositionedPortal';
 import styles from './IssuesDisplayControl.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 

@@ -16,13 +16,13 @@ interface AppNavigationTabBarProps {
 import { CodelistsInfoDisplay } from '../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
+  Info = 'Info',
   Database = 'Database',
   Constants = 'Constants',
   Codelists = 'Codelists',
   Visibility = 'Visibility',
   Execute = 'Execute',
   Report = 'Report',
-  Info = 'Info',
   NewPhenotype = 'Add Phenotype',
 }
 
@@ -102,13 +102,13 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
     }
 
     const actions = [
+      showInfo,
       showDatabase,
       showConstants,
       showCodelists,
       showVisibility,
       showExecute,
       showReport,
-      showInfo,
     ];
 
     const action = actions[index];
