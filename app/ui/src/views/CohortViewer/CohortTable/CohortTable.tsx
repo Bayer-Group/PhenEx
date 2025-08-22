@@ -163,6 +163,9 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                   <li>
                     Component phenotypes can then be accessed by Composite Phenotypes such as LogicPhenotype, ScorePhenotype, ArithemticPhenotype, etc.
                   </li>
+                  <li>
+                    All component phenotypes can be found in the <span className={styles.buttonAppearance}>All Phenotypes</span> tab.
+                  </li>
                 </ul>
               </span>
               <br></br>

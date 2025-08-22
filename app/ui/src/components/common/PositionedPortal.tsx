@@ -8,6 +8,7 @@ interface PositionedPortalProps {
   offsetY?: number;
   position?: 'below' | 'above' | 'right' | 'left';
   alignment?: 'left' | 'center' | 'right'; // New prop for X alignment
+  debug?: boolean; // Debug flag to toggle debugging panel
 }
 
 export const PositionedPortal: React.FC<PositionedPortalProps> = ({ 
@@ -16,7 +17,8 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
   offsetX = 0, 
   offsetY = 0,
   position = 'below',
-  alignment = 'left'
+  alignment = 'left',
+  debug = false
 }) => {
   const [container] = useState(() => document.createElement('div'));
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -70,32 +72,36 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
             break;
         }
 
-        // Update debug info and console log
-        const debug = {
-          alignment,
-          position,
-          triggerRect: {
-            left: Math.round(rect.left),
-            right: Math.round(rect.right),
-            width: Math.round(rect.width),
-            top: Math.round(rect.top),
-            bottom: Math.round(rect.bottom)
-          },
-          scroll: {
-            x: Math.round(window.scrollX),
-            y: Math.round(window.scrollY)
-          },
-          calculatedPosition: { 
-            x: Math.round(x), 
-            y: Math.round(y) 
-          },
-          baseX: Math.round(baseX),
-          offsetX,
-          offsetY
-        };
+        // Update debug info and console log (only if debug is enabled)
+        if (debug) {
+          const debugData = {
+            alignment,
+            position,
+            triggerRect: {
+              left: Math.round(rect.left),
+              right: Math.round(rect.right),
+              width: Math.round(rect.width),
+              top: Math.round(rect.top),
+              bottom: Math.round(rect.bottom)
+            },
+            scroll: {
+              x: Math.round(window.scrollX),
+              y: Math.round(window.scrollY)
+            },
+            calculatedPosition: { 
+              x: Math.round(x), 
+              y: Math.round(y) 
+            },
+            baseX: Math.round(baseX),
+            offsetX,
+            offsetY
+          };
 
-        setDebugInfo(debug);
-        console.log('PositionedPortal:', debug);
+          setDebugInfo(debugData);
+          console.log('PositionedPortal:', debugData);
+        } else {
+          setDebugInfo(null);
+        }
 
         container.style.left = `${x}px`;
         container.style.top = `${y}px`;
@@ -140,30 +146,115 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     window.addEventListener('scroll', handleUpdate, true);
     window.addEventListener('resize', handleUpdate);
 
-    // Add ResizeObserver for real-time size changes during drag
+    // Enhanced ResizeObserver for programmatic size changes
     let resizeObserver: ResizeObserver | null = null;
     if (triggerRef.current && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver(() => {
+      resizeObserver = new ResizeObserver((entries) => {
+        // ResizeObserver catches CSS transitions, animations, and programmatic changes
         updatePosition();
+        if (debug) {
+          console.log('ResizeObserver triggered on trigger element:', entries[0].contentRect);
+        }
       });
       resizeObserver.observe(triggerRef.current);
     }
 
-    // Add MutationObserver for style changes during drag
+    // ALSO observe the parent elements that might be changing
+    let parentResizeObserver: ResizeObserver | null = null;
+    if (triggerRef.current && triggerRef.current.parentElement && 'ResizeObserver' in window) {
+      parentResizeObserver = new ResizeObserver((entries) => {
+        updatePosition();
+        if (debug) {
+          console.log('ResizeObserver triggered on PARENT element:', entries[0].contentRect);
+        }
+      });
+      parentResizeObserver.observe(triggerRef.current.parentElement);
+    }
+
+    // Enhanced MutationObserver for style and attribute changes
     let mutationObserver: MutationObserver | null = null;
     if (triggerRef.current && 'MutationObserver' in window) {
-      mutationObserver = new MutationObserver(() => {
-        updatePosition();
+      mutationObserver = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && 
+              (mutation.attributeName === 'style' || 
+               mutation.attributeName === 'class' ||
+               mutation.attributeName === 'width')) {
+            shouldUpdate = true;
+            if (debug) {
+              console.log('MutationObserver - attribute changed:', mutation.attributeName, mutation.target);
+            }
+          }
+        });
+        if (shouldUpdate) {
+          updatePosition();
+        }
       });
       mutationObserver.observe(triggerRef.current, {
         attributes: true,
-        attributeFilter: ['style', 'class'],
+        attributeFilter: ['style', 'class', 'width'],
+        subtree: false
+      });
+    }
+
+    // ALSO observe the parent for mutations
+    let parentMutationObserver: MutationObserver | null = null;
+    if (triggerRef.current && triggerRef.current.parentElement && 'MutationObserver' in window) {
+      parentMutationObserver = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && 
+              (mutation.attributeName === 'style' || 
+               mutation.attributeName === 'class' ||
+               mutation.attributeName === 'width')) {
+            shouldUpdate = true;
+            if (debug) {
+              console.log('MutationObserver - PARENT attribute changed:', mutation.attributeName, mutation.target);
+            }
+          }
+        });
+        if (shouldUpdate) {
+          updatePosition();
+        }
+      });
+      parentMutationObserver.observe(triggerRef.current.parentElement, {
+        attributes: true,
+        attributeFilter: ['style', 'class', 'width'],
         subtree: true
       });
     }
 
+    // Additional monitoring for CSS transitions and animations
+    let transitionMonitoring = false;
+    const startTransitionMonitoring = () => {
+      if (!transitionMonitoring) {
+        transitionMonitoring = true;
+        const monitorTransitions = () => {
+          updatePosition();
+          if (transitionMonitoring) {
+            requestAnimationFrame(monitorTransitions);
+          }
+        };
+        requestAnimationFrame(monitorTransitions);
+      }
+    };
+
+    const stopTransitionMonitoring = () => {
+      transitionMonitoring = false;
+    };
+
+    // Listen for CSS transition events
+    if (triggerRef.current) {
+      triggerRef.current.addEventListener('transitionstart', startTransitionMonitoring);
+      triggerRef.current.addEventListener('transitionend', stopTransitionMonitoring);
+      triggerRef.current.addEventListener('animationstart', startTransitionMonitoring);
+      triggerRef.current.addEventListener('animationend', stopTransitionMonitoring);
+    }
+
     return () => {
       stopMonitoring();
+      stopTransitionMonitoring();
       document.removeEventListener('mousedown', startMonitoring);
       document.removeEventListener('mouseup', stopMonitoring);
       document.removeEventListener('mouseleave', stopMonitoring);
@@ -172,11 +263,24 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
+      if (parentResizeObserver) {
+        parentResizeObserver.disconnect();
+      }
       if (mutationObserver) {
         mutationObserver.disconnect();
       }
+      if (parentMutationObserver) {
+        parentMutationObserver.disconnect();
+      }
+      // Clean up transition listeners
+      if (triggerRef.current) {
+        triggerRef.current.removeEventListener('transitionstart', startTransitionMonitoring);
+        triggerRef.current.removeEventListener('transitionend', stopTransitionMonitoring);
+        triggerRef.current.removeEventListener('animationstart', startTransitionMonitoring);
+        triggerRef.current.removeEventListener('animationend', stopTransitionMonitoring);
+      }
     };
-  }, [triggerRef, offsetX, offsetY, position, alignment, container]);
+  }, [triggerRef, offsetX, offsetY, position, alignment, debug, container]);
 
   // Re-enable pointer events on the portal content
   const portalContent = (
