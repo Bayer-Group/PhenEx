@@ -4,8 +4,6 @@ import styles from './HierarchicalLeftPanel.module.css';
 import TreeList from '../../components/TreeList/TreeList';
 import { CohortTreeListItem, HierarchicalTreeNode } from './CohortTreeListItem.tsx';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
-import { ViewInfo, MainViewService } from '../MainView/MainView';
-import { TreeListItemProps } from '../../components/TreeList/TreeListItem';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -30,16 +28,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     return () => dataService.current.removeListener(updateTreeData);
   }, []);
-
-  const onClickAdd = async (name: string) => {
-    if (name === 'Cohorts') {
-      const newCohortViewInfo = await dataService.current.addNewCohort();
-      if (newCohortViewInfo) {
-        const mainViewService = MainViewService.getInstance();
-        mainViewService.navigateTo(newCohortViewInfo);
-      }
-    }
-  };
 
   const clickedOnItem = () => {};
 

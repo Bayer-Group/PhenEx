@@ -41,6 +41,7 @@ export class MainViewService {
   }
 
   public navigateTo = (viewInfo: ViewInfo) => {
+    console.log("NAVIGATING ?TO", viewInfo)
     this.notifyListeners(viewInfo);
   };
 
@@ -74,6 +75,7 @@ export const MainView = () => {
   }, []);
 
   const renderView = () => {
+    console.log("RENDERING VIEW", currentView.viewType);
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
@@ -82,8 +84,10 @@ export const MainView = () => {
       case ViewType.PublicCohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
+        console.log("THIS PLACE")
         return <CohortViewer data={undefined} />;
       default:
+        console.log("THIS")
         return <SplashPage />;
     }
   };

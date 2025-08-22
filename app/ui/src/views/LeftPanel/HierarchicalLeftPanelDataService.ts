@@ -19,6 +19,7 @@ import { ViewType } from '../MainView/MainView';
 import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
 import { CohortsDataService } from './CohortsDataService';
 import { LoginDataService } from './UserLogin/LoginDataService';
+import { ViewInfo, MainViewService } from '../MainView/MainView';
 
 interface CohortData {
   id: string;
@@ -165,10 +166,7 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async addNewCohort() {
-    console.log('ADDING NEW COHORT', this);
-
     const newCohortData = await this.dataService.createNewCohort();
-
     const newCohortNode = this.createCohortNode(newCohortData, 1);
 
     const cohortsNode = this.treeData.find(node => node.id === 'mycohorts');
@@ -183,6 +181,15 @@ export class HierarchicalLeftPanelDataService {
 
     await this.updateTreeData();
     this.notifyListeners();
+
+    if (newCohortData) {
+      console.log("GETTING NEW COHORT DATA")
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({viewType:ViewType.NewCohort, data: newCohortData});
+    } else {
+      console.log("NO DATA")
+    }
+
     return ViewType.CohortDefinition;
   }
 }
