@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Modal } from '../../../components/Modal/Modal';
 import { StepMarker } from '../../../components/StepMarker/StepMarker';
 import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
@@ -17,6 +17,17 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const [dataService] = useState(() => CohortDataService.getInstance());
   
   const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists'];
+
+  useEffect(() => {
+    // Initialize the data service with the new cohort data when wizard becomes visible
+    const initializeData = async () => {
+      if (isVisible && _data) {
+        await dataService.loadCohortData(_data);
+        setCohortName(dataService.cohort_name);
+      }
+    };
+    initializeData();
+  }, [isVisible, _data, dataService]);
 
   const handleStepClick = (stepIndex: number) => {
     console.log(`Step clicked: ${stepIndex} (${stepTitles[stepIndex]})`);
