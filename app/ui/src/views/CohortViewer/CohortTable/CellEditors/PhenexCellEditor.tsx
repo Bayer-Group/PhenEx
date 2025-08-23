@@ -1,14 +1,14 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
-import { Portal } from '../../../../components/Portal/Portal';
-import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
+import { DraggablePortal } from '../../../../components/Portal';
+// import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
-import { color } from 'd3';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
-  value?: any;
+  value: any;
   onValueChange?: (value: any) => void;
+  children?: React.ReactNode;
 }
 
 const getViewportDimensions = () => ({
@@ -134,9 +134,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     let left = cellRect.left;
     let top = cellRect.top;
 
-    // Adjust for grid scroll
-    const gridScrollTop = gridContainer.scrollTop || 0;
-    const gridScrollLeft = gridContainer.scrollLeft || 0;
+    // Adjust for grid scroll (variables declared but not used in current positioning logic)
+    // const gridScrollTop = gridContainer.scrollTop || 0;
+    // const gridScrollLeft = gridContainer.scrollLeft || 0;
 
     // Adjust position to stay within grid bounds
     // First, try to position below the cell
@@ -169,35 +169,52 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     };
   };
 
-  const portalStyle = {
-    position: 'absolute',
-    // left: `${cellRect.left + scrollLeft}px`,
-    // top: `${topPosition}px`,
-    // minHeight: `${cellRect.height}px`,
-    maxHeight: '500px',
-    zIndex: 9999,
-    ...calculatePosition(),
-  };
+  const portalPosition = calculatePosition();
 
-  const renderXButton = () => {
-    return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
-  };
+  // const renderXButton = () => {
+  //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
+  // };
   const colorClass = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-outer`;
   const colorBorder = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-border`;
 
   console.log("COLOR CLASS FoR PHENCE EDIOTR", colorBorder)
 
   return (
-    <Portal>
+    <DraggablePortal 
+      initialPosition={{ 
+        left: portalPosition.left, 
+        top: portalPosition.top 
+      }}
+      dragHandleSelector="[data-drag-handle='true']"
+      onPositionChange={(x, y) => console.log('Position changed to:', x, y)}
+    >
       <div
-        style={portalStyle}
+        style={{
+          maxHeight: portalPosition.maxHeight,
+          maxWidth: portalPosition.maxWidth,
+          zIndex: 9999,
+        }}
         ref={containerRef}
         className={`${styles.container} ${colorBorder}`}
         onClick={e => {
+          console.log('PhenexCellEditor onClick fired');
           e.stopPropagation(); // Stop click from bubbling
           e.nativeEvent.stopImmediatePropagation(); // Stop other listeners
         }}
         onMouseDown={e => {
+          console.log('PhenexCellEditor onMouseDown fired');
+          console.log('MouseDown target:', e.target);
+          
+          // Check if this is a drag handle - if so, don't stop propagation
+          const target = e.target as HTMLElement;
+          const isDragHandle = target.closest('[data-drag-handle="true"]');
+          
+          if (isDragHandle) {
+            console.log('MouseDown on drag handle - allowing propagation');
+            return; // Don't stop propagation for drag handles
+          }
+          
+          console.log('MouseDown not on drag handle - stopping propagation');
           e.stopPropagation(); // Stop mousedown from bubbling
           e.nativeEvent.stopImmediatePropagation();
         }}
@@ -219,7 +236,15 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         tabIndex={-1}
       >
         <PopoverHeader onClick={handleDone} title={'phenexheader'} className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}>
-          <div className = {styles.popoverHeader}>
+          <div 
+            className={styles.popoverHeader} 
+            data-drag-handle="true"
+            onMouseDown={(e) => {
+              console.log('Drag handle onMouseDown fired');
+              console.log('Drag handle target:', e.target);
+              // Don't stop propagation here - let it bubble up to DraggablePortal
+            }}
+          >
             <span className={styles.topLine}>
               <span className={styles.filler}>editing</span>
               <span className={styles.actionText}>{titleText}</span>
@@ -235,9 +260,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           </div>
         </PopoverHeader>
         <div className={`${styles.content}`}>
-          {React.Children.map(props.children, child =>
+          {React.Children.map(props.children, (child, index) =>
             React.isValidElement(child)
-              ? React.cloneElement(child, {
+              ? React.cloneElement(child as React.ReactElement<any>, {
+                  key: index,
                   ...props,
                   onValueChange: handleValueChange,
                 })
@@ -245,7 +271,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           )}
         </div>
       </div>
-    </Portal>
+    </DraggablePortal>
   );
 });
 

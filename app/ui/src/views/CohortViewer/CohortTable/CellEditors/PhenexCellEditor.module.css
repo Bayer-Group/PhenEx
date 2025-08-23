@@ -21,6 +21,7 @@
 }
 
 .header {
+  user-select: none !important;
   cursor: pointer;
   font-size: 16px;
   font-family: 'IBMPlexSans-regular';
@@ -48,7 +49,13 @@
 }
 
 .popoverheader {
+  user-select: none;
   line-height: 20px;
+  cursor: grab;
+}
+
+.popoverheader:active {
+  cursor: grabbing;
 }
 
 .bottomLine {
@@ -148,4 +155,10 @@
 
 .popoverHeader{
   padding: var(--padding_custom_two_line_header);
+  cursor: grab;
+  user-select: none;
+}
+
+.popoverHeader:active {
+  cursor: grabbing;
 }
