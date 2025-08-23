@@ -6,6 +6,7 @@ import { ThreePanelView } from './ThreePanelView/ThreePanelView';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
 import { SplashPage } from './SplashPage/SplashPage';
 import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { NewCohortWizard } from '../CohortViewer/NewCohortWizard';
 
 import styles from './MainView.module.css';
 
@@ -84,13 +85,26 @@ export const MainView = () => {
       case ViewType.PublicCohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
-        console.log("THIS PLACE")
-        return <CohortViewer data={undefined} />;
+        return (
+          <>
+            <TwoPanelCohortViewer data={currentView.data} />
+            <NewCohortWizard isVisible={true} onClose={closeNewCohortWizard} data={currentView.data} />
+          </>
+        );
       default:
-        console.log("THIS")
         return <SplashPage />;
     }
   };
+
+  const closeNewCohortWizard = () => {
+    // console.log("Closing new cohort wizard");
+    // setCurrentView({
+    //   viewType: ViewType.CohortDefinition,
+    //   data: currentView.data,
+    // });
+
+  };
+
 
   /*
   The first split panel is the maincontent (file browser + cohort browser) and the chat window

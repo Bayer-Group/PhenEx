@@ -1,73 +1,91 @@
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { FC, useEffect, useState, ReactNode } from 'react';
+import { Portal } from '../Portal/Portal';
 import styles from './Modal.module.css';
 
-export interface ModalProps {
-  isVisible?: boolean;
-  position?: {
-    x: number;
-    y: number;
-  };
-  size?: {
-    width: number | string;
-    height: number | string;
-  };
-  onShow?: () => void;
-  onHide?: () => void;
-  children?: ReactNode;
+interface ModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  maxWidth?: string;
+  maxHeight?: string;
+  minWidth?: string;
+  className?: string;
+  contentClassName?: string;
+  closeOnBackgroundClick?: boolean;
 }
 
-export const Modal: FC<ModalProps> = ({
-  isVisible = false,
-  position = { x: 50, y: 50 },
-  size = { width: 600, height: 300 },
-  onShow,
-  onHide,
+export const Modal: FC<ModalProps> = ({ 
+  isVisible, 
+  onClose, 
   children,
+  maxWidth = '80vw',
+  maxHeight = '80vh',
+  minWidth = '400px',
+  className = '',
+  contentClassName = '',
+  closeOnBackgroundClick = true
 }) => {
-  const [isActive, setIsActive] = useState(isVisible);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     if (isVisible) {
-      show();
-    } else {
-      hide();
+      setIsAnimating(true);
+      setIsClosing(false);
     }
   }, [isVisible]);
 
-  const show = useCallback(() => {
-    setIsActive(true);
-    onShow?.();
-  }, [onShow]);
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!closeOnBackgroundClick) return;
+    
+    console.log("Modal background clicked");
+    console.log("Target:", e.target);
+    console.log("Current target:", e.currentTarget);
+    
+    // Start closing animation
+    handleClose();
+  };
 
-  const hide = useCallback(() => {
-    setIsActive(false);
-    onHide?.();
-  }, [onHide]);
+  const handleClose = () => {
+    console.log("Starting modal close animation");
+    setIsClosing(true);
+    setIsAnimating(false); // This will trigger the fade out
+    
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      console.log("Modal close animation complete, calling onClose");
+      onClose();
+    }, 300); // Match the CSS transition duration
+  };
 
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) {
-        hide();
-      }
-    },
-    [hide]
-  );
-
-  if (!isActive) return null;
+  if (!isVisible && !isClosing) {
+    return null;
+  }
 
   return (
-    <div className={styles.overlay} onClick={handleOverlayClick}>
-      <div
-        className={styles.content}
-        style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          width: typeof size.width === 'number' ? `${size.width}px` : size.width,
-          height: typeof size.height === 'number' ? `${size.height}px` : size.height,
-        }}
+    <Portal>
+      <div 
+        className={`${styles.overlay} ${(isAnimating && !isClosing) ? styles.visible : ''} ${className}`}
       >
-        {children}
+        <div 
+          className={styles.blurBackground} 
+          onClick={handleBackgroundClick}
+        />
+        <div 
+          className={`${styles.content} ${contentClassName}`}
+          style={{
+            maxWidth,
+            maxHeight,
+            minWidth
+          }}
+          onClick={(e) => {
+            console.log("Modal content clicked - stopping propagation");
+            e.stopPropagation();
+          }}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 };

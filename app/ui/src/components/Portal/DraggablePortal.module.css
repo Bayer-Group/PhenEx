@@ -1,0 +1,38 @@
+/* DraggablePortal.module.css */
+
+.draggableContainer {
+  position: relative;
+}
+
+.dragHandle {
+  cursor: grab;
+  user-select: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+.dragging * {
+  pointer-events: none;
+}
+
+/* Optional styling for drag handle indicators */
+.dragHandleIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dragHandleIndicator::before {
+  content: "⋮⋮";
+  font-size: 12px;
+  color: #666;
+  letter-spacing: -2px;
+  transform: rotate(90deg);
+}

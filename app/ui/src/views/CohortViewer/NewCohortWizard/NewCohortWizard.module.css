@@ -1,0 +1,111 @@
+/* NewCohortWizard.module.css */
+
+.wizardContent {
+  min-width: 600px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 0 0 2rem 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.stepMarker {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+
+.stepContent {
+  flex: 1;
+  padding: 1rem 0;
+  min-height: 200px;
+}
+
+.stepTitle {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.description {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.navigationButtons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.button:not(:disabled) {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.button:not(:disabled):hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .wizardContent {
+    min-width: 320px;
+    min-height: 400px;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stepContent {
+    min-height: 150px;
+  }
+  
+  .navigationButtons {
+    padding-top: 1.5rem;
+  }
+  
+  .button {
+    padding: 0.625rem 1.25rem;
+    font-size: 13px;
+    min-width: 70px;
+  }
+}
