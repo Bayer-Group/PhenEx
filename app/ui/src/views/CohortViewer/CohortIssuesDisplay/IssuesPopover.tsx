@@ -97,6 +97,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       <PopoverHeader
         onClick={onClick}
+        className={`${styles.popoverheader}`}
       >
         {renderTitleLabel()}
       </PopoverHeader>

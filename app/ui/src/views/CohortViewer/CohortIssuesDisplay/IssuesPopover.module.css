@@ -10,7 +10,7 @@
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--color-accent-bright);
+  border: var(--border);
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top)
     var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -153,4 +153,11 @@
   line-height: 1em;
   padding: 5px 10px 0px 10px;
   height:50px;
+  color:black;
+}
+
+.popoverheader{
+  color:black !important;
+  background-color: var(--background_color_translucent);
+  border: none;
 }
