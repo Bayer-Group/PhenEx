@@ -31,7 +31,7 @@
 }
 
 .stepContainer.connectorCompleted::after {
-  background-color: #10b981;
+  background-color: var(--color-accent-bright);
 }
 
 .step {
@@ -52,10 +52,11 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 22px;
   border: 2px solid;
   transition: all 0.3s ease;
   position: relative;
+  font-family: "IBMPlexSans-bold";
 }
 
 .label {
@@ -79,25 +80,25 @@
 }
 
 .active .circle {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+  background-color: var(--color-accent-bright);
+  border-color: var(--color-accent-bright);
   color: white;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
 .active .label {
-  color: #3b82f6;
+  color: var(--color-accent-bright);
   font-weight: 600;
 }
 
 .completed .circle {
-  background-color: #10b981;
-  border-color: #10b981;
+  background-color: var(--color-accent-bright);
+  border-color: var(--color-accent-bright);
   color: white;
 }
 
 .completed .label {
-  color: #10b981;
+  color: var(--color-accent-bright);
 }
 
 /* Clickable state */
@@ -115,8 +116,8 @@
 }
 
 .clickable.completed:hover .circle {
-  background-color: #059669;
-  border-color: #059669;
+  background-color: var(--color-accent-bright);
+  border-color: var(--color-accent-bright);
 }
 
 

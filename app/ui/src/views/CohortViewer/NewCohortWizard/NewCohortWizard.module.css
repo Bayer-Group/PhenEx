@@ -1,7 +1,8 @@
 /* NewCohortWizard.module.css */
 
 .wizardContent {
-  min-width: 600px;
+  min-width: 1000px;
+  width: 1000px;
   min-height: 500px;
   display: flex;
   flex-direction: column;
@@ -16,8 +17,8 @@
 }
 
 .stepMarker {
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e5e7eb;
+  width: 400px;
+  margin: 0 auto 2rem auto;
   padding-bottom: 1rem;
 }
 
@@ -35,10 +36,30 @@
 }
 
 .description {
-  margin: 0;
+  margin: 0 0 1.5rem 0;
   color: #666;
   font-size: 1rem;
   line-height: 1.5;
+}
+
+.cohortNameContainer {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cohortNameInput {
+  width: 100%;
+  font-size: 1rem;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  transition: border-color 0.2s ease;
+}
+
+.cohortNameInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .navigationButtons {
@@ -81,31 +102,4 @@
 .button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .wizardContent {
-    min-width: 320px;
-    min-height: 400px;
-  }
-  
-  .title {
-    font-size: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .stepContent {
-    min-height: 150px;
-  }
-  
-  .navigationButtons {
-    padding-top: 1.5rem;
-  }
-  
-  .button {
-    padding: 0.625rem 1.25rem;
-    font-size: 13px;
-    min-width: 70px;
-  }
 }

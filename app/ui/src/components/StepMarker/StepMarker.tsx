@@ -48,11 +48,7 @@ export const StepMarker: FC<StepMarkerProps> = ({
               onClick={() => handleStepClick(index)}
             >
               <div className={styles.circle}>
-                {status === 'completed' ? (
-                  <span className={styles.checkmark}>✓</span>
-                ) : (
-                  <span className={styles.number}>{index + 1}</span>
-                )}
+                <span className={styles.number}>{index + 1}</span>
               </div>
               <div className={styles.label}>{title}</div>
             </div>

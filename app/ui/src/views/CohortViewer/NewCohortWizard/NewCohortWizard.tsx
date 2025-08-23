@@ -1,6 +1,8 @@
 import { FC, useState } from 'react';
 import { Modal } from '../../../components/Modal/Modal';
 import { StepMarker } from '../../../components/StepMarker/StepMarker';
+import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
 import styles from './NewCohortWizard.module.css';
 
 interface NewCohortWizardProps {
@@ -11,6 +13,8 @@ interface NewCohortWizardProps {
 
 export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, data: _data }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [cohortName, setCohortName] = useState('');
+  const [dataService] = useState(() => CohortDataService.getInstance());
   
   const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists'];
 
@@ -19,6 +23,64 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     setCurrentStep(stepIndex);
   };
 
+  const renderNameStep = () => {
+    return (
+      <div>
+        <h3 className={styles.stepTitle}>Cohort Name</h3>
+        <p className={styles.description}>
+          Please enter a name for your new cohort.
+        </p>
+        <div className={styles.cohortNameContainer}>
+          <EditableTextField
+            value={cohortName}
+            placeholder="Name your cohort..."
+            className={styles.cohortNameInput}
+            onChange={newValue => {
+              setCohortName(newValue);
+              dataService.cohort_name = newValue;
+            }}
+            onSaveChanges={async () => {
+              await dataService.saveChangesToCohort();
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const renderDescriptionStep = () => {
+    return (
+      <div>
+        <h3 className={styles.stepTitle}>Description</h3>
+        <p className={styles.description}>
+          Please enter a description for your new cohort.
+        </p>
+      </div>
+    );
+  }
+
+  const renderDatabaseStep = () => {
+    return (
+      <div>
+        <h3 className={styles.stepTitle}>Database</h3>
+        <p className={styles.description}>
+          Please select a database for your new cohort.
+        </p>
+      </div>
+    );
+  }
+
+  const renderCodelistsStep = () => {
+    return (
+      <div>
+        <h3 className={styles.stepTitle}>Codelists</h3>
+        <p className={styles.description}>
+          Please select codelists for your new cohort.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Modal 
       isVisible={isVisible} 
@@ -26,20 +88,19 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
       contentClassName={styles.wizardContent}
       maxWidth="800px"
     >
-      <h2 className={styles.title}>New Cohort Wizard</h2>
-      
-      <StepMarker 
-        stepTitles={stepTitles}
-        activeStep={currentStep}
-        onStepClick={handleStepClick}
-        className={styles.stepMarker}
-      />
-      
+        <div className = {styles.stepMarker}>
+        <StepMarker 
+            stepTitles={stepTitles}
+            activeStep={currentStep}
+            onStepClick={handleStepClick}
+            className={styles.stepMarker}
+        />
+      </div>
       <div className={styles.stepContent}>
-        <h3 className={styles.stepTitle}>Step {currentStep + 1}: {stepTitles[currentStep]}</h3>
-        <p className={styles.description}>
-          Content for {stepTitles[currentStep]} step coming soon...
-        </p>
+        {currentStep === 0 && renderNameStep()}
+        {currentStep === 1 && renderDescriptionStep()}
+        {currentStep === 2 && renderDatabaseStep()}
+        {currentStep === 3 && renderCodelistsStep()}
       </div>
       
       <div className={styles.navigationButtons}>
