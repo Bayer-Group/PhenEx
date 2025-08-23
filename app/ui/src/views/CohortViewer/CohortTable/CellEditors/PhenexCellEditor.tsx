@@ -31,6 +31,8 @@ const getGridDimensions = (gridElement: HTMLElement | null) => {
 
 export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) => {
   const [currentValue, setCurrentValue] = useState(() => props.value);
+  const [isDragging, setIsDragging] = useState(false);
+  const [recentlyDragged, setRecentlyDragged] = useState(false);
 
   useImperativeHandle(ref, () => ({
     getValue() {
@@ -47,6 +49,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   };
 
   const handleDone = () => {
+    console.log('handleDone called, recentlyDragged:', recentlyDragged);
+    if (recentlyDragged) {
+      console.log('Preventing handleDone due to recent drag');
+      return; // Don't close if we just finished dragging
+    }
     props.api.stopEditing();
   };
 
@@ -187,6 +194,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       }}
       dragHandleSelector="[data-drag-handle='true']"
       onPositionChange={(x, y) => console.log('Position changed to:', x, y)}
+      onDragStart={() => {
+        console.log('Drag started - setting isDragging to true');
+        setIsDragging(true);
+        setRecentlyDragged(false);
+      }}
+      onDragEnd={(wasDragged) => {
+        console.log('Drag ended - wasDragged:', wasDragged);
+        setIsDragging(false);
+        if (wasDragged) {
+          setRecentlyDragged(true);
+          // Clear the flag after a short delay
+          setTimeout(() => {
+            console.log('Clearing recentlyDragged flag');
+            setRecentlyDragged(false);
+          }, 200);
+        }
+      }}
     >
       <div
         style={{
