@@ -29,10 +29,13 @@
 }
 
 .stepTitle {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem 20px;
   color: #1f2937;
   font-size: 1.25rem;
   font-weight: 600;
+  font-family: "IBMPlexSans-bolditalic";
+
+
 }
 
 .description {
@@ -45,6 +48,7 @@
 .cohortNameContainer {
   margin-top: 1rem;
   margin-bottom: 1rem;
+  margin-right:40px;
 }
 
 .cohortNameInput {

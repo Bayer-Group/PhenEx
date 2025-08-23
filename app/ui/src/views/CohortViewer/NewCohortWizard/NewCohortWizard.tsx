@@ -3,6 +3,10 @@ import { Modal } from '../../../components/Modal/Modal';
 import { StepMarker } from '../../../components/StepMarker/StepMarker';
 import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
+import { CohortTextArea } from '../../SlideoverPanels/InfoPanel/CohortTextArea/CohortTextArea';
+import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel'
+import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer'
+
 import styles from './NewCohortWizard.module.css';
 
 interface NewCohortWizardProps {
@@ -37,10 +41,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const renderNameStep = () => {
     return (
       <div>
-        <h3 className={styles.stepTitle}>Cohort Name</h3>
-        <p className={styles.description}>
-          Please enter a name for your new cohort.
-        </p>
+        <h3 className={styles.stepTitle}>Enter a unique name for your new cohort.</h3>
         <div className={styles.cohortNameContainer}>
           <EditableTextField
             value={cohortName}
@@ -62,33 +63,22 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const renderDescriptionStep = () => {
     return (
       <div>
-        <h3 className={styles.stepTitle}>Description</h3>
-        <p className={styles.description}>
-          Please enter a description for your new cohort.
-        </p>
+        <h3 className={styles.stepTitle}>Enter a text description of your cohort for documentation purposes.</h3>
+            <CohortTextArea />
+        
       </div>
     );
   }
 
   const renderDatabaseStep = () => {
     return (
-      <div>
-        <h3 className={styles.stepTitle}>Database</h3>
-        <p className={styles.description}>
-          Please select a database for your new cohort.
-        </p>
-      </div>
+        <DatabasePanel />
     );
   }
 
   const renderCodelistsStep = () => {
     return (
-      <div>
-        <h3 className={styles.stepTitle}>Codelists</h3>
-        <p className={styles.description}>
-          Please select codelists for your new cohort.
-        </p>
-      </div>
+      <CodelistsViewer/>
     );
   }
 

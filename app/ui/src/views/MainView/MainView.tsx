@@ -80,14 +80,14 @@ export const MainView = () => {
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
-      // case ViewType.CohortDefinition:
-      //   return <TwoPanelCohortViewer data={currentView.data} />;
-      // case ViewType.PublicCohortDefinition:
-      //   return <TwoPanelCohortViewer data={currentView.data} />;
+      case ViewType.CohortDefinition:
+        return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
+        return <TwoPanelCohortViewer data={currentView.data} />;
+      case ViewType.NewCohort:
         return (
           <>
-            {/* <TwoPanelCohortViewer data={currentView.data} /> */}
+            <TwoPanelCohortViewer data={currentView.data} />
             <NewCohortWizard isVisible={true} onClose={closeNewCohortWizard} data={currentView.data} />
           </>
         );
