@@ -3,8 +3,7 @@
 .wizardContent {
   min-width: 1000px;
   width: 1000px;
-  min-height: 500px;
-  max-height: 80vh;
+  height: 70vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

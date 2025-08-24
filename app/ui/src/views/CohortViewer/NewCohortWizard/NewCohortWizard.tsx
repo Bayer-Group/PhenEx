@@ -72,13 +72,13 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
 
   const renderDatabaseStep = () => {
     return (
-        <DatabasePanel />
+        <DatabasePanel showTitle={false} />
     );
   }
 
   const renderCodelistsStep = () => {
     return (
-      <CodelistsViewer/>
+      <CodelistsViewer showTitle={false} />
     );
   }
 

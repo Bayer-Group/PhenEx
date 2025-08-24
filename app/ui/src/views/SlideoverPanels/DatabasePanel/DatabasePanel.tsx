@@ -4,7 +4,11 @@ import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 import { DatabaseFields } from './DatabaseFields';
 
-export const DatabasePanel: React.FC = () => {
+interface DatabasePanelProps {
+  showTitle?: boolean;
+}
+
+export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true }) => {
   const infoContent = () => {
     return (
       <span>
@@ -31,7 +35,7 @@ export const DatabasePanel: React.FC = () => {
   };
 
   return (
-    <SlideoverPanel title="Database" info={infoContent()}>
+    <SlideoverPanel title="Database" info={infoContent()} showTitle={showTitle}>
       <DatabaseFields />
     </SlideoverPanel>
   );

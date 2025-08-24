@@ -7,7 +7,11 @@ import { FileDropZone } from './FileDropZone/FileDropZone';
 import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
-export const CodelistsViewer: React.FC = () => {
+interface CodelistsViewerProps {
+  showTitle?: boolean;
+}
+
+export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = true }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [activeTab, setActiveTab] = useState(0);
   const [gridData, setGridData] = useState<{ columnDefs: any[]; rowData: any[] }>({
@@ -100,7 +104,7 @@ export const CodelistsViewer: React.FC = () => {
 
   return (
     <FileDropZone onFileDrop={handleFileDrop}>
-      <SlideoverPanel title="Codelists" info={infoContent()}>
+      <SlideoverPanel title="Codelists" info={infoContent()} showTitle={showTitle}>
         <div className={styles.container}>
           <div className={styles.tabsContainer}>
             <TabsWithDropdown
