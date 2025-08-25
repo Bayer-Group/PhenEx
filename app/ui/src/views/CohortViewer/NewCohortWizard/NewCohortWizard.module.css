@@ -19,7 +19,7 @@
 }
 
 .stepMarker {
-  width: 400px;
+  width: 500px;
   margin: 0 auto 0 auto;
   padding: 0 0;
   position: sticky;
@@ -32,16 +32,15 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding-left:10px;
 }
 
 .stepTitle {
-  margin: 0 0 1rem 20px;
-  color: #1f2937;
-  font-size: 1.25rem;
+  margin: 20px 0 20px 20px;
+  font-size: 20px;
   font-weight: 600;
   font-family: "IBMPlexSans-bolditalic";
-
-
+  color: var(--color-accent-bright);
 }
 
 .description {

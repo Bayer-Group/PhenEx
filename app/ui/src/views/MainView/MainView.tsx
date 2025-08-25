@@ -83,8 +83,8 @@ export const MainView = () => {
       case ViewType.CohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
-        //   return <TwoPanelCohortViewer data={currentView.data} />;
-        // case ViewType.NewCohort:
+          return <TwoPanelCohortViewer data={currentView.data} />;
+        case ViewType.NewCohort:
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />

@@ -20,7 +20,7 @@
 :global(.ag-cell-range-selected) {
   background-color: transparent !important;
   border-color: var(--line-color) !important;
-  border-radius: 10px;
+  border: 1px solid var(--color-accent-bright);
 }
 
 .missing {
