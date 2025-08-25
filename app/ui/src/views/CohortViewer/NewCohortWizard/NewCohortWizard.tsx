@@ -34,6 +34,23 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     initializeData();
   }, [isVisible, _data, dataService]);
 
+  useEffect(() => {
+    // Focus the appropriate input when step changes
+    const focusInput = () => {
+        if (currentStep === 0) {
+          // Focus the editable text field input
+          const nameInput = document.querySelector(`.${styles.cohortNameInput} input`) as HTMLInputElement;
+          if (nameInput) {
+            nameInput.focus();
+          }
+        }
+    };
+
+    if (isVisible) {
+      focusInput();
+    }
+  }, [currentStep, isVisible]);
+
   const handleStepClick = (stepIndex: number) => {
     console.log(`Step clicked: ${stepIndex} (${stepTitles[stepIndex]})`);
     setCurrentStep(stepIndex);
