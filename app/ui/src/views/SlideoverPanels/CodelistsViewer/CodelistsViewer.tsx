@@ -106,25 +106,24 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
     <FileDropZone onFileDrop={handleFileDrop}>
       <SlideoverPanel title="Codelists" info={infoContent()} showTitle={showTitle}>
         <div className={styles.container}>
-          <div className={styles.tabsContainer}>
-            <TabsWithDropdown
-              width="auto"
-              height="auto"
-              tabs={tabs}
-              active_tab_index={activeTab}
-              onTabChange={handleTabChange}
-            />
+          <div className={styles.topSection}>
+            <div className={styles.tabsContainer}>
+              <TabsWithDropdown
+                width="auto"
+                height="auto"
+                tabs={tabs}
+                active_tab_index={activeTab}
+                onTabChange={handleTabChange}
+              />
+            </div>
+              <div className={styles.infoBox}>
+                {activeTab !== 0 && (
+                  <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
+                )}
+            </div>
           </div>
           <div className={styles.bottomSection}>
-            <div className={styles.infoBox}>
-              {activeTab !== 0 && (
-                <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
-              )}
-            </div>
-            <div
-              className={styles.tableBox}
-              style={{ height: 'calc(100vh - 150px)', width: '100%' }}
-            >
+            <div className={styles.tableBox}>
               <AgGridReact
                 rowData={gridData.rowData}
                 columnDefs={gridData.columnDefs}

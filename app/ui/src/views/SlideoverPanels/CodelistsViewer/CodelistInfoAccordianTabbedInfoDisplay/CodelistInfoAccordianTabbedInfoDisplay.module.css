@@ -77,7 +77,7 @@
 }
 
 .contentArea {
-  padding: 20px;
+  padding: 0px;
   font-size: 16px;
   max-height: 500px;
   overflow-y: auto;

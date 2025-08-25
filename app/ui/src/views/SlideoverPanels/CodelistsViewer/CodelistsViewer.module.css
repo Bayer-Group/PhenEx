@@ -1,19 +1,35 @@
-.tableBox {
-  flex: 1;
-}
-.bottomSection {
-  /* height: 100%;
-  width: 100%; */
-  /* display: flex;
-  flex-direction: column; */
-}
-
 .container {
   height: 100%;
   display: flex;
   flex-direction: column;
   padding: 0px;
   padding-top: 0px;
+}
+
+.topSection {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 1;
+}
+
+.bottomSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tableBox {
+  flex: 1;
+  min-height: 0;
+}
+
+.infoBox {
+  flex-shrink: 0;
 }
 
 .title {

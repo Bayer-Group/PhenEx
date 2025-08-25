@@ -9,6 +9,7 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 
 interface CodelistFile {
   filename: string;
+  id?: string;
   code_column: string;
   code_type_column: string;
   codelist_column: string;
@@ -264,11 +265,34 @@ export class CodelistDataService {
 
   public prepareFileData(fileIndex: number) {
     const file = this.files[fileIndex - 1];
-    const columnDefs = file.contents.headers.map(header => ({
+    
+    // Get special columns that should be pinned to the left
+    const specialColumns = [
+      file.code_column,
+      file.code_type_column,
+      file.codelist_column
+    ].filter(col => col && file.contents.headers.includes(col));
+    
+    // Get remaining headers that are not special columns
+    const remainingHeaders = file.contents.headers.filter(
+      header => !specialColumns.includes(header)
+    );
+    
+    // Create column definitions with special columns first (pinned left)
+    const specialColumnDefs = specialColumns.map(header => ({
+      field: header,
+      headerName: header,
+      width: 100,
+      pinned: 'left' as const,
+    }));
+    
+    const remainingColumnDefs = remainingHeaders.map(header => ({
       field: header,
       headerName: header,
       width: 100,
     }));
+    
+    const columnDefs = [...specialColumnDefs, ...remainingColumnDefs];
 
     const rowData = Array.from(
       { length: file.contents.data[file.contents.headers[0]].length },
@@ -319,6 +343,16 @@ export class CodelistDataService {
   public getDefaultColumnForFile(filename: string, column: string) {
     const file = this.files.find(file => file.filename === filename);
     if (!file) return null;
-    return file[column];
+    
+    switch (column) {
+      case 'code_column':
+        return file.code_column;
+      case 'code_type_column':
+        return file.code_type_column;
+      case 'codelist_column':
+        return file.codelist_column;
+      default:
+        return null;
+    }
   }
 }
