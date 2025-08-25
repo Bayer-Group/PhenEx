@@ -377,7 +377,7 @@ class Subcohort(Cohort):
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,
         )
-        self.cohort = cohort                
+        self.cohort = cohort
 
 
 #
