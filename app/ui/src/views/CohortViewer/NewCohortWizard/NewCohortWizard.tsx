@@ -6,6 +6,7 @@ import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortTextArea } from '../../SlideoverPanels/InfoPanel/CohortTextArea/CohortTextArea';
 import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel'
 import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer'
+import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel'
 
 import styles from './NewCohortWizard.module.css';
 
@@ -20,7 +21,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const [cohortName, setCohortName] = useState('');
   const [dataService] = useState(() => CohortDataService.getInstance());
   
-  const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists'];
+  const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists', 'Constants'];
 
   useEffect(() => {
     // Initialize the data service with the new cohort data when wizard becomes visible
@@ -82,6 +83,12 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     );
   }
 
+  const renderConstantsStep = () => {
+    return (
+      <ConstantsPanel showTitle={false} />
+    );
+  }
+
   return (
     <Modal 
       isVisible={isVisible} 
@@ -102,6 +109,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
         {currentStep === 1 && renderDescriptionStep()}
         {currentStep === 2 && renderDatabaseStep()}
         {currentStep === 3 && renderCodelistsStep()}
+        {currentStep === 4 && renderConstantsStep()}
       </div>
       
       <div className={styles.navigationButtons}>
