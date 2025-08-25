@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState, useRef, useEffect } from 'react';
 import styles from './DatabaseFields.module.css';
 
 interface SnowflakeConfig {
@@ -22,6 +22,17 @@ export const SnowflakeConnectorFields: FC<SnowflakeConnectorFieldsProps> = ({
   onConfigChange,
   onSave,
 }) => {
+  const [showMore, setShowMore] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const contentHeight = contentRef.current.scrollHeight;
+      setHeight(showMore ? contentHeight : 0);
+    }
+  }, [showMore]);
+
   const handleChange = (field: keyof SnowflakeConfig, value: string) => {
     onConfigChange({
       ...snowflakeConfig,
@@ -61,65 +72,87 @@ export const SnowflakeConnectorFields: FC<SnowflakeConnectorFieldsProps> = ({
           onBlur={onSave}
         />
       </div>
+      
       <div className={styles.inputGroup}>
-        <label className={styles.inputLabel}>User</label>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="undefined"
-          value={snowflakeConfig.user}
-          onChange={e => handleChange('user', e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={onSave}
-        />
+        <button 
+          type="button"
+          className={styles.moreButton}
+          onClick={() => setShowMore(!showMore)}
+        >
+          {showMore ? 'Less' : 'More'}
+        </button>
       </div>
-      <div className={styles.inputGroup}>
-        <label className={styles.inputLabel}>Account</label>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="undefined"
-          value={snowflakeConfig.account}
-          onChange={e => handleChange('account', e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={onSave}
-        />
-      </div>
-      <div className={styles.inputGroup}>
-        <label className={styles.inputLabel}>Warehouse</label>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="undefined"
-          value={snowflakeConfig.warehouse}
-          onChange={e => handleChange('warehouse', e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={onSave}
-        />
-      </div>
-      <div className={styles.inputGroup}>
-        <label className={styles.inputLabel}>Role</label>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="undefined"
-          value={snowflakeConfig.role}
-          onChange={e => handleChange('role', e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={onSave}
-        />
-      </div>
-      <div className={styles.inputGroup + ' ' + styles.lastField}>
-        <label className={styles.inputLabel}>Password</label>
-        <input
-          type="password"
-          className={styles.input}
-          placeholder="undefined"
-          value={snowflakeConfig.password}
-          onChange={e => handleChange('password', e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={onSave}
-        />
+
+      <div 
+        className={styles.additionalFieldsContainer}
+        style={{ 
+          height: `${height}px`,
+          overflow: 'hidden',
+          transition: 'height 0.3s ease-in-out'
+        }}
+      >
+        <div ref={contentRef} className={styles.additionalFields}>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>User</label>
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="undefined"
+              value={snowflakeConfig.user}
+              onChange={e => handleChange('user', e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={onSave}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Account</label>
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="undefined"
+              value={snowflakeConfig.account}
+              onChange={e => handleChange('account', e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={onSave}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Warehouse</label>
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="undefined"
+              value={snowflakeConfig.warehouse}
+              onChange={e => handleChange('warehouse', e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={onSave}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Role</label>
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="undefined"
+              value={snowflakeConfig.role}
+              onChange={e => handleChange('role', e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={onSave}
+            />
+          </div>
+          <div className={styles.inputGroup + ' ' + styles.lastField}>
+            <label className={styles.inputLabel}>Password</label>
+            <input
+              type="password"
+              className={styles.input}
+              placeholder="undefined"
+              value={snowflakeConfig.password}
+              onChange={e => handleChange('password', e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={onSave}
+            />
+          </div>
+        </div>
       </div>
     </>
   );
