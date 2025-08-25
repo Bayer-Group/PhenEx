@@ -8,6 +8,7 @@ from phenex.phenotypes.functions import hstack
 from phenex.reporting import Table1
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
+from phenex.filters import DateFilter
 
 logger = create_logger(__name__)
 
@@ -43,6 +44,7 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
+        date_range: DateFilter = None,
     ):
         self.name = name
         self.table = None  # Will be set during execution
@@ -53,6 +55,7 @@ class Cohort:
         self.characteristics = characteristics if characteristics is not None else []
         self.derived_tables = derived_tables if derived_tables is not None else []
         self.outcomes = outcomes if outcomes is not None else []
+        self.date_range = date_range
 
         #
         # Entry stage
@@ -92,7 +95,7 @@ class Cohort:
             )
             index_nodes.append(self.exclusions_table_node)
 
-        self.index_table_node = IndexTableNode(
+        self.index_table_node = IndexPhenotype(
             f"{self.name}__index".upper(),
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
@@ -127,6 +130,24 @@ class Cohort:
             reporting_nodes.append(self.outcomes_table_node)
 
         self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
+
+        #
+        # Data period filter stage (created after all other stages)
+        #
+        self.data_period_filter_stage = None
+        if date_range:
+            domains = self._get_domains()
+            data_period_filter_nodes = [
+                DataPeriodFilterNode(
+                    name=f"{self.name}__data_period_filter_{domain}".upper(),
+                    domain=domain,
+                    date_filter=date_range,
+                )
+                for domain in domains
+            ]
+            self.data_period_filter_stage = NodeGroup(
+                name="data_period_filter", nodes=data_period_filter_nodes
+            )
 
         self._table1 = None
 
@@ -227,7 +248,7 @@ class Cohort:
         lazy_execution: Optional[bool] = False,
     ):
         """
-        The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
+        The execute method executes the full cohort in order of computation. The order is data period filter -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
 
         Parameters:
             tables: A dictionary mapping domains to Table objects
@@ -239,6 +260,21 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        # Apply data period filter first if specified
+        if self.data_period_filter_stage:
+            logger.info(f"Cohort '{self.name}': executing data period filter stage ...")
+            self.data_period_filter_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
+            # Update tables with filtered versions
+            for node in self.data_period_filter_stage.nodes:
+                tables[node.domain] = PhenexTable(node.table)
+            logger.info(f"Cohort '{self.name}': completed data period filter stage.")
+
         if self.derived_tables_stage:
             logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
             self.derived_tables_stage.execute(
@@ -317,6 +353,10 @@ class Cohort:
         # Collect all nodes from all stages
         all_nodes = []
 
+        # Add nodes from data period filter stage
+        if hasattr(self, "data_period_filter_stage") and self.data_period_filter_stage:
+            all_nodes += list(self.data_period_filter_stage.dependencies)
+
         # Add nodes from entry stage
         if hasattr(self, "entry_stage") and self.entry_stage:
             all_nodes += list(self.entry_stage.dependencies)
@@ -350,9 +390,64 @@ class Cohort:
                 name_to_hash[node_name] = node_hash
 
 
+class Subcohort(Cohort):
+    """
+    A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.
+
+    Parameters:
+        name: A descriptive name for the subcohort.
+        cohort: The parent cohort from which this subcohort derives.
+        inclusions: Additional phenotypes that must evaluate to True for patients to be included in the subcohort.
+        exclusions: Additional phenotypes that must evaluate to False for patients to be included in the subcohort.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        cohort: "Cohort",
+        inclusions: Optional[List[Phenotype]] = None,
+        exclusions: Optional[List[Phenotype]] = None,
+    ):
+        # Initialize as a regular Cohort with Cohort index table as entry criterion
+        additional_inclusions = inclusions or []
+        additional_exclusions = exclusions or []
+        super(Subcohort, self).__init__(
+            name=name,
+            entry_criterion=cohort.entry_criterion,
+            inclusions=cohort.inclusions + additional_inclusions,
+            exclusions=cohort.exclusions + additional_exclusions,
+            date_range=cohort.date_range,
+        )
+        self.cohort = cohort
+
+
 #
 # Helper Nodes -- FIXME move to separate file / namespace
 #
+class DataPeriodFilterNode(Node):
+    """
+    A compute node that filters tables by the data period (date range).
+    This ensures phenotypes only have access to data within the specified date range.
+    """
+
+    def __init__(self, name: str, domain: str, date_filter: DateFilter):
+        super(DataPeriodFilterNode, self).__init__(name=name)
+        self.domain = domain
+        self.date_filter = date_filter
+
+    def _execute(self, tables: Dict[str, Table]) -> Table:
+        """
+        Apply date filter to the specified domain table.
+
+        Args:
+            tables: Dictionary of table names to Table objects
+
+        Returns:
+            Table: Filtered table with events only within the data period
+        """
+        table = tables[self.domain]
+        table = self.date_filter.filter(table)
+        return table
 
 
 class HStackNode(Node):
@@ -490,7 +585,7 @@ class ExclusionsTableNode(Node):
         return exclusions_table
 
 
-class IndexTableNode(Node):
+class IndexPhenotype(Phenotype):
     """
     Compute the index table form the individual inclusions / exclusions phenotypes.
     """
@@ -502,7 +597,7 @@ class IndexTableNode(Node):
         inclusion_table_node: Node,
         exclusion_table_node: Node,
     ):
-        super(IndexTableNode, self).__init__(name=name)
+        super(IndexPhenotype, self).__init__(name=name)
         self.add_children(entry_phenotype)
         if inclusion_table_node:
             self.add_children(inclusion_table_node)
@@ -515,6 +610,7 @@ class IndexTableNode(Node):
 
     def _execute(self, tables: Dict[str, Table]):
 
+        # index_table = self.entry_phenotype.table
         index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
 
         if self.inclusion_table_node:
