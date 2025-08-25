@@ -39,9 +39,22 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     setCurrentStep(stepIndex);
   };
 
+  const handleNextStep = () => {
+    if (currentStep < stepTitles.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleNextStep();
+    }
+  };
+
   const renderNameStep = () => {
     return (
-      <div>
+      <div onKeyDown={handleKeyDown}>
         <h3 className={styles.stepTitle}>Enter a unique name for your new cohort.</h3>
         <div className={styles.cohortNameContainer}>
           <EditableTextField
