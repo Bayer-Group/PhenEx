@@ -44,6 +44,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
             table.
           </li>
           <li>Click the Component phenotypes tab to add component phenotypes.</li>
+          <li>Changes made here are reflected in the Cohort Editor table as well.</li>
         </ul>
       </span>
     );
@@ -51,7 +52,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   if (!data) {
     return (
-      <SlideoverPanel title="Phenotype Editor" info={() => <span>No data available</span>}>
+      <SlideoverPanel title="Edit Phenotype" info={() => <span>No data available</span>}>
         <div>No phenotype data available</div>
       </SlideoverPanel>
     );
@@ -59,14 +60,14 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   return (
     <SlideoverPanel
-      title="Phenotype Editor"
+      title="Edit Phenotype"
       info={infoContent()}
       classNameHeader={typeStyles[`${data.type}_color_block`]}
       classNameButton={styles.whiteText}
     >
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
-          <span className={styles.fillerText}>for</span> {data.name}
+          <span className={styles.fillerText}></span> {data.name}
         </div>
         <div className={styles.mainContainer}>
           <div className={styles.controlsContainer}>

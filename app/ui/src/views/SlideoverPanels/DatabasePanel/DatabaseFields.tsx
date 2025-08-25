@@ -45,10 +45,16 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
   const [selectedDatabase, setSelectedDatabase] = useState('');
   const [selectedSchema, setSelectedSchema] = useState('');
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
-  
+
+  const createDefaultDestinationDb = () => {
+    return `IEG_PROJECTS.PXUI_${dataService.cohort_data.id}`;
+
+
+  };
+
   const [snowflakeConfig, setSnowflakeConfig] = useState({
     sourceDb: existingConfig.config?.source_database || '',
-    destinationDb: existingConfig.config?.destination_database || '',
+    destinationDb: existingConfig.config?.destination_database || createDefaultDestinationDb(),
     user: existingConfig.config?.user || snowflakeDefaults.user,
     account: existingConfig.config?.account || snowflakeDefaults.account,
     warehouse: existingConfig.config?.warehouse || snowflakeDefaults.warehouse,
@@ -62,15 +68,29 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
     setSelectedMapper(newConfig.mapper || mappers[0]);
     setSelectedConnector(newConfig.connector || connector_types[0]);
     setDuckDbPath(newConfig.config?.database_path || '');
+    const destinationDb = newConfig.config?.destination_database || createDefaultDestinationDb();
+
     setSnowflakeConfig({
       sourceDb: newConfig.config?.source_database || '',
-      destinationDb: newConfig.config?.destination_database || '',
+      destinationDb: destinationDb,
       user: newConfig.config?.user || snowflakeDefaults.user,
       account: newConfig.config?.account || snowflakeDefaults.account,
       warehouse: newConfig.config?.warehouse || snowflakeDefaults.warehouse,
       role: newConfig.config?.role || snowflakeDefaults.role,
       password: newConfig.config?.password || snowflakeDefaults.password,
     });
+
+    // If destination database was auto-generated and we have a connector, save it
+    if (!newConfig.config?.destination_database && newConfig.connector === 'Snowflake') {
+      const updatedConfig = {
+        ...newConfig,
+        config: {
+          ...newConfig.config,
+          destination_database: destinationDb,
+        },
+      };
+      dataService.setDatabaseSettings(updatedConfig);
+    }
 
     // Parse source_database to set default database and schema selections
     const sourceDb = newConfig.config?.source_database;
@@ -223,13 +243,16 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         const newConnector = 'Snowflake';
         setSelectedConnector(newConnector);
         
+        // Set destination database if not already set
+        const destinationDb = snowflakeConfig.destinationDb || createDefaultDestinationDb();
+        
         // Create and save the complete database config
         const databaseConfig = {
           mapper: newMapper,
           connector: newConnector,
           config: {
             source_database: snowflakeConfig.sourceDb,
-            destination_database: snowflakeConfig.destinationDb,
+            destination_database: destinationDb,
             user: snowflakeConfig.user,
             account: snowflakeConfig.account,
             warehouse: snowflakeConfig.warehouse,
@@ -237,6 +260,12 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
             password: snowflakeConfig.password,
           },
         };
+        
+        // Update local state as well
+        setSnowflakeConfig(prev => ({
+          ...prev,
+          destinationDb: destinationDb
+        }));
         
         dataService.setDatabaseSettings(databaseConfig);
       }
@@ -248,11 +277,32 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
       if (selectedDatabase && schemaName) {
         // Set the sourceDb as database.schema
         const sourceDb = `${selectedDatabase}.${schemaName}`;
+        
+        // Set destination database if not already set
+        const destinationDb = snowflakeConfig.destinationDb || createDefaultDestinationDb();
+
         setSnowflakeConfig(prev => ({
           ...prev,
-          sourceDb: sourceDb
+          sourceDb: sourceDb,
+          destinationDb: destinationDb
         }));
-        handleSaveChanges('source_database', sourceDb);
+        
+        // Save both source and destination database
+        const databaseConfig = {
+          mapper: selectedMapper,
+          connector: selectedConnector,
+          config: {
+            source_database: sourceDb,
+            destination_database: destinationDb,
+            user: snowflakeConfig.user,
+            account: snowflakeConfig.account,
+            warehouse: snowflakeConfig.warehouse,
+            role: snowflakeConfig.role,
+            password: snowflakeConfig.password,
+          },
+        };
+        
+        dataService.setDatabaseSettings(databaseConfig);
       }
     };
 
