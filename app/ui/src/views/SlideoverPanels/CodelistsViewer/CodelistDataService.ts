@@ -355,4 +355,56 @@ export class CodelistDataService {
         return null;
     }
   }
+
+
+  public summarizeCodelistFile(file) {
+    if (!file) return [];
+
+    const codelistColumn = file.codelist_column;
+    const codeColumn = file.code_column;
+    const codeTypeColumn = file.code_type_column;
+    const data = file.contents.data;
+
+    // Get unique codelist names
+    const uniqueCodelistNames = Array.from(new Set(data[codelistColumn]));
+
+    // Calculate code counts for each codelist
+    return uniqueCodelistNames.map(codelistName => {
+      // Get indices where this codelist name appears
+      const indices = data[codelistColumn]
+        .map((name, idx) => (name === codelistName ? idx : -1))
+        .filter(idx => idx !== -1);
+
+      // Get codes and their types for these indices
+      const codesByType = indices.reduce((acc, idx) => {
+        const codeType = data[codeTypeColumn][idx];
+        const code = data[codeColumn][idx];
+        if (!acc[codeType]) acc[codeType] = new Set();
+        acc[codeType].add(code);
+        return acc;
+      }, {});
+
+      // Calculate total unique codes
+      const totalCodes = Object.values(codesByType).reduce(
+        (sum, codes: Set<string>) => sum + codes.size,
+        0
+      );
+
+      return {
+        codelist_name: codelistName,
+        n_codes: totalCodes,
+        filename: file.filename,
+      };
+    });
+  };
+
+  public summarizeAllCodelistFiles() {
+    const all_summaries = this.files.map(file => this.summarizeCodelistFile(file));
+
+    const summaries_as_flat_list = all_summaries.flat();
+    return summaries_as_flat_list;
+  }
+
 }
+
+  

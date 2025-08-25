@@ -6,7 +6,7 @@ import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';
 import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-
+import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummarytable';
 interface CodelistsViewerProps {
   showTitle?: boolean;
 }
@@ -102,6 +102,25 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
     );
   };
 
+  const renderBottomContent = () => {
+    if (activeTab==0){
+      return <AllCodelistsSummaryTable />;
+    }
+    return (
+      <AgGridReact
+              rowData={gridData.rowData}
+              columnDefs={gridData.columnDefs}
+              defaultColDef={{
+                sortable: true,
+                filter: true,
+                resizable: true,
+              }}
+              animateRows={true}
+              theme={dataService.codelists_service.getTheme()}
+            />
+    );
+  }
+
   return (
     <FileDropZone onFileDrop={handleFileDrop}>
       <SlideoverPanel title="Codelists" info={infoContent()} showTitle={showTitle}>
@@ -124,18 +143,9 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
           </div>
           <div className={styles.bottomSection}>
             <div className={styles.tableBox}>
-              <AgGridReact
-                rowData={gridData.rowData}
-                columnDefs={gridData.columnDefs}
-                defaultColDef={{
-                  sortable: true,
-                  filter: true,
-                  resizable: true,
-                }}
-                animateRows={true}
-                theme={dataService.codelists_service.getTheme()}
-              />
+             {renderBottomContent()}
             </div>
+
           </div>
         </div>
       </SlideoverPanel>

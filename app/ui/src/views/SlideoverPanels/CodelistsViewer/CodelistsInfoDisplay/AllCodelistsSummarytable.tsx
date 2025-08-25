@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, act } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
-import styles from './CodelistFileContent.module.css';
+import styles from './AllCodelistsSummaryTable.module.css';
 
-export const CodelistFileContent: React.FC = () => {
+export const AllCodelistsSummaryTable: React.FC = () => {
   const dataService = useRef(CohortDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const [activeFile, setActiveFile] = useState(dataService.codelists_service.activeFile);
@@ -41,11 +41,17 @@ export const CodelistFileContent: React.FC = () => {
         resizable: true,
         minWidth: 120,
       },
+      {
+        headerName: 'Source file',
+        field: 'filename',
+        resizable: true,
+        minWidth: 120,
+      },
     ];
   };
 
   const getRowData = () => {
-    return dataService.codelists_service.summarizeCodelistFile(activeFile);
+    return dataService.codelists_service.summarizeAllCodelistFiles();
   };
 
   return (
