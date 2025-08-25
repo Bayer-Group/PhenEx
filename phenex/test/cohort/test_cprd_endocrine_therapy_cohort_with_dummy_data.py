@@ -44,6 +44,7 @@ def create_cohort():
     )
 
     entry = CodelistPhenotype(
+        name="codelist_drugs",
         return_date="first",
         codelist=Codelist(["d1"]).copy(use_code_type=False),
         domain="DRUG_EXPOSURE",

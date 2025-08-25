@@ -43,7 +43,7 @@ def from_dict(data: dict):
                     for item in value
                 ]
             elif isinstance(value, dict) and "__datetime__" in value:
-                init_args[param] = datetime.fromisoformat(value["__datetime__"])
+                init_args[param] = datetime.fromisoformat(value["__datetime__"]).date()
             elif isinstance(value, dict) and "class_name" in value.keys():
                 init_args[param] = from_dict(value)
             elif isinstance(value, dict):

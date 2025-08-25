@@ -272,7 +272,7 @@ class SimpleCohortWithInclusionAndExclusionTestGenerator(CohortTestGenerator):
         )
 
         i1 = CodelistPhenotype(
-            name="prior_et_usage",
+            name="prior_et_usage_incl",
             codelist=Codelist(["i1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
@@ -281,7 +281,7 @@ class SimpleCohortWithInclusionAndExclusionTestGenerator(CohortTestGenerator):
         )
 
         e4 = CodelistPhenotype(
-            name="prior_et_usage",
+            name="prior_et_usage_excl",
             codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(
@@ -388,7 +388,7 @@ class SimpleCohortWithInclusionAndExclusionSeparateTablesTestGenerator(
         )
 
         i1 = CodelistPhenotype(
-            name="prior_et_usage",
+            name="prior_et_usage_incl",
             codelist=Codelist(["i1"]).copy(use_code_type=False),
             domain="CONDITION_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
@@ -397,7 +397,7 @@ class SimpleCohortWithInclusionAndExclusionSeparateTablesTestGenerator(
         )
 
         e4 = CodelistPhenotype(
-            name="prior_et_usage",
+            name="prior_et_usage_excl",
             codelist=Codelist(["e4"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
             relative_time_range=RelativeTimeRangeFilter(

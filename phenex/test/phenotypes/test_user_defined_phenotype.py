@@ -49,6 +49,7 @@ class UserDefinedPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "all_true_patients",
             "persons": [f"P{x}" for x in idx_persons],
             "phenotype": UserDefinedPhenotype(
+                name="udp1",
                 function=function1,
             ),
         }
@@ -64,6 +65,7 @@ class UserDefinedPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "some_true_some_false",
             "persons": [f"P{x}" for x in idx_persons],
             "phenotype": UserDefinedPhenotype(
+                name="udp2",
                 function=function2,
             ),
         }

@@ -8,11 +8,12 @@ from phenex.tables import (
 )
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import to_dict
+from phenex.node import Node
 
 logger = create_logger(__name__)
 
 
-class Phenotype:
+class Phenotype(Node):
     """
     A phenotype is a description of the state of a person at a specific time.
 
@@ -20,60 +21,23 @@ class Phenotype:
 
     The translation of this description in actual executable code (the "how") is handled via the `Phenotype.execute()` method. The execute method returns a PhenotypeTable - the realization of the defined Phenotype in a particular database. See `execute()` for details.
 
-    All Phenotype's in Phenex derive from the Phenotype class.
-
-    To subclass:
-        1. Define the parameters required to compute the Phenotype in the `__init__()` interface.
-        2. Within `__init__()`, define `self.children` - a list of Phenotype's which must be executed before the current Phenotype, allowing Phenotype's to be chained and executed recursively.
-        3. Define `self._execute()`. The `self._execute()` method is reponsible for interpreting the input parameters to the Phenotype and returning the appropriate PhenotypeTable.
-        4. Define tests in `phenex.test.phenotypes`! We demand a high level of test coverage for our code. High test coverage gives us confidence that our answers are correct and makes it easier to make changes to the code later on.
+    All Phenotype's in Phenex derive from the Phenotype class. To subclass, see documentation for Node.
 
     Parameters:
         description: A plain text description of the phenotype.
+        kwargs: For additional parameters, see Node.
     """
 
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
-        self.table = (
-            None  # self.table is populated ONLY AFTER self.execute() is called!
-        )
-        self._name = name
-        self.children = []  # List[Phenotype]
+    def __init__(self, description: str = None, **kwargs):
         self.description = description
-        self._check_for_children()
+        super(Phenotype, self).__init__(**kwargs)
 
-    @property
-    def name(self):
-        if self._name is not None:
-            return self._name.upper()
-        return "PHENOTYPE"  # TODO replace with phenotype id when phenotype id is implemented
-
-    @name.setter
-    def name(self, name):
-        self._name = name
-
-    def execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+    def _perform_final_processing(self, table: Table) -> Table:
         """
-        Executes the phenotype computation for the current object and its children. This method recursively iterates over the children of the current object and calls their execute method if their table attribute is None.
-
-        Args:
-            tables (Dict[str, PhenexTable]): A dictionary mapping table names to PhenexTable objects. See phenex.mappers.DomainsDictionary.get_mapped_tables().
-
-        Returns:
-            table (PhenotypeTable): The resulting phenotype table containing the required columns. The PhenotypeTable will contain the columns: PERSON_ID, EVENT_DATE, VALUE. DATE is determined by the return_date parameter. VALUE is different for each phenotype. For example, AgePhenotype will return the age in the VALUE column. A MeasurementPhenotype will return the observed value for the measurement. See the specific phenotype of interest to understand more.
+        Post process a Table before writing to disk to enforce that the table is actually a PhenotypeTable.
         """
-        logger.info(f"Phenotype '{self.name}': executing...")
-        for child in self.children:
-            if child.table is None:
-                logger.debug(
-                    f"Phenotype {self.name}: executing child phenotype '{child.name}'..."
-                )
-                child.execute(tables)
-            else:
-                logger.debug(
-                    f"Phenotype {self.name}: skipping already computed child phenotype '{child.name}'."
-                )
-
-        table = self._execute(tables).mutate(BOOLEAN=True)
+        # post-processing specific to Phenotype Nodes
+        table = table.mutate(BOOLEAN=True)
 
         if not set(PHENOTYPE_TABLE_COLUMNS) <= set(table.columns):
             raise ValueError(
@@ -86,7 +50,6 @@ class Phenotype:
             self.table = self.table.cast({"VALUE": "float64"})
 
         assert is_phenex_phenotype_table(self.table)
-        logger.info(f"Phenotype '{self.name}': execution completed.")
         return self.table
 
     @property
@@ -119,11 +82,6 @@ class Phenotype:
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
-
-    def _check_for_children(self):
-        for phenotype in self.children:
-            if not isinstance(phenotype, Phenotype):
-                raise ValueError("Dependent children must be of type Phenotype!")
 
     def __add__(
         self, other: Union["Phenotype", "ComputationGraph"]
@@ -167,16 +125,6 @@ class Phenotype:
 
     def __invert__(self) -> "ComputationGraph":
         return ComputationGraph(self, None, "~")
-
-    def __eq__(self, other) -> bool:
-        diff = DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
-        if diff:
-            logger.info(f"{self.__class__.__name__}s NOT equal")
-            logger.info(diff)
-            return False
-        else:
-            logger.debug(f"{self.__class__.__name__}s are equal")
-            return True
 
     def get_codelists(self, to_pandas=False):
         codelists = []
@@ -285,7 +233,7 @@ class ComputationGraph:
         phenotypes = []
         phenotypes.extend(manage_node(self.left))
         phenotypes.extend(manage_node(self.right))
-        return phenotypes
+        return list(set(phenotypes))
 
     def get_value_expression(self, table, operate_on="boolean"):
         """

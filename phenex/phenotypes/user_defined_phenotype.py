@@ -15,7 +15,10 @@ from phenex.util import create_logger
 logger = create_logger(__name__)
 
 
-class UserDefinedPhenotype(Phenotype):
+def UserDefinedPhenotype(
+    name: str,
+    function: Callable[[Dict[str, "PhenexTable"]], "PhenexTable"],
+):
     """
     UserDefinedPhenotype allows users of PhenEx to implement custom functionality within a single phenotype. To use, the user must pass a function that returns an ibis table. This means that the function must
     1. return an ibis table
@@ -55,29 +58,26 @@ class UserDefinedPhenotype(Phenotype):
         ```
     """
 
-    def __init__(
-        self,
-        function: Callable[[Dict[str, "PhenexTable"]], "PhenexTable"],
-        **kwargs,
-    ):
-        super(UserDefinedPhenotype, self).__init__(**kwargs)
-        self.function = function
+    class _UserDefinedPhenotype(Phenotype):
+        def __init__(
+            self,
+            **kwargs,
+        ):
+            super(_UserDefinedPhenotype, self).__init__(**kwargs)
 
-    def _execute(self, tables) -> PhenotypeTable:
-        table = self.function(tables)
-        import ibis
+        def _execute(self, tables) -> PhenotypeTable:
+            table = function(tables)
 
-        ibis.options.interactive = True
-        print(table)
+            if "BOOLEAN" not in table.columns:
+                table = table.mutate(BOOLEAN=True).distinct()
+            else:
+                table = table.filter(table.BOOLEAN == True)
 
-        if "BOOLEAN" not in table.columns:
-            table = table.mutate(BOOLEAN=True).distinct()
-        else:
-            table = table.filter(table.BOOLEAN == True)
+            if "EVENT_DATE" not in table.columns:
+                table = table.mutate(EVENT_DATE=ibis.null(date))
+            if "VALUE" not in table.columns:
+                table = table.mutate(VALUE=ibis.null().cast("int32"))
 
-        if "EVENT_DATE" not in table.columns:
-            table = table.mutate(EVENT_DATE=ibis.null(date))
-        if "VALUE" not in table.columns:
-            table = table.mutate(VALUE=ibis.null().cast("int32"))
-        print(table)
-        return table
+            return table
+
+    return _UserDefinedPhenotype(name=name)

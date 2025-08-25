@@ -54,7 +54,7 @@ class ComputationGraphPhenotype(Phenotype):
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
-        self.children = self.expression.get_leaf_phenotypes()
+        self.add_children(self.expression.get_leaf_phenotypes())
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
@@ -115,7 +115,7 @@ class ComputationGraphPhenotype(Phenotype):
         # Add a null value column if it doesn't exist, for example in the case of a LogicPhenotype
         schema = joined_table.schema()
         if "VALUE" not in schema.names:
-            joined_table = joined_table.mutate(VALUE=ibis.null())
+            joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
