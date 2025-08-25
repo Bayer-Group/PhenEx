@@ -89,17 +89,28 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         } else {
           setSelectedSchema('');
         }
+        
+        // Database found in defaults, stay on Default tab
+        setCurrentTab(DatabaseTabTypes.Default);
       } else {
-        // Database not found in defaults, reset selections
+        // Database not found in defaults, reset selections and switch to Manual tab
         setSelectedDatabase('');
         setSelectedSchema('');
         setAvailableSchemas([]);
+        setCurrentTab(DatabaseTabTypes.Manual);
       }
-    } else {
-      // No valid source_database, reset selections
+    } else if (sourceDb) {
+      // Source database exists but doesn't contain a dot (invalid format), switch to Manual tab
       setSelectedDatabase('');
       setSelectedSchema('');
       setAvailableSchemas([]);
+      setCurrentTab(DatabaseTabTypes.Manual);
+    } else {
+      // No valid source_database, reset selections and stay on Default tab
+      setSelectedDatabase('');
+      setSelectedSchema('');
+      setAvailableSchemas([]);
+      setCurrentTab(DatabaseTabTypes.Default);
     }
   };
 
@@ -297,7 +308,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         height={25}
         tabs={tabs}
         onTabChange={onTabChange}
-        active_tab_index={-1}
+        active_tab_index={Object.values(DatabaseTabTypes).indexOf(currentTab)}
         />
       {currentTab === DatabaseTabTypes.Manual && renderManualEntry()}
       {currentTab === DatabaseTabTypes.Default && renderDefaults()}
