@@ -9,8 +9,8 @@ from phenex.util import create_logger
 from phenex.ibis_connect import DuckDBConnector
 import threading
 import queue
-from collections import defaultdict, deque
-
+from deepdiff import DeepDiff
+from collections import defaultdict
 
 logger = create_logger(__name__)
 
@@ -213,10 +213,11 @@ class Node:
         # Use json.dumps to get a string, enforce sorted keys for deterministic ordering
         encoded = json.dumps(as_dict, sort_keys=True).encode()
         dhash.update(encoded)
-        return hash(dhash.hexdigest())
+        return int(dhash.hexdigest()[:8], 16)
 
     def __hash__(self):
         # For python built-in function hash().
+        # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
     def _update_current_hash(self):
@@ -247,6 +248,7 @@ class Node:
         con: Optional[object] = None,
         overwrite: bool = False,
         lazy_execution: bool = False,
+        n_threads: int = 1,
     ) -> Table:
         """
         Executes the Node computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing Node's that have already executed.
@@ -256,10 +258,35 @@ class Node:
             con: Connection to database for materializing outputs. If provided, outputs from the node and all children nodes will be materialized (written) to the database using the connector.
             overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed.
             lazy_execution: If True, only re-executes if the node's definition has changed. Defaults to False. You should pass overwrite=True with lazy_execution as lazy_execution is intended precisely for iterative updates to a node definition. You must pass a connector (to cache results) for lazy_execution to work.
+            n_threads: Max number of Node's to execute simultaneously when this node has multiple children.
 
         Returns:
-            Table: The resulting table for this node. Also accessible through self.talbe after calling self.execute().
+            Table: The resulting table for this node. Also accessible through self.table after calling self.execute().
         """
+        # Handle None tables
+        if tables is None:
+            tables = {}
+
+        # Use multithreaded execution if we have multiple children and n_threads > 1
+        if len(self.children) > 1 and n_threads > 1:
+            return self._execute_multithreaded(
+                tables, con, overwrite, lazy_execution, n_threads
+            )
+        else:
+            return self._execute_sequential(tables, con, overwrite, lazy_execution)
+
+    def _execute_sequential(
+        self,
+        tables: Dict[str, Table] = None,
+        con: Optional[object] = None,
+        overwrite: bool = False,
+        lazy_execution: bool = False,
+    ) -> Table:
+        """
+        Execute the node and its dependencies sequentially.
+        """
+        if tables is None:
+            tables = {}
 
         # First recursively execute all children nodes
         logger.info(f"Node '{self.name}': executing ...")
@@ -270,6 +297,7 @@ class Node:
                 con=con,
                 overwrite=overwrite,
                 lazy_execution=lazy_execution,
+                n_threads=1,  # Sequential execution for children
             )
 
         # Execute current node
@@ -278,7 +306,7 @@ class Node:
                 raise ValueError("lazy_execution only works with overwrite=True.")
             if con is None:
                 raise ValueError(
-                    "A DatabaseConnector is required for lazy execution. Comupted tables will be materialized and only recomputed as needed."
+                    "A DatabaseConnector is required for lazy execution. Computed tables will be materialized and only recomputed as needed."
                 )
 
             # first time computing, _get_last_hash() will be None and execution will still be triggered
@@ -313,225 +341,45 @@ class Node:
         logger.info(f"Node '{self.name}': execution completed.")
         return self.table
 
-    def _execute(self, tables: Dict[str, Table]) -> Table:
-        """
-        Implements the processing logic for this node. Should be implemented by subclasses to define specific computation logic.
-
-        Parameters:
-            tables (Dict[str, Table]): A dictionary where the keys are table domains and the values are Table objects.
-
-        Raises:
-            NotImplementedError: This method should be implemented by subclasses.
-        """
-        raise NotImplementedError()
-
-    def __eq__(self, other) -> bool:
-        return hash(self) == hash(other)
-
-    def to_dict(self):
-        """
-        Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
-        """
-        return to_dict(self)
-
-    def __repr__(self):
-        return f"Node('{self.name}')"
-
-
-class Executor:
-    """
-    An Executor manages the execution of multiple Node's in the correct dependency order, with support for multithreaded execution while respecting dependencies.
-
-    The Executor ensures that dependencies are computed before their parent nodes, and allows N threads to compute Node's concurrently when their dependencies have been satisfied.
-
-    Parameters:
-        name: A short and descriptive name for the Executor.
-        nodes: A list of Node objects to be computed. You only need to pass top-level nodes. Dependencies of the supplied list of Node's will detected and computed as needed.
-    """
-
-    def __init__(self, name: str, nodes: List[Node]):
-        self.name = name
-        self.nodes = {node.name: node for node in nodes}
-        self._auto_add_missing_dependencies()
-        self._dependency_graph = self._build_dependency_graph()
-        self._reverse_graph = self._build_reverse_graph()
-
-    def _build_dependency_graph(self) -> Dict[str, Set[str]]:
-        """
-        Build a dependency graph where each node maps to its direct dependencies (children).
-        """
-        graph = defaultdict(set)
-        for node_name, node in self.nodes.items():
-            for child in node.children:
-                if child.name in self.nodes:
-                    graph[node_name].add(child.name)
-        return dict(graph)
-
-    def _build_reverse_graph(self) -> Dict[str, Set[str]]:
-        """
-        Build a reverse dependency graph where each node maps to nodes that depend on it (parents).
-        """
-        reverse_graph = defaultdict(set)
-        for node_name, dependencies in self._dependency_graph.items():
-            for dep in dependencies:
-                reverse_graph[dep].add(node_name)
-        return dict(reverse_graph)
-
-    def _topological_sort(self) -> List[str]:
-        """
-        Perform topological sort to determine the execution order.
-        Returns nodes in dependency order (children before parents).
-        """
-        in_degree = defaultdict(int)
-
-        # Initialize in-degree for all nodes
-        for node_name in self.nodes:
-            in_degree[node_name] = 0
-
-        # Calculate in-degrees
-        for node_name, dependencies in self._dependency_graph.items():
-            in_degree[node_name] = len(dependencies)
-
-        # Start with nodes that have no dependencies
-        queue_nodes = deque([node for node, degree in in_degree.items() if degree == 0])
-        result = []
-
-        while queue_nodes:
-            current = queue_nodes.popleft()
-            result.append(current)
-
-            # Reduce in-degree for dependent nodes
-            for dependent in self._reverse_graph.get(current, set()):
-                in_degree[dependent] -= 1
-                if in_degree[dependent] == 0:
-                    queue_nodes.append(dependent)
-
-        if len(result) != len(self.nodes):
-            raise ValueError("Circular dependency detected in the compute graph")
-
-        return result
-
-    def _collect_all_dependencies(
-        self, node: Node, visited: Set[str] = None
-    ) -> Dict[str, Node]:
-        """
-        Recursively collect all dependencies of a node (including dependencies of dependencies).
-
-        Parameters:
-            node: The node to collect dependencies for
-            visited: Set of already visited node names to avoid infinite loops
-
-        Returns:
-            Dict[str, Node]: A dictionary mapping node names to node objects for all dependencies
-        """
-        if visited is None:
-            visited = set()
-
-        all_deps = {}
-
-        # Avoid infinite loops with circular dependencies
-        if node.name in visited:
-            return all_deps
-        visited.add(node.name)
-
-        # Add direct children (dependencies)
-        for child in node.children:
-            if child.name not in all_deps:
-                all_deps[child.name] = child
-                # Recursively collect dependencies of this child
-                child_deps = self._collect_all_dependencies(child, visited.copy())
-                all_deps.update(child_deps)
-
-        return all_deps
-
-    def _auto_add_missing_dependencies(self):
-        """
-        Automatically find and add all missing dependencies to the workflow.
-        This includes dependencies of dependencies recursively.
-        """
-        added_nodes = {}
-
-        # Keep adding dependencies until no more are found
-        while True:
-            new_deps_found = False
-
-            # Check all current nodes for missing dependencies
-            for node_name, node in self.nodes.items():
-                all_deps = self._collect_all_dependencies(node)
-
-                for dep_name, dep_node in all_deps.items():
-                    if dep_name not in self.nodes and dep_name not in added_nodes:
-                        added_nodes[dep_name] = dep_node
-                        new_deps_found = True
-                        logger.info(
-                            f"Adding dependent node '{dep_name}' required by '{node_name}'"
-                        )
-
-            # If no new dependencies were found, we're done
-            if not new_deps_found:
-                break
-
-        # Add all collected dependencies to the workflow
-        if added_nodes:
-            self.nodes.update(added_nodes)
-            # Rebuild the dependency graphs with the new nodes
-            self._dependency_graph = self._build_dependency_graph()
-            self._reverse_graph = self._build_reverse_graph()
-
-    def _validate_dependencies(self):
-        """
-        Automatically find and add all missing dependencies to the workflow,
-        then validate that the dependency graph is complete and valid.
-        """
-        # Validate that all dependencies are satisfied
-        missing_deps = []
-        for node_name, node in self.nodes.items():
-            for child in node.children:
-                if child.name not in self.nodes:
-                    missing_deps.append((node_name, child.name))
-
-        # This should not happen after auto-adding dependencies, but check anyway
-        if missing_deps:
-            error_msg = "Missing dependencies found after auto-collection:\n"
-            for parent, child in missing_deps:
-                error_msg += f"  Node '{parent}' depends on '{child}' which is not in the graph\n"
-            raise ValueError(error_msg)
-
-    def execute(
+    def _execute_multithreaded(
         self,
         tables: Dict[str, Table] = None,
         con: Optional[object] = None,
         overwrite: bool = False,
         lazy_execution: bool = False,
         n_threads: int = 4,
-    ) -> Dict[str, Table]:
+    ) -> Table:
         """
-        Execute all nodes in the graph in the correct dependency order using multithreading.
-
-        Parameters:
-            tables: See Node.
-            con: See Node.
-            overwrite: See Node.
-            lazy_execution: See Node.
-            n_threads: Max number of Node's to execute simultaneously.
-
-        Returns:
-            Dict[str, Table]: A dictionary mapping node names to their computed tables
+        Execute this node's dependencies using multithreading, then execute this node.
         """
-        self._validate_dependencies()
-        if n_threads == 1:
-            return self.execute_sequential(tables, con, overwrite, lazy_execution)
+        if tables is None:
+            tables = {}
+
+        # Build dependency graph for all dependencies
+        all_deps = self.dependencies
+        nodes = {node.name: node for node in all_deps}
+        nodes[self.name] = self  # Add self to the nodes
+
+        # Validate node uniqueness
+        self._validate_node_uniqueness(nodes)
+
+        # Build dependency and reverse graphs
+        dependency_graph = self._build_dependency_graph(nodes)
+        reverse_graph = self._build_reverse_graph(dependency_graph)
+
+        # Execute dependencies in parallel if n_threads > 1
+        if n_threads == 1 or len(all_deps) <= 1:
+            return self._execute_sequential(tables, con, overwrite, lazy_execution)
 
         # Track completion status and results
         completed = set()
-        results = {}
         completion_lock = threading.Lock()
 
         # Track in-degree for scheduling
         in_degree = {}
-        for node_name, dependencies in self._dependency_graph.items():
+        for node_name, dependencies in dependency_graph.items():
             in_degree[node_name] = len(dependencies)
-        for node_name in self.nodes:
+        for node_name in nodes:
             if node_name not in in_degree:
                 in_degree[node_name] = 0
 
@@ -557,7 +405,7 @@ class Executor:
                     logger.info(
                         f"Thread {threading.current_thread().name}: executing node '{node_name}'"
                     )
-                    node = self.nodes[node_name]
+                    node = nodes[node_name]
 
                     # Execute the node (without recursive child execution since we handle dependencies here)
                     if lazy_execution:
@@ -573,7 +421,10 @@ class Executor:
                         if node._get_current_hash() != node._get_last_hash():
                             logger.info(f"Node '{node_name}': computing...")
                             table = node._execute(tables)
-                            con.create_table(table, node_name, overwrite=overwrite)
+                            if (
+                                table is not None
+                            ):  # Only create table if _execute returns something
+                                con.create_table(table, node_name, overwrite=overwrite)
                             node._update_current_hash()
                         else:
                             logger.info(
@@ -582,25 +433,24 @@ class Executor:
                             table = con.get_dest_table(node_name)
                     else:
                         table = node._execute(tables)
-                        if con:
+                        if (
+                            con and table is not None
+                        ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
 
                     node.table = table
 
                     with completion_lock:
                         completed.add(node_name)
-                        results[node_name] = table
 
                         # Update in-degree for dependent nodes and add ready ones to queue
-                        for dependent in self._reverse_graph.get(node_name, set()):
+                        for dependent in reverse_graph.get(node_name, set()):
                             in_degree[dependent] -= 1
                             if in_degree[dependent] == 0:
                                 # Check if all dependencies are completed
                                 deps_completed = all(
                                     dep in completed
-                                    for dep in self._dependency_graph.get(
-                                        dependent, set()
-                                    )
+                                    for dep in dependency_graph.get(dependent, set())
                                 )
                                 if deps_completed:
                                     ready_queue.put(dependent)
@@ -617,14 +467,14 @@ class Executor:
 
         # Start worker threads
         threads = []
-        for i in range(min(n_threads, len(self.nodes))):
+        for i in range(min(n_threads, len(nodes))):
             thread = threading.Thread(target=worker, name=f"PhenexWorker-{i}")
             thread.daemon = True
             thread.start()
             threads.append(thread)
 
         # Wait for all nodes to complete
-        while len(completed) < len(self.nodes):
+        while len(completed) < len(nodes):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
 
         # Signal workers to stop and wait for them
@@ -634,64 +484,103 @@ class Executor:
         for thread in threads:
             thread.join(timeout=1)
 
-        logger.info(f"PhenexComputeGraph: completed execution of {len(results)} nodes")
-        return results
+        logger.info(
+            f"Node '{self.name}': completed multithreaded execution of {len(nodes)} nodes"
+        )
+        return self.table
 
-    def execute_sequential(
-        self,
-        tables: Dict[str, Table] = None,
-        con: Optional[object] = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-    ) -> Dict[str, Table]:
+    def _validate_node_uniqueness(self, nodes: Dict[str, "Node"]):
         """
-        Execute all nodes sequentially in topological order (for debugging/comparison).
+        Validate that all nodes are unique according to the rule:
+        node1.name == node2.name implies hash(node1) == hash(node2)
+
+        This ensures that nodes with the same name have identical parameters (same hash).
+        """
+        name_to_hash = {}
+
+        for node_name, node in nodes.items():
+            node_hash = hash(node)
+
+            # Check if we've seen this name before
+            if node_name in name_to_hash:
+                existing_hash = name_to_hash[node_name]
+                if existing_hash != node_hash:
+                    raise ValueError(
+                        f"Node uniqueness violation: Found nodes with the same name '{node_name}' "
+                        f"but different hashes ({existing_hash} vs {node_hash}). "
+                        f"Nodes with the same name must have identical parameters."
+                    )
+            else:
+                name_to_hash[node_name] = node_hash
+
+    def _build_dependency_graph(self, nodes: Dict[str, "Node"]) -> Dict[str, Set[str]]:
+        """
+        Build a dependency graph where each node maps to its direct dependencies (children).
+        """
+        graph = defaultdict(set)
+        for node_name, node in nodes.items():
+            for child in node.children:
+                if child.name in nodes:
+                    graph[node_name].add(child.name)
+        return dict(graph)
+
+    def _build_reverse_graph(
+        self, dependency_graph: Dict[str, Set[str]]
+    ) -> Dict[str, Set[str]]:
+        """
+        Build a reverse dependency graph where each node maps to nodes that depend on it (parents).
+        """
+        reverse_graph = defaultdict(set)
+        for node_name, dependencies in dependency_graph.items():
+            for dep in dependencies:
+                reverse_graph[dep].add(node_name)
+        return dict(reverse_graph)
+
+    def _execute(self, tables: Dict[str, Table] = None) -> Table:
+        """
+        Implements the processing logic for this node. Should be implemented by subclasses to define specific computation logic.
 
         Parameters:
-            tables: See Node.
-            con: See Node.
-            overwrite: See Node.
-            lazy_execution: See Node.
+            tables (Dict[str, Table]): A dictionary where the keys are table domains and the values are Table objects.
 
-        Returns:
-            Dict[str, Table]: A dictionary mapping node names to their computed tables
+        Raises:
+            NotImplementedError: This method should be implemented by subclasses.
         """
-        self._validate_dependencies()
-        execution_order = self._topological_sort()
-        results = {}
+        raise NotImplementedError()
 
-        for node_name in execution_order:
-            logger.info(f"Sequential execution: processing node '{node_name}'")
-            node = self.nodes[node_name]
-            table = node.execute(
-                tables=tables,
-                con=con,
-                overwrite=overwrite,
-                lazy_execution=lazy_execution,
-            )
-            results[node_name] = table
+    def __eq__(self, other: "Node") -> bool:
+        return hash(self) == hash(other)
 
-        return results
+    def diff(self, other: "Node"):
+        return DeepDiff(self.to_dict(), other.to_dict(), ignore_order=True)
 
-    def get_execution_plan(self) -> List[str]:
+    def to_dict(self):
         """
-        Get the planned execution order for nodes.
-
-        Returns:
-            List[str]: Node names in execution order
+        Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
-        return self._topological_sort()
+        return to_dict(self)
+
+    def __repr__(self):
+        return f"Node('{self.name}')"
 
     def visualize_dependencies(self) -> str:
         """
-        Create a text visualization of the dependency graph.
+        Create a text visualization of the dependency graph for this node and its dependencies.
 
         Returns:
             str: A text representation of the dependency graph
         """
-        lines = ["PhenexComputeGraph Dependencies:"]
-        dependency_graph = self._build_dependency_graph()
-        for node_name in sorted(self.nodes.keys()):
+        lines = [f"Dependencies for Node '{self.name}':"]
+
+        # Get all dependencies
+        all_deps = self.dependencies
+        nodes = {node.name: node for node in all_deps}
+        nodes[self.name] = self  # Add self to the nodes
+
+        # Build dependency graph
+        dependency_graph = self._build_dependency_graph(nodes)
+
+        for node_name in sorted(nodes.keys()):
             dependencies = dependency_graph.get(node_name, set())
             if dependencies:
                 deps_str = ", ".join(sorted(dependencies))
@@ -700,3 +589,35 @@ class Executor:
                 lines.append(f"  {node_name} (no dependencies)")
 
         return "\n".join(lines)
+
+
+class NodeGroup(Node):
+    """
+    A NodeGroup is a simple grouping mechanism for nodes that should run together. It is a no-op node that returns no table and is simply used to enforce dependencies and organize related nodes.
+
+    The NodeGroup acts as a container that ensures all its child nodes are executed when the group is executed. It does not perform any computation itself and returns None from its _execute method.
+
+    Parameters:
+        name: A short and descriptive name for the NodeGroup.
+        nodes: A list of Node objects to be grouped together. When the NodeGroup is executed, all these nodes (and their dependencies) will be executed.
+    """
+
+    def __init__(self, name: str, nodes: List[Node]):
+        super(NodeGroup, self).__init__(name=name)
+        self.add_children(nodes)
+
+    def _execute(self, tables: Dict[str, Table] = None) -> Table:
+        """
+        Execute all children nodes and return a table with information about dependencies.
+        The execution logic is handled by the parent Node class.
+        """
+        # Create a table with NODE_NAME and NODE_PARAMS for each dependency
+        data = []
+        for node in self.dependencies:
+            data.append(
+                {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
+            )
+
+        # Create a pandas DataFrame and convert to ibis memtable
+        df = pd.DataFrame(data)
+        return ibis.memtable(df)

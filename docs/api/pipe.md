@@ -2,8 +2,8 @@
 
 ## Node
 
-::: phenex.pipe.Node
+::: phenex.node.Node
 
-## Executor
+## NodeGroup
 
-::: phenex.pipe.Executor
+::: phenex.node.NodeGroup

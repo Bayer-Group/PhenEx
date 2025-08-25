@@ -8,7 +8,7 @@ from phenex.tables import (
 )
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import to_dict
-from phenex.pipe import Node
+from phenex.node import Node
 
 logger = create_logger(__name__)
 

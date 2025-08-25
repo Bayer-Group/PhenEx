@@ -4,9 +4,9 @@ from unittest.mock import Mock, patch
 import pandas as pd
 
 
-from phenex.pipe import (
+from phenex.node import (
     Node,
-    Executor,
+    NodeGroup,
     NODE_STATES_TABLE_NAME,
 )
 
@@ -162,7 +162,7 @@ class TestPhenexNode:
 
         assert hash1 != hash2
 
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_get_last_hash_no_table(self, mock_connector_class):
         """Test _get_last_hash when no state table exists"""
         mock_connector = Mock()
@@ -174,7 +174,7 @@ class TestPhenexNode:
 
         assert result is None
 
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_get_last_hash_with_existing_data(self, mock_connector_class):
         """Test _get_last_hash with existing state data"""
         mock_connector = Mock()
@@ -196,8 +196,8 @@ class TestPhenexNode:
 
         assert result == "hash123"
 
-    @patch("phenex.pipe.DuckDBConnector")
-    @patch("phenex.pipe.ibis.memtable")
+    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node.ibis.memtable")
     def test_update_current_hash(self, mock_memtable, mock_connector_class):
         """Test _update_current_hash"""
         mock_connector = Mock()
@@ -310,7 +310,7 @@ class TestPhenexNodeExecution:
         assert parent.executed
         assert result is not None
 
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_execute_with_connector(self, mock_connector_class):
         """Test execution with database connector"""
         mock_connector = Mock()
@@ -324,7 +324,7 @@ class TestPhenexNodeExecution:
         assert node.executed
         mock_connector.create_table.assert_called_once()
 
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_execute_lazy_execution_first_time(self, mock_connector_class):
         """Test lazy execution when node hasn't been computed before"""
         mock_connector = Mock()
@@ -344,7 +344,7 @@ class TestPhenexNodeExecution:
         mock_connector.create_table.assert_called_once()
         node._update_current_hash.assert_called_once()
 
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_execute_lazy_execution_unchanged(self, mock_connector_class):
         """Test lazy execution when node hasn't changed"""
         mock_connector = Mock()
@@ -415,11 +415,11 @@ class TestPhenexNodeExecution:
             node_b.add_children(node_a)
 
 
-class TestPhenexExecutor:
-    """Test Executor class"""
+class TestPhenexNodeGroup:
+    """Test NodeGroup class"""
 
     def test_autoadd_dependencies(self):
-        """Test Executor initialization"""
+        """Test NodeGroup initialization"""
         node1 = ConcreteNode("node1")
         node2 = ConcreteNode("node2")
         node3 = ConcreteNode("node3")
@@ -427,10 +427,10 @@ class TestPhenexExecutor:
         node2.add_children(node3)
         node3.add_children(node4)
 
-        executor = Executor("test_executor", [node1, node2])
+        grp = NodeGroup("test_NodeGroup", [node1, node2])
 
-        assert "NODE3" in executor.nodes
-        assert "NODE4" in executor.nodes
+        assert node3 in grp.dependencies
+        assert node4 in grp.dependencies
 
     def test_build_reverse_graph(self):
         """Test reverse dependency graph building"""
@@ -438,43 +438,19 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
+        grp = NodeGroup("test", [parent, child])
 
-        assert "CHILD" in executor._reverse_graph
-        assert "PARENT" in executor._reverse_graph["CHILD"]
+        # Build dependency graph first
+        all_deps = grp.dependencies
+        nodes = {node.name: node for node in all_deps}
+        nodes[grp.name] = grp
+        dependency_graph = grp._build_dependency_graph(nodes)
 
-    def test_topological_sort_simple(self):
-        """Test topological sort with simple dependencies"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
+        # Then build reverse graph
+        reverse_graph = grp._build_reverse_graph(dependency_graph)
 
-        executor = Executor("test", [parent, child])
-        order = executor._topological_sort()
-
-        # Child should come before parent
-        child_index = order.index("CHILD")
-        parent_index = order.index("PARENT")
-        assert child_index < parent_index
-
-    def test_topological_sort_complex(self):
-        """Test topological sort with complex dependencies"""
-        bottom = ConcreteNode("bottom")
-        left = ConcreteNode("left")
-        right = ConcreteNode("right")
-        top = ConcreteNode("top")
-
-        left.add_children(bottom)
-        right.add_children(bottom)
-        top.add_children([left, right])
-
-        executor = Executor("test", [top, left, right, bottom])
-        order = executor._topological_sort()
-
-        # Bottom should come first, top should come last
-        bottom_index = order.index("BOTTOM")
-        top_index = order.index("TOP")
-        assert bottom_index < top_index
+        assert "CHILD" in reverse_graph
+        assert "PARENT" in reverse_graph["CHILD"]
 
     def test_execute_sequential_simple(self):
         """Test sequential execution"""
@@ -482,15 +458,13 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
+        grp = NodeGroup("test", [parent, child])
         tables = {"domain1": MockTable()}
 
-        results = executor.execute_sequential(tables)
+        grp._execute_sequential(tables)
 
         assert child.executed
         assert parent.executed
-        assert "CHILD" in results
-        assert "PARENT" in results
 
     def test_execute_multithreaded(self):
         """Test multithreaded execution"""
@@ -500,11 +474,11 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children([fast_child, slow_child])
 
-        executor = Executor("test", [parent])
+        grp = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
         start_time = time.time()
-        results = executor.execute(tables, n_threads=2)
+        grp.execute(tables, n_threads=2)
         end_time = time.time()
 
         # Should be faster than sequential execution
@@ -513,7 +487,6 @@ class TestPhenexExecutor:
         assert fast_child.executed
         assert slow_child.executed
         assert parent.executed
-        assert len(results) == 3
 
     def test_execute_single_thread(self):
         """Test execution with n_threads=1 falls back to sequential"""
@@ -521,29 +494,15 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent])
+        grp = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
-        with patch.object(executor, "execute_sequential") as mock_sequential:
+        with patch.object(grp, "_execute_sequential") as mock_sequential:
             mock_sequential.return_value = {"PARENT": MockTable(), "CHILD": MockTable()}
 
-            executor.execute(tables, n_threads=1)
+            grp.execute(tables, n_threads=1)
 
             mock_sequential.assert_called_once()
-
-    def test_get_execution_plan(self):
-        """Test getting execution plan"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        executor = Executor("test", [parent, child])
-        plan = executor.get_execution_plan()
-
-        assert isinstance(plan, list)
-        assert "CHILD" in plan
-        assert "PARENT" in plan
-        assert plan.index("CHILD") < plan.index("PARENT")
 
     def test_visualize_dependencies(self):
         """Test dependency visualization"""
@@ -551,31 +510,22 @@ class TestPhenexExecutor:
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
-        executor = Executor("test", [parent, child])
-        viz = executor.visualize_dependencies()
+        grp = NodeGroup("test", [parent, child])
+        viz = grp.visualize_dependencies()
 
         assert isinstance(viz, str)
         assert "PARENT" in viz
         assert "CHILD" in viz
         assert "depends on" in viz
 
-    # def test_execute_with_failure(self):
-    #     """Test execution when a node fails"""
-    #     failing_child = ConcreteNode("failing_child", fail=True)
-    #     parent = ConcreteNode("parent")
-    #     parent.add_children(failing_child)
-
-    #     executor = Executor("test", [parent])
-    #     tables = {"domain1": MockTable()}
-
-    #     with pytest.raises(RuntimeError, match="Node FAILING_CHILD failed"):
-    #         executor.execute(tables)
-
-    @patch("phenex.pipe.DuckDBConnector")
+    @patch("phenex.node.DuckDBConnector")
     def test_execute_with_lazy_execution(self, mock_connector_class):
         """Test execution with lazy execution enabled"""
         mock_connector = Mock()
         mock_connector_class.return_value = mock_connector
+
+        # Configure the mock connector to handle list_tables() calls
+        mock_connector.dest_connection.list_tables.return_value = []
 
         child = ConcreteNode("child")
         parent = ConcreteNode("parent")
@@ -583,72 +533,20 @@ class TestPhenexExecutor:
 
         # Mock that nodes haven't been computed before
         child._get_last_hash = Mock(return_value=None)
-        child._get_current_hash = Mock(return_value="child_hash")
+        child._get_current_hash = Mock(return_value=2345)
         child._update_current_hash = Mock(return_value=True)
 
         parent._get_last_hash = Mock(return_value=None)
-        parent._get_current_hash = Mock(return_value="parent_hash")
+        parent._get_current_hash = Mock(return_value=1234)
         parent._update_current_hash = Mock(return_value=True)
 
-        executor = Executor("test", [parent])
+        grp = NodeGroup("test", [parent])
         tables = {"domain1": MockTable()}
 
-        results = executor.execute(
-            tables, con=mock_connector, overwrite=True, lazy_execution=True
-        )
+        grp.execute(tables, con=mock_connector, overwrite=True, lazy_execution=True)
 
         assert child.executed
         assert parent.executed
-        assert len(results) == 2
-
-
-class TestEdgeCases:
-    """Test edge cases and error conditions"""
-
-    def test_empty_executor(self):
-        """Test executor with no nodes"""
-        executor = Executor("empty", [])
-        results = executor.execute({})
-
-        assert len(results) == 0
-
-    def test_node_with_no_dependencies(self):
-        """Test single node with no dependencies"""
-        node = ConcreteNode("single")
-        executor = Executor("test", [node])
-
-        results = executor.execute({})
-
-        assert len(results) == 1
-        assert "SINGLE" in results
-        assert node.executed
-
-    def test_multiple_independent_nodes(self):
-        """Test multiple nodes with no dependencies between them"""
-        node1 = ConcreteNode("node1")
-        node2 = ConcreteNode("node2")
-        node3 = ConcreteNode("node3")
-
-        executor = Executor("test", [node1, node2, node3])
-        results = executor.execute({}, n_threads=3)
-
-        assert len(results) == 3
-        assert all(node.executed for node in [node1, node2, node3])
-
-    def test_deep_dependency_chain(self):
-        """Test deep chain of dependencies"""
-        nodes = []
-        for i in range(5):
-            node = ConcreteNode(f"node_{i}")
-            if i > 0:
-                node.add_children(nodes[i - 1])
-            nodes.append(node)
-
-        executor = Executor("test", [nodes[-1]])  # Only provide the top node
-        results = executor.execute({})
-
-        assert len(results) == 5
-        assert all(node.executed for node in nodes)
 
 
 if __name__ == "__main__":

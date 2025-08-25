@@ -2,7 +2,7 @@ from typing import Dict, Optional
 from ibis.expr.types.relations import Table
 import ibis
 
-from phenex.pipe import Node
+from phenex.node import Node
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
