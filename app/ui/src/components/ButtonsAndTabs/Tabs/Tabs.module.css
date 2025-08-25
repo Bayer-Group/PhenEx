@@ -10,6 +10,8 @@
   /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: blur(10px);
   user-select: none;
+  flex-shrink: 0;
+  width: fit-content;
   /* background-color: yellow; */
 }
 

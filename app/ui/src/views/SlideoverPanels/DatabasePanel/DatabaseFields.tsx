@@ -5,6 +5,8 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
 import editPencilIcon from '../../../../../assets/icons/edit-pencil.svg';
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import databasesData from '../../../assets/databases.json';
 
 interface DatabaseFieldsProps {}
 
@@ -19,17 +21,31 @@ const snowflakeDefaults = {
   password: 'default_password',
 };
 
+enum DatabaseTabTypes {
+  Default = 'Default',
+  Manual = 'Manual',
+}
+
+
 export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
   const dataService = CohortDataService.getInstance();
   const [existingConfig, setExistingConfig] = useState(
     dataService.cohort_data.database_config || {}
   );
+  const tabs = Object.values(DatabaseTabTypes).map(value => value.charAt(0) + value.slice(1));
+  const [currentTab, setCurrentTab] = useState<DatabaseTabTypes>(DatabaseTabTypes.Default);
 
   const [selectedMapper, setSelectedMapper] = useState(existingConfig.mapper || mappers[0]);
   const [selectedConnector, setSelectedConnector] = useState(
     existingConfig.connector || connector_types[0]
   );
   const [duckDbPath, setDuckDbPath] = useState(existingConfig.config?.database_path || '');
+  
+  // State for default database selection
+  const [selectedDatabase, setSelectedDatabase] = useState('');
+  const [selectedSchema, setSelectedSchema] = useState('');
+  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
+  
   const [snowflakeConfig, setSnowflakeConfig] = useState({
     sourceDb: existingConfig.config?.source_database || '',
     destinationDb: existingConfig.config?.destination_database || '',
@@ -103,9 +119,9 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
     );
   };
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.section}>
+  const renderManualEntry = () => {
+    return (
+       <div className={styles.section}>
         <div className={styles.inputFields}>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Mapper</label>
@@ -145,6 +161,116 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
           {renderConnectorFields()}
         </div>
       </div>
+    );
+  }
+
+  const renderDefaults = () => {
+    const handleDatabaseChange = (databaseName: string) => {
+      setSelectedDatabase(databaseName);
+      setSelectedSchema(''); // Reset schema selection
+      
+      // Find the selected database object
+      const dbConfig = databasesData.find(db => db.database === databaseName);
+      if (dbConfig) {
+        setAvailableSchemas(dbConfig.schemas);
+        
+        // Set mapper based on the database config
+        const newMapper = dbConfig.mapper;
+        setSelectedMapper(newMapper);
+        
+        // Set connector to Snowflake
+        const newConnector = 'Snowflake';
+        setSelectedConnector(newConnector);
+        
+        // Create and save the complete database config
+        const databaseConfig = {
+          mapper: newMapper,
+          connector: newConnector,
+          config: {
+            source_database: snowflakeConfig.sourceDb,
+            destination_database: snowflakeConfig.destinationDb,
+            user: snowflakeConfig.user,
+            account: snowflakeConfig.account,
+            warehouse: snowflakeConfig.warehouse,
+            role: snowflakeConfig.role,
+            password: snowflakeConfig.password,
+          },
+        };
+        
+        dataService.setDatabaseSettings(databaseConfig);
+      }
+    };
+
+    const handleSchemaChange = (schemaName: string) => {
+      setSelectedSchema(schemaName);
+      
+      if (selectedDatabase && schemaName) {
+        // Set the sourceDb as database.schema
+        const sourceDb = `${selectedDatabase}.${schemaName}`;
+        setSnowflakeConfig(prev => ({
+          ...prev,
+          sourceDb: sourceDb
+        }));
+        handleSaveChanges('source_database', sourceDb);
+      }
+    };
+
+    return (
+      <div className={styles.section}>
+        <div className={styles.inputFields}>
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Database</label>
+            <select
+              className={styles.dropdown}
+              value={selectedDatabase}
+              onChange={e => handleDatabaseChange(e.target.value)}
+            >
+              <option value="">Select a database</option>
+              {databasesData.map(db => (
+                <option key={db.database} value={db.database}>
+                  {db.database}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className={styles.inputGroup}>
+            <label className={styles.inputLabel}>Schema</label>
+            <select
+              className={styles.dropdown}
+              value={selectedSchema}
+              onChange={e => handleSchemaChange(e.target.value)}
+              disabled={!selectedDatabase}
+            >
+              <option value="">Select a schema</option>
+              {availableSchemas.map(schema => (
+                <option key={schema} value={schema}>
+                  {schema}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const onTabChange = (index: number) => {
+    const tabTypes = Object.values(DatabaseTabTypes);
+    setCurrentTab(tabTypes[index]);
+  };
+
+  return (
+    <div className={styles.container}>
+       <Tabs
+        width={200}
+        height={25}
+        tabs={tabs}
+        onTabChange={onTabChange}
+        active_tab_index={-1}
+        />
+      {currentTab === DatabaseTabTypes.Manual && renderManualEntry()}
+      {currentTab === DatabaseTabTypes.Default && renderDefaults()}
     </div>
   );
 };

@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 0px;
   padding-right: 20px;
+  padding-left:10px;
 }
 
 .headerContainer {
