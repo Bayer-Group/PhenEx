@@ -92,7 +92,7 @@ class Cohort:
             )
             index_nodes.append(self.exclusions_table_node)
 
-        self.index_table_node = IndexTableNode(
+        self.index_table_node = IndexPhenotype(
             f"{self.name}__index".upper(),
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
