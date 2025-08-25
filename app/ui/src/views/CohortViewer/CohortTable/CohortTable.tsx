@@ -72,7 +72,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         console.log('No onRowDragEnd callback provided');
         return;
       }
-      
+
       // Get the current order from the grid and update indices
       const newRowData: any[] = [];
       if (ref && typeof ref === 'object' && ref.current?.api) {
@@ -80,10 +80,16 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           newRowData.push(node.data);
         });
       }
-      
-      console.log('Current row data from grid:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
-      console.log('Original data rows:', data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
-      
+
+      console.log(
+        'Current row data from grid:',
+        newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+      );
+      console.log(
+        'Original data rows:',
+        data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+      );
+
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
         console.log('No row data found, skipping drag operation');
@@ -105,17 +111,20 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         }
         groupedByType[row.type].push(row);
       });
-      
+
       console.log('New grouped by type:', groupedByType);
-      
+
       // Update indices within each type
       Object.keys(groupedByType).forEach(type => {
         groupedByType[type].forEach((phenotype, index) => {
           phenotype.index = index + 1;
         });
       });
-      
-      console.log('Calling onRowDragEnd with:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+
+      console.log(
+        'Calling onRowDragEnd with:',
+        newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+      );
       // Call the parent callback with the reordered data
       onRowDragEnd(newRowData);
       console.log('=== handleRowDragEnd END ===');
@@ -147,7 +156,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         </div>
       );
     };
-  
+
     const NoRowsOverlayComponents: FC = () => {
       return (
         <div className={styles.noRowsOverlay}>
@@ -158,13 +167,16 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               <span className={styles.noRowsTopLine}>
                 <ul>
                   <li>
-                    Click <span className={styles.buttonAppearance}>Add Component</span> in right above this table to add a component phenotype.
+                    Click <span className={styles.buttonAppearance}>Add Component</span> in right
+                    above this table to add a component phenotype.
                   </li>
                   <li>
-                    Component phenotypes can then be accessed by Composite Phenotypes such as LogicPhenotype, ScorePhenotype, ArithemticPhenotype, etc.
+                    Component phenotypes can then be accessed by Composite Phenotypes such as
+                    LogicPhenotype, ScorePhenotype, ArithemticPhenotype, etc.
                   </li>
                   <li>
-                    All component phenotypes can be found in the <span className={styles.buttonAppearance}>All Phenotypes</span> tab.
+                    All component phenotypes can be found in the{' '}
+                    <span className={styles.buttonAppearance}>All Phenotypes</span> tab.
                   </li>
                 </ul>
               </span>
@@ -180,7 +192,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         return NoRowsOverlayOutcomes;
       } else if (currentlyViewing === 'baseline') {
         return NoRowsOverlayCharacteristics;
-      } else if (currentlyViewing === 'components'){
+      } else if (currentlyViewing === 'components') {
         return NoRowsOverlayComponents;
       }
       return NoRowsOverlayCohort;

@@ -19,7 +19,6 @@
   background: white;
   flex-shrink: 0;
   width: fit-content;
-
 }
 
 .bottomContainer {
@@ -27,8 +26,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-left:0px;
-  margin-bottom:10px;
+  padding-left: 0px;
+  margin-bottom: 10px;
 }
 
 .bottomContainer > div {

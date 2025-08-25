@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
-import stylesXButton from '../../../components/ButtonsAndTabs/XButton/XButton.module.css'
+import stylesXButton from '../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 interface TwoPanelViewProps {
   split: 'vertical';
   initialSizeLeft: number;

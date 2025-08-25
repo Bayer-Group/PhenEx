@@ -3,8 +3,8 @@
 }
 
 .accordianContainer {
-  margin-left:10px;
-  margin-right:20px;
+  margin-left: 10px;
+  margin-right: 20px;
   background-color: red;
   border: var(--accordian_container_border_width) solid transparent;
   border-radius: 10px;
@@ -62,9 +62,7 @@
 .toggleButton:focus {
   outline: none;
   border: none;
-
 }
-
 
 .content {
   padding: 5px 0px 0px 0px;
@@ -93,7 +91,6 @@
   transition: 0.2s ease;
   flex-shrink: 0;
   width: fit-content;
-
 }
 
 .tabsContainer.closed {

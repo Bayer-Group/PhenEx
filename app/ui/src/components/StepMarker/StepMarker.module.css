@@ -56,7 +56,7 @@
   border: 2px solid;
   transition: all 0.3s ease;
   position: relative;
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
 }
 
 .label {
@@ -120,8 +120,6 @@
   border-color: var(--color-accent-bright);
 }
 
-
-
 /* Icons */
 .checkmark {
   font-size: 16px;
@@ -138,27 +136,27 @@
   .stepMarker {
     padding: 1rem 0;
   }
-  
+
   .circle {
     width: 32px;
     height: 32px;
     font-size: 12px;
   }
-  
+
   .label {
     font-size: 11px;
     max-width: 60px;
   }
-  
+
   .connector {
     width: 40px;
     margin: 0 5px;
   }
-  
+
   .checkmark {
     font-size: 14px;
   }
-  
+
   .number {
     font-size: 12px;
   }

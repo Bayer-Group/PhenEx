@@ -42,7 +42,7 @@ export class MainViewService {
   }
 
   public navigateTo = (viewInfo: ViewInfo) => {
-    console.log("NAVIGATING ?TO", viewInfo)
+    console.log('NAVIGATING ?TO', viewInfo);
     this.notifyListeners(viewInfo);
   };
 
@@ -76,19 +76,23 @@ export const MainView = () => {
   }, []);
 
   const renderView = () => {
-    console.log("RENDERING VIEW", currentView.viewType);
+    console.log('RENDERING VIEW', currentView.viewType);
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
       case ViewType.CohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
-      //   return <TwoPanelCohortViewer data={currentView.data} />;
-      // case ViewType.NewCohort:
+        //   return <TwoPanelCohortViewer data={currentView.data} />;
+        // case ViewType.NewCohort:
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />
-            <NewCohortWizard isVisible={true} onClose={closeNewCohortWizard} data={currentView.data} />
+            <NewCohortWizard
+              isVisible={true}
+              onClose={closeNewCohortWizard}
+              data={currentView.data}
+            />
           </>
         );
       default:
@@ -97,14 +101,12 @@ export const MainView = () => {
   };
 
   const closeNewCohortWizard = () => {
-    console.log("Closing new cohort wizard");
+    console.log('Closing new cohort wizard');
     setCurrentView({
       viewType: ViewType.CohortDefinition,
       data: currentView.data,
     });
-
   };
-
 
   /*
   The first split panel is the maincontent (file browser + cohort browser) and the chat window

@@ -52,7 +52,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
       );
       // Update the state to trigger re-render
       setTableData(dataService.componentPhenotypeTableData);
-      
+
       if (refreshPhenotypeGrid) {
         refreshGrid();
       }
@@ -66,29 +66,27 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   }, []);
 
   useEffect(() => {
-      const listener = (refreshPhenotypeGrid: boolean = false) => {
-        if (refreshPhenotypeGrid) {
-          refreshGrid();
-        }
-      };
-      dataService.addListener(listener);
-  
-      if (data) {
-        console.log("SETTING DATA", data)
-        dataService.setData(data);
+    const listener = (refreshPhenotypeGrid: boolean = false) => {
+      if (refreshPhenotypeGrid) {
+        refreshGrid();
       }
-  
-      return () => {
-        dataService.removeListener(listener);
-      };
-    }, [data]);
+    };
+    dataService.addListener(listener);
+
+    if (data) {
+      console.log('SETTING DATA', data);
+      dataService.setData(data);
+    }
+
+    return () => {
+      dataService.removeListener(listener);
+    };
+  }, [data]);
 
   // Update table data when the phenotype data changes
   useEffect(() => {
     setTableData(dataService.componentPhenotypeTableData);
   }, [data]);
-
-
 
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
@@ -99,20 +97,23 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const clickedOnAddButton = (e: React.MouseEvent) => {
     dataService.addNewComponentPhenotype();
   };
-  
+
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.header}>
-        <button className={`${styles.addButton} ${typeStyles[`${data.type}_color_text_and_border_on_hover`]}`} onClick={clickedOnAddButton}>
-              Add Component
-            </button>
+        <button
+          className={`${styles.addButton} ${typeStyles[`${data.type}_color_text_and_border_on_hover`]}`}
+          onClick={clickedOnAddButton}
+        >
+          Add Component
+        </button>
       </div>
       <div className={styles.tableBox}>
         <CohortTable
           data={tableData}
           onCellValueChanged={onCellValueChanged}
           ref={gridRef}
-          currentlyViewing = {'components'}
+          currentlyViewing={'components'}
         />
       </div>
     </div>

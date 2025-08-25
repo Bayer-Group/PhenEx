@@ -39,11 +39,11 @@
   color: white;
 }
 
-.xButton{
+.xButton {
   cursor: pointer !important;
   pointer-events: none !important;
 }
 
-.hasChildren{
+.hasChildren {
   padding: 0px !important;
 }

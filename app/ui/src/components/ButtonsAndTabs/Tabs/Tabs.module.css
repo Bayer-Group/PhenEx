@@ -19,8 +19,6 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-
-
 .tab {
   padding: 2px 10px;
   border: none;
@@ -69,10 +67,10 @@
 }
 
 .outline {
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
   border: var(--border);
 }
 
 .tab.outline:hover {
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
 }

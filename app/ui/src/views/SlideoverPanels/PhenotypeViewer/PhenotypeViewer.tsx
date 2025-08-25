@@ -4,7 +4,7 @@ import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
 import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
-import typeStyles from '../../../styles/study_types.module.css'
+import typeStyles from '../../../styles/study_types.module.css';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -51,7 +51,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     dataService.addListener(listener);
 
     if (data) {
-      console.log("SETTING DATA", data)
+      console.log('SETTING DATA', data);
       dataService.setData(data);
       setPhenotypeName(data.name);
     }
@@ -137,7 +137,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
         />
       </div>
     );
-  }
+  };
 
   const renderType = () => {
     const type = data?.type;
@@ -153,8 +153,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     } else if (type == 'outcome') {
       s = 'Outcome';
     }
-
-  
 
     return (
       <>
@@ -179,9 +177,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   return (
     <div className={styles.container}>
       <div className={`${styles.header}`}>
-        <div className={styles.paramsContainer}>
-          {renderPhenotypeEditorTable()}
-        </div>
+        <div className={styles.paramsContainer}>{renderPhenotypeEditorTable()}</div>
       </div>
     </div>
   );

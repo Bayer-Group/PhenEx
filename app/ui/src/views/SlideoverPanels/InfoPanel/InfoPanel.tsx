@@ -19,7 +19,8 @@ export const InfoPanel: React.FC = () => {
         <i>Document your cohort and access settings</i>
         <ul>
           <li>
-            <em>Document your cohort</em> in the description tab using the the rich text editor. You can even ask AI to check that your description is properly implemented.
+            <em>Document your cohort</em> in the description tab using the the rich text editor. You
+            can even ask AI to check that your description is properly implemented.
           </li>
           <li>
             <em>Share and export your cohort</em> in the share tab.
@@ -34,17 +35,17 @@ export const InfoPanel: React.FC = () => {
 
   const renderTabs = () => {
     return (
-        <div className={styles.tabsContainer}>
-            <TabsWithDropdown
-              width="auto"
-              height="auto"
-              tabs={tabs}
-              active_tab_index={activeTabIndex}
-              onTabChange={handleTabChange}
-            />
-          </div>
+      <div className={styles.tabsContainer}>
+        <TabsWithDropdown
+          width="auto"
+          height="auto"
+          tabs={tabs}
+          active_tab_index={activeTabIndex}
+          onTabChange={handleTabChange}
+        />
+      </div>
     );
-  }
+  };
 
   const renderDescription = () => {
     return (

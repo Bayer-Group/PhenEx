@@ -15,48 +15,56 @@ interface CustomizableDropdownButtonProps {
 export const CustomizableDropdownButton = forwardRef<
   { closeDropdown: () => void },
   CustomizableDropdownButtonProps
->(({ label, content, menuClassName = 'dropdownMenu', outline=false }, customizableDropdownButtonRef) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+>(
+  (
+    { label, content, menuClassName = 'dropdownMenu', outline = false },
+    customizableDropdownButtonRef
+  ) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-  useImperativeHandle(customizableDropdownButtonRef, () => ({
-    closeDropdown: () => setIsOpen(false),
-  }));
+    useImperativeHandle(customizableDropdownButtonRef, () => ({
+      closeDropdown: () => setIsOpen(false),
+    }));
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const isClickInDropdown = dropdownRef.current?.contains(event.target as Node);
-      const isClickInMenu = menuRef.current?.contains(event.target as Node);
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const isClickInDropdown = dropdownRef.current?.contains(event.target as Node);
+        const isClickInMenu = menuRef.current?.contains(event.target as Node);
 
-      if (!isClickInMenu) {
-        setIsOpen(false);
-      }
-    };
+        if (!isClickInMenu) {
+          setIsOpen(false);
+        }
+      };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-  return (
-    <div className={styles.dropdownContainer} ref={dropdownRef}>
-      <button className={`${buttonStyles.button} ${outline ? buttonStyles.outline : ''}`} onClick={() => setIsOpen(!isOpen)}>
-        {label}
-      </button>
-      {isOpen && (
-        <Portal>
-          <div
-            ref={menuRef}
-            className={`${styles.dropdownMenu} ${menuClassName}`}
-            style={{
-              top: dropdownRef.current?.getBoundingClientRect().bottom - 40,
-              left: dropdownRef.current?.getBoundingClientRect().left,
-            }}
-          >
-            {content}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-});
+    return (
+      <div className={styles.dropdownContainer} ref={dropdownRef}>
+        <button
+          className={`${buttonStyles.button} ${outline ? buttonStyles.outline : ''}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {label}
+        </button>
+        {isOpen && (
+          <Portal>
+            <div
+              ref={menuRef}
+              className={`${styles.dropdownMenu} ${menuClassName}`}
+              style={{
+                top: dropdownRef.current?.getBoundingClientRect().bottom - 40,
+                left: dropdownRef.current?.getBoundingClientRect().left,
+              }}
+            >
+              {content}
+            </div>
+          </Portal>
+        )}
+      </div>
+    );
+  }
+);

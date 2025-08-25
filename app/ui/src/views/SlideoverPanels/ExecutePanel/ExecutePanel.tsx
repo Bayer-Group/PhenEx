@@ -117,23 +117,28 @@ export const ExecutePanel: React.FC = () => {
       <span>
         <i>Execute your cohort.</i>
         <ul>
-          <li>
-            Extract the patients that belong to your cohort and generate the attrition table
-          </li>
+          <li>Extract the patients that belong to your cohort and generate the attrition table</li>
           <li>Assess the cohort at baseline and generate Table 1</li>
           <li>Perform outcome analyses such as Time to Event</li>
         </ul>
         When you are finished defining your cohort :
         <ol>
           <li>
-            <em>Trigger execution</em> : <i>click</i> <code>Execute Cohort</code> below. You can watch the execution in real time in this panel; the logs are streamed to you. This allows you to monitor the progress and see any issues as they arise.
+            <em>Trigger execution</em> : <i>click</i> <code>Execute Cohort</code> below. You can
+            watch the execution in real time in this panel; the logs are streamed to you. This
+            allows you to monitor the progress and see any issues as they arise.
           </li>
           <li>
-            <em>View results</em> : 
-              <ul>
-                <li>Counts of patients in the cohort that fulfill a phenotype are displayed directly in the cohort editing table in the 'type' column.</li>
-                <li>Further results are found in the <code>Report</code> tab</li>
-              </ul>
+            <em>View results</em> :
+            <ul>
+              <li>
+                Counts of patients in the cohort that fulfill a phenotype are displayed directly in
+                the cohort editing table in the 'type' column.
+              </li>
+              <li>
+                Further results are found in the <code>Report</code> tab
+              </li>
+            </ul>
           </li>
         </ol>
       </span>
@@ -141,9 +146,7 @@ export const ExecutePanel: React.FC = () => {
   };
 
   const renderFilterDropdown = () => {
-    return (
-      <div></div>
-    );
+    return <div></div>;
     //   <div className={styles.filterDropdown}>
     //     <select
     //       value={logFilter}
@@ -161,14 +164,10 @@ export const ExecutePanel: React.FC = () => {
   };
 
   const renderControls = () => {
-    const tabs = [
-      isExecuting ? 'Executing...' : 'Execute Cohort',
-      'Clear Logs',
-      'Filter'
-    ];
+    const tabs = [isExecuting ? 'Executing...' : 'Execute Cohort', 'Clear Logs', 'Filter'];
 
     const handleTabChange = (index: number) => {
-      switch(index) {
+      switch (index) {
         case 0:
           handleExecute();
           break;
@@ -191,59 +190,45 @@ export const ExecutePanel: React.FC = () => {
         />
       </div>
     );
-  }
-
+  };
 
   const renderLogs = () => {
     return (
       <div className={styles.logsContainer} ref={logsContainerRef}>
-        {logs.length === 0 ? (
-          renderEmptyLogs()
-        ) : (
-          renderLogMessages()
-        )}
+        {logs.length === 0 ? renderEmptyLogs() : renderLogMessages()}
       </div>
     );
-  }
+  };
 
-  const renderEmptyLogs = () =>{
-    return (
-        <div className={styles.emptyState}>
-        </div>
-    );
-  }
+  const renderEmptyLogs = () => {
+    return <div className={styles.emptyState}></div>;
+  };
 
-  const renderLogMessages = () =>{
-    return (
-      logs
-        .filter(log => shouldShowLog(log.message))
-        .map((log, index) => {
-          // Format message for display
-          const displayMessage =
-            typeof log.message === 'string'
-              ? log.message
-              : JSON.stringify(log.message, null, 2);
+  const renderLogMessages = () => {
+    return logs
+      .filter(log => shouldShowLog(log.message))
+      .map((log, index) => {
+        // Format message for display
+        const displayMessage =
+          typeof log.message === 'string' ? log.message : JSON.stringify(log.message, null, 2);
 
-          return (
-            <div
-              key={index}
-              className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}
-            >
-              <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
-              <span className={styles.logMessage}>{displayMessage}</span>
-            </div>
-          );
-        })
-    );
-  }
+        return (
+          <div
+            key={index}
+            className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}
+          >
+            <span className={styles.timestamp}>[{formatTimestamp(log.timestamp)}]</span>
+            <span className={styles.logMessage}>{displayMessage}</span>
+          </div>
+        );
+      });
+  };
 
   return (
     <SlideoverPanel title="Execute" info={infoContent()}>
       <div className={styles.container}>
         {renderControls()}
-        <div className={styles.content}>
-          {renderLogs()}
-        </div>
+        <div className={styles.content}>{renderLogs()}</div>
       </div>
     </SlideoverPanel>
   );

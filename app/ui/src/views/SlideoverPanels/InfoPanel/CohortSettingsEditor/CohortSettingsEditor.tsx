@@ -39,7 +39,7 @@ export const CohortSettingsEditor: React.FC<CohortSettingsEditorProps> = props =
 
   const handleSettingSelect = (settingName: string) => {
     setSelectedSetting(settingName);
-    
+
     switch (settingName) {
       case 'Export':
         exportCohort();
@@ -56,7 +56,7 @@ export const CohortSettingsEditor: React.FC<CohortSettingsEditorProps> = props =
       default:
         break;
     }
-    
+
     // Reset selection after action
     setTimeout(() => setSelectedSetting(null), 200);
   };
@@ -80,8 +80,8 @@ export const CohortSettingsEditor: React.FC<CohortSettingsEditorProps> = props =
     // Call the deleteCohort method from the data service
     await dataService.deleteCohort();
     console.log('Cohort deleted successfully');
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo('empty');
+    const mainViewService = MainViewService.getInstance();
+    mainViewService.navigateTo('empty');
   };
 
   return (

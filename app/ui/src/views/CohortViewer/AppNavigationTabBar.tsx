@@ -26,7 +26,11 @@ enum InfoTabType {
   NewPhenotype = 'Add Phenotype',
 }
 
-export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoContent, onSectionTabChange }) => {
+export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
+  title,
+  infoContent,
+  onSectionTabChange,
+}) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
@@ -165,16 +169,16 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({ title, infoC
   };
   return (
     <div className={`${styles.tabsContainer} ${styles.closed}`}>
-        <TabsWithDropdown
-          width={'100%'}
-          height={'100%'}
-          tabs={tabs}
-          dropdown_items={{ 7: renderAddNewPhenotypeDropdown() }}
-          onTabChange={onTabChange}
-          active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-          customizableDropdownButtonRef={customizableDropdownButtonRef}
-          outline_tab_index={7}
-        />
+      <TabsWithDropdown
+        width={'100%'}
+        height={'100%'}
+        tabs={tabs}
+        dropdown_items={{ 7: renderAddNewPhenotypeDropdown() }}
+        onTabChange={onTabChange}
+        active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
+        customizableDropdownButtonRef={customizableDropdownButtonRef}
+        outline_tab_index={7}
+      />
     </div>
   );
 };

@@ -1,124 +1,116 @@
-.inclusion_list_item:hover{
+.inclusion_list_item:hover {
   border-color: var(--color_inclusion) !important;
 }
 
-.exclusion_list_item:hover{
+.exclusion_list_item:hover {
   border-color: var(--color_exclusion) !important;
 }
 
-.outcome_list_item:hover{
+.outcome_list_item:hover {
   border-color: var(--color_outcome) !important;
-  
 }
 
-.entry_list_item:hover{
+.entry_list_item:hover {
   border-color: var(--color_entry) !important;
 }
 
-.baseline_list_item:hover{
+.baseline_list_item:hover {
   border-color: var(--color_baseline) !important;
 }
 
-.component_list_item:hover{
+.component_list_item:hover {
   border-color: var(--color_component) !important;
 }
 
-
-
-
 /* A list item; border and text is colored */
-.inclusion_list_item_selected{
+.inclusion_list_item_selected {
   border-color: var(--color_inclusion) !important;
   color: var(--color_inclusion) !important;
 }
 
-
-.exclusion_list_item_selected{
+.exclusion_list_item_selected {
   border-color: var(--color_exclusion) !important;
   color: var(--color_exclusion) !important;
 }
 
-.outcome_list_item_selected{
+.outcome_list_item_selected {
   border-color: var(--color_outcome) !important;
   color: var(--color_outcome) !important;
 }
 
-.entry_list_item_selected{
+.entry_list_item_selected {
   border-color: var(--color_entry) !important;
   color: var(--color_entry) !important;
 }
 
-.baseline_list_item_selected{
+.baseline_list_item_selected {
   border-color: var(--color_baseline) !important;
   color: var(--color_baseline) !important;
 }
 
-.component_list_item_selected{
+.component_list_item_selected {
   border-color: var(--color_component) !important;
   color: var(--color_component) !important;
 }
 
-
 /* A color block : background is colored and text is white */
-.inclusion_color_block{
+.inclusion_color_block {
   background-color: var(--color_inclusion) !important;
   color: white;
 }
 
-.exclusion_color_block{
+.exclusion_color_block {
   background-color: var(--color_exclusion) !important;
   color: white;
 }
 
-.outcome_color_block{
+.outcome_color_block {
   background-color: var(--color_outcome) !important;
   color: white;
 }
 
-.entry_color_block{
+.entry_color_block {
   background-color: var(--color_entry) !important;
   color: white;
 }
 
-.baseline_color_block{
+.baseline_color_block {
   background-color: var(--color_baseline) !important;
-  color: white; 
+  color: white;
 }
 
-.component_color_block{
+.component_color_block {
   background-color: var(--color_component) !important;
   color: white;
 }
 
-
 /* color both text and border on hover*/
-.inclusion_color_text_and_border_on_hover:hover{
+.inclusion_color_text_and_border_on_hover:hover {
   border-color: var(--color_inclusion) !important;
   color: var(--color_inclusion) !important;
 }
 
-
-.exclusion_color_text_and_border_on_hover:hover{
+.exclusion_color_text_and_border_on_hover:hover {
   border-color: var(--color_exclusion) !important;
   color: var(--color_exclusion) !important;
 }
 
-.outcome_color_text_and_border_on_hover:hover{
+.outcome_color_text_and_border_on_hover:hover {
   border-color: var(--color_outcome) !important;
   color: var(--color_outcome) !important;
 }
 
-.entry_color_text_and_border_on_hover:hover{
+.entry_color_text_and_border_on_hover:hover {
   border-color: var(--color_entry) !important;
   color: var(--color_entry) !important;
 }
 
-.baseline_color_text_and_border_on_hover:hover{
+.baseline_color_text_and_border_on_hover:hover {
   border-color: var(--color_baseline) !important;
   color: var(--color_baseline) !important;
 }
 
-.component_color_text_and_border_on_hover:hover{
+.component_color_text_and_border_on_hover:hover {
   border-color: var(--color_component) !important;
   color: var(--color_component) !important;
 }

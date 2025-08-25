@@ -94,8 +94,8 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
             <em>Map necessary columns</em> : map the three columns defined above
           </li>
           <li>
-            <em>Use the codelist entities</em> : codelists in the codelist column are available in the codelist column in
-            any phenotype editing area.
+            <em>Use the codelist entities</em> : codelists in the codelist column are available in
+            the codelist column in any phenotype editing area.
           </li>
         </ol>
       </span>

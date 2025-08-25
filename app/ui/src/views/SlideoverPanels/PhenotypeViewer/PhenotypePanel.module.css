@@ -1,7 +1,6 @@
-
-.whiteText{
-    color:white !important;
-    border-color:white !important;
+.whiteText {
+  color: white !important;
+  border-color: white !important;
 }
 
 .wrapper {
@@ -16,10 +15,10 @@
   top: 0;
   z-index: 10;
   padding: 0px 12px 5px 10px;
-  font-family: "IBMPlexSans-bolditalic";
+  font-family: 'IBMPlexSans-bolditalic';
   font-size: 20px;
   flex-shrink: 0;
-  margin-bottom:10px;
+  margin-bottom: 10px;
 }
 
 .mainContainer {
@@ -45,7 +44,7 @@
   min-height: 0; /* Allow flex item to shrink below content size */
 }
 
-.fillerText{
-  font-family: "IBMPlexSans-regular";
-  font-size:18px;
+.fillerText {
+  font-family: 'IBMPlexSans-regular';
+  font-size: 18px;
 }

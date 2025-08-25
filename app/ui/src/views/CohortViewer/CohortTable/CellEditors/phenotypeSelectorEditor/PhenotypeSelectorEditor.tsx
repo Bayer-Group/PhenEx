@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './PhenotypeSelectorEditor.module.css';
 import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
-import typeStyles from '../../../../../styles/study_types.module.css'
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface PhenotypeSelectorEditorProps {
   value?: any;

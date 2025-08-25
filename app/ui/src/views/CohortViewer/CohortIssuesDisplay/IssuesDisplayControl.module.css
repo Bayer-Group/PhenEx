@@ -1,11 +1,10 @@
 .container {
   position: absolute;
   user-select: none;
-  right:10px;
-  top:0px;
+  right: 10px;
+  top: 0px;
   transition: all 0.3s ease;
   z-index: 1001;
-
 }
 
 .showingPopover {
@@ -15,11 +14,11 @@
 
 .issuesButton {
   position: absolute;
-  top:0px!important;
-  right:0px;
-  margin:0px!important;
+  top: 0px !important;
+  right: 0px;
+  margin: 0px !important;
   padding: 0px !important;
-  background-color:transparent;
+  background-color: transparent;
   z-index: 1000;
 }
 

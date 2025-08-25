@@ -208,7 +208,7 @@ export class CohortDataService {
 
   public addPhenotype(type: string = 'NA', parentPhenotypeId: string | null = null) {
     // ensure that cohort only has one entry phenotype
-    if (type === 'entry'){
+    if (type === 'entry') {
       const existingEntryPhenotype = this._cohort_data.phenotypes.find(
         (row: TableRow) => row.type === 'entry'
       );
@@ -245,13 +245,19 @@ export class CohortDataService {
 
   public async updateRowOrder(newRowData: TableRow[]) {
     console.log('=== updateRowOrder START ===');
-    console.log('newRowData received:', newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
+    console.log(
+      'newRowData received:',
+      newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+    );
     console.log('Current filter:', this._currentFilter);
-    
+
     // Get all phenotypes (including those not currently visible due to filter)
     const allPhenotypes = [...this._cohort_data.phenotypes];
-    console.log('All phenotypes before reorder:', allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index })));
-    
+    console.log(
+      'All phenotypes before reorder:',
+      allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
+    );
+
     // Group the reordered visible phenotypes by type
     const reorderedVisibleByType: { [key: string]: TableRow[] } = {};
     newRowData.forEach(row => {
@@ -265,7 +271,7 @@ export class CohortDataService {
     // Create a map of visible phenotype IDs for quick lookup
     const visiblePhenotypeIds = new Set(newRowData.map(row => row.id));
     console.log('Visible phenotype IDs:', Array.from(visiblePhenotypeIds));
-    
+
     // Separate hidden phenotypes by type
     const hiddenPhenotypesByType: { [key: string]: TableRow[] } = {};
     allPhenotypes.forEach(phenotype => {
@@ -281,36 +287,44 @@ export class CohortDataService {
     // Rebuild the complete phenotypes array maintaining order within each type
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
     let newCompleteOrder: TableRow[] = [];
-    
+
     for (const type of order) {
       // Combine reordered visible phenotypes with hidden phenotypes for this type
       const visibleOfType = reorderedVisibleByType[type] || [];
       const hiddenOfType = hiddenPhenotypesByType[type] || [];
       const allOfType = [...visibleOfType, ...hiddenOfType];
-      
-      console.log(`Type ${type}: visible=${visibleOfType.length}, hidden=${hiddenOfType.length}, total=${allOfType.length}`);
-      
+
+      console.log(
+        `Type ${type}: visible=${visibleOfType.length}, hidden=${hiddenOfType.length}, total=${allOfType.length}`
+      );
+
       // Update indices within each type
       allOfType.forEach((phenotype, index) => {
         phenotype.index = index + 1;
       });
-      
+
       newCompleteOrder = newCompleteOrder.concat(allOfType);
     }
 
-    console.log('New complete order:', newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index })));
+    console.log(
+      'New complete order:',
+      newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
+    );
 
     // Update the cohort data with the complete new order
     this._cohort_data.phenotypes = newCompleteOrder;
     console.log('Updated _cohort_data.phenotypes length:', this._cohort_data.phenotypes.length);
-    
+
     // Update table data before saving - do this manually to avoid sorting
     this._table_data = this.tableDataFromCohortData();
     console.log('Updated _table_data rows length:', this._table_data.rows.length);
-    console.log('Table data rows:', this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index })));
-    
+    console.log(
+      'Table data rows:',
+      this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+    );
+
     console.log('=== updateRowOrder END ===');
-    
+
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
@@ -480,7 +494,7 @@ export class CohortDataService {
   public updateColumns(newColumns: ColumnDefinition[]): void {
     this.columns = newColumns;
     this._table_data = this.tableDataFromCohortData();
-    console.log(this._table_data)
+    console.log(this._table_data);
     this.notifyListeners();
   }
 

@@ -8,10 +8,15 @@ export interface ItemListProps {
   onSelect?: (name: string) => void;
   classNameListItem?: string;
   classNameListItemSelected?: string;
-
 }
 
-export const ItemList: React.FC<ItemListProps> = ({ items, selectedName, onSelect, classNameListItem, classNameListItemSelected }) => {
+export const ItemList: React.FC<ItemListProps> = ({
+  items,
+  selectedName,
+  onSelect,
+  classNameListItem,
+  classNameListItemSelected,
+}) => {
   return (
     <div className={styles.container}>
       {items.map(item => (

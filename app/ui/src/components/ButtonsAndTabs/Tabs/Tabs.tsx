@@ -10,13 +10,13 @@ interface TabsProps {
   accentColor?: string;
 }
 
-export const Tabs: FC<TabsProps> = ({ 
-  width, 
-  height, 
-  tabs, 
-  active_tab_index = 0, 
-  onTabChange, 
-  accentColor 
+export const Tabs: FC<TabsProps> = ({
+  width,
+  height,
+  tabs,
+  active_tab_index = 0,
+  onTabChange,
+  accentColor,
 }) => {
   const [activeTab, setActiveTab] = useState(active_tab_index);
 
@@ -37,10 +37,7 @@ export const Tabs: FC<TabsProps> = ({
   } as React.CSSProperties;
 
   return (
-    <div 
-      className={styles.tabsContainer} 
-      style={containerStyle}
-    >
+    <div className={styles.tabsContainer} style={containerStyle}>
       {tabs.map((tab, index) => (
         <button
           key={index}

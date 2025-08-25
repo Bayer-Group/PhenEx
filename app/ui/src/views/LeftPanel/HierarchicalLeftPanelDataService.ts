@@ -79,7 +79,6 @@ export class HierarchicalLeftPanelDataService {
     this.cachedPublicCohortNamesAndIds = (await this.dataService.publicCohortNamesAndIds()) || [];
     this.cachedUserCohortNamesAndIds = (await this.dataService.userCohortNamesAndIds()) || [];
 
-
     const createRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
       id,
       displayName,
@@ -183,11 +182,11 @@ export class HierarchicalLeftPanelDataService {
     this.notifyListeners();
 
     if (newCohortData) {
-      console.log("GETTING NEW COHORT DATA")
+      console.log('GETTING NEW COHORT DATA');
       const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({viewType:ViewType.NewCohort, data: newCohortData});
+      mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
     } else {
-      console.log("NO DATA")
+      console.log('NO DATA');
     }
 
     return ViewType.CohortDefinition;

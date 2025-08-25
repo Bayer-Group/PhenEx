@@ -18,7 +18,7 @@ export const PopoverHeader: FC<PopoverHeader> = ({
   return (
     <div
       className={`${styles.popoverheader} ${className} ${children && styles.hasChildren}`}
-      onClick={(event) => onClick(event)}
+      onClick={event => onClick(event)}
       title={title}
       aria-label={title}
     >

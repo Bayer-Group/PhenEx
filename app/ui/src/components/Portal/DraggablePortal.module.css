@@ -30,7 +30,7 @@
 }
 
 .dragHandleIndicator::before {
-  content: "⋮⋮";
+  content: '⋮⋮';
   font-size: 12px;
   color: #666;
   letter-spacing: -2px;

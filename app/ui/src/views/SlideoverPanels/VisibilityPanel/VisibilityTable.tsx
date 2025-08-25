@@ -9,7 +9,7 @@ export const VisibilityTable: React.FC = () => {
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue && event.colDef.field === 'visible') {
       dataService.updateVisibility(event.data.column, event.newValue);
-      
+
       // Refresh the grid with sorted data
       if (gridRef.current?.api) {
         gridRef.current.api.setGridOption('rowData', dataService.tableData.rows);
@@ -18,8 +18,8 @@ export const VisibilityTable: React.FC = () => {
   };
 
   const onRowDragEnd = () => {
-    console.log("ON ROW DRAG END");
-    
+    console.log('ON ROW DRAG END');
+
     // Just get the current order from the grid and update indices
     const newRowData: any[] = [];
     if (gridRef.current?.api) {
@@ -27,18 +27,18 @@ export const VisibilityTable: React.FC = () => {
         newRowData.push(node.data);
       });
     }
-    
+
     // Update indices for visible rows based on their current positions
     const visibleRows = newRowData.filter(row => row.visible);
     visibleRows.forEach((row, index) => {
       row.index = index;
     });
-    
-    console.log("Updated visible rows:", visibleRows);
-    
+
+    console.log('Updated visible rows:', visibleRows);
+
     // Update the service data using the public method
     dataService.updateRowOrder(newRowData);
-    
+
     // Refresh the grid
     if (gridRef.current?.api) {
       gridRef.current.api.setGridOption('rowData', dataService.tableData.rows);

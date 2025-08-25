@@ -14,16 +14,16 @@ interface ModalProps {
   closeOnBackgroundClick?: boolean;
 }
 
-export const Modal: FC<ModalProps> = ({ 
-  isVisible, 
-  onClose, 
+export const Modal: FC<ModalProps> = ({
+  isVisible,
+  onClose,
   children,
   maxWidth = '80vw',
   maxHeight = '80vh',
   minWidth = '400px',
   className = '',
   contentClassName = '',
-  closeOnBackgroundClick = true
+  closeOnBackgroundClick = true,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -37,23 +37,23 @@ export const Modal: FC<ModalProps> = ({
 
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!closeOnBackgroundClick) return;
-    
-    console.log("Modal background clicked");
-    console.log("Target:", e.target);
-    console.log("Current target:", e.currentTarget);
-    
+
+    console.log('Modal background clicked');
+    console.log('Target:', e.target);
+    console.log('Current target:', e.currentTarget);
+
     // Start closing animation
     handleClose();
   };
 
   const handleClose = () => {
-    console.log("Starting modal close animation");
+    console.log('Starting modal close animation');
     setIsClosing(true);
     setIsAnimating(false); // This will trigger the fade out
-    
+
     // Wait for animation to complete before actually closing
     setTimeout(() => {
-      console.log("Modal close animation complete, calling onClose");
+      console.log('Modal close animation complete, calling onClose');
       onClose();
     }, 300); // Match the CSS transition duration
   };
@@ -64,22 +64,19 @@ export const Modal: FC<ModalProps> = ({
 
   return (
     <Portal>
-      <div 
-        className={`${styles.overlay} ${(isAnimating && !isClosing) ? styles.visible : ''} ${className}`}
+      <div
+        className={`${styles.overlay} ${isAnimating && !isClosing ? styles.visible : ''} ${className}`}
       >
-        <div 
-          className={styles.blurBackground} 
-          onClick={handleBackgroundClick}
-        />
-        <div 
+        <div className={styles.blurBackground} onClick={handleBackgroundClick} />
+        <div
           className={`${styles.content} ${contentClassName}`}
           style={{
             maxWidth,
             maxHeight,
-            minWidth
+            minWidth,
           }}
-          onClick={(e) => {
-            console.log("Modal content clicked - stopping propagation");
+          onClick={e => {
+            console.log('Modal content clicked - stopping propagation');
             e.stopPropagation();
           }}
         >

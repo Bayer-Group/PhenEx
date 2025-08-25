@@ -86,7 +86,7 @@
   background-color: var(--button-color-hover);
 }
 
-.outline{
+.outline {
   border: var(--border);
-  font-family: "IBMPlexSans-bold";
+  font-family: 'IBMPlexSans-bold';
 }

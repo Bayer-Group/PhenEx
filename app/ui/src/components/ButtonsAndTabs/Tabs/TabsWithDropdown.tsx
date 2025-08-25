@@ -63,10 +63,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
   } as React.CSSProperties;
 
   return (
-    <div
-      className={styles.tabsContainer}
-      style={containerStyle}
-    >
+    <div className={styles.tabsContainer} style={containerStyle}>
       {tabs.map((tab, index) => {
         if (dropdown_items && index in dropdown_items) {
           return (

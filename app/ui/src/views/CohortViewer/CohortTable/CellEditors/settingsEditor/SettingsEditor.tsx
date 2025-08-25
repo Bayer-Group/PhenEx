@@ -38,7 +38,7 @@ export const SettingsEditor: React.FC<SettingsEditorProps> = props => {
 
   const handleSettingSelect = (settingName: string) => {
     setSelectedSetting(settingName);
-    
+
     switch (settingName) {
       case 'Delete':
         deletePhenotype();
@@ -55,7 +55,7 @@ export const SettingsEditor: React.FC<SettingsEditorProps> = props => {
       default:
         break;
     }
-    
+
     // Reset selection after action
     setTimeout(() => setSelectedSetting(null), 200);
   };

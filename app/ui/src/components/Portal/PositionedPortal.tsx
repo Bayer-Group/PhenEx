@@ -11,14 +11,14 @@ interface PositionedPortalProps {
   debug?: boolean; // Debug flag to toggle debugging panel
 }
 
-export const PositionedPortal: React.FC<PositionedPortalProps> = ({ 
-  children, 
-  triggerRef, 
-  offsetX = 0, 
+export const PositionedPortal: React.FC<PositionedPortalProps> = ({
+  children,
+  triggerRef,
+  offsetX = 0,
   offsetY = 0,
   position = 'below',
   alignment = 'left',
-  debug = false
+  debug = false,
 }) => {
   const [container] = useState(() => document.createElement('div'));
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -43,15 +43,15 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     const updatePosition = () => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        
+
         // Calculate X position based on alignment
         let baseX = rect.left + window.scrollX;
         if (alignment === 'center') {
-          baseX = rect.left + window.scrollX + (rect.width / 2);
+          baseX = rect.left + window.scrollX + rect.width / 2;
         } else if (alignment === 'right') {
           baseX = rect.right + window.scrollX;
         }
-        
+
         let x = baseX + offsetX;
         let y = rect.bottom + window.scrollY + offsetY;
 
@@ -82,19 +82,19 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
               right: Math.round(rect.right),
               width: Math.round(rect.width),
               top: Math.round(rect.top),
-              bottom: Math.round(rect.bottom)
+              bottom: Math.round(rect.bottom),
             },
             scroll: {
               x: Math.round(window.scrollX),
-              y: Math.round(window.scrollY)
+              y: Math.round(window.scrollY),
             },
-            calculatedPosition: { 
-              x: Math.round(x), 
-              y: Math.round(y) 
+            calculatedPosition: {
+              x: Math.round(x),
+              y: Math.round(y),
             },
             baseX: Math.round(baseX),
             offsetX,
-            offsetY
+            offsetY,
           };
 
           setDebugInfo(debugData);
@@ -149,7 +149,7 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     // Enhanced ResizeObserver for programmatic size changes
     let resizeObserver: ResizeObserver | null = null;
     if (triggerRef.current && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver((entries) => {
+      resizeObserver = new ResizeObserver(entries => {
         // ResizeObserver catches CSS transitions, animations, and programmatic changes
         updatePosition();
         if (debug) {
@@ -162,7 +162,7 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     // ALSO observe the parent elements that might be changing
     let parentResizeObserver: ResizeObserver | null = null;
     if (triggerRef.current && triggerRef.current.parentElement && 'ResizeObserver' in window) {
-      parentResizeObserver = new ResizeObserver((entries) => {
+      parentResizeObserver = new ResizeObserver(entries => {
         updatePosition();
         if (debug) {
           console.log('ResizeObserver triggered on PARENT element:', entries[0].contentRect);
@@ -174,16 +174,22 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
     // Enhanced MutationObserver for style and attribute changes
     let mutationObserver: MutationObserver | null = null;
     if (triggerRef.current && 'MutationObserver' in window) {
-      mutationObserver = new MutationObserver((mutations) => {
+      mutationObserver = new MutationObserver(mutations => {
         let shouldUpdate = false;
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && 
-              (mutation.attributeName === 'style' || 
-               mutation.attributeName === 'class' ||
-               mutation.attributeName === 'width')) {
+        mutations.forEach(mutation => {
+          if (
+            mutation.type === 'attributes' &&
+            (mutation.attributeName === 'style' ||
+              mutation.attributeName === 'class' ||
+              mutation.attributeName === 'width')
+          ) {
             shouldUpdate = true;
             if (debug) {
-              console.log('MutationObserver - attribute changed:', mutation.attributeName, mutation.target);
+              console.log(
+                'MutationObserver - attribute changed:',
+                mutation.attributeName,
+                mutation.target
+              );
             }
           }
         });
@@ -194,23 +200,29 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
       mutationObserver.observe(triggerRef.current, {
         attributes: true,
         attributeFilter: ['style', 'class', 'width'],
-        subtree: false
+        subtree: false,
       });
     }
 
     // ALSO observe the parent for mutations
     let parentMutationObserver: MutationObserver | null = null;
     if (triggerRef.current && triggerRef.current.parentElement && 'MutationObserver' in window) {
-      parentMutationObserver = new MutationObserver((mutations) => {
+      parentMutationObserver = new MutationObserver(mutations => {
         let shouldUpdate = false;
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && 
-              (mutation.attributeName === 'style' || 
-               mutation.attributeName === 'class' ||
-               mutation.attributeName === 'width')) {
+        mutations.forEach(mutation => {
+          if (
+            mutation.type === 'attributes' &&
+            (mutation.attributeName === 'style' ||
+              mutation.attributeName === 'class' ||
+              mutation.attributeName === 'width')
+          ) {
             shouldUpdate = true;
             if (debug) {
-              console.log('MutationObserver - PARENT attribute changed:', mutation.attributeName, mutation.target);
+              console.log(
+                'MutationObserver - PARENT attribute changed:',
+                mutation.attributeName,
+                mutation.target
+              );
             }
           }
         });
@@ -221,7 +233,7 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
       parentMutationObserver.observe(triggerRef.current.parentElement, {
         attributes: true,
         attributeFilter: ['style', 'class', 'width'],
-        subtree: true
+        subtree: true,
       });
     }
 
@@ -288,20 +300,24 @@ export const PositionedPortal: React.FC<PositionedPortalProps> = ({
       {children}
       {/* Debug display */}
       {debugInfo && (
-        <div style={{
-          position: 'fixed',
-          top: '10px',
-          right: '10px',
-          background: 'rgba(0,0,0,0.8)',
-          color: 'white',
-          padding: '10px',
-          fontSize: '12px',
-          fontFamily: 'monospace',
-          borderRadius: '4px',
-          zIndex: 10000,
-          maxWidth: '300px'
-        }}>
-          <div><strong>Portal Debug:</strong></div>
+        <div
+          style={{
+            position: 'fixed',
+            top: '10px',
+            right: '10px',
+            background: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '10px',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            borderRadius: '4px',
+            zIndex: 10000,
+            maxWidth: '300px',
+          }}
+        >
+          <div>
+            <strong>Portal Debug:</strong>
+          </div>
           <div>Width: {debugInfo.triggerRect.width}px</div>
           <div>Left: {debugInfo.triggerRect.left}px</div>
           <div>Right: {debugInfo.triggerRect.right}px</div>

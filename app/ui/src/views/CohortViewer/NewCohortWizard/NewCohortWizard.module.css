@@ -39,9 +39,7 @@
   color: #1f2937;
   font-size: 1.25rem;
   font-weight: 600;
-  font-family: "IBMPlexSans-bolditalic";
-
-
+  font-family: 'IBMPlexSans-bolditalic';
 }
 
 .description {
@@ -54,7 +52,7 @@
 .cohortNameContainer {
   margin-top: 1rem;
   margin-bottom: 1rem;
-  margin-right:40px;
+  margin-right: 40px;
 }
 
 .cohortNameInput {
@@ -72,7 +70,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-
 .navigationButtons {
   display: flex;
   /* flex-wrap: wrap; */
@@ -85,9 +82,9 @@
   /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: blur(10px);
   user-select: none;
-    position: absolute;
-    bottom: 10px;
-    right:20px;
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
 
   /* background-color: yellow; */
 }
@@ -97,9 +94,6 @@
   border: 1px solid var(--dynamic-accent-color, var(--color-accent-bright));
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
-
-
 
 .button:disabled {
   background-color: #f3f4f6;

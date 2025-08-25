@@ -7,7 +7,7 @@
   background-color: var(--background-color);
 }
 
-.topSection{
+.topSection {
   height: calc(var(--top_app_navigation_tab_bar) + 100px);
 }
 
@@ -16,8 +16,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding-top:0px;
-
+  padding-top: 0px;
 }
 
 .visible {
@@ -67,11 +66,10 @@
   color: #000;
 }
 
-
 .cohortNameContainer {
   width: 100%;
   margin-bottom: 20px;
-  height:40px;
+  height: 40px;
 }
 
 .cohortNameInput {
@@ -88,7 +86,6 @@
 .cohortNameInput::placeholder {
   color: var(--text-color-secondary);
 }
-
 
 .sectionTabsContainer {
   margin-left: 10px;

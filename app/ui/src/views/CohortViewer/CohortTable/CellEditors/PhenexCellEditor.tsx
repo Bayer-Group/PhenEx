@@ -181,16 +181,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   // const renderXButton = () => {
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   // };
-  const colorClass = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-outer`;
-  const colorBorder = `rag-${props.data.type== 'entry' ? 'dark' : props.data.type== 'inclusion' ? 'blue' : props.data.type== 'exclusion' ? 'green' : props.data.type== 'baseline' ? 'coral' : props.data.type== 'outcome' ? 'red' : ''}-border`;
+  const colorClass = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-outer`;
+  const colorBorder = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-border`;
 
-  console.log("COLOR CLASS FoR PHENCE EDIOTR", colorBorder)
+  console.log('COLOR CLASS FoR PHENCE EDIOTR', colorBorder);
 
   return (
-    <DraggablePortal 
-      initialPosition={{ 
-        left: portalPosition.left, 
-        top: portalPosition.top 
+    <DraggablePortal
+      initialPosition={{
+        left: portalPosition.left,
+        top: portalPosition.top,
       }}
       dragHandleSelector="[data-drag-handle='true']"
       onPositionChange={(x, y) => console.log('Position changed to:', x, y)}
@@ -199,7 +199,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         setIsDragging(true);
         setRecentlyDragged(false);
       }}
-      onDragEnd={(wasDragged) => {
+      onDragEnd={wasDragged => {
         console.log('Drag ended - wasDragged:', wasDragged);
         setIsDragging(false);
         if (wasDragged) {
@@ -228,16 +228,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         onMouseDown={e => {
           console.log('PhenexCellEditor onMouseDown fired');
           console.log('MouseDown target:', e.target);
-          
+
           // Check if this is a drag handle - if so, don't stop propagation
           const target = e.target as HTMLElement;
           const isDragHandle = target.closest('[data-drag-handle="true"]');
-          
+
           if (isDragHandle) {
             console.log('MouseDown on drag handle - allowing propagation');
             return; // Don't stop propagation for drag handles
           }
-          
+
           console.log('MouseDown not on drag handle - stopping propagation');
           e.stopPropagation(); // Stop mousedown from bubbling
           e.nativeEvent.stopImmediatePropagation();
@@ -259,11 +259,15 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
         tabIndex={-1}
       >
-        <PopoverHeader onClick={handleDone} title={'phenexheader'} className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}>
-          <div 
-            className={styles.popoverHeader} 
+        <PopoverHeader
+          onClick={handleDone}
+          title={'phenexheader'}
+          className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}
+        >
+          <div
+            className={styles.popoverHeader}
             data-drag-handle="true"
-            onMouseDown={(e) => {
+            onMouseDown={e => {
               console.log('Drag handle onMouseDown fired');
               console.log('Drag handle target:', e.target);
               // Don't stop propagation here - let it bubble up to DraggablePortal

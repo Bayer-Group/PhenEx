@@ -4,9 +4,9 @@ import { StepMarker } from '../../../components/StepMarker/StepMarker';
 import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortTextArea } from '../../SlideoverPanels/InfoPanel/CohortTextArea/CohortTextArea';
-import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel'
-import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer'
-import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel'
+import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
+import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
+import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
 
 import styles from './NewCohortWizard.module.css';
 
@@ -20,7 +20,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const [currentStep, setCurrentStep] = useState(0);
   const [cohortName, setCohortName] = useState('');
   const [dataService] = useState(() => CohortDataService.getInstance());
-  
+
   const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists', 'Constants'];
 
   useEffect(() => {
@@ -59,49 +59,44 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
         </div>
       </div>
     );
-  }
+  };
 
   const renderDescriptionStep = () => {
     return (
       <div>
-        <h3 className={styles.stepTitle}>Enter a text description of your cohort for documentation purposes.</h3>
-            <CohortTextArea />
-        
+        <h3 className={styles.stepTitle}>
+          Enter a text description of your cohort for documentation purposes.
+        </h3>
+        <CohortTextArea />
       </div>
     );
-  }
+  };
 
   const renderDatabaseStep = () => {
-    return (
-        <DatabasePanel showTitle={false} />
-    );
-  }
+    return <DatabasePanel showTitle={false} />;
+  };
 
   const renderCodelistsStep = () => {
-    return (
-      <CodelistsViewer showTitle={false} />
-    );
-  }
+    return <CodelistsViewer showTitle={false} />;
+  };
 
   const renderConstantsStep = () => {
-    return (
-      <ConstantsPanel showTitle={false} />
-    );
-  }
+    return <ConstantsPanel showTitle={false} />;
+  };
 
   return (
-    <Modal 
-      isVisible={isVisible} 
+    <Modal
+      isVisible={isVisible}
       onClose={onClose}
       contentClassName={styles.wizardContent}
       maxWidth="800px"
     >
-        <div className = {styles.stepMarker}>
-        <StepMarker 
-            stepTitles={stepTitles}
-            activeStep={currentStep}
-            onStepClick={handleStepClick}
-            className={styles.stepMarker}
+      <div className={styles.stepMarker}>
+        <StepMarker
+          stepTitles={stepTitles}
+          activeStep={currentStep}
+          onStepClick={handleStepClick}
+          className={styles.stepMarker}
         />
       </div>
       <div className={styles.stepContent}>
@@ -111,17 +106,17 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
         {currentStep === 3 && renderCodelistsStep()}
         {currentStep === 4 && renderConstantsStep()}
       </div>
-      
+
       <div className={styles.navigationButtons}>
-        <button 
+        <button
           className={styles.button}
           onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
           disabled={currentStep === 0}
         >
           Previous
         </button>
-        
-        <button 
+
+        <button
           className={styles.button}
           onClick={() => setCurrentStep(Math.min(stepTitles.length - 1, currentStep + 1))}
           disabled={currentStep === stepTitles.length - 1}

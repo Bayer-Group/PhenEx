@@ -11,7 +11,6 @@ import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/Visibilit
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
 
-
 interface TwoPanelCohortViewerProps {
   data?: string;
 }

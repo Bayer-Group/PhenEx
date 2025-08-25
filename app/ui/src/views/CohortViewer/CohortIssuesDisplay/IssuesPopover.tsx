@@ -45,17 +45,17 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
 
   const renderTitleLabel = () => {
     return (
-      <div className = {styles.titleLabelDiv}>
-          <span className={styles.issuesText}>Issues</span>
-          <br></br>
-          <span className={styles.labelSecondary}>
-            <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
-            in
-            <span className={`${styles.number} ${styles.phenotypeIssues}`}>
-              {phenotypesWithIssues}
-            </span>{' '}
-            phenotypes
-          </span>
+      <div className={styles.titleLabelDiv}>
+        <span className={styles.issuesText}>Issues</span>
+        <br></br>
+        <span className={styles.labelSecondary}>
+          <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
+          in
+          <span className={`${styles.number} ${styles.phenotypeIssues}`}>
+            {phenotypesWithIssues}
+          </span>{' '}
+          phenotypes
+        </span>
       </div>
     );
   };
@@ -87,18 +87,14 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
   };
 
   const hidePopover = (event: MouseEvent) => {
-    onClick();  
-
+    onClick();
   };
   // Flatten all issues
   const allIssues = Object.values(groupedIssues).flat();
   // Iterate over each, rendering a phenotype
   return (
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      <PopoverHeader
-        onClick={onClick}
-        className={`${styles.popoverheader}`}
-      >
+      <PopoverHeader onClick={onClick} className={`${styles.popoverheader}`}>
         {renderTitleLabel()}
       </PopoverHeader>
       <div className={styles.body}>

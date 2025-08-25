@@ -11,7 +11,14 @@ interface SlideoverPanelProps {
   showTitle?: boolean;
 }
 
-export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({ title, info = '', children, classNameHeader = '', classNameButton = '', showTitle = true }) => {
+export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
+  title,
+  info = '',
+  children,
+  classNameHeader = '',
+  classNameButton = '',
+  showTitle = true,
+}) => {
   const [isOpen, setIsOpen] = useState(true); // Initial state set to open
 
   const toggleInfobox = () => {
@@ -22,21 +29,22 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({ title, info = ''
     e.stopPropagation();
   };
 
-  const renderHeader = () =>{
-    return (
-<div className={styles.title}>
-          {title}
-        </div>
-    );
-  }
+  const renderHeader = () => {
+    return <div className={styles.title}>{title}</div>;
+  };
 
   return (
     <div className={styles.container} onClick={onClick}>
       <div className={`${styles.header} ${classNameHeader}`}>
         {showTitle && renderHeader()}
-        <Button title='Help' onClick={toggleInfobox} className={`${styles.infoButton} ${isOpen ? styles.open : styles.closed} ${classNameButton}`} />
+        <Button
+          title="Help"
+          onClick={toggleInfobox}
+          className={`${styles.infoButton} ${isOpen ? styles.open : styles.closed} ${classNameButton}`}
+        />
 
-        <div className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}
+        <div
+          className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}
           onClick={toggleInfobox}
         >
           {info}

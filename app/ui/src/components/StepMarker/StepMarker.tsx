@@ -8,11 +8,11 @@ interface StepMarkerProps {
   className?: string;
 }
 
-export const StepMarker: FC<StepMarkerProps> = ({ 
-  stepTitles, 
-  activeStep, 
+export const StepMarker: FC<StepMarkerProps> = ({
+  stepTitles,
+  activeStep,
   onStepClick,
-  className = ''
+  className = '',
 }) => {
   const handleStepClick = (stepIndex: number) => {
     // Only allow clicking on previous steps or current step, not future steps
@@ -37,13 +37,13 @@ export const StepMarker: FC<StepMarkerProps> = ({
         const status = getStepStatus(index);
         const clickable = isClickable(index);
         const connectorCompleted = index < activeStep;
-        
+
         return (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`${styles.stepContainer} ${connectorCompleted ? styles.connectorCompleted : ''}`}
           >
-            <div 
+            <div
               className={`${styles.step} ${styles[status]} ${clickable ? styles.clickable : ''}`}
               onClick={() => handleStepClick(index)}
             >

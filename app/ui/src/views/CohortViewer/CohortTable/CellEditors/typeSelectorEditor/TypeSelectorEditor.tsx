@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './TypeSelectorEditor.module.css';
 import { ItemList } from '../../../../../components/ItemList/ItemList'; // adjust path as needed
-import typeStyles from '../../../../../styles/study_types.module.css'
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface TypeSelectorEditorProps {
   value?: any;
@@ -50,7 +50,9 @@ export const TypeSelectorEditor: React.FC<TypeSelectorEditorProps> = props => {
         selectedName={selectedType || undefined}
         onSelect={handleTypeSelect}
         classNameListItem={typeStyles[`${props?.data?.type || ''}_list_item`] || ''}
-        classNameListItemSelected={typeStyles[`${props?.data?.type || ''}_list_item_selected`] || ''}
+        classNameListItemSelected={
+          typeStyles[`${props?.data?.type || ''}_list_item_selected`] || ''
+        }
       />
     </div>
   );

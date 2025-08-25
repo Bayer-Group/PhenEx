@@ -1,4 +1,4 @@
-:root{
+:root {
   --margin_left_slideover_panel: 70px;
   --margin_top_right_panel_title: 5px;
 }
@@ -16,11 +16,11 @@
   font-size: 28px;
   font-family: 'IBMPlexSans-bold';
   margin-left: var(--margin_left_slideover_panel);
-  margin-top:var(--margin_top_right_panel_title);
+  margin-top: var(--margin_top_right_panel_title);
   /* margin-left: 30px; */
 }
 
-.header{
+.header {
 }
 
 .controls {
@@ -79,8 +79,6 @@ em {
   font-family: 'IBMPlexSans-bold';
 }
 
-
-
 ol,
 ul {
   margin-top: 0px;
@@ -93,7 +91,6 @@ code {
   border-radius: 8px;
   border: var(--border);
 }
-
 
 .infoButton {
   position: absolute !important;
@@ -110,10 +107,6 @@ code {
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
-
-
-
 
 .infobox {
   margin: 0px 0px 0px 10px;
@@ -160,8 +153,8 @@ code {
   opacity: 1; /* Fully visible when open */
   margin-right: 20px;
   margin-bottom: 10px;
-  margin-top:10px;
-  
+  margin-top: 10px;
+
   background-color: transparent !important;
   /* border: 1px solid var(--button-border-color-selected); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -171,7 +164,7 @@ code {
 .infobox.closed {
   max-height: 20; /* Closed state */
   opacity: 0; /* Hidden */
-  margin-bottom:0px; /* No margin when closed */
+  margin-bottom: 0px; /* No margin when closed */
   padding-top: 0;
   padding-bottom: 0;
   border: none; /* Remove border when closed */

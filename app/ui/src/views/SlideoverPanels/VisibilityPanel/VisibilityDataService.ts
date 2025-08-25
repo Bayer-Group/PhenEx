@@ -81,12 +81,10 @@ export class VisibilityDataService {
 
   private initializeTableData(): TableData {
     // Filter out the rowDrag, type, and name columns - users shouldn't see or control them
-    const filteredColumns = defaultColumns.filter(column => 
-      column.field !== 'rowDrag' && 
-      column.field !== 'type' && 
-      column.field !== 'name'
+    const filteredColumns = defaultColumns.filter(
+      column => column.field !== 'rowDrag' && column.field !== 'type' && column.field !== 'name'
     );
-    
+
     const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
       column: column.headerName || column.field,
@@ -132,13 +130,13 @@ export class VisibilityDataService {
     const row = this._tableData.rows.find(r => r.column === columnName);
     if (row) {
       row.visible = visible;
-      
+
       if (visible) {
         // When making visible, add to end of visible items
         const visibleRows = this._tableData.rows.filter(r => r.visible);
         row.index = visibleRows.length - 1;
       }
-      
+
       this.sortRowsByVisibility();
       // Note: updateCohortDataServiceColumns() is called in sortRowsByVisibility()
     }
@@ -158,39 +156,40 @@ export class VisibilityDataService {
       }
       return b.visible ? 1 : -1; // visible (true) rows come first
     });
-    
+
     // Update the CohortDataService with the new column visibility and order
     this.updateCohortDataServiceColumns();
   }
 
   private updateCohortDataServiceColumns(): void {
     const cohortDataService = CohortDataService.getInstance();
-    
+
     // Always get the rowDrag, type, and name columns first (they should always be present)
     const rowDragColumn = defaultColumns.find(col => col.field === 'rowDrag');
     const typeColumn = defaultColumns.find(col => col.field === 'type');
     const nameColumn = defaultColumns.find(col => col.field === 'name');
-    
+
     // Get the ordered list of visible column names
     const visibleColumnNames = this.getOrderedVisibleColumns();
-    
+
     // Filter and reorder defaultColumns based on visibility and order
     const visibleColumns = visibleColumnNames
       .map(columnName => {
         // Find the column in defaultColumns by matching headerName or field
-        return defaultColumns.find(col => 
-          (col.headerName && col.headerName === columnName) || 
-          col.field === columnName
+        return defaultColumns.find(
+          col => (col.headerName && col.headerName === columnName) || col.field === columnName
         );
       })
       .filter(col => col !== undefined);
-    
+
     // Combine required columns (rowDrag, type, name) with visible columns
-    const requiredColumns = [rowDragColumn, typeColumn, nameColumn].filter(col => col !== undefined);
+    const requiredColumns = [rowDragColumn, typeColumn, nameColumn].filter(
+      col => col !== undefined
+    );
     const finalColumns = [...requiredColumns, ...visibleColumns];
-    
+
     console.log('Updating CohortDataService columns:', finalColumns);
-    
+
     // Update the cohort data service columns using the public method
     cohortDataService.updateColumns(finalColumns as ColumnDefinition[]);
   }
@@ -222,19 +221,15 @@ export class VisibilityDataService {
       row.index = index;
     });
 
-    console.log(visibleRows)
+    console.log(visibleRows);
   }
 
   public getVisibleColumns(): string[] {
-    return this._tableData.rows
-      .filter(row => row.visible)
-      .map(row => row.column);
+    return this._tableData.rows.filter(row => row.visible).map(row => row.column);
   }
 
   public getHiddenColumns(): string[] {
-    return this._tableData.rows
-      .filter(row => !row.visible)
-      .map(row => row.column);
+    return this._tableData.rows.filter(row => !row.visible).map(row => row.column);
   }
 
   public getOrderedVisibleColumns(): string[] {
@@ -245,25 +240,25 @@ export class VisibilityDataService {
   }
 
   public resortAllRows(): void {
-    console.log("resortAllRows")
+    console.log('resortAllRows');
     // Simply call the existing sort method to maintain visible/invisible separation
     this.sortRowsByVisibility();
   }
 
   public updateRowOrder(newRowData: VisibilityRow[]): void {
-    console.log("updateRowOrder called with:", newRowData);
-    
+    console.log('updateRowOrder called with:', newRowData);
+
     // Update our internal data with the new order
     this._tableData.rows = newRowData;
-    
+
     // Update indices for visible rows based on their new positions
     const visibleRows = newRowData.filter(row => row.visible);
     visibleRows.forEach((row, index) => {
       row.index = index;
     });
-    
-    console.log("Updated visible rows with new indices:", visibleRows);
-    
+
+    console.log('Updated visible rows with new indices:', visibleRows);
+
     // Then sort to maintain visible/invisible separation
     this.sortRowsByVisibility();
   }

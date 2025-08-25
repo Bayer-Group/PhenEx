@@ -21,7 +21,7 @@
 .divider {
   width: 15px;
   top: 0px;
-  height:100vh;
+  height: 100vh;
   cursor: col-resize;
   /* position: absolute; */
   z-index: 100000;
@@ -30,14 +30,13 @@
   /* justify-content: center; */
 }
 
-.divider.left{
+.divider.left {
   position: absolute;
-  right:0px;
+  right: 0px;
   background-color: transparent !important;
-
 }
 
-.divider.right{
+.divider.right {
 }
 
 .dividerLine {
@@ -65,20 +64,18 @@
   /* overflow: hidden; */
 }
 
-.collapseButton{
+.collapseButton {
   z-index: 10000;
   position: absolute;
   pointer-events: all;
-  padding:0px 10px;
-  margin-left:10px;
-  margin-top:14px;
-  font-size:22px;
+  padding: 0px 10px;
+  margin-left: 10px;
+  margin-top: 14px;
+  font-size: 22px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
-  cursor:pointer;
+  cursor: pointer;
 }
-
-
 
 .collapseButton {
   /* position: absolute;
@@ -127,7 +124,6 @@
 }
 
 .collapseButton.left {
-
 }
 
 .collapseButton.left:hover {
@@ -185,7 +181,7 @@
 .rightDividerPadding {
   width: 9px;
   height: 100%;
-  background-color: blue !important;/*var(--background-color);*/
+  background-color: blue !important; /*var(--background-color);*/
   /* margin-left: -12px; */
   pointer-events: none;
   position: absolute;
@@ -232,7 +228,7 @@
 
 .leftPanel {
   width: 100%;
-  background-color: blue!important;
+  background-color: blue !important;
   max-width: var(--initial-left-width);
   /* padding-right:10px; */
 }

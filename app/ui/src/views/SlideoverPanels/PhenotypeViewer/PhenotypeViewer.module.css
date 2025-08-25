@@ -33,7 +33,7 @@
 
 .phenotypeNameInput {
   font-size: 30px;
-  color:white;
+  color: white;
   font-family: 'IBMPlexSans-bold';
 }
 
@@ -74,7 +74,7 @@
 }
 
 .paramsContainer {
-  width:100%;
+  width: 100%;
 }
 
 .componentsContainer {

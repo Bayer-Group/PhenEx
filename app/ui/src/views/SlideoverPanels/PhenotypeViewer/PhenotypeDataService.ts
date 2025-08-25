@@ -151,7 +151,7 @@ export class PhenotypeDataService {
   }
 
   public updateComponentPhenotypeData() {
-    console.log("UPDATING COMPONENT DATA")
+    console.log('UPDATING COMPONENT DATA');
     this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
       this.currentPhenotype
     );

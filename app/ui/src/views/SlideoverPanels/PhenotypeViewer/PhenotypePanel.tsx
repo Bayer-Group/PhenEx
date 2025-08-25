@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import styles from './PhenotypePanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import typeStyles from '../../../styles/study_types.module.css'
+import typeStyles from '../../../styles/study_types.module.css';
 import { PhenotypeViewer } from './PhenotypeViewer';
 import { Phenotype } from './PhenotypeDataService';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs'
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
 
 interface PhenotypeViewerProps {
@@ -16,9 +16,10 @@ enum PhenotypePanelViewType {
   ComponentPhenotypes = 'componentPhenotypes',
 }
 
-
 export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
-  const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(PhenotypePanelViewType.Parameters);
+  const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
+    PhenotypePanelViewType.Parameters
+  );
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
   const tabs = Object.values(PhenotypePanelViewType).map(value => {
@@ -34,19 +35,20 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const infoContent = () => {
     return (
-      <span className = {styles.whiteText}>
-        <i className = {styles.whiteText}>Edit a single phenotype</i>
+      <span className={styles.whiteText}>
+        <i className={styles.whiteText}>Edit a single phenotype</i>
         <br></br>
         <ul>
           <li>
-            All parameters available for a single phenotype are displayed and editable in this table.
+            All parameters available for a single phenotype are displayed and editable in this
+            table.
           </li>
           <li>Click the Component phenotypes tab to add component phenotypes.</li>
         </ul>
       </span>
     );
   };
-  
+
   if (!data) {
     return (
       <SlideoverPanel title="Phenotype Editor" info={() => <span>No data available</span>}>
@@ -54,9 +56,14 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       </SlideoverPanel>
     );
   }
-  
+
   return (
-    <SlideoverPanel title="Phenotype Editor" info={infoContent()} classNameHeader={typeStyles[`${data.type}_color_block`]} classNameButton={styles.whiteText}>
+    <SlideoverPanel
+      title="Phenotype Editor"
+      info={infoContent()}
+      classNameHeader={typeStyles[`${data.type}_color_block`]}
+      classNameButton={styles.whiteText}
+    >
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
           <span className={styles.fillerText}>for</span> {data.name}
@@ -73,8 +80,12 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
             />
           </div>
           <div className={styles.bottomSection}>
-            {currentView === PhenotypePanelViewType.Parameters && data && <PhenotypeViewer data={data} />}
-            {currentView === PhenotypePanelViewType.ComponentPhenotypes && <PhenotypeComponents data={data} />}
+            {currentView === PhenotypePanelViewType.Parameters && data && (
+              <PhenotypeViewer data={data} />
+            )}
+            {currentView === PhenotypePanelViewType.ComponentPhenotypes && (
+              <PhenotypeComponents data={data} />
+            )}
           </div>
         </div>
       </div>
