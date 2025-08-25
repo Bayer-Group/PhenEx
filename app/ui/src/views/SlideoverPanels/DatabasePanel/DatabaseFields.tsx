@@ -71,6 +71,36 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
       role: newConfig.config?.role || snowflakeDefaults.role,
       password: newConfig.config?.password || snowflakeDefaults.password,
     });
+
+    // Parse source_database to set default database and schema selections
+    const sourceDb = newConfig.config?.source_database;
+    if (sourceDb && sourceDb.includes('.')) {
+      const [database, schema] = sourceDb.split('.');
+      
+      // Check if this database exists in our databases data
+      const dbConfig = databasesData.find(db => db.database === database);
+      if (dbConfig) {
+        setSelectedDatabase(database);
+        setAvailableSchemas(dbConfig.schemas);
+        
+        // Check if the schema exists in the available schemas
+        if (dbConfig.schemas.includes(schema)) {
+          setSelectedSchema(schema);
+        } else {
+          setSelectedSchema('');
+        }
+      } else {
+        // Database not found in defaults, reset selections
+        setSelectedDatabase('');
+        setSelectedSchema('');
+        setAvailableSchemas([]);
+      }
+    } else {
+      // No valid source_database, reset selections
+      setSelectedDatabase('');
+      setSelectedSchema('');
+      setAvailableSchemas([]);
+    }
   };
 
   useEffect(() => {
