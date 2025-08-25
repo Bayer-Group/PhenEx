@@ -17,7 +17,7 @@ from .computation_graph_phenotypes import (
     LogicPhenotype,
 )
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
-from .cohort import Cohort
+from .cohort import Cohort, Subcohort
 
 # from .age_phenotype import AgePhenotype
 # from .event_count_phenotype import EventCountPhenotype
