@@ -117,8 +117,8 @@ export class ConstantsDataService {
   }
 
   public refreshConstants() {
-    this.createDefaultConstants();
-    this.tableData = this.tableDataFromConstants();
+    // this.createDefaultConstants();
+    // this.tableData = this.tableDataFromConstants();
   }
 
   private createDefaultConstants() {

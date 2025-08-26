@@ -269,7 +269,7 @@ async def get_all_cohorts_for_user(username: str):
                     cohort_id, cohort_name = cohort["id"], cohort["name"]
                     cohorts.append({"id": cohort_id, "name": cohort_name})
                 else:
-                    logger.info("No ID found in cohort", cohort["name"])
+                    logger.info(f"No ID found in cohort {cohort["name"]}, {cohort}")
         return cohorts
     except Exception as e:
         logger.error(f"Failed to retrieve cohorts for user {username}: {e}")
