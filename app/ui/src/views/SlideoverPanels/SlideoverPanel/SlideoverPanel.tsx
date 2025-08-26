@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './SlideoverPanel.module.css';
 import { Button } from '../../../components/ButtonsAndTabs/Button/Button';
+import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 interface SlideoverPanelProps {
   title: string;
@@ -58,7 +59,8 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const toggleInfobox = () => {
+  const toggleInfobox = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     const newState = !isOpen;
     setIsOpen(newState);
     setInfoBoxState(newState);
@@ -72,9 +74,14 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
     return <div className={styles.title}>{title}</div>;
   };
 
+  const clickOnHeader = () => {
+      const cohortViewer = TwoPanelCohortViewerService.getInstance();
+      cohortViewer.hideExtraContent();
+  }
+
   return (
     <div className={`${styles.container} ${classNameContainer}`} onClick={onClick}>
-      <div className={`${styles.header} ${classNameHeader}`}>
+      <div className={`${styles.header} ${classNameHeader}`} onClick={clickOnHeader}>
         {showTitle && renderHeader()}
         <Button
           title="Help"
