@@ -149,7 +149,7 @@
 
 .titleLabelDiv {
   line-height: 1em;
-  padding: 5px 10px 0px 10px;
+  padding: 5px 10px 5px 10px;
   height: 50px;
   color: black;
 }
@@ -158,4 +158,19 @@
   color: black !important;
   background-color: var(--background_color_translucent);
   border: none;
+  box-shadow: none;
+  border-bottom: var(--border);
 }
+
+.issuesText{
+  font-size:28px;
+}
+
+.xButton{
+  color: black;
+}
+
+.popoverheader:hover .xButton{
+  color:var(--color-accent-bright) !important;
+}
+

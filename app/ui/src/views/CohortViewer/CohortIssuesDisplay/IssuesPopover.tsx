@@ -94,7 +94,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
   // Iterate over each, rendering a phenotype
   return (
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      <PopoverHeader onClick={onClick} className={`${styles.popoverheader}`}>
+      <PopoverHeader onClick={onClick} className={`${styles.popoverheader}`} classNameXButton={`${styles.xButton}`}>
         {renderTitleLabel()}
       </PopoverHeader>
       <div className={styles.body}>

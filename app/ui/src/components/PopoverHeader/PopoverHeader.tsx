@@ -7,6 +7,7 @@ interface PopoverHeader {
   title?: string; // for accessibility and tooltips
   className?: string;
   children?: React.ReactNode;
+  classNameXButton?: string;
 }
 
 export const PopoverHeader: FC<PopoverHeader> = ({
@@ -14,6 +15,7 @@ export const PopoverHeader: FC<PopoverHeader> = ({
   title = 'Close',
   className = '',
   children = undefined,
+  classNameXButton = '',
 }) => {
   return (
     <div
@@ -24,7 +26,7 @@ export const PopoverHeader: FC<PopoverHeader> = ({
     >
       {!children && title}
       {children && <div className={styles.content}>{children}</div>}
-      <XButton onClick={onClick} className={styles.xButton} />
+      <XButton onClick={onClick} className={`${styles.xButton} ${classNameXButton}`} />
     </div>
   );
 };
