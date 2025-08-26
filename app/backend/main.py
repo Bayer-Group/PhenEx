@@ -265,8 +265,11 @@ async def get_all_cohorts_for_user(username: str):
         for cohort_file in cohort_files:
             with open(os.path.join(user_cohorts_dir, cohort_file), "r") as f:
                 cohort = json.load(f)
-                cohort_id, cohort_name = cohort["id"], cohort["name"]
-                cohorts.append({"id": cohort_id, "name": cohort_name})
+                if "id" in cohort.keys():
+                    cohort_id, cohort_name = cohort["id"], cohort["name"]
+                    cohorts.append({"id": cohort_id, "name": cohort_name})
+                else:
+                    logger.info("No ID found in cohort", cohort["name"])
         return cohorts
     except Exception as e:
         logger.error(f"Failed to retrieve cohorts for user {username}: {e}")

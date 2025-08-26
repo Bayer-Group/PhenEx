@@ -59,6 +59,7 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
     const login_service = LoginDataService.getInstance();
+    console.log("I AM UPDATING THE COHORT", cohort_data)
     const response = await axios.post(
       `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`,
       cohort_data

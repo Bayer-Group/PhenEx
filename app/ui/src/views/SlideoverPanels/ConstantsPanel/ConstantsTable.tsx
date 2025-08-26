@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-
+import styles from './ConstantsPanel.module.css'
 export const ConstantsTable: React.FC = () => {
   const dataService = useRef(CohortDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
@@ -21,6 +21,12 @@ export const ConstantsTable: React.FC = () => {
     }
   };
 
+  const addConstant = () => {
+    console.log('adding constant');
+    dataService.constants_service.addConstant();
+  };
+
+
   useEffect(() => {
     const listener = () => refreshGrid();
     dataService.addListener(listener);
@@ -39,7 +45,12 @@ export const ConstantsTable: React.FC = () => {
   return (
     console.log('CONSTANTS DATA', dataService.constants_service.tableData),
     (
-      <div style={{ width: '100%', height: '400px' }}>
+      <div style={{ width: '100%', height: '100%' }}>
+      <div className={styles.controls}>
+        <button onClick={addConstant} className={styles.addButton}>
+          Add Constant
+        </button>
+      </div>
         <AgGridReact
           rowData={dataService.constants_service.tableData.rows}
           columnDefs={dataService.constants_service.tableData.columns}

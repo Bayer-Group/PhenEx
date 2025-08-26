@@ -3,13 +3,12 @@ import styles from './ConstantsPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 
 import { ConstantsTable } from './ConstantsTable';
+import { ConstantsDataService } from './ConstantsDataService';
 interface ConstantsPanelProps {
   showTitle?: boolean;
 }
 export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true }) => {
-  const addConstant = () => {
-    console.log('adding constant');
-  };
+  const constantsDataService = useRef(new ConstantsDataService()).current;
 
   const infoContent = () => {
     return (
@@ -49,11 +48,6 @@ export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true
 
   return (
     <SlideoverPanel title="Constants" info={infoContent()} showTitle={showTitle}>
-      <div className={styles.controls}>
-        <button onClick={addConstant} className={styles.addButton}>
-          Add Constant
-        </button>
-      </div>
       <ConstantsTable />
     </SlideoverPanel>
   );

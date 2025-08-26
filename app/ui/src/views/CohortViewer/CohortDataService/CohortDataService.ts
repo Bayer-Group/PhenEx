@@ -105,6 +105,7 @@ export class CohortDataService {
       }
 
       this._table_data = this.tableDataFromCohortData();
+      this.constants_service.refreshConstants();
       this.notifyListeners(); // Notify listeners after loading data
     } catch (error) {
       console.error('Error loading cohort data:', error);
@@ -147,7 +148,6 @@ export class CohortDataService {
       this.sortPhenotypes();
       this.splitPhenotypesByType();
     }
-
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     await updateCohort(this._cohort_data.id, this._cohort_data);
@@ -375,9 +375,11 @@ export class CohortDataService {
       class_name: 'Cohort',
       phenotypes: [],
       database_config: {},
+      constants: [],
     };
     this._cohort_name = this._cohort_data.name;
     this._table_data = this.tableDataFromCohortData();
+    this.constants_service.refreshConstants();
     this.isNewCohort = true;
     this.notifyListeners(); // Notify listeners after initialization
     this.isNewCohort = false;

@@ -71,16 +71,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [dataService]);
 
   const refreshGrid = () => {
-    console.log('=== refreshGrid START ===');
-    console.log(
-      'Current dataService.table_data.rows:',
-      dataService.table_data.rows.map(r => ({
-        id: r.id,
-        type: r.type,
-        name: r.name,
-        index: r.index,
-      }))
-    );
 
     if (gridRef.current?.api) {
       const api = gridRef.current.api;
@@ -110,7 +100,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
       });
     }
-    console.log('=== refreshGrid END ===');
   };
   useEffect(() => {
     // Add listener for data service updates

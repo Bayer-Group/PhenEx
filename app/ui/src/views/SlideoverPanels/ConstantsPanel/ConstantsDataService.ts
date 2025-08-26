@@ -113,41 +113,51 @@ export class ConstantsDataService {
 
   public setCohortDataService(dataService: any) {
     this.cohortDataService = dataService;
+    // this.refreshConstants();
+  }
+
+  public refreshConstants() {
     this.createDefaultConstants();
     this.tableData = this.tableDataFromConstants();
   }
 
   private createDefaultConstants() {
-    if (!this.cohortDataService.cohort_data.constants) {
-      this.cohortDataService.cohort_data.constants = {};
-      DEFAULT_CONSTANTS.forEach(constant => {
-        this.cohortDataService.cohort_data.constants[constant.name] = {
-          description: constant.description,
-          type: constant.type,
-          value: constant.value,
-        };
-      });
+    console.log("CREATING DEFAULT CONSTANTS", this.cohortDataService._cohort_data)
+    if (!this.cohortDataService._cohort_data.constants) {
+      this.cohortDataService._cohort_data.constants = DEFAULT_CONSTANTS;
+      this.cohortDataService.saveChangesToCohort(false, false);
+      console.log("SAVED CONSTANTS", this.cohortDataService._cohort_data)
+    }
+    else{
+      console.log(this.cohortDataService._cohort_data.constants, "THESE ARE SAVED CONSTANTS")
     }
   }
 
-  public addConstant(name: string, description: string, type: string, value: any) {
-    this.cohortDataService.cohort_data.constants[name] = {
-      description,
-      type,
-      value,
-    };
+  public addConstant() {
+      console.log(this.cohortDataService._cohort_data.constants, "IN ADD")
+
+    this.cohortDataService._cohort_data.constants.push({
+      name: '',
+      description:'',
+      type: '',
+      value:'',
+    });
+
+    this.cohortDataService.saveChangesToCohort(false, false);
   }
 
   public deleteConstant(name: string) {
-    delete this.cohortDataService.cohort_data.constants[name];
+    this.cohortDataService._cohort_data.constants = this.cohortDataService._cohort_data.constants.filter(
+      (constant: any) => constant.name !== name
+    );
   }
 
   public getConstantsOfType(type: string): Record<string, any> {
     const result: Record<string, any> = {};
-    Object.entries(this.cohortDataService.cohort_data.constants).forEach(
-      ([name, constant]: [string, any]) => {
+    this.cohortDataService._cohort_data.constants.forEach(
+      (constant: any) => {
         if (constant.type === type) {
-          result[name] = constant;
+          result[constant.name] = constant;
         }
       }
     );
@@ -155,9 +165,9 @@ export class ConstantsDataService {
   }
 
   public tableDataFromConstants(): TableData {
-    const rows = Object.entries(this.cohortDataService.cohort_data.constants).map(
-      ([name, constant]: [string, any]) => ({
-        name,
+    const rows = this.cohortDataService._cohort_data.constants.map(
+      (constant: any) => ({
+        name: constant.name,
         description: constant.description,
         type: constant.type,
         value: JSON.stringify(constant.value),
@@ -165,7 +175,7 @@ export class ConstantsDataService {
     );
 
     return {
-      rows,
+      rows: rows,
       columns: this.columns,
     };
   }
@@ -188,13 +198,33 @@ export class ConstantsDataService {
     });
   }
 
-  public valueChanged(rowData: ParamRow, newValue: any) {
-    this.currentPhenotype[rowData.parameter] = newValue;
-    this.saveChangesToPhenotype();
+  public valueChanged(rowData: any, newValue: any) {
+    // Find the constant in the cohort data and update it
+    const constantIndex = this.cohortDataService._cohort_data.constants.findIndex(
+      (constant: any) => constant.name === rowData.name
+    );
+    
+    if (constantIndex !== -1) {
+      // Update the specific field that changed
+      const fieldName = rowData.parameter || 'value'; // Fallback to 'value' if parameter is not set
+      if (fieldName === 'value') {
+        // Try to parse JSON if it's a string, otherwise use as-is
+        try {
+          this.cohortDataService._cohort_data.constants[constantIndex].value = 
+            typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+        } catch {
+          this.cohortDataService._cohort_data.constants[constantIndex].value = newValue;
+        }
+      } else {
+        this.cohortDataService._cohort_data.constants[constantIndex][fieldName] = newValue;
+      }
+    }
+    
+    this.saveChangesToConstants();
   }
 
   public saveChangesToConstants() {
-    // this.notifyListeners(false);
-    this.cohortDataService.setConstants(this.tableData.rows);
+    this.cohortDataService.saveChangesToCohort(false, false);
+    this.refreshConstants(); // Refresh to update the table data
   }
 }
