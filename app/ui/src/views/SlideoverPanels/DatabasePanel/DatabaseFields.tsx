@@ -63,7 +63,10 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
   });
 
   const updateConfig = () => {
+    console.log('🚨 updateConfig called');
     const newConfig = dataService.cohort_data.database_config || {};
+    console.log('🚨 newConfig from dataService:', newConfig);
+    
     setExistingConfig(newConfig);
     setSelectedMapper(newConfig.mapper || mappers[0]);
     setSelectedConnector(newConfig.connector || connector_types[0]);
@@ -94,12 +97,16 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
     // Parse source_database to set default database and schema selections
     const sourceDb = newConfig.config?.source_database;
+    console.log('🚨 sourceDb from config:', sourceDb);
+    
     if (sourceDb && sourceDb.includes('.')) {
       const [database, schema] = sourceDb.split('.');
+      console.log('🚨 Parsed database:', database, 'schema:', schema);
       
       // Check if this database exists in our databases data
       const dbConfig = databasesData.find(db => db.database === database);
       if (dbConfig) {
+        console.log('🚨 Setting selectedDatabase to:', database);
         setSelectedDatabase(database);
         setAvailableSchemas(dbConfig.schemas);
         
@@ -114,6 +121,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         setCurrentTab(DatabaseTabTypes.Default);
       } else {
         // Database not found in defaults, reset selections and switch to Manual tab
+        console.log('🚨 Database not found in defaults, resetting');
         setSelectedDatabase('');
         setSelectedSchema('');
         setAvailableSchemas([]);
@@ -121,12 +129,14 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
       }
     } else if (sourceDb) {
       // Source database exists but doesn't contain a dot (invalid format), switch to Manual tab
+      console.log('🚨 Invalid sourceDb format, switching to Manual');
       setSelectedDatabase('');
       setSelectedSchema('');
       setAvailableSchemas([]);
       setCurrentTab(DatabaseTabTypes.Manual);
     } else {
       // No valid source_database, reset selections and stay on Default tab
+      console.log('🚨 No valid sourceDb, resetting to defaults');
       setSelectedDatabase('');
       setSelectedSchema('');
       setAvailableSchemas([]);
@@ -140,7 +150,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
     return () => {
       dataService.removeListener(updateConfig);
     };
-  }, [dataService.cohort_data]);
+  }, []); // Remove the dependency on dataService.cohort_data to prevent infinite loops
 
   const handleSaveChanges = (key?: string, value?: any) => {
     const databaseConfig = {
@@ -227,11 +237,16 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
   const renderDefaults = () => {
     const handleDatabaseChange = (databaseName: string) => {
+      console.log('🔥 handleDatabaseChange called with:', databaseName);
+      console.log('🔥 Current selectedDatabase before update:', selectedDatabase);
+      
       setSelectedDatabase(databaseName);
       setSelectedSchema(''); // Reset schema selection
       
       // Find the selected database object
       const dbConfig = databasesData.find(db => db.database === databaseName);
+      console.log('🔥 Found dbConfig:', dbConfig);
+      
       if (dbConfig) {
         setAvailableSchemas(dbConfig.schemas);
         
@@ -246,28 +261,15 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         // Set destination database if not already set
         const destinationDb = snowflakeConfig.destinationDb || createDefaultDestinationDb();
         
-        // Create and save the complete database config
-        const databaseConfig = {
-          mapper: newMapper,
-          connector: newConnector,
-          config: {
-            source_database: snowflakeConfig.sourceDb,
-            destination_database: destinationDb,
-            user: snowflakeConfig.user,
-            account: snowflakeConfig.account,
-            warehouse: snowflakeConfig.warehouse,
-            role: snowflakeConfig.role,
-            password: snowflakeConfig.password,
-          },
-        };
-        
-        // Update local state as well
+        // Update local state but don't save to dataService yet
+        // Wait until schema is also selected
         setSnowflakeConfig(prev => ({
           ...prev,
+          sourceDb: '', // Clear sourceDb until schema is selected
           destinationDb: destinationDb
         }));
         
-        dataService.setDatabaseSettings(databaseConfig);
+        console.log('🔥 Database selected, waiting for schema selection before saving');
       }
     };
 
@@ -314,7 +316,10 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
             <select
               className={styles.dropdown}
               value={selectedDatabase}
-              onChange={e => handleDatabaseChange(e.target.value)}
+              onChange={e => {
+                console.log('📋 Database select onChange triggered with:', e.target.value);
+                handleDatabaseChange(e.target.value);
+              }}
             >
               <option value="">Select a database</option>
               {databasesData.map(db => (
