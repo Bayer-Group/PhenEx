@@ -8,6 +8,7 @@ import { TwoPanelCohortViewerService } from '../../TwoPanelCohortViewer/TwoPanel
 import { CohortViewType } from '../../TwoPanelCohortViewer/types';
 import { SettingsCellEditor } from '../CellEditors/SettingsCellEditor';
 
+import typeStyles from '../../../../styles/study_types.module.css'
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const dataService = CohortDataService.getInstance();
   const onClickEdit = () => {
@@ -28,9 +29,34 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     console.log('Edit delete clicked for row with ID:', props.data?.id);
   };
 
+  const renderComponentPhenotypeName = () => {
+    const parentPhenotype = dataService.getPhenotypeById(props.data.parentIds[0]);
+    const parentName = parentPhenotype?.name || props.data.parentIds[0];
+    return (
+      <div className={styles.label}>
+        <span className={`${styles.parentLabel} ${typeStyles[`${parentPhenotype?.type || ''}_text_color`] || ''}`}>
+          {parentName}
+        </span>
+        <span className={styles.parentDivider}>{'|'}</span>
+        {props.value}
+      </div>
+    );
+  };
+
+  const renderName = () => {
+    const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
+    return (
+      <div className={styles.label}>
+        {isComponentPhenotype 
+          ? renderComponentPhenotypeName() 
+          : props.value}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <span className={styles.label}>{props.value}</span>
+      {renderName()}
 
       <div>
         <button className={styles.editButton} onClick={onClickEdit}>

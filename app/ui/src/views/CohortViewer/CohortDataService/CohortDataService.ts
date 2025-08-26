@@ -229,6 +229,12 @@ export class CohortDataService {
     this.saveChangesToCohort(true, true);
   }
 
+  public getPhenotypeById(id: string): TableRow | undefined {
+    return this._cohort_data.phenotypes.find(
+      (phenotype: TableRow) => phenotype.id === id
+    );
+  }
+
   public deletePhenotype(id: string) {
     const phenotypeIndex = this._cohort_data.phenotypes.findIndex(
       (phenotype: TableRow) => phenotype.id === id

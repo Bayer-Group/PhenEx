@@ -74,3 +74,13 @@
   line-height: 1;
   padding-top: 10px;
 }
+
+.parentLabel{
+  font-family: "IBMPlexSans-bolditalic";
+}
+
+.parentDivider{
+  font-family: "IBMPlexSans-bold";
+  color: var(--color-accent-bright);
+  margin:0px 5px 0px 5px;
+}

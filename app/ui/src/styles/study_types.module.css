@@ -114,3 +114,28 @@
   border-color: var(--color_component) !important;
   color: var(--color_component) !important;
 }
+
+/* Text color only */
+.inclusion_text_color {
+  color: var(--color_inclusion) !important;
+}
+
+.exclusion_text_color {
+  color: var(--color_exclusion) !important;
+}
+
+.outcome_text_color {
+  color: var(--color_outcome) !important;
+}
+
+.entry_text_color {
+  color: var(--color_entry) !important;
+}
+
+.baseline_text_color {
+  color: var(--color_baseline) !important;
+}
+
+.component_text_color {
+  color: var(--color_component) !important;
+}
