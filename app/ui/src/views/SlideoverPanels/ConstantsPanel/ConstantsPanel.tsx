@@ -50,7 +50,7 @@ export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true
   return (
     <SlideoverPanel title="Constants" info={infoContent()} showTitle={showTitle}>
       <div className={styles.controls}>
-        <button onClick={addConstant} className={styles.executeButton}>
+        <button onClick={addConstant} className={styles.addButton}>
           Add Constant
         </button>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './SlideoverPanel.module.css';
 import { Button } from '../../../components/ButtonsAndTabs/Button/Button';
 
@@ -11,6 +11,25 @@ interface SlideoverPanelProps {
   showTitle?: boolean;
 }
 
+const SLIDEOVER_PANEL_INFO_STATE_KEY = 'slideoverPanelInfoOpen';
+
+const getInfoBoxState = (): boolean => {
+  try {
+    const stored = localStorage.getItem(SLIDEOVER_PANEL_INFO_STATE_KEY);
+    return stored !== null ? JSON.parse(stored) : true; // Default to open
+  } catch {
+    return true; // Default to open if parsing fails
+  }
+};
+
+const setInfoBoxState = (isOpen: boolean): void => {
+  try {
+    localStorage.setItem(SLIDEOVER_PANEL_INFO_STATE_KEY, JSON.stringify(isOpen));
+  } catch {
+    // Handle localStorage errors silently
+  }
+};
+
 export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   title,
   info = '',
@@ -19,10 +38,28 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   classNameButton = '',
   showTitle = true,
 }) => {
-  const [isOpen, setIsOpen] = useState(true); // Initial state set to open
+  const [isOpen, setIsOpen] = useState(getInfoBoxState);
+
+  useEffect(() => {
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SLIDEOVER_PANEL_INFO_STATE_KEY && e.newValue !== null) {
+        try {
+          setIsOpen(JSON.parse(e.newValue));
+        } catch {
+          // Handle parsing errors silently
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const toggleInfobox = () => {
-    setIsOpen(prevState => !prevState);
+    const newState = !isOpen;
+    setIsOpen(newState);
+    setInfoBoxState(newState);
   };
 
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
