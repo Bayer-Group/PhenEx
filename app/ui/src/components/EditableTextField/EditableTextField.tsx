@@ -7,6 +7,7 @@ interface EditableTextFieldProps {
   onChange: (newValue: string) => void;
   onSaveChanges: () => void;
   className?: string;
+  classNameInput?: string;
 }
 
 export const EditableTextField: FC<EditableTextFieldProps> = ({
@@ -15,6 +16,7 @@ export const EditableTextField: FC<EditableTextFieldProps> = ({
   onChange,
   onSaveChanges,
   className,
+  classNameInput = ''
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +32,7 @@ export const EditableTextField: FC<EditableTextFieldProps> = ({
       <input
         ref={inputRef}
         type="text"
-        className={styles.input}
+        className={`${styles.input} ${classNameInput}`}
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}

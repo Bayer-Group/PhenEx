@@ -1,10 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
-import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
-import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
-import typeStyles from '../../../styles/study_types.module.css';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -13,7 +10,6 @@ interface PhenotypeViewerProps {
 export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
-  const [phenotypeName, setPhenotypeName] = useState('');
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -53,7 +49,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     if (data) {
       console.log('SETTING DATA', data);
       dataService.setData(data);
-      setPhenotypeName(data.name);
     }
 
     return () => {
@@ -64,12 +59,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
       dataService.valueChanged(event.data, event.newValue);
-    }
-  };
-
-  const onSaveNameChanges = () => {
-    if (data) {
-      dataService.valueChanged({ parameter: 'name', value: phenotypeName }, phenotypeName);
     }
   };
 

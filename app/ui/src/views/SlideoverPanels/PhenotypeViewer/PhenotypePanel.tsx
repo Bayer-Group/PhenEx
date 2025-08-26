@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './PhenotypePanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import typeStyles from '../../../styles/study_types.module.css';
@@ -6,6 +6,9 @@ import { PhenotypeViewer } from './PhenotypeViewer';
 import { Phenotype, PhenotypeDataService } from './PhenotypeDataService';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
+import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
+import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { CohortViewType } from '../../CohortViewer/CohortViewer';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -24,6 +27,24 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     PhenotypePanelViewType.Parameters
   );
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
+
+  // Initialize phenotype name when data changes
+  useEffect(() => {
+    if (data) {
+      setPhenotypeName(data.name);
+    }
+  }, [data]);
+
+  const onSaveNameChanges = () => {
+    if (data) {
+      dataService.valueChanged({ parameter: 'name', value: phenotypeName }, phenotypeName);
+    }
+  };
+
+  const onClickAncestor = (ancestor: Phenotype) => {
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('phenotype' as CohortViewType, ancestor);
+  };
 
   const tabs = Object.values(PhenotypePanelViewType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
@@ -70,7 +91,11 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         <div className={styles.ancestorsLabel}>
           {ancestors.map((ancestor, index) => (
             <React.Fragment key={ancestor.id}>
-              <span className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_color_block`] || ''}`}>
+              <span 
+                className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_color_block`] || ''}`}
+                onClick={() => onClickAncestor(ancestor as Phenotype)}
+                style={{ cursor: 'pointer' }}
+              >
                 {ancestor.name || ancestor.id}
               </span>
               {index < ancestors.length - 1 && (
@@ -92,7 +117,15 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
           {renderAncestors()}
-          {data.name}
+          <EditableTextField
+            value={phenotypeName}
+            placeholder="Enter phenotype name..."
+            classNameInput={styles.phenotypeNameInput}
+            onChange={newValue => {
+              setPhenotypeName(newValue);
+            }}
+            onSaveChanges={onSaveNameChanges}
+          />
         </div>
         <div className={styles.mainContainer}>
           <div className={styles.controlsContainer}>
