@@ -235,6 +235,25 @@ export class CohortDataService {
     );
   }
 
+  public getAllAncestors(phenotypeData: TableRow): TableRow[] {
+    if (!phenotypeData.parentIds || phenotypeData.parentIds.length === 0) {
+      return [];
+    }
+
+    const parentId = phenotypeData.parentIds[0];
+    const parentPhenotype = this.getPhenotypeById(parentId);
+    
+    if (!parentPhenotype) {
+      return [];
+    }
+
+    // Recursively get ancestors of the parent
+    const grandparents = this.getAllAncestors(parentPhenotype);
+    
+    // Return grandparents first, then the immediate parent
+    return [...grandparents, parentPhenotype];
+  }
+
   public deletePhenotype(id: string) {
     const phenotypeIndex = this._cohort_data.phenotypes.findIndex(
       (phenotype: TableRow) => phenotype.id === id

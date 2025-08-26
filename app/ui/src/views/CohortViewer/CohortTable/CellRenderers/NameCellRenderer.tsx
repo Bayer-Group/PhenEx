@@ -30,15 +30,24 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   const renderComponentPhenotypeName = () => {
-    const parentPhenotype = dataService.getPhenotypeById(props.data.parentIds[0]);
-    const parentName = parentPhenotype?.name || props.data.parentIds[0];
+    const ancestors = dataService.getAllAncestors(props.data);
     return (
-      <div className={styles.label}>
-        <span className={`${styles.parentLabel} ${typeStyles[`${parentPhenotype?.type || ''}_text_color`] || ''}`}>
-          {parentName}
-        </span>
-        <span className={styles.parentDivider}>{'|'}</span>
-        {props.value}
+      <div className={styles.componentPhenotypeLabel}>
+        <div className={styles.ancestorLabel}>
+          {ancestors.map((ancestor, index) => (
+            <React.Fragment key={ancestor.id}>
+              <span className={`${styles.parentLabel} ${typeStyles[`${ancestor.type || ''}_text_color`] || ''}`}>
+                {ancestor.name || ancestor.id}
+              </span>
+              {index < ancestors.length - 1 && (
+                <span className={styles.parentDivider}>{'|'}</span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className={styles.componentPhenotypeName}>
+          {props.value}
+        </div>
       </div>
     );
   };

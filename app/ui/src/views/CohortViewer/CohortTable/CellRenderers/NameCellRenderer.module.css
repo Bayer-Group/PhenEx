@@ -84,3 +84,12 @@
   color: var(--color-accent-bright);
   margin:0px 5px 0px 5px;
 }
+
+.ancestorLabel{
+  font-family: "IBMPlexSans-boldtitalic";
+  font-size: 10px;
+}
+
+.componentPhenotypeName{
+
+}
