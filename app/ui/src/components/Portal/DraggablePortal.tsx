@@ -59,7 +59,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
   // Only set initial position if user hasn't dragged yet
   useEffect(() => {
     if (initialPosition && !userHasDragged) {
-      console.log('Setting initial position (user has not dragged yet):', initialPosition);
       const newPos = getInitialPosition();
       setPosition(newPos);
     }
@@ -92,10 +91,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
 
       const target = e.target as HTMLElement;
 
-      console.log('Mouse down detected on:', target);
-      console.log('Target classes:', target.className);
-      console.log('Drag handle selector:', dragHandleSelector);
-
       // Check if we should handle this drag
       let shouldDrag = false;
       if (dragHandleSelector) {
@@ -103,7 +98,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
         const selectors = dragHandleSelector.split(',').map(s => s.trim());
         shouldDrag = selectors.some(selector => {
           const element = target.closest(selector);
-          console.log(`Checking selector "${selector}":`, element);
           return element !== null;
         });
       } else {
@@ -111,7 +105,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
         shouldDrag = containerRef.current?.contains(target) || false;
       }
 
-      console.log('Should drag:', shouldDrag);
 
       if (!shouldDrag) return;
 
@@ -127,7 +120,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
       setHasDragged(false);
       setIsDragging(true);
       onDragStart?.();
-      console.log('Drag started');
     },
     [dragHandleSelector, container, enableDragging]
   );
@@ -136,7 +128,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
     (e: MouseEvent) => {
       if (!isDragging) return;
 
-      console.log('Mouse move during drag');
       e.preventDefault();
 
       const newX = e.clientX - dragOffset.x;
@@ -150,7 +141,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
 
       if (dragDistance > moveThreshold && !hasDragged) {
         setHasDragged(true);
-        console.log('Drag threshold exceeded - this is a real drag');
       }
 
       // Keep the portal within viewport bounds
@@ -160,18 +150,15 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
       const clampedX = Math.max(0, Math.min(newX, maxX));
       const clampedY = Math.max(0, Math.min(newY, maxY));
 
-      console.log(`Moving to: ${clampedX}, ${clampedY}`);
       setPosition({ x: clampedX, y: clampedY });
     },
     [isDragging, dragOffset, dragStartPosition, hasDragged]
   );
 
   const handleMouseUp = useCallback(() => {
-    console.log('Mouse up - ending drag, hasDragged:', hasDragged);
     setIsDragging(false);
 
     if (hasDragged) {
-      console.log('User has dragged - position will be preserved');
       setUserHasDragged(true); // Mark that user has dragged, so we won't reset position
     }
 
@@ -185,7 +172,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
 
   // Debug logging for drag state
   useEffect(() => {
-    console.log('isDragging state changed to:', isDragging);
   }, [isDragging]);
 
   // Set up global mouse event listeners
@@ -208,17 +194,14 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
   // Set up mousedown listener on the container
   useEffect(() => {
     const currentContainer = container;
-    console.log('Setting up mousedown listener on container:', currentContainer);
 
     const mouseDownHandler = (e: MouseEvent) => {
-      console.log('Container mousedown event fired');
       handleMouseDown(e);
     };
 
     currentContainer.addEventListener('mousedown', mouseDownHandler);
 
     return () => {
-      console.log('Removing mousedown listener from container');
       currentContainer.removeEventListener('mousedown', mouseDownHandler);
     };
   }, [container, handleMouseDown]);
@@ -235,11 +218,6 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
               ? 'default'
               : 'grab',
         position: 'relative',
-      }}
-      onMouseDown={e => {
-        console.log('Portal content mousedown event fired');
-        console.log('Event target:', e.target);
-        console.log('Current target:', e.currentTarget);
       }}
     >
       {children}

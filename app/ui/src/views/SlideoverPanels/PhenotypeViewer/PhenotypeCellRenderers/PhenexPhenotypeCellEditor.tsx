@@ -35,6 +35,7 @@ export const PhenexPhenotypeCellEditor = forwardRef(
   (props: PhenexPhenotypeCellEditorProps, ref) => {
     if (props.data?.parameter in classNameToEditorMapping) {
       const Editor = classNameToEditorMapping[props.data?.parameter];
+      console.log("SHOWING EDITOR FOR", props.data?.parameter, props.onValueChange);
       return <Editor {...props} onValueChange={props.onValueChange} ref={ref} />;
     }
     return <PhenexCellEditor {...props} onValueChange={props.onValueChange} ref={ref} />;

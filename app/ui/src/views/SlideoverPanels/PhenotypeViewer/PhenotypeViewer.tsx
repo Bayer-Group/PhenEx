@@ -40,7 +40,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   useEffect(() => {
     const listener = (refreshPhenotypeGrid: boolean = false) => {
+      console.log("this is the REFRESHING", refreshPhenotypeGrid)
       if (refreshPhenotypeGrid) {
+        console.log("AM REFRESHING GRID!!")
         refreshGrid();
       }
     };

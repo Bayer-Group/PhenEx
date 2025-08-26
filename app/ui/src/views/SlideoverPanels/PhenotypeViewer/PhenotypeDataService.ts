@@ -82,21 +82,27 @@ export class PhenotypeDataService {
   }
 
   public valueChanged(rowData: ParamRow, newValue: any) {
+    console.log("VALUE CHANGED", rowData, newValue)
     if (this.currentPhenotype) {
+      console.log("has currentphenotype")
       this.currentPhenotype[rowData.parameter] = newValue;
-      this.saveChangesToPhenotype();
+      console.log("new value set", this.currentPhenotype)
+      console.log(rowData.parameter)
+      if (rowData.parameter === 'class_name'){
+        this.updateRowData()
+      }
+      this.saveChangesToPhenotype(rowData.parameter === 'class_name' ? true : false);
     }
   }
 
-  public saveChangesToPhenotype() {
+  public saveChangesToPhenotype(refreshGrid:boolean = false) {
     if (this.currentPhenotype) {
-      this.notifyListeners(false);
+      this.notifyListeners(refreshGrid);
       this.cohortDataService.saveChangesToCohort(false, true);
     }
   }
 
   private updateRowData() {
-    console.log('UPDATING ROW DATA');
     if (this.currentPhenotype?.class_name && classDefinitions[this.currentPhenotype.class_name]) {
       let paramDefinitions = classDefinitions[this.currentPhenotype.class_name];
       // filter out the non user visible params
