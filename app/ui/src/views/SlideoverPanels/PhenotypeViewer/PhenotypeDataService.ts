@@ -32,7 +32,7 @@ export class PhenotypeDataService {
 
   private listeners: ((refreshGrid: boolean) => void)[] = [];
   private componentPhenotypeListeners: ((refreshGrid: boolean) => void)[] = [];
-  private cohortDataService = CohortDataService.getInstance(); // Assuming CohortDataService is a singleton class
+  public cohortDataService = CohortDataService.getInstance(); // Assuming CohortDataService is a singleton class
 
   private constructor() {}
 
@@ -104,7 +104,9 @@ export class PhenotypeDataService {
 
       const requiredParams = paramDefinitions.filter(paramDef => paramDef.required);
       const nonRequiredParams = paramDefinitions.filter(paramDef => !paramDef.required);
-      const sharedParams = ['name', 'type', 'class_name'].map(param => ({
+      //const sharedParams = ['name', 'type', 'class_name'].map(param => ({
+      const sharedParams = ['class_name'].map(param => ({
+
         parameter: param,
         value: this.currentPhenotype![param] || 'Not set',
         ...this.currentPhenotype,
@@ -151,11 +153,9 @@ export class PhenotypeDataService {
   }
 
   public updateComponentPhenotypeData() {
-    console.log('UPDATING COMPONENT DATA');
     this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
       this.currentPhenotype
     );
-    console.log('THIS IS COMPONENT PHENOTYPE DATA', this.componentPhenotypeTableData);
     console.log(this.cohortDataService);
   }
 

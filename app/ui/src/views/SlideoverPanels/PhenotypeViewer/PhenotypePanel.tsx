@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styles from './PhenotypePanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import typeStyles from '../../../styles/study_types.module.css';
 import { PhenotypeViewer } from './PhenotypeViewer';
-import { Phenotype } from './PhenotypeDataService';
+import { Phenotype, PhenotypeDataService } from './PhenotypeDataService';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
 
@@ -17,6 +17,9 @@ enum PhenotypePanelViewType {
 }
 
 export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
+  const dataService = useRef(PhenotypeDataService.getInstance()).current;
+  const [phenotypeName, setPhenotypeName] = useState('');
+
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
   );
@@ -58,6 +61,27 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
+  const renderAncestors = () => {
+    if (data.type != 'component'){
+      return;
+    }
+    const ancestors = dataService.cohortDataService.getAllAncestors(data);
+    return (
+        <div className={styles.ancestorsLabel}>
+          {ancestors.map((ancestor, index) => (
+            <React.Fragment key={ancestor.id}>
+              <span className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_color_block`] || ''}`}>
+                {ancestor.name || ancestor.id}
+              </span>
+              {index < ancestors.length - 1 && (
+                <span className={styles.ancestorDivider}>{'|'}</span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+    );
+  }
+
   return (
     <SlideoverPanel
       title="Edit Phenotype"
@@ -67,7 +91,8 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     >
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
-          <span className={styles.fillerText}></span> {data.name}
+          {renderAncestors()}
+          {data.name}
         </div>
         <div className={styles.mainContainer}>
           <div className={styles.controlsContainer}>

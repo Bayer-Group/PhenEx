@@ -139,32 +139,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   };
 
-  const renderType = () => {
-    const type = data?.type;
-    let s = '';
-    if (type == 'entry') {
-      s = 'Entry Criterion';
-    } else if (type == 'inclusion') {
-      s = 'Inclusion Criterion';
-    } else if (type == 'exclusion') {
-      s = 'Exclusion Criterion';
-    } else if (type == 'baseline') {
-      s = 'Baseline Characteristic';
-    } else if (type == 'outcome') {
-      s = 'Outcome';
-    }
-
-    return (
-      <>
-        <span
-          className={`${styles.phenotypeType} rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`}
-        >
-          {s}
-        </span>
-        in {dataService.getCohortName()}
-      </>
-    );
-  };
 
   if (!data) {
     return (

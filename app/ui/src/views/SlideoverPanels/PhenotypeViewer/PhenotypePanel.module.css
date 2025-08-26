@@ -15,7 +15,7 @@
   top: 0;
   z-index: 10;
   padding: 0px 12px 5px 10px;
-  font-family: 'IBMPlexSans-bolditalic';
+  font-family: 'IBMPlexSans-bold';
   font-size: 20px;
   flex-shrink: 0;
   margin-bottom: 10px;
@@ -47,4 +47,26 @@
 .fillerText {
   font-family: 'IBMPlexSans-regular';
   font-size: 18px;
+}
+
+
+.ancestorsLabel{
+  font-family: "IBMPlexSans-bolditalic";
+
+}
+.ancestorLabel{
+  padding: 0px 4px;
+  border-radius: 4px;
+  font-size:14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.ancestorLabel:hover{
+  border: var(--border);
+}
+
+.ancestorDivider{
+  font-family: "IBMPlexSans-bold";
+  color: var(--color-accent-bright);
+  margin:0px 5px 0px 5px;
 }

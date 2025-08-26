@@ -75,17 +75,17 @@
   padding-top: 10px;
 }
 
-.parentLabel{
+.ancestorLabel{
   font-family: "IBMPlexSans-bolditalic";
 }
 
-.parentDivider{
+.ancestorDivider{
   font-family: "IBMPlexSans-bold";
   color: var(--color-accent-bright);
   margin:0px 5px 0px 5px;
 }
 
-.ancestorLabel{
+.ancestorsLabel{
   font-family: "IBMPlexSans-boldtitalic";
   font-size: 10px;
 }

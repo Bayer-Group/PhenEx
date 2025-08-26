@@ -33,14 +33,14 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     const ancestors = dataService.getAllAncestors(props.data);
     return (
       <div className={styles.componentPhenotypeLabel}>
-        <div className={styles.ancestorLabel}>
+        <div className={styles.ancestorsLabel}>
           {ancestors.map((ancestor, index) => (
             <React.Fragment key={ancestor.id}>
-              <span className={`${styles.parentLabel} ${typeStyles[`${ancestor.type || ''}_text_color`] || ''}`}>
+              <span className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_text_color`] || ''}`}>
                 {ancestor.name || ancestor.id}
               </span>
               {index < ancestors.length - 1 && (
-                <span className={styles.parentDivider}>{'|'}</span>
+                <span className={styles.ancestorDivider}>{'|'}</span>
               )}
             </React.Fragment>
           ))}
