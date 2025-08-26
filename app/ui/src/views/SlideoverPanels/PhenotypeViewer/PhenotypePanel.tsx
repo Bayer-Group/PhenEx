@@ -113,6 +113,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       info={infoContent()}
       classNameHeader={typeStyles[`${data.type}_color_block`]}
       classNameButton={styles.whiteText}
+      classNameContainer={typeStyles[`${data.type}_border_color`]}
     >
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>

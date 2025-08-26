@@ -1,7 +1,8 @@
 .label {
   text-wrap: wrap;
-  line-height: 1 !important;
+  /* line-height: 1 !important; */
   font-size: 14px;
+  font-family: "IBMPlexSans-bolditalic";
   /* padding: 4px 0; */
   /* padding:0px;
   margin:0px;

@@ -22,7 +22,7 @@
   border-color: var(--color_component) !important;
 }
 
-/* A list item; border and text is colored */
+/* BORDER and TEXT-COLOR = type.color */
 .inclusion_list_item_selected {
   border-color: var(--color_inclusion) !important;
   color: var(--color_inclusion) !important;
@@ -53,7 +53,7 @@
   color: var(--color_component) !important;
 }
 
-/* A color block : background is colored and text is white */
+/* A color block : BACKGROUND = type.color TEXT-COLOR = white*/
 .inclusion_color_block {
   background-color: var(--color_inclusion) !important;
   color: white;
@@ -84,7 +84,9 @@
   color: white;
 }
 
-/* color both text and border on hover*/
+
+
+/* BORDER and TEXT-COLOR = type.color ON HOVER */
 .inclusion_color_text_and_border_on_hover:hover {
   border-color: var(--color_inclusion) !important;
   color: var(--color_inclusion) !important;
@@ -115,7 +117,7 @@
   color: var(--color_component) !important;
 }
 
-/* Text color only */
+/*TEXT-COLOR = type.color ON HOVER */
 .inclusion_text_color {
   color: var(--color_inclusion) !important;
 }
@@ -138,4 +140,30 @@
 
 .component_text_color {
   color: var(--color_component) !important;
+}
+
+
+/* BORDER = type.color */
+.inclusion_border_color {
+  border: 1px solid var(--color_inclusion) !important;
+}
+
+.exclusion_border_color {
+  border: 1px solid var(--color_exclusion) !important;
+}
+
+.outcome_border_color {
+  border: 1px solid var(--color_outcome) !important;
+}
+
+.entry_border_color {
+  border: 1px solid var(--color_entry) !important;
+}
+
+.baseline_border_color {
+  border: 1px solid var(--color_baseline) !important;
+}
+
+.component_border_color {
+  border: 1px solid var(--color_component) !important;
 }

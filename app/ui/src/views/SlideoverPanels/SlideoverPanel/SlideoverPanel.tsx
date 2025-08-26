@@ -8,6 +8,7 @@ interface SlideoverPanelProps {
   children: React.ReactNode;
   classNameHeader?: string;
   classNameButton?: string;
+  classNameContainer?: string;
   showTitle?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   children,
   classNameHeader = '',
   classNameButton = '',
+  classNameContainer = '',
   showTitle = true,
 }) => {
   const [isOpen, setIsOpen] = useState(getInfoBoxState);
@@ -71,7 +73,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   };
 
   return (
-    <div className={styles.container} onClick={onClick}>
+    <div className={`${styles.container} ${classNameContainer}`} onClick={onClick}>
       <div className={`${styles.header} ${classNameHeader}`}>
         {showTitle && renderHeader()}
         <Button
