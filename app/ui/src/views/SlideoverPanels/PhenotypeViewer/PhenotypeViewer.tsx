@@ -59,7 +59,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   }, [data]);
 
   const onCellValueChanged = async (event: any) => {
+    console.log("PHENOTYPE VIEWER: ON CELL VALUE CHANGED");
     if (event.newValue !== event.oldValue) {
+      console.log("PHENOTYPE VIEWER: VALUE CHANGED");
       dataService.valueChanged(event.data, event.newValue);
     }
   };

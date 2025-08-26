@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import styles from './DescriptionCellEditor.module.css';
 
@@ -7,13 +7,28 @@ interface DescriptionCellEditorProps extends PhenexCellEditorProps {
 }
 
 export const DescriptionCellEditor = forwardRef<any, DescriptionCellEditorProps>((props, ref) => {
-  const handleValueChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    props.onValueChange?.(event.target.value);
+  const editorRef = useRef<any>(null);
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => {
+      return editorRef.current?.getValue() || props.value;
+    },
+    afterGuiAttached: () => {
+      editorRef.current?.focus();
+    }
+  }));
+
+  const handleValueChange = (value: string) => {
+    props.onValueChange?.(value);
   };
 
   return (
-    <PhenexCellEditor {...props} ref={ref}>
-      <DescriptionEditor {...props} onValueChange={handleValueChange} />
+    <PhenexCellEditor {...props} value={props.value || ''} ref={ref}>
+      <DescriptionEditor 
+        {...props} 
+        onValueChange={handleValueChange}
+        ref={editorRef}
+      />
     </PhenexCellEditor>
   );
 });
@@ -24,26 +39,32 @@ export interface DescriptionEditorProps {
   value?: any;
   onValueChange?: (value: any) => void;
 }
-export const DescriptionEditor: React.FC<DescriptionEditorProps> = props => {
+
+export const DescriptionEditor = forwardRef<any, DescriptionEditorProps>((props, ref) => {
   const [localValue, setLocalValue] = React.useState(
     typeof props.value === 'string' ? props.value : ''
   );
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => localValue,
+    focus: () => textareaRef.current?.focus()
+  }));
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLocalValue(e.target.value);
-  };
-
-  const handleBlur = () => {
-    props.onValueChange?.(localValue);
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    // Call onValueChange immediately on every change
+    props.onValueChange?.(newValue);
   };
 
   return (
     <textarea
+      ref={textareaRef}
       className={styles.textarea}
       value={localValue}
       onChange={handleChange}
-      onBlur={handleBlur}
       placeholder="Enter description..."
     />
   );
-};
+});

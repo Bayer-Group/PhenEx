@@ -66,7 +66,6 @@ export class PhenotypeDataService {
   }
 
   public setData(data: Phenotype | undefined) {
-    console.log('SETTING DATA FOR NEW PHENOTYPE', data);
     this.currentPhenotype = data || null;
     this.updateRowData();
     this.updateComponentPhenotypeData();
