@@ -1,9 +1,10 @@
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
+import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
 import parametersInfo from '../../../../assets/parameters_info.json';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
@@ -11,6 +12,25 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onValueChange?: (value: any) => void;
   children?: React.ReactNode;
 }
+
+const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
+
+const getInfoBoxState = (): boolean => {
+  try {
+    const stored = localStorage.getItem(PHENEX_CELL_EDITOR_INFO_STATE_KEY);
+    return stored !== null ? JSON.parse(stored) : true; // Default to open
+  } catch {
+    return true; // Default to open if parsing fails
+  }
+};
+
+const setInfoBoxState = (isOpen: boolean): void => {
+  try {
+    localStorage.setItem(PHENEX_CELL_EDITOR_INFO_STATE_KEY, JSON.stringify(isOpen));
+  } catch {
+    // Handle localStorage errors silently
+  }
+};
 
 const getViewportDimensions = () => ({
   width: window.innerWidth,
@@ -34,6 +54,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [isDragging, setIsDragging] = useState(false);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
+
+  useEffect(() => {
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === PHENEX_CELL_EDITOR_INFO_STATE_KEY && e.newValue !== null) {
+        try {
+          setIsInfoOpen(JSON.parse(e.newValue));
+        } catch {
+          // Handle parsing errors silently
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     getValue() {
@@ -54,6 +91,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       return; // Don't close if we just finished dragging
     }
     props.api.stopEditing();
+  };
+
+  const toggleInfobox = () => {
+    const newState = !isInfoOpen;
+    setIsInfoOpen(newState);
+    setInfoBoxState(newState);
   };
 
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -190,19 +233,13 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const parameterKey = props.column?.getColDef().field || props.data?.parameter;
     const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
     
-    if (!parameterInfo) {
-      return (
-        <div className={styles.infoBox}>
-          <span className={styles.infoText}>No additional information available for this parameter.</span>
-        </div>
-      );
-    }
+    const renderInfoContent = () => {
+      if (!parameterInfo) {
+        return "No additional information available for this parameter.";
+      }
 
-    return (
-      <div className={styles.infoBox}>
-        <div className={styles.infoText}>
-        
-          
+      return (
+        <div>
           {parameterInfo.description && parameterInfo.description !== "NaN" && (
             <div style={{ marginTop: '8px' }}>
               <div style={{ marginTop: '4px', fontSize: '14px', lineHeight: '1.4' }}>
@@ -210,6 +247,20 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               </div>
             </div>
           )}
+        </div>
+      );
+    };
+
+    return (
+      <div className={styles.infoContainer}>
+        <Button
+          title="Help"
+          onClick={toggleInfobox}
+          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed}`}
+        />
+        
+        <div className={`${styles.infobox} ${isInfoOpen ? styles.open : styles.closed}`}>
+          {renderInfoContent()}
         </div>
       </div>
     );

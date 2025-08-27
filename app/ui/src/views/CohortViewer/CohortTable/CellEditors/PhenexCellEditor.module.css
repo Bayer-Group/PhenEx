@@ -160,3 +160,60 @@
 .popoverHeader:active {
   cursor: grabbing;
 }
+
+.infoContainer {
+  position: relative;
+}
+
+.infoButton {
+  position: absolute !important;
+  right: 10px;
+  top: 5px;
+  z-index: 10;
+}
+
+.infoButton.open {
+  color: var(--color-accent-bright);
+  background-color: var(--button-background-color-selected) !important;
+  color: var(--button-text-color-selected);
+  border: 1px solid var(--button-border-color-selected);
+  font-family: var(--button-font-family-selected);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.infobox {
+  margin: 0px 10px 0px 10px;
+  padding: 10px;
+  background-color: var(--background-color) !important;
+  color: black !important;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    margin 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  user-select: none;
+  cursor: pointer;
+}
+
+.infobox.open {
+  max-height: 400px;
+  opacity: 1;
+  margin: 10px 10px 10px 10px;
+  background-color: transparent !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.infobox.closed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0px 10px 0px 10px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border: none;
+}
