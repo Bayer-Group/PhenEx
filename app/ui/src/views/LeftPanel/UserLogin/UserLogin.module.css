@@ -1,4 +1,12 @@
 .container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginTriggerButton {
+  margin: 8px;
+  font-family: 'IBMPlexSans-bold', sans-serif;
 }
 
 .loginHeader {
