@@ -56,6 +56,7 @@ export class PhenotypeDataService {
       headerFontSize: 14,
       headerFontWeight: 'bold',
       headerRowBorder: true,
+      fontSize: '20px',
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'var(--background-color)',
       backgroundColor: 'var(--background-color)',

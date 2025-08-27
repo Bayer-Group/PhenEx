@@ -6,7 +6,6 @@ const DescriptionCellRenderer = (props: any) => {
         textAlign: 'left',
         lineHeight: '1em',
         marginTop: '10px',
-        fontSize: '14px',
         textWrap: 'wrap',
       }}
     >

@@ -31,7 +31,7 @@ const classNameToRendererMapping = {
 export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererProps> = props => {
   if (props.data?.parameter in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.parameter];
-    return <Renderer {...props} fontSize={'12px'} />;
+    return <Renderer {...props} fontSize={'18px'} />;
   }
   return <div>{props.data.value}</div>;
 };

@@ -6,7 +6,7 @@
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
-  top: calc(var(--issue_popover_margin) + 0px);
+  top: calc(var(--issue_popover_margin) - 9px);
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
