@@ -51,6 +51,11 @@
   user-select: none;
   line-height: 20px;
   cursor: grab;
+  min-height: 60px; /* Fixed minimum height to prevent layout shifts */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: fit-content;
 }
 
 .popoverheader:active {
@@ -163,6 +168,8 @@
 
 .infoContainer {
   position: relative;
+  min-height: 40px; /* Reserve space for the info button */
+  padding-top: 5px; /* Add some top padding to prevent content overlap */
 }
 
 .infoButton {
@@ -170,13 +177,16 @@
   right: 10px;
   top: 5px;
   z-index: 10;
+  min-width: 30px; /* Ensure button has consistent size */
+  height: 30px;
+  font-family: "IBMPlexSans-regular";
 }
 
 .infoButton.open {
   color: var(--color-accent-bright);
-  background-color: var(--button-background-color-selected) !important;
+  background-color: var(--background-color);
   color: var(--button-text-color-selected);
-  border: 1px solid var(--button-border-color-selected);
+  border: 1px solid transparent;
   font-family: var(--button-font-family-selected);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -201,10 +211,10 @@
 }
 
 .infobox.open {
-  max-height: 400px;
+  max-height: 200px;
   opacity: 1;
   margin: 10px 10px 10px 10px;
-  background-color: transparent !important;
+  background-color: var(--background-color);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   overflow: auto;
 }
@@ -213,7 +223,7 @@
   max-height: 0;
   opacity: 0;
   margin: 0px 10px 0px 10px;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding: 0; /* Remove all padding when closed */
   border: none;
+  min-height: 0; /* Ensure it can collapse completely */
 }

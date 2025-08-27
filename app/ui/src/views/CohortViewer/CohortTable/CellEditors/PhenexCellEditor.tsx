@@ -6,6 +6,7 @@ import { DraggablePortal } from '../../../../components/Portal';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
 import parametersInfo from '../../../../assets/parameters_info.json';
+import typeStyles from '../../../../styles/study_types.module.css';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -256,15 +257,18 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         <Button
           title="Help"
           onClick={toggleInfobox}
-          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed}`}
+          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.type || ''}_list_item_selected`] || ''}`}
         />
         
-        <div className={`${styles.infobox} ${isInfoOpen ? styles.open : styles.closed}`}>
+        <div className={`${styles.infobox} ${isInfoOpen ? styles.open : styles.closed}`}
+          onClick={toggleInfobox}
+        >
           {renderInfoContent()}
         </div>
       </div>
     );
   };
+
   return (
     <DraggablePortal
       initialPosition={{
