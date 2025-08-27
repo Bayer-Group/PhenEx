@@ -60,7 +60,7 @@ export class HierarchicalLeftPanelDataService {
     return HierarchicalLeftPanelDataService.instance;
   }
 
-  private createCohortNode = (cohort: CohortData, level: number): HierarchicalTreeNode => {
+  private createCohortNode = (cohort: CohortData, level: number, isSelected: boolean = false): HierarchicalTreeNode => {
     return {
       id: cohort.id,
       displayName: cohort.name,
@@ -71,11 +71,17 @@ export class HierarchicalLeftPanelDataService {
       fontSize: 20,
       renderer: CohortTreeRenderer,
       collapsed: true,
-      selected: false,
+      selected: isSelected,
     };
   };
 
   public async updateTreeData() {
+    console.log('🔄 updateTreeData called - preserving selection states');
+    
+    // Capture currently selected node ID before rebuilding
+    const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
+    console.log('🔄 Currently selected node ID:', currentlySelectedNodeId);
+    
     this.cachedPublicCohortNamesAndIds = (await this.dataService.publicCohortNamesAndIds()) || [];
     this.cachedUserCohortNamesAndIds = (await this.dataService.userCohortNamesAndIds()) || [];
 
@@ -89,18 +95,22 @@ export class HierarchicalLeftPanelDataService {
       fontSize: 18,
       fontFamily: 'IBMPlexSans-bold',
       collapsed: false,
-      selected: false,
+      selected: id === currentlySelectedNodeId,
       hasButton: id == 'mycohorts' ? true : false,
       buttonTitle: 'New Cohort',
       buttonOnClick: this.addNewCohort.bind(this),
     });
 
     const createPublicCohorts = () => {
-      return this.cachedPublicCohortNamesAndIds.map(cohort => this.createCohortNode(cohort, 1));
+      return this.cachedPublicCohortNamesAndIds.map(cohort => 
+        this.createCohortNode(cohort, 1, cohort.id === currentlySelectedNodeId)
+      );
     };
 
     const createUserCohorts = () => {
-      return this.cachedUserCohortNamesAndIds.map(cohort => this.createCohortNode(cohort, 1));
+      return this.cachedUserCohortNamesAndIds.map(cohort => 
+        this.createCohortNode(cohort, 1, cohort.id === currentlySelectedNodeId)
+      );
     };
 
     this.treeData = [];
@@ -109,6 +119,7 @@ export class HierarchicalLeftPanelDataService {
     }
     this.treeData.push(createRootNode('publiccohorts', 'Public Cohorts'));
 
+    console.log('🔄 Tree rebuilt with preserved selection for:', currentlySelectedNodeId);
     this.notifyListeners();
   }
 
@@ -141,8 +152,44 @@ export class HierarchicalLeftPanelDataService {
     });
   }
 
+  // Helper method to find a node by ID
+  private findNodeById(nodeId: string): HierarchicalTreeNode | null {
+    const findInNodes = (nodes: HierarchicalTreeNode[]): HierarchicalTreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === nodeId) {
+          return node;
+        }
+        if (node.children) {
+          const found = findInNodes(node.children as HierarchicalTreeNode[]);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findInNodes(this.treeData);
+  }
+
+  // Helper method to get the currently selected node ID
+  private getCurrentlySelectedNodeId(): string | null {
+    const findSelectedNode = (nodes: HierarchicalTreeNode[]): string | null => {
+      for (const node of nodes) {
+        if (node.selected) {
+          return node.id;
+        }
+        if (node.children) {
+          const found = findSelectedNode(node.children as HierarchicalTreeNode[]);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findSelectedNode(this.treeData);
+  }
+
   // Set selected state for a specific node
   public selectNode(nodeId: string) {
+    console.log('🎯 selectNode called with nodeId:', nodeId);
+    
     // First deselect all nodes
     this.deselectAllNodes(this.treeData);
 
@@ -150,6 +197,7 @@ export class HierarchicalLeftPanelDataService {
     const findAndSelectNode = (nodes: HierarchicalTreeNode[]): boolean => {
       for (const node of nodes) {
         if (node.id === nodeId) {
+          console.log('🎯 Found and selecting node:', node.displayName, 'with id:', node.id);
           node.selected = true;
           return true;
         }
@@ -160,8 +208,16 @@ export class HierarchicalLeftPanelDataService {
       return false;
     };
 
-    findAndSelectNode(this.treeData);
+    const found = findAndSelectNode(this.treeData);
+    console.log('🎯 Node selection result:', found ? 'SUCCESS' : 'FAILED');
+    
     this.notifyListeners();
+    
+    // Add a small delay to check if selection state persists
+    setTimeout(() => {
+      const selectedNode = this.findNodeById(nodeId);
+      console.log('🎯 Selection state after 100ms:', selectedNode ? selectedNode.selected : 'NODE NOT FOUND');
+    }, 100);
   }
 
   public async addNewCohort() {
