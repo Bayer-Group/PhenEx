@@ -1,7 +1,7 @@
 import { FC, useRef, useState } from 'react';
 import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
-import { LoginDataService } from './LoginDataService';
+import { LoginDataService } from '../../../services/supabaseAuthService';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
 interface NotLoggedInProps {
@@ -9,46 +9,65 @@ interface NotLoggedInProps {
 }
 
 export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
-  const customizableDropdownButtonRef = useRef(null);
+  const customizableDropdownButtonRef = useRef<any>(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
 
   const loginService = LoginDataService.getInstance();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+    
     try {
       setError('');
-      const success = await loginService.login(username, password);
+      const success = await loginService.login(email, password);
       if (success) {
-        customizableDropdownButtonRef.current?.closeDropdown();
         onLoginSuccess?.();
+        customizableDropdownButtonRef.current?.closeDropdown();
       } else {
         setError('Login failed. Please check your credentials.');
       }
-    } catch (err) {
-      setError('An error occurred during login.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login.');
+    }
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'github' | 'azure' = 'google') => {
+    try {
+      setError('');
+      await loginService.loginWithOAuth(provider);
+      // OAuth will redirect, so no need to handle success here
+    } catch (err: any) {
+      setError(err.message || 'OAuth login failed.');
     }
   };
 
   const handleRegister = async () => {
-    if (!email) {
-      setError('Email is required for registration');
+    if (!email || !password) {
+      setError('Email and password are required');
       return;
     }
     try {
       setError('');
-      const success = await loginService.register(username, password, email);
+      const success = await loginService.register(email, password, username);
       if (success) {
-        // Automatically login after successful registration
-        await handleLogin();
+        setError('Registration successful! Please check your email for confirmation.');
+        // Optionally switch back to login view
+        setTimeout(() => {
+          setIsRegistering(false);
+          setError('');
+        }, 3000);
       } else {
-        setError('Registration failed. Username or email might already be taken.');
+        setError('Registration failed. Please try again.');
       }
-    } catch (err) {
-      setError('An error occurred during registration.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during registration.');
     }
   };
 
@@ -63,10 +82,10 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
 
         <div className={styles.loginForm}>
           <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -90,10 +109,10 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
           />
           {isRegistering && (
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              type="text"
+              placeholder="Username (optional)"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -121,6 +140,9 @@ export const NotLoggedIn: FC<NotLoggedInProps> = ({ onLoginSuccess }) => {
                 </button>
                 <button onClick={() => setIsRegistering(true)} className={styles.loginButton}>
                   Create Account
+                </button>
+                <button onClick={() => handleOAuthLogin('google')} className={styles.loginButton}>
+                  Login with Google
                 </button>
               </>
             )}

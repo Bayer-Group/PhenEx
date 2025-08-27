@@ -2,13 +2,13 @@ import { FC, useRef } from 'react';
 import styles from './UserLogin.module.css';
 import { CustomizableDropdownButton } from '../../../components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { ItemList } from '../../../components/ItemList/ItemList';
-import { LoginDataService } from './LoginDataService';
+import { LoginDataService } from '../../../services/supabaseAuthService';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 
 interface LoggedInProps {}
 
 export const LoggedIn: FC<LoggedInProps> = ({}) => {
-  const customizableDropdownButtonRef = useRef(null);
+  const customizableDropdownButtonRef = useRef<any>(null);
 
   const items = [
     {
@@ -16,6 +16,8 @@ export const LoggedIn: FC<LoggedInProps> = ({}) => {
       info: 'Log out of your PhenEx account. You can only edit cohorts when logged in.',
     },
   ];
+
+  const loginService = LoginDataService.getInstance();
 
   const renderUserPanel = () => {
     return (
@@ -32,10 +34,8 @@ export const LoggedIn: FC<LoggedInProps> = ({}) => {
     );
   };
 
-  const loginService = LoginDataService.getInstance();
-
   const clickedOnHeader = () => {
-    console.log('CLICKED ON HEDAER', customizableDropdownButtonRef);
+    console.log('CLICKED ON HEADER', customizableDropdownButtonRef);
     customizableDropdownButtonRef.current?.closeDropdown();
   };
 
@@ -43,8 +43,8 @@ export const LoggedIn: FC<LoggedInProps> = ({}) => {
     if (itemName === 'Log Out') {
       const loginService = LoginDataService.getInstance();
       await loginService.logout();
-      // Force a reload to reset the app state
-      window.location.reload();
+      // The auth state change will automatically update the UI
+      // No need to force reload with Supabase
     }
   };
 

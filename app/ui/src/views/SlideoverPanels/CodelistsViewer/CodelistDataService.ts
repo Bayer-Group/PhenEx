@@ -179,41 +179,6 @@ export class CodelistDataService {
     return result;
   }
 
-  private parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let inQuotes = false;
-    let currentValue = '';
-    let i = 0;
-
-    while (i < line.length) {
-      const char = line[i];
-
-      if (char === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          // Handle escaped quotes
-          currentValue += '"';
-          i += 2;
-        } else {
-          // Toggle quote mode
-          inQuotes = !inQuotes;
-          i++;
-        }
-      } else if (char === ',' && !inQuotes) {
-        // End of field
-        result.push(currentValue.trim());
-        currentValue = '';
-        i++;
-      } else {
-        currentValue += char;
-        i++;
-      }
-    }
-
-    // Push the last field
-    result.push(currentValue.trim());
-    return result;
-  }
-
   public setUsedCodelists(codelists: UsedCodelist[]): void {
     this.usedCodelists = codelists;
   }
