@@ -39,7 +39,7 @@
     transform 0.2s ease-in-out;
   position: relative;
   color: var(--xbutton_color_orange_background);
-  padding: 4px 20px 10px 4px;
+  padding: 10px 20px 10px 4px;
   /* line-height:var(--popover_font_size); */
 }
 
@@ -169,17 +169,18 @@
 .infoContainer {
   position: relative;
   min-height: 40px; /* Reserve space for the info button */
-  padding-top: 5px; /* Add some top padding to prevent content overlap */
+  padding-top: 0px; /* Add some top padding to prevent content overlap */
 }
 
 .infoButton {
   position: absolute !important;
-  right: 10px;
+  right: 5px;
   top: 5px;
   z-index: 10;
   min-width: 30px; /* Ensure button has consistent size */
-  height: 30px;
+  height: 24px;
   font-family: "IBMPlexSans-regular";
+  background-color: var(--background-color);
 }
 
 .infoButton.open {
@@ -226,4 +227,25 @@
   padding: 0; /* Remove all padding when closed */
   border: none;
   min-height: 0; /* Ensure it can collapse completely */
+}
+
+
+.infoContainer{
+  padding:0px;
+  padding-left:10px;
+  padding-bottom:5px;
+  border-bottom: 1px solid var(--line-color);
+  line-height: 20px;
+}
+
+.currentSelectionHeader{
+  font-size:12px;
+  line-height:0px;
+  padding:0px;
+  margin-top:-10px;
+  font-family:"IBMPlexSans-regular";
+}
+.currentSelectionValue{
+  font-family:"IBMPlexSans-bolditalic";
+  font-size:20px;
 }

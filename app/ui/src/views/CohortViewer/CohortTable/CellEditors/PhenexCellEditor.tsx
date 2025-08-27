@@ -254,6 +254,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
     return (
       <div className={styles.infoContainer}>
+          <span className={styles.currentSelectionHeader}>Current selection:</span><br></br> <span className={styles.currentSelectionValue}>{props.data[parameterKey]}</span>
         <Button
           title="Help"
           onClick={toggleInfobox}
