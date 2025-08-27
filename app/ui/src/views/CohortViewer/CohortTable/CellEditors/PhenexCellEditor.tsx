@@ -4,6 +4,7 @@ import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
+import parametersInfo from '../../../../assets/parameters_info.json';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -182,6 +183,37 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const colorBorder = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-border`;
 
 
+  const renderInfoText = () => {
+    /*
+    Render additional information for the selected parameter.
+    */
+    const parameterKey = props.column?.getColDef().field || props.data?.parameter;
+    const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
+    
+    if (!parameterInfo) {
+      return (
+        <div className={styles.infoBox}>
+          <span className={styles.infoText}>No additional information available for this parameter.</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.infoBox}>
+        <div className={styles.infoText}>
+        
+          
+          {parameterInfo.description && parameterInfo.description !== "NaN" && (
+            <div style={{ marginTop: '8px' }}>
+              <div style={{ marginTop: '4px', fontSize: '14px', lineHeight: '1.4' }}>
+                {parameterInfo.description}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
   return (
     <DraggablePortal
       initialPosition={{
@@ -271,6 +303,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             </span>
           </div>
         </PopoverHeader>
+        {renderInfoText()}
         <div className={`${styles.content}`}>
           {React.Children.map(props.children, (child, index) =>
             React.isValidElement(child)

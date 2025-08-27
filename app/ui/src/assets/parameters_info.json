@@ -1,0 +1,215 @@
+{
+  "domain": {
+    "phenotypes": [
+      "Age",
+      "Categorical",
+      "Codelist",
+      "Death",
+      "Measurement",
+      "TimeRange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "return_date": {
+    "phenotypes": [
+      "Categorical",
+      "Codelist",
+      "EventCount",
+      "MeasurementChange",
+      "Measurement",
+      "Score",
+      "Arithmetic",
+      "Logic"
+    ],
+    "description": "Specifies which event (that fulfills all phenotype criteri) to return for each patient. Options are :\n- first : the first event.\n- last : the last event.\n- all : return all event dates. Returns multiple rows per patient.\n",
+    "examples": "- to return the nearest event to index in the pre-index period (i.e. setting relative time range), set return_date to last"
+  },
+  "direction": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "component_date_select": {
+    "phenotypes": [
+      "MeasurementChange",
+      "EventCount"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "column_name": {
+    "phenotypes": [
+      "WithinSameEncounter"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "phenotype": {
+    "phenotypes": [
+      "Bin",
+      "EventCount",
+      "MeasurementChange",
+      "WithinSameEncounter"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "anchor_phenotype": {
+    "phenotypes": [
+      "Age",
+      "WithinSameEncounter"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "further_value_filter_phenotype": {
+    "phenotypes": [
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "relative_time_range": {
+    "phenotypes": [
+      "Categorical",
+      "Codelist",
+      "Death",
+      "EventCount",
+      "Measurement",
+      "TimeRange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "value_filter": {
+    "phenotypes": [
+      "Age",
+      "EventCount",
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "categorical_filter": {
+    "phenotypes": [
+      "Categorical",
+      "Codelist",
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "date_range": {
+    "phenotypes": [
+      "Categorical",
+      "Codelist",
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "codelist": {
+    "phenotypes": [
+      "Codelist",
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "clean_nonphysiologicals_value_filter": {
+    "phenotypes": [
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "expression": {
+    "phenotypes": [
+      "Score",
+      "Arithmetic",
+      "Logic"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "bins": {
+    "phenotypes": [
+      "Bin"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "function": {
+    "phenotypes": [
+      "UserDefined"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "min_change": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "max_change": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "min_days_between": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "max_days_between": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "return_value": {
+    "phenotypes": [
+      "MeasurementChange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "value_aggregation": {
+    "phenotypes": [
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "clean_null_values": {
+    "phenotypes": [
+      "Measurement"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "allow_null_end_date": {
+    "phenotypes": [
+      "TimeRange"
+    ],
+    "description": null,
+    "examples": null
+  },
+  "class_name": {
+    "phenotypes": [
+      "all"
+    ],
+    "description": "PhenEx phenotypes are off the shelf implementations of common patterns in observational studies. Each Phenotype allows you to do different things; there is a slight learning curve to understanding which phenotype to use when. Read the description of each phenotype to decide which one suits your needs for this phenotype.",
+    "examples": null
+  }
+}
