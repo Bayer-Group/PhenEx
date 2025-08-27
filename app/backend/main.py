@@ -1,19 +1,13 @@
 from typing import Dict, Optional, Union
-from fastapi import FastAPI, Body, HTTPException, Depends
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import ast
-import phenex
-import bcrypt
-import jwt
-from datetime import datetime, timedelta
-from pydantic import BaseModel
+from fastapi import FastAPI, Body, HTTPException
+from fastapi.responses import StreamingResponse
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
 from examples import EXAMPLES
 from dotenv import load_dotenv
 from utils import CohortUtils
-import os, json, glob
+from database import DatabaseManager
+import os, json
 import logging
 from deepdiff import DeepDiff
 from rag import router as rag_router, query_faiss_index  # Import the router from rag.py
@@ -24,14 +18,12 @@ from openai import AzureOpenAI, OpenAI
 
 # Required imports for authentication
 import os
-import sys
-import traceback
-import threading
-import asyncio
-from datetime import datetime, timedelta
 
 # Constants and configuration
 COHORTS_DIR = "/data/cohorts"
+
+# Initialize database manager
+db_manager = DatabaseManager()
 
 openai_client = AzureOpenAI()
 if "AZURE_OPENAI_ENDPOINT" in os.environ:
@@ -75,64 +67,45 @@ def get_cohort_path(cohort_id, provisional=False):
 
 
 # Add this helper function
-def get_user_cohort_path(username: str, cohort_id: str, provisional: bool = False):
+def get_user_cohort_path(user_id: str, cohort_id: str, provisional: bool = False):
     """Get the path to a user's cohort file"""
-    user_cohorts_dir = os.path.join(COHORTS_DIR, username)
+    user_cohorts_dir = os.path.join(COHORTS_DIR, user_id)
     # Ensure user directory exists
     os.makedirs(user_cohorts_dir, exist_ok=True)
     if provisional:
         return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.provisional.json")
     return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.json")
 
-# Modify the get_all_cohorts endpoint to accept username
+# Modify the get_all_cohorts endpoint to accept user_id
 @app.get("/cohorts")
-async def get_all_cohorts_for_user(username: str):
+async def get_all_cohorts_for_user(user_id: str):
     """
     Retrieve a list of all available cohorts for a specific user.
 
     Args:
-        username (str): The username whose cohorts to retrieve.
+        user_id (str): The user ID (UUID) whose cohorts to retrieve.
 
     Returns:
         dict: A list of cohort IDs and names for that user.
     """
-    print("GETTING COHORTS FOR USER", username)
     try:
-        user_cohorts_dir = os.path.join(COHORTS_DIR, username)
-        # Create directory if it doesn't exist
-        os.makedirs(user_cohorts_dir, exist_ok=True)
-        
-        # Get only files from user's directory
-        cohort_files = [
-            f for f in os.listdir(user_cohorts_dir)
-            if f.endswith(".json") and not f.endswith(".provisional.json")
-        ]
-        
-        cohorts = []
-        for cohort_file in cohort_files:
-            with open(os.path.join(user_cohorts_dir, cohort_file), "r") as f:
-                cohort = json.load(f)
-                if "id" in cohort.keys():
-                    cohort_id, cohort_name = cohort["id"], cohort["name"]
-                    cohorts.append({"id": cohort_id, "name": cohort_name})
-                else:
-                    logger.info(f"No ID found in cohort {cohort["name"]}, {cohort}")
+        cohorts = await db_manager.get_all_cohorts_for_user(user_id)
         return cohorts
     except Exception as e:
-        logger.error(f"Failed to retrieve cohorts for user {username}: {e}")
+        logger.error(f"Failed to retrieve cohorts for user {user_id}: {e}")
         raise HTTPException(
             status_code=500, 
-            detail=f"Failed to retrieve cohorts for user {username}."
+            detail=f"Failed to retrieve cohorts for user {user_id}."
         )
 
-# Modify the get_cohort endpoint to require username
+# Modify the get_cohort endpoint to require user_id
 @app.get("/cohort")
-async def get_cohort_for_user(username: str, cohort_id: str, provisional: bool = False):
+async def get_cohort_for_user(user_id: str, cohort_id: str, provisional: bool = False):
     """
     Retrieve a cohort by its ID for a specific user.
 
     Args:
-        username (str): The username whose cohort to retrieve.
+        user_id (str): The user ID (UUID) whose cohort to retrieve.
         cohort_id (str): The ID of the cohort to retrieve.
         provisional (bool): Whether to retrieve the provisional version of the cohort.
 
@@ -140,27 +113,26 @@ async def get_cohort_for_user(username: str, cohort_id: str, provisional: bool =
         dict: The cohort data.
     """
     try:
-        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
-        if not os.path.exists(cohort_path):
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id, provisional)
+        if not cohort:
             raise HTTPException(
                 status_code=404,
-                detail=f"Cohort not found for user {username}"
+                detail=f"Cohort not found for user {user_id}"
             )
-        with open(cohort_path, "r") as f:
-            return json.load(f)
+        return cohort
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving cohort for user {username}: {e}")
+        logger.error(f"Error retrieving cohort for user {user_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to retrieve cohort for user {username}"
+            detail=f"Failed to retrieve cohort for user {user_id}"
         )
 
-# Modify the update_cohort endpoint to require username
+# Modify the update_cohort endpoint to require user_id
 @app.post("/cohort")
 async def update_cohort_for_user(
-    username: str,
+    user_id: str,
     cohort_id: str,
     cohort: Dict = Body(...),
     provisional: bool = False
@@ -169,7 +141,7 @@ async def update_cohort_for_user(
     Update or create a cohort for a specific user.
 
     Args:
-        username (str): The username whose cohort to update.
+        user_id (str): The user ID (UUID) whose cohort to update.
         cohort_id (str): The ID of the cohort to update.
         cohort (Dict): The complete JSON specification of the cohort.
         provisional (bool): Whether to save the cohort as provisional.
@@ -178,70 +150,63 @@ async def update_cohort_for_user(
         dict: Status and message of the operation.
     """
     try:
-        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
-        with open(cohort_path, "w") as f:
-            json.dump(cohort, f, indent=4)
+        await db_manager.update_cohort_for_user(user_id, cohort_id, cohort, provisional)
         return {
             "status": "success",
-            "message": f"Cohort updated successfully for user {username}."
+            "message": f"Cohort updated successfully for user {user_id}."
         }
     except Exception as e:
-        logger.error(f"Failed to update cohort for user {username}: {e}")
+        logger.error(f"Failed to update cohort for user {user_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to update cohort for user {username}"
+            detail=f"Failed to update cohort for user {user_id}"
         )
 
 @app.delete("/cohort")
-async def delete_cohort_for_user(username: str, cohort_id: str):
+async def delete_cohort_for_user(user_id: str, cohort_id: str):
     """
     Delete a cohort by its ID.
 
     Args:
-        cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
+        user_id (str): The user ID (UUID) whose cohort to delete.
+        cohort_id (str): The ID of the cohort to delete.
 
     Returns:
-        dict: The cohort data.
+        dict: Status and message of the operation.
     """
-    cohort_path = get_user_cohort_path(username, cohort_id)
-    print(cohort_path)
-    if os.path.exists(cohort_path):
-        print("PATH EXISTS")
-        os.remove(cohort_path)
-    else:
-        logger.error(f"Failed to retrieve cohort {cohort_id}")
+    try:
+        success = await db_manager.delete_cohort_for_user(user_id, cohort_id)
+        if not success:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Failed to find cohort {cohort_id} for user {user_id}."
+            )
+        
+        return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete cohort {cohort_id} for user {user_id}: {e}")
         raise HTTPException(
-            status_code=404, detail=f"Failed to find cohort {cohort_id}."
+            status_code=500,
+            detail=f"Failed to delete cohort {cohort_id} for user {user_id}"
         )
-
-    return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
 
 
 @app.get("/publiccohorts")
 async def get_public_cohorts():
     """
-    Retrieve a list of all available cohorts.
+    Retrieve a list of all public cohorts (latest versions only).
 
     Returns:
-        dict: A list of cohort IDs.
+        dict: A list of public cohort IDs and names.
     """
     try:
-        cohort_files = [
-            f
-            for f in os.listdir(COHORTS_DIR)
-            if f.endswith(".json") and not f.endswith(".provisional.json")
-        ]
-        cohorts = []
-        for cohort_file in cohort_files:
-            with open(os.path.join(COHORTS_DIR, cohort_file), "r") as f:
-                cohort = json.load(f)
-                cohort_id, cohort_name = cohort["id"], cohort["name"]
-                cohorts.append({"id": cohort_id, "name": cohort_name})
+        cohorts = await db_manager.get_public_cohorts()
         return cohorts
     except Exception as e:
-        logger.error(f"Failed to retrieve cohorts: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve cohorts.")
+        logger.error(f"Failed to retrieve public cohorts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve public cohorts.")
 
 
 @app.get("/publiccohort")
@@ -264,38 +229,69 @@ async def get_public_cohort(cohort_id: str, provisional: bool = False):
 
 
 @app.get("/cohort/accept_changes")
-async def accept_changes(cohort_id: str):
+async def accept_changes(user_id: str, cohort_id: str):
     """
-    Accept changes made to a provisional cohort.
+    Accept changes made to a provisional cohort by setting is_provisional to False.
 
     Args:
+        user_id (str): The user ID (UUID).
         cohort_id (str): The ID of the cohort to finalize.
 
     Returns:
-        dict: Status and message of the operation.
+        dict: The finalized cohort data.
     """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    final_path = get_cohort_path(cohort_id, provisional=False)
-    if os.path.exists(provisional_path):
-        os.replace(provisional_path, final_path)
-        return await get_cohort(cohort_id, provisional=False)
+    try:
+        success = await db_manager.accept_changes(user_id, cohort_id)
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No provisional changes found for cohort {cohort_id}"
+            )
+        
+        # Return the updated cohort
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to accept changes for cohort {cohort_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to accept changes for cohort {cohort_id}"
+        )
 
 
 @app.get("/cohort/reject_changes")
-async def reject_changes(cohort_id: str):
+async def reject_changes(user_id: str, cohort_id: str):
     """
-    Reject changes made to a provisional cohort.
+    Reject changes made to a provisional cohort by deleting provisional versions.
 
     Args:
+        user_id (str): The user ID (UUID).
         cohort_id (str): The ID of the cohort to discard provisional changes.
 
     Returns:
-        dict: Status and message of the operation.
+        dict: The non-provisional cohort data.
     """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    if os.path.exists(provisional_path):
-        os.remove(provisional_path)
-        return await get_cohort(cohort_id, provisional=False)
+    try:
+        await db_manager.reject_changes(user_id, cohort_id)
+        
+        # Return the non-provisional cohort
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+        if not cohort:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found after rejecting changes"
+            )
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to reject changes for cohort {cohort_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to reject changes for cohort {cohort_id}"
+        )
 
 
 @app.get("/cohort/get_changes")
@@ -331,177 +327,8 @@ async def get_changes(cohort_id: str):
     return diff
 
 
-@app.post("/text_to_cohort")
-async def text_to_cohort(
-    cohort_id: Optional[str] = None,
-    model: Optional[str] = "gpt-4o-mini",
-    current_cohort: Dict = Body(None),
-    user_request: str = Body(
-        "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    ),
-    return_updated_cohort: bool = False,
-):
-    """
-    Generate or modify a cohort based on user instructions.
-
-    Args:
-        cohort_id (str): The ID of the cohort to modify. Optional, in case you want to read the cohort from the backend database.
-        model (str): The model to use for processing the request.
-
-    Body:
-        current_cohort (Dict): The current cohort definition. In case frontend is managing cohort state.
-        user_request (str): Instructions for modifying the cohort.
-
-    Returns:
-        StreamingResponse: A stream of the response text.
-    """
-    if cohort_id is not None:
-        current_cohort = await get_cohort(cohort_id)
-    else:
-        cohort_id = current_cohort["id"]
-        await update_cohort(cohort_id, current_cohort)
-
-    try:
-        del current_cohort["entry_criterion"]
-        del current_cohort["inclusions"]
-        del current_cohort["exclusions"]
-        del current_cohort["characteristics"]
-        del current_cohort["outcomes"]
-    except KeyError:
-        pass
-
-    # Perform RAG search to get the context
-    logger.info(f"Retrieving context for user request: {user_request}")
-    query = user_request
-    top_k = 10
-    try:
-        results = query_faiss_index(query=query, top_k=top_k)
-        context = "\n\n".join(results)
-    except Exception as e:
-        logger.error(f"Error during RAG search: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve context for the request."
-        )
-
-    logger.info(f"Context retrieved: {len(context.split())} words")
-
-    system_prompt = f"""
-    Consider the following library code: 
-        {context}
-
-    Your task is to create or modify a cohort according to the user instructions given below. 
-    
-    In performing your task, you may use any tools at your disposal to complete the task as well as possible.
-     
-    Include in your response three types of output: 
-        1) output intended for display to user, 
-        2) thinking output used only by you, and 
-        3) a final answer in valid JSON format
-     
-    1) Text displayed to the user must consist of VERY BRIEF, concise plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
-
-    2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside markdown comments labelled "THINKING", as below:
-    
-<!-- THINKING: (your thoughts here) -->
-
-    THINKING will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <!-- THINKING: (your thoughts here) --> to plan that out. Or you may use <!-- THINKING: (your thoughts here) --> to explain what parameters you are going to fill in to the output JSON.
-
-    3) At the end of your response, create a JSON with the phenotypes of the cohort that need to be updated. Write this json inside the tags <JSON> </JSON>. You only need to include the phenotypes that need updating. Phenotypes that are unchanged may be omitted. Thus, your response will conclude with the following structure:
-
-    <JSON>
-        {{
-            "id": "{current_cohort['id']}",
-            "name": "{current_cohort['name']}",
-            "class_name": "{current_cohort['class_name']}",
-            "phenotypes": [
-                COMPLETE SPECIFICATION OF PHENOTYPES TO BE UPDATED
-            ]
-        }}
-    </JSON>
-
-    You may switch back and forth between (1) and (2) freely but (3) occurs only once and at the end of your response. Do not number or label these sections except as instructed. Do not refer to the JSON you are outputting, as the JSON will be stripped from the text before being displayed to the user. The user sees only the output of (1).
-
-    Additional guidelines:
-
-    - When adding a new phenotype to the cohort, ALWAYS give the phenotype a good description.
-    - When modifying an existing phenotype in the cohort, UPDATE the phenotype description only if necessary.
-    - Do NOT modify the description of existing phenotypes if you are not changing any thing else in the phenotype UNLESS explicitly asked to do so by the user.
-    - Only include the phenotypes that need updating in your response
-    - The text within the <JSON> </JSON> tags must be valid JSON; therefore comments are not allowed in this text. Any comments you wish to make to the user must be made with (1) type output
-    - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
-    - Make sure to choose the appropriate domain for each phenotype for the given data source
-    - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
-    """
-
-    user_prompt = f"""     
-    Consider the currently defined cohort (which is possibly empty):
-
-    <JSON>
-        {{
-            "id": "{current_cohort['id']}",
-            "name": "{current_cohort['name']}",
-            "class_name": "{current_cohort['class_name']}",
-            "phenotypes": {json.dumps(current_cohort["phenotypes"], indent=4)}
-        }}
-    </JSON>
-
-    Modify the current Cohort according to the following instructions:
-
-    {user_request}
-    """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
-
-    completion = openai_client.chat.completions.create(
-        model=model, stream=True, messages=messages
-    )
-
-    async def stream_response():
-        inside_json = False
-        trailing_buffer = ""  # To handle split tags
-        json_buffer = ""
-        for chunk in completion:
-            if len(chunk.choices):
-                current_response = chunk.choices[0].delta.content
-                if current_response is not None:
-                    # Prepend trailing buffer to handle split tags
-                    if not inside_json:
-                        current_response = trailing_buffer + current_response
-                        trailing_buffer = current_response[
-                            -10:
-                        ]  # Keep last 10 characters for next iteration
-
-                    if "<JSON>" in current_response:
-                        inside_json = True
-                        json_buffer = current_response.split("<JSON>", 1)[1]
-                        final_chunk = current_response.split("<JSON>", 1)[0]
-                        yield final_chunk
-                    elif inside_json:
-                        json_buffer += current_response
-                    elif not inside_json:
-                        yield current_response[
-                            :-10
-                        ]  # Yield response excluding trailing buffer
-
-        parsed_json = json_buffer.replace("</JSON>", "")
-        logger.info(f"Parsed JSON: {parsed_json}")
-        new_phenotypes = json.loads(json_buffer.replace("</JSON>", ""))
-        logger.info(
-            f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
-        )
-
-        c = CohortUtils()
-        new_cohort = c.convert_phenotypes_to_structure(
-            c.update_cohort(current_cohort, new_phenotypes)
-        )
-        await update_cohort(cohort_id, new_cohort, provisional=True)
-        if return_updated_cohort:
-            yield json.dumps(new_cohort, indent=4)
-        logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
-
-    return StreamingResponse(stream_response(), media_type="text/plain")
+# TODO: text_to_cohort function temporarily disabled for database migration
+# This function needs to be updated to work with username-based database storage
 
 
 @app.post("/execute_study")
@@ -1033,9 +860,7 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict]):
     return phenotypes
 
 
-def prepare_codelists_for_phenotype(
-    phenotype: Union["CodelistPhenotype", "MeasurementPhenotype"]
-):
+def prepare_codelists_for_phenotype(phenotype: dict):
     """
     Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
 
@@ -1058,7 +883,7 @@ def prepare_codelists_for_phenotype(
     return phenotype
 
 
-def prepare_time_range_phenotype(phenotype: "TimeRangePhenotype"):
+def prepare_time_range_phenotype(phenotype: dict):
     if (
         "relative_time_range" in phenotype.keys()
         and phenotype["relative_time_range"] != None
