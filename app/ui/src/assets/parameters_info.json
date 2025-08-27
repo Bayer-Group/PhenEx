@@ -8,8 +8,9 @@
       "Measurement",
       "TimeRange"
     ],
-    "description": null,
-    "examples": null
+    "description": "Specifies which **database table** to query for this phenotype. Available domains correspond to different data types:\n- **PERSON**: Demographics and patient identifiers\n- **VISIT_OCCURRENCE**: Hospital visits, admissions, outpatient encounters\n- **CONDITION_OCCURRENCE**: Diagnoses and medical conditions\n- **PROCEDURE_OCCURRENCE**: Medical procedures and interventions\n- **DRUG_EXPOSURE**: Medication prescriptions and exposures\n- **MEASUREMENT**: Laboratory values, vital signs, measurements\n- **OBSERVATION**: Other clinical observations and notes\n- **DEATH**: Mortality information",
+    "examples": null,
+    "showSelection": "selection"
   },
   "return_date": {
     "phenotypes": [
@@ -23,29 +24,33 @@
       "Logic"
     ],
     "description": "Specifies which event (that fulfills all phenotype criteri) to return for each patient. Options are :\n- first : the first event.\n- last : the last event.\n- all : return all event dates. Returns multiple rows per patient.\n",
-    "examples": "- to return the nearest event to index in the pre-index period (i.e. setting relative time range), set return_date to last"
+    "examples": "- to return the nearest event to index in the pre-index period (i.e. setting relative time range), set return_date to last",
+    "showSelection": "selection"
   },
   "direction": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "Defines whether to look for an **increase** or **decrease** in measurement values:\n- **increase**: Look for values that go up (positive change)\n- **decrease**: Look for values that go down (negative change)\n\nFor example, with `min_change = GreaterThan(2)` and `direction = 'decrease'`, this looks for a decrease of at least 2 units.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "component_date_select": {
     "phenotypes": [
       "MeasurementChange",
       "EventCount"
     ],
-    "description": null,
-    "examples": null
+    "description": "Selects which component event date to use as the phenotype's EVENT_DATE:\n- **first**: Use the date of the first measurement in the comparison\n- **second**: Use the date of the second measurement in the comparison\n\nFor MeasurementChange, this determines whether the returned date represents when the baseline measurement was taken or when the changed measurement was observed.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "column_name": {
     "phenotypes": [
       "WithinSameEncounter"
     ],
-    "description": null,
-    "examples": null
+    "description": "Specifies the **database column name** to use for matching records within the same encounter. This column is used to group events that should be considered as occurring within the same clinical encounter or visit.",
+    "examples": null,
+    "showSelection": null
   },
   "phenotype": {
     "phenotypes": [
@@ -54,23 +59,26 @@
       "MeasurementChange",
       "WithinSameEncounter"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **child phenotype** that serves as input to this phenotype. This creates a hierarchical relationship where the current phenotype operates on the results of another phenotype, allowing for complex multi-step phenotype definitions.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "anchor_phenotype": {
     "phenotypes": [
       "Age",
       "WithinSameEncounter"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **reference phenotype** used as an anchor point for calculations. For Age phenotypes, this determines the reference date for age calculation. For WithinSameEncounter, this defines the primary phenotype around which other events are grouped.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "further_value_filter_phenotype": {
     "phenotypes": [
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "An **additional phenotype** used to apply secondary filtering on measurement values. This allows for complex filtering logic where measurements must meet criteria from both the primary value filter and this additional phenotype filter.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "relative_time_range": {
     "phenotypes": [
@@ -81,8 +89,9 @@
       "Measurement",
       "TimeRange"
     ],
-    "description": null,
-    "examples": null
+    "description": "Defines the **time window** relative to the index date (usually patient's index event) where this phenotype should be evaluated. Common patterns include:\n- **Pre-index periods**: Look for historical events (e.g., 365 days before index)\n- **Post-index periods**: Look for follow-up events (e.g., 30 days after index)\n- **Around-index periods**: Look for events near the index date",
+    "examples": null,
+    "showSelection": "count"
   },
   "value_filter": {
     "phenotypes": [
@@ -90,8 +99,9 @@
       "EventCount",
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "Applies **numerical filtering** to values (age, counts, or measurements). Uses comparison operators to filter records:\n- **GreaterThan(X)**: Value > X\n- **LessThanOrEqualTo(X)**: Value ≤ X\n- **Between(X, Y)**: X ≤ Value ≤ Y\n\nFor Age: filters by patient age. For EventCount: filters by count of events. For Measurement: filters by measurement values.",
+    "examples": null,
+    "showSelection": "count"
   },
   "categorical_filter": {
     "phenotypes": [
@@ -99,8 +109,9 @@
       "Codelist",
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "Filters records based on **categorical/text values** in database columns. This allows filtering by specific values like gender, race, medication names, or other categorical data. Supports exact matches and list-based filtering.",
+    "examples": null,
+    "showSelection": "count"
   },
   "date_range": {
     "phenotypes": [
@@ -108,23 +119,26 @@
       "Codelist",
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "Specifies an **absolute date range** (start and end dates) to filter events, independent of the patient's index date. Unlike relative_time_range, this uses fixed calendar dates to constrain when events can occur.",
+    "examples": null,
+    "showSelection": "count"
   },
   "codelist": {
     "phenotypes": [
       "Codelist",
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **list of medical codes** (ICD-10, CPT, SNOMED, etc.) used to identify specific conditions, procedures, or measurements. The phenotype will match any records with codes from this list. Essential for defining clinical concepts in standardized healthcare data.",
+    "examples": null,
+    "showSelection": "count"
   },
   "clean_nonphysiologicals_value_filter": {
     "phenotypes": [
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "Automatically **removes biologically implausible values** from measurement data. This applies predefined ranges for common lab values and vital signs to filter out data entry errors, extreme outliers, or impossible values (e.g., negative heights, impossible blood pressures).",
+    "examples": null,
+    "showSelection": "count"
   },
   "expression": {
     "phenotypes": [
@@ -132,84 +146,96 @@
       "Arithmetic",
       "Logic"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **mathematical or logical expression** that combines multiple phenotypes using operators:\n- **Arithmetic**: Mathematical operations (+, -, *, /) on phenotype values\n- **Logic**: Boolean operations (AND, OR, NOT) on phenotype results\n- **Score**: Complex scoring algorithms combining multiple phenotypes\n\nExpressions allow creating composite phenotypes from simpler building blocks.",
+    "examples": null,
+    "showSelection": "none"
   },
   "bins": {
     "phenotypes": [
       "Bin"
     ],
-    "description": null,
-    "examples": null
+    "description": "Defines **value ranges** for categorizing continuous data into discrete bins. Each bin specifies a range (e.g., 0-10, 10-20, 20+) and patients are assigned to bins based on their phenotype values. Useful for creating categorical variables from continuous measurements.",
+    "examples": null,
+    "showSelection": "none"
   },
   "function": {
     "phenotypes": [
       "UserDefined"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **custom Python function** that implements user-defined logic for phenotype calculation. This allows complete flexibility to implement complex algorithms that aren't covered by standard phenotype types. The function receives tables as input and returns a phenotype result.",
+    "examples": null,
+    "showSelection": "none"
   },
   "min_change": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "The **minimum magnitude of change** required between two measurements. For 'increase' direction, this is the minimum increase. For 'decrease' direction, this becomes the minimum decrease. Uses Value objects with comparison operators (e.g., GreaterThan(2) for at least 2 units change).",
+    "examples": null,
+    "showSelection": "none"
   },
   "max_change": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "The **maximum magnitude of change** allowed between two measurements. For 'increase' direction, this caps the maximum increase. For 'decrease' direction, this caps the maximum decrease. Useful for excluding extreme outliers or unrealistic changes.",
+    "examples": null,
+    "showSelection": "none"
   },
   "min_days_between": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "The **minimum number of days** required between the two measurements being compared. Ensures sufficient time separation to detect meaningful changes rather than random variation. Defaults to 0 days (same day changes allowed).",
+    "examples": null,
+    "showSelection": "none"
   },
   "max_days_between": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "The **maximum number of days** allowed between the two measurements being compared. Prevents comparing measurements that are too far apart in time, ensuring changes reflect acute rather than chronic variations. No default limit if not specified.",
+    "examples": null,
+    "showSelection": "none"
   },
   "return_value": {
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": null,
-    "examples": null
+    "description": "A **ValueAggregator** operation that determines which value to return when multiple measurement changes are found for the same patient. Options include First(), Last(), Min(), Max(), Mean(), etc. This helps resolve multiple qualifying changes into a single result per patient.",
+    "examples": null,
+    "showSelection": "selection"
   },
   "value_aggregation": {
     "phenotypes": [
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "Specifies how to **aggregate multiple measurement values** for the same patient when multiple values are found. Options include:\n- **First()**: Use the earliest measurement\n- **Last()**: Use the most recent measurement\n- **Mean()**: Calculate average of all values\n- **Max()/Min()**: Use highest/lowest value\n- **DailyMedian()**: Take median of values per day",
+    "examples": null,
+    "showSelection": "selection"
   },
   "clean_null_values": {
     "phenotypes": [
       "Measurement"
     ],
-    "description": null,
-    "examples": null
+    "description": "When enabled, **removes records with null/missing values** from the measurement data before processing. This ensures calculations only include patients with actual recorded values, preventing null values from affecting aggregations or comparisons.",
+    "examples": null,
+    "showSelection": "none"
   },
   "allow_null_end_date": {
     "phenotypes": [
       "TimeRange"
     ],
-    "description": null,
-    "examples": null
+    "description": "When enabled, allows **time ranges with missing end dates** to be included in the analysis. This is useful for ongoing events or when the end date is unknown. Without this flag, records with null end dates are excluded from time range calculations.",
+    "examples": null,
+    "showSelection": "none"
   },
   "class_name": {
     "phenotypes": [
       "all"
     ],
     "description": "PhenEx phenotypes are off the shelf implementations of common patterns in observational studies. Each Phenotype allows you to do different things; there is a slight learning curve to understanding which phenotype to use when. Read the description of each phenotype to decide which one suits your needs for this phenotype.",
-    "examples": null
+    "examples": null,
+    "showSelection": "selection"
   }
 }

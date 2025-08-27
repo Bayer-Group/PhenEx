@@ -227,45 +227,118 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const colorBorder = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-border`;
 
 
-  const renderInfoText = () => {
-    /*
-    Render additional information for the selected parameter.
-    */
-    const parameterKey = props.column?.getColDef().field || props.data?.parameter;
-    const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
-    
-    const renderInfoContent = () => {
-      if (!parameterInfo) {
-        return "No additional information available for this parameter.";
-      }
+  const renderPopoverHeader = () => {
+    return (
+      <PopoverHeader
+        onClick={handleDone}
+        title={'Close or Drag'}
+        className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}
+      >
+        <div
+          className={styles.popoverHeader}
+          data-drag-handle="true"
+          onMouseDown={() => {
+            // Don't stop propagation here - let it bubble up to DraggablePortal
+          }}
+        >
+          <span className={styles.topLine}>
+            <span className={styles.filler}>editing</span>
+            <span className={styles.actionText}>{titleText}</span>
+          </span>
+          <br></br>
 
-      return (
-        <div>
-          {parameterInfo.description && parameterInfo.description !== "NaN" && (
-            <div style={{ marginTop: '8px' }}>
-              <div style={{ marginTop: '4px', fontSize: '14px', lineHeight: '1.4' }}>
-                {parameterInfo.description}
-              </div>
-            </div>
-          )}
+          <span className={styles.bottomLine}>
+            <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+            <span className={`${styles.phenotypeName} ${styles.actionText}`}>
+              {props.data.name}
+            </span>
+          </span>
         </div>
-      );
-    };
+      </PopoverHeader>
+    );
+  };
+
+  const renderInfoHeader = () => {
+    /*
+    Render the info container with current selection and info button.
+    This should maintain consistent height regardless of info state.
+    */
+    let parameterKey = props.column?.getColDef().field || props.data?.parameter;
+    if (parameterKey == 'value'){
+      parameterKey = props.data?.parameter;
+    }
+    const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
+
+    const renderCurrentSelection = () => {
+      if (parameterInfo && parameterInfo.showSelection == 'selection') {
+        return (
+          <>
+            <span className={styles.currentSelectionHeader}>Current selection:</span><br></br> 
+            <span className={`${styles.currentSelectionValue} ${typeStyles[`${props.data.type || ''}_text_color`] || ''}`}>{props.data[parameterKey]}</span>
+          </>
+        );
+      }
+      // Return placeholder to maintain consistent height
+      return <div className={styles.selectionPlaceholder}>&nbsp;</div>;
+    }
 
     return (
       <div className={styles.infoContainer}>
-          <span className={styles.currentSelectionHeader}>Current selection:</span><br></br> <span className={styles.currentSelectionValue}>{props.data[parameterKey]}</span>
+        {renderCurrentSelection()}
         <Button
-          title="Help"
+          title={isInfoOpen ? "Back to Editor" : "Help"}
           onClick={toggleInfobox}
           className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.type || ''}_list_item_selected`] || ''}`}
         />
-        
-        <div className={`${styles.infobox} ${isInfoOpen ? styles.open : styles.closed}`}
-          onClick={toggleInfobox}
-        >
-          {renderInfoContent()}
+      </div>
+    );
+  };
+
+  const renderMainContent = () => {
+    return React.Children.map(props.children, (child, index) =>
+      React.isValidElement(child)
+        ? React.cloneElement(child as React.ReactElement<any>, {
+            key: index,
+            ...props,
+            onValueChange: handleValueChange,
+          })
+        : child
+    );
+  };
+
+  const renderInfoContent = () => {
+    let parameterKey = props.column?.getColDef().field || props.data?.parameter;
+    if (parameterKey == 'value'){
+      parameterKey = props.data?.parameter;
+    }
+    const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
+
+    if (!parameterInfo) {
+      return (
+        <div className={styles.infoContentArea}>
+          <h3>Parameter Information</h3>
+          <p>No additional information available for this parameter.</p>
         </div>
+      );
+    }
+
+    return (
+      <div className={styles.infoContentArea}>
+        {parameterInfo.description && parameterInfo.description !== "NaN" && (
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ marginTop: '8px', fontSize: '14px', lineHeight: '1.4' }}>
+              {parameterInfo.description}
+            </div>
+          </div>
+        )}
+        {parameterInfo.showSelection == 'selection' && (
+          <div style={{ marginTop: '16px' }}>
+            <h4>Current selection:</h4>
+            <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 'bold' }}>
+              {props.data[parameterKey]}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -333,43 +406,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
         tabIndex={-1}
       >
-        <PopoverHeader
-          onClick={handleDone}
-          title={'Close or Drag'}
-          className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}
-        >
-          <div
-            className={styles.popoverHeader}
-            data-drag-handle="true"
-            onMouseDown={e => {
-              // Don't stop propagation here - let it bubble up to DraggablePortal
-            }}
-          >
-            <span className={styles.topLine}>
-              <span className={styles.filler}>editing</span>
-              <span className={styles.actionText}>{titleText}</span>
-            </span>
-            <br></br>
-
-            <span className={styles.bottomLine}>
-              <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
-              <span className={`${styles.phenotypeName} ${styles.actionText}`}>
-                {props.data.name}
-              </span>
-            </span>
-          </div>
-        </PopoverHeader>
-        {renderInfoText()}
+        {renderPopoverHeader()}
         <div className={`${styles.content}`}>
-          {React.Children.map(props.children, (child, index) =>
-            React.isValidElement(child)
-              ? React.cloneElement(child as React.ReactElement<any>, {
-                  key: index,
-                  ...props,
-                  onValueChange: handleValueChange,
-                })
-              : child
-          )}
+          {renderInfoHeader()}
+          <div className={`${styles.contentScrollable}`}>
+            {isInfoOpen ? (
+              renderInfoContent()
+            ) : (
+              renderMainContent()
+            )}
+          </div>
         </div>
       </div>
     </DraggablePortal>
