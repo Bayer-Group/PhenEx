@@ -3,7 +3,7 @@ import { Modal } from '../../Modal/Modal';
 import { Input } from '../Input';
 import { ModernButton } from '../Button';
 import { FormField } from '../FormField';
-import { LoginDataService } from '../../../services/supabaseAuthService';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 import styles from './LoginModal.module.css';
 
 interface LoginModalProps {

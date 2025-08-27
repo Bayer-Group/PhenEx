@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { LoginDataService } from '../../views/LeftPanel/UserLogin/LoginDataService';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 
 let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 if (!BACKEND_URL) {

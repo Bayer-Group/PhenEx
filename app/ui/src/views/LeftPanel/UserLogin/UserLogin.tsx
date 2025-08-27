@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import styles from './UserLogin.module.css';
 import { LoggedIn } from './LoggedIn';
 import { NotLoggedIn } from './NotLoggedIn';
-import { LoginDataService } from '../../../services/supabaseAuthService';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 
 interface UserLoginProps {}
 

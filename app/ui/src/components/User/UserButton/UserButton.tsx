@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { Avatar } from '../../Avatar/Avatar';
 import { UserMenu } from '../UserMenu/UserMenu';
-import { LoginDataService } from '../../../services/supabaseAuthService';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 import styles from './UserButton.module.css';
 
 interface UserButtonProps {

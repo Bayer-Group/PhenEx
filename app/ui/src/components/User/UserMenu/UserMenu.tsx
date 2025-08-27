@@ -2,7 +2,7 @@ import { FC, useState } from 'react';
 import { Modal } from '../../Modal/Modal';
 import { Avatar } from '../../Avatar/Avatar';
 import { ModernButton } from '../../Form';
-import { LoginDataService } from '../../../services/supabaseAuthService';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 import styles from './UserMenu.module.css';
 
 interface UserMenuProps {
