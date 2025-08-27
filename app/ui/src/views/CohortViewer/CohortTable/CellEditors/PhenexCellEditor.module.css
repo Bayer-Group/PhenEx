@@ -29,7 +29,6 @@
   /* margin: 4px; */
   overflow: hidden;
   text-wrap: wrap;
-  min-height: 40px;
   background-color: white;
   /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
   box-shadow: var(--box_shadow_selected_no_hover);
@@ -39,7 +38,6 @@
     transform 0.2s ease-in-out;
   position: relative;
   color: var(--xbutton_color_orange_background);
-  padding: 10px 20px 10px 4px;
   /* line-height:var(--popover_font_size); */
 }
 
@@ -51,11 +49,15 @@
   user-select: none;
   line-height: 20px;
   cursor: grab;
-  min-height: 60px; /* Fixed minimum height to prevent layout shifts */
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: fit-content;
+  height: 50px; /* Fixed height instead of fit-content */
+  min-height: 50px; /* Ensure minimum height */
+  max-height: 60px; /* Prevent growth */
+  padding-top:10px;
+  padding: 10px 10px 0px 0px !important;
+  overflow: hidden; /* Prevent content from affecting height */
 }
 
 .popoverheader:active {
@@ -73,7 +75,8 @@
   display: flex;
   flex-direction: column;
   width: 350px;
-  height: 500px;
+  min-height: 500px; /* Minimum height, but allow expansion */
+  max-height: none; /* Remove height restriction */
   padding: 0px;
   border: 1px solid var(--color-accent-bright);
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top)
@@ -90,8 +93,44 @@
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Take remaining space but allow container to grow */
+  min-height: 0; /* Allow shrinking if needed */
+  overflow: hidden; /* Prevent outer scrolling */
+}
+
+.contentScrollable {
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.infoContentArea {
+  padding: 20px;
   height: 100%;
+  overflow-y: auto;
+}
+
+.infoContentArea h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-bold';
+}
+
+.infoContentArea h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-color);
+  font-family: 'IBMPlexSans-bold';
+}
+
+.infoContentArea p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-color);
 }
 
 .filler {
@@ -167,19 +206,26 @@
 }
 
 .infoContainer {
-  position: relative;
-  min-height: 40px; /* Reserve space for the info button */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--line-color);
+  height: 30px; /* Fixed absolute height */
+  min-height: 40px; /* Fixed height to prevent layout shifts */
+  max-height: 50px; /* Prevent container from growing */
   padding-top: 0px; /* Add some top padding to prevent content overlap */
+  overflow: hidden; /* Hide any overflow to prevent layout changes */
 }
 
 .infoButton {
   position: absolute !important;
-  right: 5px;
-  top: 5px;
+  right: 10px;
+  top: 10px;
   z-index: 10;
   min-width: 30px; /* Ensure button has consistent size */
   height: 24px;
-  font-family: "IBMPlexSans-regular";
+  font-family: "IBMPlexSans-bold";
   background-color: var(--background-color);
 }
 
@@ -192,42 +238,15 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.infobox {
-  margin: 0px 10px 0px 10px;
-  padding: 10px;
-  background-color: var(--background-color) !important;
-  color: black !important;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  transition:
-    max-height 0.3s ease,
-    opacity 0.3s ease,
-    margin 0.3s ease;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  user-select: none;
-  cursor: pointer;
+.selectionPlaceholder {
+  height: 30px; /* Match the height of current selection content */
+  visibility: hidden; /* Hidden but takes up space */
+  line-height: 30px; /* Ensure proper spacing */
 }
 
-.infobox.open {
-  max-height: 200px;
-  opacity: 1;
-  margin: 10px 10px 10px 10px;
-  background-color: var(--background-color);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow: auto;
-}
+/* Removed old infobox styles - info content now renders in main content area */
 
-.infobox.closed {
-  max-height: 0;
-  opacity: 0;
-  margin: 0px 10px 0px 10px;
-  padding: 0; /* Remove all padding when closed */
-  border: none;
-  min-height: 0; /* Ensure it can collapse completely */
-}
+/* Removed duplicate infoContainer - styles are defined above */
 
 
 .infoContainer{
