@@ -194,6 +194,10 @@ export class LoginDataService {
     return this.loginUsername;
   }
 
+  getUserId(): string {
+    return this.currentUser?.id || '';
+  }
+
   private notifyListeners() {
     console.log('NOTIFYING LISTENERS');
     this.listeners.forEach(listener => listener());

@@ -1,7 +1,6 @@
 import { createID } from '../../types/createID';
 import {
   getPublicCohorts,
-  getUserCohort,
   getUserCohorts,
   updateCohort,
 } from '../../api/text_to_cohort/route';
@@ -58,7 +57,7 @@ export class CohortsDataService {
       database_config: {},
     };
 
-    const newcohort = await updateCohort(newCohortData.id, newCohortData);
+    await updateCohort(newCohortData.id, newCohortData);
 
     this.notifyListeners(); // Notify listeners after initialization
     return newCohortData;
@@ -79,15 +78,5 @@ export class CohortsDataService {
 
   private notifyListeners() {
     this.listeners.forEach(listener => listener());
-  }
-
-  async deleteCohort() {
-    if (this._cohort_data.id) {
-      await deleteCohort(this._cohort_data.id);
-      this._cohort_data = {};
-      this._cohort_name = '';
-      this._table_data = { rows: [], columns: this.columns };
-      this.notifyListeners();
-    }
   }
 }

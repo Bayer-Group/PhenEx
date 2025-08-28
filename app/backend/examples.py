@@ -146,7 +146,7 @@ def atrial_fibrillation_cohort():
         phenotype=af_phenotype,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
         component_date_select="second",
-        return_date='first'
+        return_date="first",
     )
 
     # Define the cohort

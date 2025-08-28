@@ -59,6 +59,7 @@ app.add_middleware(
 # Include the router from rag.py
 app.include_router(rag_router, prefix="/rag")
 
+
 def get_cohort_path(cohort_id, provisional=False):
     if provisional:
         return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.provisional.json")
@@ -75,6 +76,7 @@ def get_user_cohort_path(user_id: str, cohort_id: str, provisional: bool = False
     if provisional:
         return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.provisional.json")
     return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.json")
+
 
 # Modify the get_all_cohorts endpoint to accept user_id
 @app.get("/cohorts")
@@ -94,30 +96,28 @@ async def get_all_cohorts_for_user(user_id: str):
     except Exception as e:
         logger.error(f"Failed to retrieve cohorts for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to retrieve cohorts for user {user_id}."
+            status_code=500, detail=f"Failed to retrieve cohorts for user {user_id}."
         )
+
 
 # Modify the get_cohort endpoint to require user_id
 @app.get("/cohort")
-async def get_cohort_for_user(user_id: str, cohort_id: str, provisional: bool = False):
+async def get_cohort_for_user(user_id: str, cohort_id: str):
     """
-    Retrieve a cohort by its ID for a specific user.
+    Retrieve a cohort by its ID for a specific user. Retrieves the latest version.
 
     Args:
         user_id (str): The user ID (UUID) whose cohort to retrieve.
         cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
 
     Returns:
         dict: The cohort data.
     """
     try:
-        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id, provisional)
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
             raise HTTPException(
-                status_code=404,
-                detail=f"Cohort not found for user {user_id}"
+                status_code=404, detail=f"Cohort not found for user {user_id}"
             )
         return cohort
     except HTTPException:
@@ -125,17 +125,14 @@ async def get_cohort_for_user(user_id: str, cohort_id: str, provisional: bool = 
     except Exception as e:
         logger.error(f"Error retrieving cohort for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve cohort for user {user_id}"
+            status_code=500, detail=f"Failed to retrieve cohort for user {user_id}"
         )
+
 
 # Modify the update_cohort endpoint to require user_id
 @app.post("/cohort")
 async def update_cohort_for_user(
-    user_id: str,
-    cohort_id: str,
-    cohort: Dict = Body(...),
-    provisional: bool = False
+    user_id: str, cohort_id: str, cohort: Dict = Body(...), provisional: bool = False
 ):
     """
     Update or create a cohort for a specific user.
@@ -153,14 +150,14 @@ async def update_cohort_for_user(
         await db_manager.update_cohort_for_user(user_id, cohort_id, cohort, provisional)
         return {
             "status": "success",
-            "message": f"Cohort updated successfully for user {user_id}."
+            "message": f"Cohort updated successfully for user {user_id}.",
         }
     except Exception as e:
         logger.error(f"Failed to update cohort for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to update cohort for user {user_id}"
+            status_code=500, detail=f"Failed to update cohort for user {user_id}"
         )
+
 
 @app.delete("/cohort")
 async def delete_cohort_for_user(user_id: str, cohort_id: str):
@@ -178,18 +175,21 @@ async def delete_cohort_for_user(user_id: str, cohort_id: str):
         success = await db_manager.delete_cohort_for_user(user_id, cohort_id)
         if not success:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Failed to find cohort {cohort_id} for user {user_id}."
+                status_code=404,
+                detail=f"Failed to find cohort {cohort_id} for user {user_id}.",
             )
-        
-        return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
+
+        return {
+            "status": "success",
+            "message": f"Cohort {cohort_id} deleted successfully.",
+        }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to delete cohort {cohort_id} for user {user_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to delete cohort {cohort_id} for user {user_id}"
+            detail=f"Failed to delete cohort {cohort_id} for user {user_id}",
         )
 
 
@@ -206,7 +206,9 @@ async def get_public_cohorts():
         return cohorts
     except Exception as e:
         logger.error(f"Failed to retrieve public cohorts: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve public cohorts.")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve public cohorts."
+        )
 
 
 @app.get("/publiccohort")
@@ -227,7 +229,6 @@ async def get_public_cohort(cohort_id: str, provisional: bool = False):
         return json.load(f)
 
 
-
 @app.get("/cohort/accept_changes")
 async def accept_changes(user_id: str, cohort_id: str):
     """
@@ -245,9 +246,9 @@ async def accept_changes(user_id: str, cohort_id: str):
         if not success:
             raise HTTPException(
                 status_code=404,
-                detail=f"No provisional changes found for cohort {cohort_id}"
+                detail=f"No provisional changes found for cohort {cohort_id}",
             )
-        
+
         # Return the updated cohort
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         return cohort
@@ -256,8 +257,7 @@ async def accept_changes(user_id: str, cohort_id: str):
     except Exception as e:
         logger.error(f"Failed to accept changes for cohort {cohort_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to accept changes for cohort {cohort_id}"
+            status_code=500, detail=f"Failed to accept changes for cohort {cohort_id}"
         )
 
 
@@ -275,13 +275,13 @@ async def reject_changes(user_id: str, cohort_id: str):
     """
     try:
         await db_manager.reject_changes(user_id, cohort_id)
-        
+
         # Return the non-provisional cohort
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
             raise HTTPException(
                 status_code=404,
-                detail=f"Cohort {cohort_id} not found after rejecting changes"
+                detail=f"Cohort {cohort_id} not found after rejecting changes",
             )
         return cohort
     except HTTPException:
@@ -289,8 +289,7 @@ async def reject_changes(user_id: str, cohort_id: str):
     except Exception as e:
         logger.error(f"Failed to reject changes for cohort {cohort_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to reject changes for cohort {cohort_id}"
+            status_code=500, detail=f"Failed to reject changes for cohort {cohort_id}"
         )
 
 
@@ -353,39 +352,39 @@ async def execute_study(
     from queue import Queue
     import threading
     import json
-    
+
     async def stream_execution():
         # Create a queue to capture output
         output_queue = Queue()
         final_result = {}
-        
+
         def capture_output():
             # Capture stdout and stderr
             old_stdout = sys.stdout
             old_stderr = sys.stderr
-            
+
             # Capture logging output
             import logging
-            
+
             class StreamCapture:
                 def __init__(self, queue, prefix=""):
                     self.queue = queue
                     self.prefix = prefix
-                    
+
                 def write(self, text):
                     if text.strip():  # Only send non-empty lines
                         self.queue.put(f"{self.prefix}{text}")
                     return len(text)
-                    
+
                 def flush(self):
                     pass
-            
+
             # Custom logging handler to capture log messages
             class QueueHandler(logging.Handler):
                 def __init__(self, queue):
                     super().__init__()
                     self.queue = queue
-                    
+
                 def emit(self, record):
                     try:
                         log_message = self.format(record)
@@ -393,43 +392,46 @@ async def execute_study(
                         self.queue.put(f"[{level_name}] {log_message}")
                     except Exception:
                         self.handleError(record)
-            
+
             # Set up logging capture
             queue_handler = QueueHandler(output_queue)
-            queue_handler.setFormatter(logging.Formatter('%(name)s - %(message)s'))
-            
+            queue_handler.setFormatter(logging.Formatter("%(name)s - %(message)s"))
+
             # Get the root logger and add our handler
             root_logger = logging.getLogger()
             original_level = root_logger.level
             original_handlers = root_logger.handlers.copy()
-            
+
             # Also specifically capture phenex logger messages
-            phenex_logger = logging.getLogger('phenex')
+            phenex_logger = logging.getLogger("phenex")
             phenex_original_level = phenex_logger.level
             phenex_original_handlers = phenex_logger.handlers.copy()
-            
+
             # Clear existing handlers and add our queue handler
             root_logger.handlers.clear()
             root_logger.addHandler(queue_handler)
             root_logger.setLevel(logging.INFO)  # Capture all log levels
-            
+
             # Ensure phenex logger also uses our handler
             phenex_logger.handlers.clear()
             phenex_logger.addHandler(queue_handler)
             phenex_logger.setLevel(logging.INFO)
             phenex_logger.propagate = True  # Ensure messages propagate to root logger
-            
+
             sys.stdout = StreamCapture(output_queue, "[STDOUT] ")
             sys.stderr = StreamCapture(output_queue, "[STDERR] ")
-            
+
             try:
                 print(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
-                logger.info(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
+                logger.info(
+                    f"Starting execution for cohort: {cohort.get('name', 'Unknown')}"
+                )
                 print(f"Database config: {database_config}")
                 logger.info(f"Database configuration: {database_config}")
-                
+
                 if database_config["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
+
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
                     logger.info("Using OMOP mapper")
@@ -437,7 +439,7 @@ async def execute_study(
                 database = database_config["config"]
                 print("Creating database connection...")
                 logger.info("Creating Snowflake database connection...")
-                
+
                 con = SnowflakeConnector(
                     SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
                     SNOWFLAKE_DEST_DATABASE=database["destination_database"],
@@ -449,8 +451,10 @@ async def execute_study(
                 logger.info("Retrieving mapped tables from database...")
                 mapped_tables = mapper.get_mapped_tables(con)
                 print(f"Found {len(mapped_tables)} mapped tables")
-                logger.info(f"Successfully retrieved {len(mapped_tables)} mapped tables")
-                
+                logger.info(
+                    f"Successfully retrieved {len(mapped_tables)} mapped tables"
+                )
+
                 del cohort["phenotypes"]
                 print("Preparing cohort for phenex...")
                 logger.info("Converting cohort data structure for phenex processing...")
@@ -460,11 +464,11 @@ async def execute_study(
                 logger.debug("Saving processed cohort to processed_cohort.json")
                 with open("./processed_cohort.json", "w") as f:
                     json.dump(processed_cohort, f, indent=4)
-                    
+
                 print("Creating phenex cohort object...")
                 logger.info("Creating phenex cohort object from processed data...")
                 px_cohort = from_dict(processed_cohort)
-                
+
                 logger.debug("Saving cohort object to cohort.json")
                 with open("./cohort.json", "w") as f:
                     json.dump(px_cohort.to_dict(), f, indent=4)
@@ -487,20 +491,24 @@ async def execute_study(
                 print("Generating waterfall report...")
                 logger.info("Generating waterfall/attrition report...")
                 from phenex.reporting import Waterfall
+
                 r = Waterfall()
                 df_waterfall = r.execute(px_cohort)
-                df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
+                df_waterfall.to_csv(
+                    os.path.join(path_cohort, "waterfall.csv"), index=False
+                )
 
                 print("Finalizing results...")
                 logger.info("Finalizing and formatting results for return...")
                 append_count_to_cohort(px_cohort, cohort)
 
                 from json import loads, dumps
+
                 cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
                 cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
 
                 final_result["cohort"] = cohort
-                
+
                 print("Saving final results...")
                 logger.debug("Saving executed cohort to executed_cohort.json")
                 with open("./executed_cohort.json", "w") as f:
@@ -509,38 +517,39 @@ async def execute_study(
                 logger.debug("Saving returned cohort to returned_cohort.json")
                 with open("./returned_cohort.json", "w") as f:
                     json.dump(cohort, f, indent=4)
-                    
+
                 print("Execution completed successfully!")
                 logger.info("Cohort execution completed successfully!")
-                
+
             except Exception as e:
                 print(f"ERROR: {str(e)}")
                 import traceback
+
                 print(f"TRACEBACK: {traceback.format_exc()}")
                 final_result["error"] = str(e)
             finally:
                 # Restore original stdout/stderr
                 sys.stdout = old_stdout
                 sys.stderr = old_stderr
-                
+
                 # Restore original logging configuration
                 root_logger.handlers.clear()
                 for handler in original_handlers:
                     root_logger.addHandler(handler)
                 root_logger.setLevel(original_level)
-                
+
                 # Restore phenex logger configuration
                 phenex_logger.handlers.clear()
                 for handler in phenex_original_handlers:
                     phenex_logger.addHandler(handler)
                 phenex_logger.setLevel(phenex_original_level)
-                
+
                 output_queue.put("__EXECUTION_COMPLETE__")
-        
+
         # Start execution in a separate thread
         execution_thread = threading.Thread(target=capture_output)
         execution_thread.start()
-        
+
         # Stream output as it comes
         while True:
             try:
@@ -554,16 +563,16 @@ async def execute_study(
                     await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
             except:
                 await asyncio.sleep(0.1)
-        
+
         # Wait for thread to complete
         execution_thread.join()
-        
+
         # Send final result
         if "error" in final_result:
             yield f"data: {json.dumps({'type': 'error', 'message': final_result['error']})}\n\n"
         else:
             yield f"data: {json.dumps({'type': 'result', 'data': final_result})}\n\n"
-        
+
         yield f"data: {json.dumps({'type': 'complete'})}\n\n"
 
     return StreamingResponse(
@@ -573,7 +582,7 @@ async def execute_study(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
-        }
+        },
     )
 
 
@@ -809,7 +818,7 @@ def resolve_phenexui_codelist_file(phenexui_codelist):
         "class_name": "Codelist",
         "name": phenexui_codelist["codelist_name"],
         "codelist": phenex_codelist,
-        "use_code_type":False
+        "use_code_type": False,
     }
 
 

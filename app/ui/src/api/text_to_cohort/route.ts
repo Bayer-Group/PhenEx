@@ -34,7 +34,7 @@ export const getUserCohorts = async () => {
     const login_service = LoginDataService.getInstance();
 
     const response = await axios.get(
-      `${BACKEND_URL}/cohorts?username=${login_service.getUsername()}`
+      `${BACKEND_URL}/cohorts?user_id=${login_service.getUserId()}`
     );
     return response.data;
   } catch (error) {
@@ -47,7 +47,7 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
   try {
     const login_service = LoginDataService.getInstance();
     const response = await axios.get(
-      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}&provisional=${provisional}`
+      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}&provisional=${provisional}`
     );
     return response.data;
   } catch (error) {
@@ -61,7 +61,7 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
     const login_service = LoginDataService.getInstance();
     console.log("I AM UPDATING THE COHORT", cohort_data)
     const response = await axios.post(
-      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`,
+      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`,
       cohort_data
     );
     return response.data;
@@ -75,7 +75,7 @@ export const deleteCohort = async (cohort_id: string) => {
   try {
     const login_service = LoginDataService.getInstance();
     const response = await axios.delete(
-      `${BACKEND_URL}/cohort?username=${login_service.getUsername()}&cohort_id=${cohort_id}`
+      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`
     );
     return response.data;
   } catch (error) {
@@ -86,8 +86,9 @@ export const deleteCohort = async (cohort_id: string) => {
 
 export const acceptChanges = async (cohort_id: string) => {
   try {
+    const login_service = LoginDataService.getInstance();
     const response = await axios.get(`${BACKEND_URL}/cohort/accept_changes`, {
-      params: { cohort_id },
+      params: { user_id: login_service.getUserId(), cohort_id },
     });
     return response.data;
   } catch (error) {
@@ -98,8 +99,9 @@ export const acceptChanges = async (cohort_id: string) => {
 
 export const rejectChanges = async (cohort_id: string) => {
   try {
+    const login_service = LoginDataService.getInstance();
     const response = await axios.get(`${BACKEND_URL}/cohort/reject_changes`, {
-      params: { cohort_id },
+      params: { user_id: login_service.getUserId(), cohort_id },
     });
     return response.data;
   } catch (error) {
@@ -124,7 +126,7 @@ export const textToCohort = async (data: any) => {
 
     const stream = new ReadableStream({
       start(controller) {
-        const reader = response.body.getReader();
+        const reader = response.body!.getReader();
 
         const read = async () => {
           while (true) {
