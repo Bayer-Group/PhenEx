@@ -3,6 +3,7 @@ import styles from './SingleCodelistEditor.module.css';
 import { ManualCodelistEditor } from './ManualCodelistEditor';
 import { FileCodelistEditor } from './FileCodelistEditor';
 import { MedConBCodelistEditor } from './MedConBCodelistEditor';
+import { Tabs } from '../../../../../components/ButtonsAndTabs/Tabs/Tabs';
 
 export interface SingleCodelistEditorProps {
   value?: any;
@@ -13,6 +14,12 @@ export interface SingleCodelistEditorProps {
 
 type EditorType = 'manual' | 'from file' | 'from medconb';
 
+const EDITOR_OPTIONS: { label: string; type: EditorType }[] = [
+  { label: 'Manual', type: 'manual' },
+  { label: 'File', type: 'from file' },
+  { label: 'MedConB', type: 'from medconb' }
+];
+
 export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   value,
   onValueChange,
@@ -22,6 +29,15 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   const [selectedEditor, setSelectedEditor] = useState<EditorType>(
     value?.codelist_type || 'manual'
   );
+
+  const handleTabChange = (tabIndex: number) => {
+    const newEditorType = EDITOR_OPTIONS[tabIndex].type;
+    setSelectedEditor(newEditorType);
+  };
+
+  const getCurrentTabIndex = () => {
+    return EDITOR_OPTIONS.findIndex(option => option.type === selectedEditor);
+  };
 
   const handleValueChange = (newValue: any) => {
     console.log('SINGLE CODELIST EDITOR', newValue);
@@ -59,15 +75,11 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   return (
     <div className={`${styles.editorContainer} ${className || ''}`}>
       <div className={styles.editorTypeSelector}>
-        <select
-          value={selectedEditor}
-          onChange={e => setSelectedEditor(e.target.value as EditorType)}
-          className={styles.editorSelect}
-        >
-          <option value="manual">Manual</option>
-          <option value="from file">From File</option>
-          <option value="from medconb">From MedConB</option>
-        </select>
+        <Tabs
+          tabs={EDITOR_OPTIONS.map(option => option.label)}
+          active_tab_index={getCurrentTabIndex()}
+          onTabChange={handleTabChange}
+        />
       </div>
       {renderEditor()}
     </div>
