@@ -149,17 +149,21 @@ class Cohort:
             + self.outcomes
         )
         all_nodes = top_level_nodes + sum([t.dependencies for t in top_level_nodes], [])
+
         # FIXME Person domain should not be HARD CODED; however, it IS hardcoded in SCORE phenotype. Remove hardcoding!
-        domains = list(
-            set(
-                ["PERSON"]
-                + [
-                    getattr(pt, "domain", None)
-                    for pt in all_nodes
-                    if getattr(pt, "domain", None) is not None
-                ]
-            )
-        )
+        domains = ["PERSON"] + [
+            getattr(pt, "domain", None)
+            for pt in all_nodes
+            if getattr(pt, "domain", None) is not None
+        ]
+
+        domains += [
+            getattr(getattr(pt, "categorical_filter", None), "domain", None)
+            for pt in all_nodes
+            if getattr(getattr(pt, "categorical_filter", None), "domain", None)
+            is not None
+        ]
+        domains = list(set(domains))
         return domains
 
     def _get_subset_tables_nodes(self, stage: str, index_phenotype: Phenotype):
@@ -413,7 +417,6 @@ class InclusionsTableNode(Node):
         self.index_phenotype = index_phenotype
 
     def _execute(self, tables: Dict[str, Table]):
-
         inclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
 
         for pt in self.phenotypes:
@@ -458,7 +461,6 @@ class ExclusionsTableNode(Node):
         self.index_phenotype = index_phenotype
 
     def _execute(self, tables: Dict[str, Table]):
-
         exclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
 
         for pt in self.phenotypes:
@@ -514,7 +516,6 @@ class IndexTableNode(Node):
         self.exclusion_table_node = exclusion_table_node
 
     def _execute(self, tables: Dict[str, Table]):
-
         index_table = self.entry_phenotype.table.mutate(INDEX_DATE="EVENT_DATE")
 
         if self.inclusion_table_node:

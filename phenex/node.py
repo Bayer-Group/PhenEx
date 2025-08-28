@@ -221,7 +221,6 @@ class Node:
         return self._get_current_hash()
 
     def _update_current_hash(self):
-
         con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
 
         df = pd.DataFrame.from_dict(
