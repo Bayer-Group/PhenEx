@@ -5,11 +5,12 @@ import {
   updateCohort,
 } from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { LoginDataService } from './UserLogin/LoginDataService';
 
 export class CohortsDataService {
   private static instance: CohortsDataService;
-  private _publicCohortNamesAndIds = null;
-  private _userCohortNamesAndIds = null;
+  private _publicCohortNamesAndIds: any[] | null = null;
+  private _userCohortNamesAndIds: any[] | null = null;
 
   private cohortDataService: CohortDataService;
 
@@ -21,6 +22,13 @@ export class CohortsDataService {
   }
 
   public async userCohortNamesAndIds() {
+    const loginService = LoginDataService.getInstance();
+    if (!loginService.isLoggedIn()) {
+      // Return empty array when not logged in
+      this._userCohortNamesAndIds = [];
+      return this._userCohortNamesAndIds;
+    }
+    
     this._userCohortNamesAndIds = await getUserCohorts();
     return this._userCohortNamesAndIds;
   }
