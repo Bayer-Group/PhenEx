@@ -122,3 +122,48 @@ label {
   margin: 0;
   cursor: pointer;
 } */
+
+.dropdownGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.dropdownGroup label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.dropdownGroup select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.moreButton {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  align-self: flex-start;
+}
+
+.moreButton:hover {
+  background: #e0e0e0;
+}
+
+.additionalFieldsContainer {
+  overflow: hidden;
+  transition: height 0.3s ease-in-out;
+}
+
+.additionalFields {
+  padding-top: 8px;
+}

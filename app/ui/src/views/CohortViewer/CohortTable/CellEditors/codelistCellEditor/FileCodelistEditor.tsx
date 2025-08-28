@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from '../CodelistCellEditor.module.css';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 
@@ -131,6 +131,10 @@ const useCodelistState = (initialValue: any, onValueChange?: (value: any) => voi
 };
 
 export const FileCodelistEditor: React.FC<FileCodelistEditorProps> = ({ value, onValueChange }) => {
+  const [showMore, setShowMore] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>(0);
+  
   const {
     selectedFileName,
     selectedFileColumnnames,
@@ -142,6 +146,13 @@ export const FileCodelistEditor: React.FC<FileCodelistEditorProps> = ({ value, o
     selectedCodelist,
     selectedFileCodelists,
   } = useCodelistState(value, onValueChange);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const contentHeight = contentRef.current.scrollHeight;
+      setHeight(showMore ? contentHeight : 0);
+    }
+  }, [showMore]);
 
   return (
     <>
@@ -159,61 +170,80 @@ export const FileCodelistEditor: React.FC<FileCodelistEditorProps> = ({ value, o
           ))}
         </select>
       </div>
-
       <div className={styles.dropdownGroup}>
-        <label>Code Column:</label>
-        <select
-          value={selectedCodeColumn}
-          onChange={e => handleDropdownChange('codeColumn', e.target.value)}
+            <label>Codelist:</label>
+            <select
+              value={selectedCodelist}
+              onChange={e => handleDropdownChange('codelist', e.target.value)}
+            >
+              {selectedFileCodelists.map((codelist, index) => (
+                <option key={index} value={codelist}>
+                  {codelist}
+                </option>
+              ))}
+            </select>
+          </div>
+      <div className={styles.dropdownGroup}>
+        <button 
+          type="button"
+          className={styles.moreButton}
+          onClick={() => setShowMore(!showMore)}
         >
-          {selectedFileColumnnames.map((col, index) => (
-            <option key={index} value={col}>
-              {col}
-            </option>
-          ))}
-        </select>
+          {showMore ? 'Less' : 'More'}
+        </button>
       </div>
 
-      <div className={styles.dropdownGroup}>
-        <label>Code Type Column:</label>
-        <select
-          value={selectedCodeTypeColumn}
-          onChange={e => handleDropdownChange('codeTypeColumn', e.target.value)}
-        >
-          {selectedFileColumnnames.map((col, index) => (
-            <option key={index} value={col}>
-              {col}
-            </option>
-          ))}
-        </select>
-      </div>
+      <div 
+        className={styles.additionalFieldsContainer}
+        style={{ 
+          height: `${height}px`,
+          overflow: 'hidden',
+          transition: 'height 0.3s ease-in-out'
+        }}
+      >
+        <div ref={contentRef} className={styles.additionalFields}>
+          <div className={styles.dropdownGroup}>
+            <label>Code Column:</label>
+            <select
+              value={selectedCodeColumn}
+              onChange={e => handleDropdownChange('codeColumn', e.target.value)}
+            >
+              {selectedFileColumnnames.map((col, index) => (
+                <option key={index} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className={styles.dropdownGroup}>
-        <label>Codelist Column:</label>
-        <select
-          value={selectedCodelistColumn}
-          onChange={e => handleDropdownChange('codelistColumn', e.target.value)}
-        >
-          {selectedFileColumnnames.map((col, index) => (
-            <option key={index} value={col}>
-              {col}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className={styles.dropdownGroup}>
+            <label>Code Type Column:</label>
+            <select
+              value={selectedCodeTypeColumn}
+              onChange={e => handleDropdownChange('codeTypeColumn', e.target.value)}
+            >
+              {selectedFileColumnnames.map((col, index) => (
+                <option key={index} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className={styles.dropdownGroup}>
-        <label>Codelist:</label>
-        <select
-          value={selectedCodelist}
-          onChange={e => handleDropdownChange('codelist', e.target.value)}
-        >
-          {selectedFileCodelists.map((codelist, index) => (
-            <option key={index} value={codelist}>
-              {codelist}
-            </option>
-          ))}
-        </select>
+          <div className={styles.dropdownGroup}>
+            <label>Codelist Column:</label>
+            <select
+              value={selectedCodelistColumn}
+              onChange={e => handleDropdownChange('codelistColumn', e.target.value)}
+            >
+              {selectedFileColumnnames.map((col, index) => (
+                <option key={index} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </>
   );
