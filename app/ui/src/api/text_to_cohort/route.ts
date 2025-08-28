@@ -9,7 +9,7 @@ if (!BACKEND_URL) {
 
 export const getPublicCohorts = async () => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/publiccohorts`);
+    const response = await axios.get(`${BACKEND_URL}/cohorts/public`);
     return response.data;
   } catch (error) {
     console.error('Error in getPublicCohorts:', error);
@@ -20,7 +20,7 @@ export const getPublicCohorts = async () => {
 export const getPublicCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
     const response = await axios.get(
-      `${BACKEND_URL}/publiccohort?cohort_id=${cohort_id}&provisional=${provisional}`
+      `${BACKEND_URL}/cohort/public?cohort_id=${cohort_id}&provisional=${provisional}`
     );
     return response.data;
   } catch (error) {
