@@ -319,36 +319,29 @@ async def reject_changes(user_id: str, cohort_id: str):
 
 
 @app.get("/cohort/get_changes")
-async def get_changes(cohort_id: str):
+async def get_changes(user_id: str, cohort_id: str):
     """
-    Get differences between the provisional and final versions of a cohort.
+    Get differences between the provisional and non-provisional versions of a cohort.
+    Returns empty dict if there is no provisional cohort.
 
     Args:
-        cohort_id (str): The ID of the cohort to finalize.
+        user_id (str): The user ID (UUID).
+        cohort_id (str): The ID of the cohort to compare.
 
     Returns:
-        dict: Dictionary of fields of changed phenotypes.
+        dict: Dictionary of changes between provisional and non-provisional versions.
     """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    final_path = get_cohort_path(cohort_id, provisional=False)
-    logger.info(f"Provisional path: {provisional_path}")
-    logger.info(f"Final path: {final_path}")
-    if not os.path.exists(provisional_path):
-        logger.info(f"No differences")
-        return {}
-    if not os.path.exists(final_path):
-        raise HTTPException(status_code=404, detail="Final cohort not found.")
-
-    with open(provisional_path, "r") as provisional_file:
-        provisional_cohort = json.load(provisional_file)
-
-    with open(final_path, "r") as final_file:
-        final_cohort = json.load(final_file)
-    logger.info(final_cohort)
-    logger.info(provisional_cohort)
-    diff = DeepDiff(provisional_cohort, final_cohort, ignore_order=True)
-    logger.info(f"Calculated differences: {diff}")
-    return diff
+    try:
+        changes = await db_manager.get_changes_for_user(user_id, cohort_id)
+        return changes
+    except Exception as e:
+        logger.error(
+            f"Failed to get changes for cohort {cohort_id} for user {user_id}: {e}"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get changes for cohort {cohort_id} for user {user_id}",
+        )
 
 
 @app.get("/cohorts/public")
