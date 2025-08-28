@@ -1,8 +1,10 @@
 import React from 'react';
 import {
+  PhenexCellRenderer,
   PhenexCellRendererProps,
 } from '../../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 import parametersInfo from '../../../../assets/parameters_info.json';
+import ReactMarkdown from 'react-markdown';
 
 export interface PhenexPhenotypeCellRendererProps extends PhenexCellRendererProps {}
 
@@ -40,7 +42,11 @@ const isValueMissingOrEmpty = (value: any): boolean => {
 // Helper function to get parameter description
 const getParameterDescription = (parameter: string): string => {
   const paramInfo = (parametersInfo as any)[parameter];
-  return paramInfo?.description || 'No description available for this parameter.';
+  const fullDescription = paramInfo?.description || 'No description available for this parameter.';
+  
+  // Extract only the first sentence (until the first period)
+  const firstSentence = fullDescription.split('.')[0];
+  return firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
 };
 
 export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererProps> = props => {
@@ -48,15 +54,20 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
   if (isValueMissingOrEmpty(props.data?.value) && props.data?.parameter) {
     const description = getParameterDescription(props.data.parameter);
     return (
-      <div style={{ 
-        fontSize: '18px', 
-        fontStyle: 'italic', 
-        color: '#666',
-        padding: '4px',
-        lineHeight: '1.4'
-      }}>
-        {description}
-      </div>
+      <PhenexCellRenderer {...props}>
+        <div style={{ 
+          fontSize: '18px', 
+          fontStyle: 'italic', 
+          color: 'var(--line-color)',
+          padding: '4px',
+          lineHeight: '1.4',
+          fontFamily: 'IBMPlexSans-bolditalic',
+          textWrap: 'wrap',
+          padding: '0px 20px'
+        }}>
+          <ReactMarkdown>{description}</ReactMarkdown>
+        </div>
+      </PhenexCellRenderer>
     );
   }
 
