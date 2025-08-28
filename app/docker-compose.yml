@@ -18,6 +18,9 @@ services:
     # mount your local disk to save cohorts
     command: fastapi run main.py --reload
     env_file: ./backend/.env
+    depends_on:
+      auth:
+        condition: service_healthy
     ports:
       - "8001:8000"
     volumes:
@@ -37,11 +40,8 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - studio
-      - db
-      - auth
-      - meta
-      - backend-dev
+      backend-dev:
+        condition: service_started
 
   studio:
     container_name: supabase-studio
@@ -210,6 +210,7 @@ services:
       - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
       # Initialize the database settings with JWT_SECRET and JWT_EXP
       - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      # Note: PhenEx cohorts table and test users are now initialized via Python scripts in the backend service
       # PGDATA directory is persisted between restarts
       - ./volumes/db/data:/var/lib/postgresql/data:Z
       # Changes required for internal supabase data such as _analytics

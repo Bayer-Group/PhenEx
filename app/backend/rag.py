@@ -63,7 +63,6 @@ DOCSTRING:
 {docstring}
 """
                             documents.append(document)
-                            logger.info(document)
                 except Exception as e:
                     logger.error(f"Failed to parse {file_path}: {e}")
 

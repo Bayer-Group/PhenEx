@@ -1,16 +1,14 @@
-from typing import Dict, Optional, Union
+from typing import Dict
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
-from examples import EXAMPLES
 from dotenv import load_dotenv
-from utils import CohortUtils
 from database import DatabaseManager
 import os, json
 import logging
 from deepdiff import DeepDiff
-from rag import router as rag_router, query_faiss_index  # Import the router from rag.py
+from rag import router as rag_router
 
 load_dotenv()
 
@@ -55,6 +53,59 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database schema, users, and sample data on startup."""
+    try:
+
+        # import asyncio
+        # await asyncio.sleep(5)
+
+        # First, create the cohort table structure
+        from init.create_cohort_table import CohortTableInitializer
+        
+        logger.info("🚀 Starting cohort table initialization on backend startup...")
+        table_initializer = CohortTableInitializer()
+        table_success = await table_initializer.initialize()
+        
+        if table_success:
+            logger.info("✅ Cohort table initialization completed successfully!")
+        else:
+            logger.warning("⚠️ Cohort table initialization failed, but backend will continue to start")
+        
+        # Then, create test users
+        from init.populate_sample_users import UserInitializer
+        
+        logger.info("🚀 Starting user initialization on backend startup...")
+        user_initializer = UserInitializer()
+        user_success = await user_initializer.initialize()
+        
+        if user_success:
+            logger.info("✅ User initialization completed successfully!")
+        else:
+            logger.warning("⚠️ User initialization failed, but backend will continue to start")
+        
+        # Finally, populate sample cohorts
+        from init.populate_sample_cohorts import SampleCohortsInitializer
+        
+        logger.info("🚀 Starting sample cohorts initialization on backend startup...")
+        cohorts_initializer = SampleCohortsInitializer()
+        cohorts_success = await cohorts_initializer.initialize()
+        
+        if cohorts_success:
+            logger.info("✅ Sample cohorts initialization completed successfully!")
+        else:
+            logger.warning("⚠️ Sample cohorts initialization failed, but backend will continue to start")
+            
+        if table_success and user_success and cohorts_success:
+            logger.info("🎉 Complete database initialization completed successfully!")
+        else:
+            logger.warning("⚠️ Some initialization steps failed, but backend is ready")
+            
+    except Exception as e:
+        logger.warning(f"⚠️ Database initialization failed: {e}, but backend will continue to start")
 
 # Include the router from rag.py
 app.include_router(rag_router, prefix="/rag")
