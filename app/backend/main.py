@@ -54,6 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
@@ -65,47 +66,56 @@ async def startup_event():
 
         # First, create the cohort table structure
         from init.create_cohort_table import CohortTableInitializer
-        
+
         logger.info("🚀 Starting cohort table initialization on backend startup...")
         table_initializer = CohortTableInitializer()
         table_success = await table_initializer.initialize()
-        
+
         if table_success:
             logger.info("✅ Cohort table initialization completed successfully!")
         else:
-            logger.warning("⚠️ Cohort table initialization failed, but backend will continue to start")
-        
+            logger.warning(
+                "⚠️ Cohort table initialization failed, but backend will continue to start"
+            )
+
         # Then, create test users
         from init.populate_sample_users import UserInitializer
-        
+
         logger.info("🚀 Starting user initialization on backend startup...")
         user_initializer = UserInitializer()
         user_success = await user_initializer.initialize()
-        
+
         if user_success:
             logger.info("✅ User initialization completed successfully!")
         else:
-            logger.warning("⚠️ User initialization failed, but backend will continue to start")
-        
+            logger.warning(
+                "⚠️ User initialization failed, but backend will continue to start"
+            )
+
         # Finally, populate sample cohorts
         from init.populate_sample_cohorts import SampleCohortsInitializer
-        
+
         logger.info("🚀 Starting sample cohorts initialization on backend startup...")
         cohorts_initializer = SampleCohortsInitializer()
         cohorts_success = await cohorts_initializer.initialize()
-        
+
         if cohorts_success:
             logger.info("✅ Sample cohorts initialization completed successfully!")
         else:
-            logger.warning("⚠️ Sample cohorts initialization failed, but backend will continue to start")
-            
+            logger.warning(
+                "⚠️ Sample cohorts initialization failed, but backend will continue to start"
+            )
+
         if table_success and user_success and cohorts_success:
             logger.info("🎉 Complete database initialization completed successfully!")
         else:
             logger.warning("⚠️ Some initialization steps failed, but backend is ready")
-            
+
     except Exception as e:
-        logger.warning(f"⚠️ Database initialization failed: {e}, but backend will continue to start")
+        logger.warning(
+            f"⚠️ Database initialization failed: {e}, but backend will continue to start"
+        )
+
 
 # Include the router from rag.py
 app.include_router(rag_router, prefix="/rag")
@@ -244,42 +254,6 @@ async def delete_cohort_for_user(user_id: str, cohort_id: str):
         )
 
 
-@app.get("/publiccohorts")
-async def get_public_cohorts():
-    """
-    Retrieve a list of all public cohorts (latest versions only).
-
-    Returns:
-        dict: A list of public cohort IDs and names.
-    """
-    try:
-        cohorts = await db_manager.get_public_cohorts()
-        return cohorts
-    except Exception as e:
-        logger.error(f"Failed to retrieve public cohorts: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve public cohorts."
-        )
-
-
-@app.get("/publiccohort")
-async def get_public_cohort(cohort_id: str, provisional: bool = False):
-    """
-    Retrieve a cohort by its ID.
-
-    Args:
-        cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
-
-    Returns:
-        dict: The cohort data.
-    """
-    cohort_path = get_cohort_path(cohort_id, provisional)
-    # handle provisional = True and doesn't exist
-    with open(cohort_path, "r") as f:
-        return json.load(f)
-
-
 @app.get("/cohort/accept_changes")
 async def accept_changes(user_id: str, cohort_id: str):
     """
@@ -375,6 +349,65 @@ async def get_changes(cohort_id: str):
     diff = DeepDiff(provisional_cohort, final_cohort, ignore_order=True)
     logger.info(f"Calculated differences: {diff}")
     return diff
+
+
+@app.get("/cohorts/public")
+async def get_all_public_cohorts():
+    """
+    Retrieve a list of all cohorts for the public user (latest versions only).
+
+    Returns:
+        dict: A list of cohort IDs and names for the public user.
+    """
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        cohorts = await db_manager.get_all_cohorts_for_user(public_user_id)
+        return cohorts
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to retrieve public cohorts: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve public cohorts."
+        )
+
+
+@app.get("/cohort/public")
+async def get_public_cohort(cohort_id: str):
+    """
+    Retrieve a cohort by its ID for the public user. Retrieves the latest version.
+
+    Args:
+        cohort_id (str): The ID of the cohort to retrieve.
+
+    Returns:
+        dict: The cohort data.
+    """
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        cohort = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
+        if not cohort:
+            raise HTTPException(
+                status_code=404, detail=f"Cohort not found for public user"
+            )
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving cohort for public user: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve cohort for public user"
+        )
 
 
 # TODO: text_to_cohort function temporarily disabled for database migration
