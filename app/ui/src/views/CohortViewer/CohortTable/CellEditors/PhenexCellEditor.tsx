@@ -7,6 +7,7 @@ import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeade
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
 import parametersInfo from '../../../../assets/parameters_info.json';
 import typeStyles from '../../../../styles/study_types.module.css';
+import ReactMarkdown from 'react-markdown';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -327,7 +328,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         {parameterInfo.description && parameterInfo.description !== "NaN" && (
           <div style={{ marginTop: '16px' }}>
             <div style={{ marginTop: '8px', fontSize: '14px', lineHeight: '1.4' }}>
-              {parameterInfo.description}
+              <ReactMarkdown>{parameterInfo.description}</ReactMarkdown>
             </div>
           </div>
         )}
