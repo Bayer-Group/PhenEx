@@ -78,7 +78,7 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
       `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`,
       cohort_data
     );
-    return response.data;
+    return response.data.cohort_data;
   } catch (error) {
     console.error('Error in updateCohort:', error);
     throw error;
@@ -91,7 +91,7 @@ export const deleteCohort = async (cohort_id: string) => {
     const response = await axios.delete(
       `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`
     );
-    return response.data;
+    return response.data.cohort_data;
   } catch (error) {
     console.error('Error in deleteCohort:', error);
     throw error;
@@ -104,7 +104,14 @@ export const acceptChanges = async (cohort_id: string) => {
     const response = await axios.get(`${BACKEND_URL}/cohort/accept_changes`, {
       params: { user_id: login_service.getUserId(), cohort_id },
     });
-    return response.data;
+    
+    // Parse the cohort_data field if it exists and is a string
+    if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
+      return JSON.parse(response.data.cohort_data);
+    }
+    
+    // Fallback to return the original data if cohort_data is not present or already parsed
+    return response.data.cohort_data || response.data;
   } catch (error) {
     console.error('Error in acceptChanges:', error);
     throw error;
@@ -117,21 +124,44 @@ export const rejectChanges = async (cohort_id: string) => {
     const response = await axios.get(`${BACKEND_URL}/cohort/reject_changes`, {
       params: { user_id: login_service.getUserId(), cohort_id },
     });
-    return response.data;
+    
+    // Parse the cohort_data field if it exists and is a string
+    if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
+      return JSON.parse(response.data.cohort_data);
+    }
+    
+    // Fallback to return the original data if cohort_data is not present or already parsed
+    return response.data.cohort_data || response.data;
   } catch (error) {
     console.error('Error in rejectChanges:', error);
     throw error;
   }
 };
 
-export const suggestChanges = async (data: any) => {
+export const suggestChanges = async (
+  cohort_id: string,
+  user_request: string,
+  model: string = "gpt-4o-mini",
+  return_updated_cohort: boolean = false
+) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/cohort/suggest_changes`, {
+    const login_service = LoginDataService.getInstance();
+    
+    // Ensure cohort_id is a string and properly encoded
+    const cohortIdString = String(cohort_id);
+    const params = new URLSearchParams({
+      user_id: login_service.getUserId(),
+      cohort_id: cohortIdString,
+      model: model,
+      return_updated_cohort: String(return_updated_cohort)
+    });
+    
+    const response = await fetch(`${BACKEND_URL}/cohort/suggest_changes?${params.toString()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: user_request,
     });
 
     if (!response.body) {

@@ -313,24 +313,44 @@ class DatabaseManager:
                     target_version = current_max_version
 
                     if provisional:
-                        # If provisional, create a new row with same version and set is_provisional = True
-                        insert_query = f"""
-                            INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
-                            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                        # If provisional, first try to update existing provisional row, otherwise insert new one
+                        update_provisional_query = f"""
+                            UPDATE {self.full_table_name} 
+                            SET cohort_data = $3, updated_at = NOW()
+                            WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = TRUE
                         """
 
-                        await conn.execute(
-                            insert_query,
-                            cohort_id,
+                        result = await conn.execute(
+                            update_provisional_query,
                             user_id,
-                            target_version,
+                            cohort_id,
                             json.dumps(cohort_data),
-                            True,  # Always provisional for this case
+                            target_version,
                         )
 
-                        logger.info(
-                            f"Successfully created provisional cohort {cohort_id} version {target_version} for user {user_id}"
-                        )
+                        if result == "UPDATE 0":
+                            # No existing provisional row found, insert new one
+                            insert_query = f"""
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                            """
+
+                            await conn.execute(
+                                insert_query,
+                                cohort_id,
+                                user_id,
+                                target_version,
+                                json.dumps(cohort_data),
+                                True,  # Always provisional for this case
+                            )
+
+                            logger.info(
+                                f"Successfully created provisional cohort {cohort_id} version {target_version} for user {user_id}"
+                            )
+                        else:
+                            logger.info(
+                                f"Successfully updated existing provisional cohort {cohort_id} version {target_version} for user {user_id}"
+                            )
                     else:
                         # Replace existing version (update the existing row)
                         update_query = f"""

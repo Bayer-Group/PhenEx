@@ -116,11 +116,24 @@ class ChatPanelDataService {
 
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
+    
+    // Check if cohort data is available
+    if (!this.cohortDataService.cohort_data || !this.cohortDataService.cohort_data.id) {
+      console.error('No cohort data available or missing cohort ID');
+      this.notifyAICompletionListeners(false);
+      return;
+    }
+    
+    const cohortId = this.cohortDataService.cohort_data.id;
+    console.log('Using cohort ID:', cohortId);
+    
     try {
-      const stream = await suggestChanges({
-        user_request: inputText.trim(),
-        current_cohort: this.cohortDataService.cohort_data,
-      });
+      const stream = await suggestChanges(
+        cohortId,
+        inputText.trim(),
+        "gpt-4o-mini",
+        false
+      );
 
       console.log('Stream received from suggestChanges');
       const assistantMessage: Message = {
@@ -152,9 +165,11 @@ class ChatPanelDataService {
       }
 
       console.log('Finalizing assistant response');
-      const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-      console.log('Response from suggestChanges:', response);
-      this.cohortDataService.updateCohortFromChat(response);
+      if (this.cohortDataService.cohort_data?.id) {
+        const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+        console.log('Response from suggestChanges:', response);
+        this.cohortDataService.updateCohortFromChat(response);
+      }
       this.notifyListeners();
       this.notifyAICompletionListeners(true);
       console.log('AI request completed successfully');
@@ -166,6 +181,10 @@ class ChatPanelDataService {
 
   public async acceptAIResult(): Promise<void> {
     try {
+      if (!this.cohortDataService.cohort_data?.id) {
+        console.error('No cohort ID available for accepting changes');
+        return;
+      }
       const response = await acceptChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
@@ -177,6 +196,10 @@ class ChatPanelDataService {
 
   public async rejectAIResult(): Promise<void> {
     try {
+      if (!this.cohortDataService.cohort_data?.id) {
+        console.error('No cohort ID available for rejecting changes');
+        return;
+      }
       const response = await rejectChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();

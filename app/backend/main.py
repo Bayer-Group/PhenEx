@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
@@ -157,15 +157,15 @@ async def get_cohort_for_user(user_id: str, cohort_id: str):
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
             raise HTTPException(
-                status_code=404, detail=f"Cohort not found for user {user_id}"
+                status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
             )
         return cohort
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving cohort for user {user_id}: {e}")
+        logger.error(f"Error retrieving cohort {cohort_id} for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve cohort for user {user_id}"
+            status_code=500, detail=f"Failed to retrieve cohort {cohort_id} for user {user_id}"
         )
 
 
@@ -305,32 +305,36 @@ app.include_router(rag_router, prefix="/rag")
 
 @app.post("/cohort/suggest_changes", tags=["AI"])
 async def suggest_changes(
+    request: Request,
     user_id: str,
     cohort_id: str,
     model: Optional[str] = "gpt-4o-mini",
-    user_request: str = Body(
-        "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    ),
     return_updated_cohort: bool = False,
 ):
     """
     Generate or modify a cohort based on user instructions.
 
     Args:
+        request (Request): The FastAPI request object containing the user request in the body.
         user_id (str): The ID of the user.
         cohort_id (str): The ID of the cohort to modify.
         model (str): The model to use for processing the request.
+        return_updated_cohort (bool): Whether to return the updated cohort.
 
     Body:
-        user_request (str): Instructions for modifying the cohort.
+        user_request (str): Instructions for modifying the cohort (plain text in request body).
 
     Returns:
         StreamingResponse: A stream of the response text.
     """
+    # Read the user request from the request body
+    body = await request.body()
+    user_request = body.decode('utf-8') if body else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+    
     current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
     if not current_cohort:
         raise HTTPException(
-            status_code=404, detail=f"Cohort not found for user {user_id}"
+            status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
         )
     current_cohort = json.loads(current_cohort["cohort_data"])
     try:
@@ -404,6 +408,7 @@ async def suggest_changes(
     - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
     - Make sure to choose the appropriate domain for each phenotype for the given data source
     - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
+    - If a phenotype is to be removed, then return the phenotype in the list of to-be-updated phenotypes in the form {{"id": PTID, "class_name": null}}.
     """
 
     user_prompt = f"""     
@@ -435,48 +440,76 @@ async def suggest_changes(
         inside_json = False
         trailing_buffer = ""  # To handle split tags
         json_buffer = ""
-        for chunk in completion:
-            if len(chunk.choices):
-                current_response = chunk.choices[0].delta.content
-                if current_response is not None:
-                    # Prepend trailing buffer to handle split tags
-                    if not inside_json:
-                        current_response = trailing_buffer + current_response
-                        trailing_buffer = current_response[
-                            -10:
-                        ]  # Keep last 10 characters for next iteration
+        try:
+            for chunk in completion:
+                if len(chunk.choices):
+                    current_response = chunk.choices[0].delta.content
+                    if current_response is not None:
+                        # Prepend trailing buffer to handle split tags
+                        if not inside_json:
+                            current_response = trailing_buffer + current_response
+                            trailing_buffer = current_response[
+                                -10:
+                            ]  # Keep last 10 characters for next iteration
 
-                    if "<JSON>" in current_response:
-                        inside_json = True
-                        json_buffer = current_response.split("<JSON>", 1)[1]
-                        final_chunk = current_response.split("<JSON>", 1)[0]
-                        yield final_chunk
-                    elif inside_json:
-                        json_buffer += current_response
-                    elif not inside_json:
-                        yield current_response[
-                            :-10
-                        ]  # Yield response excluding trailing buffer
+                        if "<JSON>" in current_response:
+                            inside_json = True
+                            json_buffer = current_response.split("<JSON>", 1)[1]
+                            final_chunk = current_response.split("<JSON>", 1)[0]
+                            yield final_chunk
+                        elif inside_json:
+                            json_buffer += current_response
+                        elif not inside_json:
+                            yield current_response[
+                                :-10
+                            ]  # Yield response excluding trailing buffer
 
-        parsed_json = json_buffer.replace("</JSON>", "")
-        logger.info(f"Parsed JSON: {parsed_json}")
-        new_phenotypes = json.loads(json_buffer.replace("</JSON>", ""))
-        logger.info(
-            f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
-        )
+            # Yield any remaining trailing buffer
+            if not inside_json and trailing_buffer:
+                yield trailing_buffer
 
-        c = CohortUtils()
-        new_cohort = c.convert_phenotypes_to_structure(
-            c.update_cohort(current_cohort, new_phenotypes)
-        )
-        await db_manager.update_cohort_for_user(
-            user_id, cohort_id, new_cohort, provisional=True, new_version=False
-        )
-        if return_updated_cohort:
-            yield json.dumps(new_cohort, indent=4)
-        logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
+            # Process the JSON if we found it
+            if json_buffer:
+                try:
+                    parsed_json = json_buffer.replace("</JSON>", "")
+                    logger.info(f"Parsed JSON: {parsed_json}")
+                    new_phenotypes = json.loads(parsed_json)
+                    logger.info(
+                        f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
+                    )
 
-    return StreamingResponse(stream_response(), media_type="text/plain")
+                    c = CohortUtils()
+                    new_cohort = c.convert_phenotypes_to_structure(
+                        c.update_cohort(current_cohort, new_phenotypes)
+                    )
+                    await db_manager.update_cohort_for_user(
+                        user_id, cohort_id, new_cohort, provisional=True, new_version=False
+                    )
+                    if return_updated_cohort:
+                        yield json.dumps(new_cohort, indent=4)
+                    logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse JSON: {e}")
+                    yield f"\n\nError: Failed to parse AI response JSON. Please try again."
+                except Exception as e:
+                    logger.error(f"Error processing cohort update: {e}")
+                    yield f"\n\nError: Failed to update cohort. Please try again."
+            else:
+                logger.warning("No JSON found in AI response")
+                
+        except Exception as e:
+            logger.error(f"Error in stream_response: {e}")
+            yield f"\n\nError: Streaming failed. Please try again."
+
+    return StreamingResponse(
+        stream_response(), 
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )
 
 
 @app.get("/cohort/accept_changes", tags=["AI"])
