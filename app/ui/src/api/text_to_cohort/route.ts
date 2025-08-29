@@ -124,9 +124,9 @@ export const rejectChanges = async (cohort_id: string) => {
   }
 };
 
-export const textToCohort = async (data: any) => {
+export const suggestChanges = async (data: any) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/text_to_cohort`, {
+    const response = await fetch(`${BACKEND_URL}/cohort/suggest_changes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
 import {
-  textToCohort,
+  suggestChanges,
   getUserCohort,
   acceptChanges,
   rejectChanges,
@@ -117,12 +117,12 @@ class ChatPanelDataService {
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
     try {
-      const stream = await textToCohort({
+      const stream = await suggestChanges({
         user_request: inputText.trim(),
         current_cohort: this.cohortDataService.cohort_data,
       });
 
-      console.log('Stream received from textToCohort');
+      console.log('Stream received from suggestChanges');
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
         text: '',
@@ -153,7 +153,7 @@ class ChatPanelDataService {
 
       console.log('Finalizing assistant response');
       const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-      console.log('Response from textToCohort:', response);
+      console.log('Response from suggestChanges:', response);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
       this.notifyAICompletionListeners(true);

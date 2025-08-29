@@ -332,7 +332,7 @@ async def suggest_changes(
         raise HTTPException(
             status_code=404, detail=f"Cohort not found for user {user_id}"
         )
-
+    current_cohort = json.loads(current_cohort["cohort_data"])
     try:
         # these are duplicated i think, there is a phenotype key with everything
         del current_cohort["entry_criterion"]
