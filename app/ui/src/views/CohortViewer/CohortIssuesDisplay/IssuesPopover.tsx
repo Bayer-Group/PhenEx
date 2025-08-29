@@ -16,6 +16,43 @@ interface IssuesPopoverProps {
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Subscribe to right panel changes
+  useEffect(() => {
+    const cohortViewerService = TwoPanelCohortViewerService.getInstance();
+    
+    const handleRightPanelChange = (viewType: any, extraData: any) => {
+      console.log('[IssuesPopover] Right panel changed:', viewType, extraData);
+      
+      if (viewType === 'phenotype' && extraData && extraData.id) {
+        // Find matching phenotype in our issues list using issue.phenotype.id
+        const matchingIssue = issues.find(issue => issue.phenotype && issue.phenotype.id === extraData.id);
+        
+        if (matchingIssue) {
+          console.log('[IssuesPopover] Found matching phenotype:', matchingIssue.phenotype.id);
+          setSelectedId(matchingIssue.phenotype.id);
+        } else {
+          // If no matching issue, clear selection
+          setSelectedId(null);
+        }
+      } else {
+        // If not a phenotype view or no extraData, clear selection
+        setSelectedId(null);
+      }
+    };
+
+    // Subscribe to service changes
+    cohortViewerService.addListener(handleRightPanelChange);
+    
+    // Initial check for current state
+    const currentViewType = cohortViewerService.getCurrentViewType();
+    const currentExtraData = cohortViewerService.getExtraData();
+    handleRightPanelChange(currentViewType, currentExtraData);
+
+    return () => {
+      cohortViewerService.removeListener(handleRightPanelChange);
+    };
+  }, [issues]); // Re-run when issues change
+
   const groupedIssues = issues.reduce(
     (acc, issue) => {
       const type = issue.type as PhenotypeType;

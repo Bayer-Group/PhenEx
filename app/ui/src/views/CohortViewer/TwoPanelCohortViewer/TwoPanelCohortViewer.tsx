@@ -23,7 +23,7 @@ export class TwoPanelCohortViewerService {
   private extraData?: any;
   private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void }>;
   private currentViewType: any = CohortViewType.Info;
-  private listeners: Array<() => void> = [];
+  private listeners: Array<(viewType: any, extraData: any) => void> = [];
 
   private constructor() {}
 
@@ -77,15 +77,19 @@ export class TwoPanelCohortViewerService {
     return this.extraData;
   }
 
-  private notifyListeners() {
-    this.listeners.forEach(listener => listener());
+  public getCurrentViewType(): any {
+    return this.currentViewType;
   }
 
-  public addListener(listener: () => void) {
+  private notifyListeners() {
+    this.listeners.forEach(listener => listener(this.currentViewType, this.extraData));
+  }
+
+  public addListener(listener: (viewType: any, extraData: any) => void) {
     this.listeners.push(listener);
   }
 
-  public removeListener(listener: () => void) {
+  public removeListener(listener: (viewType: any, extraData: any) => void) {
     this.listeners = this.listeners.filter(l => l !== listener);
   }
 }
@@ -94,15 +98,15 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   const service = TwoPanelCohortViewerService.getInstance();
   const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void }>(null);
   service.setPanelRef(panelRef);
-  const [viewType, setViewType] = useState<CohortViewType>(service.currentViewType);
+  const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
 
   React.useEffect(() => {
-    const updateState = () => {
-      setViewType(service.currentViewType);
-      setExtraData(service.getExtraData());
+    const updateState = (viewType: any, extraData: any) => {
+      setViewType(viewType);
+      setExtraData(extraData);
     };
-    updateState();
+    updateState(service.getCurrentViewType(), service.getExtraData());
     // Subscribe to service changes
     service.addListener(updateState);
     return () => service.removeListener(updateState);
