@@ -16,7 +16,7 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const [currentItem, setCurrentItem] = useState<RightPanelHistoryItem | null>(historyService.getCurrentItem());
   const [isHovered, setIsHovered] = useState(false);
 
-  const maxCards = 4; // Number of cards to display
+  const maxCards = 3; // Number of cards to display
 
   useEffect(() => {
     const updateHistory = () => {
