@@ -29,6 +29,12 @@ services:
       - ${HOME}/data/phenex/users:/data/users
       - ./backend:/app
       - ../phenex:/app/phenex
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     container_name: phenex-frontend
@@ -44,7 +50,7 @@ services:
       - "5173:5173"
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
 
   studio:
     container_name: supabase-studio

@@ -118,6 +118,17 @@ async def startup_event():
         )
 
 
+@app.get("/health", tags=["health"])
+async def health_check():
+    """
+    Health check endpoint for Docker health checks and service readiness.
+    
+    Returns:
+        dict: Simple health status
+    """
+    return {"status": "healthy", "service": "phenex-backend"}
+
+
 # Modify the get_all_cohorts endpoint to accept user_id
 @app.get("/cohorts", tags=["cohort"])
 async def get_all_cohorts_for_user(user_id: str):
