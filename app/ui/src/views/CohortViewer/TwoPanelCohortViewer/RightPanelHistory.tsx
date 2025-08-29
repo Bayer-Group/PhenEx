@@ -33,27 +33,30 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const handleCardClick = (item: RightPanelHistoryItem, index: number) => {
     console.log(`[RightPanelHistory] Card clicked at index ${index}:`, item.displayName);
     
-    // If clicking the current item (index 0), do nothing
-    if (index === 0) return;
+    // Since we're showing previous items, index 0 is the most recent previous item
+    // We need to pop (index + 1) times to reach the clicked item
+    const popsNeeded = index + 1;
     
-    // Pop items until we reach the clicked item
-    for (let i = 0; i < index; i++) {
+    for (let i = 0; i < popsNeeded; i++) {
       const previousItem = historyService.goBack();
-      if (previousItem) {
+      if (previousItem && i === popsNeeded - 1) {
+        // On the last pop, update the view
         cohortViewerService.setCurrentViewAndData(previousItem.viewType, previousItem.extraData);
       }
     }
   };
 
-  if (!currentItem) {
-    console.log('[RightPanelHistory] No current item, not rendering');
+  if (!currentItem || history.length <= 1) {
+    console.log('[RightPanelHistory] No previous items to show, not rendering');
     return null;
   }
 
-  // Get the last N items for display (most recent first)
-  const displayItems = history.slice(-maxCards).reverse();
+  // Get the previous N items for display (excluding the current item)
+  // We want to show items we can go back to, not the current one
+  const previousItems = history.slice(0, -1); // Remove current item
+  const displayItems = previousItems.slice(-maxCards).reverse(); // Get last N, most recent first
   
-  console.log('[RightPanelHistory] Rendering stack with items:', displayItems.map(item => item.displayName));
+  console.log('[RightPanelHistory] Rendering stack with previous items:', displayItems.map(item => item.displayName));
 
   return (
     <div className={`${styles.rightPanelHistory} ${className || ''}`}>
