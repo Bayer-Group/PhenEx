@@ -59,6 +59,15 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
+  public setCurrentViewAndData = (viewType: any, data: any) => {
+    console.log(`Setting current view and data without adding to history: ${viewType}`);
+    
+    this.currentViewType = viewType;
+    this.extraData = data;
+    this.panelRef?.current?.collapseRightPanel(false);
+    this.notifyListeners();
+  };
+
   public hideExtraContent = () => {
     this.panelRef?.current?.collapseRightPanel(true);
     this.notifyListeners();
