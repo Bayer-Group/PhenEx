@@ -10,6 +10,8 @@ import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPa
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
+import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
+import { RightPanelHistory } from './RightPanelHistory';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -20,7 +22,7 @@ export class TwoPanelCohortViewerService {
   private data?: string;
   private extraData?: any;
   private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void }>;
-  private currentViewType: CohortViewType = CohortViewType.Info;
+  private currentViewType: any = CohortViewType.Info;
   private listeners: Array<() => void> = [];
 
   private constructor() {}
@@ -44,8 +46,13 @@ export class TwoPanelCohortViewerService {
     this.panelRef = ref;
   }
 
-  public displayExtraContent = (viewType: CohortViewType, data: any) => {
+  public displayExtraContent = (viewType: any, data: any) => {
     console.log(`Displaying extra content for view type: ${viewType}`);
+    
+    // Add to history
+    const historyService = RightPanelHistoryDataService.getInstance();
+    historyService.addToHistory(viewType, data);
+    
     this.currentViewType = viewType;
     this.extraData = data;
     this.panelRef?.current?.collapseRightPanel(false);
@@ -94,6 +101,10 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   service.setData(data);
 
   const renderRightPanel = () => {
+    // Add to history when rendering a panel
+    const historyService = RightPanelHistoryDataService.getInstance();
+    historyService.addToHistory(viewType, extraData);
+
     if (viewType === 'phenotype') {
       return <PhenotypePanel data={extraData} />;
     } else if (viewType === 'report') {
@@ -115,7 +126,11 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
 
   return (
     <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={400}>
-      <CohortViewer data={service.getData()} />
+      <>
+        <CohortViewer data={service.getData()} />
+        <RightPanelHistory />
+
+      </>
       {renderRightPanel()}
     </TwoPanelView>
   );

@@ -12,6 +12,7 @@
 
 .leftPanel {
   background-color: var(--background-color) !important;
+  position: relative;
   /* transition:
     width 0.2s ease,
     opacity 0.2s ease; */
