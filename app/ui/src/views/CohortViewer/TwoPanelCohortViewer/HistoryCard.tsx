@@ -23,10 +23,17 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
   
   const cardClassName = [
     styles.historyCard,
+    `${styles.cardIndex}${index}`, // Add specific index class for CSS targeting
     typeStyleClass,
     className,
     typeStyles[`${item.extraData?.type || ''}_text_color`] || ''
   ].filter(Boolean).join(' ');
+
+  // Debug logging for classes
+  console.log('[HistoryCard] Debug - index:', index);
+  console.log('[HistoryCard] Debug - className prop:', className);
+  console.log('[HistoryCard] Debug - final cardClassName:', cardClassName);
+  console.log('[HistoryCard] Debug - cardIndex class:', `${styles.cardIndex}${index}`);
 
   const cardStyle = {
     '--card-index': index,
@@ -40,7 +47,7 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
       className={cardClassName}
       style={cardStyle}
       onClick={onClick}
-      title={`${item.displayName} - ${new Date(item.timestamp).toLocaleTimeString()}`}
+      title={`${item.displayName}`}
     >
       <div className={`${styles.cardContent}`}>
         <div className={styles.cardTitle}>

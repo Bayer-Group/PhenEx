@@ -8,5 +8,11 @@
 .cardStack {
     position: relative;
     width: 140px; /* Base width + max offset (120px + 20px for 2 cards behind) */
-    height: 80px; /* Base height + max offset */
+    height: 200px; /* Increased height to accommodate animated cards moving up */
+    transition: all 0.3s ease;
+}
+
+.cardStack.hovered {
+    /* Expand the container height when hovered to show fanned cards */
+    /* height: 240px; */
 }

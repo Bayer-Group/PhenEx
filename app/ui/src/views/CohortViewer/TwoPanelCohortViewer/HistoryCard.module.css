@@ -6,7 +6,7 @@
   border: 1px solid #ddd;
   background: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   
   /* Stack positioning using CSS custom property */
@@ -17,8 +17,8 @@
 }
 
 .historyCard:hover {
-  transform: translateZ(calc(var(--card-index) * -1px)) translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  /* transform: translateZ(calc(var(--card-index) * 1px)) translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); */
 }
 
 .cardContent {
@@ -48,4 +48,38 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Index-specific classes for targeting cards */
+.cardIndex0 {
+  /* Base class for index 0 card - keep absolute positioning */
+}
+
+.cardIndex1 {
+  /* Base class for index 1 card - keep absolute positioning */
+}
+
+.cardIndex2 {
+  /* Base class for index 2 card - keep absolute positioning */
+}
+
+/* Stack hover animation behavior */
+/* Use CSS calc to dynamically position cards based on their index */
+/* The topmost card (highest index) should not move */
+/* Cards behind it should move up progressively more */
+
+/* Define a CSS variable for card height */
+:root {
+  --card-height: 60px;
+  --max-cards: 4; /* Should match maxCards from React component */
+}
+
+/* Global hover animation using CSS custom properties */
+.cardHovered {
+  /* Calculate reverse movement: cards with lower indices move up more */
+  /* For maxCards=4: index 3 gets 0px, index 2 gets -60px, index 1 gets -120px, index 0 gets -180px */
+  transform: translateZ(calc(var(--card-index) * -1px)) 
+             translateY(calc((var(--card-index)) * -1 * var(--card-height)));
+            /* translateY(calc((var(--max-cards) + 1 - var(--card-index)) * -1 * var(--card-height))); */
+
 }
