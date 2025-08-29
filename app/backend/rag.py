@@ -137,7 +137,7 @@ class QueryRequest(BaseModel):
     top_k: int = 10
 
 
-@router.post("/query")
+@router.post("/query", tags=["AI"])
 async def query_rag(request: QueryRequest):
     """
     Endpoint to query the FAISS index and retrieve the most relevant documents.

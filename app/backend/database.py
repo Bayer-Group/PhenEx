@@ -39,7 +39,7 @@ class DatabaseManager:
     async def get_all_cohorts_for_user(self, user_id: str) -> List[Dict]:
         """
         Retrieve all cohorts for a specific user from the database.
-        Returns only the latest version of each cohort, prioritizing provisional versions 
+        Returns only the latest version of each cohort, prioritizing provisional versions
         when they exist at the highest version number.
 
         Args:
@@ -127,7 +127,7 @@ class DatabaseManager:
             """
 
             max_version_row = await conn.fetchrow(max_version_query, user_id, cohort_id)
-            
+
             if not max_version_row or max_version_row["max_version"] is None:
                 return None
 
@@ -140,19 +140,29 @@ class DatabaseManager:
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
             """
 
-            provisional_row = await conn.fetchrow(provisional_query, user_id, cohort_id, max_version)
+            provisional_row = await conn.fetchrow(
+                provisional_query, user_id, cohort_id, max_version
+            )
 
             if provisional_row:
                 # Return the provisional version at the highest version number
                 cohort_data = {
-                    "cohort_data": provisional_row["cohort_data"] if provisional_row["cohort_data"] else {},
+                    "cohort_data": (
+                        provisional_row["cohort_data"]
+                        if provisional_row["cohort_data"]
+                        else {}
+                    ),
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
                     "created_at": (
-                        provisional_row["created_at"].isoformat() if provisional_row["created_at"] else None
+                        provisional_row["created_at"].isoformat()
+                        if provisional_row["created_at"]
+                        else None
                     ),
                     "updated_at": (
-                        provisional_row["updated_at"].isoformat() if provisional_row["updated_at"] else None
+                        provisional_row["updated_at"].isoformat()
+                        if provisional_row["updated_at"]
+                        else None
                     ),
                 }
                 return cohort_data
@@ -164,21 +174,31 @@ class DatabaseManager:
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
             """
 
-            non_provisional_row = await conn.fetchrow(non_provisional_query, user_id, cohort_id, max_version)
+            non_provisional_row = await conn.fetchrow(
+                non_provisional_query, user_id, cohort_id, max_version
+            )
 
             if not non_provisional_row:
                 return None
 
             # Return the non-provisional version at the highest version number
             cohort_data = {
-                "cohort_data": non_provisional_row["cohort_data"] if non_provisional_row["cohort_data"] else {},
+                "cohort_data": (
+                    non_provisional_row["cohort_data"]
+                    if non_provisional_row["cohort_data"]
+                    else {}
+                ),
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
                 "created_at": (
-                    non_provisional_row["created_at"].isoformat() if non_provisional_row["created_at"] else None
+                    non_provisional_row["created_at"].isoformat()
+                    if non_provisional_row["created_at"]
+                    else None
                 ),
                 "updated_at": (
-                    non_provisional_row["updated_at"].isoformat() if non_provisional_row["updated_at"] else None
+                    non_provisional_row["updated_at"].isoformat()
+                    if non_provisional_row["updated_at"]
+                    else None
                 ),
             }
 
@@ -194,11 +214,16 @@ class DatabaseManager:
                 await conn.close()
 
     async def update_cohort_for_user(
-        self, user_id: str, cohort_id: str, cohort_data: Dict, provisional: bool = False, new_version: bool = False
+        self,
+        user_id: str,
+        cohort_id: str,
+        cohort_data: Dict,
+        provisional: bool = False,
+        new_version: bool = False,
     ) -> bool:
         """
         Update or create a cohort for a user in the database.
-        
+
         Args:
             user_id (str): The user ID (UUID) whose cohort to update.
             cohort_id (str): The ID of the cohort to update.
@@ -220,7 +245,7 @@ class DatabaseManager:
                     FROM {self.full_table_name} 
                     WHERE user_id = $1 AND cohort_id = $2
                 """
-                
+
                 version_row = await conn.fetchrow(version_query, user_id, cohort_id)
                 current_max_version = (
                     version_row["max_version"]
@@ -228,13 +253,13 @@ class DatabaseManager:
                     else 0
                 )
                 target_version = current_max_version + 1
-                
+
                 # Insert the new version
                 insert_query = f"""
                     INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
                 """
-                
+
                 await conn.execute(
                     insert_query,
                     cohort_id,
@@ -243,7 +268,7 @@ class DatabaseManager:
                     json.dumps(cohort_data),
                     provisional,
                 )
-                
+
                 logger.info(
                     f"Successfully created cohort {cohort_id} version {target_version} for user {user_id} (provisional: {provisional})"
                 )
@@ -255,23 +280,23 @@ class DatabaseManager:
                     FROM {self.full_table_name} 
                     WHERE user_id = $1 AND cohort_id = $2
                 """
-                
+
                 version_row = await conn.fetchrow(version_query, user_id, cohort_id)
                 current_max_version = (
                     version_row["max_version"]
                     if version_row and version_row["max_version"]
                     else 0
                 )
-                
+
                 if current_max_version == 0:
                     # No existing cohort, create version 1
                     target_version = 1
-                    
+
                     insert_query = f"""
                         INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
                         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
                     """
-                    
+
                     await conn.execute(
                         insert_query,
                         cohort_id,
@@ -280,20 +305,20 @@ class DatabaseManager:
                         json.dumps(cohort_data),
                         provisional,
                     )
-                    
+
                     logger.info(
                         f"Successfully created new cohort {cohort_id} version {target_version} for user {user_id} (provisional: {provisional})"
                     )
                 else:
                     target_version = current_max_version
-                    
+
                     if provisional:
                         # If provisional, create a new row with same version and set is_provisional = True
                         insert_query = f"""
                             INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
                             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
                         """
-                        
+
                         await conn.execute(
                             insert_query,
                             cohort_id,
@@ -302,7 +327,7 @@ class DatabaseManager:
                             json.dumps(cohort_data),
                             True,  # Always provisional for this case
                         )
-                        
+
                         logger.info(
                             f"Successfully created provisional cohort {cohort_id} version {target_version} for user {user_id}"
                         )
@@ -313,7 +338,7 @@ class DatabaseManager:
                             SET cohort_data = $3, updated_at = NOW()
                             WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = FALSE
                         """
-                        
+
                         result = await conn.execute(
                             update_query,
                             user_id,
@@ -321,14 +346,14 @@ class DatabaseManager:
                             json.dumps(cohort_data),
                             target_version,
                         )
-                        
+
                         if result == "UPDATE 0":
                             # No non-provisional version found, insert new one
                             insert_query = f"""
                                 INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
                                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
                             """
-                            
+
                             await conn.execute(
                                 insert_query,
                                 cohort_id,
@@ -337,7 +362,7 @@ class DatabaseManager:
                                 json.dumps(cohort_data),
                                 False,
                             )
-                            
+
                             logger.info(
                                 f"Successfully created cohort {cohort_id} version {target_version} for user {user_id} (no existing non-provisional version)"
                             )
@@ -418,31 +443,35 @@ class DatabaseManager:
                     ORDER BY version DESC
                     LIMIT 1
                 """
-                
-                provisional_row = await conn.fetchrow(provisional_query, user_id, cohort_id)
-                
+
+                provisional_row = await conn.fetchrow(
+                    provisional_query, user_id, cohort_id
+                )
+
                 if not provisional_row:
                     return False  # No provisional version found
-                
+
                 target_version = provisional_row["version"]
-                
+
                 # Delete any existing non-provisional cohort at the same version
                 delete_query = f"""
                     DELETE FROM {self.full_table_name} 
                     WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
                 """
-                
+
                 await conn.execute(delete_query, user_id, cohort_id, target_version)
-                
+
                 # Set the provisional cohort to non-provisional
                 update_query = f"""
                     UPDATE {self.full_table_name} 
                     SET is_provisional = FALSE, updated_at = NOW()
                     WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
                 """
-                
-                result = await conn.execute(update_query, user_id, cohort_id, target_version)
-                
+
+                result = await conn.execute(
+                    update_query, user_id, cohort_id, target_version
+                )
+
                 if result == "UPDATE 0":
                     return False  # No provisional version found
 

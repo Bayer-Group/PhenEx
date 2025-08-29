@@ -121,7 +121,11 @@ class DatabaseTester:
         try:
             print(f"📝 Creating cohort {TEST_COHORT_ID} for user {TEST_USER_ID}")
             success = await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, TEST_COHORT_ID, SAMPLE_COHORT_DATA, provisional=False, new_version=False
+                TEST_USER_ID,
+                TEST_COHORT_ID,
+                SAMPLE_COHORT_DATA,
+                provisional=False,
+                new_version=False,
             )
             print(f"✏️  Create operation result: {success}")
 
@@ -130,8 +134,10 @@ class DatabaseTester:
                 cohort = await self.db_manager.get_cohort_for_user(
                     TEST_USER_ID, TEST_COHORT_ID
                 )
-                print(f"📋 Retrieved cohort: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}")
-                
+                print(
+                    f"📋 Retrieved cohort: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}"
+                )
+
                 if cohort and cohort.get("version") == 1:
                     self.log_test(
                         "Create Cohort", True, "Cohort created with version 1"
@@ -149,14 +155,20 @@ class DatabaseTester:
     async def test_update_cohort_versioning(self):
         """Test cohort versioning when updating with new_version=False and provisional=True."""
         try:
-            print(f"📝 Updating cohort {TEST_COHORT_ID} with provisional=True, new_version=False")
+            print(
+                f"📝 Updating cohort {TEST_COHORT_ID} with provisional=True, new_version=False"
+            )
             # Update the cohort with new_version=False and provisional=True
             # This should create a provisional version at the same version number (1)
             updated_data = SAMPLE_COHORT_DATA.copy()
             updated_data["description"] = "Updated description for provisional version"
 
             success = await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, TEST_COHORT_ID, updated_data, provisional=True, new_version=False
+                TEST_USER_ID,
+                TEST_COHORT_ID,
+                updated_data,
+                provisional=True,
+                new_version=False,
             )
             print(f"✏️  Update operation result: {success}")
 
@@ -165,15 +177,18 @@ class DatabaseTester:
                 cohort = await self.db_manager.get_cohort_for_user(
                     TEST_USER_ID, TEST_COHORT_ID
                 )
-                print(f"📋 Retrieved cohort after update: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}")
-                
+                print(
+                    f"📋 Retrieved cohort after update: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}"
+                )
+
                 if cohort:
                     cohort_data = cohort.get("cohort_data", {})
                     if isinstance(cohort_data, str):
                         import json
+
                         cohort_data = json.loads(cohort_data)
                     print(f"📄 Cohort description: {cohort_data.get('description')}")
-                
+
                 if (
                     cohort
                     and cohort.get("version") == 1
@@ -203,7 +218,11 @@ class DatabaseTester:
         try:
             # Create a second cohort
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, TEST_COHORT_ID_2, SAMPLE_COHORT_DATA_2, provisional=False, new_version=False
+                TEST_USER_ID,
+                TEST_COHORT_ID_2,
+                SAMPLE_COHORT_DATA_2,
+                provisional=False,
+                new_version=False,
             )
 
             cohorts = await self.db_manager.get_all_cohorts_for_user(TEST_USER_ID)
@@ -237,8 +256,10 @@ class DatabaseTester:
             cohort_before = await self.db_manager.get_cohort_for_user(
                 TEST_USER_ID, TEST_COHORT_ID
             )
-            print(f"   Current: version={cohort_before.get('version')}, provisional={cohort_before.get('is_provisional')}")
-            
+            print(
+                f"   Current: version={cohort_before.get('version')}, provisional={cohort_before.get('is_provisional')}"
+            )
+
             # Accept the provisional version 1
             success = await self.db_manager.accept_changes(TEST_USER_ID, TEST_COHORT_ID)
             print(f"✏️  Accept operation result: {success}")
@@ -248,8 +269,10 @@ class DatabaseTester:
                 cohort = await self.db_manager.get_cohort_for_user(
                     TEST_USER_ID, TEST_COHORT_ID
                 )
-                print(f"📋 After accept: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}")
-                
+                print(
+                    f"📋 After accept: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}"
+                )
+
                 if (
                     cohort
                     and cohort.get("version") == 1
@@ -275,21 +298,29 @@ class DatabaseTester:
     async def test_reject_changes(self):
         """Test rejecting provisional changes."""
         try:
-            print(f"📝 Creating another provisional version for cohort {TEST_COHORT_ID}")
+            print(
+                f"📝 Creating another provisional version for cohort {TEST_COHORT_ID}"
+            )
             # Create another provisional version at the same version number (1)
             updated_data = SAMPLE_COHORT_DATA.copy()
             updated_data["description"] = "This provisional version should be rejected"
 
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, TEST_COHORT_ID, updated_data, provisional=True, new_version=False
+                TEST_USER_ID,
+                TEST_COHORT_ID,
+                updated_data,
+                provisional=True,
+                new_version=False,
             )
 
             # Verify provisional version was created
             cohort = await self.db_manager.get_cohort_for_user(
                 TEST_USER_ID, TEST_COHORT_ID
             )
-            print(f"📋 After creating provisional: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}")
-            
+            print(
+                f"📋 After creating provisional: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}"
+            )
+
             if not cohort.get("is_provisional"):
                 self.log_test(
                     "Reject Changes",
@@ -308,8 +339,10 @@ class DatabaseTester:
                 cohort = await self.db_manager.get_cohort_for_user(
                     TEST_USER_ID, TEST_COHORT_ID
                 )
-                print(f"📋 After reject: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}")
-                
+                print(
+                    f"📋 After reject: version={cohort.get('version') if cohort else 'None'}, provisional={cohort.get('is_provisional') if cohort else 'None'}"
+                )
+
                 if (
                     cohort
                     and cohort.get("version") == 1
@@ -403,7 +436,11 @@ class DatabaseTester:
         try:
             # Create a cohort for a different user
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID_2, TEST_COHORT_ID, SAMPLE_COHORT_DATA, provisional=False, new_version=False
+                TEST_USER_ID_2,
+                TEST_COHORT_ID,
+                SAMPLE_COHORT_DATA,
+                provisional=False,
+                new_version=False,
             )
 
             # Try to get the cohort as the first user
@@ -433,37 +470,59 @@ class DatabaseTester:
             # Create a new cohort for this test
             test_cohort_id = generate_cohort_id()
             print(f"📝 Testing new_version parameter with cohort {test_cohort_id}")
-            
+
             # Create initial version
             print("📝 Creating initial version with new_version=False")
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, SAMPLE_COHORT_DATA, provisional=False, new_version=False
+                TEST_USER_ID,
+                test_cohort_id,
+                SAMPLE_COHORT_DATA,
+                provisional=False,
+                new_version=False,
             )
-            
-            cohort_v1 = await self.db_manager.get_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            print(f"📋 Initial version: version={cohort_v1.get('version')}, provisional={cohort_v1.get('is_provisional')}")
-            
+
+            cohort_v1 = await self.db_manager.get_cohort_for_user(
+                TEST_USER_ID, test_cohort_id
+            )
+            print(
+                f"📋 Initial version: version={cohort_v1.get('version')}, provisional={cohort_v1.get('is_provisional')}"
+            )
+
             # Update with new_version=True (should create version 2)
             updated_data = SAMPLE_COHORT_DATA.copy()
             updated_data["description"] = "Version 2 with new_version=True"
-            
+
             print("📝 Updating with new_version=True (should create version 2)")
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, updated_data, provisional=False, new_version=True
+                TEST_USER_ID,
+                test_cohort_id,
+                updated_data,
+                provisional=False,
+                new_version=True,
             )
-            
+
             # Verify version 2 was created
-            cohort = await self.db_manager.get_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            print(f"📋 After new_version=True: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}")
-            
+            cohort = await self.db_manager.get_cohort_for_user(
+                TEST_USER_ID, test_cohort_id
+            )
+            print(
+                f"📋 After new_version=True: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}"
+            )
+
             if cohort and cohort.get("version") == 2:
-                self.log_test("New Version Parameter", True, "new_version=True creates version 2")
+                self.log_test(
+                    "New Version Parameter", True, "new_version=True creates version 2"
+                )
             else:
-                self.log_test("New Version Parameter", False, f"Expected version 2, got {cohort.get('version')}")
-                
+                self.log_test(
+                    "New Version Parameter",
+                    False,
+                    f"Expected version 2, got {cohort.get('version')}",
+                )
+
             # Clean up
             await self.db_manager.delete_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            
+
         except Exception as e:
             self.log_test("New Version Parameter", False, f"Error: {e}")
 
@@ -472,40 +531,58 @@ class DatabaseTester:
         try:
             # Create a new cohort for this test
             test_cohort_id = generate_cohort_id()
-            
+
             # Create initial version
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, SAMPLE_COHORT_DATA, provisional=False, new_version=False
+                TEST_USER_ID,
+                test_cohort_id,
+                SAMPLE_COHORT_DATA,
+                provisional=False,
+                new_version=False,
             )
-            
+
             # Update with new_version=False and provisional=False (should replace version 1)
             updated_data = SAMPLE_COHORT_DATA.copy()
             updated_data["description"] = "Replaced version 1"
-            
+
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, updated_data, provisional=False, new_version=False
+                TEST_USER_ID,
+                test_cohort_id,
+                updated_data,
+                provisional=False,
+                new_version=False,
             )
-            
+
             # Verify still version 1 but with updated data
-            cohort = await self.db_manager.get_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            
+            cohort = await self.db_manager.get_cohort_for_user(
+                TEST_USER_ID, test_cohort_id
+            )
+
             # Check if cohort_data is dict or string and handle accordingly
             cohort_data = cohort.get("cohort_data", {})
             if isinstance(cohort_data, str):
                 import json
+
                 cohort_data = json.loads(cohort_data)
-                
-            if (cohort and 
-                cohort.get("version") == 1 and 
-                cohort_data.get("description") == "Replaced version 1"):
-                self.log_test("Replace Existing Version", True, "Version 1 replaced successfully")
+
+            if (
+                cohort
+                and cohort.get("version") == 1
+                and cohort_data.get("description") == "Replaced version 1"
+            ):
+                self.log_test(
+                    "Replace Existing Version", True, "Version 1 replaced successfully"
+                )
             else:
-                self.log_test("Replace Existing Version", False, 
-                            f"Expected version 1 with updated description, got version {cohort.get('version')}")
-                
+                self.log_test(
+                    "Replace Existing Version",
+                    False,
+                    f"Expected version 1 with updated description, got version {cohort.get('version')}",
+                )
+
             # Clean up
             await self.db_manager.delete_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            
+
         except Exception as e:
             self.log_test("Replace Existing Version", False, f"Error: {e}")
 
@@ -515,48 +592,74 @@ class DatabaseTester:
             # Create a new cohort for this test
             test_cohort_id = generate_cohort_id()
             print(f"📝 Testing get_cohort priority logic with cohort {test_cohort_id}")
-            
+
             # Create initial version
             print("📝 Creating initial non-provisional version")
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, SAMPLE_COHORT_DATA, provisional=False, new_version=False
+                TEST_USER_ID,
+                test_cohort_id,
+                SAMPLE_COHORT_DATA,
+                provisional=False,
+                new_version=False,
             )
-            
-            cohort_initial = await self.db_manager.get_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            print(f"📋 Initial state: version={cohort_initial.get('version')}, provisional={cohort_initial.get('is_provisional')}")
-            
+
+            cohort_initial = await self.db_manager.get_cohort_for_user(
+                TEST_USER_ID, test_cohort_id
+            )
+            print(
+                f"📋 Initial state: version={cohort_initial.get('version')}, provisional={cohort_initial.get('is_provisional')}"
+            )
+
             # Create a provisional version at the same version number
             provisional_data = SAMPLE_COHORT_DATA.copy()
             provisional_data["description"] = "Provisional version"
-            
+
             print("📝 Creating provisional version at same version number")
             await self.db_manager.update_cohort_for_user(
-                TEST_USER_ID, test_cohort_id, provisional_data, provisional=True, new_version=False
+                TEST_USER_ID,
+                test_cohort_id,
+                provisional_data,
+                provisional=True,
+                new_version=False,
             )
-            
+
             # get_cohort should return the provisional version
-            cohort = await self.db_manager.get_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            print(f"📋 After creating provisional: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}")
-            
+            cohort = await self.db_manager.get_cohort_for_user(
+                TEST_USER_ID, test_cohort_id
+            )
+            print(
+                f"📋 After creating provisional: version={cohort.get('version')}, provisional={cohort.get('is_provisional')}"
+            )
+
             # Check if cohort_data is dict or string and handle accordingly
             cohort_data = cohort.get("cohort_data", {})
             if isinstance(cohort_data, str):
                 import json
+
                 cohort_data = json.loads(cohort_data)
-            
+
             print(f"📄 Returned description: '{cohort_data.get('description')}'")
-            
-            if (cohort and 
-                cohort.get("is_provisional") and
-                cohort_data.get("description") == "Provisional version"):
-                self.log_test("Get Cohort Priority Logic", True, "Provisional version returned correctly")
+
+            if (
+                cohort
+                and cohort.get("is_provisional")
+                and cohort_data.get("description") == "Provisional version"
+            ):
+                self.log_test(
+                    "Get Cohort Priority Logic",
+                    True,
+                    "Provisional version returned correctly",
+                )
             else:
-                self.log_test("Get Cohort Priority Logic", False, 
-                            f"Expected provisional version with 'Provisional version' description, got provisional: {cohort.get('is_provisional')}, description: '{cohort_data.get('description')}'")
-                
+                self.log_test(
+                    "Get Cohort Priority Logic",
+                    False,
+                    f"Expected provisional version with 'Provisional version' description, got provisional: {cohort.get('is_provisional')}, description: '{cohort_data.get('description')}'",
+                )
+
             # Clean up
             await self.db_manager.delete_cohort_for_user(TEST_USER_ID, test_cohort_id)
-            
+
         except Exception as e:
             self.log_test("Get Cohort Priority Logic", False, f"Error: {e}")
 
