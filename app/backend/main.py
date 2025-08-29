@@ -193,7 +193,7 @@ async def get_cohort_for_user(user_id: str, cohort_id: str):
 # Modify the update_cohort endpoint to require user_id
 @app.post("/cohort")
 async def update_cohort_for_user(
-    user_id: str, cohort_id: str, cohort: Dict = Body(...), provisional: bool = False
+    user_id: str, cohort_id: str, cohort: Dict = Body(...), provisional: bool = False, new_version: bool = False
 ):
     """
     Update or create a cohort for a specific user.
@@ -203,12 +203,13 @@ async def update_cohort_for_user(
         cohort_id (str): The ID of the cohort to update.
         cohort (Dict): The complete JSON specification of the cohort.
         provisional (bool): Whether to save the cohort as provisional.
+        new_version (bool): If True, increment version. If False, replace existing version.
 
     Returns:
         dict: Status and message of the operation.
     """
     try:
-        await db_manager.update_cohort_for_user(user_id, cohort_id, cohort, provisional)
+        await db_manager.update_cohort_for_user(user_id, cohort_id, cohort, provisional, new_version)
         return {
             "status": "success",
             "message": f"Cohort updated successfully for user {user_id}.",

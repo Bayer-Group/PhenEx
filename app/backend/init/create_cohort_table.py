@@ -142,11 +142,8 @@ class CohortTableInitializer:
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 
-                -- Primary key includes version to allow multiple versions per cohort
-                PRIMARY KEY (cohort_id, user_id, version),
-                
-                -- Ensure unique combination of cohort_id, user_id, and version for each provisional state
-                CONSTRAINT unique_cohort_version_provisional UNIQUE (cohort_id, user_id, version)
+                -- Primary key includes version and is_provisional to allow both provisional and non-provisional at same version
+                PRIMARY KEY (cohort_id, user_id, version, is_provisional)
             );
             """
 

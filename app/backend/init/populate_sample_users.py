@@ -113,6 +113,7 @@ class UserInitializer:
             test_user_ids = [
                 "c0799d5d-2bdf-4da4-8496-4f6d44b8fd26",  # PUBLIC USER
                 "00000000-0000-0000-0000-000000000000",  # TEST_USER
+                "00000000-0000-0000-0000-000000000001",  # TEST_USER_2
             ]
 
             existing_users = await conn.fetch(
@@ -202,6 +203,25 @@ class UserInitializer:
                 NOW(),
                 '{"provider": "email", "providers": ["email"]}',
                 '{"name": "Test User"}',
+                NOW(),
+                NOW(),
+                '',
+                '',
+                '',
+                ''
+            ),
+            (
+                '00000000-0000-0000-0000-000000000000',
+                '00000000-0000-0000-0000-000000000001',
+                'authenticated',
+                'authenticated',
+                'test2@phenex.ai',
+                crypt('12345678', gen_salt('bf')),
+                NOW(),
+                NOW(),
+                NOW(),
+                '{"provider": "email", "providers": ["email"]}',
+                '{"name": "Test User 2"}',
                 NOW(),
                 NOW(),
                 '',
