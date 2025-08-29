@@ -5,6 +5,7 @@ import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
+import typeStyles from '../../../styles/study_types.module.css';
 
 import { color, group } from 'd3';
 
@@ -103,10 +104,17 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
 
   const renderPhenotype = (issue, index) => {
     // render a single phenotype
+    const phenotypeType = issue.phenotype?.type || '';
+    const isSelected = selectedId === issue.phenotype?.id;
+    
+    // Build class names for hover and selected states using typeStyles
+    const typeHoverClass = typeStyles[`${phenotypeType}_list_item`] || '';
+    const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_list_item_selected`] : '';
+    
     return (
       <div
         key={`${issue.phenotype_id}-${index}`}
-        className={`${styles.phenotypeSection} ${selectedId === issue.phenotype.id ? styles.selected : ''}`}
+        className={`${styles.phenotypeSection} ${typeHoverClass} ${typeSelectedClass} ${isSelected ? styles.selected : ''}`}
         onClick={event => {
           event.stopPropagation();
           setSelectedId(issue.phenotype.id);

@@ -15,7 +15,7 @@
     var(--popover_border_radius_bottom) var(--popover_border_radius_bottom);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 400px;
-  max-height: calc(100vh - 50px);
+  max-height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -58,22 +58,7 @@
   border: transparent solid 1px;
 }
 
-.phenotypeSection:hover {
-  color: var(--color-accent);
-  border-color: var(--line-color);
-  background-color: var(--color-accent-hover) !important;
-}
 
-.phenotypeSection.selected {
-  background-color: var(--color-accent-hover) !important;
-  border-color: var(--color-accent);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-accent);
-}
-
-.phenotypeSection.selected:hover {
-  color: black;
-}
 
 .phenotypeId {
   font-family: 'IBMPlexSans-regular';
