@@ -10,7 +10,6 @@ export interface RightPanelHistoryItem {
 export class RightPanelHistoryDataService {
   private static instance: RightPanelHistoryDataService | null = null;
   private history: RightPanelHistoryItem[] = [];
-  private currentIndex: number = -1; // Current position in history
   private listeners: Array<() => void> = [];
   private maxHistorySize: number = 10;
 
@@ -28,8 +27,8 @@ export class RightPanelHistoryDataService {
     console.log(`[RightPanelHistory] Adding to history - viewType: ${viewType}`, extraData);
     
     // Don't add duplicate consecutive entries
-    const currentItem = this.getCurrentItem();
-    if (currentItem && currentItem.viewType === viewType && this.areExtraDataEqual(currentItem.extraData, extraData)) {
+    const lastItem = this.getLastItem();
+    if (lastItem && lastItem.viewType === viewType && this.areExtraDataEqual(lastItem.extraData, extraData)) {
       console.log(`[RightPanelHistory] Skipping duplicate entry for viewType: ${viewType}`);
       return;
     }
@@ -42,23 +41,13 @@ export class RightPanelHistoryDataService {
       displayName
     };
 
-    // If we're not at the end of history, remove everything after current position
-    // This happens when user goes back and then navigates to a new item
-    if (this.currentIndex < this.history.length - 1) {
-      this.history = this.history.slice(0, this.currentIndex + 1);
-      console.log(`[RightPanelHistory] Truncated history at index ${this.currentIndex}`);
-    }
-
     this.history.push(historyItem);
-    this.currentIndex = this.history.length - 1;
-    console.log(`[RightPanelHistory] Added item: ${displayName}, total history items: ${this.history.length}, currentIndex: ${this.currentIndex}`);
+    console.log(`[RightPanelHistory] Added item: ${displayName}, total history items: ${this.history.length}`);
 
     // Keep history size manageable
     if (this.history.length > this.maxHistorySize) {
-      const itemsToRemove = this.history.length - this.maxHistorySize;
-      this.history = this.history.slice(itemsToRemove);
-      this.currentIndex -= itemsToRemove;
-      console.log(`[RightPanelHistory] Trimmed history to ${this.maxHistorySize} items, new currentIndex: ${this.currentIndex}`);
+      this.history = this.history.slice(-this.maxHistorySize);
+      console.log(`[RightPanelHistory] Trimmed history to ${this.maxHistorySize} items`);
     }
 
     this.notifyListeners();
@@ -69,7 +58,7 @@ export class RightPanelHistoryDataService {
   }
 
   public getCurrentItem(): RightPanelHistoryItem | null {
-    return this.currentIndex >= 0 && this.currentIndex < this.history.length ? this.history[this.currentIndex] : null;
+    return this.history.length > 0 ? this.history[this.history.length - 1] : null;
   }
 
   public getLastItem(): RightPanelHistoryItem | null {
@@ -77,57 +66,36 @@ export class RightPanelHistoryDataService {
   }
 
   public getPreviousItem(): RightPanelHistoryItem | null {
-    return this.currentIndex > 0 ? this.history[this.currentIndex - 1] : null;
-  }
-
-  public getNextItem(): RightPanelHistoryItem | null {
-    return this.currentIndex < this.history.length - 1 ? this.history[this.currentIndex + 1] : null;
+    return this.history.length > 1 ? this.history[this.history.length - 2] : null;
   }
 
   public canGoBack(): boolean {
-    return this.currentIndex > 0;
-  }
-
-  public canGoForward(): boolean {
-    return this.currentIndex < this.history.length - 1;
+    return this.history.length > 1;
   }
 
   public goBack(): RightPanelHistoryItem | null {
     if (this.canGoBack()) {
-      this.currentIndex--;
-      console.log(`[RightPanelHistory] Went back to index ${this.currentIndex}: ${this.getCurrentItem()?.displayName}`);
+      // Pop the current item off the stack
+      const removedItem = this.history.pop();
+      const previousItem = this.getCurrentItem();
+      console.log(`[RightPanelHistory] Popped item: ${removedItem?.displayName}, now at: ${previousItem?.displayName}`);
       this.notifyListeners();
-      return this.getCurrentItem();
+      return previousItem;
     }
-    console.log(`[RightPanelHistory] Cannot go back - already at beginning`);
-    return null;
-  }
-
-  public goForward(): RightPanelHistoryItem | null {
-    if (this.canGoForward()) {
-      this.currentIndex++;
-      console.log(`[RightPanelHistory] Went forward to index ${this.currentIndex}: ${this.getCurrentItem()?.displayName}`);
-      this.notifyListeners();
-      return this.getCurrentItem();
-    }
-    console.log(`[RightPanelHistory] Cannot go forward - already at end`);
+    console.log(`[RightPanelHistory] Cannot go back - no previous items`);
     return null;
   }
 
   public clearHistory() {
     console.log(`[RightPanelHistory] Clearing history - had ${this.history.length} items`);
     this.history = [];
-    this.currentIndex = -1;
     this.notifyListeners();
   }
 
   public removeLastItem() {
     if (this.history.length > 0) {
       const removedItem = this.history.pop();
-      if (this.currentIndex >= this.history.length) {
-        this.currentIndex = this.history.length - 1;
-      }
-      console.log(`[RightPanelHistory] Removed last item: ${removedItem?.displayName}, remaining: ${this.history.length}, currentIndex: ${this.currentIndex}`);
+      console.log(`[RightPanelHistory] Removed last item: ${removedItem?.displayName}, remaining: ${this.history.length}`);
       this.notifyListeners();
     } else {
       console.log(`[RightPanelHistory] Cannot remove last item - history is empty`);

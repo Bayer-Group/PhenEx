@@ -39,29 +39,15 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
     }
   };
 
-  const handleForwardClick = () => {
-    console.log('[RightPanelHistory] Forward button clicked');
-    const nextItem = historyService.goForward();
-    if (nextItem) {
-      console.log('[RightPanelHistory] Navigating to next item:', nextItem.displayName);
-      // Don't call displayExtraContent as that would add to history
-      // Instead, directly update the service state
-      cohortViewerService.setCurrentViewAndData(nextItem.viewType, nextItem.extraData);
-    } else {
-      console.log('[RightPanelHistory] No next item available');
-    }
-  };
-
   // Check navigation availability
   const canGoBack = historyService.canGoBack();
-  const canGoForward = historyService.canGoForward();
 
   if (!currentItem) {
     console.log('[RightPanelHistory] No current item, not rendering');
     return null;
   }
 
-  console.log('[RightPanelHistory] Rendering with current item:', currentItem.displayName, 'canGoBack:', canGoBack, 'canGoForward:', canGoForward);
+  console.log('[RightPanelHistory] Rendering with current item:', currentItem.displayName, 'canGoBack:', canGoBack);
 
   return (
     <div className={styles.rightPanelHistory}>
@@ -76,20 +62,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
         </div>
         <div className="history-text">
           Back
-        </div>
-      </button>
-      
-      <button
-        onClick={handleForwardClick}
-        className={`history-button ${!canGoForward ? 'disabled' : ''}`}
-        title={canGoForward ? `Go forward to next panel` : 'No next panel available'}
-        disabled={!canGoForward}
-      >
-        <div className="history-icon">
-          →
-        </div>
-        <div className="history-text">
-          Forward
         </div>
       </button>
       
