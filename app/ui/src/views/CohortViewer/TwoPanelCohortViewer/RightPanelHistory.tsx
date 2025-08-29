@@ -1,7 +1,9 @@
 import React, { FC, useState, useEffect } from 'react';
 import { RightPanelHistoryDataService, RightPanelHistoryItem } from './RightPanelHistoryDataService';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer';
-import styles from './RightPanelHistory.module.css'
+import { HistoryCard } from './HistoryCard';
+import styles from './RightPanelHistory.module.css';
+
 interface RightPanelHistoryProps {
   className?: string;
 }
@@ -11,6 +13,8 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const cohortViewerService = TwoPanelCohortViewerService.getInstance();
   const [history, setHistory] = useState<RightPanelHistoryItem[]>(historyService.getHistory());
   const [currentItem, setCurrentItem] = useState<RightPanelHistoryItem | null>(historyService.getCurrentItem());
+
+  const maxCards = 3; // Number of cards to display
 
   useEffect(() => {
     const updateHistory = () => {
@@ -26,47 +30,42 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
     return () => historyService.removeListener(updateHistory);
   }, [historyService]);
 
-  const handleBackClick = () => {
-    console.log('[RightPanelHistory] Back button clicked');
-    const previousItem = historyService.goBack();
-    if (previousItem) {
-      console.log('[RightPanelHistory] Navigating to previous item:', previousItem.displayName);
-      // Don't call displayExtraContent as that would add to history
-      // Instead, directly update the service state
-      cohortViewerService.setCurrentViewAndData(previousItem.viewType, previousItem.extraData);
-    } else {
-      console.log('[RightPanelHistory] No previous item available');
+  const handleCardClick = (item: RightPanelHistoryItem, index: number) => {
+    console.log(`[RightPanelHistory] Card clicked at index ${index}:`, item.displayName);
+    
+    // If clicking the current item (index 0), do nothing
+    if (index === 0) return;
+    
+    // Pop items until we reach the clicked item
+    for (let i = 0; i < index; i++) {
+      const previousItem = historyService.goBack();
+      if (previousItem) {
+        cohortViewerService.setCurrentViewAndData(previousItem.viewType, previousItem.extraData);
+      }
     }
   };
-
-  // Check navigation availability
-  const canGoBack = historyService.canGoBack();
 
   if (!currentItem) {
     console.log('[RightPanelHistory] No current item, not rendering');
     return null;
   }
 
-  console.log('[RightPanelHistory] Rendering with current item:', currentItem.displayName, 'canGoBack:', canGoBack);
+  // Get the last N items for display (most recent first)
+  const displayItems = history.slice(-maxCards).reverse();
+  
+  console.log('[RightPanelHistory] Rendering stack with items:', displayItems.map(item => item.displayName));
 
   return (
-    <div className={styles.rightPanelHistory}>
-      <button
-        onClick={handleBackClick}
-        className={`history-button ${!canGoBack ? 'disabled' : ''}`}
-        title={canGoBack ? `Go back to previous panel` : 'No previous panel available'}
-        disabled={!canGoBack}
-      >
-        <div className="history-icon">
-          ←
-        </div>
-        <div className="history-text">
-          Back
-        </div>
-      </button>
-      
-      <div className="history-info">
-        {currentItem.displayName} ({history.length} items)
+    <div className={`${styles.rightPanelHistory} ${className || ''}`}>
+      <div className={styles.cardStack}>
+        {displayItems.map((item, index) => (
+          <HistoryCard 
+            key={`${item.timestamp}-${index}`}
+            item={item}
+            index={index}
+            onClick={() => handleCardClick(item, index)}
+          />
+        ))}
       </div>
     </div>
   );

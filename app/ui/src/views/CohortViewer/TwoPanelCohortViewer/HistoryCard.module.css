@@ -1,0 +1,91 @@
+.historyCard {
+  position: absolute;
+  width: 120px;
+  height: 60px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  /* Stack positioning using CSS custom property */
+  right: calc(var(--card-index) * 10px);
+  bottom: calc(var(--card-index) * 2px);
+  transform: translateZ(calc(var(--card-index) * -1px));
+  z-index: calc(10 - var(--card-index));
+}
+
+.historyCard:hover {
+  transform: translateZ(calc(var(--card-index) * -1px)) translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cardContent {
+  padding: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.cardSubtitle {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Type-specific styles - these can be customized based on class_name */
+.historyCard.typeStyles-phenotype {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+}
+
+.historyCard.typeStyles-report {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  border-color: #9c27b0;
+}
+
+.historyCard.typeStyles-database {
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+  border-color: #4caf50;
+}
+
+.historyCard.typeStyles-execute {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+  border-color: #ff9800;
+}
+
+.historyCard.typeStyles-constants {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+  border-color: #e91e63;
+}
+
+.historyCard.typeStyles-visibility {
+  background: linear-gradient(135deg, #f1f8e9 0%, #dcedc1 100%);
+  border-color: #8bc34a;
+}
+
+.historyCard.typeStyles-info {
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+  border-color: #009688;
+}
+
+.historyCard.typeStyles-codelists {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border-color: #ffc107;
+}

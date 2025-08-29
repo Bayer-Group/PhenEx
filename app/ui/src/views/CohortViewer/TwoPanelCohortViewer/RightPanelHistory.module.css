@@ -1,37 +1,12 @@
-.rightPanelHistory{
+.rightPanelHistory {
     position: absolute;
-    bottom: 0;
-    right: 0;
+    bottom: 20px;
+    right: 20px;
     z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px;
 }
 
-.rightPanelHistory .history-button {
-    padding: 4px 8px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-}
-
-.rightPanelHistory .history-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.rightPanelHistory .history-button:hover:not(:disabled) {
-    background: #f0f0f0;
-}
-
-.rightPanelHistory .history-info {
-    font-size: 10px;
-    color: #666;
-    text-align: center;
+.cardStack {
+    position: relative;
+    width: 140px; /* Base width + max offset (120px + 20px for 2 cards behind) */
+    height: 80px; /* Base height + max offset */
 }
