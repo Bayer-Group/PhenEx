@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
 import styles from './PhenexCellRenderer.module.css';
 import { NARenderer } from './NARenderer';
 import { columnNameToApplicablePhenotypeMapping } from '../../CohortDataService/CohortColumnDefinitions';
+import typeStyles from '../../../../styles/study_types.module.css';
 
 export interface PhenexCellRendererProps extends ICellRendererParams {
   children?: React.ReactNode;
@@ -21,14 +22,21 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     : false;
   if (
     isFieldInMapping &&
-    !columnNameToApplicablePhenotypeMapping[field]?.includes(props.data.class_name)
+    field &&
+    !(columnNameToApplicablePhenotypeMapping as any)[field]?.includes(props.data.class_name)
   ) {
     return <NARenderer value={props.value} />;
   }
 
+  // Get dynamic border color class for missing values
+  const isMissing = props.value === 'missing';
+  const dynamicBorderClass = isMissing && props.data?.type 
+    ? typeStyles[`${props.data.type}_border_color`] || ''
+    : '';
+
   return (
     <div
-      className={`${styles.containerStyle} ${props.value === 'missing' ? styles.missing : ''} ${props.node.isSelected() ? styles.selected : ''}`}
+      className={`${styles.containerStyle} ${isMissing ? styles.missing : ''} ${dynamicBorderClass} ${props.node.isSelected() ? styles.selected : ''}`}
       onClick={() => {
         if (props.value === 'missing') {
           props.api?.startEditingCell({

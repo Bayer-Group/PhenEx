@@ -53,18 +53,20 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
   // Check if value is missing/empty and we have a parameter to show description for
   if (isValueMissingOrEmpty(props.data?.value) && props.data?.parameter) {
     const description = getParameterDescription(props.data.parameter);
+    
     return (
       <PhenexCellRenderer {...props}>
-        <div style={{ 
-          fontSize: '18px', 
-          fontStyle: 'italic', 
-          color: 'var(--line-color)',
-          padding: '4px',
-          lineHeight: '1.4',
-          fontFamily: 'IBMPlexSans-bolditalic',
-          textWrap: 'wrap',
-          padding: '0px 20px'
-        }}>
+        <div 
+          style={{ 
+            fontSize: '18px', 
+            fontStyle: 'italic', 
+            color: 'var(--line-color)',
+            padding: '0px 20px',
+            lineHeight: '1.4',
+            fontFamily: 'IBMPlexSans-bolditalic',
+            textWrap: 'wrap'
+          }}
+        >
           <ReactMarkdown>{description}</ReactMarkdown>
         </div>
       </PhenexCellRenderer>
