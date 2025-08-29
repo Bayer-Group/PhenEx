@@ -388,6 +388,82 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def get_changes_for_user(self, user_id: str, cohort_id: str) -> Dict:
+        """
+        Compare the most recent provisional cohort to the most recent non-provisional cohort.
+        Returns an empty dict if there is no provisional cohort.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            cohort_id (str): The ID of the cohort.
+
+        Returns:
+            Dict: Dictionary of changes between provisional and non-provisional versions.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the most recent provisional cohort
+            provisional_query = f"""
+                SELECT cohort_data 
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = TRUE
+                ORDER BY version DESC
+                LIMIT 1
+            """
+
+            provisional_row = await conn.fetchrow(provisional_query, user_id, cohort_id)
+
+            # If no provisional cohort exists, return empty dict
+            if not provisional_row:
+                logger.info(
+                    f"No provisional cohort found for user {user_id}, cohort {cohort_id}"
+                )
+                return {}
+
+            # Get the most recent non-provisional cohort
+            non_provisional_query = f"""
+                SELECT cohort_data 
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = FALSE
+                ORDER BY version DESC
+                LIMIT 1
+            """
+
+            non_provisional_row = await conn.fetchrow(
+                non_provisional_query, user_id, cohort_id
+            )
+
+            # If no non-provisional cohort exists, return empty dict
+            if not non_provisional_row:
+                logger.info(
+                    f"No non-provisional cohort found for user {user_id}, cohort {cohort_id}"
+                )
+                return {}
+
+            provisional_data = provisional_row["cohort_data"]
+            non_provisional_data = non_provisional_row["cohort_data"]
+
+            # Use DeepDiff to calculate differences
+            from deepdiff import DeepDiff
+
+            diff = DeepDiff(provisional_data, non_provisional_data, ignore_order=True)
+
+            logger.info(
+                f"Calculated differences for cohort {cohort_id} for user {user_id}: {diff}"
+            )
+            return dict(diff) if diff else {}
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get changes for cohort {cohort_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
 
 # Global instance
 db_manager = DatabaseManager()
