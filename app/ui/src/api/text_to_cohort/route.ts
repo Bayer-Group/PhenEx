@@ -22,7 +22,14 @@ export const getPublicCohort = async (cohort_id: string, provisional: boolean = 
     const response = await axios.get(
       `${BACKEND_URL}/cohort/public?cohort_id=${cohort_id}&provisional=${provisional}`
     );
-    return response.data;
+    
+    // Parse the cohort_data field if it exists and is a string
+    if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
+      return JSON.parse(response.data.cohort_data);
+    }
+    
+    // Fallback to return the original data if cohort_data is not present or already parsed
+    return response.data.cohort_data || response.data;
   } catch (error) {
     console.error('Error in getPublicCohort:', error);
     throw error;
@@ -49,7 +56,14 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
     const response = await axios.get(
       `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}&provisional=${provisional}`
     );
-    return response.data;
+    
+    // Parse the cohort_data field if it exists and is a string
+    if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
+      return JSON.parse(response.data.cohort_data);
+    }
+    
+    // Fallback to return the original data if cohort_data is not present or already parsed
+    return response.data.cohort_data || response.data;
   } catch (error) {
     console.error('Error in getUserCohort:', error);
     throw error;
