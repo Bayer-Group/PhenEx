@@ -38,10 +38,24 @@ Follow these steps to get the PhenEx application running locally:
 
    This copies the initial configuration files and database schemas needed for the application to start properly.
 
-3. **Start the application**
+3. **Configure environment variables**
 
    ```bash
-   docker compose up
+   cp .env.example .env
+   ```
+
+   Then edit the `.env` file and fill in any missing fields, particularly:
+
+   - Database passwords and secrets
+   - API keys for external services (OpenAI, Snowflake, etc.)
+   - User-specific configuration values
+
+   **Important**: Never commit the actual `.env` file with real credentials to version control.
+
+4. **Start the application**
+
+   ```bash
+   docker compose up -d
    ```
 
    This command will:
@@ -56,10 +70,19 @@ Follow these steps to get the PhenEx application running locally:
 
 Once all services are running (this may take a few minutes on first startup):
 
+- **Supabase Studio**: http://localhost:8000 (database management interface)
 - **Frontend Application**: http://localhost:5173
 - **Backend API**: http://localhost:8001
-- **Supabase Studio**: http://localhost:54323 (database management interface)
 - **API Documentation**: http://localhost:8001/docs (FastAPI Swagger docs)
+
+### 👤 Test User Login
+
+To explore the application features, you can log in using the pre-configured test user:
+
+- **Email**: `test@phenex.ai`
+- **Password**: `12345678`
+
+This test user has access to sample data and pre-built cohorts that demonstrate PhenEx's capabilities for phenotype extraction and cohort building.
 
 ## 🔧 Development
 
