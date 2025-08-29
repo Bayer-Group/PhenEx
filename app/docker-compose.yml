@@ -9,7 +9,8 @@ name: supabase
 
 services:
 
-  backend-dev:
+  backend:
+    container_name: phenex-backend
     # in dev mode, mount local files and restart service while files change
     build:
       context: ./backend
@@ -29,7 +30,9 @@ services:
       - ./backend:/app
       - ../phenex:/app/phenex
 
-  frontend-dev:
+  frontend:
+    container_name: phenex-frontend
+    env_file: ./.env
     build:
       context: ./ui
       dockerfile: Dockerfile
@@ -40,7 +43,7 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      backend-dev:
+      backend:
         condition: service_started
 
   studio:
