@@ -157,7 +157,8 @@ async def get_cohort_for_user(user_id: str, cohort_id: str):
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
             raise HTTPException(
-                status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found for user {user_id}",
             )
         return cohort
     except HTTPException:
@@ -165,7 +166,8 @@ async def get_cohort_for_user(user_id: str, cohort_id: str):
     except Exception as e:
         logger.error(f"Error retrieving cohort {cohort_id} for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve cohort {cohort_id} for user {user_id}"
+            status_code=500,
+            detail=f"Failed to retrieve cohort {cohort_id} for user {user_id}",
         )
 
 
@@ -329,8 +331,12 @@ async def suggest_changes(
     """
     # Read the user request from the request body
     body = await request.body()
-    user_request = body.decode('utf-8') if body else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    
+    user_request = (
+        body.decode("utf-8")
+        if body
+        else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+    )
+
     current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
     if not current_cohort:
         raise HTTPException(
@@ -483,7 +489,11 @@ async def suggest_changes(
                         c.update_cohort(current_cohort, new_phenotypes)
                     )
                     await db_manager.update_cohort_for_user(
-                        user_id, cohort_id, new_cohort, provisional=True, new_version=False
+                        user_id,
+                        cohort_id,
+                        new_cohort,
+                        provisional=True,
+                        new_version=False,
                     )
                     if return_updated_cohort:
                         yield json.dumps(new_cohort, indent=4)
@@ -496,19 +506,19 @@ async def suggest_changes(
                     yield f"\n\nError: Failed to update cohort. Please try again."
             else:
                 logger.warning("No JSON found in AI response")
-                
+
         except Exception as e:
             logger.error(f"Error in stream_response: {e}")
             yield f"\n\nError: Streaming failed. Please try again."
 
     return StreamingResponse(
-        stream_response(), 
+        stream_response(),
         media_type="text/plain",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
-        }
+        },
     )
 
 
