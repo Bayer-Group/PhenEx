@@ -2,7 +2,7 @@
   position: absolute;
   width: auto;
   min-width:150px;
-  height: 60px;
+  height: auto;
   border-radius: 8px;
   border: 1px solid #ddd;
   background: white;
@@ -15,7 +15,7 @@
   bottom: calc(var(--card-index) * 1px);
   transform: translateZ(calc(var(--card-index) * 0px));
   z-index: calc(10 - var(--card-index));
-  opacity: calc(1 - 2*(var(--card-index) / (var(--max-cards))));
+  opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards))));
 }
 
 .historyCard:hover {
@@ -81,7 +81,7 @@
   /* Calculate reverse movement: cards with lower indices move up more */
   /* For maxCards=4: index 3 gets 0px, index 2 gets -60px, index 1 gets -120px, index 0 gets -180px */
   transform: translateZ(calc(var(--card-index) * -1px)) 
-             translateY(calc((var(--card-index)) * -1 * (var(--card-height) - 10px)))
+             /* translateY(calc((var(--card-index)) * -1 * (var(--card-height) - 10px))) */
              translateX(calc(var(--card-index) * -1 * 100px)) ;
             /* translateY(calc((var(--max-cards) + 1 - var(--card-index)) * -1 * var(--card-height))); */
 
