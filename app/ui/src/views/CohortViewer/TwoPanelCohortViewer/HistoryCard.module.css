@@ -4,7 +4,8 @@
   /* width: auto;
   min-width:100px;
   max-width:150px; */
-  height: 60px;
+  height: auto; /* Default to auto height */
+  max-height:50px;
   border-radius: 4px;
   border: 1px solid var(--line-color);
   background: white;
@@ -18,7 +19,13 @@
   transform: translateZ(calc(var(--card-index) * 0px));
   z-index: calc(10 - var(--card-index));
   opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards))));
-  line-height: 12px;
+  line-height: 16px;
+}
+
+/* Only the topmost card (index 0) gets fixed height */
+.cardIndex0 {
+    background-color: red;
+  height: 60px;
 }
 
 .historyCard:hover {
@@ -27,7 +34,7 @@
 }
 
 .cardContent {
-  padding: 5px 10px 5px 10px;
+  padding: 5px 10px 5px 30px;
   height: 100%;
   /* height: 40px; */
   display: flex;
@@ -37,7 +44,7 @@
 }
 
 .cardTitle {
-  font-size: 12px;
+  font-size: 16px;
   font-family: "IBMPlexSans-bold";
   /* color: #333; */
   white-space: wrap;
@@ -58,15 +65,24 @@
 
 /* Index-specific classes for targeting cards */
 .cardIndex0 {
-  /* Base class for index 0 card - keep absolute positioning */
+  /* Topmost card gets fixed height */
+  height: auto;
 }
 
 .cardIndex1 {
-  /* Base class for index 1 card - keep absolute positioning */
+  /* Auto height for cards behind the top card */
+  height: auto;
 }
 
 .cardIndex2 {
-  /* Base class for index 2 card - keep absolute positioning */
+  /* Auto height for cards behind the top card */
+  height: 60px;
+  background-color: red;
+}
+
+.cardIndex3 {
+  /* Auto height for cards behind the top card */
+  height: 60px;
 }
 
 /* Stack hover animation behavior */
@@ -88,4 +104,15 @@
   /* Higher index cards should move LEFT (negative X) */
   transform: translateZ(calc(var(--card-index) * 0px)) 
              translateX(calc(var(--card-index) * -120px)) !important;
+    opacity: 1;
+}
+
+
+.backButton{
+    left:8px;
+    position: absolute;
+  font-size: 22px;
+  font-family: 'SNPro-black' !important;
+  border-radius: var(--border-radius);
+  cursor: pointer;
 }
