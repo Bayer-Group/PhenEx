@@ -1,11 +1,13 @@
+
 .historyCard {
   position: absolute;
-  width: 120px;
+  width: 150px;
   /* width: auto;
   min-width:100px;
   max-width:150px; */
   height: auto; /* Default to auto height */
-  max-height:50px;
+  max-height:60px;
+  min-height:35px;
   border-radius: 4px;
   border: 1px solid var(--line-color);
   background: white;
@@ -20,6 +22,7 @@
   z-index: calc(10 - var(--card-index));
   opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards))));
   line-height: 16px;
+  transition: all 0.3s ease;
 }
 
 /* Only the topmost card (index 0) gets fixed height */
@@ -51,7 +54,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   /* line-height: 1.2; */
-  text-align: left;
+  text-align: right;
 }
 
 .cardSubtitle {
@@ -103,7 +106,7 @@
   /* Index 0 (topmost, highest z-index) should NOT move */
   /* Higher index cards should move LEFT (negative X) */
   transform: translateZ(calc(var(--card-index) * 0px)) 
-             translateX(calc(var(--card-index) * -120px)) !important;
+             translateX(calc(var(--card-index) * -160px)) !important;
     opacity: 1;
 }
 
