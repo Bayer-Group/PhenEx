@@ -26,7 +26,9 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
     `${styles.cardIndex}${index}`, // Add specific index class for CSS targeting
     typeStyleClass,
     className,
-    typeStyles[`${item.extraData?.type || ''}_text_color`] || ''
+    typeStyles[`${item.extraData?.type || ''}_color_block`] || '',
+    typeStyles[`${item.extraData?.type || ''}_border_color`] || ''
+
   ].filter(Boolean).join(' ');
 
   // Debug logging for classes

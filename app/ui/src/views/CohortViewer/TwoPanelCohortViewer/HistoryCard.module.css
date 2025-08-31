@@ -1,10 +1,12 @@
 .historyCard {
   position: absolute;
-  width: auto;
-  min-width:150px;
-  height: auto;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  width: 120px;
+  /* width: auto;
+  min-width:100px;
+  max-width:150px; */
+  height: 60px;
+  border-radius: 4px;
+  border: 1px solid var(--line-color);
   background: white;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -12,10 +14,11 @@
   
   /* Stack positioning using CSS custom property */
   right: calc(var(--card-index) * 10px);
-  bottom: calc(var(--card-index) * 1px);
+  top: calc(var(--card-index) * 2px);
   transform: translateZ(calc(var(--card-index) * 0px));
   z-index: calc(10 - var(--card-index));
   opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards))));
+  line-height: 12px;
 }
 
 .historyCard:hover {
@@ -24,8 +27,9 @@
 }
 
 .cardContent {
-  padding: 8px;
+  padding: 5px 10px 5px 10px;
   height: 100%;
+  /* height: 40px; */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -33,14 +37,14 @@
 }
 
 .cardTitle {
-  font-size: 24px;
+  font-size: 12px;
   font-family: "IBMPlexSans-bold";
   /* color: #333; */
-  white-space: nowrap;
+  white-space: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
   /* line-height: 1.2; */
-  text-align: right;
+  text-align: left;
 }
 
 .cardSubtitle {
@@ -70,19 +74,18 @@
 /* The topmost card (highest index) should not move */
 /* Cards behind it should move up progressively more */
 
-/* Define a CSS variable for card height */
+/* Define a CSS variable for card height and spacing */
 :root {
   --card-height: 60px;
   --max-cards: 4; /* Should match maxCards from React component */
+  --card-x-offset: 120px; /* Fixed pixel offset for consistent spacing */
 }
 
 /* Global hover animation using CSS custom properties */
 .cardHovered {
-  /* Calculate reverse movement: cards with lower indices move up more */
-  /* For maxCards=4: index 3 gets 0px, index 2 gets -60px, index 1 gets -120px, index 0 gets -180px */
-  transform: translateZ(calc(var(--card-index) * -1px)) 
-             /* translateY(calc((var(--card-index)) * -1 * (var(--card-height) - 10px))) */
-             translateX(calc(var(--card-index) * -1 * 100px)) ;
-            /* translateY(calc((var(--max-cards) + 1 - var(--card-index)) * -1 * var(--card-height))); */
-
+  /* NO Y translation - just spread out horizontally */
+  /* Index 0 (topmost, highest z-index) should NOT move */
+  /* Higher index cards should move LEFT (negative X) */
+  transform: translateZ(calc(var(--card-index) * 0px)) 
+             translateX(calc(var(--card-index) * -120px)) !important;
 }
