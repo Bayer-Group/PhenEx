@@ -112,8 +112,10 @@
 
 
 .backButton{
-    left:8px;
-    position: absolute;
+  left: 8px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 22px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
