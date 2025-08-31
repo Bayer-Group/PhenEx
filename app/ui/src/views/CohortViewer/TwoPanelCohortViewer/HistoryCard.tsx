@@ -80,10 +80,11 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
       title={`${item.displayName}`}
     >
       <div className={`${styles.cardContent}`}>
-        <div className={styles.cardTitle} style={{ fontSize: `${fontSize}px` }}>
-          <span className={styles.backButton}>{'<'}</span>
+        <span className={styles.backButton}>{'<'}</span>
+        <span className={styles.cardTitle} style={{ fontSize: `${fontSize}px` }}>
+          
            {displayTitle}
-        </div>
+        </span>
         {/* {hasExtraData && (
           <div className={styles.cardSubtitle}>
             {item.viewType}
