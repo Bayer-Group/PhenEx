@@ -59,8 +59,18 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     // Debug log to see selection state
     console.log(`[NameCellRenderer] ${props.data?.id}: isSelected=${isSelected}, rowIndex=${props.node.rowIndex}`);
     
+    // Calculate indentation for component phenotypes based on their level
+    const getIndentationStyle = () => {
+      if (props.data?.type === 'component' && props.data.level > 0) {
+        return {
+          marginLeft: `calc(var(--type-label-indent) * ${props.data.level})`
+        };
+      }
+      return {};
+    };
+    
     return (
-      <div className={`${styles.label} ${isSelected ? styles.selected : ''}`}>
+      <div className={`${styles.label} ${isSelected ? styles.selected : ''}`} style={getIndentationStyle()}>
         {isComponentPhenotype
           ? renderComponentPhenotypeName()
           : props.value}

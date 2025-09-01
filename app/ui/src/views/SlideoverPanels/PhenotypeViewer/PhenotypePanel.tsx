@@ -111,12 +111,12 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     <SlideoverPanel
       title="Edit Phenotype"
       info={infoContent()}
-      classNameHeader={typeStyles[`${data.type}_color_block`]}
+      classNameHeader={typeStyles[`${data.effective_type}_color_block`]}
       classNameButton={styles.whiteText}
-      classNameContainer={typeStyles[`${data.type}_border_color`]}
+      classNameContainer={typeStyles[`${data.effective_type}_border_color`]}
     >
       <div className={styles.wrapper}>
-        <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
+        <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block`]}`}>
           <EditableTextField
             value={phenotypeName}
             placeholder="Enter phenotype name..."

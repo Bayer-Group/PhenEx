@@ -48,9 +48,19 @@ const TypeCellRenderer = (props: any) => {
   const colorClassText = `${styles.ancestorLabel} ${typeStyles[`${effectiveType || ''}_text_color`] || ''}`;
   const colorClass = `${styles.ancestorLabel} ${typeStyles[`${effectiveType || ''}_color_block`] || ''}`;
 
+  // Calculate indentation for component phenotypes based on their level
+  const getIndentationStyle = () => {
+    if (props.data.type === 'component' && props.data.level > 0) {
+      return {
+        marginLeft: `calc(var(--type-label-indent) * ${props.data.level})`
+      };
+    }
+    return {};
+  };
+
   return (
     <PhenexCellRenderer {...props}>
-      <div className={styles.container}>
+      <div className={styles.container} style={getIndentationStyle()}>
         <span
           className={`${styles.block} ${colorClass}`}
           onClick={() => {
