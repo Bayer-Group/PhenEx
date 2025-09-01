@@ -1,4 +1,4 @@
-import { FC, forwardRef, useEffect, Component } from 'react';
+import { FC, forwardRef, useEffect, Component, useState } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 
 class ErrorBoundary extends Component {
@@ -300,6 +300,23 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       };
     }, []);
 
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          console.log('=== ESCAPE PRESSED: Clearing all selections ===');
+          if (ref && typeof ref === 'object' && ref.current?.api) {
+            ref.current.api.deselectAll();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }, []);
+
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
         <ErrorBoundary>
@@ -334,7 +351,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             onRangeSelectionChanged={() => {
               console.log('=== RANGE SELECTION CHANGED EVENT FIRED ===');
             }}
-            rowDragManaged={true}  // Temporarily disabled to test cell selection
+            rowDragManaged={true}
             loadThemeGoogleFonts={true}
             animateRows={true}
             getRowHeight={params => {
