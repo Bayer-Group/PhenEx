@@ -221,10 +221,14 @@ export class CohortDataService {
       type: type,
       name: 'Unnamed Phenotype',
       class_name: 'CodelistPhenotype',
+      level: 0,
     };
     if (parentPhenotypeId) {
       newPhenotype.parentIds = [parentPhenotypeId];
-    }
+      newPhenotype.level = (this.getAllAncestors(newPhenotype).length);
+    } 
+      console.log("LEVEL OF NEW PHENOTYPE", newPhenotype.level)
+
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
   }
@@ -254,18 +258,72 @@ export class CohortDataService {
     return [...grandparents, parentPhenotype];
   }
 
-  public deletePhenotype(id: string) {
-    const phenotypeIndex = this._cohort_data.phenotypes.findIndex(
-      (phenotype: TableRow) => phenotype.id === id
+  public getAllDescendants(phenotypeId: string): TableRow[] {
+    const descendants: TableRow[] = [];
+    
+    // Find all direct children of this phenotype
+    const directChildren = this._cohort_data.phenotypes.filter(
+      (phenotype: TableRow) =>
+        phenotype.parentIds && 
+        Array.isArray(phenotype.parentIds) && 
+        phenotype.parentIds.includes(phenotypeId)
     );
-    if (phenotypeIndex !== -1) {
-      this._cohort_data.phenotypes.splice(phenotypeIndex, 1);
-      this.saveChangesToCohort();
-      return {
-        remove: [id],
-      };
+    
+    // For each direct child, recursively get their descendants
+    for (const child of directChildren) {
+      descendants.push(child);
+      const childDescendants = this.getAllDescendants(child.id);
+      descendants.push(...childDescendants);
     }
-    return null;
+    
+    return descendants;
+  }
+
+  public deletePhenotype(id: string) {
+    const phenotypeToDelete = this.getPhenotypeById(id);
+    if (!phenotypeToDelete) {
+      return null;
+    }
+
+    const idsToRemove: string[] = [id];
+    
+    // If this is a component phenotype, also get all its descendants
+    if (phenotypeToDelete.type === 'component') {
+      const descendants = this.getAllDescendants(id);
+      idsToRemove.push(...descendants.map(desc => desc.id));
+    }
+
+    // Also find any component phenotypes that have this phenotype as an ancestor
+    // (component phenotypes that would become orphaned)
+    const componentPhenotypes = this._cohort_data.phenotypes.filter(
+      (phenotype: TableRow) => phenotype.type === 'component'
+    );
+
+    for (const component of componentPhenotypes) {
+      const ancestors = this.getAllAncestors(component);
+      if (ancestors.some(ancestor => ancestor.id === id)) {
+        if (!idsToRemove.includes(component.id)) {
+          idsToRemove.push(component.id);
+          // Also get descendants of this component
+          const componentDescendants = this.getAllDescendants(component.id);
+          componentDescendants.forEach(desc => {
+            if (!idsToRemove.includes(desc.id)) {
+              idsToRemove.push(desc.id);
+            }
+          });
+        }
+      }
+    }
+
+    // Remove all identified phenotypes
+    this._cohort_data.phenotypes = this._cohort_data.phenotypes.filter(
+      (phenotype: TableRow) => !idsToRemove.includes(phenotype.id)
+    );
+
+    this.saveChangesToCohort();
+    return {
+      remove: idsToRemove,
+    };
   }
 
   public async updateRowOrder(newRowData: TableRow[]) {
