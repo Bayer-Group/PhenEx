@@ -112,15 +112,35 @@
   display: flex;
   color: hsl(0, 0%, 60%);
   z-index: 1000;
-
   left: 15px;
 
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
   margin-top: 17px;
-  font-family: 'SNPro-black';
-  font-size: 22px;
+  font-family: 'SNPro-black' !important;
+  font-size: 22px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 40px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  padding: 0;
+  line-height: 1;
+  position: absolute;
+  right: 5px;
+  top: 3px;
+  font-family: 'SNPro-black' !important;
+  cursor: pointer;
+
 }
 
 .collapseButton:hover {
@@ -131,6 +151,14 @@
 }
 
 .collapseButton.collapsed {
+}
+
+.collapseButton.lightTheme {
+  color: white !important;
+}
+
+.collapseButton.lightTheme:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 .panel.collapsed {

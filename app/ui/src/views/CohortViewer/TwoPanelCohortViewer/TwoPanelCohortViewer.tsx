@@ -138,7 +138,13 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   };
 
   return (
-    <TwoPanelView ref={panelRef} split="vertical" initialSizeLeft={500} minSizeLeft={400}>
+    <TwoPanelView 
+      ref={panelRef} 
+      split="vertical" 
+      initialSizeLeft={500} 
+      minSizeLeft={400}
+      collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
+    >
       <>
         <CohortViewer data={service.getData()} />
         <RightPanelHistory />
