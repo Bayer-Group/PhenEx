@@ -11,8 +11,28 @@ const TypeCellRenderer = (props: any) => {
       return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
     } else {
       // For non-component phenotypes, show regular index (but not for entry)
-      return <span className={styles.index}>{phenotype.type != 'entry' && phenotype.index}</span>;
+      return <span className={styles.index}>{phenotype.type != 'entry' ? phenotype.index : ''}</span>;
     }
+  };
+
+  const renderComponentDisplay = () => {
+    if (props.data.type === 'component') {
+      const effectiveType = props.data.effective_type;
+      const hierarchicalIndex = props.data.hierarchical_index;
+      
+      if (effectiveType === 'entry' && hierarchicalIndex) {
+        // For entry components: show "e" + index after first dot (1.1 becomes e.1)
+        const indexParts = hierarchicalIndex.split('.');
+        const suffixIndex = indexParts.slice(1).join('.'); // Everything after first part
+        return `e.${suffixIndex}`;
+      } else if (hierarchicalIndex) {
+        // For other components: show only hierarchical index
+        return hierarchicalIndex;
+      }
+    }
+    
+    // For non-components: show type + index
+    return `${props.data.type === 'component' && props.data.effective_type ? props.data.effective_type : type} ${renderIndex(props.data).props.children}`;
   };
 
   const renderCount = () => {
@@ -40,10 +60,9 @@ const TypeCellRenderer = (props: any) => {
             });
           }}
         >
-          {props.data.type === 'component' && props.data.effective_type ? props.data.effective_type : type}
-          {renderIndex(props.data)}
+          {renderComponentDisplay()}
         </span>
-        {renderCount()}
+         {renderCount()}
       </div>
     </PhenexCellRenderer>
   );
