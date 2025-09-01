@@ -134,13 +134,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       return (
         <div className={styles.noRowsOverlay}>
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>
+            {/* <span className={styles.noRows_section}>
               How do you want to assess post-index data?
             </span>
-            <br></br>
+            <br></br> */}
             <span className={styles.noRowsTopLine}>
-              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
-              above to add <span className={styles.noRows_section}>outcome phenotypes</span>.
+              <span className={styles.buttonAppearance}>Click Add Phenotype in the action bar
+              above to add <span className={styles.noRows_section}>outcomes</span>.</span>
             </span>
             <br></br>
             <br></br>
@@ -202,16 +202,19 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       return (
         <div className={styles.noRowsOverlay}>
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>How do you want to define your cohort?</span>
-            <br></br>
+            {/* <span className={styles.noRows_section}>Define your entry, inclusion and exclusion criteria.</span>
+            <br></br> */}
             <span className={styles.noRowsTopLine}>
-              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
-              above to add :
-              <ol>
+              <span className={styles.buttonAppearance}>Click Add Phenotype in the action bar
+              above to define your cohort.</span> 
+              {/* <ol>
                 <li>
-                  the cohort <span className={styles.noRows_section}>entry</span> criterion, which
-                  defines the <span className={styles.noRows_section}>index date</span> for each
-                  patient i.e. the study entry date.
+                  the cohort <span className={styles.noRows_section}>entry</span> criterion,
+                  <ul>
+                    <li>this defines the <span className={styles.noRows_section}>index date</span> for each
+                  patient</li>
+                  </ul>
+                  
                 </li>
                 <li>
                   <span className={styles.noRows_section}>inclusion</span> criteria, which all
@@ -221,10 +224,14 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                   <span className={styles.noRows_section}>exclusion</span> criteria, which patients
                   may not fulfill at index date.
                 </li>
-              </ol>
+              </ol> */}
             </span>
             <br></br>
-            <span className={styles.noRowsCommentLine}>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>
+            <br></br>            <span className={styles.noRowsCommentLine}>
               PhenEx can then <span className={styles.noRows_action}>generate your cohort</span>
             </span>
           </span>
@@ -235,13 +242,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       return (
         <div className={styles.noRowsOverlay}>
           <span className={styles.noRowsBottomLine}>
-            <span className={styles.noRows_section}>
+            {/* <span className={styles.noRows_section}>
               How do you want to assess patients at index date?
             </span>
-            <br></br>
+            <br></br> */}
             <span className={styles.noRowsTopLine}>
-              Click <span className={styles.buttonAppearance}>Add Phenotype</span> in the action bar
-              above to add <span className={styles.noRows_section}>baseline phenotypes</span>.
+              <span className={styles.buttonAppearance}>Click Add Phenotype in the action bar
+              above to add <span className={styles.noRows_section}>baseline characteristics</span>.</span>
             </span>
             <br></br>
             <br></br>

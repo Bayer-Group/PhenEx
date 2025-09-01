@@ -11,11 +11,14 @@
   font-family: inherit;
   text-align: left;
   max-width: 200px;
+    border: 1px solid transparent;
+
 }
 
 .userButton:hover {
   background-color: var(--background-color);
   transform: translateY(-1px);
+  border: 1px solid var(--color-accent-bright);
 }
 
 .userButton:active {

@@ -20,9 +20,9 @@
 }
 
 .buttonAppearance {
-  border: 1px solid var(--color-accent-bright);
+  /* border: 1px solid var(--color-accent-bright); */
   border-radius: 10px;
-  padding: 4px 8px;
+  /* padding: 1px px; */
   margin: 0px 3px;
   font-family: 'IBMPlexSans-bold';
 }
@@ -35,7 +35,7 @@
 
 .noRows_section {
   font-family: 'IBMPlexSans-bold';
-  font-size: 18x;
+  font-size: 20px;
   color: black;
 }
 
