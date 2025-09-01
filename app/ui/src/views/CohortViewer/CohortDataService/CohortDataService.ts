@@ -185,6 +185,9 @@ export class CohortDataService {
     }
     this._cohort_data.phenotypes = sortedPhenotypes;
     this._table_data = this.tableDataFromCohortData();
+    
+    // Recalculate hierarchical indices after sorting
+    this.calculateHierarchicalIndices();
   }
 
   private splitPhenotypesByType() {
@@ -250,7 +253,6 @@ export class CohortDataService {
       newPhenotype.effective_type = type;
     } 
 
-
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
   }
@@ -282,6 +284,49 @@ export class CohortDataService {
           phenotype.effective_type = 'component';
         }
       }
+    });
+
+    // Third pass: calculate hierarchical indices for all phenotypes
+    this.calculateHierarchicalIndices();
+  }
+
+  private calculateHierarchicalIndices(): void {
+    // Group phenotypes by type to get base indices
+    const typeGroups = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    
+    typeGroups.forEach(type => {
+      const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
+      
+      phenotypesOfType.forEach((phenotype: any, index: number) => {
+        const baseIndex = index + 1; // 1-based indexing
+        phenotype.hierarchical_index = baseIndex.toString();
+        
+        // Calculate hierarchical indices for all component descendants
+        this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+      });
+    });
+  }
+
+  private calculateComponentHierarchicalIndices(parentId: string, parentHierarchicalIndex: string): void {
+    // Find direct component children of this parent
+    const directChildren = this._cohort_data.phenotypes.filter(
+      (phenotype: TableRow) =>
+        phenotype.type === 'component' &&
+        phenotype.parentIds && 
+        Array.isArray(phenotype.parentIds) && 
+        phenotype.parentIds.includes(parentId)
+    );
+
+    // Sort by their current index to maintain order
+    directChildren.sort((a: any, b: any) => (a.index || 0) - (b.index || 0));
+
+    // Assign hierarchical indices to direct children
+    directChildren.forEach((child: any, index: number) => {
+      const childIndex = index + 1; // 1-based indexing
+      child.hierarchical_index = `${parentHierarchicalIndex}.${childIndex}`;
+      
+      // Recursively calculate for grandchildren
+      this.calculateComponentHierarchicalIndices(child.id, child.hierarchical_index);
     });
   }
 
@@ -519,6 +564,10 @@ export class CohortDataService {
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
+    
+    // Recalculate hierarchical indices after reordering
+    this.calculateHierarchicalIndices();
+    
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
@@ -596,6 +645,10 @@ export class CohortDataService {
     
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
+    
+    // Recalculate hierarchical indices after hierarchical reordering
+    this.calculateHierarchicalIndices();
+    
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();

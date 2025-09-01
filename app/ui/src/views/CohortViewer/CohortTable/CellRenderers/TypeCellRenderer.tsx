@@ -6,7 +6,13 @@ const TypeCellRenderer = (props: any) => {
   const type = props.value;
 
   const renderIndex = (phenotype: any) => {
-    return <span className={styles.index}>{phenotype.type != 'entry' && phenotype.index}</span>;
+    if (phenotype.type === 'component' && phenotype.hierarchical_index) {
+      // For component phenotypes, show hierarchical index (e.g., "1.2.3")
+      return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
+    } else {
+      // For non-component phenotypes, show regular index (but not for entry)
+      return <span className={styles.index}>{phenotype.type != 'entry' && phenotype.index}</span>;
+    }
   };
 
   const renderCount = () => {
@@ -34,7 +40,7 @@ const TypeCellRenderer = (props: any) => {
             });
           }}
         >
-          {type}
+          {props.data.type === 'component' && props.data.effective_type ? props.data.effective_type : type}
           {renderIndex(props.data)}
         </span>
         {renderCount()}
