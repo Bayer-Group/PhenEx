@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from '../categoricalFilterEditor/SingleCategoricalFilterEditor.module.css';
 import { SingleLogicalExpression, FilterType } from './types';
+import { CohortDataService } from '../../../CohortDataService/CohortDataService';
+import { TableRow } from '../../../tableTypes';
 
 interface SingleLogicalExpressionEditorProps {
   value: SingleLogicalExpression;
@@ -8,50 +10,45 @@ interface SingleLogicalExpressionEditorProps {
   onDelete: (value: FilterType) => void;
   onIsEditing: (editing: boolean) => void;
   createLogicalFilter: (type: 'AndFilter' | 'OrFilter', filter: FilterType) => void;
+  data?: {
+    id?: string;
+    type?: string;
+    name?: string;
+  };
 }
-
-const dummyPhenotypes = [
-  { name: 'Phenotype A', id: 'pheno_a' },
-  { name: 'Phenotype B', id: 'pheno_b' },
-  { name: 'Phenotype C', id: 'pheno_c' },
-  { name: 'Phenotype D', id: 'pheno_d' },
-];
 
 export const SingleLogicalExpressionEditor: React.FC<SingleLogicalExpressionEditorProps> = ({
   value,
   onValueChange,
   onDelete,
-  onIsEditing,
   createLogicalFilter,
+  data,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [useConstant, setUseConstant] = useState(false);
-  const [values, setValues] = useState(() => {
-    if (value) {
-      return value;
+  const [componentPhenotypes, setComponentPhenotypes] = useState<TableRow[]>([]);
+  const dataService = CohortDataService.getInstance();
+  
+  // Load component phenotypes when component mounts or when data.id changes
+  useEffect(() => {
+    if (data?.id) {
+      const descendants = dataService.getAllDescendants(data.id);
+      // Filter to only get component phenotypes
+      const components = descendants.filter(phenotype => phenotype.type === 'component');
+      setComponentPhenotypes(components);
+    } else {
+      setComponentPhenotypes([]);
     }
-    return {
-      column_name: '',
-      domain: '',
-      allowed_values: [],
-      class_name: 'LogicalExpression',
-      status: 'empty',
-      id: Math.random().toString(36),
-      constant: null,
-    };
-  });
+  }, [data?.id, dataService]);
 
-  const handleValueChange = event => {
+  const handleValueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     event.stopPropagation();
-    const selectedPhenotype = dummyPhenotypes.find(p => p.name === event.target.value);
+    const selectedPhenotype = componentPhenotypes.find(p => p.name === event.target.value);
     if (selectedPhenotype) {
-      const newValues = {
+      const newValues: SingleLogicalExpression = {
         ...value,
         phenotype_name: selectedPhenotype.name,
         phenotype_id: selectedPhenotype.id,
-        status: 'filled',
+        status: 'filled' as const,
       };
-      setValues(newValues);
       onValueChange(newValues);
     }
   };
@@ -71,8 +68,8 @@ export const SingleLogicalExpressionEditor: React.FC<SingleLogicalExpressionEdit
           onChange={handleValueChange}
           className={styles.phenotypeSelect}
         >
-          <option value="">Select a phenotype...</option>
-          {dummyPhenotypes.map(phenotype => (
+          <option value="">Select a component phenotype...</option>
+          {componentPhenotypes.map(phenotype => (
             <option key={phenotype.id} value={phenotype.name}>
               {phenotype.name}
             </option>
