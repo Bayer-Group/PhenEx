@@ -239,6 +239,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         </div>
       );
     };
+    
     const NoRowsOverlayCharacteristics: FC = () => {
       return (
         <div className={styles.noRowsOverlay}>
@@ -334,6 +335,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           if (matchingRowNode) {
             console.log('[CohortTable] Found matching row, selecting:', extraData.id);
             matchingRowNode.setSelected(true);
+            // Force refresh of cell renderers to update selection state
+            ref.current.api.refreshCells({ force: true });
             // Optionally scroll to the selected row
             ref.current.api.ensureNodeVisible(matchingRowNode);
           } else {
@@ -342,6 +345,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               if (node.data && node.data.id === extraData.id) {
                 console.log('[CohortTable] Found matching row by data.id, selecting:', extraData.id);
                 node.setSelected(true);
+                // Force refresh of cell renderers to update selection state
+                ref.current.api.refreshCells({ force: true });
                 ref.current.api.ensureNodeVisible(node);
               }
             });
@@ -357,15 +362,72 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       // Subscribe to service changes
       cohortViewerService.addListener(handleRightPanelChange);
       
-      // Initial check for current state
+      // Initial check for current state (handles both component mount and data reload)
       const currentViewType = cohortViewerService.getCurrentViewType();
       const currentExtraData = cohortViewerService.getExtraData();
-      handleRightPanelChange(currentViewType, currentExtraData);
+      
+      // Delay the initial check to ensure grid is ready after data reload
+      // setTimeout(() => {
+        console.log('[CohortTable] Checking initial/reload state:', currentViewType, currentExtraData);
+        handleRightPanelChange(currentViewType, currentExtraData);
+      // }, 100);
 
       return () => {
         cohortViewerService.removeListener(handleRightPanelChange);
       };
-    }, [data.rows]); // Re-run when row data changes
+    }, [data.rows, data]); // Re-run when row data changes (handles table reload)
+
+    // Separate effect to sync selection with current right panel state on every data refresh
+    useEffect(() => {
+      const cohortViewerService = TwoPanelCohortViewerService.getInstance();
+      
+      // Always check current right panel state when data changes
+      const currentViewType = cohortViewerService.getCurrentViewType();
+      const currentExtraData = cohortViewerService.getExtraData();
+      
+      console.log('[CohortTable] Data refreshed, syncing with current right panel state:', currentViewType, currentExtraData);
+      
+      // Use a small delay to ensure grid is ready after data update
+      setTimeout(() => {
+        if (currentViewType === 'phenotype' && currentExtraData && currentExtraData.id && ref && typeof ref === 'object' && ref.current?.api) {
+          // Clear existing selections first
+          ref.current.api.deselectAll();
+          
+          // Find the row with matching ID
+          const matchingRowNode = ref.current.api.getRowNode(currentExtraData.id);
+          if (matchingRowNode) {
+            console.log('[CohortTable] Data refresh - Found matching row, selecting:', currentExtraData.id);
+            matchingRowNode.setSelected(true);
+            // Force refresh of cell renderers to update selection state
+            ref.current.api.refreshCells({ force: true });
+            ref.current.api.ensureNodeVisible(matchingRowNode);
+          } else {
+            // Try alternative approach - iterate through all nodes to find by data.id
+            let found = false;
+            ref.current.api.forEachNode((node: any) => {
+              if (node.data && node.data.id === currentExtraData.id) {
+                console.log('[CohortTable] Data refresh - Found matching row by data.id, selecting:', currentExtraData.id);
+                node.setSelected(true);
+                // Force refresh of cell renderers to update selection state
+                ref.current.api.refreshCells({ force: true });
+                ref.current.api.ensureNodeVisible(node);
+                found = true;
+              }
+            });
+            
+            if (!found) {
+              console.log('[CohortTable] Data refresh - No matching row found for:', currentExtraData.id);
+            }
+          }
+        } else {
+          // Clear selections when not viewing a phenotype or no current data
+          if (ref && typeof ref === 'object' && ref.current?.api) {
+            ref.current.api.deselectAll();
+          }
+        }
+      }, 50);
+    }, [data]);
+
 
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>

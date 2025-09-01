@@ -54,8 +54,13 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   const renderName = () => {
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
+    const isSelected = props.node.isSelected();
+    
+    // Debug log to see selection state
+    console.log(`[NameCellRenderer] ${props.data?.id}: isSelected=${isSelected}, rowIndex=${props.node.rowIndex}`);
+    
     return (
-      <div className={`${styles.label} ${props.node.isSelected() ? styles.selected : ''}`}>
+      <div className={`${styles.label} ${isSelected ? styles.selected : ''}`}>
         {isComponentPhenotype
           ? renderComponentPhenotypeName()
           : props.value}
