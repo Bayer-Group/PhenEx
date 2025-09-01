@@ -117,7 +117,6 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     >
       <div className={styles.wrapper}>
         <div className={`${styles.header} ${typeStyles[`${data.type}_color_block`]}`}>
-          {renderAncestors()}
           <EditableTextField
             value={phenotypeName}
             placeholder="Enter phenotype name..."
@@ -127,6 +126,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
             }}
             onSaveChanges={onSaveNameChanges}
           />
+          {renderAncestors()}
         </div>
         <div className={styles.mainContainer}>
           <div className={styles.controlsContainer}>
