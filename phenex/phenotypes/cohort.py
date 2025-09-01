@@ -24,7 +24,7 @@ class Cohort:
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
-        
+
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
         inclusions_table (Table): The patient-level result of all inclusion criteria calculations (None until execute is called)
@@ -44,7 +44,7 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ):
         self.name = name
         self.description = description
