@@ -93,3 +93,7 @@
 .componentPhenotypeName{
 
 }
+
+.selected {
+  font-family: "IBMPlexSans-bold";
+}

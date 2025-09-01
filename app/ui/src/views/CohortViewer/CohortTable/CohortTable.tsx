@@ -31,6 +31,7 @@ import { ModuleRegistry } from '@ag-grid-community/core';
 
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 import { TableData, TableRow } from '../tableTypes';
+import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 // Register AG Grid Modules
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
@@ -316,6 +317,55 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         document.removeEventListener('keydown', handleKeyDown);
       };
     }, []);
+
+    // Subscribe to right panel changes to auto-select matching rows
+    useEffect(() => {
+      const cohortViewerService = TwoPanelCohortViewerService.getInstance();
+      
+      const handleRightPanelChange = (viewType: any, extraData: any) => {
+        console.log('[CohortTable] Right panel changed:', viewType, extraData);
+        
+        if (viewType === 'phenotype' && extraData && extraData.id && ref && typeof ref === 'object' && ref.current?.api) {
+          // Clear existing selections first
+          ref.current.api.deselectAll();
+          
+          // Find the row with matching ID
+          const matchingRowNode = ref.current.api.getRowNode(extraData.id);
+          if (matchingRowNode) {
+            console.log('[CohortTable] Found matching row, selecting:', extraData.id);
+            matchingRowNode.setSelected(true);
+            // Optionally scroll to the selected row
+            ref.current.api.ensureNodeVisible(matchingRowNode);
+          } else {
+            // Try alternative approach - iterate through all nodes to find by data.id
+            ref.current.api.forEachNode((node: any) => {
+              if (node.data && node.data.id === extraData.id) {
+                console.log('[CohortTable] Found matching row by data.id, selecting:', extraData.id);
+                node.setSelected(true);
+                ref.current.api.ensureNodeVisible(node);
+              }
+            });
+          }
+        } else {
+          // Clear selections when not viewing a phenotype
+          if (ref && typeof ref === 'object' && ref.current?.api) {
+            ref.current.api.deselectAll();
+          }
+        }
+      };
+
+      // Subscribe to service changes
+      cohortViewerService.addListener(handleRightPanelChange);
+      
+      // Initial check for current state
+      const currentViewType = cohortViewerService.getCurrentViewType();
+      const currentExtraData = cohortViewerService.getExtraData();
+      handleRightPanelChange(currentViewType, currentExtraData);
+
+      return () => {
+        cohortViewerService.removeListener(handleRightPanelChange);
+      };
+    }, [data.rows]); // Re-run when row data changes
 
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
