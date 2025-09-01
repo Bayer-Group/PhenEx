@@ -100,6 +100,7 @@ export class CohortDataService {
 
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
+      this.ensureEffectiveTypes(); // Ensure all phenotypes have effective_type
       this.sortPhenotypes();
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
@@ -232,6 +233,21 @@ export class CohortDataService {
     if (parentPhenotypeId) {
       newPhenotype.parentIds = [parentPhenotypeId];
       newPhenotype.level = (this.getAllAncestors(newPhenotype).length);
+      
+      // Set effective_type for component phenotypes based on root ancestor
+      if (type === 'component') {
+        const ancestors = this.getAllAncestors(newPhenotype);
+        if (ancestors.length > 0) {
+          // Find the root ancestor (first non-component type, or the last ancestor)
+          const rootAncestor = ancestors.find(ancestor => ancestor.type !== 'component') || ancestors[ancestors.length - 1];
+          newPhenotype.effective_type = rootAncestor.effective_type || rootAncestor.type;
+        }
+      }
+    } 
+
+    // Set effective_type for non-component phenotypes (they are their own effective type)
+    if (type !== 'component') {
+      newPhenotype.effective_type = type;
     } 
 
 
@@ -243,6 +259,30 @@ export class CohortDataService {
     return this._cohort_data.phenotypes.find(
       (phenotype: TableRow) => phenotype.id === id
     );
+  }
+
+  private ensureEffectiveTypes(): void {
+    // First pass: set effective_type for non-component phenotypes
+    this._cohort_data.phenotypes.forEach((phenotype: TableRow) => {
+      if (phenotype.type !== 'component') {
+        phenotype.effective_type = phenotype.type;
+      }
+    });
+
+    // Second pass: set effective_type for component phenotypes based on ancestors
+    this._cohort_data.phenotypes.forEach((phenotype: TableRow) => {
+      if (phenotype.type === 'component' && !phenotype.effective_type) {
+        const ancestors = this.getAllAncestors(phenotype);
+        if (ancestors.length > 0) {
+          // Find the root ancestor (first non-component type, or the last ancestor)
+          const rootAncestor = ancestors.find(ancestor => ancestor.type !== 'component') || ancestors[ancestors.length - 1];
+          phenotype.effective_type = rootAncestor.effective_type || rootAncestor.type;
+        } else {
+          // Fallback if no ancestors
+          phenotype.effective_type = 'component';
+        }
+      }
+    });
   }
 
   public getAllAncestors(phenotypeData: TableRow): TableRow[] {
