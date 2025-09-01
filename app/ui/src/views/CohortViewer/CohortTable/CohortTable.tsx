@@ -318,10 +318,23 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,
             }}
+            cellSelection={false}
+            rowSelection="multiple"
+            onSelectionChanged={() => {
+              console.log('=== ROW SELECTION CHANGED EVENT FIRED ===');
+              if (ref && typeof ref === 'object' && ref.current?.api) {
+                const selectedRows = ref.current.api.getSelectedRows();
+                console.log('Selected rows:', selectedRows);
+                console.log('Number of selected rows:', selectedRows.length);
+              }
+            }}
             suppressColumnVirtualisation={true}
             onCellValueChanged={onCellValueChanged}
             onRowDragEnd={handleRowDragEnd}
-            rowDragManaged={true}
+            onRangeSelectionChanged={() => {
+              console.log('=== RANGE SELECTION CHANGED EVENT FIRED ===');
+            }}
+            rowDragManaged={true}  // Temporarily disabled to test cell selection
             loadThemeGoogleFonts={true}
             animateRows={true}
             getRowHeight={params => {
