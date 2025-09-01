@@ -63,7 +63,6 @@ DOCSTRING:
 {docstring}
 """
                             documents.append(document)
-                            logger.info(document)
                 except Exception as e:
                     logger.error(f"Failed to parse {file_path}: {e}")
 
@@ -138,7 +137,7 @@ class QueryRequest(BaseModel):
     top_k: int = 10
 
 
-@router.post("/query")
+@router.post("/query", tags=["AI"])
 async def query_rag(request: QueryRequest):
     """
     Endpoint to query the FAISS index and retrieve the most relevant documents.

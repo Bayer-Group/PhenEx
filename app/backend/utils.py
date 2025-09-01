@@ -91,6 +91,9 @@ class CohortUtils:
         updated_phenotypes = new_phenotypes + [
             p for p in old_phenotypes if p.get("id") not in new_ids
         ]
+        updated_phenotypes = [
+            p for p in updated_phenotypes if p.get("class_name") is not None
+        ]
 
         cohort["phenotypes"] = updated_phenotypes
         return cohort

@@ -1,0 +1,67 @@
+.userButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
+  max-width: 200px;
+}
+
+.userButton:hover {
+  background-color: var(--background-color);
+  transform: translateY(-1px);
+}
+
+.userButton:active {
+  transform: translateY(0);
+}
+
+.avatar {
+  flex-shrink: 0;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.email {
+  font-size: 12px;
+  color: var(--text-color-inactive);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--text-color-inactive);
+  transition: transform 0.2s ease;
+}
+
+.userButton:hover .chevron {
+  color: var(--color-accent-bright);
+  transform: translateY(1px);
+}

@@ -18,8 +18,8 @@
 import { ViewType } from '../MainView/MainView';
 import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
 import { CohortsDataService } from './CohortsDataService';
-import { LoginDataService } from './UserLogin/LoginDataService';
-import { ViewInfo, MainViewService } from '../MainView/MainView';
+import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
+import { MainViewService } from '../MainView/MainView';
 
 interface CohortData {
   id: string;

@@ -1,16 +1,16 @@
 import { createID } from '../../types/createID';
 import {
   getPublicCohorts,
-  getUserCohort,
   getUserCohorts,
   updateCohort,
 } from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { LoginDataService } from './UserLogin/LoginDataService';
 
 export class CohortsDataService {
   private static instance: CohortsDataService;
-  private _publicCohortNamesAndIds = null;
-  private _userCohortNamesAndIds = null;
+  private _publicCohortNamesAndIds: any[] | null = null;
+  private _userCohortNamesAndIds: any[] | null = null;
 
   private cohortDataService: CohortDataService;
 
@@ -22,6 +22,13 @@ export class CohortsDataService {
   }
 
   public async userCohortNamesAndIds() {
+    const loginService = LoginDataService.getInstance();
+    if (!loginService.isLoggedIn()) {
+      // Return empty array when not logged in
+      this._userCohortNamesAndIds = [];
+      return this._userCohortNamesAndIds;
+    }
+    
     this._userCohortNamesAndIds = await getUserCohorts();
     return this._userCohortNamesAndIds;
   }
@@ -58,7 +65,7 @@ export class CohortsDataService {
       database_config: {},
     };
 
-    const newcohort = await updateCohort(newCohortData.id, newCohortData);
+    await updateCohort(newCohortData.id, newCohortData);
 
     this.notifyListeners(); // Notify listeners after initialization
     return newCohortData;
@@ -79,15 +86,5 @@ export class CohortsDataService {
 
   private notifyListeners() {
     this.listeners.forEach(listener => listener());
-  }
-
-  async deleteCohort() {
-    if (this._cohort_data.id) {
-      await deleteCohort(this._cohort_data.id);
-      this._cohort_data = {};
-      this._cohort_name = '';
-      this._table_data = { rows: [], columns: this.columns };
-      this.notifyListeners();
-    }
   }
 }

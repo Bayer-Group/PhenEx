@@ -1,30 +1,60 @@
-import { loginUser, registerUser } from '../../../api/user_login/route';
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase configuration - using environment variables for flexibility
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
 
 interface UserData {
   username: string;
   email: string;
 }
 
-// export abstract class LoginDataService {
 export class LoginDataService {
   private static instance: LoginDataService;
   public loggedIn: boolean = false;
   public loginUsername: string = '';
-  private token: string | null = null;
-  private currentUser: UserData | null = null;
-  private listeners: any[] = [];
+  private currentUser: User | null = null;
+  private listeners: (() => void)[] = [];
 
   private constructor() {
-    // Restore session from localStorage if it exists
-    const storedToken = localStorage.getItem('token');
-    const storedUsername = localStorage.getItem('username');
-    const storedUser = localStorage.getItem('userData');
+    // Initialize auth state listener
+    supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        this.currentUser = session.user;
+        this.loggedIn = true;
+        this.loginUsername = session.user.email?.split('@')[0] || session.user.id;
+      } else if (event === 'SIGNED_OUT') {
+        this.currentUser = null;
+        this.loggedIn = false;
+        this.loginUsername = '';
+      }
+      this.notifyListeners();
+    });
 
-    if (storedToken && storedUsername) {
-      this.token = storedToken;
-      this.loginUsername = storedUsername;
-      this.loggedIn = true;
-      this.currentUser = storedUser ? JSON.parse(storedUser) : null;
+    // Check for existing session on startup
+    this.initializeSession();
+  }
+
+  private async initializeSession() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        this.currentUser = session.user;
+        this.loggedIn = true;
+        this.loginUsername = session.user.email?.split('@')[0] || session.user.id;
+        this.notifyListeners();
+      }
+    } catch (error) {
+      console.error('Error initializing session:', error);
     }
   }
 
@@ -35,81 +65,105 @@ export class LoginDataService {
     return LoginDataService.instance;
   }
 
-  async login(username: string, password: string): Promise<boolean> {
+  async login(email: string, password: string): Promise<boolean> {
     try {
-      const response = await loginUser(username, password);
-      if (response?.access_token) {
-        this.token = response.access_token;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error.message);
+        throw new Error(error.message);
+      }
+
+      if (data.user) {
+        this.currentUser = data.user;
         this.loggedIn = true;
-        this.loginUsername = username;
-
-        // Save to localStorage
-        localStorage.setItem('token', response.access_token);
-        localStorage.setItem('username', username);
-
-        await this.fetchUserData();
+        this.loginUsername = data.user.email?.split('@')[0] || data.user.id;
         this.notifyListeners();
-
         return true;
       }
+
       return false;
     } catch (error) {
       console.error('Login failed:', error);
       this.loggedIn = false;
       this.loginUsername = '';
-      this.token = null;
+      this.currentUser = null;
       throw error;
     }
   }
 
-  async register(username: string, password: string, email: string): Promise<boolean> {
+  async register(email: string, password: string, username?: string): Promise<boolean> {
     try {
-      const response = await registerUser(username, password, email);
-      return !!response;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: username || email.split('@')[0],
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Registration error:', error.message);
+        throw new Error(error.message);
+      }
+
+      if (data.user) {
+        // Note: User might need to confirm email before being fully authenticated
+        return true;
+      }
+
+      return false;
     } catch (error) {
       console.error('Registration failed:', error);
-      throw error; // Propagate the error to show validation messages
+      throw error;
     }
-    this.notifyListeners();
   }
 
   async logout(): Promise<void> {
-    this.token = null;
-    this.currentUser = null;
-    this.loggedIn = false;
-    this.loginUsername = '';
-
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userData');
-    this.notifyListeners();
-  }
-
-  private async fetchUserData(): Promise<void> {
-    if (!this.token) return;
-
     try {
-      // Implement user data fetching once the endpoint is available
-      // const response = await axios.get<UserData>('/users/me', {
-      //   headers: {
-      //     Authorization: `Bearer ${this.token}`,
-      //   },
-      // });
-      // this.currentUser = response.data;
-      this.currentUser = {
-        username: this.loginUsername,
-        email: '', // Will be populated when the endpoint is available
-      };
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error.message);
+        throw new Error(error.message);
+      }
 
-      // Save user data to localStorage
-      localStorage.setItem('userData', JSON.stringify(this.currentUser));
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-      this.token = null;
       this.currentUser = null;
       this.loggedIn = false;
       this.loginUsername = '';
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still clear local state even if logout request fails
+      this.currentUser = null;
+      this.loggedIn = false;
+      this.loginUsername = '';
+      this.notifyListeners();
+    }
+  }
+
+  async loginWithOAuth(provider: 'google' | 'github' | 'azure' = 'google') {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        console.error('OAuth login error:', error.message);
+        throw new Error(error.message);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('OAuth login failed:', error);
+      throw error;
     }
   }
 
@@ -118,27 +172,42 @@ export class LoginDataService {
   }
 
   getCurrentUser(): UserData | null {
+    if (!this.currentUser) return null;
+    
+    return {
+      username: this.currentUser.user_metadata?.username || this.currentUser.email?.split('@')[0] || this.currentUser.id,
+      email: this.currentUser.email || '',
+    };
+  }
+
+  getSupabaseUser(): User | null {
     return this.currentUser;
   }
 
-  getToken(): string | null {
-    return this.token;
+  async getToken(): Promise<string | null> {
+    // Get the current session token
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
   }
 
   getUsername(): string {
     return this.loginUsername;
   }
 
+  getUserId(): string {
+    return this.currentUser?.id || '';
+  }
+
   private notifyListeners() {
-    console.log('NOTIFYING LISTENRERS');
+    console.log('NOTIFYING LISTENERS');
     this.listeners.forEach(listener => listener());
   }
 
-  addListener(listener) {
+  addListener(listener: () => void) {
     this.listeners.push(listener);
   }
 
-  removeListener(listener) {
+  removeListener(listener: () => void) {
     const index = this.listeners.indexOf(listener);
     if (index > -1) {
       this.listeners.splice(index, 1);

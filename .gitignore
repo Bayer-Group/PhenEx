@@ -244,3 +244,5 @@ yarn-error.log*
 
 *.vite
 *.virtual_documents
+
+*volumes*

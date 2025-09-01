@@ -1,22 +1,15 @@
-from typing import Dict, Optional, Union
-from fastapi import FastAPI, Body, HTTPException, Depends
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import ast
-import phenex
-import bcrypt
-import jwt
-from datetime import datetime, timedelta
-from pydantic import BaseModel
+from typing import Dict, Optional
+from fastapi import FastAPI, Body, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
-from examples import EXAMPLES
 from dotenv import load_dotenv
-from utils import CohortUtils
-import os, json, glob
+from database import DatabaseManager
+import os, json
 import logging
 from deepdiff import DeepDiff
-from rag import router as rag_router, query_faiss_index  # Import the router from rag.py
+from utils import CohortUtils
+from rag import router as rag_router, query_faiss_index
 
 load_dotenv()
 
@@ -24,90 +17,12 @@ from openai import AzureOpenAI, OpenAI
 
 # Required imports for authentication
 import os
-import sys
-import traceback
-import threading
-import asyncio
-from datetime import datetime, timedelta
 
 # Constants and configuration
 COHORTS_DIR = "/data/cohorts"
-USERS_FILE = "/data/users/users.json"
-SECRET_KEY = "your-secret-key-here"  # In production, use a proper secret key
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Pydantic models for request/response
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    email: str
-
-class User(BaseModel):
-    username: str
-    email: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-# OAuth2 scheme for JWT tokens
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# User management functions
-def get_users():
-    try:
-        # Ensure the directory exists
-        print("GETTING USERS")
-        if os.path.exists(USERS_FILE):
-            print("exists")
-            with open(USERS_FILE, 'r') as f:
-                return json.load(f)
-        # If file doesn't exist, create it with an empty list
-        print('doesnt exist')
-        with open(USERS_FILE, 'w') as f:
-            json.dump([], f)
-        return []
-    except Exception as e:
-        logger.error(f"Error reading users file: {e}")
-        raise HTTPException(status_code=500, detail=f"Error accessing user database: {str(e)}")
-
-def save_users(users):
-    with open(USERS_FILE, 'w') as f:
-        print("THIS is writing users")
-        json.dump(users, f)
-    print("RWOTE OK")
-
-def get_user(username: str):
-    users = get_users()
-    return next((user for user in users if user['username'] == username), None)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
-
-def get_password_hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-        user = get_user(username)
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        return User(**user)
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.JWTError:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+# Initialize database manager
+db_manager = DatabaseManager()
 
 openai_client = AzureOpenAI()
 if "AZURE_OPENAI_ENDPOINT" in os.environ:
@@ -140,381 +55,307 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include the router from rag.py
-app.include_router(rag_router, prefix="/rag")
 
-@app.post("/register")
-async def register(user: UserCreate):
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database schema, users, and sample data on startup."""
+    try:
+
+        # import asyncio
+        # await asyncio.sleep(5)
+
+        # First, create the cohort table structure
+        from init.create_cohort_table import CohortTableInitializer
+
+        logger.info("🚀 Starting cohort table initialization on backend startup...")
+        table_initializer = CohortTableInitializer()
+        table_success = await table_initializer.initialize()
+
+        if table_success:
+            logger.info("✅ Cohort table initialization completed successfully!")
+        else:
+            logger.warning(
+                "⚠️ Cohort table initialization failed, but backend will continue to start"
+            )
+
+        # Then, create test users
+        from init.populate_sample_users import UserInitializer
+
+        logger.info("🚀 Starting user initialization on backend startup...")
+        user_initializer = UserInitializer()
+        user_success = await user_initializer.initialize()
+
+        if user_success:
+            logger.info("✅ User initialization completed successfully!")
+        else:
+            logger.warning(
+                "⚠️ User initialization failed, but backend will continue to start"
+            )
+
+        # Finally, populate sample cohorts
+        from init.populate_sample_cohorts import SampleCohortsInitializer
+
+        logger.info("🚀 Starting sample cohorts initialization on backend startup...")
+        cohorts_initializer = SampleCohortsInitializer()
+        cohorts_success = await cohorts_initializer.initialize()
+
+        if cohorts_success:
+            logger.info("✅ Sample cohorts initialization completed successfully!")
+        else:
+            logger.warning(
+                "⚠️ Sample cohorts initialization failed, but backend will continue to start"
+            )
+
+        if table_success and user_success and cohorts_success:
+            logger.info("🎉 Complete database initialization completed successfully!")
+        else:
+            logger.warning("⚠️ Some initialization steps failed, but backend is ready")
+
+    except Exception as e:
+        logger.warning(
+            f"⚠️ Database initialization failed: {e}, but backend will continue to start"
+        )
+
+
+@app.get("/health", tags=["health"])
+async def health_check():
     """
-    Register a new user.
+    Health check endpoint for Docker health checks and service readiness.
     
-    Args:
-        user: UserCreate object containing username, password, and email
-        
     Returns:
-        Dict with status message
-        
-    Raises:
-        HTTPException: If registration fails due to validation or database errors
+        dict: Simple health status
     """
-    users = get_users()
-    print(users)
-    print('tat was users!!!')
-    # Check if username already exists
-    if any(u["username"] == user.username for u in users):
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    # Check if email already exists
-    if any(u["email"] == user.email for u in users):
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Validate password strength
-    if len(user.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
-    
-    print("got through")
-    # Create new user with hashed password
-    new_user = {
-        "username": user.username,
-        "password": get_password_hash(user.password),
-        "email": user.email
-    }
-    print(new_user)
-    
-    users.append(new_user)
-    save_users(users)
-    
-    return {"status": "success", "message": "User registered successfully"}
-
-@app.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Authenticate a user and return a JWT token.
-    
-    Args:
-        form_data: OAuth2PasswordRequestForm containing username and password
-        
-    Returns:
-        Token object containing access token and token type
-    """
-    user = get_user(form_data.username)
-    if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    if not verify_password(form_data.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    access_token = create_access_token({"sub": user["username"]})
-    return Token(access_token=access_token, token_type="bearer")
-
-@app.get("/users/me", response_model=User)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    """
-    Get current user information.
-    
-    Args:
-        current_user: User object from the JWT token
-        
-    Returns:
-        User object containing user information
-    """
-    return current_user
-
-def get_cohort_path(cohort_id, provisional=False):
-    if provisional:
-        return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.provisional.json")
-    else:
-        return os.path.join(COHORTS_DIR, f"cohort_{cohort_id}.json")
+    return {"status": "healthy", "service": "phenex-backend"}
 
 
-# Add this helper function
-def get_user_cohort_path(username: str, cohort_id: str, provisional: bool = False):
-    """Get the path to a user's cohort file"""
-    user_cohorts_dir = os.path.join(COHORTS_DIR, username)
-    # Ensure user directory exists
-    os.makedirs(user_cohorts_dir, exist_ok=True)
-    if provisional:
-        return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.provisional.json")
-    return os.path.join(user_cohorts_dir, f"cohort_{cohort_id}.json")
-
-# Modify the get_all_cohorts endpoint to accept username
-@app.get("/cohorts")
-async def get_all_cohorts_for_user(username: str):
+# Modify the get_all_cohorts endpoint to accept user_id
+@app.get("/cohorts", tags=["cohort"])
+async def get_all_cohorts_for_user(user_id: str):
     """
     Retrieve a list of all available cohorts for a specific user.
 
     Args:
-        username (str): The username whose cohorts to retrieve.
+        user_id (str): The user ID (UUID) whose cohorts to retrieve.
 
     Returns:
         dict: A list of cohort IDs and names for that user.
     """
-    print("GETTING COHORTS FOR USER", username)
     try:
-        user_cohorts_dir = os.path.join(COHORTS_DIR, username)
-        # Create directory if it doesn't exist
-        os.makedirs(user_cohorts_dir, exist_ok=True)
-        
-        # Get only files from user's directory
-        cohort_files = [
-            f for f in os.listdir(user_cohorts_dir)
-            if f.endswith(".json") and not f.endswith(".provisional.json")
-        ]
-        
-        cohorts = []
-        for cohort_file in cohort_files:
-            with open(os.path.join(user_cohorts_dir, cohort_file), "r") as f:
-                cohort = json.load(f)
-                if "id" in cohort.keys():
-                    cohort_id, cohort_name = cohort["id"], cohort["name"]
-                    cohorts.append({"id": cohort_id, "name": cohort_name})
-                else:
-                    logger.info(f"No ID found in cohort {cohort["name"]}, {cohort}")
+        cohorts = await db_manager.get_all_cohorts_for_user(user_id)
         return cohorts
     except Exception as e:
-        logger.error(f"Failed to retrieve cohorts for user {username}: {e}")
+        logger.error(f"Failed to retrieve cohorts for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to retrieve cohorts for user {username}."
+            status_code=500, detail=f"Failed to retrieve cohorts for user {user_id}."
         )
 
-# Modify the get_cohort endpoint to require username
-@app.get("/cohort")
-async def get_cohort_for_user(username: str, cohort_id: str, provisional: bool = False):
+
+# Modify the get_cohort endpoint to require user_id
+@app.get("/cohort", tags=["cohort"])
+async def get_cohort_for_user(user_id: str, cohort_id: str):
     """
-    Retrieve a cohort by its ID for a specific user.
+    Retrieve a cohort by its ID for a specific user. Retrieves the latest version.
 
     Args:
-        username (str): The username whose cohort to retrieve.
+        user_id (str): The user ID (UUID) whose cohort to retrieve.
         cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
 
     Returns:
         dict: The cohort data.
     """
     try:
-        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
-        if not os.path.exists(cohort_path):
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+        if not cohort:
             raise HTTPException(
                 status_code=404,
-                detail=f"Cohort not found for user {username}"
+                detail=f"Cohort {cohort_id} not found for user {user_id}",
             )
-        with open(cohort_path, "r") as f:
-            return json.load(f)
+        return cohort
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving cohort for user {username}: {e}")
+        logger.error(f"Error retrieving cohort {cohort_id} for user {user_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to retrieve cohort for user {username}"
+            detail=f"Failed to retrieve cohort {cohort_id} for user {user_id}",
         )
 
-# Modify the update_cohort endpoint to require username
-@app.post("/cohort")
+
+# Modify the update_cohort endpoint to require user_id
+@app.post("/cohort", tags=["cohort"])
 async def update_cohort_for_user(
-    username: str,
+    user_id: str,
     cohort_id: str,
     cohort: Dict = Body(...),
-    provisional: bool = False
+    provisional: bool = False,
+    new_version: bool = False,
 ):
     """
     Update or create a cohort for a specific user.
 
     Args:
-        username (str): The username whose cohort to update.
+        user_id (str): The user ID (UUID) whose cohort to update.
         cohort_id (str): The ID of the cohort to update.
         cohort (Dict): The complete JSON specification of the cohort.
         provisional (bool): Whether to save the cohort as provisional.
+        new_version (bool): If True, increment version. If False, replace existing version.
 
     Returns:
         dict: Status and message of the operation.
     """
     try:
-        cohort_path = get_user_cohort_path(username, cohort_id, provisional)
-        with open(cohort_path, "w") as f:
-            json.dump(cohort, f, indent=4)
+        await db_manager.update_cohort_for_user(
+            user_id, cohort_id, cohort, provisional, new_version
+        )
         return {
             "status": "success",
-            "message": f"Cohort updated successfully for user {username}."
+            "message": f"Cohort updated successfully for user {user_id}.",
         }
     except Exception as e:
-        logger.error(f"Failed to update cohort for user {username}: {e}")
+        logger.error(f"Failed to update cohort for user {user_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to update cohort for user {username}"
+            status_code=500, detail=f"Failed to update cohort for user {user_id}"
         )
 
-@app.delete("/cohort")
-async def delete_cohort_for_user(username: str, cohort_id: str):
+
+@app.delete("/cohort", tags=["cohort"])
+async def delete_cohort_for_user(user_id: str, cohort_id: str):
     """
     Delete a cohort by its ID.
 
     Args:
-        cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
+        user_id (str): The user ID (UUID) whose cohort to delete.
+        cohort_id (str): The ID of the cohort to delete.
 
     Returns:
-        dict: The cohort data.
-    """
-    cohort_path = get_user_cohort_path(username, cohort_id)
-    print(cohort_path)
-    if os.path.exists(cohort_path):
-        print("PATH EXISTS")
-        os.remove(cohort_path)
-    else:
-        logger.error(f"Failed to retrieve cohort {cohort_id}")
-        raise HTTPException(
-            status_code=404, detail=f"Failed to find cohort {cohort_id}."
-        )
-
-    return {"status": "success", "message": f"Cohort {cohort_id} deleted successfully."}
-
-
-@app.get("/publiccohorts")
-async def get_public_cohorts():
-    """
-    Retrieve a list of all available cohorts.
-
-    Returns:
-        dict: A list of cohort IDs.
+        dict: Status and message of the operation.
     """
     try:
-        cohort_files = [
-            f
-            for f in os.listdir(COHORTS_DIR)
-            if f.endswith(".json") and not f.endswith(".provisional.json")
-        ]
-        cohorts = []
-        for cohort_file in cohort_files:
-            with open(os.path.join(COHORTS_DIR, cohort_file), "r") as f:
-                cohort = json.load(f)
-                cohort_id, cohort_name = cohort["id"], cohort["name"]
-                cohorts.append({"id": cohort_id, "name": cohort_name})
-        return cohorts
+        success = await db_manager.delete_cohort_for_user(user_id, cohort_id)
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Failed to find cohort {cohort_id} for user {user_id}.",
+            )
+
+        return {
+            "status": "success",
+            "message": f"Cohort {cohort_id} deleted successfully.",
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to retrieve cohorts: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve cohorts.")
+        logger.error(f"Failed to delete cohort {cohort_id} for user {user_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete cohort {cohort_id} for user {user_id}",
+        )
 
 
-@app.get("/publiccohort")
-async def get_public_cohort(cohort_id: str, provisional: bool = False):
+@app.get("/cohorts/public", tags=["cohort"])
+async def get_all_public_cohorts():
     """
-    Retrieve a cohort by its ID.
+    Retrieve a list of all cohorts for the public user (latest versions only).
+
+    Returns:
+        dict: A list of cohort IDs and names for the public user.
+    """
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        cohorts = await db_manager.get_all_cohorts_for_user(public_user_id)
+        return cohorts
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to retrieve public cohorts: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve public cohorts."
+        )
+
+
+@app.get("/cohort/public", tags=["cohort"])
+async def get_public_cohort(cohort_id: str):
+    """
+    Retrieve a cohort by its ID for the public user. Retrieves the latest version.
 
     Args:
         cohort_id (str): The ID of the cohort to retrieve.
-        provisional (bool): Whether to retrieve the provisional version of the cohort.
 
     Returns:
         dict: The cohort data.
     """
-    cohort_path = get_cohort_path(cohort_id, provisional)
-    # handle provisional = True and doesn't exist
-    with open(cohort_path, "r") as f:
-        return json.load(f)
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        cohort = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
+        if not cohort:
+            raise HTTPException(
+                status_code=404, detail=f"Cohort not found for public user"
+            )
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving cohort for public user: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve cohort for public user"
+        )
 
 
-
-@app.get("/cohort/accept_changes")
-async def accept_changes(cohort_id: str):
-    """
-    Accept changes made to a provisional cohort.
-
-    Args:
-        cohort_id (str): The ID of the cohort to finalize.
-
-    Returns:
-        dict: Status and message of the operation.
-    """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    final_path = get_cohort_path(cohort_id, provisional=False)
-    if os.path.exists(provisional_path):
-        os.replace(provisional_path, final_path)
-        return await get_cohort(cohort_id, provisional=False)
+# Include the router from rag.py
+app.include_router(rag_router, prefix="/rag")
 
 
-@app.get("/cohort/reject_changes")
-async def reject_changes(cohort_id: str):
-    """
-    Reject changes made to a provisional cohort.
-
-    Args:
-        cohort_id (str): The ID of the cohort to discard provisional changes.
-
-    Returns:
-        dict: Status and message of the operation.
-    """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    if os.path.exists(provisional_path):
-        os.remove(provisional_path)
-        return await get_cohort(cohort_id, provisional=False)
-
-
-@app.get("/cohort/get_changes")
-async def get_changes(cohort_id: str):
-    """
-    Get differences between the provisional and final versions of a cohort.
-
-    Args:
-        cohort_id (str): The ID of the cohort to finalize.
-
-    Returns:
-        dict: Dictionary of fields of changed phenotypes.
-    """
-    provisional_path = get_cohort_path(cohort_id, provisional=True)
-    final_path = get_cohort_path(cohort_id, provisional=False)
-    logger.info(f"Provisional path: {provisional_path}")
-    logger.info(f"Final path: {final_path}")
-    if not os.path.exists(provisional_path):
-        logger.info(f"No differences")
-        return {}
-    if not os.path.exists(final_path):
-        raise HTTPException(status_code=404, detail="Final cohort not found.")
-
-    with open(provisional_path, "r") as provisional_file:
-        provisional_cohort = json.load(provisional_file)
-
-    with open(final_path, "r") as final_file:
-        final_cohort = json.load(final_file)
-    logger.info(final_cohort)
-    logger.info(provisional_cohort)
-    diff = DeepDiff(provisional_cohort, final_cohort, ignore_order=True)
-    logger.info(f"Calculated differences: {diff}")
-    return diff
-
-
-@app.post("/text_to_cohort")
-async def text_to_cohort(
-    cohort_id: Optional[str] = None,
+@app.post("/cohort/suggest_changes", tags=["AI"])
+async def suggest_changes(
+    request: Request,
+    user_id: str,
+    cohort_id: str,
     model: Optional[str] = "gpt-4o-mini",
-    current_cohort: Dict = Body(None),
-    user_request: str = Body(
-        "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    ),
     return_updated_cohort: bool = False,
 ):
     """
     Generate or modify a cohort based on user instructions.
 
     Args:
-        cohort_id (str): The ID of the cohort to modify. Optional, in case you want to read the cohort from the backend database.
+        request (Request): The FastAPI request object containing the user request in the body.
+        user_id (str): The ID of the user.
+        cohort_id (str): The ID of the cohort to modify.
         model (str): The model to use for processing the request.
+        return_updated_cohort (bool): Whether to return the updated cohort.
 
     Body:
-        current_cohort (Dict): The current cohort definition. In case frontend is managing cohort state.
-        user_request (str): Instructions for modifying the cohort.
+        user_request (str): Instructions for modifying the cohort (plain text in request body).
 
     Returns:
         StreamingResponse: A stream of the response text.
     """
-    if cohort_id is not None:
-        current_cohort = await get_cohort(cohort_id)
-    else:
-        cohort_id = current_cohort["id"]
-        await update_cohort(cohort_id, current_cohort)
+    # Read the user request from the request body
+    body = await request.body()
+    user_request = (
+        body.decode("utf-8")
+        if body
+        else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+    )
 
+    current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not current_cohort:
+        raise HTTPException(
+            status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
+        )
+    current_cohort = json.loads(current_cohort["cohort_data"])
     try:
+        # these are duplicated i think, there is a phenotype key with everything
         del current_cohort["entry_criterion"]
         del current_cohort["inclusions"]
         del current_cohort["exclusions"]
@@ -584,6 +425,7 @@ async def text_to_cohort(
     - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
     - Make sure to choose the appropriate domain for each phenotype for the given data source
     - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
+    - If a phenotype is to be removed, then return the phenotype in the list of to-be-updated phenotypes in the form {{"id": PTID, "class_name": null}}.
     """
 
     user_prompt = f"""     
@@ -615,46 +457,170 @@ async def text_to_cohort(
         inside_json = False
         trailing_buffer = ""  # To handle split tags
         json_buffer = ""
-        for chunk in completion:
-            if len(chunk.choices):
-                current_response = chunk.choices[0].delta.content
-                if current_response is not None:
-                    # Prepend trailing buffer to handle split tags
-                    if not inside_json:
-                        current_response = trailing_buffer + current_response
-                        trailing_buffer = current_response[
-                            -10:
-                        ]  # Keep last 10 characters for next iteration
+        try:
+            for chunk in completion:
+                if len(chunk.choices):
+                    current_response = chunk.choices[0].delta.content
+                    if current_response is not None:
+                        # Prepend trailing buffer to handle split tags
+                        if not inside_json:
+                            current_response = trailing_buffer + current_response
+                            trailing_buffer = current_response[
+                                -10:
+                            ]  # Keep last 10 characters for next iteration
 
-                    if "<JSON>" in current_response:
-                        inside_json = True
-                        json_buffer = current_response.split("<JSON>", 1)[1]
-                        final_chunk = current_response.split("<JSON>", 1)[0]
-                        yield final_chunk
-                    elif inside_json:
-                        json_buffer += current_response
-                    elif not inside_json:
-                        yield current_response[
-                            :-10
-                        ]  # Yield response excluding trailing buffer
+                        if "<JSON>" in current_response:
+                            inside_json = True
+                            json_buffer = current_response.split("<JSON>", 1)[1]
+                            final_chunk = current_response.split("<JSON>", 1)[0]
+                            yield final_chunk
+                        elif inside_json:
+                            json_buffer += current_response
+                        elif not inside_json:
+                            yield current_response[
+                                :-10
+                            ]  # Yield response excluding trailing buffer
 
-        parsed_json = json_buffer.replace("</JSON>", "")
-        logger.info(f"Parsed JSON: {parsed_json}")
-        new_phenotypes = json.loads(json_buffer.replace("</JSON>", ""))
-        logger.info(
-            f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
+            # Yield any remaining trailing buffer
+            if not inside_json and trailing_buffer:
+                yield trailing_buffer
+
+            # Process the JSON if we found it
+            if json_buffer:
+                try:
+                    parsed_json = json_buffer.replace("</JSON>", "")
+                    logger.info(f"Parsed JSON: {parsed_json}")
+                    new_phenotypes = json.loads(parsed_json)
+                    logger.info(
+                        f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
+                    )
+
+                    c = CohortUtils()
+                    new_cohort = c.convert_phenotypes_to_structure(
+                        c.update_cohort(current_cohort, new_phenotypes)
+                    )
+                    await db_manager.update_cohort_for_user(
+                        user_id,
+                        cohort_id,
+                        new_cohort,
+                        provisional=True,
+                        new_version=False,
+                    )
+                    if return_updated_cohort:
+                        yield json.dumps(new_cohort, indent=4)
+                    logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse JSON: {e}")
+                    yield f"\n\nError: Failed to parse AI response JSON. Please try again."
+                except Exception as e:
+                    logger.error(f"Error processing cohort update: {e}")
+                    yield f"\n\nError: Failed to update cohort. Please try again."
+            else:
+                logger.warning("No JSON found in AI response")
+
+        except Exception as e:
+            logger.error(f"Error in stream_response: {e}")
+            yield f"\n\nError: Streaming failed. Please try again."
+
+    return StreamingResponse(
+        stream_response(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )
+
+
+@app.get("/cohort/accept_changes", tags=["AI"])
+async def accept_changes(user_id: str, cohort_id: str):
+    """
+    Accept changes made to a provisional cohort by setting is_provisional to False.
+
+    Args:
+        user_id (str): The user ID (UUID).
+        cohort_id (str): The ID of the cohort to finalize.
+
+    Returns:
+        dict: The finalized cohort data.
+    """
+    try:
+        success = await db_manager.accept_changes(user_id, cohort_id)
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No provisional changes found for cohort {cohort_id}",
+            )
+
+        # Return the updated cohort
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to accept changes for cohort {cohort_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to accept changes for cohort {cohort_id}"
         )
 
-        c = CohortUtils()
-        new_cohort = c.convert_phenotypes_to_structure(
-            c.update_cohort(current_cohort, new_phenotypes)
-        )
-        await update_cohort(cohort_id, new_cohort, provisional=True)
-        if return_updated_cohort:
-            yield json.dumps(new_cohort, indent=4)
-        logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
 
-    return StreamingResponse(stream_response(), media_type="text/plain")
+@app.get("/cohort/reject_changes", tags=["AI"])
+async def reject_changes(user_id: str, cohort_id: str):
+    """
+    Reject changes made to a provisional cohort by deleting provisional versions.
+
+    Args:
+        user_id (str): The user ID (UUID).
+        cohort_id (str): The ID of the cohort to discard provisional changes.
+
+    Returns:
+        dict: The non-provisional cohort data.
+    """
+    try:
+        await db_manager.reject_changes(user_id, cohort_id)
+
+        # Return the non-provisional cohort
+        cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+        if not cohort:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found after rejecting changes",
+            )
+        return cohort
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to reject changes for cohort {cohort_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to reject changes for cohort {cohort_id}"
+        )
+
+
+@app.get("/cohort/get_changes", tags=["AI"])
+async def get_changes(user_id: str, cohort_id: str):
+    """
+    Get differences between the provisional and non-provisional versions of a cohort.
+    Returns empty dict if there is no provisional cohort.
+
+    Args:
+        user_id (str): The user ID (UUID).
+        cohort_id (str): The ID of the cohort to compare.
+
+    Returns:
+        dict: Dictionary of changes between provisional and non-provisional versions.
+    """
+    try:
+        changes = await db_manager.get_changes_for_user(user_id, cohort_id)
+        return changes
+    except Exception as e:
+        logger.error(
+            f"Failed to get changes for cohort {cohort_id} for user {user_id}: {e}"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get changes for cohort {cohort_id} for user {user_id}",
+        )
 
 
 @app.post("/execute_study")
@@ -679,39 +645,39 @@ async def execute_study(
     from queue import Queue
     import threading
     import json
-    
+
     async def stream_execution():
         # Create a queue to capture output
         output_queue = Queue()
         final_result = {}
-        
+
         def capture_output():
             # Capture stdout and stderr
             old_stdout = sys.stdout
             old_stderr = sys.stderr
-            
+
             # Capture logging output
             import logging
-            
+
             class StreamCapture:
                 def __init__(self, queue, prefix=""):
                     self.queue = queue
                     self.prefix = prefix
-                    
+
                 def write(self, text):
                     if text.strip():  # Only send non-empty lines
                         self.queue.put(f"{self.prefix}{text}")
                     return len(text)
-                    
+
                 def flush(self):
                     pass
-            
+
             # Custom logging handler to capture log messages
             class QueueHandler(logging.Handler):
                 def __init__(self, queue):
                     super().__init__()
                     self.queue = queue
-                    
+
                 def emit(self, record):
                     try:
                         log_message = self.format(record)
@@ -719,43 +685,46 @@ async def execute_study(
                         self.queue.put(f"[{level_name}] {log_message}")
                     except Exception:
                         self.handleError(record)
-            
+
             # Set up logging capture
             queue_handler = QueueHandler(output_queue)
-            queue_handler.setFormatter(logging.Formatter('%(name)s - %(message)s'))
-            
+            queue_handler.setFormatter(logging.Formatter("%(name)s - %(message)s"))
+
             # Get the root logger and add our handler
             root_logger = logging.getLogger()
             original_level = root_logger.level
             original_handlers = root_logger.handlers.copy()
-            
+
             # Also specifically capture phenex logger messages
-            phenex_logger = logging.getLogger('phenex')
+            phenex_logger = logging.getLogger("phenex")
             phenex_original_level = phenex_logger.level
             phenex_original_handlers = phenex_logger.handlers.copy()
-            
+
             # Clear existing handlers and add our queue handler
             root_logger.handlers.clear()
             root_logger.addHandler(queue_handler)
             root_logger.setLevel(logging.INFO)  # Capture all log levels
-            
+
             # Ensure phenex logger also uses our handler
             phenex_logger.handlers.clear()
             phenex_logger.addHandler(queue_handler)
             phenex_logger.setLevel(logging.INFO)
             phenex_logger.propagate = True  # Ensure messages propagate to root logger
-            
+
             sys.stdout = StreamCapture(output_queue, "[STDOUT] ")
             sys.stderr = StreamCapture(output_queue, "[STDERR] ")
-            
+
             try:
                 print(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
-                logger.info(f"Starting execution for cohort: {cohort.get('name', 'Unknown')}")
+                logger.info(
+                    f"Starting execution for cohort: {cohort.get('name', 'Unknown')}"
+                )
                 print(f"Database config: {database_config}")
                 logger.info(f"Database configuration: {database_config}")
-                
+
                 if database_config["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
+
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
                     logger.info("Using OMOP mapper")
@@ -763,7 +732,7 @@ async def execute_study(
                 database = database_config["config"]
                 print("Creating database connection...")
                 logger.info("Creating Snowflake database connection...")
-                
+
                 con = SnowflakeConnector(
                     SNOWFLAKE_SOURCE_DATABASE=database["source_database"],
                     SNOWFLAKE_DEST_DATABASE=database["destination_database"],
@@ -775,8 +744,10 @@ async def execute_study(
                 logger.info("Retrieving mapped tables from database...")
                 mapped_tables = mapper.get_mapped_tables(con)
                 print(f"Found {len(mapped_tables)} mapped tables")
-                logger.info(f"Successfully retrieved {len(mapped_tables)} mapped tables")
-                
+                logger.info(
+                    f"Successfully retrieved {len(mapped_tables)} mapped tables"
+                )
+
                 del cohort["phenotypes"]
                 print("Preparing cohort for phenex...")
                 logger.info("Converting cohort data structure for phenex processing...")
@@ -786,11 +757,11 @@ async def execute_study(
                 logger.debug("Saving processed cohort to processed_cohort.json")
                 with open("./processed_cohort.json", "w") as f:
                     json.dump(processed_cohort, f, indent=4)
-                    
+
                 print("Creating phenex cohort object...")
                 logger.info("Creating phenex cohort object from processed data...")
                 px_cohort = from_dict(processed_cohort)
-                
+
                 logger.debug("Saving cohort object to cohort.json")
                 with open("./cohort.json", "w") as f:
                     json.dump(px_cohort.to_dict(), f, indent=4)
@@ -813,20 +784,24 @@ async def execute_study(
                 print("Generating waterfall report...")
                 logger.info("Generating waterfall/attrition report...")
                 from phenex.reporting import Waterfall
+
                 r = Waterfall()
                 df_waterfall = r.execute(px_cohort)
-                df_waterfall.to_csv(os.path.join(path_cohort, "waterfall.csv"), index=False)
+                df_waterfall.to_csv(
+                    os.path.join(path_cohort, "waterfall.csv"), index=False
+                )
 
                 print("Finalizing results...")
                 logger.info("Finalizing and formatting results for return...")
                 append_count_to_cohort(px_cohort, cohort)
 
                 from json import loads, dumps
+
                 cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
                 cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
 
                 final_result["cohort"] = cohort
-                
+
                 print("Saving final results...")
                 logger.debug("Saving executed cohort to executed_cohort.json")
                 with open("./executed_cohort.json", "w") as f:
@@ -835,38 +810,39 @@ async def execute_study(
                 logger.debug("Saving returned cohort to returned_cohort.json")
                 with open("./returned_cohort.json", "w") as f:
                     json.dump(cohort, f, indent=4)
-                    
+
                 print("Execution completed successfully!")
                 logger.info("Cohort execution completed successfully!")
-                
+
             except Exception as e:
                 print(f"ERROR: {str(e)}")
                 import traceback
+
                 print(f"TRACEBACK: {traceback.format_exc()}")
                 final_result["error"] = str(e)
             finally:
                 # Restore original stdout/stderr
                 sys.stdout = old_stdout
                 sys.stderr = old_stderr
-                
+
                 # Restore original logging configuration
                 root_logger.handlers.clear()
                 for handler in original_handlers:
                     root_logger.addHandler(handler)
                 root_logger.setLevel(original_level)
-                
+
                 # Restore phenex logger configuration
                 phenex_logger.handlers.clear()
                 for handler in phenex_original_handlers:
                     phenex_logger.addHandler(handler)
                 phenex_logger.setLevel(phenex_original_level)
-                
+
                 output_queue.put("__EXECUTION_COMPLETE__")
-        
+
         # Start execution in a separate thread
         execution_thread = threading.Thread(target=capture_output)
         execution_thread.start()
-        
+
         # Stream output as it comes
         while True:
             try:
@@ -880,16 +856,16 @@ async def execute_study(
                     await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
             except:
                 await asyncio.sleep(0.1)
-        
+
         # Wait for thread to complete
         execution_thread.join()
-        
+
         # Send final result
         if "error" in final_result:
             yield f"data: {json.dumps({'type': 'error', 'message': final_result['error']})}\n\n"
         else:
             yield f"data: {json.dumps({'type': 'result', 'data': final_result})}\n\n"
-        
+
         yield f"data: {json.dumps({'type': 'complete'})}\n\n"
 
     return StreamingResponse(
@@ -899,7 +875,7 @@ async def execute_study(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
-        }
+        },
     )
 
 
@@ -928,7 +904,7 @@ def append_count_to_phenotypes(phenex_phenotypes, list_of_phenotype_dicts):
 
 
 # -- CODELIST FILE MANAGEMENT ENDPOINTS
-@app.get("/codelist_filesnames_for_cohort")
+@app.get("/codelist_filesnames_for_cohort", tags=["codelist"])
 async def codelist_filesnames_for_cohort(cohort_id: str):
     """
     Get a list of codelist filenames for a given cohort ID.
@@ -942,7 +918,7 @@ async def codelist_filesnames_for_cohort(cohort_id: str):
     return get_codelist_filenames_for_cohort(cohort_id)
 
 
-@app.get("/codelist_file_for_cohort")
+@app.get("/codelist_file_for_cohort", tags=["codelist"])
 async def codelist_file_for_cohort(cohort_id: str, file_id: str):
     """
     Get the contents of a codelist file for a given cohort ID and file ID.
@@ -957,7 +933,7 @@ async def codelist_file_for_cohort(cohort_id: str, file_id: str):
     return get_codelist_file_for_cohort(cohort_id, file_id)
 
 
-@app.post("/upload_codelist_file_to_cohort")
+@app.post("/upload_codelist_file_to_cohort", tags=["codelist"])
 async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
     """
     Delete a cohort by its ID.
@@ -976,7 +952,7 @@ async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
     }
 
 
-@app.delete("/codelist_file")
+@app.delete("/codelist_file", tags=["codelist"])
 async def delete_codelist_file(cohort_id: str, file_id: str):
     """
     Delete a codelist file and it's contents.
@@ -1135,7 +1111,7 @@ def resolve_phenexui_codelist_file(phenexui_codelist):
         "class_name": "Codelist",
         "name": phenexui_codelist["codelist_name"],
         "codelist": phenex_codelist,
-        "use_code_type":False
+        "use_code_type": False,
     }
 
 
@@ -1186,9 +1162,7 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict]):
     return phenotypes
 
 
-def prepare_codelists_for_phenotype(
-    phenotype: Union["CodelistPhenotype", "MeasurementPhenotype"]
-):
+def prepare_codelists_for_phenotype(phenotype: dict):
     """
     Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
 
@@ -1211,7 +1185,7 @@ def prepare_codelists_for_phenotype(
     return phenotype
 
 
-def prepare_time_range_phenotype(phenotype: "TimeRangePhenotype"):
+def prepare_time_range_phenotype(phenotype: dict):
     if (
         "relative_time_range" in phenotype.keys()
         and phenotype["relative_time_range"] != None

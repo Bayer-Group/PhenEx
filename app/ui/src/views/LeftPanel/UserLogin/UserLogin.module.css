@@ -1,4 +1,17 @@
 .container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.loginTriggerButton {
+  margin: 8px;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.userButton {
+  margin: 4px;
 }
 
 .loginHeader {
