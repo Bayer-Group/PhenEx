@@ -17,12 +17,16 @@
   
   /* Stack positioning using CSS custom property */
   right: calc(var(--card-index) * 10px);
-  top: calc(var(--card-index) * 2px);
+
   transform: translateZ(calc(var(--card-index) * 0px));
   z-index: calc(10 - var(--card-index));
-  opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards))));
+  opacity: calc(1 - (var(--card-index) / (var(--max-cards) - 3)));
+  /* opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards)))); */
+
   line-height: 16px;
   transition: all 0.3s ease;
+  top:50%;
+  transform: translateY(-50%);
 }
 
 /* Only the topmost card (index 0) gets fixed height */
@@ -116,7 +120,10 @@
   /* Index 0 (topmost, highest z-index) should NOT move */
   /* Higher index cards should move LEFT (negative X) */
   transform: translateZ(calc(var(--card-index) * 0px)) 
-             translateX(calc(var(--card-index) * -160px)) !important;
+             translateX(calc(var(--card-index) * -160px)) 
+             translateY(-50%) 
+             !important;
+
     opacity: 1;
 }
 
