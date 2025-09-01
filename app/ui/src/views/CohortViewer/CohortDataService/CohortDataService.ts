@@ -77,6 +77,12 @@ export class CohortDataService {
         this._currentFilter.includes(phenotype.type)
       );
     }
+
+    // If components are included in the filter, we need hierarchical sorting
+    if (this._currentFilter.includes('component')) {
+      filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes(filteredPhenotypes);
+    }
+
     return {
       rows: filteredPhenotypes,
       columns: this.columns,
@@ -227,7 +233,7 @@ export class CohortDataService {
       newPhenotype.parentIds = [parentPhenotypeId];
       newPhenotype.level = (this.getAllAncestors(newPhenotype).length);
     } 
-      console.log("LEVEL OF NEW PHENOTYPE", newPhenotype.level)
+
 
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
@@ -277,6 +283,58 @@ export class CohortDataService {
     }
     
     return descendants;
+  }
+
+  private getHierarchicallyOrderedPhenotypes(phenotypes: TableRow[]): TableRow[] {
+    const result: TableRow[] = [];
+    
+    // Separate phenotypes by type, maintaining original order for non-components
+    const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    const componentPhenotypes = phenotypes.filter(p => p.type === 'component');
+    
+    for (const type of order) {
+      const phenotypesOfType = phenotypes.filter(p => p.type === type);
+      
+      for (const phenotype of phenotypesOfType) {
+        // Add the parent phenotype
+        result.push(phenotype);
+        
+        // Add all its component descendants in hierarchical order
+        const descendants = this.getComponentDescendantsHierarchically(phenotype.id, componentPhenotypes);
+        result.push(...descendants);
+      }
+    }
+    
+    // Add any orphaned components (components without parents in the filtered list)
+    const addedComponentIds = new Set(result.filter(p => p.type === 'component').map(p => p.id));
+    const orphanedComponents = componentPhenotypes.filter(c => !addedComponentIds.has(c.id));
+    result.push(...orphanedComponents);
+    
+    return result;
+  }
+
+  private getComponentDescendantsHierarchically(parentId: string, componentPhenotypes: TableRow[]): TableRow[] {
+    const result: TableRow[] = [];
+    
+    // Find direct children of this parent
+    const directChildren = componentPhenotypes.filter(
+      (phenotype: TableRow) =>
+        phenotype.parentIds && 
+        Array.isArray(phenotype.parentIds) && 
+        phenotype.parentIds.includes(parentId)
+    );
+    
+    // Sort direct children by their index if available
+    directChildren.sort((a, b) => (a.index || 0) - (b.index || 0));
+    
+    // For each direct child, add it and then recursively add its descendants
+    for (const child of directChildren) {
+      result.push(child);
+      const childDescendants = this.getComponentDescendantsHierarchically(child.id, componentPhenotypes);
+      result.push(...childDescendants);
+    }
+    
+    return result;
   }
 
   public deletePhenotype(id: string) {
@@ -341,6 +399,18 @@ export class CohortDataService {
       allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
     );
 
+    // If components are in the filter, handle hierarchical reordering
+    if (this._currentFilter.includes('component')) {
+      await this.updateHierarchicalRowOrder(newRowData, allPhenotypes);
+    } else {
+      // Original flat reordering logic for non-component filters
+      await this.updateFlatRowOrder(newRowData, allPhenotypes);
+    }
+
+    console.log('=== updateRowOrder END ===');
+  }
+
+  private async updateFlatRowOrder(newRowData: TableRow[], allPhenotypes: TableRow[]) {
     // Group the reordered visible phenotypes by type
     const reorderedVisibleByType: { [key: string]: TableRow[] } = {};
     newRowData.forEach(row => {
@@ -406,8 +476,6 @@ export class CohortDataService {
       this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
     );
 
-    console.log('=== updateRowOrder END ===');
-
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
@@ -415,6 +483,151 @@ export class CohortDataService {
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     this.notifyListeners();
+  }
+
+  private async updateHierarchicalRowOrder(newRowData: TableRow[], allPhenotypes: TableRow[]) {
+    console.log('=== Hierarchical reordering ===');
+    
+    // Create a map of all phenotypes for quick lookup
+    const visibleIds = new Set(newRowData.map(r => r.id));
+    
+    // Separate visible phenotypes by type
+    const visibleByType: { [key: string]: TableRow[] } = {};
+    newRowData.forEach(row => {
+      if (!visibleByType[row.type]) {
+        visibleByType[row.type] = [];
+      }
+      visibleByType[row.type].push(row);
+    });
+    
+    // Process the new order and update indices based on hierarchical constraints
+    const newCompleteOrder: TableRow[] = [];
+    const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    
+    // First, add all non-component phenotypes and their descendants in the new order
+    for (const type of order) {
+      const visibleOfType = visibleByType[type] || [];
+      let typeIndex = 1;
+      
+      for (const phenotype of visibleOfType) {
+        // Update the phenotype's index within its type
+        phenotype.index = typeIndex++;
+        newCompleteOrder.push(phenotype);
+        
+        // Find all component descendants that should be placed after this parent
+        const componentDescendants = this.getComponentsInNewOrder(phenotype.id, newRowData);
+        newCompleteOrder.push(...componentDescendants);
+      }
+      
+      // Add any hidden phenotypes of this type
+      const hiddenOfType = allPhenotypes.filter(p => 
+        p.type === type && !visibleIds.has(p.id)
+      );
+      for (const hidden of hiddenOfType) {
+        hidden.index = typeIndex++;
+        newCompleteOrder.push(hidden);
+        
+        // Add hidden component descendants
+        const hiddenComponents = allPhenotypes.filter(comp =>
+          comp.type === 'component' &&
+          comp.parentIds &&
+          comp.parentIds.includes(hidden.id) &&
+          !visibleIds.has(comp.id)
+        );
+        newCompleteOrder.push(...hiddenComponents);
+      }
+    }
+    
+    // Add any orphaned components
+    const addedIds = new Set(newCompleteOrder.map(p => p.id));
+    const orphanedComponents = allPhenotypes.filter(p => 
+      p.type === 'component' && !addedIds.has(p.id)
+    );
+    newCompleteOrder.push(...orphanedComponents);
+    
+    console.log(
+      'New hierarchical order:',
+      newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index, level: p.level }))
+    );
+    
+    // Update the cohort data
+    this._cohort_data.phenotypes = newCompleteOrder;
+    this._table_data = this.tableDataFromCohortData();
+    
+    this.splitPhenotypesByType();
+    this._cohort_data.name = this._cohort_name;
+    await updateCohort(this._cohort_data.id, this._cohort_data);
+    this.notifyNameChangeListeners();
+    this.issues_service.validateCohort();
+    this.notifyListeners();
+  }
+  
+  private getComponentsInNewOrder(parentId: string, newRowData: TableRow[]): TableRow[] {
+    const result: TableRow[] = [];
+    
+    // Find components in the new order that are direct children of this parent
+    const directChildren = newRowData.filter(row =>
+      row.type === 'component' &&
+      row.parentIds &&
+      row.parentIds.includes(parentId)
+    );
+    
+    // Process each child and its descendants
+    for (const child of directChildren) {
+      result.push(child);
+      const childComponents = this.getComponentsInNewOrder(child.id, newRowData);
+      result.push(...childComponents);
+    }
+    
+    return result;
+  }
+
+  // Method to validate drag-and-drop constraints for hierarchical phenotypes
+  public canDropPhenotype(draggedPhenotype: TableRow, targetPhenotype: TableRow, position: 'before' | 'after' | 'inside'): boolean {
+    // If components are not in the current filter, use normal rules
+    if (!this._currentFilter.includes('component')) {
+      // Only allow reordering within the same type
+      return draggedPhenotype.type === targetPhenotype.type;
+    }
+
+    // Hierarchical rules when components are visible
+    if (draggedPhenotype.type === 'component' && targetPhenotype.type === 'component') {
+      // Components can only be reordered among siblings (same parent)
+      const draggedParents = draggedPhenotype.parentIds || [];
+      const targetParents = targetPhenotype.parentIds || [];
+      
+      // Check if they have the same parent
+      if (draggedParents.length > 0 && targetParents.length > 0) {
+        return draggedParents[0] === targetParents[0];
+      }
+      
+      // Both are orphaned components
+      return draggedParents.length === 0 && targetParents.length === 0;
+    }
+
+    if (draggedPhenotype.type !== 'component' && targetPhenotype.type !== 'component') {
+      // Non-component phenotypes can be reordered within their type
+      return draggedPhenotype.type === targetPhenotype.type;
+    }
+
+    if (draggedPhenotype.type !== 'component' && targetPhenotype.type === 'component') {
+      // Cannot drop a parent phenotype into its component area
+      const targetAncestors = this.getAllAncestors(targetPhenotype);
+      return !targetAncestors.some(ancestor => ancestor.id === draggedPhenotype.id);
+    }
+
+    if (draggedPhenotype.type === 'component' && targetPhenotype.type !== 'component') {
+      // Components can be dropped near their parent or other valid parents of the same type
+      if (position === 'inside') {
+        // Can be dropped inside a phenotype if it could be a valid parent
+        return targetPhenotype.type !== 'component';
+      }
+      
+      // For before/after positioning, it depends on the component's current parent relationship
+      return true; // Allow repositioning for now, the exact rules can be refined
+    }
+
+    return false;
   }
 
   private isNewCohort: boolean = false;
