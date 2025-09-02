@@ -71,8 +71,8 @@
 }
 
 .statusDot {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   position: absolute;
   top: -10px;
@@ -82,10 +82,31 @@
   align-items: center;
   justify-content: center;
   font-family: 'IBMPlexSans-bold';
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   color: white;
+  background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover));
+  border: 2px solid rgba(255, 255, 255, 0.2);
+
+  
 }
+
+/* .statusDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover));
+  color: white;
+  text-align: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+} */
 
 .row.noIssues .statusDot.green {
   /* background-color: blue;

@@ -71,9 +71,10 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     
     return (
       <div className={`${styles.label} ${isSelected ? styles.selected : ''}`} style={getIndentationStyle()}>
-        {isComponentPhenotype
+        {props.value}
+        {/* {isComponentPhenotype
           ? renderComponentPhenotypeName()
-          : props.value}
+          : props.value} */}
       </div>
     );
   }

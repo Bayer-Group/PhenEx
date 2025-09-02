@@ -42,7 +42,10 @@ export const defaultColumns = [
     headerName: 'Type',
     width: 100,
     pinned: 'left',
-    editable: true,
+    editable: params => {
+      return params.data.type != 'component';
+    },
+
     cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
       values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
