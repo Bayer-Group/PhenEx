@@ -224,8 +224,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   // const renderXButton = () => {
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   // };
-  const colorClass = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-outer`;
-  const colorBorder = `rag-${props.data.type == 'entry' ? 'dark' : props.data.type == 'inclusion' ? 'blue' : props.data.type == 'exclusion' ? 'green' : props.data.type == 'baseline' ? 'coral' : props.data.type == 'outcome' ? 'red' : ''}-border`;
+  const colorClass = `rag-${props.data.effective_type == 'entry' ? 'dark' : props.data.effective_type == 'inclusion' ? 'blue' : props.data.effective_type == 'exclusion' ? 'green' : props.data.effective_type == 'baseline' ? 'coral' : props.data.effective_type == 'outcome' ? 'red' : ''}-outer`;
+  const colorBorder = `rag-${props.data.effective_type == 'entry' ? 'dark' : props.data.effective_type == 'inclusion' ? 'blue' : props.data.effective_type == 'exclusion' ? 'green' : props.data.effective_type == 'baseline' ? 'coral' : props.data.effective_type == 'outcome' ? 'red' : ''}-border`;
 
 
   const renderPopoverHeader = () => {
@@ -275,7 +275,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         return (
           <>
             <span className={styles.currentSelectionHeader}>Current selection:</span><br></br> 
-            <span className={`${styles.currentSelectionValue} ${typeStyles[`${props.data.type || ''}_text_color`] || ''}`}>{props.data[parameterKey]}</span>
+            <span className={`${styles.currentSelectionValue} ${typeStyles[`${props.data.effective_type || ''}_text_color`] || ''}`}>{props.data[parameterKey]}</span>
           </>
         );
       }
@@ -289,7 +289,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         <Button
           title={isInfoOpen ? "Back to Editor" : "Help"}
           onClick={toggleInfobox}
-          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.type || ''}_list_item_selected`] || ''}`}
+          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''}`}
         />
       </div>
     );

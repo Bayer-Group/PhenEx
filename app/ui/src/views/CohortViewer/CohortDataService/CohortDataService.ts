@@ -147,6 +147,28 @@ export class CohortDataService {
       (row: TableRow) => row.id === rowIdEdited
     );
     phenotypeEdited[fieldEdited] = event.newValue;
+    
+    // If type field is changed, update effective_type for all descendant component phenotypes
+    if (fieldEdited === 'type') {
+      phenotypeEdited['effective_type'] = event.newValue;
+
+      const descendants = this.getAllDescendants(rowIdEdited);
+      let descendantsUpdated = false;
+      
+      descendants.forEach(descendant => {
+        if (descendant.type === 'component') {
+          descendant.effective_type = event.newValue;
+          descendantsUpdated = true;
+        }
+      });
+      
+      // If descendant components were edited, save with refresh and return
+      if (descendantsUpdated) {
+        this.saveChangesToCohort(true, true);
+        return;
+      }
+    }
+    
     this.saveChangesToCohort(true, false);
   }
 

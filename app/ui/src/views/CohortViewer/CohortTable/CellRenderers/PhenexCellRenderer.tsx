@@ -30,8 +30,8 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   // Get dynamic border color class for missing values
   const isMissing = props.value === 'missing';
-  const dynamicBorderClass = isMissing && props.data?.type 
-    ? typeStyles[`${props.data.type}_border_color`] || ''
+  const dynamicBorderClass = isMissing && props.data?.effective_type
+    ? typeStyles[`${props.data.effective_type}_border_color`] || ''
     : '';
 
   return (

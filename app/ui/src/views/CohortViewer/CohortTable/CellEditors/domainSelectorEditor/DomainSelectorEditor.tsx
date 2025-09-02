@@ -46,8 +46,8 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
           items={domains}
           selectedName={selectedDomain || undefined}
           onSelect={handleDomainSelect}
-          classNameListItem={typeStyles[`${props.data.type}_list_item`]}
-          classNameListItemSelected={`${typeStyles[`${props.data.type}_list_item_selected`]}`}
+          classNameListItem={typeStyles[`${props.data.effective_type}_list_item`]}
+          classNameListItemSelected={`${typeStyles[`${props.data.effective_type}_list_item_selected`]}`}
         />
       </div>
     </div>
