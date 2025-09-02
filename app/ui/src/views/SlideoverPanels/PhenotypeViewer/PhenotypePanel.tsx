@@ -92,14 +92,14 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           {ancestors.map((ancestor, index) => (
             <React.Fragment key={ancestor.id}>
               <span 
-                className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_color_block`] || ''}`}
+                className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.effective_type || ''}_color_block`] || ''}`}
                 onClick={() => onClickAncestor(ancestor as Phenotype)}
                 style={{ cursor: 'pointer' }}
               >
                 {ancestor.name || ancestor.id}
               </span>
               {index < ancestors.length - 1 && (
-                <span className={styles.ancestorDivider}>{'|'}</span>
+                <span className={styles.ancestorDivider}>{'⋅'}</span>
               )}
             </React.Fragment>
           ))}
@@ -136,7 +136,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
               tabs={tabs}
               onTabChange={onTabChange}
               active_tab_index={activeTabIndex}
-              accentColor={`var(--color_${data.type})`}
+              accentColor={`var(--color_${data.effective_type})`}
             />
           </div>
           <div className={styles.bottomSection}>

@@ -163,10 +163,8 @@ export class CohortDataService {
       });
       
       // If descendant components were edited, save with refresh and return
-      if (descendantsUpdated) {
-        this.saveChangesToCohort(true, true);
-        return;
-      }
+      this.saveChangesToCohort(true, true);
+      return;
     }
     
     this.saveChangesToCohort(true, false);

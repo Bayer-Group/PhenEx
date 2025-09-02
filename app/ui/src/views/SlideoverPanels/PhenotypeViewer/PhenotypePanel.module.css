@@ -56,8 +56,8 @@
 
 
 .ancestorsLabel{
-  font-family: "IBMPlexSans-bolditalic";
-
+  font-family: "IBMPlexSans-bold";
+  font-size: 20px;
 }
 .ancestorLabel{
   padding: 0px 4px;
@@ -72,8 +72,12 @@
 }
 
 .ancestorDivider{
-  font-family: "IBMPlexSans-bold";
-  color: var(--color-accent-bright);
-  margin:0px 5px 0px 5px;
+  font-family: "SNPro-black";
+  /* color: var(--color-accent-bright); */
+  margin: 0px 5px;
+  font-size: 40px;
+  vertical-align: middle;
+  display: inline-block;
+  line-height: 20px;
 }
 

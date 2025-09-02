@@ -1,6 +1,6 @@
 .rightPanelHistory {
     position: absolute;
-    bottom: 100px;
+    bottom: 30px;
     right: 20px;
     z-index: 10;
 }
