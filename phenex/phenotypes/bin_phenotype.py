@@ -7,6 +7,7 @@ from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters import DateFilter, ValueFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.aggregators import First, Last
+from phenex.codelists import Codelist
 
 from phenex.util import create_logger
 
@@ -31,8 +32,12 @@ class BinPhenotype(Phenotype):
         value_mapping: Dictionary mapping bin names to lists of values (e.g., {"Heart Disease": ["I21", "I22", "I23"]})
 
     Examples:
+
+    Example: Binning on continuous value
         ```python
         # Continuous binning example
+        from phenex.phenotypes import AgePhenotype
+
         age = AgePhenotype()
         binned_age = BinPhenotype(
             name="age_groups",
@@ -40,10 +45,20 @@ class BinPhenotype(Phenotype):
             bins=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         )
 
+    Example: Binning on discrete value
+        ```python
         # Discrete mapping example
+        from phenex.phenotypes import CodelistPhenotype
+        from phenex.codelists import Codelist
+
+        diagnosis_codelist = Codelist(
+            name="diagnosis_codes",
+            codelist=["I21", "I22", "I23", "I24", "I25"]
+        )
         diagnosis_codes = CodelistPhenotype(
             name="diagnosis",
-            codelist=["I21", "I22", "I23", "I24", "I25"],
+            domain="CONDITION_OCCURRENCE",
+            codelist=diagnosis_codelist,
             return_value="all"
         )
         diagnosis_categories = BinPhenotype(
@@ -64,7 +79,6 @@ class BinPhenotype(Phenotype):
         # Result will have VALUE column with labels like "Acute MI", "MI Complications", etc.
         ```
     """
-
     def __init__(
         self,
         phenotype: Phenotype,
@@ -72,20 +86,6 @@ class BinPhenotype(Phenotype):
         value_mapping: Optional[Dict[str, List[str]]] = None,
         **kwargs,
     ):
-        """
-        Create bins from a phenotype's VALUE column.
-
-        Supports two modes:
-        1. Continuous binning: Use 'bins' parameter for numeric ranges
-        2. Discrete mapping: Use 'value_mapping' parameter for bin-to-values mapping
-
-        Args:
-            phenotype: The phenotype to bin values from
-            bins: List of bin edges for continuous values (e.g., [0, 10, 20, 30])
-                 Default is [0, 10, 20, ..., 100] for backward compatibility
-            value_mapping: Dictionary mapping bin names to lists of values
-                          (e.g., {"Heart Disease": ["I21", "I22", "I23"], "Diabetes": ["E10", "E11"]})
-        """
         super(BinPhenotype, self).__init__(**kwargs)
 
         # Set default bins for backward compatibility if neither parameter is provided
