@@ -1149,15 +1149,6 @@ class CodelistPhenotypeReturnValueTestGenerator(PhenotypeTestGenerator):
                     event_date_2,
                     event_date_2,
                 ],
-                "VALUE": [
-                    10,
-                    20,
-                    30,
-                    40,
-                    50,
-                    60,
-                    70,
-                ],  # Original values (not used when return_value='all')
             }
         )
 

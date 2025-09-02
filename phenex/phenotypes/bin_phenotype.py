@@ -79,6 +79,7 @@ class BinPhenotype(Phenotype):
         # Result will have VALUE column with labels like "Acute MI", "MI Complications", etc.
         ```
     """
+
     def __init__(
         self,
         phenotype: Phenotype,
@@ -137,13 +138,7 @@ class BinPhenotype(Phenotype):
         if (
             self.value_mapping is not None
             and self.phenotype.__class__.__name__
-            not in [
-                "CodelistPhenotype",
-                "AgePhenotype",
-                "MeasurementPhenotype",
-                "ArithmeticPhenotype",
-                "ScorePhenotype",
-            ]
+            not in ["CodelistPhenotype", "CategoricalPhenotype"]
         ):
             raise ValueError(
                 f"Invalid phenotype type for discrete mapping: {self.phenotype.__class__.__name__}"
