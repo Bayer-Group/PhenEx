@@ -73,7 +73,7 @@ class MeasurementPhenotype(CodelistPhenotype):
         # Default value of return_date in codelist_phenotype is 'first'. This is not helpful behavior for measurementphenotype as we will perform further operations that require all values. For example, if we want the mean of all values in the post index period, setting return_date = 'first' will return only the values on the first day
         if "return_date" not in kwargs:
             kwargs["return_date"] = "all"
-        kwargs['return_value'] = 'all'
+        kwargs["return_value"] = "all"
         super(MeasurementPhenotype, self).__init__(
             **kwargs,
         )
