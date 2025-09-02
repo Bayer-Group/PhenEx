@@ -17,11 +17,9 @@ class BinPhenotype(Phenotype):
     """
     BinPhenotype converts values into categorical bin labels. Supports both continuous numeric binning and discrete value mapping.
 
-    For continuous values: Takes a phenotype that returns numeric values (like age, measurements, etc.)
-    and converts the VALUE column into bin labels like "[10-20)", "[20-30)", etc.
+    For continuous values: Takes a phenotype that returns numeric values (like age, measurements, etc.) and converts the VALUE column into bin labels like "[10-20)", "[20-30)", etc.
 
-    For discrete values: Takes a phenotype that returns discrete values (like codes from CodelistPhenotype)
-    and maps them to categorical labels using a bin mapping dictionary.
+    For discrete values: Takes a phenotype that returns discrete values (like codes from CodelistPhenotype) and maps them to categorical labels using a bin mapping dictionary.
 
     DATE: The event date selected from the input phenotype
     VALUE: A categorical variable representing the bin label
