@@ -38,7 +38,6 @@ class UserDefinedPhenotypeTestGenerator(PhenotypeTestGenerator):
         return [input_info_person]
 
     def define_phenotype_tests(self):
-
         def function1(mapped_tables):
             df = pd.DataFrame()
             df["PERSON_ID"] = ["P1", "P2", "P3", "P4", "P5"]
@@ -49,6 +48,7 @@ class UserDefinedPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "all_true_patients",
             "persons": [f"P{x}" for x in idx_persons],
             "phenotype": UserDefinedPhenotype(
+                name="udp1",
                 function=function1,
             ),
         }
@@ -64,6 +64,7 @@ class UserDefinedPhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "some_true_some_false",
             "persons": [f"P{x}" for x in idx_persons],
             "phenotype": UserDefinedPhenotype(
+                name="udp2",
                 function=function2,
             ),
         }

@@ -1,7 +1,7 @@
 import datetime, os
 import pandas as pd
 
-from phenex.phenotypes import CodelistPhenotype, LogicPhenotype
+from phenex.phenotypes import CodelistPhenotype, LogicPhenotype, MeasurementPhenotype
 
 from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.date_filter import DateFilter
@@ -876,6 +876,136 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
+class LogicPhenotypeValueTestGenerator(PhenotypeTestGenerator):
+    """
+    Test generator for LogicPhenotype VALUE column population functionality.
+    Uses MeasurementPhenotype to test that LogicPhenotype correctly populates
+    the VALUE column with the value from the phenotype whose date is selected.
+    """
+
+    name_space = "lgpt_value_test"
+    test_values = True  # Enable VALUE column testing
+    value_datatype = float
+
+    def define_input_tables(self):
+        """
+        Create measurement data with known values for testing VALUE population.
+        Each patient has at most one measurement per code to avoid duplicates.
+        """
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P1", "P2", "P2", "P3"],
+                "CODE": ["M1", "M2", "M1", "M2", "M1"],
+                "CODE_TYPE": [
+                    "measurement",
+                    "measurement",
+                    "measurement",
+                    "measurement",
+                    "measurement",
+                ],
+                "EVENT_DATE": [
+                    datetime.date(2022, 1, 1),  # P1 has M1 on Jan 1 (VALUE=10)
+                    datetime.date(2022, 2, 1),  # P1 has M2 on Feb 1 (VALUE=20)
+                    datetime.date(2022, 1, 15),  # P2 has M1 on Jan 15 (VALUE=15)
+                    datetime.date(2022, 1, 10),  # P2 has M2 on Jan 10 (VALUE=25)
+                    datetime.date(
+                        2022, 3, 1
+                    ),  # P3 has M1 on Mar 1 (VALUE=31) - only M1, no M2
+                ],
+                "VALUE": [10.0, 20.0, 15.0, 25.0, 31.0],
+            }
+        )
+
+        df_person = pd.DataFrame({"PERSON_ID": ["P1", "P2", "P3"]})
+
+        return [
+            {"name": "measurement", "df": df},
+            {"name": "PERSON", "df": df_person},
+        ]
+
+    def define_phenotype_tests(self):
+        """
+        Define test cases for LogicPhenotype VALUE population.
+        """
+        # Create a test codelist CSV
+        test_codelist_path = os.path.join(
+            os.path.dirname(__file__),
+            "artifacts",
+            self.name_space,
+            "test_codelists.csv",
+        )
+        os.makedirs(os.path.dirname(test_codelist_path), exist_ok=True)
+
+        codelist_df = pd.DataFrame(
+            {
+                "code": ["M1", "M2"],
+                "codelist": ["m1", "m2"],
+                "code_type": ["measurement", "measurement"],
+                "description": ["Measurement 1", "Measurement 2"],
+            }
+        )
+        codelist_df.to_csv(test_codelist_path, index=False)
+
+        codelist_factory = LocalCSVCodelistFactory(test_codelist_path)
+
+        m1 = {
+            "name": "m1",
+            "persons": ["P1", "P2", "P3"],
+            "phenotype": MeasurementPhenotype(
+                codelist=codelist_factory.get_codelist("m1"),
+                domain="measurement",
+                name="m1",
+                return_date="first",  # Ensure single row per person
+            ),
+        }
+
+        m2 = {
+            "name": "m2",
+            "persons": ["P1", "P2"],
+            "phenotype": MeasurementPhenotype(
+                codelist=codelist_factory.get_codelist("m2"),
+                domain="measurement",
+                name="m2",
+                return_date="first",  # Ensure single row per person
+            ),
+        }
+
+        # Test LogicPhenotype with return_date="first" - should return VALUE from earliest date
+        m1_and_m2_first = {
+            "name": "m1_and_m2_first",
+            "persons": ["P1", "P2"],  # Only P1 and P2 have both measurements
+            "values": [
+                10.0,
+                25.0,
+            ],  # P1: earliest is Jan 1 (M1=10), P2: earliest is Jan 10 (M2=25)
+            "dates": [datetime.date(2022, 1, 1), datetime.date(2022, 1, 10)],
+            "phenotype": LogicPhenotype(
+                expression=(m1["phenotype"] & m2["phenotype"]),
+                return_date="first",
+                name="m1_and_m2_first",
+            ),
+        }
+
+        # Test LogicPhenotype with return_date="last" - should return VALUE from latest date
+        m1_and_m2_last = {
+            "name": "m1_and_m2_last",
+            "persons": ["P1", "P2"],  # Only P1 and P2 have both measurements
+            "values": [
+                20.0,
+                15.0,
+            ],  # P1: latest is Feb 1 (M2=20), P2: latest is Jan 15 (M1=15)
+            "dates": [datetime.date(2022, 2, 1), datetime.date(2022, 1, 15)],
+            "phenotype": LogicPhenotype(
+                expression=(m1["phenotype"] & m2["phenotype"]),
+                return_date="last",
+                name="m1_and_m2_last",
+            ),
+        }
+
+        test_infos = [m1_and_m2_first, m1_and_m2_last]
+        return test_infos
+
+
 def test_logic_phenotype_1():
     spg = LogicPhenotypeTestGenerator()
     spg.run_tests()
@@ -901,9 +1031,16 @@ def test_logic_phenotype_5():
     spg.run_tests()
 
 
+def test_logic_phenotype_value():
+    """Test LogicPhenotype VALUE column population functionality."""
+    spg = LogicPhenotypeValueTestGenerator()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_logic_phenotype_1()
     test_logic_phenotype_2()
     test_logic_phenotype_3()
     test_logic_phenotype_4()
     test_logic_phenotype_5()
+    test_logic_phenotype_value()

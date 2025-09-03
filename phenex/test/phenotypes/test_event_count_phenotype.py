@@ -22,7 +22,6 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
     test_date = True
 
     def define_input_tables(self):
-
         df = pd.DataFrame()
         df["PERSON_ID"] = ["P1", "P1", "P1", "P1", "P2", "P2"]
         df["CODE"] = "c1"
@@ -47,7 +46,6 @@ class EventCountTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-
         pt1_prior = CodelistPhenotype(
             codelist=Codelist("c1"),
             domain="condition_occurrence",
