@@ -5,6 +5,7 @@ import ibis
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
+from phenex.phenotypes.functions import select_phenotype_columns
 
 
 class ComputationGraphPhenotype(Phenotype):
@@ -294,3 +295,138 @@ class LogicPhenotype(ComputationGraphPhenotype):
             populate="boolean",
             reduce=True,
         )
+
+    def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
+        """
+        Executes the logic phenotype processing logic.
+        Unlike the base class, LogicPhenotype populates both BOOLEAN and VALUE columns.
+        The VALUE is taken from the phenotype whose date is selected based on return_date.
+
+        Args:
+            tables (Dict[str, Table]): A dictionary where the keys are table names and the values are Table objects.
+
+        Returns:
+            PhenotypeTable: The resulting phenotype table containing the required columns.
+        """
+        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+
+        # Convert boolean columns to integers for arithmetic operations if needed
+        if self.populate == "value" and self.operate_on == "boolean":
+            for child in self.children:
+                column_name = f"{child.name}_BOOLEAN"
+                mutated_column = ibis.ifelse(
+                    joined_table[column_name].isnull(),
+                    0,
+                    joined_table[column_name].cast("int"),
+                ).cast("float")
+                joined_table = joined_table.mutate(**{column_name: mutated_column})
+
+        # Populate the BOOLEAN column using the logical expression
+        _boolean_expression = self.expression.get_boolean_expression(
+            joined_table, operate_on=self.operate_on
+        )
+        joined_table = joined_table.mutate(BOOLEAN=_boolean_expression)
+
+        # Get date columns for determining which phenotype's value to use
+        date_columns = self._coalesce_all_date_columns(joined_table)
+
+        # Handle the "all" case separately since it returns a Union table
+        if self.return_date == "all":
+            joined_table = self._return_all_dates_with_value(joined_table, date_columns)
+        else:
+            # Determine the selected date and corresponding value for non-"all" cases
+            if self.return_date == "first":
+                selected_date = ibis.least(*date_columns)
+                joined_table = joined_table.mutate(EVENT_DATE=selected_date)
+            elif self.return_date == "last":
+                selected_date = ibis.greatest(*date_columns)
+                joined_table = joined_table.mutate(EVENT_DATE=selected_date)
+            elif isinstance(self.return_date, Phenotype):
+                selected_date = getattr(
+                    joined_table, f"{self.return_date.name}_EVENT_DATE"
+                )
+                joined_table = joined_table.mutate(EVENT_DATE=selected_date)
+            else:
+                selected_date = ibis.null(date)
+                joined_table = joined_table.mutate(EVENT_DATE=selected_date)
+
+            # Populate the VALUE column with the value from the phenotype whose date matches the selected date
+            value_cases = []
+            for child in self.children:
+                child_date_col = f"{child.name}_EVENT_DATE"
+                child_value_col = f"{child.name}_VALUE"
+
+                # Check if this child's date matches the selected date
+                condition = getattr(joined_table, child_date_col) == selected_date
+                value_cases.append((condition, getattr(joined_table, child_value_col)))
+
+            # Build the CASE expression: when date matches, use that phenotype's value
+            if value_cases:
+                selected_value = ibis.case()
+                for condition, value in value_cases:
+                    selected_value = selected_value.when(condition, value)
+                selected_value = selected_value.else_(ibis.null()).end()
+                joined_table = joined_table.mutate(VALUE=selected_value)
+            else:
+                joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
+
+        # Reduce the table to only include rows where the boolean column is True
+        if self.reduce:
+            joined_table = joined_table.filter(joined_table.BOOLEAN == True)
+
+        # Select only the required phenotype columns
+        return select_phenotype_columns(joined_table)
+
+    def _return_all_dates_with_value(self, table, date_columns):
+        """
+        Custom version of _return_all_dates that properly handles VALUE column for LogicPhenotype.
+        For each date column, creates a separate table with the correct VALUE populated, then unions them.
+
+        Args:
+            table: The Ibis table object (e.g., joined_table) that contains all leaf phenotypes stacked horizontally
+            date_columns: List of base columns as ibis objects
+
+        Returns:
+            Ibis expression representing the UNION of all non null dates with proper VALUE columns.
+        """
+        # get all the non-null dates for each date column and populate VALUE correctly
+        non_null_dates_by_date_col = []
+        for date_col in date_columns:
+            # Filter for non-null dates
+            non_null_dates = table.filter(date_col.notnull()).mutate(
+                EVENT_DATE=date_col
+            )
+
+            # For this specific date, find which phenotype's value to use
+            value_cases = []
+            for child in self.children:
+                child_date_col = f"{child.name}_EVENT_DATE"
+                child_value_col = f"{child.name}_VALUE"
+
+                # Check if this child's date matches the current date
+                condition = getattr(non_null_dates, child_date_col) == date_col
+                value_cases.append(
+                    (condition, getattr(non_null_dates, child_value_col))
+                )
+
+            # Build the CASE expression for this date
+            if value_cases:
+                selected_value = ibis.case()
+                for condition, value in value_cases:
+                    selected_value = selected_value.when(condition, value)
+                selected_value = selected_value.else_(ibis.null()).end()
+                non_null_dates = non_null_dates.mutate(VALUE=selected_value)
+            else:
+                non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("int32"))
+
+            non_null_dates_by_date_col.append(non_null_dates)
+
+        # do the union of all the non-null dates
+        all_dates = non_null_dates_by_date_col[0]
+        for non_null_dates in non_null_dates_by_date_col[1:]:
+            all_dates = all_dates.union(non_null_dates)
+
+        # Select only the required phenotype columns
+        from phenex.phenotypes.functions import select_phenotype_columns
+
+        return select_phenotype_columns(all_dates)
