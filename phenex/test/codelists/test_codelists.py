@@ -75,5 +75,25 @@ def test_codelist_deletion():
     assert diff == {}
 
 
+def test_to_list_with_multiple_code_types():
+    """Test to_list() method with multiple code types."""
+    codelist = Codelist({"ICD-9": ["427.31"], "ICD-10": ["I48.0", "I48.1"]})
+    result = codelist.to_list()
+    expected = ["427.31", "I48.0", "I48.1"]
+    assert set(result) == set(expected)
+    assert len(result) == 3
+
+
+def test_to_list_with_single_code_type():
+    """Test to_list() method with single code type."""
+    codelist = Codelist({"ICD-10": ["I48.0", "I48.1", "I48.2"]})
+    result = codelist.to_list()
+    expected = ["I48.0", "I48.1", "I48.2"]
+    assert set(result) == set(expected)
+    assert len(result) == 3
+
+
 if __name__ == "__main__":
     test_codelist_union()
+    test_to_list_with_multiple_code_types()
+    test_to_list_with_single_code_type()
