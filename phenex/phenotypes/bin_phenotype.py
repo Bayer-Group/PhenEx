@@ -138,16 +138,16 @@ class BinPhenotype(Phenotype):
             # Validate that all values are either lists of strings or Codelist objects
             for bin_name, values in self.value_mapping.items():
                 if isinstance(values, Codelist):
-                    # Validate that the Codelist has a valid codelist attribute
-                    if not hasattr(values, "codelist") or not isinstance(
-                        values.codelist, list
-                    ):
+                    # Validate that the Codelist can be converted to a list
+                    try:
+                        values_list = values.to_list()
+                        if not all(isinstance(v, str) for v in values_list):
+                            raise ValueError(
+                                f"All values in Codelist for bin '{bin_name}' must be strings"
+                            )
+                    except Exception as e:
                         raise ValueError(
-                            f"Codelist for bin '{bin_name}' must have a valid codelist attribute"
-                        )
-                    if not all(isinstance(v, str) for v in values.codelist):
-                        raise ValueError(
-                            f"All values in Codelist for bin '{bin_name}' must be strings"
+                            f"Invalid Codelist for bin '{bin_name}': {str(e)}"
                         )
                 elif isinstance(values, list):
                     if not all(isinstance(v, str) for v in values):
@@ -246,9 +246,9 @@ class BinPhenotype(Phenotype):
 
         # Add conditions for each bin and its associated values
         for bin_name, values in self.value_mapping.items():
-            # Check if values is a Codelist and extract the codelist, otherwise use as list
+            # Check if values is a Codelist and convert to list, otherwise use as list
             if isinstance(values, Codelist):
-                values_list = values.codelist
+                values_list = values.to_list()
             else:
                 values_list = values
 
