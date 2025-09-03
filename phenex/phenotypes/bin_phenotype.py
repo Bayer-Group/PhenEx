@@ -29,12 +29,12 @@ class BinPhenotype(Phenotype):
         name: The name of the phenotype.
         phenotype: The phenotype that returns values of interest (AgePhenotype, MeasurementPhenotype, CodelistPhenotype, etc.)
         bins: List of bin edges for continuous binning. Default is [0, 10, 20, ..., 100] for age ranges.
-        value_mapping: Dictionary mapping bin names to lists of values (e.g., {"Heart Disease": ["I21", "I22", "I23"]})
+        value_mapping: Dictionary mapping bin names to lists of values or Codelist objects (e.g., {"Heart Disease": ["I21", "I22", "I23"]} or {"Heart Disease": heart_disease_codelist})
 
     Examples:
 
     Example: Binning on continuous value
-        ```python
+    ```python
         # Continuous binning example
         from phenex.phenotypes import AgePhenotype
 
@@ -44,9 +44,10 @@ class BinPhenotype(Phenotype):
             phenotype=age,
             bins=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         )
+    ```
 
     Example: Binning on discrete value
-        ```python
+    ```python
         # Discrete mapping example
         from phenex.phenotypes import CodelistPhenotype
         from phenex.codelists import Codelist
@@ -70,6 +71,24 @@ class BinPhenotype(Phenotype):
                 "Chronic Heart Disease": ["I25"]
             }
         )
+    ```
+
+    Example: Binning on discrete value
+    ```python
+        # Alternative: Using Codelist objects in value_mapping
+        acute_mi_codelist = Codelist(name="acute_mi", codelist=["I21", "I22"])
+        mi_complications_codelist = Codelist(name="mi_complications", codelist=["I23", "I24"])
+        chronic_hd_codelist = Codelist(name="chronic_hd", codelist=["I25"])
+
+        diagnosis_categories_v2 = BinPhenotype(
+            name="diagnosis_categories_v2",
+            phenotype=diagnosis_codes,
+            value_mapping={
+                "Acute MI": acute_mi_codelist,
+                "MI Complications": mi_complications_codelist,
+                "Chronic Heart Disease": chronic_hd_codelist
+            }
+        )
 
         tables = {"PERSON": example_person_table}
         result_table = binned_age.execute(tables)
@@ -77,7 +96,7 @@ class BinPhenotype(Phenotype):
 
         result_table = diagnosis_categories.execute(tables)
         # Result will have VALUE column with labels like "Acute MI", "MI Complications", etc.
-        ```
+    ```
     """
 
     def __init__(
@@ -116,12 +135,29 @@ class BinPhenotype(Phenotype):
                 raise ValueError("value_mapping must be a dictionary")
             if len(self.value_mapping) == 0:
                 raise ValueError("value_mapping cannot be empty")
-            # Validate that all values are lists of strings
+            # Validate that all values are either lists of strings or Codelist objects
             for bin_name, values in self.value_mapping.items():
-                if not isinstance(values, list):
-                    raise ValueError(f"Values for bin '{bin_name}' must be a list")
-                if not all(isinstance(v, str) for v in values):
-                    raise ValueError(f"All values for bin '{bin_name}' must be strings")
+                if isinstance(values, Codelist):
+                    # Validate that the Codelist has a valid codelist attribute
+                    if not hasattr(values, "codelist") or not isinstance(
+                        values.codelist, list
+                    ):
+                        raise ValueError(
+                            f"Codelist for bin '{bin_name}' must have a valid codelist attribute"
+                        )
+                    if not all(isinstance(v, str) for v in values.codelist):
+                        raise ValueError(
+                            f"All values in Codelist for bin '{bin_name}' must be strings"
+                        )
+                elif isinstance(values, list):
+                    if not all(isinstance(v, str) for v in values):
+                        raise ValueError(
+                            f"All values for bin '{bin_name}' must be strings"
+                        )
+                else:
+                    raise ValueError(
+                        f"Values for bin '{bin_name}' must be either a list or a Codelist object"
+                    )
 
         # Validate phenotype types for continuous binning
         if self.bins is not None and self.phenotype.__class__.__name__ not in [
@@ -210,8 +246,14 @@ class BinPhenotype(Phenotype):
 
         # Add conditions for each bin and its associated values
         for bin_name, values in self.value_mapping.items():
+            # Check if values is a Codelist and extract the codelist, otherwise use as list
+            if isinstance(values, Codelist):
+                values_list = values.codelist
+            else:
+                values_list = values
+
             # Create condition that checks if value is in the list of values for this bin
-            condition = value_col.isin(values)
+            condition = value_col.isin(values_list)
             case_expr = case_expr.when(condition, bin_name)
 
         # Handle unmapped values as null
