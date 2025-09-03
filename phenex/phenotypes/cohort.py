@@ -95,7 +95,7 @@ class Cohort:
             )
             index_nodes.append(self.exclusions_table_node)
 
-        self.index_table_node = IndexTableNode(
+        self.index_table_node = IndexPhenotype(
             f"{self.name}__index".upper(),
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
@@ -357,11 +357,39 @@ class Cohort:
                 name_to_hash[node_name] = node_hash
 
 
+class Subcohort(Cohort):
+    """
+    A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.
+
+    Parameters:
+        name: A descriptive name for the subcohort.
+        cohort: The parent cohort from which this subcohort derives.
+        inclusions: Additional phenotypes that must evaluate to True for patients to be included in the subcohort.
+        exclusions: Additional phenotypes that must evaluate to False for patients to be included in the subcohort.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        cohort: "Cohort",
+        inclusions: Optional[List[Phenotype]] = None,
+        exclusions: Optional[List[Phenotype]] = None,
+    ):
+        # Initialize as a regular Cohort with Cohort index table as entry criterion
+        additional_inclusions = inclusions or []
+        additional_exclusions = exclusions or []
+        super(Subcohort, self).__init__(
+            name=name,
+            entry_criterion=cohort.entry_criterion,
+            inclusions=cohort.inclusions + additional_inclusions,
+            exclusions=cohort.exclusions + additional_exclusions,
+        )
+        self.cohort = cohort
+
+
 #
 # Helper Nodes -- FIXME move to separate file / namespace
 #
-
-
 class HStackNode(Node):
     """
     A compute node that horizontally stacks (joins) multiple phenotypes into a single table. Used for computing characteristics and outcomes tables in cohorts.
@@ -495,7 +523,7 @@ class ExclusionsTableNode(Node):
         return exclusions_table
 
 
-class IndexTableNode(Node):
+class IndexPhenotype(Phenotype):
     """
     Compute the index table form the individual inclusions / exclusions phenotypes.
     """
@@ -507,7 +535,7 @@ class IndexTableNode(Node):
         inclusion_table_node: Node,
         exclusion_table_node: Node,
     ):
-        super(IndexTableNode, self).__init__(name=name)
+        super(IndexPhenotype, self).__init__(name=name)
         self.add_children(entry_phenotype)
         if inclusion_table_node:
             self.add_children(inclusion_table_node)
