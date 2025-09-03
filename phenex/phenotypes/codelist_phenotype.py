@@ -3,6 +3,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.date_filter import DateFilter
+from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.aggregators import First, Last
 from phenex.codelists import Codelist
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -20,7 +21,8 @@ class CodelistPhenotype(Phenotype):
         name: The name of the phenotype. Optional. If not passed, name will be derived from the name of the codelist.
         date_range: A date range filter to apply.
         relative_time_range: A relative time range filter or a list of filters to apply.
-        return_date: Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
+        return_date: Specifies whether to return the 'first', 'last', 'nearest', or 'all' event date(s). Default is 'first'.
+        return_value: Specifies which values to return. None for no return value or 'all' for all return values on the selected date(s). Default is None.
         categorical_filter: Additional categorical filters to apply.
 
     Attributes:
@@ -99,7 +101,8 @@ class CodelistPhenotype(Phenotype):
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
         return_date="first",
-        categorical_filter: Optional["CategoricalFilter"] = None,
+        return_value=None,
+        categorical_filter: Optional[CategoricalFilter] = None,
         **kwargs,
     ):
         super(CodelistPhenotype, self).__init__(name=name or codelist.name)
@@ -109,12 +112,17 @@ class CodelistPhenotype(Phenotype):
         self.categorical_filter = categorical_filter
         self.date_range = date_range
         self.return_date = return_date
+        self.return_value = return_value
         assert self.return_date in [
             "first",
             "last",
             "nearest",
             "all",
         ], f"Unknown return_date: {return_date}"
+        assert self.return_value in [
+            None,
+            "all",
+        ], f"Unknown return_value: {return_value}"
         self.domain = domain
         if isinstance(relative_time_range, RelativeTimeRangeFilter):
             relative_time_range = [relative_time_range]
@@ -131,6 +139,7 @@ class CodelistPhenotype(Phenotype):
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
+        code_table = self._perform_value_selection(code_table)
         code_table = select_phenotype_columns(code_table)
         code_table = self._perform_final_processing(code_table)
         return code_table
@@ -154,16 +163,46 @@ class CodelistPhenotype(Phenotype):
                 code_table = rtr.filter(code_table)
         return code_table
 
-    def _perform_date_selection(self, code_table, reduce=True):
+    def _perform_date_selection(self, code_table):
+        """
+        Perform date selection based on return_date and return_value parameters.
+
+        Logic:
+        - If return_date='all', return all rows (no date aggregation)
+        - If return_date='first'/'last'/'nearest' and return_value=None, aggregate to one row per person (reduce=True)
+        - If return_date='first'/'last'/'nearest' and return_value='all', keep all rows on the selected date (reduce=False)
+        """
         if self.return_date is None or self.return_date == "all":
             return code_table
+
+        # Determine if we should reduce to one row per person or keep all rows on the selected date
+        reduce = self.return_value != "all"
+
         if self.return_date == "first":
             aggregator = First(reduce=reduce)
         elif self.return_date == "last":
             aggregator = Last(reduce=reduce)
+        elif self.return_date == "nearest":
+            # Note: Nearest is not currently implemented in the aggregators
+            # This would need to be added to the aggregator module
+            raise NotImplementedError("Nearest aggregation not yet implemented")
         else:
             raise ValueError(f"Unknown return_date: {self.return_date}")
+
         return aggregator.aggregate(code_table)
+
+    def _perform_value_selection(self, code_table):
+        """
+        Handle the return_value parameter logic.
+
+        If return_value='all', set the VALUE column to contain the CODE that matched.
+        If return_value=None, the VALUE will be set to null by select_phenotype_columns.
+        """
+        if self.return_value == "all":
+            # Set VALUE to the CODE column to return the actual codes that matched
+            code_table = code_table.mutate(VALUE=code_table.CODE)
+
+        return code_table
 
     def get_codelists(self) -> List[Codelist]:
         """
