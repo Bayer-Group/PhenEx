@@ -12,6 +12,8 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
     clientHeight: 0,
     isScrollable: false 
   });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ y: 0, scrollTop: 0 });
 
   const updateScrollInfo = () => {
     const target = targetRef.current;
@@ -46,16 +48,64 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
     setScrollInfo({ scrollTop, scrollHeight, clientHeight, isScrollable });
   };
 
-  const handleScrollbarClick = (e: React.MouseEvent) => {
+  const getScrollableElement = (): HTMLElement | null => {
     const target = targetRef.current;
-    if (!target) return;
+    if (!target) return null;
+    return target.querySelector('.ag-body-viewport') || target;
+  };
 
-    const scrollableElement = target.querySelector('.ag-body-viewport') || target;
+  const handleThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const scrollableElement = getScrollableElement();
+    if (!scrollableElement) return;
+
+    setIsDragging(true);
+    setDragStart({
+      y: e.clientY,
+      scrollTop: scrollableElement.scrollTop
+    });
+  };
+
+  const handleTrackClick = (e: React.MouseEvent) => {
+    // Only handle clicks on the track, not the thumb
+    if (e.target !== e.currentTarget) return;
+    
+    const scrollableElement = getScrollableElement();
+    if (!scrollableElement) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const clickRatio = (e.clientY - rect.top) / rect.height;
-    
     scrollableElement.scrollTop = clickRatio * (scrollInfo.scrollHeight - scrollInfo.clientHeight);
   };
+
+  // Handle global mouse move and mouse up for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const scrollableElement = getScrollableElement();
+      if (!scrollableElement) return;
+
+      const deltaY = e.clientY - dragStart.y;
+      const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
+      const thumbRange = 100 - ((scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
+      const scrollRatio = deltaY / (scrollableElement.clientHeight * (thumbRange / 100));
+      
+      scrollableElement.scrollTop = dragStart.scrollTop + (scrollRatio * scrollRange);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart, scrollInfo]);
 
   useEffect(() => {
     console.log('CustomScrollbar: useEffect called');
@@ -152,7 +202,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
   return (
     <div 
       className={styles.scrollbar}
-      onClick={handleScrollbarClick}
+      onClick={handleTrackClick}
       style={{ 
         backgroundColor: 'red', // Temporary debug
         border: '2px solid blue' // Temporary debug
@@ -163,8 +213,10 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
         style={{
           height: `${thumbHeight}%`,
           top: `${thumbTop}%`,
-          backgroundColor: 'yellow' // Temporary debug
+          backgroundColor: 'yellow', // Temporary debug
+          cursor: isDragging ? 'grabbing' : 'grab'
         }}
+        onMouseDown={handleThumbMouseDown}
       />
     </div>
   );
