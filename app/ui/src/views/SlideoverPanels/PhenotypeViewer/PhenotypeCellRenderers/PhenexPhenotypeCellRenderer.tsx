@@ -43,7 +43,6 @@ const isValueMissingOrEmpty = (value: any): boolean => {
 const getParameterDescription = (parameter: string): string => {
   const paramInfo = (parametersInfo as any)[parameter];
 
-  console.log("PAREMA INFO FOR ", parameter, paramInfo)
   const fullDescription = paramInfo?.description || 'No description available for this parameter.';
   
   // Extract only the first sentence (until the first period)
@@ -56,8 +55,6 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
   // Check if value is missing/empty and we have a parameter to show description for
 
   const renderParameterMissingCell = () => {
-    console.log("PARAMETER INFO FOR ", props.data);
-    console.log("Parameter", props.data.parameter)
     const description = getParameterDescription(props.data.parameter);
 
     return (

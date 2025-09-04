@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
+import { CustomScrollbar } from '../../../components/CustomScrollbar/CustomScrollbar';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -10,6 +11,7 @@ interface PhenotypeViewerProps {
 export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -68,7 +70,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div style={{ height: '100%' }}>
+      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }}>
         <AgGridReact
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
@@ -76,11 +78,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
           theme={dataService.getTheme()}
           onCellValueChanged={onCellValueChanged}
           animateRows={false}
-          defaultColDef={{
-            // flex: 1,
-            // minWidth: 100,
-            // resizable: true,
-          }}
           getRowHeight={params => {
             // Calculate height of CODELISTS
             let current_max_height = 100;
@@ -128,6 +125,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             return current_max_height;
           }}
         />
+        <CustomScrollbar targetRef={gridContainerRef as React.RefObject<HTMLElement>} />
       </div>
     );
   };
