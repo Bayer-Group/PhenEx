@@ -3,9 +3,15 @@ import styles from './CustomScrollbar.module.css';
 
 export interface CustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement>;
+  height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.)
+  marginBottom?: string | number; // Bottom margin (e.g. "10px", 20, etc.)
 }
 
-export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) => {
+export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ 
+  targetRef, 
+  height = "70%", 
+  marginBottom = 20 
+}) => {
   const [scrollInfo, setScrollInfo] = useState({ 
     scrollTop: 0, 
     scrollHeight: 0, 
@@ -192,11 +198,18 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
 
   const thumbHeight = Math.max(20, (scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
   const thumbTop = (scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight)) * (100 - thumbHeight);
+  
+  // Convert height and marginBottom to CSS values
+  const heightValue = typeof height === 'number' ? `${height}px` : height;
+  const bottomValue = typeof marginBottom === 'number' ? `${marginBottom}px` : marginBottom;
+  
   console.log("CustomScrollbar: CREATING SCROLLBAR", { 
     thumbHeight, 
     thumbTop,
     scrollInfo,
-    isScrollable: scrollInfo.isScrollable 
+    isScrollable: scrollInfo.isScrollable,
+    height: heightValue,
+    bottom: bottomValue
   });
 
   return (
@@ -204,6 +217,8 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ targetRef }) =
       className={styles.scrollbar}
       onClick={handleTrackClick}
       style={{ 
+        height: heightValue,
+        bottom: bottomValue,
         backgroundColor: 'red', // Temporary debug
         border: '2px solid blue' // Temporary debug
       }}
