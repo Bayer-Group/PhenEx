@@ -1,0 +1,49 @@
+.scrollbar {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  width: 4px;
+  height: 100%;
+  background: transparent;
+  border-radius: 8px;
+  transition: width 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.scrollbar:hover {
+  width: 12px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.thumb {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  min-height: 20px;
+}
+
+.scrollbar:hover .thumb {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.thumb:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Hide default scrollbar on AG Grid */
+:global(.ag-body-viewport) {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+:global(.ag-body-viewport::-webkit-scrollbar) {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+.scrollbar.accent .thumb:hover {
+  background-color: var(--color-accent-bright, rgba(0, 0, 0, 0.6));
+}
