@@ -113,7 +113,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
             if (params.data?.parameter == 'description') {
               if (!params.data?.value) {
-                current_max_height = 30;
+                current_max_height = 100;
                 return current_max_height;
               }
 

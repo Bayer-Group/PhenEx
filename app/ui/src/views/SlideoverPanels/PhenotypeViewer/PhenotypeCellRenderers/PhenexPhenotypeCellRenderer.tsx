@@ -42,6 +42,8 @@ const isValueMissingOrEmpty = (value: any): boolean => {
 // Helper function to get parameter description
 const getParameterDescription = (parameter: string): string => {
   const paramInfo = (parametersInfo as any)[parameter];
+
+  console.log("PAREMA INFO FOR ", parameter, paramInfo)
   const fullDescription = paramInfo?.description || 'No description available for this parameter.';
   
   // Extract only the first sentence (until the first period)
@@ -49,28 +51,50 @@ const getParameterDescription = (parameter: string): string => {
   return firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
 };
 
+
 export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererProps> = props => {
   // Check if value is missing/empty and we have a parameter to show description for
-  if (isValueMissingOrEmpty(props.data?.value) && props.data?.parameter) {
+
+  const renderParameterMissingCell = () => {
+    console.log("PARAMETER INFO FOR ", props.data);
+    console.log("Parameter", props.data.parameter)
     const description = getParameterDescription(props.data.parameter);
-    
+
     return (
-      <PhenexCellRenderer {...props}>
-        <div 
-          style={{ 
-            fontSize: '18px', 
-            fontStyle: 'italic', 
-            color: 'var(--line-color)',
-            padding: '0px 20px',
-            lineHeight: '1.4',
-            fontFamily: 'IBMPlexSans-bolditalic',
-            textWrap: 'wrap'
-          }}
-        >
-          <ReactMarkdown>{description}</ReactMarkdown>
+    <PhenexCellRenderer {...props}>
+      <div 
+        style={{ 
+          fontSize: '18px', 
+          fontStyle: 'italic', 
+          color: 'var(--line-color)',
+          padding: '10px 20px',
+          lineHeight: '1.4',
+          fontFamily: 'IBMPlexSans-bolditalic',
+          textWrap: 'wrap',
+          margin: '0px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          height: '100%',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ margin: '0px', padding: '0px' }}>
+          <ReactMarkdown 
+            components={{
+              p: ({children}) => <p style={{margin: '0px', padding: '0px'}}>{children}</p>
+            }}
+          >
+            {description}
+          </ReactMarkdown>
         </div>
-      </PhenexCellRenderer>
-    );
+      </div>
+    </PhenexCellRenderer>
+  );
+}
+
+  if (isValueMissingOrEmpty(props.data?.value) && props.data?.parameter) {
+
+    return renderParameterMissingCell();
   }
 
   if (props.data?.parameter in classNameToRendererMapping) {

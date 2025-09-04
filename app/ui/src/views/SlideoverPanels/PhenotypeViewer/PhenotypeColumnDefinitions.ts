@@ -2,6 +2,7 @@ import { PhenexPhenotypeCellRenderer } from './PhenotypeCellRenderers/PhenexPhen
 import { PhenexPhenotypeCellEditor } from './PhenotypeCellRenderers/PhenexPhenotypeCellEditor';
 
 import { PhenotypeParamCellRenderer } from './PhenotypeCellRenderers/PhenotypeParamCellRenderer';
+import { max, min } from 'd3';
 
 export const defaultColumns = [
   {
@@ -9,9 +10,10 @@ export const defaultColumns = [
     headerName: 'Parameter',
     sortable: true,
     filter: true,
-    width: 120,
+    width: 100,
+    maxWidth: 200,
+    minWidth: 100,
     pinned: 'left',
-    maxWidth: 400,
     wrapText: true,
     cellRenderer: PhenotypeParamCellRenderer,
   },

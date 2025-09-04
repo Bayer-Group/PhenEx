@@ -237,5 +237,11 @@
     "description": "PhenEx phenotypes are off the shelf implementations of common patterns in observational studies. Each Phenotype allows you to do different things; there is a slight learning curve to understanding which phenotype to use when. Read the description of each phenotype to decide which one suits your needs for this phenotype.",
     "examples": null,
     "showSelection": "selection"
+  },
+  "description": {
+    "phenotypes": [
+      "all"
+    ],
+    "description": "Add a rich text description of your phenotype. Use Markdown syntax to format the text."
   }
 }
