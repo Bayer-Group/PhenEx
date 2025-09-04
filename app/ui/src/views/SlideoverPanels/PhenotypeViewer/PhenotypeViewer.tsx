@@ -77,9 +77,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
           onCellValueChanged={onCellValueChanged}
           animateRows={false}
           defaultColDef={{
-            flex: 1,
-            minWidth: 100,
-            resizable: true,
+            // flex: 1,
+            // minWidth: 100,
+            // resizable: true,
           }}
           getRowHeight={params => {
             // Calculate height of CODELISTS
