@@ -32,14 +32,28 @@
   background: rgba(0, 0, 0, 0.7);
 }
 
-/* Hide default scrollbar on AG Grid */
-:global(.ag-body-viewport) {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+/* Note: Scrollbar hiding is now handled programmatically per instance */
+
+/* Also add a fallback for containers with the ag-grid-no-scrollbar class */
+:global(.ag-grid-no-scrollbar .ag-body-viewport) {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
 }
 
-:global(.ag-body-viewport::-webkit-scrollbar) {
-  display: none; /* Chrome, Safari, and Opera */
+:global(.ag-grid-no-scrollbar .ag-body-viewport::-webkit-scrollbar) {
+  display: none !important; /* Chrome, Safari, and Opera */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:global(.ag-grid-no-scrollbar .ag-center-cols-viewport::-webkit-scrollbar) {
+  display: none !important;
+  width: 0 !important;
+}
+
+:global(.ag-grid-no-scrollbar .ag-body-horizontal-scroll::-webkit-scrollbar) {
+  display: none !important;
+  height: 0 !important;
 }
 
 .scrollbar.accent .thumb:hover {

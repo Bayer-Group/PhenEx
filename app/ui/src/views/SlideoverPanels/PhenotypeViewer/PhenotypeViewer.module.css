@@ -48,6 +48,19 @@
   overflow: hidden;
 }
 
+/* AG Grid scrollbar hiding - from Stack Overflow solution */
+:global(.ag-body-vertical-scroll) {
+  display: none !important;
+}
+
+:global(.ag-body-viewport.ag-layout-normal) {
+  overflow-y: hidden !important;
+}
+
+:global(.ag-force-vertical-scroll) {
+  overflow-y: hidden !important;
+}
+
 .phenotypeType {
   font-size: 20px;
   padding: 2px 6px;

@@ -70,7 +70,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }}>
+      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }} className="ag-grid-no-scrollbar">
         <AgGridReact
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}

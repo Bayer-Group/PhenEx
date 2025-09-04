@@ -23,33 +23,16 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
 
   const updateScrollInfo = () => {
     const target = targetRef.current;
-    console.log('CustomScrollbar: updateScrollInfo called', { target: !!target });
-    
-    if (!target) {
-      console.log('CustomScrollbar: No target element');
-      return;
-    }
+    if (!target) return;
 
     // Find the scrollable element (AG Grid viewport or the target itself)
     const agGridViewport = target.querySelector('.ag-body-viewport');
-    console.log('CustomScrollbar: AG Grid viewport found?', !!agGridViewport);
-    
     const scrollableElement = agGridViewport || target;
     
     const scrollTop = scrollableElement.scrollTop;
     const scrollHeight = scrollableElement.scrollHeight;
     const clientHeight = scrollableElement.clientHeight;
     const isScrollable = scrollHeight > clientHeight;
-
-  console.log('CustomScrollbar: Scroll info', {
-      scrollTop,
-      scrollHeight,
-      clientHeight,
-      isScrollable,
-      element: scrollableElement.tagName,
-      className: scrollableElement.className,
-      difference: scrollHeight - clientHeight
-    });
 
     setScrollInfo({ scrollTop, scrollHeight, clientHeight, isScrollable });
   };
@@ -119,69 +102,82 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     const waitForAgGrid = () => {
       const target = targetRef.current;
       if (!target) {
-        console.log('CustomScrollbar: No target, retrying...');
         setTimeout(waitForAgGrid, 100);
         return;
       }
 
+      // Look for all possible scrollable elements in AG Grid
       const agGridViewport = target.querySelector('.ag-body-viewport');
+      
       if (!agGridViewport) {
-        console.log('CustomScrollbar: No AG Grid viewport yet, retrying...');
         setTimeout(waitForAgGrid, 100);
         return;
       }
 
-      console.log('CustomScrollbar: AG Grid found, setting up scrollbar');
       const scrollableElement = agGridViewport as HTMLElement;
       
-      // Hide the default scrollbar directly on the element
+      // Create a unique class name for this specific instance
+      const uniqueClass = `custom-scrollbar-hidden-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      scrollableElement.classList.add(uniqueClass);
+      
+      // Simple CSS approach - the main hiding is handled by PhenotypeViewer CSS
       scrollableElement.style.scrollbarWidth = 'none'; // Firefox
       (scrollableElement.style as any).msOverflowStyle = 'none'; // IE and Edge
       
-      // Create a style element for webkit scrollbar
+      // Method 2: CSS injection with multiple selectors
       const style = document.createElement('style');
+      style.setAttribute('data-custom-scrollbar', uniqueClass);
       style.textContent = `
-        .ag-body-viewport::-webkit-scrollbar {
+        /* Target the specific element */
+        .${uniqueClass}::-webkit-scrollbar {
           display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          background: transparent !important;
+        }
+        .${uniqueClass}::-webkit-scrollbar-track {
+          display: none !important;
+        }
+        .${uniqueClass}::-webkit-scrollbar-thumb {
+          display: none !important;
+        }
+        .${uniqueClass} {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+        
+        /* Also target by AG Grid class + unique class combination */
+        .ag-body-viewport.${uniqueClass}::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+        }
+        .ag-body-viewport.${uniqueClass} {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
         }
       `;
       document.head.appendChild(style);
       
-      console.log('CustomScrollbar: Setting up scroll listener on', {
-        element: scrollableElement.tagName,
-        className: scrollableElement.className,
-        scrollable: scrollableElement.scrollHeight > scrollableElement.clientHeight,
-        scrollHeight: scrollableElement.scrollHeight,
-        clientHeight: scrollableElement.clientHeight,
-        hasScrollEvent: typeof scrollableElement.addEventListener === 'function'
-      });
+      // Method 3: Set overflow style to ensure it's scrollable but without visible scrollbar
+      scrollableElement.style.overflow = 'scroll';
+      scrollableElement.style.setProperty('overflow', 'scroll', 'important');
 
       const handleScroll = () => {
-        console.log('CustomScrollbar: Scroll event triggered!');
         updateScrollInfo();
       };
       
       scrollableElement.addEventListener('scroll', handleScroll);
       
-      // Test if the element can be scrolled manually
-      setTimeout(() => {
-        console.log('CustomScrollbar: Testing manual scroll', {
-          currentScrollTop: scrollableElement.scrollTop,
-          maxScroll: scrollableElement.scrollHeight - scrollableElement.clientHeight
-        });
-        if (scrollableElement.scrollHeight > scrollableElement.clientHeight) {
-          console.log('CustomScrollbar: Attempting to scroll programmatically');
-          scrollableElement.scrollTop = 10;
-          setTimeout(() => {
-            console.log('CustomScrollbar: After manual scroll:', scrollableElement.scrollTop);
-          }, 100);
-        }
-      }, 1000);
-      
       updateScrollInfo(); // Initial update
 
       return () => {
         scrollableElement.removeEventListener('scroll', handleScroll);
+        // Clean up the unique class and style element
+        scrollableElement.classList.remove(uniqueClass);
+        const styleElement = document.querySelector(`style[data-custom-scrollbar="${uniqueClass}"]`);
+        if (styleElement && styleElement.parentNode) {
+          styleElement.parentNode.removeChild(styleElement);
+        }
       };
     };
 
@@ -192,7 +188,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   const showScrollbar = scrollInfo.scrollHeight > scrollInfo.clientHeight || true; // Force show for now
   
   if (!showScrollbar) {
-    console.log('CustomScrollbar: Not scrollable, returning null');
     return null;
   }
 
@@ -202,15 +197,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   // Convert height and marginBottom to CSS values
   const heightValue = typeof height === 'number' ? `${height}px` : height;
   const bottomValue = typeof marginBottom === 'number' ? `${marginBottom}px` : marginBottom;
-  
-  console.log("CustomScrollbar: CREATING SCROLLBAR", { 
-    thumbHeight, 
-    thumbTop,
-    scrollInfo,
-    isScrollable: scrollInfo.isScrollable,
-    height: heightValue,
-    bottom: bottomValue
-  });
 
   return (
     <div 
