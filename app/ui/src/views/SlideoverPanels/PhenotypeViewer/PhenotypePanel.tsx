@@ -35,6 +35,14 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     }
   }, [data]);
 
+  // Reset to Parameters tab when data changes
+  useEffect(() => {
+    if (data) {
+      setCurrentView(PhenotypePanelViewType.Parameters);
+      setActiveTabIndex(0);
+    }
+  }, [data]);
+
   const onSaveNameChanges = () => {
     if (data) {
       dataService.valueChanged({ parameter: 'name', value: phenotypeName }, phenotypeName);
