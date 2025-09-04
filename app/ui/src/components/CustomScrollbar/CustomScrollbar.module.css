@@ -1,7 +1,7 @@
 .scrollbar {
   position: absolute;
-  right: 4px;
-  width: 4px;
+  right: 10px;
+  width: 8px;
   background: transparent;
   border-radius: 8px;
   transition: width 0.2s ease;

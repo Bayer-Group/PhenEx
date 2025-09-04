@@ -21,14 +21,20 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     const tryRefresh = () => {
       if (gridRef.current?.api) {
         const api = gridRef.current.api;
-        const firstRow = api.getFirstDisplayedRow();
-        const lastRow = api.getLastDisplayedRow();
 
         api.setGridOption('rowData', dataService.rowData);
 
+        // Force scroll to top after refresh
         requestAnimationFrame(() => {
-          api.ensureIndexVisible(firstRow, 'top');
-          api.ensureIndexVisible(lastRow, 'bottom');
+          api.ensureIndexVisible(0, 'top');
+          
+          // Also scroll the viewport directly
+          if (gridContainerRef.current) {
+            const agGridViewport = gridContainerRef.current.querySelector('.ag-body-viewport');
+            if (agGridViewport) {
+              agGridViewport.scrollTop = 0;
+            }
+          }
         });
       } else if (retryCount < maxRetries) {
         retryCount++;
@@ -53,6 +59,26 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     if (data) {
       console.log('SETTING DATA', data);
       dataService.setData(data);
+      
+      // Multiple attempts to scroll to top when new data is loaded
+      const scrollToTop = () => {
+        if (gridRef.current?.api) {
+          gridRef.current.api.ensureIndexVisible(0, 'top');
+        }
+        
+        // Also scroll the AG Grid viewport directly
+        if (gridContainerRef.current) {
+          const agGridViewport = gridContainerRef.current.querySelector('.ag-body-viewport');
+          if (agGridViewport) {
+            agGridViewport.scrollTop = 0;
+          }
+        }
+      };
+      
+      // Try multiple times with increasing delays to handle dynamic row heights
+      setTimeout(scrollToTop, 50);
+      setTimeout(scrollToTop, 200);
+      setTimeout(scrollToTop, 500);
     }
 
     return () => {
@@ -70,7 +96,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }} className="ag-grid-no-scrollbar">
+      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }}>
         <AgGridReact
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
