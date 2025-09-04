@@ -68,9 +68,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const handleRowDragEnd = () => {
-      console.log('=== handleRowDragEnd START ===');
       if (!onRowDragEnd) {
-        console.log('No onRowDragEnd callback provided');
         return;
       }
 
@@ -82,25 +80,14 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       }
 
-      console.log(
-        'Current row data from grid:',
-        newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
-      );
-      console.log(
-        'Original data rows:',
-        data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
-      );
-
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
-        console.log('No row data found, skipping drag operation');
         return;
       }
 
       // Validate that all rows have required properties
       const invalidRows = newRowData.filter(row => !row.id || !row.type);
       if (invalidRows.length > 0) {
-        console.log('Invalid rows detected:', invalidRows);
         return;
       }
 
@@ -113,7 +100,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         groupedByType[row.type].push(row);
       });
 
-      console.log('New grouped by type:', groupedByType);
 
       // Update indices within each type
       Object.keys(groupedByType).forEach(type => {
@@ -122,13 +108,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       });
 
-      console.log(
-        'Calling onRowDragEnd with:',
-        newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
-      );
       // Call the parent callback with the reordered data
       onRowDragEnd(newRowData);
-      console.log('=== handleRowDragEnd END ===');
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
@@ -305,7 +286,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
-          console.log('=== ESCAPE PRESSED: Clearing all selections ===');
           if (ref && typeof ref === 'object' && ref.current?.api) {
             ref.current.api.deselectAll();
           }
@@ -324,7 +304,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       const cohortViewerService = TwoPanelCohortViewerService.getInstance();
       
       const handleRightPanelChange = (viewType: any, extraData: any) => {
-        console.log('[CohortTable] Right panel changed:', viewType, extraData);
         
         if (viewType === 'phenotype' && extraData && extraData.id && ref && typeof ref === 'object' && ref.current?.api) {
           // Clear existing selections first
@@ -333,7 +312,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // Find the row with matching ID
           const matchingRowNode = ref.current.api.getRowNode(extraData.id);
           if (matchingRowNode) {
-            console.log('[CohortTable] Found matching row, selecting:', extraData.id);
             matchingRowNode.setSelected(true);
             // Force refresh of cell renderers to update selection state
             ref.current.api.refreshCells({ force: true });
@@ -343,7 +321,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             // Try alternative approach - iterate through all nodes to find by data.id
             ref.current.api.forEachNode((node: any) => {
               if (node.data && node.data.id === extraData.id) {
-                console.log('[CohortTable] Found matching row by data.id, selecting:', extraData.id);
                 node.setSelected(true);
                 // Force refresh of cell renderers to update selection state
                 ref.current.api.refreshCells({ force: true });
@@ -368,7 +345,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       
       // Delay the initial check to ensure grid is ready after data reload
       // setTimeout(() => {
-        console.log('[CohortTable] Checking initial/reload state:', currentViewType, currentExtraData);
         handleRightPanelChange(currentViewType, currentExtraData);
       // }, 100);
 
@@ -385,7 +361,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       const currentViewType = cohortViewerService.getCurrentViewType();
       const currentExtraData = cohortViewerService.getExtraData();
       
-      console.log('[CohortTable] Data refreshed, syncing with current right panel state:', currentViewType, currentExtraData);
       
       // Use a small delay to ensure grid is ready after data update
       setTimeout(() => {
@@ -396,7 +371,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // Find the row with matching ID
           const matchingRowNode = ref.current.api.getRowNode(currentExtraData.id);
           if (matchingRowNode) {
-            console.log('[CohortTable] Data refresh - Found matching row, selecting:', currentExtraData.id);
             matchingRowNode.setSelected(true);
             // Force refresh of cell renderers to update selection state
             ref.current.api.refreshCells({ force: true });
@@ -406,7 +380,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             let found = false;
             ref.current.api.forEachNode((node: any) => {
               if (node.data && node.data.id === currentExtraData.id) {
-                console.log('[CohortTable] Data refresh - Found matching row by data.id, selecting:', currentExtraData.id);
                 node.setSelected(true);
                 // Force refresh of cell renderers to update selection state
                 ref.current.api.refreshCells({ force: true });
@@ -416,7 +389,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             });
             
             if (!found) {
-              console.log('[CohortTable] Data refresh - No matching row found for:', currentExtraData.id);
             }
           }
         } else {
@@ -450,18 +422,14 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             cellSelection={false}
             rowSelection="multiple"
             onSelectionChanged={() => {
-              console.log('=== ROW SELECTION CHANGED EVENT FIRED ===');
               if (ref && typeof ref === 'object' && ref.current?.api) {
                 const selectedRows = ref.current.api.getSelectedRows();
-                console.log('Selected rows:', selectedRows);
-                console.log('Number of selected rows:', selectedRows.length);
               }
             }}
             suppressColumnVirtualisation={true}
             onCellValueChanged={onCellValueChanged}
             onRowDragEnd={handleRowDragEnd}
             onRangeSelectionChanged={() => {
-              console.log('=== RANGE SELECTION CHANGED EVENT FIRED ===');
             }}
             rowDragManaged={true}
             loadThemeGoogleFonts={true}

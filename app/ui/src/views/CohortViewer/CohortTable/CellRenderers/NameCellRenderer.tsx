@@ -14,7 +14,6 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const onClickEdit = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('phenotype' as CohortViewType, props.data);
-    console.log('Edit button clicked for row with ID:', props.data?.id);
   };
 
   const onClickDelete = () => {
@@ -26,7 +25,6 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       key: 'settings',
     };
     props.api.startEditingCell(params);
-    console.log('Edit delete clicked for row with ID:', props.data?.id);
   };
 
   const renderComponentPhenotypeName = () => {
@@ -56,8 +54,6 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
     const isSelected = props.node.isSelected();
     
-    // Debug log to see selection state
-    console.log(`[NameCellRenderer] ${props.data?.id}: isSelected=${isSelected}, rowIndex=${props.node.rowIndex}`);
     
     // Calculate indentation for component phenotypes based on their level
     const getIndentationStyle = () => {
