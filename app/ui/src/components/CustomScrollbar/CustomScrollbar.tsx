@@ -200,13 +200,11 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
 
   return (
     <div 
-      className={styles.scrollbar}
+      className={`${styles.scrollbar} ${isDragging ? styles.dragging : ''}`}
       onClick={handleTrackClick}
       style={{ 
         height: heightValue,
         bottom: bottomValue,
-        backgroundColor: 'red', // Temporary debug
-        border: '2px solid blue' // Temporary debug
       }}
     >
       <div 
@@ -214,7 +212,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         style={{
           height: `${thumbHeight}%`,
           top: `${thumbTop}%`,
-          backgroundColor: 'yellow', // Temporary debug
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
         onMouseDown={handleThumbMouseDown}

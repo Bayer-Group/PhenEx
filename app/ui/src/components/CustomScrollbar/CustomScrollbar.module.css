@@ -14,6 +14,11 @@
   background: rgba(0, 0, 0, 0.1);
 }
 
+.scrollbar.dragging {
+  width: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .thumb {
   position: absolute;
   right: 0;
@@ -25,6 +30,10 @@
 }
 
 .scrollbar:hover .thumb {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.scrollbar.dragging .thumb {
   background: rgba(0, 0, 0, 0.5);
 }
 
