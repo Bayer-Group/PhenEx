@@ -1,8 +1,32 @@
-.rightPanelHistory {
+/* Masking container - sits exactly where the history should be */
+.historyContainer {
     position: absolute;
     top: 100px;
     right: 20px;
+    width: 140px; /* Same as history width */
+    height: 60px; /* Enough to contain the cards */
+    overflow: hidden; /* This creates the masking effect */
     z-index: 10;
+    
+    /* Debug border - remove in production */
+    border: 2px solid red;
+    background: transparent;
+}
+
+.rightPanelHistory {
+    position: relative;
+    width: 140px;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Default state - visible within container */
+.rightPanelHistory.slideIn {
+    transform: translateX(0);
+}
+
+/* Hidden state - slide out to the right, moving outside the container's bounds */
+.rightPanelHistory.slideOut {
+    transform: translateX(120px); /* Slides most of it out of the container */
 }
 
 .cardStack {
@@ -13,6 +37,5 @@
 }
 
 .cardStack.hovered {
-    /* Expand the container height when hovered to show fanned cards */
-    /* height: 240px; */
+    /* Future: Expand for fanned cards if needed */
 }

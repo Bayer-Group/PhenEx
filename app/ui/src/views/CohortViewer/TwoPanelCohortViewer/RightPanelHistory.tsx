@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { RightPanelHistoryDataService, RightPanelHistoryItem } from './RightPanelHistoryDataService';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer';
 import { HistoryCard } from './HistoryCard';
@@ -15,22 +15,75 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const [history, setHistory] = useState<RightPanelHistoryItem[]>(historyService.getHistory());
   const [currentItem, setCurrentItem] = useState<RightPanelHistoryItem | null>(historyService.getCurrentItem());
   const [isHovered, setIsHovered] = useState(false);
+  const [isSlideOut, setIsSlideOut] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const maxCards = 3; // Number of cards to display
+  const AUTO_HIDE_DELAY = 2000; // 2 seconds
 
   useEffect(() => {
     const updateHistory = () => {
       console.log('[RightPanelHistory] Updating history state');
       setHistory(historyService.getHistory());
       setCurrentItem(historyService.getCurrentItem());
+      
+      // Reset auto-hide timer when history updates
+      resetAutoHideTimer();
     };
 
     // Initialize with current state
     updateHistory();
     
     historyService.addListener(updateHistory);
-    return () => historyService.removeListener(updateHistory);
+    return () => {
+      historyService.removeListener(updateHistory);
+      clearTimeouts();
+    };
   }, [historyService]);
+
+  // Auto-hide management
+  const clearTimeouts = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
+
+  const resetAutoHideTimer = () => {
+    clearTimeouts();
+    
+    // Don't auto-hide if hovered
+    if (isHovered) return;
+    
+    hideTimeoutRef.current = setTimeout(() => {
+      setIsSlideOut(true);
+      console.log('[RightPanelHistory] Auto-hiding after timeout');
+    }, AUTO_HIDE_DELAY);
+  };
+
+  const handleMouseEnter = () => {
+    console.log('[RightPanelHistory] Mouse entered');
+    setIsHovered(true);
+    setIsSlideOut(false);
+    clearTimeouts();
+  };
+
+  const handleMouseLeave = () => {
+    console.log('[RightPanelHistory] Mouse left');
+    setIsHovered(false);
+    
+    // Start auto-hide timer again
+    resetAutoHideTimer();
+  };
+
+  // Start auto-hide timer on mount and when history changes
+  useEffect(() => {
+    if (currentItem && history.length > 1 && !isHovered && !isSlideOut) {
+      resetAutoHideTimer();
+    }
+    
+    return () => clearTimeouts();
+  }, [currentItem, history.length, isHovered, isSlideOut]);
 
   const handleCardClick = (item: RightPanelHistoryItem, index: number) => {
     console.log(`[RightPanelHistory] Card clicked at index ${index}:`, item.displayName);
@@ -63,26 +116,22 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
 
   return (
     <div 
-      className={`${styles.rightPanelHistory} ${className || ''}`}
-      onMouseEnter={() => {
-        console.log('[RightPanelHistory] Mouse entered');
-        setIsHovered(true);
-      }}
-      onMouseLeave={() => {
-        console.log('[RightPanelHistory] Mouse left');
-        setIsHovered(false);
-      }}
+      className={`${styles.historyContainer} ${className || ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
-        {displayItems.map((item, index) => (
-          <HistoryCard 
-            key={`${item.timestamp}-${index}`}
-            item={item}
-            index={index}
-            onClick={() => handleCardClick(item, index)}
-            className={isHovered ? historyCardStyles.cardHovered : ''}
-          />
-        ))}
+      <div className={`${styles.rightPanelHistory} ${isSlideOut ? styles.slideOut : styles.slideIn}`}>
+        <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
+          {displayItems.map((item, index) => (
+            <HistoryCard 
+              key={`${item.timestamp}-${index}`}
+              item={item}
+              index={index}
+              onClick={() => handleCardClick(item, index)}
+              className={isHovered ? historyCardStyles.cardHovered : ''}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
