@@ -14,7 +14,7 @@
 
   --text-color-normal: black;
   --text-color-inactive: hsl(0, 0%, 0%);
-  --background-color:#faf1e5; /*#f8f9fa;*/
+  --background-color: #f8f9fa;/*#faf1e5;*/
   --background-color-content: white;
   --border: 1px solid var(--line-color);
   --border-radius: 8px;

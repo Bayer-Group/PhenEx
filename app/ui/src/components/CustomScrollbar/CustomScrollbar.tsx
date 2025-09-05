@@ -428,7 +428,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     
     scrollbarStyle = { 
       width: widthValue,
-      left: 0,
+      right: 10,
     };
     
     thumbStyle = {

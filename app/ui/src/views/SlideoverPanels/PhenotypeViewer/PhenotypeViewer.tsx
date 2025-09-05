@@ -83,8 +83,8 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     }
 
     // Set type color based on phenotype type
-    if (data?.type && typeStyles[`${data.type}_color_block`]) {
-      setTypeColor(typeStyles[`${data.type}_color_block`]);
+    if (data?.effective_type && typeStyles[`${data.effective_type}_color_block`]) {
+      setTypeColor(typeStyles[`${data.effective_type}_color_block`]);
     } else {
       setTypeColor('red'); // default color
     }
@@ -111,7 +111,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
           ref={gridRef}
           theme={dataService.getTheme()}
           onCellValueChanged={onCellValueChanged}
+          scrollbarConfig={{ vertical: { classNameThumb: typeColor } }}
           animateRows={false}
+          
           getRowHeight={params => {
             // Calculate height of CODELISTS
             let current_max_height = 100;
