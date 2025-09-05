@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
 import { CustomScrollbar } from '../../../components/CustomScrollbar/CustomScrollbar';
-
+import typeStyles from '../../../styles/study_types.module.css';
 interface PhenotypeViewerProps {
   data?: Phenotype;
 }
@@ -12,6 +12,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [typeColor, setTypeColor] = useState('red');
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -81,6 +82,13 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
       setTimeout(scrollToTop, 500);
     }
 
+    // Set type color based on phenotype type
+    if (data?.type && typeStyles[`${data.type}_color_block`]) {
+      setTypeColor(typeStyles[`${data.type}_color_block`]);
+    } else {
+      setTypeColor('red'); // default color
+    }
+
     return () => {
       dataService.removeListener(listener);
     };
@@ -97,6 +105,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const renderPhenotypeEditorTable = () => {
     return (
       <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }}>
+
         <AgGridReact
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
@@ -151,7 +160,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             return current_max_height;
           }}
         />
-        <CustomScrollbar targetRef={gridContainerRef as React.RefObject<HTMLElement>} />
+        <div className={styles.scrollbarContainer}>
+          <CustomScrollbar targetRef={gridContainerRef as React.RefObject<HTMLElement>} classNameThumb={typeColor} />
+        </div>
       </div>
     );
   };

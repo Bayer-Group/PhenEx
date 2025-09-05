@@ -5,12 +5,16 @@ export interface CustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement>;
   height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.)
   marginBottom?: string | number; // Bottom margin (e.g. "10px", 20, etc.)
+  classNameThumb?: string; // Additional class for the thumb
+  classNameTrack?: string; // Additional class for the track
 }
 
 export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ 
   targetRef, 
   height = "70%", 
-  marginBottom = 20 
+  marginBottom = 20,
+  classNameThumb = '',
+  classNameTrack = ''
 }) => {
   const [scrollInfo, setScrollInfo] = useState({ 
     scrollTop: 0, 
@@ -200,7 +204,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
 
   return (
     <div 
-      className={`${styles.scrollbar} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.scrollbar} ${isDragging ? styles.dragging : ''} ${classNameTrack}`}
       onClick={handleTrackClick}
       style={{ 
         height: heightValue,
@@ -208,7 +212,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       }}
     >
       <div 
-        className={styles.thumb}
+        className={`${styles.thumb} ${classNameThumb}`}
         style={{
           height: `${thumbHeight}%`,
           top: `${thumbTop}%`,

@@ -128,7 +128,7 @@
       "Codelist",
       "Measurement"
     ],
-    "description": "A **list of medical codes** (ICD-10, CPT, SNOMED, etc.) used to identify specific conditions, procedures, or measurements. The phenotype will match any records with codes from this list. Essential for defining clinical concepts in standardized healthcare data.",
+    "description": "Add a codelist from a file, MedConB, or manual entry. Codelists contain medical codes from multiple code types.",
     "examples": null,
     "showSelection": "count"
   },

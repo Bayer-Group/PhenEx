@@ -64,7 +64,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
           fontSize: '18px', 
           fontStyle: 'italic', 
           color: 'var(--line-color)',
-          padding: '10px 20px',
+          padding: '5px 5px',
           lineHeight: '1.4',
           fontFamily: 'IBMPlexSans-bolditalic',
           textWrap: 'wrap',
