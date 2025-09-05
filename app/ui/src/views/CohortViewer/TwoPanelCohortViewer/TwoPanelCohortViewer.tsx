@@ -142,7 +142,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       ref={panelRef} 
       split="vertical" 
       initialSizeLeft={500} 
-      minSizeLeft={400}
+      minSizeLeft={100}
       collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
     >
       <>
