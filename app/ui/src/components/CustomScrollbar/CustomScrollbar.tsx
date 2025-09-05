@@ -236,7 +236,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   }, [targetRef]);
 
     // Show scrollbar only if content is actually scrollable
-  const showScrollbar = scrollInfo.isScrollable || true; // Temporarily force show for debugging
+  const showScrollbar = scrollInfo.isScrollable;
   
   if (!showScrollbar) {
     return null;
