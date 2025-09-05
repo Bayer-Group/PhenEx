@@ -8,13 +8,15 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
   scrollbarConfig?: {
     vertical?: {
       enabled?: boolean;
-      height?: string | number;
+      marginTop?: number;
+      marginBottom?: number;
       classNameThumb?: string;
       classNameTrack?: string;
     };
     horizontal?: {
       enabled?: boolean;
-      width?: string | number;
+      marginLeft?: number;
+      marginRight?: number;
       classNameThumb?: string;
       classNameTrack?: string;
     };
@@ -28,7 +30,8 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
     // Default scrollbar settings
     const verticalConfig = {
       enabled: true,
-      height: "85%",
+      marginTop: 65, // Space for header
+      marginBottom: 30,
       classNameThumb: '',
       classNameTrack: '',
       ...scrollbarConfig?.vertical
@@ -36,7 +39,8 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
 
     const horizontalConfig = {
       enabled: true,
-      width: "85%",
+      marginLeft: 200,
+      marginRight: 10, // Space for vertical scrollbar area
       classNameThumb: '',
       classNameTrack: '',
       ...scrollbarConfig?.horizontal
@@ -60,7 +64,8 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="vertical"
-              height={verticalConfig.height}
+              marginTop={verticalConfig.marginTop}
+              marginBottom={verticalConfig.marginBottom}
               classNameThumb={verticalConfig.classNameThumb}
               classNameTrack={verticalConfig.classNameTrack}
             />
@@ -71,7 +76,8 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="horizontal"
-              width={horizontalConfig.width}
+              marginLeft={horizontalConfig.marginLeft}
+              marginRight={horizontalConfig.marginRight}
               classNameThumb={horizontalConfig.classNameThumb}
               classNameTrack={horizontalConfig.classNameTrack}
             />

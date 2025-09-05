@@ -4,8 +4,10 @@ import styles from './AGGridCustomScrollbar.module.css';
 export interface AGGridCustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement>;
   orientation?: 'vertical' | 'horizontal'; // Orientation of the scrollbar
-  height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.) - for vertical
-  width?: string | number; // Width of the scrollbar (e.g. "80%", 300, etc.) - for horizontal
+  marginTop?: number; // Top margin in pixels
+  marginBottom?: number; // Bottom margin in pixels  
+  marginLeft?: number; // Left margin in pixels
+  marginRight?: number; // Right margin in pixels
   classNameThumb?: string; // Additional class for the thumb
   classNameTrack?: string; // Additional class for the track
 }
@@ -13,8 +15,10 @@ export interface AGGridCustomScrollbarProps {
 export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({ 
   targetRef, 
   orientation = 'vertical',
-  height = "85%", 
-  width = "85%",
+  marginTop = 0,
+  marginBottom = 0, 
+  marginLeft = 0,
+  marginRight = 0,
   classNameThumb = '',
   classNameTrack = ''
 }) => {
@@ -405,12 +409,10 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     const thumbHeight = Math.max(20, (scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
     const thumbTop = (scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight)) * (100 - thumbHeight);
     
-    // Convert height and marginBottom to CSS values
-    const heightValue = typeof height === 'number' ? `${height}px` : height;
-    
     scrollbarStyle = { 
-      height: heightValue,
-      top: 65,
+      top: `${marginTop}px`,
+      bottom: `${marginBottom}px`,
+      height: `calc(100% - ${marginTop + marginBottom}px)`,
     };
     
     thumbStyle = {
@@ -423,12 +425,10 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     const thumbWidth = Math.max(20, (scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
     const thumbLeft = (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * (100 - thumbWidth);
     
-    // Convert width to CSS value
-    const widthValue = typeof width === 'number' ? `${width}px` : width;
-    
     scrollbarStyle = { 
-      width: widthValue,
-      right: 10,
+      left: `${marginLeft}px`,
+      right: `${marginRight}px`,
+      width: `calc(100% - ${marginLeft + marginRight}px)`,
     };
     
     thumbStyle = {

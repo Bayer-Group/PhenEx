@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'rea
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
-import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
@@ -426,6 +426,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           <SimpleCustomScrollbar 
             targetRef={contentScrollableRef}
             orientation="vertical"
+            marginTop={65}
+            marginBottom={30}
           />
         </div>
       </div>
