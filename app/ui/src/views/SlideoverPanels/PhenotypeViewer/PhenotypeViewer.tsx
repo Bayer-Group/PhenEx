@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import styles from './PhenotypeViewer.module.css';
 import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
-import { CustomScrollbar } from '../../../components/CustomScrollbar/CustomScrollbar';
+import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustomScrollbars/AgGridWithCustomScrollbars';
 import typeStyles from '../../../styles/study_types.module.css';
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -104,9 +104,8 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div ref={gridContainerRef} style={{ height: '100%', position: 'relative' }}>
 
-        <AgGridReact
+        <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
           ref={gridRef}
@@ -160,10 +159,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             return current_max_height;
           }}
         />
-        <div className={styles.scrollbarContainer}>
-          <CustomScrollbar targetRef={gridContainerRef as React.RefObject<HTMLElement>} classNameThumb={typeColor} />
-        </div>
-      </div>
     );
   };
 

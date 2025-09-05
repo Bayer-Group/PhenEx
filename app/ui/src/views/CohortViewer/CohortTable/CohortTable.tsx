@@ -1,6 +1,6 @@
-import { FC, forwardRef, useEffect, Component, useState } from 'react';
+import { FC, forwardRef, useEffect, Component, useState , useRef} from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
-
+import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustomScrollbars/AgGridWithCustomScrollbars';
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -60,6 +60,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
     });
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
     const onGridReady = () => {
       if (ref && typeof ref === 'object' && ref.current?.api) {
@@ -404,7 +405,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     return (
       <div className={`ag-theme-quartz ${styles.gridContainer}`}>
         <ErrorBoundary>
-          <AgGridReact
+          <AgGridWithCustomScrollbars
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}
             noRowsOverlayComponent={NoRowsOverlayText()}

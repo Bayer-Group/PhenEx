@@ -3,16 +3,22 @@ import styles from './CustomScrollbar.module.css';
 
 export interface CustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement>;
-  height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.)
-  marginBottom?: string | number; // Bottom margin (e.g. "10px", 20, etc.)
+  orientation?: 'vertical' | 'horizontal'; // Orientation of the scrollbar
+  height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.) - for vertical
+  width?: string | number; // Width of the scrollbar (e.g. "80%", 300, etc.) - for horizontal
+  marginBottom?: string | number; // Bottom margin (e.g. "10px", 20, etc.) - for vertical
+  marginRight?: string | number; // Right margin (e.g. "10px", 20, etc.) - for horizontal
   classNameThumb?: string; // Additional class for the thumb
   classNameTrack?: string; // Additional class for the track
 }
 
 export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ 
   targetRef, 
+  orientation = 'vertical',
   height = "85%", 
+  width = "85%",
   marginBottom = 20,
+  marginRight = 20,
   classNameThumb = '',
   classNameTrack = ''
 }) => {
