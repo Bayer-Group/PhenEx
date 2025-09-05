@@ -427,7 +427,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             targetRef={contentScrollableRef}
             orientation="vertical"
             marginTop={65}
-            marginBottom={30}
+            marginBottom={5}
+            classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
           />
         </div>
       </div>
