@@ -1,7 +1,7 @@
 .scrollbar {
   position: absolute;
   right: 10px;
-  width: 8px;
+  width: 5px;
   background: transparent;
   border-radius: 8px;
   transition: width 0.2s ease;
@@ -27,14 +27,17 @@
   border-radius: 8px;
   transition: background-color 0.2s ease;
   min-height: 20px;
+  opacity: .5;
 }
 
 .scrollbar:hover .thumb {
   background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
 }
 
 .scrollbar.dragging .thumb {
   background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
 }
 
 .thumb:hover {

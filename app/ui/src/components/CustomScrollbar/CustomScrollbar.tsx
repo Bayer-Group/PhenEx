@@ -11,7 +11,7 @@ export interface CustomScrollbarProps {
 
 export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ 
   targetRef, 
-  height = "70%", 
+  height = "85%", 
   marginBottom = 20,
   classNameThumb = '',
   classNameTrack = ''
@@ -36,7 +36,27 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     const scrollTop = scrollableElement.scrollTop;
     const scrollHeight = scrollableElement.scrollHeight;
     const clientHeight = scrollableElement.clientHeight;
-    const isScrollable = scrollHeight > clientHeight;
+    
+    // Test if element can actually scroll by temporarily setting scrollTop
+    const originalScrollTop = scrollableElement.scrollTop;
+    scrollableElement.scrollTop = 1;
+    const canActuallyScroll = scrollableElement.scrollTop > 0;
+    scrollableElement.scrollTop = originalScrollTop;
+    
+    // More precise check - element is scrollable if:
+    // 1. scrollHeight > clientHeight AND
+    // 2. we can actually scroll (not just padding/margins creating extra height)
+    const isScrollable = scrollHeight > clientHeight && canActuallyScroll;
+
+    console.log('updateScrollInfo:', {
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      canActuallyScroll,
+      isScrollable,
+      heightDiff: scrollHeight - clientHeight,
+      elementType: agGridViewport ? 'ag-grid-viewport' : 'target'
+    });
 
     setScrollInfo({ scrollTop, scrollHeight, clientHeight, isScrollable });
   };
@@ -170,12 +190,44 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         updateScrollInfo();
       };
       
+      // Set up observers to detect content changes
+      let resizeObserver: ResizeObserver | null = null;
+      let mutationObserver: MutationObserver | null = null;
+      
+      // ResizeObserver to detect size changes
+      if (window.ResizeObserver) {
+        resizeObserver = new ResizeObserver(() => {
+          updateScrollInfo();
+        });
+        resizeObserver.observe(scrollableElement);
+      }
+      
+      // MutationObserver to detect content changes (like new rows in AG Grid)
+      mutationObserver = new MutationObserver(() => {
+        // Use requestAnimationFrame to avoid excessive calls
+        requestAnimationFrame(() => {
+          updateScrollInfo();
+        });
+      });
+      
+      mutationObserver.observe(scrollableElement, {
+        childList: true,
+        subtree: true,
+        attributes: false
+      });
+      
       scrollableElement.addEventListener('scroll', handleScroll);
       
       updateScrollInfo(); // Initial update
 
       return () => {
         scrollableElement.removeEventListener('scroll', handleScroll);
+        if (resizeObserver) {
+          resizeObserver.disconnect();
+        }
+        if (mutationObserver) {
+          mutationObserver.disconnect();
+        }
         // Clean up the unique class and style element
         scrollableElement.classList.remove(uniqueClass);
         const styleElement = document.querySelector(`style[data-custom-scrollbar="${uniqueClass}"]`);
@@ -188,8 +240,17 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     waitForAgGrid();
   }, [targetRef]);
 
-  // Show scrollbar if there's ANY scroll content (even just 1px) or force show for debugging
-  const showScrollbar = scrollInfo.scrollHeight > scrollInfo.clientHeight || true; // Force show for now
+  // Show scrollbar only if content is actually scrollable
+  const showScrollbar = scrollInfo.isScrollable;
+  
+  // Debug logging to understand scroll behavior
+  console.log('CustomScrollbar Debug:', {
+    scrollHeight: scrollInfo.scrollHeight,
+    clientHeight: scrollInfo.clientHeight,
+    isScrollable: scrollInfo.isScrollable,
+    showScrollbar,
+    heightDiff: scrollInfo.scrollHeight - scrollInfo.clientHeight
+  });
   
   if (!showScrollbar) {
     return null;
@@ -208,7 +269,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       onClick={handleTrackClick}
       style={{ 
         height: heightValue,
-        bottom: bottomValue,
+        top: 65,
       }}
     >
       <div 
