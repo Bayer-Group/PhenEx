@@ -126,9 +126,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     }
   }, [currentView]);
 
-  const onCellValueChanged = async (event: any) => {
+  const onCellValueChanged = async (event: any, selectedRows?: any[]) => {
     if (event.newValue !== event.oldValue) {
-      dataService.onCellValueChanged(event);
+      dataService.onCellValueChanged(event, selectedRows);
       // setTableData(dataService.table_data);
     }
 

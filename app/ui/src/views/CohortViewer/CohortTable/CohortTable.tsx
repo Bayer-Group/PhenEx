@@ -39,7 +39,7 @@ ModuleRegistry.registerModules([ClientSideRowModelModule]);
 interface CohortTableProps {
   data: TableData;
   currentlyViewing: string;
-  onCellValueChanged?: (event: any) => void;
+  onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
 }
 
@@ -61,6 +61,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       backgroundColor: 'var(--background-color)',
     });
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const selectedNodesBeforeEdit = useRef<any[]>([]);
 
     const onGridReady = () => {
       if (ref && typeof ref === 'object' && ref.current?.api) {
@@ -111,6 +112,19 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
       // Call the parent callback with the reordered data
       onRowDragEnd(newRowData);
+    };
+
+    const handleCellValueChanged = (event: any) => {
+      // Get currently selected rows
+      let selectedRows: any[] = [];
+      if (ref && typeof ref === 'object' && ref.current?.api) {
+        selectedRows = ref.current.api.getSelectedRows();
+      }
+
+      // Call the parent callback with the event and selected rows
+      if (onCellValueChanged) {
+        onCellValueChanged(event, selectedRows);
+      }
     };
 
     const NoRowsOverlayOutcomes: FC = () => {
@@ -423,12 +437,34 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             cellSelection={false}
             rowSelection="multiple"
             onSelectionChanged={() => {
+              // Selection changed - could be used for future functionality
+            }}
+            onCellEditingStarted={() => {
+              // Store the current selection before editing starts
               if (ref && typeof ref === 'object' && ref.current?.api) {
-                const selectedRows = ref.current.api.getSelectedRows();
+                const selectedNodes = ref.current.api.getSelectedNodes();
+                selectedNodesBeforeEdit.current = selectedNodes;
               }
             }}
+            onCellEditingStopped={() => {
+              // Restore the selection after editing stops
+              if (ref && typeof ref === 'object' && ref.current?.api && selectedNodesBeforeEdit.current.length > 0) {
+                // Clear current selection
+                ref.current.api.deselectAll();
+                // Restore previous selection
+                selectedNodesBeforeEdit.current.forEach((node: any) => {
+                  const currentNode = ref.current.api.getRowNode(node.id);
+                  if (currentNode) {
+                    currentNode.setSelected(true);
+                  }
+                });
+                // Clean up the stored selection
+                selectedNodesBeforeEdit.current = [];
+              }
+            }}
+            suppressRowDeselection={true}
             suppressColumnVirtualisation={true}
-            onCellValueChanged={onCellValueChanged}
+            onCellValueChanged={handleCellValueChanged}
             onRowDragEnd={handleRowDragEnd}
             onRangeSelectionChanged={() => {
             }}

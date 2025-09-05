@@ -137,37 +137,79 @@ export class CohortDataService {
     this.saveChangesToCohort(false, false);
   }
 
-  public onCellValueChanged(event: any) {
+  public onCellValueChanged(event: any, selectedRows?: any[]) {
+    console.log("ON CELL VALUE CHANGED", event, selectedRows)
     /*
     Update phenotype data with new value from grid editor
     */
     const fieldEdited = event.colDef.field;
-    const rowIdEdited = event.data.id; // TODO consider giving all phenotypes an ID
-    let phenotypeEdited = this._cohort_data.phenotypes.find(
-      (row: TableRow) => row.id === rowIdEdited
-    );
-    phenotypeEdited[fieldEdited] = event.newValue;
+    const newValue = event.newValue;
     
-    // If type field is changed, update effective_type for all descendant component phenotypes
-    if (fieldEdited === 'type') {
-      phenotypeEdited['effective_type'] = event.newValue;
+    // Determine which rows to update
+    const rowsToUpdate = this.determineRowsToUpdate(event, selectedRows);
+    console.log(`Updating field '${fieldEdited}' to '${newValue}' for ${rowsToUpdate.length} row(s):`, 
+                rowsToUpdate.map(r => ({ id: r.id, name: r.name })));
+    
+    // Apply changes to all target rows
+    const changedRows = this.applyFieldChangesToRows(fieldEdited, newValue, rowsToUpdate);
+    
+    // Handle special cases and save changes
+    this.handlePostUpdateActions(fieldEdited, changedRows);
+  }
 
-      const descendants = this.getAllDescendants(rowIdEdited);
-      let descendantsUpdated = false;
-      
-      descendants.forEach(descendant => {
-        if (descendant.type === 'component') {
-          descendant.effective_type = event.newValue;
-          descendantsUpdated = true;
-        }
-      });
-      
-      // If descendant components were edited, save with refresh and return
-      this.saveChangesToCohort(true, true);
-      return;
+  private determineRowsToUpdate(event: any, selectedRows?: any[]): any[] {
+    const editedRowId = event.data.id;
+    
+    // If we have selected rows and the edited row is among them, update all selected rows
+    if (selectedRows && selectedRows.length > 0) {
+      const editedRowIsSelected = selectedRows.some(row => row.id === editedRowId);
+      if (editedRowIsSelected) {
+        return selectedRows;
+      }
     }
     
-    this.saveChangesToCohort(true, false);
+    // Otherwise, just update the edited row
+    return [event.data];
+  }
+
+  private applyFieldChangesToRows(fieldEdited: string, newValue: any, rowsToUpdate: any[]): any[] {
+    const changedRows: any[] = [];
+    
+    rowsToUpdate.forEach(rowData => {
+      const phenotype = this._cohort_data.phenotypes.find(
+        (p: TableRow) => p.id === rowData.id
+      );
+      
+      if (phenotype) {
+        // Apply the field change
+        phenotype[fieldEdited] = newValue;
+        changedRows.push(phenotype);
+        
+        // Handle type field changes for effective_type
+        if (fieldEdited === 'type') {
+          phenotype.effective_type = newValue;
+          
+          // Update descendants for component phenotypes
+          const descendants = this.getAllDescendants(phenotype.id);
+          descendants.forEach(descendant => {
+            if (descendant.type === 'component') {
+              descendant.effective_type = newValue;
+              changedRows.push(descendant);
+            }
+          });
+        }
+      }
+    });
+    
+    return changedRows;
+  }
+
+  private handlePostUpdateActions(fieldEdited: string, _changedRows: any[]): void {
+    // Determine if we need a grid refresh based on the field type
+    const needsGridRefresh = ['description', 'class_name', 'type'].includes(fieldEdited) || _changedRows.length>1;
+    
+    // Save changes once after all updates
+    this.saveChangesToCohort(true, needsGridRefresh);
   }
 
   public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid: boolean = true) {
