@@ -4,13 +4,20 @@ import { CustomScrollbar } from '../CustomScrollbar';
 import styles from './AgGridWithCustomScrollbars.module.css';
 
 export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
-  // Additional props for customizing the vertical scrollbar
+  // Additional props for customizing scrollbars
   scrollbarConfig?: {
-    enabled?: boolean;
-    height?: string | number;
-    marginBottom?: string | number;
-    classNameThumb?: string;
-    classNameTrack?: string;
+    vertical?: {
+      enabled?: boolean;
+      height?: string | number;
+      classNameThumb?: string;
+      classNameTrack?: string;
+    };
+    horizontal?: {
+      enabled?: boolean;
+      width?: string | number;
+      classNameThumb?: string;
+      classNameTrack?: string;
+    };
   };
 }
 
@@ -19,13 +26,20 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
     const gridContainerRef = useRef<HTMLDivElement>(null);
 
     // Default scrollbar settings
-    const config = {
+    const verticalConfig = {
       enabled: true,
       height: "85%",
-      marginBottom: 20,
       classNameThumb: '',
       classNameTrack: '',
-      ...scrollbarConfig
+      ...scrollbarConfig?.vertical
+    };
+
+    const horizontalConfig = {
+      enabled: true,
+      width: "85%",
+      classNameThumb: '',
+      classNameTrack: '',
+      ...scrollbarConfig?.horizontal
     };
 
     // Debug effect to check scrollbar hiding
@@ -38,14 +52,18 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
             viewport,
             viewportStyles: {
               scrollbarWidth: getComputedStyle(viewport).scrollbarWidth,
-              msOverflowStyle: (getComputedStyle(viewport) as any).msOverflowStyle
+              msOverflowStyle: (getComputedStyle(viewport) as any).msOverflowStyle,
+              overflowX: getComputedStyle(viewport).overflowX,
+              overflowY: getComputedStyle(viewport).overflowY
             },
             containerClasses: gridContainerRef.current.className,
-            wrapperClasses: gridContainerRef.current.parentElement?.className
+            wrapperClasses: gridContainerRef.current.parentElement?.className,
+            verticalScrollbarEnabled: verticalConfig.enabled,
+            horizontalScrollbarEnabled: horizontalConfig.enabled
           });
         }
       }
-    }, []);
+    }, [verticalConfig.enabled, horizontalConfig.enabled]);
 
     return (
       <div className={`${styles.gridWrapper} ${className || ''}`}>
@@ -56,15 +74,29 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           />
           
           {/* Custom Vertical Scrollbar */}
-          {config.enabled && (
+          {verticalConfig.enabled && (
             <CustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
-              height={config.height}
-              marginBottom={config.marginBottom}
-              classNameThumb={config.classNameThumb}
-              classNameTrack={config.classNameTrack}
+              orientation="vertical"
+              height={verticalConfig.height}
+              classNameThumb={verticalConfig.classNameThumb}
+              classNameTrack={verticalConfig.classNameTrack}
             />
           )}
+
+          {/* Custom Horizontal Scrollbar */}
+          {horizontalConfig.enabled && (() => {
+            console.log('Rendering horizontal scrollbar with config:', horizontalConfig);
+            return (
+              <CustomScrollbar 
+                targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
+                orientation="horizontal"
+                width={horizontalConfig.width}
+                classNameThumb={horizontalConfig.classNameThumb}
+                classNameTrack={horizontalConfig.classNameTrack}
+              />
+            );
+          })()}
         </div>
       </div>
     );
