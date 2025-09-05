@@ -61,20 +61,8 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     
     if (!isInitialUpdate && !relevantScrollChanged) {
       // This scroll event doesn't affect this scrollbar, skip the update
-      console.log(`${orientation} scrollbar skipping update - no relevant change`, {
-        currentScrollValue,
-        previousScrollValue,
-        relevantScrollChanged
-      });
       return;
     }
-    
-    console.log(`${orientation} scrollbar updating scroll info`, {
-      currentScrollValue,
-      previousScrollValue,
-      relevantScrollChanged,
-      isInitialUpdate
-    });
     
     // Test if element can actually scroll by temporarily setting scroll position
     const originalScrollTop = scrollableElement.scrollTop;
@@ -98,38 +86,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     const isScrollable = orientation === 'vertical' 
       ? scrollHeight > clientHeight && canScrollVertically
       : actualCanScrollHorizontally;
-
-    // Debug logging for horizontal scrollbar
-    if (orientation === 'horizontal') {
-      // Get more detailed info about child elements
-      const children = Array.from(scrollableElement.children);
-      const childWidths = children.map(child => ({
-        tagName: child.tagName,
-        className: child.className,
-        width: child.getBoundingClientRect().width,
-        scrollWidth: (child as HTMLElement).scrollWidth
-      }));
-      
-      console.log('CustomScrollbar Horizontal Debug:', {
-        orientation,
-        scrollLeft,
-        scrollWidth,
-        clientWidth,
-        hasHorizontalOverflow,
-        canScrollHorizontally,
-        actualCanScrollHorizontally,
-        isScrollable,
-        element: scrollableElement,
-        elementTagName: scrollableElement.tagName,
-        elementClasses: scrollableElement.className,
-        childWidths,
-        elementStyles: {
-          overflowX: getComputedStyle(scrollableElement).overflowX,
-          width: getComputedStyle(scrollableElement).width,
-          display: getComputedStyle(scrollableElement).display
-        }
-      });
-    }
 
     // Removed excessive debug logging - keeping component lightweight
     setScrollInfo({ 
@@ -166,31 +122,11 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         ...Array.from(target.querySelectorAll('[class*="center-cols"]'))
       ].filter(Boolean);
       
-      console.log('Horizontal scroll element search:', {
-        target,
-        horizontalScrollViewport,
-        allPotentialContainers: allPotentialContainers.map(el => ({
-          className: el?.className,
-          tagName: el?.tagName,
-          scrollWidth: (el as HTMLElement)?.scrollWidth,
-          clientWidth: (el as HTMLElement)?.clientWidth,
-          overflowX: el ? getComputedStyle(el).overflowX : 'unknown',
-          hasHorizontalScroll: (el as HTMLElement)?.scrollWidth > (el as HTMLElement)?.clientWidth
-        }))
-      });
-      
       // Find the element that actually has horizontal overflow
       const actualHorizontalContainer = allPotentialContainers.find(el => {
         if (!el) return false;
         const htmlEl = el as HTMLElement;
         return htmlEl.scrollWidth > htmlEl.clientWidth;
-      });
-      
-      console.log('Found actual horizontal container:', {
-        element: actualHorizontalContainer,
-        className: actualHorizontalContainer?.className,
-        scrollWidth: (actualHorizontalContainer as HTMLElement)?.scrollWidth,
-        clientWidth: (actualHorizontalContainer as HTMLElement)?.clientWidth
       });
       
       return actualHorizontalContainer || horizontalScrollViewport || target.querySelector('.ag-body-viewport') || target;
@@ -333,8 +269,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       scrollableElement.style.setProperty('overflow', 'scroll', 'important');
 
       const handleScroll = (event: Event) => {
-        console.log(`Scroll event received for ${orientation} scrollbar from`, event.target);
-        
         // For horizontal scrollbar, be very specific about which events to handle
         if (orientation === 'horizontal') {
           const target = event.target as HTMLElement;
@@ -345,10 +279,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
             target.classList.contains('ag-center-cols-container') ||
             target.classList.contains('ag-body-horizontal-scroll')
           )) {
-            console.log(`Processing horizontal scroll event from ${target.className}`);
             updateScrollInfo();
-          } else {
-            console.log(`Ignoring scroll event from ${target?.className} for horizontal scrollbar`);
           }
         } else {
           // Vertical scrollbar processes all events normally
@@ -388,13 +319,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       // Remove duplicates
       const uniqueElementsToListenTo = [...new Set(elementsToListenTo)].filter(Boolean);
       
-      console.log(`Setting up scroll listeners for ${orientation}:`, {
-        orientation,
-        scrollableElement: scrollableElement.className,
-        elementsToListenTo: uniqueElementsToListenTo.map(el => el?.className || 'unknown'),
-        totalListeners: uniqueElementsToListenTo.length
-      });
-      
       // Set up observers to detect content changes
       let resizeObserver: ResizeObserver | null = null;
       let mutationObserver: MutationObserver | null = null;
@@ -425,7 +349,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       uniqueElementsToListenTo.forEach(element => {
         if (element) {
           element.addEventListener('scroll', handleScroll);
-          console.log(`Added scroll listener to ${element.className} for ${orientation}`);
         }
       });
       
@@ -440,7 +363,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         elementsWithListeners.forEach((element: Element) => {
           if (element) {
             element.removeEventListener('scroll', handleScroll);
-            console.log(`Removed scroll listener from ${element.className} for ${orientation}`);
           }
         });
         
@@ -472,23 +394,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     // Show scrollbar only if content is actually scrollable
   const showScrollbar = scrollInfo.isScrollable;
   
-  // TEMPORARY: Force horizontal scrollbar to be visible for debugging
-  const forceShowHorizontal = orientation === 'horizontal';
-  const actualShowScrollbar = showScrollbar || forceShowHorizontal;
-  
-  // Debug logging for rendering
-  if (orientation === 'horizontal') {
-    console.log('CustomScrollbar Horizontal Render Debug:', {
-      orientation,
-      showScrollbar,
-      forceShowHorizontal,
-      actualShowScrollbar,
-      scrollInfo,
-      willRender: actualShowScrollbar
-    });
-  }
-  
-  if (!actualShowScrollbar) {
+  if (!showScrollbar) {
     return null;
   }
 

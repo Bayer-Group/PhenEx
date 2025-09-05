@@ -35,8 +35,31 @@
 
 .gridWrapper :global(.ag-body-viewport.ag-layout-normal) {
   overflow-y: hidden !important;
+  overflow-x: scroll !important; /* Keep horizontal scrolling enabled */
 }
 
 .gridWrapper :global(.ag-force-vertical-scroll) {
   overflow-y: hidden !important;
+}
+
+/* Hide horizontal scrollbars */
+.gridWrapper :global(.ag-body-horizontal-scroll) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-body-horizontal-scroll-viewport) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-force-horizontal-scroll) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
+}
+
+/* Ensure center cols viewport keeps horizontal scrolling but hides scrollbars */
+.gridWrapper :global(.ag-center-cols-viewport) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
+}
+
+.gridWrapper :global(.ag-center-cols-container) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
 }

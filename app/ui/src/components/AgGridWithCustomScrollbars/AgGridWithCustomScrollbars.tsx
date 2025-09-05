@@ -44,25 +44,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
 
     // Debug effect to check scrollbar hiding
     useEffect(() => {
-      if (gridContainerRef.current) {
-        const viewport = gridContainerRef.current.querySelector('.ag-body-viewport');
-        if (viewport) {
-          console.log('AgGridWithCustomScrollbars Debug:', {
-            container: gridContainerRef.current,
-            viewport,
-            viewportStyles: {
-              scrollbarWidth: getComputedStyle(viewport).scrollbarWidth,
-              msOverflowStyle: (getComputedStyle(viewport) as any).msOverflowStyle,
-              overflowX: getComputedStyle(viewport).overflowX,
-              overflowY: getComputedStyle(viewport).overflowY
-            },
-            containerClasses: gridContainerRef.current.className,
-            wrapperClasses: gridContainerRef.current.parentElement?.className,
-            verticalScrollbarEnabled: verticalConfig.enabled,
-            horizontalScrollbarEnabled: horizontalConfig.enabled
-          });
-        }
-      }
+      // Initial setup for hiding AG Grid scrollbars
     }, [verticalConfig.enabled, horizontalConfig.enabled]);
 
     return (
@@ -85,18 +67,15 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           )}
 
           {/* Custom Horizontal Scrollbar */}
-          {horizontalConfig.enabled && (() => {
-            console.log('Rendering horizontal scrollbar with config:', horizontalConfig);
-            return (
-              <CustomScrollbar 
-                targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
-                orientation="horizontal"
-                width={horizontalConfig.width}
-                classNameThumb={horizontalConfig.classNameThumb}
-                classNameTrack={horizontalConfig.classNameTrack}
-              />
-            );
-          })()}
+          {horizontalConfig.enabled && (
+            <CustomScrollbar 
+              targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
+              orientation="horizontal"
+              width={horizontalConfig.width}
+              classNameThumb={horizontalConfig.classNameThumb}
+              classNameTrack={horizontalConfig.classNameTrack}
+            />
+          )}
         </div>
       </div>
     );
