@@ -2,6 +2,7 @@ import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'rea
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
@@ -102,6 +103,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   };
 
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const contentScrollableRef = React.useRef<HTMLDivElement>(null);
 
   const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
@@ -410,13 +412,21 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         {renderPopoverHeader()}
         <div className={`${styles.content}`}>
           {renderInfoHeader()}
-          <div className={`${styles.contentScrollable}`}>
+          <div 
+            ref={contentScrollableRef}
+            className={`${styles.contentScrollable}`}
+          >
             {isInfoOpen ? (
               renderInfoContent()
             ) : (
               renderMainContent()
             )}
           </div>
+          
+          <SimpleCustomScrollbar 
+            targetRef={contentScrollableRef}
+            orientation="vertical"
+          />
         </div>
       </div>
     </DraggablePortal>

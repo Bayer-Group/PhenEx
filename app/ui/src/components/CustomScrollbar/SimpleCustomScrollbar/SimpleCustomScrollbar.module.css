@@ -1,0 +1,110 @@
+.scrollbar {
+  position: absolute;
+  right: 10px;
+  width: 5px;
+  background: transparent;
+  border-radius: 8px;
+  transition: width 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+.scrollbar:hover {
+  width: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.scrollbar.dragging {
+  width: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1 !important;
+}
+
+.thumb {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  min-height: 20px;
+}
+
+.scrollbar:hover .thumb {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.scrollbar.dragging .thumb {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.thumb:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Horizontal scrollbar styles */
+.scrollbarHorizontal {
+  position: absolute;
+  bottom: 10px;
+  height: 5px;
+  background: transparent;
+  border-radius: 8px;
+  transition: height 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+.scrollbarHorizontal:hover {
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.scrollbarHorizontal.dragging {
+  height: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1 !important;
+}
+
+.scrollbarHorizontal .thumb {
+  position: absolute;
+  bottom: 0;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, height 0.2s ease;
+  min-width: 20px;
+}
+
+/* Specific thumb class for horizontal scrollbar */
+.thumbHorizontal {
+  height: 5px !important;
+  min-height: 5px !important; /* Override any inherited min-height */
+  min-width: 20px !important;
+  transition: background-color 0.2s ease, height 0.2s ease !important;
+}
+
+.scrollbarHorizontal:hover .thumb,
+.scrollbarHorizontal:hover .thumbHorizontal {
+  background: rgba(0, 0, 0, 0.5);
+  height: 12px !important;
+}
+
+.scrollbarHorizontal.dragging .thumb,
+.scrollbarHorizontal.dragging .thumbHorizontal {
+  background: rgba(0, 0, 0, 0.5);
+  height: 12px !important;
+}
+
+/* Hide default scrollbars - Essential for SimpleCustomScrollbar functionality */
+.hideScrollbars::-webkit-scrollbar {
+  display: none;
+}
+
+.hideScrollbars {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

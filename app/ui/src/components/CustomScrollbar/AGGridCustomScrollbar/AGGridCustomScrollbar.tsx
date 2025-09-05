@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import styles from './CustomScrollbar.module.css';
+import styles from './AGGridCustomScrollbar.module.css';
 
-export interface CustomScrollbarProps {
+export interface AGGridCustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement>;
   orientation?: 'vertical' | 'horizontal'; // Orientation of the scrollbar
   height?: string | number; // Height of the scrollbar (e.g. "80%", 300, etc.) - for vertical
@@ -10,7 +10,7 @@ export interface CustomScrollbarProps {
   classNameTrack?: string; // Additional class for the track
 }
 
-export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ 
+export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({ 
   targetRef, 
   orientation = 'vertical',
   height = "85%", 

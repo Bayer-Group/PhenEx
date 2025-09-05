@@ -1,6 +1,6 @@
 import React, { forwardRef, useRef, useEffect } from 'react';
 import { AgGridReact, AgGridReactProps } from '@ag-grid-community/react';
-import { CustomScrollbar } from '../CustomScrollbar';
+import { AGGridCustomScrollbar } from '../CustomScrollbar/AGGridCustomScrollbar';
 import styles from './AgGridWithCustomScrollbars.module.css';
 
 export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
@@ -57,7 +57,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           
           {/* Custom Vertical Scrollbar */}
           {verticalConfig.enabled && (
-            <CustomScrollbar 
+            <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="vertical"
               height={verticalConfig.height}
@@ -68,7 +68,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
 
           {/* Custom Horizontal Scrollbar */}
           {horizontalConfig.enabled && (
-            <CustomScrollbar 
+            <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="horizontal"
               width={horizontalConfig.width}

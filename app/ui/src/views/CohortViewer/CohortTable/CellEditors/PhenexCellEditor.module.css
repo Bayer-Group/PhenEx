@@ -93,6 +93,7 @@
 }
 
 .content {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1; /* Take remaining space but allow container to grow */
