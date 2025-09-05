@@ -48,44 +48,53 @@
 .scrollbarHorizontal {
   position: absolute;
   bottom: 10px;
-  height: 12px; /* Make it more visible by default */
-  background: rgba(255, 0, 0, 0.2); /* Red tint for debugging */
+  height: 5px;
+  background: transparent;
   border-radius: 8px;
   transition: height 0.2s ease;
   cursor: pointer;
   z-index: 10;
-  border: 2px solid rgba(255, 0, 0, 0.5); /* Red border for debugging */
 }
 
 .scrollbarHorizontal:hover {
-  height: 16px;
-  background: rgba(255, 0, 0, 0.3);
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .scrollbarHorizontal.dragging {
-  height: 16px !important;
-  background: rgba(255, 0, 0, 0.3);
+  height: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .scrollbarHorizontal .thumb {
   position: absolute;
   bottom: 0;
-  height: 100%;
-  background: rgba(0, 0, 255, 0.7); /* Blue thumb for debugging */
+  height: 5px;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, height 0.2s ease;
   min-width: 20px;
-  opacity: 1; /* Make it fully opaque for debugging */
+  opacity: .5;
 }
 
-.scrollbarHorizontal:hover .thumb {
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 1;
+/* Specific thumb class for horizontal scrollbar */
+.thumbHorizontal {
+  height: 5px !important;
+  min-height: 5px !important; /* Override the min-height from .thumb */
+  min-width: 20px !important; /* Keep min-width for horizontal */
+  transition: background-color 0.2s ease, height 0.2s ease !important;
 }
 
-.scrollbarHorizontal.dragging .thumb {
-  background: rgba(0, 0, 0, 0.5);
+.scrollbarHorizontal:hover .thumb,
+.scrollbarHorizontal:hover .thumbHorizontal {
   opacity: 1;
+  height: 12px !important;
+}
+
+.scrollbarHorizontal.dragging .thumb,
+.scrollbarHorizontal.dragging .thumbHorizontal {
+  opacity: 1;
+  height: 12px !important;
 }
 
 /* Note: Scrollbar hiding is now handled programmatically per instance */

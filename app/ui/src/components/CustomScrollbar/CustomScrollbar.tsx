@@ -442,6 +442,10 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     ? `${styles.scrollbar} ${isDragging ? styles.dragging : ''} ${classNameTrack}`
     : `${styles.scrollbarHorizontal} ${isDragging ? styles.dragging : ''} ${classNameTrack}`;
 
+  const thumbClass = orientation === 'vertical'
+    ? `${styles.thumb} ${classNameThumb}`
+    : `${styles.thumb} ${styles.thumbHorizontal} ${classNameThumb}`;
+
   return (
     <div 
       className={scrollbarClass}
@@ -449,7 +453,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       style={scrollbarStyle}
     >
       <div 
-        className={`${styles.thumb} ${classNameThumb}`}
+        className={thumbClass}
         style={thumbStyle}
         onMouseDown={handleThumbMouseDown}
       />
