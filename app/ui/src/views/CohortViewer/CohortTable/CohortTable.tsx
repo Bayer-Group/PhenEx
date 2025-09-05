@@ -403,7 +403,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
 
     return (
-      <div className={`ag-theme-quartz ${styles.gridContainer}`}>
+      <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes

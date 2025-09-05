@@ -54,16 +54,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     // 2. we can actually scroll (not just padding/margins creating extra height)
     const isScrollable = scrollHeight > clientHeight && canActuallyScroll;
 
-    console.log('updateScrollInfo:', {
-      scrollTop,
-      scrollHeight,
-      clientHeight,
-      canActuallyScroll,
-      isScrollable,
-      heightDiff: scrollHeight - clientHeight,
-      elementType: agGridViewport ? 'ag-grid-viewport' : 'target'
-    });
-
+    // Removed excessive debug logging - keeping component lightweight
     setScrollInfo({ scrollTop, scrollHeight, clientHeight, isScrollable });
   };
 
@@ -127,8 +118,6 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   }, [isDragging, dragStart, scrollInfo]);
 
   useEffect(() => {
-    console.log('CustomScrollbar: useEffect called');
-    
     const waitForAgGrid = () => {
       const target = targetRef.current;
       if (!target) {
@@ -246,17 +235,8 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     waitForAgGrid();
   }, [targetRef]);
 
-  // Show scrollbar only if content is actually scrollable
-  const showScrollbar = scrollInfo.isScrollable;
-  
-  // Debug logging to understand scroll behavior
-  console.log('CustomScrollbar Debug:', {
-    scrollHeight: scrollInfo.scrollHeight,
-    clientHeight: scrollInfo.clientHeight,
-    isScrollable: scrollInfo.isScrollable,
-    showScrollbar,
-    heightDiff: scrollInfo.scrollHeight - scrollInfo.clientHeight
-  });
+    // Show scrollbar only if content is actually scrollable
+  const showScrollbar = scrollInfo.isScrollable || true; // Temporarily force show for debugging
   
   if (!showScrollbar) {
     return null;

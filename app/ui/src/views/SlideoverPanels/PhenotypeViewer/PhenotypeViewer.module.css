@@ -48,31 +48,6 @@
   overflow: hidden;
 }
 
-/* AG Grid scrollbar hiding - SPECIFICALLY for PhenotypeViewer only */
-.container :global(.ag-body-vertical-scroll) {
-  display: none !important;
-}
-
-.container :global(.ag-body-viewport.ag-layout-normal) {
-  overflow-y: hidden !important;
-}
-
-.container :global(.ag-force-vertical-scroll) {
-  overflow-y: hidden !important;
-}
-
-/* Even more specific - target AG Grid within paramsContainer */
-.paramsContainer :global(.ag-body-vertical-scroll) {
-  display: none !important;
-}
-
-.paramsContainer :global(.ag-body-viewport.ag-layout-normal) {
-  overflow-y: hidden !important;
-}
-
-.paramsContainer :global(.ag-force-vertical-scroll) {
-  overflow-y: hidden !important;
-}
 
 .phenotypeType {
   font-size: 20px;

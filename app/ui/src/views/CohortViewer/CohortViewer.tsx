@@ -72,12 +72,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
   const refreshGrid = () => {
 
-    if (gridRef.current?.api) {
+    if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
       const api = gridRef.current.api;
       // Store current scroll position
       // const horizontalScroll = api.getHorizontalPixelRange();
-      const firstRow = api.getFirstDisplayedRow();
-      const lastRow = api.getLastDisplayedRow();
+      const firstRow = api.getFirstDisplayedRowIndex();
+      const lastRow = api.getLastDisplayedRowIndex();
 
       console.log(
         'Setting grid rowData to:',
@@ -94,9 +94,13 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
       // Restore scroll position after data update
       requestAnimationFrame(() => {
-        // api.ensureIndexVisible(firstRow, 'top');
-        api.ensureIndexVisible(lastRow, 'bottom');
-
+        // Check if grid is still alive before calling API methods
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
+          // Only ensure visible if we have valid row indices
+          if (lastRow >= 0) {
+            gridRef.current.api.ensureIndexVisible(lastRow, 'bottom');
+          }
+        }
         // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
       });
     }

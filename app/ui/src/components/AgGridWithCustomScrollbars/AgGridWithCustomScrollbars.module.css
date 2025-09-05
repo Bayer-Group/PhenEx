@@ -27,3 +27,16 @@
   width: 0 !important;
   height: 0 !important;
 }
+
+/* Additional comprehensive scrollbar hiding - copied from PhenotypeViewer */
+.gridWrapper :global(.ag-body-vertical-scroll) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-body-viewport.ag-layout-normal) {
+  overflow-y: hidden !important;
+}
+
+.gridWrapper :global(.ag-force-vertical-scroll) {
+  overflow-y: hidden !important;
+}
