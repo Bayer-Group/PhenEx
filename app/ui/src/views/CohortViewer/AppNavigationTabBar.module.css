@@ -84,3 +84,7 @@
 .addNewPhenotypeDropdownHeader:hover .addNewPhenotypeDropdownHeaderButton {
   color: red !important;
 }
+
+.addNewPhenotypeDropdown{
+  z-index: 1001;
+}
