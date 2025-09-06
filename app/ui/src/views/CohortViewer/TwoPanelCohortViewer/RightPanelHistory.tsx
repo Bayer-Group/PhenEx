@@ -2,6 +2,7 @@ import { FC, useState, useEffect, useRef } from 'react';
 import { RightPanelHistoryDataService, RightPanelHistoryItem } from './RightPanelHistoryDataService';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer';
 import { HistoryCard } from './HistoryCard';
+import { PositionedPortal } from '../../../components/Portal/PositionedPortal';
 import styles from './RightPanelHistory.module.css';
 import historyCardStyles from './HistoryCard.module.css';
 
@@ -17,6 +18,7 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const [isHovered, setIsHovered] = useState(false);
   const [isSlideOut, setIsSlideOut] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const maxCards = 3; // Number of cards to display
   const AUTO_HIDE_DELAY = 300; // 2 seconds
@@ -116,23 +118,41 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
 
   return (
     <div 
-      className={`${styles.historyContainer} ${className || ''}`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      ref={containerRef}
+      className={`${className || ''}`}
+      style={{
+        position: 'absolute',
+        top: '100px',
+        right: '0px',
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'blue',
+        border: '2px solid yellow',
+        zIndex: 5
+      }}
     >
-      <div className={`${styles.rightPanelHistory} ${isSlideOut ? styles.slideOut : styles.slideIn}`}>
-        <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
-          {displayItems.map((item, index) => (
-            <HistoryCard 
-              key={`${item.timestamp}-${index}`}
-              item={item}
-              index={index}
-              onClick={() => handleCardClick(item, index)}
-              className={isHovered ? historyCardStyles.cardHovered : ''}
-            />
-          ))}
+      TRIGGER
+      <PositionedPortal triggerRef={containerRef} position="right" offsetX={0} alignment="right">
+        <div 
+          className={`${styles.historyContainer}`}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className={`${styles.rightPanelHistory} ${isSlideOut ? styles.slideOut : styles.slideIn}`}>
+            <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
+              {displayItems.map((item, index) => (
+                <HistoryCard 
+                  key={`${item.timestamp}-${index}`}
+                  item={item}
+                  index={index}
+                  onClick={() => handleCardClick(item, index)}
+                  className={isHovered ? historyCardStyles.cardHovered : ''}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </PositionedPortal>
     </div>
   );
 };
