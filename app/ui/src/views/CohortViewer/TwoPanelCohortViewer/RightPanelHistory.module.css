@@ -3,8 +3,8 @@
     position: absolute;
     top: 70px;
     right: -1px;
-    width: 30px; /* Base width */
-    height: 60px; /* Enough to contain the cards */
+    width: 40px; /* Base width */
+    height: 120px; /* Enough to contain the cards */
     overflow: hidden; /* This creates the masking effect */
     z-index: 10;
     transition: width .9s ease-in-out; /* Much slower width expansion */
@@ -22,20 +22,21 @@
 
 .rightPanelHistory {
     position: absolute;
-    right: 0; /* Stick to the right edge of the container */
-    top: 0;
+    right: 10px; /* Stick to the right edge of the container */
+    top: 20px; /* Move cards down from the top */
     width: 200px; /* Wide enough for expanded content */
     transition: transform 0.2s ease-in-out;
 }
 
 /* Default state - visible within container */
 .rightPanelHistory.slideIn {
-    transform: translateX(0px);
+    transform: translateX(5px);
 }
 
 /* Hidden state - slide out to the right, moving outside the container's bounds */
 .rightPanelHistory.slideOut {
-    transform: translateX(125px); 
+    transform: translateX(135px); 
+    opacity: .3;
     /* Slides most of it out of the container */
 }
 
@@ -44,8 +45,13 @@
     width: 200px; 
     /* Wide enough for expanded cards */
     height: 50px; /* Increased height to accommodate animated cards moving up */
-    transition: all 0.3s ease;
+    transition: all 0.1s ease;
     display: flex;
     flex-direction: column;
     align-items: flex-end; /* Align cards to the right edge */
+}
+
+/* Enhanced shadow when history is expanded */
+.historyContainer:hover .cardStack {
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
