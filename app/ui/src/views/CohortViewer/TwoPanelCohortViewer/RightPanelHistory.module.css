@@ -1,23 +1,23 @@
 /* Masking container - sits exactly where the history should be */
 .historyContainer {
     position: absolute;
-    top: 100px;
-    right: 0px;
-    width: 200px; /* Base width */
+    top: 70px;
+    right: -1px;
+    width: 30px; /* Base width */
     height: 60px; /* Enough to contain the cards */
     overflow: hidden; /* This creates the masking effect */
     z-index: 10;
-    transition: width 0.3s ease-in-out; /* Smooth width expansion */
+    transition: width .9s ease-in-out; /* Much slower width expansion */
     
     /* Debug border - remove in production */
     /* border: 2px solid red; */
-    background: transparent;
 }
 
 /* Expanded state - wider on hover to show more history */
 .historyContainer:hover {
     width: 700px;
      /* Much wider to show full history items */
+    transition: width 0.2s ease-in-out; /* Fast expansion on hover */
 }
 
 .rightPanelHistory {
@@ -25,17 +25,17 @@
     right: 0; /* Stick to the right edge of the container */
     top: 0;
     width: 200px; /* Wide enough for expanded content */
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.2s ease-in-out;
 }
 
 /* Default state - visible within container */
 .rightPanelHistory.slideIn {
-    transform: translateX(-20px);
+    transform: translateX(0px);
 }
 
 /* Hidden state - slide out to the right, moving outside the container's bounds */
 .rightPanelHistory.slideOut {
-    transform: translateX(120px); 
+    transform: translateX(125px); 
     /* Slides most of it out of the container */
 }
 

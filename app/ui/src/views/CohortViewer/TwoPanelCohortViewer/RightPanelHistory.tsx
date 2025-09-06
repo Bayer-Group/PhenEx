@@ -122,17 +122,14 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
       className={`${className || ''}`}
       style={{
         position: 'absolute',
-        top: '100px',
+        top: '0px',
         right: '0px',
-        width: '50px',
-        height: '50px',
-        backgroundColor: 'blue',
-        border: '2px solid yellow',
-        zIndex: 5
+        width: '1px',
+        height: '1px',
+        opacity: 0
       }}
     >
-      TRIGGER
-      <PositionedPortal triggerRef={containerRef} position="right" offsetX={0} alignment="right">
+      <PositionedPortal triggerRef={containerRef} position="left" offsetX={0} offsetY={0} alignment="left">
         <div 
           className={`${styles.historyContainer}`}
           onMouseEnter={handleMouseEnter}
