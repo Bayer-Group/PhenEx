@@ -12,7 +12,6 @@
   border: 1px solid var(--line-color);
   background: white;
   cursor: pointer;
-  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   
   /* Stack positioning using CSS custom property */
@@ -24,7 +23,7 @@
   /* opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards)))); */
 
   line-height: 16px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   top:50%;
   transform: translateY(-50%);
 }

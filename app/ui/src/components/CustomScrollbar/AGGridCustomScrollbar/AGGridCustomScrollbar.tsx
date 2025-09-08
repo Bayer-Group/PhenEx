@@ -290,6 +290,34 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
           updateScrollInfo();
         }
       };
+
+      // Keyboard modifier handler for horizontal scrolling
+      const handleWheelWithModifiers = (event: WheelEvent) => {
+        // Only handle for horizontal scrollbar
+        if (orientation !== 'horizontal') return;
+        
+        // Shift + scroll - convert vertical scrolling to horizontal
+        if (event.shiftKey) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const horizontalScrollElement = getScrollableElement();
+          
+          if (horizontalScrollElement) {
+            const scrollAmount = event.deltaY * 3; // Adjust sensitivity
+            const currentScrollLeft = horizontalScrollElement.scrollLeft;
+            const maxScrollLeft = horizontalScrollElement.scrollWidth - horizontalScrollElement.clientWidth;
+            const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, currentScrollLeft + scrollAmount));
+            
+            
+            horizontalScrollElement.scrollLeft = newScrollLeft;
+            
+            // Update scroll info immediately
+            updateScrollInfo();
+            
+          }
+        }
+      };
       
       // Be more specific about which elements each orientation should listen to
       const elementsToListenTo = [];
@@ -356,6 +384,12 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
         }
       });
       
+      // Add wheel event listener for horizontal scrollbar keyboard modifiers
+      if (orientation === 'horizontal') {
+        console.log('🔗 Adding wheel event listener for horizontal scrollbar');
+        target.addEventListener('wheel', handleWheelWithModifiers, { passive: false });
+      }
+      
       // Store elements for cleanup
       (scrollableElement as any)._scrollListenerElements = uniqueElementsToListenTo;
       
@@ -369,6 +403,11 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
             element.removeEventListener('scroll', handleScroll);
           }
         });
+        
+        // Clean up wheel event listener for horizontal scrollbar
+        if (orientation === 'horizontal') {
+          target.removeEventListener('wheel', handleWheelWithModifiers);
+        }
         
         // Clean up polling interval for horizontal scrollbar
         const pollInterval = (scrollableElement as any)._pollInterval;

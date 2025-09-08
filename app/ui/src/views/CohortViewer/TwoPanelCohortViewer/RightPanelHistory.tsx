@@ -135,6 +135,7 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
+          <div className={styles.hoverZone}></div>
           <div className={`${styles.rightPanelHistory} ${isSlideOut ? styles.slideOut : styles.slideIn}`}>
             <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
               {displayItems.map((item, index) => (

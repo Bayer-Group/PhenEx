@@ -12,11 +12,11 @@
 }
 
 .bottomSection {
-  height: 100%;
+  height: calc(100% - 30px);
+  padding-top:30px;
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding-top: 0px;
 }
 
 .visible {
