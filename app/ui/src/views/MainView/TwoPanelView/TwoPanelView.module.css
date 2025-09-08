@@ -231,7 +231,7 @@
 }
 
 .topPanel {
-  background-color: red !important;
+  background-color: var(--background-color) !important;
   position: relative;
   transition:
     height 0.2s ease,
