@@ -10,11 +10,7 @@ interface SingleLogicalExpressionEditorProps {
   onDelete: (value: FilterType) => void;
   onIsEditing: (editing: boolean) => void;
   createLogicalFilter: (type: 'AndFilter' | 'OrFilter', filter: FilterType) => void;
-  data?: {
-    id?: string;
-    type?: string;
-    name?: string;
-  };
+  phenotype?: any
 }
 
 export const SingleLogicalExpressionEditor: React.FC<SingleLogicalExpressionEditorProps> = ({
@@ -22,22 +18,24 @@ export const SingleLogicalExpressionEditor: React.FC<SingleLogicalExpressionEdit
   onValueChange,
   onDelete,
   createLogicalFilter,
-  data,
+  phenotype,
 }) => {
   const [componentPhenotypes, setComponentPhenotypes] = useState<TableRow[]>([]);
   const dataService = CohortDataService.getInstance();
   
   // Load component phenotypes when component mounts or when data.id changes
   useEffect(() => {
-    if (data?.id) {
-      const descendants = dataService.getAllDescendants(data.id);
+    console.log("TRYING TO SET", phenotype)
+    if (phenotype?.id) {
+      const descendants = dataService.getAllDescendants(phenotype.id);
       // Filter to only get component phenotypes
-      const components = descendants.filter(phenotype => phenotype.type === 'component');
+      console.log("GETTIGN DESCENDENTS", descendants)
+      const components = descendants.filter(pt => pt.type === 'component');
       setComponentPhenotypes(components);
     } else {
       setComponentPhenotypes([]);
     }
-  }, [data?.id, dataService]);
+  }, [phenotype]);
 
   const handleValueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     event.stopPropagation();

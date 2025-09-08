@@ -6,11 +6,13 @@ import { SingleLogicalExpressionEditor } from './SingleLogicalExpressionEditor';
 interface LogicalExpressionEditorProps {
   value?: FilterType;
   onValueChange?: (value: FilterType) => void;
+  phenotype?: any;
 }
 
 export const LogicalExpressionEditor: React.FC<LogicalExpressionEditorProps> = ({
   value,
   onValueChange,
+  phenotype
 }) => {
   const createEmptyFilter = () => ({
     class_name: 'LogicalExpression',
@@ -159,6 +161,7 @@ export const LogicalExpressionEditor: React.FC<LogicalExpressionEditorProps> = (
               onDelete={deleteLogicalExpression}
               onIsEditing={onIsEditingSingleFilter}
               createLogicalFilter={createLogicalFilter}
+              phenotype={phenotype}
             />
           </div>
         );

@@ -12,10 +12,10 @@ export const LogicalExpressionCellEditor = forwardRef<any, LogicalExpressionCell
     const handleValueChange = (value: FilterType) => {
       props.onValueChange?.(value);
     };
-
+    console.log("THE LOGCIAL EDITOR", props)
     return (
       <PhenexCellEditor {...props} ref={ref}>
-        <LogicalExpressionEditor {...props} onValueChange={handleValueChange} />
+        <LogicalExpressionEditor {...props} onValueChange={handleValueChange} phenotype={props.data}/>
       </PhenexCellEditor>
     );
   }
