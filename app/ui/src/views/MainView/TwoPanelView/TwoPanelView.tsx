@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
-import stylesXButton from '../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 interface TwoPanelViewProps {
   split: 'vertical' | 'horizontal';
   initialSizeLeft: number;
@@ -18,8 +17,6 @@ export const TwoPanelView = React.forwardRef<
 >((props, ref) => {
   const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark' } = props;
 
-  console.log('TwoPanelView rendered with split:', split, 'initialSizeLeft:', initialSizeLeft);
-
   React.useImperativeHandle(ref, () => ({
     collapseRightPanel: (collapse: boolean) => setIsRightCollapsed(collapse),
     collapseBottomPanel: (collapse: boolean) => setIsBottomCollapsed(collapse),
@@ -32,11 +29,9 @@ export const TwoPanelView = React.forwardRef<
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isBottomCollapsed, setIsBottomCollapsed] = useState(false); // Start with bottom panel visible
   const [isDragging, setIsDragging] = useState(false);
-  const [wasDragging, setWasDragging] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    console.log('MOUSDING DOWN');
     if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
       return;
     }
@@ -49,7 +44,6 @@ export const TwoPanelView = React.forwardRef<
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    setWasDragging(true);
 
     const container = document.getElementById('two-panel-container');
     if (!container) return;
@@ -83,9 +77,6 @@ export const TwoPanelView = React.forwardRef<
       if (container) {
         container.dataset.dragging = 'false';
       }
-      setTimeout(() => {
-        setWasDragging(false);
-      }, 0);
     }
   };
 
@@ -140,25 +131,21 @@ export const TwoPanelView = React.forwardRef<
       ref={containerRef}
       className={`${styles.container} ${split === 'vertical' ? styles.vertical : styles.horizontal}`}
       data-dragging="false"
-      style={{ backgroundColor: split === 'horizontal' ? 'yellow' : 'green', minHeight: '400px' }}
     >
       {split === 'vertical' ? (
         <>
-          <div className={styles.leftPanel} style={{ width: isRightCollapsed ? '100%' : leftWidth, backgroundColor: 'lightgreen' }}>
+          <div className={styles.leftPanel} style={{ width: isRightCollapsed ? '100%' : leftWidth }}>
             {children[0]}
           </div>
 
           <div
             className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
-            style={{ width: isRightCollapsed ? 0 : rightWidth, backgroundColor: 'lightpink' }}
+            style={{ width: isRightCollapsed ? 0 : rightWidth }}
           >
             <div className={styles.rightPanelContent}>{children[1]}</div>
             <div
               className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
-              onClick={() => {
-                console.log('Vertical collapse button clicked, was:', isRightCollapsed);
-                setIsRightCollapsed(!isRightCollapsed);
-              }}
+              onClick={() => setIsRightCollapsed(!isRightCollapsed)}
             >
               {'>>'}
             </div>
@@ -170,33 +157,20 @@ export const TwoPanelView = React.forwardRef<
         </>
       ) : (
         <>
-          <div className={styles.topPanel} style={{ 
-            height: isBottomCollapsed ? '100%' : topHeight, 
-            backgroundColor: 'lightblue',
-            border: '2px solid blue'
-          }}>
-            <h4>TOP PANEL - Height: {isBottomCollapsed ? '100%' : topHeight}px</h4>
+          <div className={styles.topPanel} style={{ height: isBottomCollapsed ? '100%' : topHeight }}>
             {children[0]}
           </div>
 
           <div
             className={`${styles.bottomPanel} ${isBottomCollapsed ? styles.collapsed : ''}`}
-            style={{ 
-              height: isBottomCollapsed ? 0 : bottomHeight,
-              backgroundColor: 'lightcoral',
-              border: '2px solid red'
-            }}
+            style={{ height: isBottomCollapsed ? 0 : bottomHeight }}
           >
             <div className={styles.bottomPanelContent}>
-              <h4>BOTTOM PANEL - Height: {isBottomCollapsed ? 0 : bottomHeight}px</h4>
               {children[1]}
             </div>
             <div
               className={`${styles.collapseButtonHorizontal} ${isBottomCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
-              onClick={() => {
-                console.log('Horizontal collapse button clicked, was:', isBottomCollapsed);
-                setIsBottomCollapsed(!isBottomCollapsed);
-              }}
+              onClick={() => setIsBottomCollapsed(!isBottomCollapsed)}
             >
               {'⌄⌄'}
             </div>
