@@ -173,11 +173,5 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
-  return (
-    <div className={styles.container}>
-      <div className={`${styles.header}`}>
-        <div className={styles.paramsContainer}>{renderPhenotypeEditorTable()}</div>
-      </div>
-    </div>
-  );
+  return renderPhenotypeEditorTable();
 };

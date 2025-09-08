@@ -9,6 +9,7 @@ import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
 import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
+import { TwoPanelView } from '@/views/MainView/TwoPanelView/TwoPanelView';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -137,23 +138,17 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           {renderAncestors()}
         </div>
         <div className={styles.mainContainer}>
-          <div className={styles.controlsContainer}>
-            <Tabs
-              width={400}
-              height={25}
-              tabs={tabs}
-              onTabChange={onTabChange}
-              active_tab_index={activeTabIndex}
-              accentColor={`var(--color_${data.effective_type})`}
-            />
-          </div>
           <div className={styles.bottomSection}>
-            {currentView === PhenotypePanelViewType.Parameters && data && (
-              <PhenotypeViewer data={data} />
-            )}
-            {currentView === PhenotypePanelViewType.ComponentPhenotypes && (
-              <PhenotypeComponents data={data} />
-            )}
+          <TwoPanelView 
+                split="horizontal" 
+                initialSizeLeft={300} 
+                minSizeLeft={100}
+                // collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
+              >
+                <PhenotypeViewer data={data} />
+                <PhenotypeComponents data={data} />
+          </TwoPanelView>
+
           </div>
         </div>
       </div>

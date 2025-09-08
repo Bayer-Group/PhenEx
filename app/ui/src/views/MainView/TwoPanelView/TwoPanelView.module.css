@@ -206,6 +206,11 @@
   transition: none !important;
 }
 
+[data-dragging='true'] .topPanel,
+[data-dragging='true'] .bottomPanel {
+  transition: none !important;
+}
+
 /* Rest of your CSS remains the same */
 .rightPanel.collapsed {
   opacity: 0;
@@ -218,4 +223,110 @@
 .collapsed {
   width: 0;
   overflow: hidden;
+}
+
+/* Horizontal Split Styles */
+.container.horizontal {
+  flex-direction: column;
+}
+
+.topPanel {
+  background-color: var(--background-color) !important;
+  position: relative;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.bottomPanel {
+  background-color: var(--background-color) !important;
+  position: relative;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.bottomPanel.collapsed {
+  opacity: 0;
+  height: 0 !important;
+  overflow: hidden;
+}
+
+.topPanel.collapsed {
+  opacity: 0;
+  height: 0 !important;
+  overflow: hidden;
+}
+
+.bottomPanelContent {
+  height: 100%;
+  overflow: auto;
+  padding: var(--margin_top_right_panel);
+  box-sizing: border-box;
+}
+
+.dividerHorizontal {
+  height: 15px;
+  width: 100%;
+  cursor: row-resize;
+  position: absolute;
+  top: -7px;
+  left: 0;
+  background-color: transparent;
+  z-index: 100;
+}
+
+.dividerHorizontal:hover {
+  background-color: var(--color-accent-bright);
+}
+
+.collapseButtonHorizontal {
+  position: absolute;
+  padding: 4px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  z-index: 1;
+  border-radius: 50%;
+  background-color: transparent;
+  display: flex;
+  color: hsl(0, 0%, 60%);
+  z-index: 1000;
+  top: -25px;
+  left: 20px;
+  transition: transform 0.2s ease;
+  color: black;
+  user-select: none;
+  font-family: 'SNPro-black' !important;
+  font-size: 22px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 40px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  padding: 0;
+  line-height: 1;
+  font-family: 'SNPro-black' !important;
+  cursor: pointer;
+}
+
+.collapseButtonHorizontal:hover {
+  color: var(--color-accent-bright);
+  outline: none;
+}
+
+.collapseButtonHorizontal.lightTheme {
+  color: white !important;
+}
+
+.collapseButtonHorizontal.lightTheme:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
