@@ -47,7 +47,7 @@
 /* Horizontal scrollbar styles */
 .scrollbarHorizontal {
   position: absolute;
-  bottom: 100px;
+  bottom: 10px;
   height: 5px;
   background: transparent;
   border-radius: 8px;
