@@ -146,7 +146,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
                 // collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
               >
                 <PhenotypeViewer data={data} />
-                <PhenotypeComponents data={data} />
+                <PhenotypeComponents data={data} /> 
           </TwoPanelView>
 
           </div>

@@ -241,15 +241,17 @@
 .bottomPanel {
   background-color: var(--background-color) !important;
   position: relative;
+  border-top:var(--border);
+  border-radius: 10px 10px 0px 0px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
   transition:
-    height 0.2s ease,
-    opacity 0.2s ease;
+    height 0.2s ease;
 }
 
 .bottomPanel.collapsed {
-  opacity: 0;
   height: 0 !important;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to visible so title button can show */
 }
 
 .topPanel.collapsed {
@@ -263,6 +265,7 @@
   overflow: auto;
   padding: var(--margin_top_right_panel);
   box-sizing: border-box;
+  transition: opacity 0.2s ease;
 }
 
 .dividerHorizontal {
@@ -277,7 +280,6 @@
 }
 
 .dividerHorizontal:hover {
-  background-color: var(--color-accent-bright);
 }
 
 .collapseButtonHorizontal {
@@ -287,36 +289,29 @@
   border: 1px solid transparent;
   cursor: pointer;
   z-index: 1;
-  border-radius: 50%;
   background-color: transparent;
-  display: flex;
   color: hsl(0, 0%, 60%);
   z-index: 1000;
-  top: -25px;
-  left: 20px;
+  top: 5px; /* Changed from -100px to 0px */
+  left: 10px;
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
-  font-family: 'SNPro-black' !important;
-  font-size: 22px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
+  font-family: 'IBMPlexSans-bold' !important;
+  font-size: 24px !important;
+  height: 30px; /* Changed from 100px to 30px for proper sizing */
   cursor: pointer;
-  font-size: 40px;
   transition:
     background-color 0.2s,
     color 0.2s;
-  padding: 0;
-  line-height: 1;
-  font-family: 'SNPro-black' !important;
-  cursor: pointer;
 }
+
+.collapseButtonHorizontal.collapsed{
+  top: -70px!important;;
+  width: 300px!important;
+}
+
+
 
 .collapseButtonHorizontal:hover {
   color: var(--color-accent-bright);
@@ -329,4 +324,19 @@
 
 .collapseButtonHorizontal.lightTheme:hover {
   color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.collapseArrows{
+  margin-left: 5px;
+  transform: rotate(90deg)!important;
+  font-family: "SNPro-black"!important;
+    display: inline-block; /* Important for rotation to take effect */
+
+}
+
+
+.collapseButtonHorizontal.collapsed .collapseArrows{
+  transform: rotate(-90deg)!important;
+    display: inline-block; /* Important for rotation to take effect */
+
 }

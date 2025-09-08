@@ -125,6 +125,17 @@ export const TwoPanelView = React.forwardRef<
     return () => observer.disconnect();
   }, [leftWidth, rightWidth, topHeight, bottomHeight, isDragging, isRightCollapsed, isBottomCollapsed, split]);
 
+  const renderBottomTitleButton = () =>{
+    return (
+      <div
+        className={`${styles.collapseButtonHorizontal} ${isBottomCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
+        onClick={() => setIsBottomCollapsed(!isBottomCollapsed)}
+      >
+        Components <span className={styles.collapseArrows}>{'>'}</span>
+      </div>
+    );
+  }
+
   return (
     <div
       id="two-panel-container"
@@ -158,22 +169,21 @@ export const TwoPanelView = React.forwardRef<
       ) : (
         <>
           <div className={styles.topPanel} style={{ height: isBottomCollapsed ? '100%' : topHeight }}>
+            <>
             {children[0]}
+          </>
           </div>
 
           <div
             className={`${styles.bottomPanel} ${isBottomCollapsed ? styles.collapsed : ''}`}
             style={{ height: isBottomCollapsed ? 0 : bottomHeight }}
           >
+            {renderBottomTitleButton()}
             <div className={styles.bottomPanelContent}>
+
               {children[1]}
             </div>
-            <div
-              className={`${styles.collapseButtonHorizontal} ${isBottomCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
-              onClick={() => setIsBottomCollapsed(!isBottomCollapsed)}
-            >
-              {'⌄⌄'}
-            </div>
+
             <div
               className={`${styles.dividerHorizontal} ${isBottomCollapsed ? styles.collapsed : ''}`}
               onMouseDown={handleMouseDown}
