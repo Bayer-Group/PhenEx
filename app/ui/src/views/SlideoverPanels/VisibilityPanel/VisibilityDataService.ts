@@ -3,19 +3,10 @@ import { themeQuartz } from 'ag-grid-community';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { VisibilityCellRenderer } from './VisibilityCellRenderer';
+import VisibilityDescriptionCellRenderer from './VisibilityDescriptionCellRenderer';
+import parametersInfo from '../../../assets/parameters_info.json';
 
 const visibilityColumns: ColumnDefinition[] = [
-  // {
-  //   field: 'dragHandle',
-  //   headerName: '',
-  //   width: 10,
-  //   flex: 0,
-  //   resizable: false, // Prevent resizing to maintain fixed width
-  //   pinned: 'left',
-  //   editable: false,
-  //   cellRenderer: 'agRowDragCellRenderer',
-  //   rowDrag: (params: any) => params.data.visible, // Only allow dragging visible rows
-  // },
   {
     field: 'dragHandle',
     headerName: '',
@@ -48,11 +39,19 @@ const visibilityColumns: ColumnDefinition[] = [
     cellRenderer: VisibilityCellRenderer,
   },
   {
+    field: 'usedBy',
+    headerName: 'Used by',
+    editable: false,
+    width: 180,
+    cellRenderer: VisibilityDescriptionCellRenderer,
+  },
+  {
     field: 'description',
     headerName: 'Description',
     editable: false,
     width: 200,
     flex: 1,
+    cellRenderer: VisibilityDescriptionCellRenderer,
   },
 ];
 
@@ -60,6 +59,7 @@ interface VisibilityRow {
   dragHandle?: string;
   column: string;
   visible: boolean;
+  usedBy: string;
   description: string;
   index: number;
 }
@@ -85,11 +85,29 @@ export class VisibilityDataService {
       column => column.field !== 'rowDrag' && column.field !== 'type' && column.field !== 'name'
     );
 
+    // Helper function to get description from parameters_info.json
+    const getDescriptionForField = (fieldName: string): string => {
+      const paramInfo = parametersInfo[fieldName as keyof typeof parametersInfo];
+      const fullDescription = paramInfo?.description || '';
+      
+      // Extract only the first sentence (up to the first period)
+      const firstSentence = fullDescription.split('.')[0];
+      return firstSentence ? firstSentence + '.' : '';
+    };
+
+    // Helper function to get phenotypes that use this field
+    const getUsedByForField = (fieldName: string): string => {
+      const paramInfo = parametersInfo[fieldName as keyof typeof parametersInfo];
+      const phenotypes = paramInfo?.phenotypes || [];
+      return Array.isArray(phenotypes) ? phenotypes.join(', ') : '';
+    };
+
     const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
       column: column.headerName || column.field,
       visible: true,
-      description: '', // Empty for now as requested
+      usedBy: getUsedByForField(column.field),
+      description: getDescriptionForField(column.field),
       index: index,
     }));
 

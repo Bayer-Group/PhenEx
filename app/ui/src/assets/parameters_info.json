@@ -31,7 +31,7 @@
     "phenotypes": [
       "MeasurementChange"
     ],
-    "description": "Defines whether to look for an **increase** or **decrease** in measurement values:\n- **increase**: Look for values that go up (positive change)\n- **decrease**: Look for values that go down (negative change)\n\nFor example, with `min_change = GreaterThan(2)` and `direction = 'decrease'`, this looks for a decrease of at least 2 units.",
+    "description": "Defines whether to look for an **increase** or **decrease** in measurement values.\n- **increase**: Look for values that go up (positive change)\n- **decrease**: Look for values that go down (negative change)\n\nFor example, with `min_change = GreaterThan(2)` and `direction = 'decrease'`, this looks for a decrease of at least 2 units.",
     "examples": null,
     "showSelection": "selection"
   },
@@ -40,7 +40,7 @@
       "MeasurementChange",
       "EventCount"
     ],
-    "description": "Selects which component event date to use as the phenotype's EVENT_DATE:\n- **first**: Use the date of the first measurement in the comparison\n- **second**: Use the date of the second measurement in the comparison\n\nFor MeasurementChange, this determines whether the returned date represents when the baseline measurement was taken or when the changed measurement was observed.",
+    "description": "Selects which component event date to use as the phenotype's EVENT_DATE.\n- **first**: Use the date of the first measurement in the comparison\n- **second**: Use the date of the second measurement in the comparison\n\nFor MeasurementChange, this determines whether the returned date represents when the baseline measurement was taken or when the changed measurement was observed.",
     "examples": null,
     "showSelection": "selection"
   },
@@ -146,7 +146,7 @@
       "Arithmetic",
       "Logic"
     ],
-    "description": "A **mathematical or logical expression** that combines multiple phenotypes using operators:\n- **Arithmetic**: Mathematical operations (+, -, *, /) on phenotype values\n- **Logic**: Boolean operations (AND, OR, NOT) on phenotype results\n- **Score**: Complex scoring algorithms combining multiple phenotypes\n\nExpressions allow creating composite phenotypes from simpler building blocks.",
+    "description": "A **mathematical or logical expression** that combines multiple phenotypes using operators.\n- **Arithmetic**: Mathematical operations (+, -, *, /) on phenotype values\n- **Logic**: Boolean operations (AND, OR, NOT) on phenotype results\n- **Score**: Complex scoring algorithms combining multiple phenotypes\n\nExpressions allow creating composite phenotypes from simpler building blocks.",
     "examples": null,
     "showSelection": "none"
   },

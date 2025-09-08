@@ -56,6 +56,20 @@ export const VisibilityTable: React.FC = () => {
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
         rowDragManaged={true}
+        getRowHeight={params => {
+          let current_max_height = 48;
+
+          if (!params.data?.description) {
+            return current_max_height;
+          }
+
+          const descriptionCol = params.api.getColumnDef('description');
+          if (!descriptionCol || !params.data?.description) return 48;
+          const descWidth = descriptionCol.width || 200;
+          const charPerLine = Math.floor(descWidth / 8);
+          const lines = Math.ceil(params.data?.description.length / charPerLine);
+          return Math.max(current_max_height, lines * 10 + 20);
+        }}
         defaultColDef={{
           flex: 1,
           minWidth: 20,

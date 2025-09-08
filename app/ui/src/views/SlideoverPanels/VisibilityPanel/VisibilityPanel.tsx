@@ -27,8 +27,6 @@ export const VisibilityPanel: React.FC = () => {
     );
   };
 
-  console.log('CREATING A VISIBITy PANEL');
-
   return (
     <SlideoverPanel title="Visibility" info={infoContent()}>
       <div className={styles.container}>
