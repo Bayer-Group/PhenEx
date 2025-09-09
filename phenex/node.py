@@ -320,14 +320,8 @@ class Node:
                     self.name,
                     overwrite=overwrite,
                 )
-<<<<<<< HEAD
-<<<<<<< HEAD
+
                 # use reference to materialized table
-=======
->>>>>>> e2f7ea6 (some performance improvements)
-=======
-                # use reference to materialized table
->>>>>>> 1c69ede (use materialized table)
                 self.table = con.get_dest_table(self.name)
                 self._update_current_hash()
             else:
