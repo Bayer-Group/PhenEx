@@ -298,23 +298,65 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
         
         // Shift + scroll - convert vertical scrolling to horizontal
         if (event.shiftKey) {
+          console.log('🖱️ Mouse wheel with Shift detected:', {
+            deltaY: event.deltaY,
+            deltaX: event.deltaX,
+            deltaMode: event.deltaMode,
+            ctrlKey: event.ctrlKey,
+            shiftKey: event.shiftKey,
+            wheelDelta: (event as any).wheelDelta,
+            detail: (event as any).detail
+          });
+          
           event.preventDefault();
           event.stopPropagation();
           
           const horizontalScrollElement = getScrollableElement();
           
           if (horizontalScrollElement) {
-            const scrollAmount = event.deltaY * 3; // Adjust sensitivity
+            // Use different scroll amount calculation for better mouse wheel support
+            let scrollAmount;
+            
+            // Check if this is a mouse wheel (typically has larger, discrete values) vs trackpad (smaller, continuous values)
+            const isMouseWheel = Math.abs(event.deltaY) > 10 || Math.abs(event.deltaX) > 10 || event.deltaMode === 1; // DOM_DELTA_LINE
+            
+            // Use deltaX if available (many systems put Shift+scroll horizontal movement in deltaX)
+            // Otherwise fall back to deltaY
+            const deltaValue = event.deltaX !== 0 ? event.deltaX : event.deltaY;
+            
+            if (isMouseWheel) {
+              // For mouse wheels, use a larger multiplier and normalize the values
+              scrollAmount = deltaValue > 0 ? 50 : deltaValue < 0 ? -50 : 0; // Fixed scroll amount for mouse wheels
+            } else {
+              // For trackpads, use the delta value directly with multiplier
+              scrollAmount = deltaValue * 3;
+            }
+            
+            console.log('🖱️ Scroll calculation:', {
+              isMouseWheel,
+              originalDeltaY: event.deltaY,
+              originalDeltaX: event.deltaX,
+              usedDeltaValue: deltaValue,
+              calculatedScrollAmount: scrollAmount,
+              elementScrollWidth: horizontalScrollElement.scrollWidth,
+              elementClientWidth: horizontalScrollElement.clientWidth
+            });
+            
             const currentScrollLeft = horizontalScrollElement.scrollLeft;
             const maxScrollLeft = horizontalScrollElement.scrollWidth - horizontalScrollElement.clientWidth;
             const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, currentScrollLeft + scrollAmount));
             
+            console.log('🖱️ Scroll update:', {
+              currentScrollLeft,
+              maxScrollLeft,
+              newScrollLeft,
+              change: newScrollLeft - currentScrollLeft
+            });
             
             horizontalScrollElement.scrollLeft = newScrollLeft;
             
             // Update scroll info immediately
             updateScrollInfo();
-            
           }
         }
       };

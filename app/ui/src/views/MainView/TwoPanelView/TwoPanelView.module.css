@@ -8,6 +8,7 @@
   height: 100%;
   position: relative;
   background-color: var(--background-color) !important;
+  overflow: hidden;
 }
 
 .leftPanel {
