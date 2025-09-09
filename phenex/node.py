@@ -313,19 +313,21 @@ class Node:
                 logger.info(
                     f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
                 )
-                table = self._execute(tables)
+                self.table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
                 con.create_table(
-                    table,
+                    self.table,
                     self.name,
                     overwrite=overwrite,
                 )
+                # use reference to materialized table
                 self.table = con.get_dest_table(self.name)
                 self._update_current_hash()
             else:
                 logger.info(
                     f"Node '{self.name}': unchanged since last computation -- skipping!"
                 )
+                # use reference to materialized table
                 self.table = con.get_dest_table(self.name)
 
         else:
@@ -337,6 +339,8 @@ class Node:
                     self.name,
                     overwrite=overwrite,
                 )
+                # use reference to materialized table
+                self.table = con.get_dest_table(self.name)
 
         logger.info(f"Node '{self.name}': execution completed.")
         return self.table
@@ -425,6 +429,7 @@ class Node:
                                 table is not None
                             ):  # Only create table if _execute returns something
                                 con.create_table(table, node_name, overwrite=overwrite)
+                                table = con.get_dest_table(node_name)
                             node._update_current_hash()
                         else:
                             logger.info(
@@ -437,6 +442,7 @@ class Node:
                             con and table is not None
                         ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
+                            table = con.get_dest_table(node_name)
 
                     node.table = table
 
