@@ -389,6 +389,18 @@ class Codelist:
             phenex_codelist[codeset.ontology] = [c[0] for c in codeset.codes]
         return cls(codelist=phenex_codelist, name=codelist.name)
 
+    def to_list(self) -> List[str]:
+        """
+        Convert the codelist to a flat list of codes, ignoring code types.
+
+        Returns:
+            List[str]: A list containing all codes from all code types.
+        """
+        codes = []
+        for code_type, code_list in self.codelist.items():
+            codes.extend(code_list)
+        return codes
+
     def to_tuples(self) -> List[tuple]:
         """
         Convert the codelist to a list of tuples, where each tuple is of the form

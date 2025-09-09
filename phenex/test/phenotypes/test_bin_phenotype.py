@@ -195,6 +195,111 @@ def test_discrete_bin_phenotype():
     spg.run_tests()
 
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     test_binned_age_phenotype()
     test_discrete_bin_phenotype()
+=======
+class DiscreteBinPhenotypeWithCodelistsTestGenerator(PhenotypeTestGenerator):
+    """Test BinPhenotype with Codelist objects in value_mapping"""
+
+    name_space = "discrete_bin_codelists"
+    value_datatype = str
+    test_values = True
+
+    def define_input_tables(self):
+        # Use the same dummy data generation as CodelistPhenotype tests
+        df, tt = sdf_and_tt_dummycodes_3variables(
+            code_columnname="CODE",
+            patientid_columnname="PERSON_ID",
+            code_type_columnname="CODE_TYPE",
+            event_date_columnname="EVENT_DATE",
+        )
+
+        # Modify the codes to match our test case
+        # Replace the dummy codes with our diagnosis codes
+        code_mapping = {
+            "c1": "I21",
+            "c2": "I22",
+            "c3": "I23",
+        }
+
+        # Apply the mapping
+        df["CODE"] = df["CODE"].map(lambda x: code_mapping.get(x, x))
+
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+        # Create a proper Codelist object
+        diagnosis_codelist = Codelist(["I21", "I22", "I23"], "diagnosis_codes")
+
+        # Create a CodelistPhenotype that returns codes
+        diagnosis_codes = CodelistPhenotype(
+            name="diagnosis_codes",
+            codelist=diagnosis_codelist,
+            domain="CONDITION_OCCURRENCE",
+            return_value="all",
+        )
+
+        # Create Codelist objects for the bins
+        acute_mi_codelist = Codelist(["I21", "I22"], "acute_mi")
+        mi_complications_codelist = Codelist(["I23"], "mi_complications")
+
+        # Test discrete binning using Codelist objects in value_mapping
+        t1 = {
+            "name": "discrete_mapping_with_codelists",
+            "persons": [
+                "P1",
+                "P1",
+                "P1",  # P1 has I21, I22, I23
+                "P2",
+                "P2",  # P2 has I21, I22
+                "P3",
+                "P3",  # P3 has I21, I23
+                "P4",  # P4 has I21
+                "P5",
+                "P5",  # P5 has I22, I23
+                "P6",  # P6 has I22
+                "P7",  # P7 has I23
+            ],
+            "values": [
+                "Acute MI",
+                "Acute MI",
+                "MI Complications",  # P1
+                "Acute MI",
+                "Acute MI",  # P2
+                "Acute MI",
+                "MI Complications",  # P3
+                "Acute MI",  # P4
+                "Acute MI",
+                "MI Complications",  # P5
+                "Acute MI",  # P6
+                "MI Complications",  # P7
+            ],
+            "phenotype": BinPhenotype(
+                phenotype=diagnosis_codes,
+                value_mapping={
+                    "Acute MI": acute_mi_codelist,
+                    "MI Complications": mi_complications_codelist,
+                },
+            ),
+        }
+
+        test_infos = [t1]
+
+        for test_info in test_infos:
+            test_info["phenotype"].name = test_info["name"]
+
+        return test_infos
+
+
+def test_discrete_bin_phenotype_with_codelists():
+    spg = DiscreteBinPhenotypeWithCodelistsTestGenerator()
+    spg.run_tests()
+
+
+if __name__ == "__main__":
+    test_binned_age_phenotype()
+    test_discrete_bin_phenotype()
+    test_discrete_bin_phenotype_with_codelists()
+>>>>>>> main

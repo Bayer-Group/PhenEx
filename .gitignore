@@ -166,6 +166,7 @@ cython_debug/
 phenex/test/phenotypes/artifacts/
 phenex/test/cohort/artifacts/
 phenex/test/serialization/artifacts
+<<<<<<< HEAD
 
 *.csv
 
@@ -246,3 +247,5 @@ yarn-error.log*
 *.virtual_documents
 
 *volumes*
+=======
+>>>>>>> main
