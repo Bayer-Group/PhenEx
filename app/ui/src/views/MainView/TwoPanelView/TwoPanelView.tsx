@@ -6,6 +6,7 @@ interface TwoPanelViewProps {
   minSizeLeft: number;
   children: React.ReactNode[];
   collapseButtonTheme?: 'light' | 'dark'; // Add this prop
+  onRightPanelCollapse?: (isCollapsed: boolean) => void; // Add this prop
 }
 
 export const TwoPanelView = React.forwardRef<
@@ -15,10 +16,13 @@ export const TwoPanelView = React.forwardRef<
   },
   TwoPanelViewProps
 >((props, ref) => {
-  const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark' } = props;
+  const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
 
   React.useImperativeHandle(ref, () => ({
-    collapseRightPanel: (collapse: boolean) => setIsRightCollapsed(collapse),
+    collapseRightPanel: (collapse: boolean) => {
+      setIsRightCollapsed(collapse);
+      onRightPanelCollapse?.(collapse);
+    },
     collapseBottomPanel: (collapse: boolean) => setIsBottomCollapsed(collapse),
   }));
 
@@ -156,7 +160,11 @@ export const TwoPanelView = React.forwardRef<
             <div className={styles.rightPanelContent}>{children[1]}</div>
             <div
               className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
-              onClick={() => setIsRightCollapsed(!isRightCollapsed)}
+              onClick={() => {
+                const newCollapsedState = !isRightCollapsed;
+                setIsRightCollapsed(newCollapsedState);
+                onRightPanelCollapse?.(newCollapsedState);
+              }}
             >
               {'>>'}
             </div>

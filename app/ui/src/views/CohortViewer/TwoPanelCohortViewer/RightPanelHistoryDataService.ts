@@ -53,6 +53,29 @@ export class RightPanelHistoryDataService {
     this.notifyListeners();
   }
 
+  public forceAddToHistory(viewType: any, extraData?: any) {
+    console.log(`[RightPanelHistory] Force adding to history - viewType: ${viewType}`, extraData);
+    
+    const displayName = this.getDisplayName(viewType, extraData);
+    const historyItem: RightPanelHistoryItem = {
+      viewType,
+      extraData,
+      timestamp: Date.now(),
+      displayName
+    };
+
+    this.history.push(historyItem);
+    console.log(`[RightPanelHistory] Force added item: ${displayName}, total history items: ${this.history.length}`);
+
+    // Keep history size manageable
+    if (this.history.length > this.maxHistorySize) {
+      this.history = this.history.slice(-this.maxHistorySize);
+      console.log(`[RightPanelHistory] Trimmed history to ${this.maxHistorySize} items`);
+    }
+
+    this.notifyListeners();
+  }
+
   public getHistory(): RightPanelHistoryItem[] {
     return [...this.history];
   }

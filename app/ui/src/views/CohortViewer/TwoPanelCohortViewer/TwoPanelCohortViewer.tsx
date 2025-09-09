@@ -51,6 +51,7 @@ export class TwoPanelCohortViewerService {
     
     // Add to history
     const historyService = RightPanelHistoryDataService.getInstance();
+    console.log("ADDING THE dATA HERE", data)
     historyService.addToHistory(viewType, data);
     
     this.currentViewType = viewType;
@@ -69,6 +70,12 @@ export class TwoPanelCohortViewerService {
   };
 
   public hideExtraContent = () => {
+    // Add to history if it was a phenotype before closing
+    if (this.currentViewType === 'phenotype') {
+      const historyService = RightPanelHistoryDataService.getInstance();
+      historyService.addToHistory(this.currentViewType, this.extraData);
+    }
+    
     this.panelRef?.current?.collapseRightPanel(true);
     this.notifyListeners();
   };
@@ -100,6 +107,15 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
   service.setPanelRef(panelRef);
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
+
+  // Handle right panel collapse events
+  const handleRightPanelCollapse = (isCollapsed: boolean) => {
+    if (isCollapsed && viewType === 'phenotype') {
+      const historyService = RightPanelHistoryDataService.getInstance();
+      console.log("HANDLING RIGHT PANEL COLLAPSE", extraData)
+      historyService.forceAddToHistory(viewType, extraData);
+    }
+  };
 
   React.useEffect(() => {
     const updateState = (viewType: any, extraData: any) => {
@@ -144,6 +160,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       initialSizeLeft={500} 
       minSizeLeft={100}
       collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
+      onRightPanelCollapse={handleRightPanelCollapse}
     >
       <>
         <CohortViewer data={service.getData()} />

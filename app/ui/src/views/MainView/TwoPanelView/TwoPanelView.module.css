@@ -76,7 +76,7 @@
 }
 
 .divider:hover {
-  border-color: var(--color-accent);
+  /* border-color: var(--color-accent); */
 }
 
 .divider:hover .dividerLine {
