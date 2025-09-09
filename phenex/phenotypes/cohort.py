@@ -358,7 +358,7 @@ class Cohort:
 
     def append_counts(self):
         def append_count_to_phenotype(phenotype):
-            phenotype.count = phenotype.table.select('PERSON_ID').distinct().count()
+            phenotype.count = int(phenotype.table.select('PERSON_ID').distinct().count().to_pandas())
             if len(phenotype.children)>0:
                 for child in phenotype.children:
                     append_count_to_phenotype(child)
