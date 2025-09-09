@@ -18,6 +18,8 @@ import { DomainSelectorCellEditor } from '../CohortTable/CellEditors/DomainSelec
 import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorCellEditor';
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
 import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
+import { ReturnDateCellEditor } from '../CohortTable/CellEditors/ReturnDateCellEditor';
+
 import LogicalExpressionCellRenderer from '../CohortTable/CellRenderers/LogicalExpressionCellRenderer';
 
 export const columnNameToApplicablePhenotypeMapping = {
@@ -213,7 +215,7 @@ export const defaultColumns = [
     headerName: 'Return Date',
     width: 250,
     editable: true,
-    cellEditor: DescriptionCellEditor,
+    cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,
     cellRenderer: DescriptionCellRenderer,
   },
