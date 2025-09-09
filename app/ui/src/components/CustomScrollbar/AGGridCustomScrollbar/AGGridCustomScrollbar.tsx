@@ -298,15 +298,7 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
         
         // Shift + scroll - convert vertical scrolling to horizontal
         if (event.shiftKey) {
-          console.log('🖱️ Mouse wheel with Shift detected:', {
-            deltaY: event.deltaY,
-            deltaX: event.deltaX,
-            deltaMode: event.deltaMode,
-            ctrlKey: event.ctrlKey,
-            shiftKey: event.shiftKey,
-            wheelDelta: (event as any).wheelDelta,
-            detail: (event as any).detail
-          });
+          
           
           event.preventDefault();
           event.stopPropagation();
@@ -332,26 +324,13 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
               scrollAmount = deltaValue * 3;
             }
             
-            console.log('🖱️ Scroll calculation:', {
-              isMouseWheel,
-              originalDeltaY: event.deltaY,
-              originalDeltaX: event.deltaX,
-              usedDeltaValue: deltaValue,
-              calculatedScrollAmount: scrollAmount,
-              elementScrollWidth: horizontalScrollElement.scrollWidth,
-              elementClientWidth: horizontalScrollElement.clientWidth
-            });
+
             
             const currentScrollLeft = horizontalScrollElement.scrollLeft;
             const maxScrollLeft = horizontalScrollElement.scrollWidth - horizontalScrollElement.clientWidth;
             const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, currentScrollLeft + scrollAmount));
             
-            console.log('🖱️ Scroll update:', {
-              currentScrollLeft,
-              maxScrollLeft,
-              newScrollLeft,
-              change: newScrollLeft - currentScrollLeft
-            });
+
             
             horizontalScrollElement.scrollLeft = newScrollLeft;
             
@@ -428,7 +407,6 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
       
       // Add wheel event listener for horizontal scrollbar keyboard modifiers
       if (orientation === 'horizontal') {
-        console.log('🔗 Adding wheel event listener for horizontal scrollbar');
         target.addEventListener('wheel', handleWheelWithModifiers, { passive: false });
       }
       
@@ -455,7 +433,6 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
         const pollInterval = (scrollableElement as any)._pollInterval;
         if (pollInterval) {
           clearInterval(pollInterval);
-          console.log(`Cleared polling interval for ${orientation} scrollbar`);
         }
         
         if (resizeObserver) {
