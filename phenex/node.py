@@ -313,13 +313,14 @@ class Node:
                 logger.info(
                     f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
                 )
-                self.table = self._execute(tables)
+                table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
                 con.create_table(
-                    self.table,
+                    table,
                     self.name,
                     overwrite=overwrite,
                 )
+                self.table = con.get_dest_table(self.name)
                 self._update_current_hash()
             else:
                 logger.info(

@@ -116,6 +116,7 @@ class Cohort:
         # Create HStackNodes for characteristics and outcomes
         self.characteristics_table_node = None
         self.outcomes_table_node = None
+        self.reporting_stage = None
         reporting_nodes = []
         if self.characteristics:
             self.characteristics_table_node = HStackNode(
@@ -128,8 +129,8 @@ class Cohort:
                 name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
             )
             reporting_nodes.append(self.outcomes_table_node)
-
-        self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
+        if reporting_nodes:
+            self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
 
         self._table1 = None
 
@@ -418,6 +419,31 @@ class HStackNode(Node):
 
 
 class SubsetTable(Node):
+    """
+    A compute node that creates a subset of a domain table by joining it with an index phenotype.
+
+    This node takes a table from a specific domain and filters it to include only records for patients who have entries in the index phenotype table. The resulting table contains all original columns from the domain table plus an INDEX_DATE column from the index phenotype.
+
+    Parameters:
+        name: Name identifier for this subset table node.
+        domain: The domain name (e.g., 'PERSON', 'CONDITION_OCCURRENCE') of the table to subset.
+        index_phenotype: The phenotype used to filter the domain table. Only patients present in this phenotype's table will be included in the subset.
+
+    Attributes:
+        index_phenotype: The phenotype used for subsetting.
+        domain: The domain of the table being subset.
+
+    Example:
+        ```python
+        # Create a subset of the CONDITION_OCCURRENCE table based on diabetes patients
+        diabetes_subset = SubsetTable(
+            name="DIABETES_CONDITIONS",
+            domain="CONDITION_OCCURRENCE",
+            index_phenotype=diabetes_phenotype
+        )
+        ```
+    """
+
     def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
         super(SubsetTable, self).__init__(name=name)
         self.add_children(index_phenotype)
