@@ -2,7 +2,7 @@
   position: absolute;
   user-select: none;
   right: 30px;
-  top: 0px;
+  top: 10px;
   transition: all 0.3s ease;
   z-index: 1001;
 }
