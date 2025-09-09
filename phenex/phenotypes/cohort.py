@@ -287,13 +287,14 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
         self.subset_tables_index = tables = self.get_subset_tables_index(tables)
-        self.reporting_stage.execute(
-            tables=tables,
-            con=con,
-            overwrite=overwrite,
-            n_threads=n_threads,
-            lazy_execution=lazy_execution,
-        )
+        if self.reporting_stage:
+            self.reporting_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
 
         return self.index_table
 
@@ -452,8 +453,18 @@ class SubsetTable(Node):
 
     def _execute(self, tables: Dict[str, Table]):
         table = tables[self.domain]
-        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
-        columns = list(set(["INDEX_DATE"] + table.columns))
+        index_table = self.index_phenotype.table
+
+        # Check if EVENT_DATE exists in the index table
+        if "EVENT_DATE" in index_table.columns:
+            index_table = index_table.rename({"INDEX_DATE": "EVENT_DATE"})
+            columns = list(set(["INDEX_DATE"] + table.columns))
+        else:
+            logger.warning(
+                f"EVENT_DATE column not found in index_phenotype table for SubsetTable '{self.name}'. INDEX_DATE will not be set."
+            )
+            columns = table.columns
+
         subset_table = table.inner_join(index_table, "PERSON_ID")
         subset_table = subset_table.select(columns)
         return subset_table
