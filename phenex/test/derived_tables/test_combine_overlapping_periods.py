@@ -90,8 +90,8 @@ def test_combine_overlapping_periods():
     expected_table = create_expected_data(con)
 
     cop = CombineOverlappingPeriods(
-        dest_domain="HOSPITALIZATION",
-        source_domain="VISIT_OCCURRENCE",
+        name="HOSPITALIZATION",
+        domain="VISIT_OCCURRENCE",
     )
 
     result = cop.execute(tables={"VISIT_OCCURRENCE": visit_occurrence_table})

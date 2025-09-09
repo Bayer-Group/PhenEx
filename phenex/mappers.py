@@ -82,6 +82,7 @@ class OMOPVisitOccurrenceTable(PhenexObservationPeriodTable):
     JOIN_KEYS = {
         "OMOPPersonTable": ["PERSON_ID"],
         "OMOPConditionOccurenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
+        "OMOPDrugExposureTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
         "OMOPVisitDetailTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
     }
     DEFAULT_MAPPING = {
@@ -91,11 +92,16 @@ class OMOPVisitOccurrenceTable(PhenexObservationPeriodTable):
     }
 
 
-class OMOPVisitDetailTable(PhenexTable):
+class OMOPVisitDetailTable(PhenexObservationPeriodTable):
     NAME_TABLE = "VISIT_DETAIL"
     RELATIONSHIPS = {
         "OMOPPersonTable": ["PERSON_ID"],
         "OMOPVisitOccurrenceTable": ["PERSON_ID", "VISIT_OCCURRENCE_ID"],
+    }
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "START_DATE": "VISIT_DETAIL_START_DATE",
+        "END_DATE": "VISIT_DETAIL_END_DATE",
     }
 
 
@@ -183,6 +189,10 @@ class OMOPDrugExposureTable(CodeTable):
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "DRUG_EXPOSURE_START_DATE",
         "CODE": "DRUG_CONCEPT_ID",
+    }
+
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
     }
 
 

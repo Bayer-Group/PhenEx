@@ -29,16 +29,15 @@ class DeathPhenotype(Phenotype):
         ] = None,
         **kwargs
     ):
+        super(DeathPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
-        self.children = []
         self.relative_time_range = relative_time_range
         if self.relative_time_range is not None:
             if isinstance(self.relative_time_range, RelativeTimeRangeFilter):
                 self.relative_time_range = [self.relative_time_range]
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
-                    self.children.append(rtr.anchor_phenotype)
-        super(DeathPhenotype, self).__init__(name=name, **kwargs)
+                    self.add_children(rtr.anchor_phenotype)
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
@@ -49,5 +48,7 @@ class DeathPhenotype(Phenotype):
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
-        death_table = death_table.mutate(VALUE=ibis.null())
-        return death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
+        death_table = death_table.mutate(VALUE=ibis.null("int32"))
+        death_table = death_table.mutate(BOOLEAN=True)
+        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
+        return death_table.select(["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"])

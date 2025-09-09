@@ -735,7 +735,6 @@ class CohortWithUDPTestGenerator(CohortTestGenerator):
     """
 
     def define_cohort(self):
-
         def user_defined_function(mapped_tables):
             df = pd.DataFrame()
             df["PERSON_ID"] = ["P0", "P1", "P2", "P3", "P4"]

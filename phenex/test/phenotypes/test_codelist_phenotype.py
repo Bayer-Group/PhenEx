@@ -1097,6 +1097,224 @@ def test_categorical_filter_is_null_phenotype():
     tg.run_tests()
 
 
+def test_return_value():
+    tg = CodelistPhenotypeReturnValueTestGenerator()
+    tg.run_tests()
+
+
+def test_return_value_reduced():
+    tg = CodelistPhenotypeReturnValueReducedTestGenerator()
+    tg.run_tests()
+
+
+class CodelistPhenotypeReturnValueTestGenerator(PhenotypeTestGenerator):
+    """Test the return_value parameter functionality"""
+
+    name_space = "clpt_return_value"
+    test_values = True  # Enable value testing
+    test_date = True  # Enable date testing
+    value_datatype = str  # Set value datatype to str since we're returning codes
+
+    def define_input_tables(self):
+        # Create test data with multiple codes on the same date for some patients
+        # This will help test the return_value='all' functionality
+
+        # P1 has 2 different codes on the same date (2022-01-01) - should test return_value='all'
+        # P2 has codes on different dates - should test first/last selection
+        # P3 has 3 different codes on the same date (2022-01-02) - should test return_value='all'
+
+        event_date_1 = datetime.date(2022, 1, 1)
+        event_date_2 = datetime.date(2022, 1, 2)
+        event_date_3 = datetime.date(2022, 1, 3)
+
+        df = pd.DataFrame.from_dict(
+            {
+                "CODE": [
+                    "c1",
+                    "c2",
+                    "c1",
+                    "c3",
+                    "c1",
+                    "c2",
+                    "c3",
+                ],  # Different codes to test return_value
+                "PERSON_ID": ["P1", "P1", "P2", "P2", "P3", "P3", "P3"],
+                "CODE_TYPE": ["ICD10CM"] * 7,
+                "EVENT_DATE": [
+                    event_date_1,
+                    event_date_1,
+                    event_date_1,
+                    event_date_3,
+                    event_date_2,
+                    event_date_2,
+                    event_date_2,
+                ],
+            }
+        )
+
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+        event_date_1 = datetime.date(2022, 1, 1)
+        event_date_2 = datetime.date(2022, 1, 2)
+        event_date_3 = datetime.date(2022, 1, 3)
+
+        # Test 1: return_date='all', return_value='all' - should return all rows with codes as values
+        t1 = {
+            "name": "all_date_all_value",
+            "return_date": "all",
+            "return_value": "all",
+            "persons": ["P1", "P1", "P2", "P2", "P3", "P3", "P3"],  # All original rows
+            "dates": [
+                event_date_1,
+                event_date_1,
+                event_date_1,
+                event_date_3,
+                event_date_2,
+                event_date_2,
+                event_date_2,
+            ],
+            "values": [
+                "c1",
+                "c2",
+                "c1",
+                "c3",
+                "c1",
+                "c2",
+                "c3",
+            ],  # The matching codes as values
+        }
+
+        # Test 2: return_date='first', return_value='all' - should return all codes on first date
+        t2 = {
+            "name": "first_date_all_value",
+            "return_date": "first",
+            "return_value": "all",
+            "persons": [
+                "P2",
+                "P3",
+                "P3",
+                "P3",
+                "P1",
+                "P1",
+            ],  # All rows on first date for each person (order may vary)
+            "dates": [
+                event_date_1,
+                event_date_2,
+                event_date_2,
+                event_date_2,
+                event_date_1,
+                event_date_1,
+            ],  # First dates
+            "values": [
+                "c1",
+                "c1",
+                "c2",
+                "c3",
+                "c1",
+                "c2",
+            ],  # Codes on first date for each person
+        }
+
+        test_infos = [t1, t2]
+
+        # Create phenotypes for each test
+        for test_info in test_infos:
+            name = test_info["name"]
+            return_date = test_info.get("return_date", "first")
+            return_value = test_info.get("return_value", None)
+
+            codelist = Codelist(
+                ["c1", "c2", "c3"]
+            )  # Include all codes in the test data
+
+            test_info["phenotype"] = CodelistPhenotype(
+                name=name,
+                domain="CONDITION_OCCURRENCE",
+                codelist=codelist,
+                return_date=return_date,
+                return_value=return_value,
+            )
+
+        return test_infos
+
+
+class CodelistPhenotypeReturnValueReducedTestGenerator(PhenotypeTestGenerator):
+    """Test the return_value=None parameter functionality (reduced output)"""
+
+    name_space = "clpt_return_value_reduced"
+    test_values = False  # Don't test values since they are null
+    test_date = True  # Enable date testing
+
+    def define_input_tables(self):
+        # Same input data as the main test
+        event_date_1 = datetime.date(2022, 1, 1)
+        event_date_2 = datetime.date(2022, 1, 2)
+        event_date_3 = datetime.date(2022, 1, 3)
+
+        df = pd.DataFrame.from_dict(
+            {
+                "CODE": ["c1", "c1", "c1", "c1", "c1", "c1", "c1"],
+                "PERSON_ID": ["P1", "P1", "P2", "P2", "P3", "P3", "P3"],
+                "CODE_TYPE": ["ICD10CM"] * 7,
+                "EVENT_DATE": [
+                    event_date_1,
+                    event_date_1,
+                    event_date_1,
+                    event_date_3,
+                    event_date_2,
+                    event_date_2,
+                    event_date_2,
+                ],
+                "VALUE": [10, 20, 30, 40, 50, 60, 70],
+            }
+        )
+
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+        event_date_1 = datetime.date(2022, 1, 1)
+        event_date_2 = datetime.date(2022, 1, 2)
+        event_date_3 = datetime.date(2022, 1, 3)
+
+        # Test: return_date='first', return_value=None (default) - should return first date, one row per person
+        t1 = {
+            "name": "first_date_default_value",
+            "return_date": "first",
+            "return_value": None,
+            "persons": [
+                "P3",
+                "P2",
+                "P1",
+            ],  # One row per person on first date (note: order may vary)
+            "dates": [
+                event_date_2,
+                event_date_1,
+                event_date_1,
+            ],  # First date for each person
+        }
+
+        test_infos = [t1]
+
+        # Create phenotypes for each test
+        for test_info in test_infos:
+            name = test_info["name"]
+            return_date = test_info.get("return_date", "first")
+            return_value = test_info.get("return_value", None)
+
+            codelist = Codelist(["c1"])
+
+            test_info["phenotype"] = CodelistPhenotype(
+                name=name,
+                domain="CONDITION_OCCURRENCE",
+                codelist=codelist,
+                return_date=return_date,
+                return_value=return_value,
+            )
+
+        return test_infos
+
+
 if __name__ == "__main__":
     test_categorical_filter_is_null_phenotype()
     test_categorical_filter_logic()
@@ -1106,3 +1324,5 @@ if __name__ == "__main__":
     test_anchor_phenotype()
     test_return_date()
     test_fuzzy_match()
+    test_return_value()
+    test_return_value_reduced()
