@@ -138,20 +138,9 @@ class BinPhenotype(Phenotype):
             # Validate that all values are either lists of strings or Codelist objects
             for bin_name, values in self.value_mapping.items():
                 if isinstance(values, Codelist):
-<<<<<<< HEAD
-                    # Validate that the Codelist has a valid codelist attribute
-                    if not hasattr(values, "codelist") or not isinstance(
-                        values.codelist, list
-                    ):
-                        raise ValueError(
-                            f"Codelist for bin '{bin_name}' must have a valid codelist attribute"
-                        )
-                    if not all(isinstance(v, str) for v in values.codelist):
-=======
                     # Validate that the Codelist can be converted to a list
                     values_list = values.to_list()
                     if not all(isinstance(v, str) for v in values_list):
->>>>>>> main
                         raise ValueError(
                             f"All values in Codelist for bin '{bin_name}' must be strings"
                         )
@@ -252,15 +241,9 @@ class BinPhenotype(Phenotype):
 
         # Add conditions for each bin and its associated values
         for bin_name, values in self.value_mapping.items():
-<<<<<<< HEAD
-            # Check if values is a Codelist and extract the codelist, otherwise use as list
-            if isinstance(values, Codelist):
-                values_list = values.codelist
-=======
             # Check if values is a Codelist and convert to list, otherwise use as list
             if isinstance(values, Codelist):
                 values_list = values.to_list()
->>>>>>> main
             else:
                 values_list = values
 

@@ -195,11 +195,6 @@ def test_discrete_bin_phenotype():
     spg.run_tests()
 
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    test_binned_age_phenotype()
-    test_discrete_bin_phenotype()
-=======
 class DiscreteBinPhenotypeWithCodelistsTestGenerator(PhenotypeTestGenerator):
     """Test BinPhenotype with Codelist objects in value_mapping"""
 
@@ -302,4 +297,3 @@ if __name__ == "__main__":
     test_binned_age_phenotype()
     test_discrete_bin_phenotype()
     test_discrete_bin_phenotype_with_codelists()
->>>>>>> main
