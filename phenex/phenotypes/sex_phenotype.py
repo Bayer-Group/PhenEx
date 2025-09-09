@@ -8,10 +8,11 @@ class SexPhenotype(CategoricalPhenotype):
     SexPhenotype represents a sex-based phenotype. It returns the sex of individuals in the VALUE column and optionally filters based on identified sex. DATE is not defined for SexPhenotype.
 
     Parameters:
-        name: Name of the phenotype, default is 'sex'.
+        name: Name of the phenotype, default is 'SEX'.
         domain: Domain of the phenotype, default is 'PERSON'.
-        allowed_values: List of allowed values for the categorical variable.
-        column_name: Name of the column containing the required categorical variable. Default is 'SEX'.
+        categorical_filter: A CategoricalFilter instance for filtering based on sex values.
+                          If None, a default filter with column_name='SEX' is created.
+        **kwargs: Additional keyword arguments passed to the parent CategoricalPhenotype class.
 
     Examples:
 
@@ -21,13 +22,16 @@ class SexPhenotype(CategoricalPhenotype):
     sex = SexPhenotype()
     ```
 
-    Example: Extract all male patients from the database.
+    Example: Extract patients with specific sex values using a custom filter.
     ```python
     from phenex.phenotypes import SexPhenotype
-    sex = SexPhenotype(
-        allowed_values=['M'],
-        column_name='GENDER_SOURCE_VALUE'
-        )
+    from phenex.filters import CategoricalFilter
+
+    male_filter = CategoricalFilter(
+        column_name='GENDER_SOURCE_VALUE',
+        allowed_values=['M']
+    )
+    sex = SexPhenotype(categorical_filter=male_filter)
     ```
     """
 
