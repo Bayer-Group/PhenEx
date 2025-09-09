@@ -182,14 +182,23 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
         const deltaY = e.clientY - dragStart.y;
         const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
         const thumbRange = 100 - ((scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
-        const scrollRatio = deltaY / (scrollableElement.clientHeight * (thumbRange / 100));
+        
+        // Calculate the actual scrollbar track height accounting for margins
+        const actualTrackHeight = scrollInfo.clientHeight - marginTop - marginBottom;
+        
+        const scrollRatio = deltaY / (actualTrackHeight * (thumbRange / 100));
         
         scrollableElement.scrollTop = dragStart.scrollTop + (scrollRatio * scrollRange);
       } else {
         const deltaX = e.clientX - dragStart.x;
         const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
         const thumbRange = 100 - ((scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
-        const scrollRatio = deltaX / (scrollableElement.clientWidth * (thumbRange / 100));
+        
+        // Calculate the actual scrollbar track width accounting for margins
+        const actualTrackWidth = scrollInfo.clientWidth - marginLeft - marginRight;
+                
+        // Use the actual track width for sensitivity calculation
+        const scrollRatio = deltaX / (actualTrackWidth * (thumbRange / 100));
         
         scrollableElement.scrollLeft = dragStart.scrollLeft + (scrollRatio * scrollRange);
       }
