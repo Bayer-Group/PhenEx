@@ -1,0 +1,655 @@
+CONCEPT_ID,CONCEPT_CODE,DESCRIPTION,CODELIST,VOCABULARY_ID
+38001109,281,"Acute myocardial infarction, discharged alive w CC",MYOCARDIAL_INFARCTION,SNOMED
+38001113,285,"Acute myocardial infarction, expired w/o CC/MCC",MYOCARDIAL_INFARCTION,SNOMED
+40298000,137762001,FH myocardial infarction male first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+40328012,160368008,FH myocardial infarction female first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+40398902,194871009,Postoperative transmural myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+36309015,LA20365-5,History of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+37109912,723860000,Arrhythmia due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+38001108,280,"Acute myocardial infarction, discharged alive w MCC",MYOCARDIAL_INFARCTION,SNOMED
+40398907,194876004,"Postoperative myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+1199824,10079263,Acute myocardial infarction type 2,MYOCARDIAL_INFARCTION,SNOMED
+1326588,I21.9,"Acute myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+2617496,G8006,Acute myocardial infarction: patient documented to have received aspirin at arrival,MYOCARDIAL_INFARCTION,SNOMED
+2617523,G8033,Prior myocardial infarction - coronary artery disease patient documented to be on beta-blocker therapy,MYOCARDIAL_INFARCTION,SNOMED
+2617525,G8035,Clinician documented that prior myocardial infarction - coronary artery disease patient was not eligible candidate for beta-blocker therapy measure,MYOCARDIAL_INFARCTION,SNOMED
+3521098,677131000000105,"Postoperative myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+3522581,46001000000109,Acute non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3533921,581521000000109,Anterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3540288,677121000000108,Postoperative transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+3654467,836295007,Acute myocardial infarction of inferolateral wall with posterior extension,MYOCARDIAL_INFARCTION,SNOMED
+4064348,164867002,EKG: old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4110962,194859003,Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+4119949,233839009,Old anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4121467,233840006,Old inferior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4124686,233843008,Silent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4147223,30277009,Rupture of ventricle due to acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4163874,399211009,History of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4267568,62695002,Acute anteroseptal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227444,10000894,"Acute myocardial infarction, of anterolateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227447,10000897,"Acute myocardial infarction, of inferolateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227453,10000903,"Acute myocardial infarction, of inferoposterior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227456,10000906,"Acute myocardial infarction, of other anterior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227462,10000912,"Acute myocardial infarction, of other lateral wall",MYOCARDIAL_INFARCTION,SNOMED
+35227467,10000917,"Acute myocardial infarction, of other specified sites, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227477,10000927,"Acute myocardial infarction, true posterior wall infarction, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227485,10064347,Non ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227620,10032467,"Other sequelae of myocardial infarction, not elsewhere classified",MYOCARDIAL_INFARCTION,SNOMED
+35227633,10057491,Age indeterminate posterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227636,10057544,Age indeterminate inferoposterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227644,10057552,Inferposterial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44782712,23311000119105,Acute myocardial infarction due to right coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+44820857,410.0,"Acute myocardial infarction, of anterolateral wall",MYOCARDIAL_INFARCTION,SNOMED
+44834719,410.40,"Acute myocardial infarction of other inferior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+45430134,G307100,Acute non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45452897,9hM1.00,Excepted from myocardial infarction quality indicators: patient unsuitable,MYOCARDIAL_INFARCTION,SNOMED
+45478639,3232.00,ECG: old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45511437,ZV71900,[V]Observation for suspected myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45523372,G363.00,Rupture of cardiac wall without haemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45533436,I21.11,ST elevation (STEMI) myocardial infarction involving right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+45572081,I21.4,Acute subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45605782,I23.4,Rupture of chordae tendineae as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45605783,I23.6,"Thrombosis of atrium, auricular appendage, and ventricle as current complications following acute myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+45755428,I23,Certain current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45766113,703210007,Subsequent ST segment elevation myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45766115,703212004,Acute myocardial infarction during procedure,MYOCARDIAL_INFARCTION,SNOMED
+45766212,703326006,Mitral valve regurgitation due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45766241,703360004,Subsequent non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45771327,703330009,Mitral valve regurgitation due to acute myocardial infarction with papillary muscle and chordal rupture,MYOCARDIAL_INFARCTION,SNOMED
+44784623,78741000119103,Acute coronary artery occlusion not resulting in myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44819699,410.20,"Acute myocardial infarction of inferolateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44819701,410.7,"Acute myocardial infarction, subendocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+44826635,410.30,"Acute myocardial infarction of inferoposterior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44827782,410.11,"Acute myocardial infarction of other anterior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+45423524,G380.00,Postoperative transmural myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45433415,G305.00,Lateral myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45436735,G308.00,Inferior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45496744,G32..00,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45513463,Gyu3400,[X]Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45520059,G361.00,Atrial septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45523369,G30X000,Acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45572082,I22.9,Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45596192,I22.0,Subsequent myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45766075,703164000,Acute anterior ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45773170,703209002,Subsequent ST segment elevation myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+438172,194863005,Atrial septal defect due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+438438,70211005,Acute myocardial infarction of anterolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+765132,380001000004106,Subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3519352,512751000000100,History of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3522488,44001000000101,Acute non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3533920,581511000000103,Other specified anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3555079,297401000000100,Electrocardiogram shows anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3555082,297461000000101,Electrocardiogram shows inferior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3557258,526801000000103,Excepted from myocardial infarction quality indicators: patient unsuitable,MYOCARDIAL_INFARCTION,SNOMED
+3655133,846683001,Acute ST segment elevation myocardial infarction due to occlusion of intermediate artery,MYOCARDIAL_INFARCTION,SNOMED
+3661643,868220007,Acute ST segment elevation myocardial infarction due to occlusion of mid portion of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4030582,129574000,Postoperative myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4110951,194799007,Anterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4126801,304914007,Acute Q wave myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4151770,315622004,FH myocardial infarction female first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+4176766,428752002,Recent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4324413,70998009,Acute myocardial infarction of posterobasal wall,MYOCARDIAL_INFARCTION,SNOMED
+35207685,I21.4,Non-ST elevation (NSTEMI) myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207688,I22.8,Subsequent ST elevation (STEMI) myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+35207694,I23.4,Rupture of chordae tendineae as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227446,10000896,"Acute myocardial infarction, of inferolateral wall",MYOCARDIAL_INFARCTION,SNOMED
+35227452,10000902,"Acute myocardial infarction, of inferoposterior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227634,10057492,Age indeterminate septal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227647,10058904,Posteroinferior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35610087,1089431000000107,Postoperative nontransmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35610091,1089451000000100,Acute nontransmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+435561,194861007,Certain current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+604427,896691006,Acute ST segment elevation myocardial infarction due to occlusion of circumflex branch of left coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+604429,896696001,Acute ST segment elevation myocardial infarction of apex of heart,MYOCARDIAL_INFARCTION,SNOMED
+1569129,I21.2,ST elevation (STEMI) myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+3534039,582991000000108,Other acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3535325,603911000000102,Inferior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3581933,526811000000101,Excepted from myocardial infarction quality indicators: patient unsuitable,MYOCARDIAL_INFARCTION,SNOMED
+3661547,846668006,Acute ST segment elevation myocardial infarction due to occlusion of diagonal branch of anterior descending branch of left coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4064609,164865005,EKG: myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4065281,164866006,ECG: no myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4108217,194856005,Subsequent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4108669,194809007,Acute myocardial infarction of atrium,MYOCARDIAL_INFARCTION,SNOMED
+4108678,194862000,Hemopericardium due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4110956,194811003,Acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4119947,233835003,Acute widespread myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4151046,282006,Acute myocardial infarction of basal-lateral wall,MYOCARDIAL_INFARCTION,SNOMED
+4178129,52035003,Acute anteroapical myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4206867,311796008,Postoperative subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4243372,59063002,Acute myocardial infarction of apical-lateral wall,MYOCARDIAL_INFARCTION,SNOMED
+4296653,401303003,Acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35205180,10000891,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207687,I22.1,Subsequent ST elevation (STEMI) myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+35207690,I23.0,Hemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207691,I23.1,Atrial septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207698,I24.0,Acute coronary thrombosis not resulting in myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207702,I25.2,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227442,10000892,"Acute myocardial infarction, of anterolateral wall",MYOCARDIAL_INFARCTION,SNOMED
+35227457,10000907,"Acute myocardial infarction, of other anterior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227479,10000929,"Acute myocardial infarction, unspecified site, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227630,10052517,Age indeterminate posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227648,10059869,Apical myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35228358,10036401,Postmyocardial infarction syndrome,MYOCARDIAL_INFARCTION,SNOMED
+35610089,1089441000000103,Postoperative transmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35611571,12238151000119107,Acute ST segment elevation myocardial infarction of inferoposterior wall,MYOCARDIAL_INFARCTION,SNOMED
+43020461,285991000119100,Acute ST segment elevation myocardial infarction involving left main coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+44784441,698593009,History of non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44803922,717541000000106,Exception reporting - myocardial infarction quality indicators,MYOCARDIAL_INFARCTION,SNOMED
+44825428,410.4,"Acute myocardial infarction, of other inferior wall",MYOCARDIAL_INFARCTION,SNOMED
+44825430,410.91,"Acute myocardial infarction of unspecified site, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44832375,410.50,"Acute myocardial infarction of other lateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44832376,410.82,"Acute myocardial infarction of other specified sites, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44834721,410.52,"Acute myocardial infarction of other lateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44834724,410.81,"Acute myocardial infarction of other specified sites, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+45423525,G384.00,Postoperative subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45436739,G312.00,Coronary thrombosis not resulting in myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45453322,G306.00,True posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45490177,G383.00,Postoperative transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45513426,G350.00,Subsequent myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45533437,I23.8,Other current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45538371,I23.3,Rupture of cardiac wall without haemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45548009,I23.2,Ventricular septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45591454,I21.0,Acute transmural myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45766116,703213009,Acute ST segment elevation myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+45885994,10075299,ECG signs of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+36685536,1099031000000101,Assessment using Thrombolysis In Myocardial Infarction risk score for unstable angina or non-ST-segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+37109911,723859005,Pulmonary embolism due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40297747,142027006,ECG: old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40323879,155319007,Acute Q wave myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40378867,182761001,Diabetes mellitus insulin-glucose infusion in acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40398829,194805001,Acute Q wave myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+436706,58612006,Acute myocardial infarction of lateral wall,MYOCARDIAL_INFARCTION,SNOMED
+604285,776219771000119107,History of myocardial infarction due to demand ischemia,MYOCARDIAL_INFARCTION,SNOMED
+606159,1142308000,Mitral valve regurgitation due to acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1034820,LP98863-1,Date of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1199955,10079262,Acute myocardial infarction type 1,MYOCARDIAL_INFARCTION,SNOMED
+1569127,I21.0,ST elevation (STEMI) myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+1569131,I23,Certain current complications following ST elevation (STEMI) and non-ST elevation (NSTEMI) myocardial infarction (within the 28 day period),MYOCARDIAL_INFARCTION,SNOMED
+2617499,G8009,Acute myocardial infarction: patient documented to have received beta-blocker at arrival,MYOCARDIAL_INFARCTION,SNOMED
+2617500,G8010,Acute myocardial infarction: patient not documented to have received beta-blocker at arrival,MYOCARDIAL_INFARCTION,SNOMED
+3550822,45881000000101,Acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3581931,526791000000102,Excepted from myocardial infarction quality indicators: informed dissent,MYOCARDIAL_INFARCTION,SNOMED
+3661504,840316004,Acute ST segment elevation myocardial infarction due to distal left anterior descending coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+3661645,868225002,Acute ST segment elevation myocardial infarction due to occlusion of posterior descending branch of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4108218,194858006,Subsequent myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+4110953,194801005,Lateral myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4138833,32574007,"Past myocardial infarction diagnosed on ECG AND/OR other special investigation, but currently presenting no symptoms",MYOCARDIAL_INFARCTION,SNOMED
+4179525,429391004,New myocardial infarction compared to prior study,MYOCARDIAL_INFARCTION,SNOMED
+4197719,315287002,Diabetes mellitus insulin-glucose infusion in acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4200113,314207007,Non-Q wave myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4209542,311795007,Postoperative transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+4303359,79009004,Acute myocardial infarction of septum,MYOCARDIAL_INFARCTION,SNOMED
+35205196,10049768,Silent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227459,10000909,"Acute myocardial infarction, of other inferior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227619,10030272,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227631,10053558,Subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227646,10058903,Age indeterminate anterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+43530755,461000119108,History of myocardial infarction in last eight weeks,MYOCARDIAL_INFARCTION,SNOMED
+44782769,17531000119105,Acute myocardial infarction due to left coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+44802572,515711000000105,Family history of myocardial infarction in second degree relative less than 50 years,MYOCARDIAL_INFARCTION,SNOMED
+44802642,515741000000106,Family history of myocardial infarction in first degree relative less than 60 years,MYOCARDIAL_INFARCTION,SNOMED
+44803654,715971000000103,Excepted from myocardial infarction quality indicators - informed dissent,MYOCARDIAL_INFARCTION,SNOMED
+44803655,715981000000101,Excepted from myocardial infarction quality indicators - patient unsuitable,MYOCARDIAL_INFARCTION,SNOMED
+44830079,410.5,"Acute myocardial infarction, of other lateral wall",MYOCARDIAL_INFARCTION,SNOMED
+44831238,411.81,Acute coronary occlusion without myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44834718,410.1,"Acute myocardial infarction, of other anterior wall",MYOCARDIAL_INFARCTION,SNOMED
+44834722,410.6,"Acute myocardial infarction, true posterior wall infarction",MYOCARDIAL_INFARCTION,SNOMED
+44835928,410.90,"Acute myocardial infarction of unspecified site, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+45433418,G364.00,Rupture of chordae tendinae as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45456735,G32..12,Personal history of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45476476,9hM..00,Exception reporting: myocardial infarction quality indicators,MYOCARDIAL_INFARCTION,SNOMED
+45476933,G35..00,Subsequent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45485022,12CC.00,FH myocardial infarction female first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+45486898,G30X.00,Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45488425,14AT.00,History of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45506683,G301z00,Anterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45510079,Gyu3100,[X]Other current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45552781,I22.1,Subsequent myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+45576865,I21.09,ST elevation (STEMI) myocardial infarction involving other coronary artery of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+45766151,703253007,Acute ST segment elevation myocardial infarction of inferior wall involving right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+45884824,LA17561-4,Medical-ST-elevation myocardial infarction (STEMI),MYOCARDIAL_INFARCTION,SNOMED
+37109910,723858002,Ventricular aneurysm due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+37109913,723861001,Cardiogenic shock unrelated to mechanical complications as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40297746,142026002,ECG: no myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40394119,195547003,[X]Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+40524342,315821009,[V] Family history of: [ischemic heart disease] or [myocardial infarction],MYOCARDIAL_INFARCTION,SNOMED
+43533187,C9606,"Percutaneous transluminal revascularization of acute total/subtotal occlusion during acute myocardial infarction, coronary artery or coronary artery bypass graft, any combination of drug-eluting intracoronary stent, atherectomy and angioplasty, includi...",MYOCARDIAL_INFARCTION,SNOMED
+44798535,444321000000101,[X]Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+44819700,410.21,"Acute myocardial infarction of inferolateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44819702,410.9,"Acute myocardial infarction, unspecified site",MYOCARDIAL_INFARCTION,SNOMED
+44826636,410.80,"Acute myocardial infarction of other specified sites, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44833561,410.31,"Acute myocardial infarction of inferoposterior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+45466861,G36..00,Certain current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45476932,G30z.00,Acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45523371,G360.00,Haemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45562340,I21.01,ST elevation (STEMI) myocardial infarction involving left main coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+45567165,I24.0,Coronary thrombosis not resulting in myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45596190,I21.2,Acute transmural myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+45766114,703211006,Subsequent ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45766150,703252002,Acute myocardial infarction of anterior wall involving right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+604430,896697005,Acute ST segment elevation myocardial infarction of right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+1199076,10079319,Periprocedural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1326591,I21.A9,Other myocardial infarction type,MYOCARDIAL_INFARCTION,SNOMED
+2107247,33545,"Repair of postinfarction ventricular septal defect, with or without myocardial resection",MYOCARDIAL_INFARCTION,SNOMED
+3534040,583001000000107,Other acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3654465,836293000,Acute myocardial infarction of right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+3661520,840609007,Acute ST segment elevation myocardial infarction due to occlusion of anterior descending branch of left coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+3661524,840680009,Acute ST segment elevation myocardial infarction due to occlusion of septal branch of anterior descending branch of left coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4110955,194810002,Other acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4206868,311797004,"Postoperative myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35207692,I23.2,Ventricular septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207693,I23.3,Rupture of cardiac wall without hemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207695,I23.5,Rupture of papillary muscle as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227417,10011104,Coronary occlusion without myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227463,10000913,"Acute myocardial infarction, of other lateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227469,10000919,"Acute myocardial infarction, of other specified sites, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227473,10000923,"Acute myocardial infarction, subendocardial infarction, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227491,10067273,Acute transmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227626,10052475,Age indeterminate myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227635,10057543,Age indeterminate inferolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227649,10066673,Transmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35228356,10036232,Post myocardial infarction pericarditis,MYOCARDIAL_INFARCTION,SNOMED
+35228357,10036233,Post myocardial infarction syndrome,MYOCARDIAL_INFARCTION,SNOMED
+36309521,LA24436-0,ST-segment elevation myocardial infarction (STEMI),MYOCARDIAL_INFARCTION,SNOMED
+36310216,LA28843-3,Heart attack (myocardial infarction),MYOCARDIAL_INFARCTION,SNOMED
+40398831,194807009,[X]Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+40587821,412771006,Acute posterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40761392,58291-6,"Mother, father, full-blooded sisters, full-blooded brothers, daughters, or sons ever have a heart attack or myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+312327,57054005,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+314666,1755008,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+439693,194802003,True posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+609068,16415081000119104,Supraventricular tachycardia following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1326589,I21.A,Other type of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1569128,I21.1,ST elevation (STEMI) myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+2617524,G8034,Prior myocardial infarction - coronary artery disease patient not documented to be on beta-blocker therapy,MYOCARDIAL_INFARCTION,SNOMED
+3520543,623341000000106,Acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3528915,412781000000102,[X]Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+3533922,581531000000106,Posterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3567269,297411000000103,Electrocardiogram shows posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3661503,840312002,Acute ST segment elevation myocardial infarction due to mid left anterior descending coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+3661642,868217004,Acute ST segment elevation myocardial infarction due to occlusion of distal portion of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4051874,15990001,Acute myocardial infarction of posterolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+4108215,194821006,Coronary thrombosis not resulting in myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4108219,194866002,Rupture of chordae tendinae due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4108677,194857001,Subsequent myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+4108679,194865003,Rupture of cardiac wall without hemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4253065,73999000,Posterior myocardial infarction on electrocardiogram,MYOCARDIAL_INFARCTION,SNOMED
+4270024,401314000,Acute non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4322145,71023004,Pericarditis secondary to acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207686,I22.0,Subsequent ST elevation (STEMI) myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+35227451,10000901,"Acute myocardial infarction, of inferoposterior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227455,10000905,"Acute myocardial infarction, of other anterior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227490,10066645,Acute myocardial reinfarction,MYOCARDIAL_INFARCTION,SNOMED
+35227627,10052514,Age indeterminate anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227642,10057550,Posterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227650,10068109,Anterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+36307799,LA27838-4,"Coronary artery disease (CAD) (e.g., angina, myocardial infarction, and atherosclerotic heart disease (ASHD))",MYOCARDIAL_INFARCTION,SNOMED
+36310727,LA24434-5,Non-ST-segment elevation myocardial infarction (NSTEMI),MYOCARDIAL_INFARCTION,SNOMED
+36685541,1099111000000105,Thrombolysis In Myocardial Infarction risk score for unstable angina or non-ST-segment-elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+38001112,284,"Acute myocardial infarction, expired w CC",MYOCARDIAL_INFARCTION,SNOMED
+40297994,137757002,FH: ischemic heart disease (& [myocardial infarction] or [coronary thrombosis]),MYOCARDIAL_INFARCTION,SNOMED
+40298004,137766003,FH myocardial infarction female first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+40328002,160359006,FH: Ischemic heart disease >60 (& [myocardial infarction] or [angina]),MYOCARDIAL_INFARCTION,SNOMED
+40328005,160361002,FH: ischemic heart disease (& [myocardial infarction] or [coronary thrombosis]),MYOCARDIAL_INFARCTION,SNOMED
+40394114,195542009,[X]Other current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40394118,195546007,[X]Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+40515857,311790002,Postoperative myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40572007,393588004,First myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40761439,58338-5,Ever told by doctor that you had a myocardial infarction or heart attack,MYOCARDIAL_INFARCTION,SNOMED
+46270161,15713041000119103,Acute ST segment elevation myocardial infarction of posterior wall,MYOCARDIAL_INFARCTION,SNOMED
+43528002,92941,"Percutaneous transluminal revascularization of acute total/subtotal occlusion during acute myocardial infarction, coronary artery or coronary artery bypass graft, any combination of intracoronary stent, atherectomy and angioplasty, including aspiration...",MYOCARDIAL_INFARCTION,SNOMED
+44795635,409621000000103,[X]Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+44797528,429641000000102,[X]Other current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44800526,471711000000109,[X]Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+44811406,883961000000109,Thrombolysis In Myocardial Infarction risk score for unstable angina or non-ST-segment-elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44819698,410.2,"Acute myocardial infarction, of inferolateral wall",MYOCARDIAL_INFARCTION,SNOMED
+44820864,412,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45423522,G30B.00,Acute posterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45426799,G382.00,Postoperative transmural myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+45433420,G38z.00,"Postoperative myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+45443329,G30y.00,Other acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45444835,12CD.00,FH myocardial infarction female first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+45470292,G381.00,Postoperative transmural myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+45520056,G311011,MI - myocardial infarction aborted,MYOCARDIAL_INFARCTION,SNOMED
+45523368,G301.00,Other specified anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45557537,I23.0,Haemopericardium as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45572079,I21.02,ST elevation (STEMI) myocardial infarction involving left anterior descending coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+45572080,I21.21,ST elevation (STEMI) myocardial infarction involving left circumflex coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+45576126,Z03.4,Observation for suspected myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45586571,I21.1,Acute transmural myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+319038,66189004,Postmyocardial infarction syndrome,MYOCARDIAL_INFARCTION,SNOMED
+441579,76593002,Acute myocardial infarction of inferoposterior wall,MYOCARDIAL_INFARCTION,SNOMED
+1034828,LP98871-4,PhenX measure - myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1034874,LP98917-5,"Mother, father, full-blooded sisters, full-blooded brothers, daughters, or sons ever have a heart attack or myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+1569126,I21,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1569130,I22,Subsequent ST elevation (STEMI) and non-ST elevation (NSTEMI) myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3528967,418751000000106,[V] Family history of: [ischaemic heart disease] or [myocardial infarction],MYOCARDIAL_INFARCTION,SNOMED
+3535324,603901000000104,Lateral myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+3540287,677111000000102,Postoperative transmural myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+3557254,526721000000100,Exception reporting: myocardial infarction quality indicators,MYOCARDIAL_INFARCTION,SNOMED
+3557257,526781000000104,Excepted from myocardial infarction quality indicators: informed dissent,MYOCARDIAL_INFARCTION,SNOMED
+3654466,836294006,Acute myocardial infarction of apex of heart,MYOCARDIAL_INFARCTION,SNOMED
+3661641,868214006,Acute ST segment elevation myocardial infarction due to occlusion of proximal portion of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4108680,194868001,"Thrombosis of atrium, auricular appendage, and ventricle due to and following acute myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+4152386,315619001,FH myocardial infarction male first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+4152388,315621006,FH myocardial infarction female first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+4180609,429731003,Anterior myocardial infarction on electrocardiogram,MYOCARDIAL_INFARCTION,SNOMED
+35207684,I21.3,ST elevation (STEMI) myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+35227449,10000899,"Acute myocardial infarction, of inferolateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227454,10000904,"Acute myocardial infarction, of other anterior wall",MYOCARDIAL_INFARCTION,SNOMED
+35227460,10000910,"Acute myocardial infarction, of other inferior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227468,10000918,"Acute myocardial infarction, of other specified sites, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227470,10000920,"Acute myocardial infarction, subendocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+35227480,10000930,"Acute myocardial infarction, unspecified site, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227637,10057545,Anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227639,10057547,Lateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227643,10057551,Inferolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35610093,1089471000000109,Acute transmural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35611570,12238111000119106,Acute ST segment elevation myocardial infarction of inferolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+37016102,103011000119106,Coronary arteriosclerosis in patient with history of previous myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+37311078,827164008,Delayed postmyocardial infarction pericarditis,MYOCARDIAL_INFARCTION,SNOMED
+37311079,827163002,Early postmyocardial infarction pericarditis,MYOCARDIAL_INFARCTION,SNOMED
+40298003,137765004,FH myocardial infarction female first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+40328010,160366007,FH myocardial infarction male first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+40328011,160367003,FH myocardial infarction male first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+40398903,194872002,Postoperative transmural myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+44799395,451341000000108,[V]Observation for suspected myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44819697,410.12,"Acute myocardial infarction of other anterior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44820860,410.32,"Acute myocardial infarction of inferoposterior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44834733,429.7,"Certain sequelae of myocardial infarction, not elsewhere classified",MYOCARDIAL_INFARCTION,SNOMED
+44835926,410.41,"Acute myocardial infarction of other inferior wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+45420353,G30..00,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45433412,G30..13,Cardiac rupture following myocardial infarction (MI),MYOCARDIAL_INFARCTION,SNOMED
+45443330,G351.00,Subsequent myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+45456733,G310.00,Postmyocardial infarction syndrome,MYOCARDIAL_INFARCTION,SNOMED
+45465221,3231.00,ECG: no myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45491641,12CB.00,FH myocardial infarction male first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+45503426,G362.00,Ventricular septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45596191,I21.3,Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45596193,I23.1,Atrial septal defect as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45601023,I23.5,Rupture of papillary muscle as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45601025,I25.2,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45605779,I21.19,ST elevation (STEMI) myocardial infarction involving other coronary artery of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+44820861,410.92,"Acute myocardial infarction of unspecified site, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44824237,410.00,"Acute myocardial infarction of anterolateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44826643,429.79,"Certain sequelae of myocardial infarction, not elsewhere classified, other",MYOCARDIAL_INFARCTION,SNOMED
+44831236,410.10,"Acute myocardial infarction of other anterior wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+44832372,410,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44835929,411.0,Postmyocardial infarction syndrome,MYOCARDIAL_INFARCTION,SNOMED
+45420354,G304.00,Posterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45426350,9hM0.00,Excepted from myocardial infarction quality indicators: informed dissent,MYOCARDIAL_INFARCTION,SNOMED
+45453327,G366.00,"Thrombosis of atrium, auricular appendage, and ventricle as current complications following acute myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+45490216,Gyu3500,[X]Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+45495161,323..00,ECG: myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45557536,I21.29,ST elevation (STEMI) myocardial infarction involving other sites,MYOCARDIAL_INFARCTION,SNOMED
+45605780,I21.9,"Acute myocardial infarction, unspecified",MYOCARDIAL_INFARCTION,SNOMED
+45605781,I22.2,Subsequent non-ST elevation (NSTEMI) myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45766076,703165004,Acute ST segment elevation myocardial infarction of anterior wall involving right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+45766214,703328007,Mitral valve regurgitation due to acute myocardial infarction without papillary muscle and chordal rupture,MYOCARDIAL_INFARCTION,SNOMED
+45881639,LA12731-8,Definite fatal myocardial infaction (MI) (no known non-artherosclerotic cause and definite myocardial infarction within 4 weeks of death),MYOCARDIAL_INFARCTION,SNOMED
+38001110,282,"Acute myocardial infarction, discharged alive w/o CC/MCC",MYOCARDIAL_INFARCTION,SNOMED
+38001111,283,"Acute myocardial infarction, expired w MCC",MYOCARDIAL_INFARCTION,SNOMED
+40297745,142025003,ECG: myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40323865,155306008,Old myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40328013,160369000,FH myocardial infarction female first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+40398889,194860008,[X]Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+40398900,194870005,Postoperative myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40634151,72977004,Acute myocardial infarction of atrium,MYOCARDIAL_INFARCTION,SNOMED
+40761337,58236-1,Date of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+46270163,15713121000119105,Acute ST segment elevation myocardial infarction due to right coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+46270164,15713161000119100,Acute ST segment elevation myocardial infarction of septum,MYOCARDIAL_INFARCTION,SNOMED
+46270158,15712841000119100,Acute ST segment elevation myocardial infarction of posterolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+46270160,15712961000119108,Acute ST segment elevation myocardial infarction of anteroseptal wall,MYOCARDIAL_INFARCTION,SNOMED
+46270162,15713081000119108,Acute ST segment elevation myocardial infarction due to left coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+319039,233838001,Acute posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+438447,65547006,Acute myocardial infarction of inferolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+604425,896689003,Acute myocardial infarction due to occlusion of circumflex branch of left coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+609083,16528621000119102,Rupture of interventricular septum following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+761736,15962541000119106,Acute ST segment elevation myocardial infarction of anteroapical wall,MYOCARDIAL_INFARCTION,SNOMED
+1197799,10079266,Acute myocardial infarction type 4b,MYOCARDIAL_INFARCTION,SNOMED
+1620969,LA31445-2,Previous myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+2617501,G8011,Clinician documented that acute myocardial infarction patient was not an eligible candidate for beta-blocker at arrival measure,MYOCARDIAL_INFARCTION,SNOMED
+3522945,83351000000106,Acute non-ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3523328,122701000000102,Acute posterolateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3536655,623361000000107,Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+3661502,840309000,Acute ST segment elevation myocardial infarction due to proximal left anterior descending coronary artery occlusion,MYOCARDIAL_INFARCTION,SNOMED
+4152387,315620007,FH myocardial infarction male first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+4155965,371824008,Myocardial ischemia manifest on stress test status post myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4185163,41380003,Radioisotope scan for myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4275436,64627002,Acute myocardial infarction of high lateral wall,MYOCARDIAL_INFARCTION,SNOMED
+35227450,10000900,"Acute myocardial infarction, of inferoposterior wall",MYOCARDIAL_INFARCTION,SNOMED
+35227465,10000915,"Acute myocardial infarction, of other lateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227466,10000916,"Acute myocardial infarction, of other specified sites",MYOCARDIAL_INFARCTION,SNOMED
+35227472,10000922,"Acute myocardial infarction, subendocardial infarction, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227607,10008213,"Certain sequelae of myocardial infarction, not elsewhere classified",MYOCARDIAL_INFARCTION,SNOMED
+35227628,10052515,Age indeterminate inferior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227641,10057549,Septal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+44820858,410.02,"Acute myocardial infarction of anterolateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44820859,410.22,"Acute myocardial infarction of inferolateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44823111,410.01,"Acute myocardial infarction of anterolateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44832373,410.3,"Acute myocardial infarction, of inferoposterior wall",MYOCARDIAL_INFARCTION,SNOMED
+44834720,410.51,"Acute myocardial infarction of other lateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+44834723,410.8,"Acute myocardial infarction, of other specified sites",MYOCARDIAL_INFARCTION,SNOMED
+45433413,G30..15,MI - acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45433419,G365.00,Rupture of papillary muscle as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45443368,Gyu3600,[X]Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45496075,889A.00,Diabetes mellitus insulin-glucose infusion in acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45516826,G35X.00,Subsequent myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+45538370,I21,Acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45601022,I22.8,Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+45771322,703251009,Acute myocardial infarction of inferior wall involving right ventricle,MYOCARDIAL_INFARCTION,SNOMED
+434376,54329005,Acute myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+1199180,10079267,Acute myocardial infarction type 5,MYOCARDIAL_INFARCTION,SNOMED
+2617498,G8008,Clinician documented that acute myocardial infarction patient was not an eligible candidate to receive aspirin at arrival measure,MYOCARDIAL_INFARCTION,SNOMED
+3529298,471851000000100,[X]Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+3542466,707421000000103,History of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3550740,44011000000104,Acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3576243,83361000000109,Acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+3581928,526731000000103,Exception reporting: myocardial infarction quality indicators,MYOCARDIAL_INFARCTION,SNOMED
+4108220,194867006,Rupture of papillary muscle as current complication following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4110952,194800006,Posterior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4119950,233841005,Old lateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4124687,233847009,Cardiac rupture due to and following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4207921,311792005,Postoperative transmural myocardial infarction of anterior wall,MYOCARDIAL_INFARCTION,SNOMED
+4209541,311793000,Postoperative transmural myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+4215259,394710008,First myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207689,I22.9,Subsequent ST elevation (STEMI) myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+35207696,I23.6,"Thrombosis of atrium, auricular appendage, and ventricle as current complications following acute myocardial infarction",MYOCARDIAL_INFARCTION,SNOMED
+35227445,10000895,"Acute myocardial infarction, of anterolateral wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227471,10000921,"Acute myocardial infarction, subendocardial infarction, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227475,10000925,"Acute myocardial infarction, true posterior wall infarction, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227476,10000926,"Acute myocardial infarction, true posterior wall infarction, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227478,10000928,"Acute myocardial infarction, unspecified site",MYOCARDIAL_INFARCTION,SNOMED
+35227487,10066546,Acute antero septal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227489,10066641,"Acute myocardial infarction, of anterior wall",MYOCARDIAL_INFARCTION,SNOMED
+46274044,15712921000119103,Acute ST segment elevation myocardial infarction of lateral wall,MYOCARDIAL_INFARCTION,SNOMED
+438170,73795002,Acute myocardial infarction of inferior wall,MYOCARDIAL_INFARCTION,SNOMED
+602350,387785661000119105,History of myocardial infarction due to atherothrombotic coronary artery disease,MYOCARDIAL_INFARCTION,SNOMED
+761737,15963181000119104,Acute ST segment elevation myocardial infarction due to occlusion of circumflex coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+1034921,LP98964-7,Ever told by doctor that you had a myocardial infarction or heart attack,MYOCARDIAL_INFARCTION,SNOMED
+1197837,10079264,Acute myocardial infarction type 3,MYOCARDIAL_INFARCTION,SNOMED
+1198810,10079265,Acute myocardial infarction type 4a,MYOCARDIAL_INFARCTION,SNOMED
+2617497,G8007,Acute myocardial infarction: patient not documented to have received aspirin at arrival,MYOCARDIAL_INFARCTION,SNOMED
+3661644,868224003,Acute ST segment elevation myocardial infarction due to occlusion of marginal branch of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+3661646,868226001,Acute ST segment elevation myocardial infarction due to occlusion of posterior lateral branch of right coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+4110954,194804002,Inferior myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+4111389,194797009,Other specified anterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4111390,194808004,Other acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4121468,233842003,Old posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+4207922,311794006,Postoperative transmural myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+4247796,7326005,Inferior myocardial infarction on electrocardiogram,MYOCARDIAL_INFARCTION,SNOMED
+4323202,428196007,Mixed myocardial ischemia and infarction,MYOCARDIAL_INFARCTION,SNOMED
+35205193,10066592,Post procedural myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35207697,I23.8,Other current complications following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227443,10000893,"Acute myocardial infarction, of anterolateral wall, episode of care unspecified",MYOCARDIAL_INFARCTION,SNOMED
+35227448,10000898,"Acute myocardial infarction, of inferolateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227458,10000908,"Acute myocardial infarction, of other inferior wall",MYOCARDIAL_INFARCTION,SNOMED
+35227461,10000911,"Acute myocardial infarction, of other inferior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227464,10000914,"Acute myocardial infarction, of other lateral wall, initial episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227474,10000924,"Acute myocardial infarction, true posterior wall infarction",MYOCARDIAL_INFARCTION,SNOMED
+35227481,10000931,"Acute myocardial infarction, unspecified site, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+35227483,10064345,ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227629,10052516,Age indeterminate lateral myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227632,10057490,Age indeterminate anteroseptal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227638,10057546,Inferior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+35227640,10057548,Posterior myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+43020460,285981000119103,Acute ST segment elevation myocardial infarction involving left anterior descending coronary artery,MYOCARDIAL_INFARCTION,SNOMED
+44832374,410.42,"Acute myocardial infarction of other inferior wall, subsequent episode of care",MYOCARDIAL_INFARCTION,SNOMED
+45433414,G30..17,Silent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45441521,12CA.00,FH myocardial infarction male first degree age known,MYOCARDIAL_INFARCTION,SNOMED
+45446685,G353.00,Subsequent myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+45473546,G30yz00,Other acute myocardial infarction NOS,MYOCARDIAL_INFARCTION,SNOMED
+45483528,G38..00,Postoperative myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45494794,ZV17312,[V]Family history of myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45496745,G32..11,Healed myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+45562341,I22,Subsequent myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+46270159,15712881000119105,Acute ST segment elevation myocardial infarction of anterolateral wall,MYOCARDIAL_INFARCTION,SNOMED
+46273495,15713201000119105,Acute ST segment elevation myocardial infarction of posterobasal wall,MYOCARDIAL_INFARCTION,SNOMED
+46273814,710031008,Inducible ischemia manifest on stress test post myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+36712985,15960981000119105,Mural thrombus of left ventricle following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+37395582,285721000119104,History of acute ST segment elevation myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40394117,195545006,[X]Acute transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+40398904,194873007,Postoperative transmural myocardial infarction of other sites,MYOCARDIAL_INFARCTION,SNOMED
+40398905,194874001,Postoperative transmural myocardial infarction of unspecified site,MYOCARDIAL_INFARCTION,SNOMED
+40398906,194875000,Postoperative subendocardial myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40520500,316573009,[V]Observation for suspected myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40761346,58245-2,Deprecated PhenX measure - myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+40298002,137764000,FH myocardial infarction male first degree age unknown,MYOCARDIAL_INFARCTION,SNOMED
+40328001,160358003,FH: Ischemic heart disease <60 (& [myocardial infarction] or [angina]),MYOCARDIAL_INFARCTION,SNOMED
+40398840,194815007,Aborted myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+42537536,736978009,Mural thrombus of right ventricle following acute myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+42622801,10087337,Small focal myocardial infarction,MYOCARDIAL_INFARCTION,SNOMED
+1553751,I48.11,Longstanding persistent atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+1569171,I48.2,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+2617334,G0249,"Provision of test materials and equipment for home inr monitoring of patient with either mechanical heart valve(s), chronic atrial fibrillation, or venous thromboembolism who meets medicare coverage criteria; includes: provision of materials for use in...",ATRIAL_FIBRILLATION,HCPCS
+2617598,G8184,Clinician documented that patient with heart failure and atrial fibrillation was not an eligible candidate for warfarin therapy measure,ATRIAL_FIBRILLATION,HCPCS
+3522489,44021000000105,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3522813,78591000000108,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3528478,368891000000103,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3546327,883941000000108,Provision of written information about atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3547878,1025031000000109,High risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3554056,217351000000107,Excepted from atrial fibrillation quality indicators: Patient unsuitable,ATRIAL_FIBRILLATION,SNOMED
+3586401,883951000000106,Provision of written information about atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+35207785,I48.1,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+37075784,LP408290-7,Stroke or death after atrial fibrillation 5 year risk | Patient | Cardiac risk,ATRIAL_FIBRILLATION,LOINC
+2617335,G0250,"Physician review, interpretation, and patient management of home inr testing for patient with either mechanical heart valve(s), chronic atrial fibrillation, or venous thromboembolism who meets medicare coverage criteria; testing not occurring more freq...",ATRIAL_FIBRILLATION,HCPCS
+3547903,1032711000000108,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3553396,196191000000101,Excepted from atrial fibrillation quality indicators: Patient unsuitable,ATRIAL_FIBRILLATION,SNOMED
+4181800,429211003,Maze procedure for atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40761370,58269-2,Date of first episode of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+40761371,58270-0,Emergency room visit or hospitalized or saw doctor for atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+42890784,10071667,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+44783731,699833006,Provision of written information about atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+45439583,9hF1.00,Excepted from atrial fibrillation quality indicators: Informed dissent,ATRIAL_FIBRILLATION,Read
+45576876,I48.91,Unspecified atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+45591467,I48.2,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,ICD10
+45523387,G573300,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,Read
+40297771,142049000,ECG: atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40761374,58273-4,Taking any anticoagulants for treatment of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+42736318,33253,"Operative incisions and reconstruction of atria for treatment of atrial fibrillation or atrial flutter (eg, maze procedure) (Deprecated)",ATRIAL_FIBRILLATION,CPT4
+44803652,715941000000109,Excepted from atrial fibrillation quality indicators - patient unsuitable,ATRIAL_FIBRILLATION,SNOMED
+45523386,G573200,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,Read
+1553753,I48.20,"Chronic atrial fibrillation, unspecified",ATRIAL_FIBRILLATION,ICD10CM
+2617333,G0248,"Demonstration, prior to initiation of home inr monitoring, for patient with either mechanical heart valve(s), chronic atrial fibrillation, or venous thromboembolism who meets medicare coverage criteria, under the direction of a physician; includes: fac...",ATRIAL_FIBRILLATION,HCPCS
+3585505,785121000000101,Referral to atrial fibrillation clinic,ATRIAL_FIBRILLATION,SNOMED
+4020234,175146007,Implantation of intravenous pacemaker for atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4180108,429218009,History of maze procedure for atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4199501,314208002,Rapid atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+35226620,10066551,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+44805321,785111000000107,Referral to atrial fibrillation clinic,ATRIAL_FIBRILLATION,SNOMED
+45466877,G573500,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,Read
+45548021,I48.1,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,ICD10
+45755409,I48.9,"Atrial fibrillation and atrial flutter, unspecified",ATRIAL_FIBRILLATION,ICD10
+605092,1010405004,Paroxysmal atrial fibrillation with rapid ventricular response,ATRIAL_FIBRILLATION,SNOMED
+3522946,83371000000102,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3554055,217341000000109,Excepted from atrial fibrillation quality indicators: Patient unsuitable,ATRIAL_FIBRILLATION,SNOMED
+3559536,847621000000105,Following atrial fibrillation care pathway protocol,ATRIAL_FIBRILLATION,SNOMED
+3569088,196181000000103,Excepted from atrial fibrillation quality indicators: Informed dissent,ATRIAL_FIBRILLATION,SNOMED
+4117112,300996004,Controlled atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37042325,LP408289-9,Stroke after atrial fibrillation 5 year risk | Patient | Cardiac risk,ATRIAL_FIBRILLATION,LOINC
+37208441,1105331000000106,Blood pressure measurement using oscillometric monitoring device with opportunistic atrial fibrillation detection,ATRIAL_FIBRILLATION,SNOMED
+40302105,138790004,H/O: atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40345197,266306001,(Atrial fibrillation) or (atrial flutter),ATRIAL_FIBRILLATION,SNOMED
+40768550,65864-1,Stroke after atrial fibrillation 5 year risk [#] Framingham.Wang 2003,ATRIAL_FIBRILLATION,LOINC
+42709991,449863006,Insertion of pacemaker for control of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37074473,LP121329-9,Stroke after atrial fibrillation 5 year risk,ATRIAL_FIBRILLATION,LOINC
+37076889,LP121331-5,Stroke or death after atrial fibrillation 5 year risk,ATRIAL_FIBRILLATION,LOINC
+1034851,LP98894-6,Ever told you have or had atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+1569174,I48.9,Unspecified atrial fibrillation and atrial flutter,ATRIAL_FIBRILLATION,ICD10CM
+3564783,341561000000106,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3580178,368881000000100,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4064452,164889003,ECG: atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4119602,233911009,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4154290,282825002,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+1034853,LP98896-1,Emergency room visit or hospitalized or saw doctor for atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+1340258,OMOP5165913,Exacerbation of atrial fibrillation,ATRIAL_FIBRILLATION,OMOP Extension
+1397858,G573700,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,Read
+2101903,1060F,Documentation of permanent or persistent or paroxysmal atrial fibrillation (STR),ATRIAL_FIBRILLATION,CPT4
+3522345,41241000000105,Non-rheumatic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3547877,1025011000000101,At risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3554057,217361000000105,Excepted from atrial fibrillation quality indicators: Informed dissent,ATRIAL_FIBRILLATION,SNOMED
+3568961,196171000000100,Exception reporting: atrial fibrillation quality indicators,ATRIAL_FIBRILLATION,SNOMED
+4232697,440059007,Persistent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+35328173,10086404,Asymptomatic atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+42890785,10071668,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+45422932,8HTy.00,Referral to atrial fibrillation clinic,ATRIAL_FIBRILLATION,Read
+44803800,716871000000101,Exception reporting - atrial fibrillation quality indicators,ATRIAL_FIBRILLATION,SNOMED
+45471784,14AN.00,H/O: atrial fibrillation,ATRIAL_FIBRILLATION,Read
+1034852,LP98895-3,Date of first episode of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+1397678,14O7200,High risk of atrial fibrillation,ATRIAL_FIBRILLATION,Read
+1553754,I48.21,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+3519154,1032701000000106,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3567742,341571000000104,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+3577664,217371000000103,Excepted from atrial fibrillation quality indicators: Informed dissent,ATRIAL_FIBRILLATION,SNOMED
+4139517,426814001,Transient cerebral ischemia due to atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+35226606,10001614,Alcoholic atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+35226621,10066582,Recurrent atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+35226622,10066664,Recurrent symptomatic atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+36713962,719008003,At risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37208965,1110851000000100,QOF (Quality and Outcomes Framework) atrial fibrillation quality indicator-related care invitation,ATRIAL_FIBRILLATION,SNOMED
+37395821,715395008,Familial atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40392263,195081002,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37310405,1127481000000104,Evaluation of atrial fibrillation rate control,ATRIAL_FIBRILLATION,SNOMED
+37588189,10067824,Prophylaxis against atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
+40761369,58268-4,Ever told you have or had atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+40768551,65865-8,Stroke or death after atrial fibrillation 5 year risk [#] Framingham.Wang 2003,ATRIAL_FIBRILLATION,LOINC
+45493005,9hF..00,Exception reporting: atrial fibrillation quality indicators,ATRIAL_FIBRILLATION,Read
+45581776,I48.0,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,ICD10
+45768480,706923002,Longstanding persistent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+42689660,1066791000000106,Assessment of atrial fibrillation using oscillometric blood pressure monitor,ATRIAL_FIBRILLATION,SNOMED
+44803909,717381000000109,Excepted from atrial fibrillation quality indicators - informed dissent,ATRIAL_FIBRILLATION,SNOMED
+45432822,8OAD.00,Provision of written information about atrial fibrillation,ATRIAL_FIBRILLATION,Read
+45515734,7936A00,Implantation of intravenous pacemaker for atrial fibrillation,ATRIAL_FIBRILLATION,Read
+36717692,719077007,At high risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37310849,133111000000106,QOF (Quality and Outcomes Framework) atrial fibrillation quality indicator-related care invitation using preferred method of communication,ATRIAL_FIBRILLATION,SNOMED
+37394030,1025001000000103,At risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+37394031,1025021000000107,High risk of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40323929,155364009,(Atrial fibrillation) or (atrial flutter),ATRIAL_FIBRILLATION,SNOMED
+42539346,762247006,Preexcited atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+1397724,14O7100,At risk of atrial fibrillation,ATRIAL_FIBRILLATION,Read
+1553752,I48.19,Other persistent atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+2101904,1061F,Documentation of absence of permanent and persistent and paroxysmal atrial fibrillation (STR),ATRIAL_FIBRILLATION,CPT4
+2108845,4301F,Patient not receiving warfarin therapy for nonvalvular atrial fibrillation or atrial flutter (AFIB),ATRIAL_FIBRILLATION,CPT4
+4203375,433276002,Family history of atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4232691,440028005,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+43528009,93657,Additional linear or focal intracardiac catheter ablation of the left or right atrium for treatment of atrial fibrillation remaining after completion of pulmonary vein isolation (List separately in addition to code for primary procedure),ATRIAL_FIBRILLATION,CPT4
+45428521,3272.00,ECG: atrial fibrillation,ATRIAL_FIBRILLATION,Read
+45436302,9hF0.00,Excepted from atrial fibrillation quality indicators: Patient unsuitable,ATRIAL_FIBRILLATION,Read
+45436751,G573400,Permanent atrial fibrillation,ATRIAL_FIBRILLATION,Read
+45883053,LA17563-0,Medical-supraventricular tachycardia (including atrial fibrillation),ATRIAL_FIBRILLATION,LOINC
+1034857,LP98900-1,Taking any antiarrhythmics for treatment of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+2108844,4300F,Patient receiving warfarin therapy for nonvalvular atrial fibrillation or atrial flutter (AFIB),ATRIAL_FIBRILLATION,CPT4
+3554054,217331000000100,Exception reporting: atrial fibrillation quality indicators,ATRIAL_FIBRILLATION,SNOMED
+3577663,217321000000102,Exception reporting: atrial fibrillation quality indicators,ATRIAL_FIBRILLATION,SNOMED
+4119601,233910005,Lone atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4141360,426749004,Chronic atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+35207784,I48.0,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,ICD10CM
+37310784,143601000000104,Evaluation of AF (atrial fibrillation) burden,ATRIAL_FIBRILLATION,SNOMED
+40333200,161521008,H/O: atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+40761375,58274-2,Taking any antiarrhythmics for treatment of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+42538272,758600000,Referral to atrial fibrillation clinic,ATRIAL_FIBRILLATION,SNOMED
+1034856,LP98899-5,Taking any anticoagulants for treatment of atrial fibrillation,ATRIAL_FIBRILLATION,LOINC
+2617597,G8183,Patient with heart failure and atrial fibrillation documented to be on warfarin therapy,ATRIAL_FIBRILLATION,HCPCS
+4194288,312442005,H/O: atrial fibrillation,ATRIAL_FIBRILLATION,SNOMED
+4203829,438558008,Direct current atrial defibrillation,ATRIAL_FIBRILLATION,SNOMED
+35226617,10034039,Paroxysmal atrial fibrillation,ATRIAL_FIBRILLATION,MedDRA
