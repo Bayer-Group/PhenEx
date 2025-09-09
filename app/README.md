@@ -30,15 +30,7 @@ Follow these steps to get the PhenEx application running locally:
    cd PhenEx/app
    ```
 
-2. **Set up initial volumes**
-
-   ```bash
-   cp -r _init_volumes volumes
-   ```
-
-   This copies the initial configuration files and database schemas needed for the application to start properly.
-
-3. **Configure environment variables**
+2. **Configure environment variables**
 
    ```bash
    cp .env.example .env
@@ -52,7 +44,7 @@ Follow these steps to get the PhenEx application running locally:
 
    **Important**: Never commit the actual `.env` file with real credentials to version control.
 
-4. **Start the application**
+3. **Start the application**
 
    ```bash
    docker compose up -d
@@ -65,6 +57,14 @@ Follow these steps to get the PhenEx application running locally:
    - Start the backend API server on port 8001
    - Start the frontend development server on port 5173
    - Launch Supabase Studio for database management
+
+4. **Set up initial database**
+
+   ```bash
+   bash backend/scripts/reset-databases-local.sh
+   ```
+
+   This initializes the database schemas needed for the application to start properly.
 
 ### 🌐 Accessing the Application
 

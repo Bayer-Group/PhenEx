@@ -4,9 +4,12 @@ import './index.css';
 import './styles/variables.css';
 import './styles/fonts.css';
 import App from './App.tsx';
+import { AuthProvider } from './auth/AuthProvider.tsx';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  // <StrictMode>
+  <AuthProvider>
     <App />
-  </StrictMode>
+  </AuthProvider>
+  // </StrictMode>
 );

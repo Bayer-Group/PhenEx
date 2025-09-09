@@ -1,10 +1,61 @@
 import os
 import asyncpg
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 import json
 import logging
 
+import confuse  # type: ignore
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.orm import sessionmaker, Session
+
+from .domain.user import User, UserID
+
+
+if TYPE_CHECKING:
+    from confuse import ConfigView
+
 logger = logging.getLogger(__name__)
+
+
+_engine = None
+_sm = None
+
+
+def get_engine(config: "ConfigView"):
+    global _engine, _sm
+    if not _engine:
+        _engine = create_engine(
+            url=config["url"].get(str),
+            future=True,
+            echo=config["echo"].get(confuse.Optional(bool, default=False)),
+            pool_pre_ping=True,
+        )
+        _sm = sessionmaker(_engine)
+
+    return _engine
+
+
+def get_sm(config: "ConfigView") -> sessionmaker:
+    global _sm
+    if not _sm:
+        get_engine(config)
+    return _sm
+
+
+def get_user_by_id(session: Session, user_id: UserID) -> Optional[User]:
+    return session.get(User, user_id)
+
+
+def get_user_by_email(session: Session, email: str) -> Optional[User]:
+    return session.scalar(select(User).where(User.email == email))
+
+
+def get_user_by_external_id(session: Session, external_id: str) -> Optional[User]:
+    return session.scalar(select(User).where(User.external_id == external_id))
+
+
+def lock_user_db(session: Session) -> None:
+    session.execute(text(f'LOCK TABLE "{User.__table__.name}"'))
 
 
 class DatabaseManager:
@@ -18,7 +69,7 @@ class DatabaseManager:
         """Build PostgreSQL connection string from environment variables."""
         host = os.getenv("POSTGRES_HOST", "localhost")
         port = os.getenv("POSTGRES_PORT", "5432")
-        database = os.getenv("POSTGRES_DB", "postgres")
+        database = os.getenv("POSTGRES_DB", "phenex")
         user = os.getenv("POSTGRES_USER", "postgres")
         password = os.getenv("POSTGRES_PASSWORD")
 
@@ -71,6 +122,7 @@ class DatabaseManager:
                 SELECT * FROM prioritized_cohorts
                 ORDER BY updated_at DESC
             """
+            print(query)
 
             rows = await conn.fetch(query, user_id)
 
@@ -677,6 +729,8 @@ class DatabaseManager:
         finally:
             if conn:
                 await conn.close()
+
+    def get_user_by_id(self, user_id: str) -> User: ...
 
 
 # Global instance

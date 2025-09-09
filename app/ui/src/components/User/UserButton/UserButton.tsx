@@ -1,7 +1,6 @@
-import { FC, useState } from 'react';
-import { Avatar } from '../../Avatar/Avatar';
+import { FC, useState, useContext } from 'react';
 import { UserMenu } from '../UserMenu/UserMenu';
-import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
+import { AuthContext } from '@/auth/AuthProvider';
 import styles from './UserButton.module.css';
 
 interface UserButtonProps {
@@ -10,11 +9,9 @@ interface UserButtonProps {
 
 export const UserButton: FC<UserButtonProps> = ({ className = '' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const loginService = LoginDataService.getInstance();
-  
-  const currentUser = loginService.getCurrentUser();
-  const username = currentUser?.username || loginService.getUsername();
-  const email = currentUser?.email;
+  const { user } = useContext(AuthContext);
+  const email = user.email;
+  const username = user.username;
 
   return (
     <>
@@ -30,25 +27,19 @@ export const UserButton: FC<UserButtonProps> = ({ className = '' }) => {
           className={styles.avatar}
         /> */}
         <div className={styles.userInfo}>
-          <span className={styles.username}>
-            {username}
-          </span>
-          {email && (
-            <span className={styles.email}>
-              {email}
-            </span>
-          )}
+          <span className={styles.username}>{username}</span>
+          {email && <span className={styles.email}>{email}</span>}
         </div>
-        <svg 
-          className={styles.chevron} 
-          width="12" 
-          height="12" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
+        <svg
+          className={styles.chevron}
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
           strokeWidth="2"
         >
-          <polyline points="6,9 12,15 18,9"/>
+          <polyline points="6,9 12,15 18,9" />
         </svg>
       </button>
 

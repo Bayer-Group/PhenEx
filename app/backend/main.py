@@ -1,27 +1,41 @@
-from typing import Dict, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional, TYPE_CHECKING
 from fastapi import FastAPI, Body, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
+from starlette.middleware.authentication import AuthenticationMiddleware
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
 from dotenv import load_dotenv
-from database import DatabaseManager
-import os, json
+import os
+import json
 import logging
-from deepdiff import DeepDiff
-from utils import CohortUtils
-from rag import router as rag_router, query_faiss_index
+import jwt
+
+from argon2 import PasswordHasher
+
+from .utils import CohortUtils
+from .domain.user import User, new_userid
+from .config import config
+from .middleware import AuthBackend, DBSessionMiddleware
+from .database import DatabaseManager, get_sm
+from . import database as db
+from .init.main import init_db
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
+# from .rag import router as rag_router, query_faiss_index
 
 load_dotenv()
 
 from openai import AzureOpenAI, OpenAI
 
-# Required imports for authentication
-import os
-
 # Constants and configuration
 COHORTS_DIR = "/data/cohorts"
 
 # Initialize database manager
+sessionmaker = get_sm(config["database"])
 db_manager = DatabaseManager()
 
 openai_client = AzureOpenAI()
@@ -39,6 +53,8 @@ logger = logging.getLogger(__name__)
 
 from fastapi.middleware.cors import CORSMiddleware
 
+init_db()
+
 app = FastAPI()
 
 origins = [
@@ -47,6 +63,16 @@ origins = [
     "http://localhost:5173",
 ]
 
+
+def on_auth_error(request: Request, exc: Exception):
+    return JSONResponse({"error": str(exc)}, status_code=401)
+
+
+app.add_middleware(
+    AuthenticationMiddleware,
+    backend=AuthBackend(config["auth"], sessionmaker),
+    on_error=on_auth_error,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins. Replace with specific origins if needed.
@@ -54,116 +80,64 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Initialize database on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database schema, users, and sample data on startup."""
-    try:
-
-        # import asyncio
-        # await asyncio.sleep(5)
-
-        # First, create the cohort table structure
-        from init.create_cohort_table import CohortTableInitializer
-
-        logger.info("🚀 Starting cohort table initialization on backend startup...")
-        table_initializer = CohortTableInitializer()
-        table_success = await table_initializer.initialize()
-
-        if table_success:
-            logger.info("✅ Cohort table initialization completed successfully!")
-        else:
-            logger.warning(
-                "⚠️ Cohort table initialization failed, but backend will continue to start"
-            )
-
-        # Then, create test users
-        from init.populate_sample_users import UserInitializer
-
-        logger.info("🚀 Starting user initialization on backend startup...")
-        user_initializer = UserInitializer()
-        user_success = await user_initializer.initialize()
-
-        if user_success:
-            logger.info("✅ User initialization completed successfully!")
-        else:
-            logger.warning(
-                "⚠️ User initialization failed, but backend will continue to start"
-            )
-
-        # Finally, populate sample cohorts
-        from init.populate_sample_cohorts import SampleCohortsInitializer
-
-        logger.info("🚀 Starting sample cohorts initialization on backend startup...")
-        cohorts_initializer = SampleCohortsInitializer()
-        cohorts_success = await cohorts_initializer.initialize()
-
-        if cohorts_success:
-            logger.info("✅ Sample cohorts initialization completed successfully!")
-        else:
-            logger.warning(
-                "⚠️ Sample cohorts initialization failed, but backend will continue to start"
-            )
-
-        if table_success and user_success and cohorts_success:
-            logger.info("🎉 Complete database initialization completed successfully!")
-        else:
-            logger.warning("⚠️ Some initialization steps failed, but backend is ready")
-
-    except Exception as e:
-        logger.warning(
-            f"⚠️ Database initialization failed: {e}, but backend will continue to start"
-        )
+app.add_middleware(DBSessionMiddleware, sessionmaker=sessionmaker)
 
 
 @app.get("/health", tags=["health"])
 async def health_check():
     """
     Health check endpoint for Docker health checks and service readiness.
-    
+
     Returns:
         dict: Simple health status
     """
     return {"status": "healthy", "service": "phenex-backend"}
 
 
+def _get_authenticated_user(request: Request) -> User:
+    """Helper to extract the authenticated user or raise 401."""
+    user: User | None = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+
+def _get_authenticated_user_id(request: Request) -> str:
+    """Helper to extract the authenticated user's id or raise 401."""
+    user = _get_authenticated_user(request)
+    return str(user.id)
+
+
 # Modify the get_all_cohorts endpoint to accept user_id
 @app.get("/cohorts", tags=["cohort"])
-async def get_all_cohorts_for_user(user_id: str):
+async def get_all_cohorts_for_user(request: Request):
     """
-    Retrieve a list of all available cohorts for a specific user.
-
-    Args:
-        user_id (str): The user ID (UUID) whose cohorts to retrieve.
+    Retrieve a list of all available cohorts for the authenticated user.
 
     Returns:
         dict: A list of cohort IDs and names for that user.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
-        cohorts = await db_manager.get_all_cohorts_for_user(user_id)
-        return cohorts
+        return await db_manager.get_all_cohorts_for_user(user_id)
     except Exception as e:
         logger.error(f"Failed to retrieve cohorts for user {user_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve cohorts for user {user_id}."
-        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve cohorts.")
 
 
 # Modify the get_cohort endpoint to require user_id
 @app.get("/cohort", tags=["cohort"])
-async def get_cohort_for_user(user_id: str, cohort_id: str):
+async def get_cohort_for_user(request: Request, cohort_id: str):
     """
     Retrieve a cohort by its ID for a specific user. Retrieves the latest version.
 
     Args:
-        user_id (str): The user ID (UUID) whose cohort to retrieve.
-        cohort_id (str): The ID of the cohort to retrieve.
+        cohort_id (str): The ID of the cohort to retrieve for the authenticated user.
 
     Returns:
         dict: The cohort data.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
@@ -185,7 +159,7 @@ async def get_cohort_for_user(user_id: str, cohort_id: str):
 # Modify the update_cohort endpoint to require user_id
 @app.post("/cohort", tags=["cohort"])
 async def update_cohort_for_user(
-    user_id: str,
+    request: Request,
     cohort_id: str,
     cohort: Dict = Body(...),
     provisional: bool = False,
@@ -195,8 +169,7 @@ async def update_cohort_for_user(
     Update or create a cohort for a specific user.
 
     Args:
-        user_id (str): The user ID (UUID) whose cohort to update.
-        cohort_id (str): The ID of the cohort to update.
+        cohort_id (str): The ID of the cohort to update for the authenticated user.
         cohort (Dict): The complete JSON specification of the cohort.
         provisional (bool): Whether to save the cohort as provisional.
         new_version (bool): If True, increment version. If False, replace existing version.
@@ -204,33 +177,29 @@ async def update_cohort_for_user(
     Returns:
         dict: Status and message of the operation.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         await db_manager.update_cohort_for_user(
             user_id, cohort_id, cohort, provisional, new_version
         )
-        return {
-            "status": "success",
-            "message": f"Cohort updated successfully for user {user_id}.",
-        }
+        return {"status": "success", "message": "Cohort updated successfully."}
     except Exception as e:
         logger.error(f"Failed to update cohort for user {user_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to update cohort for user {user_id}"
-        )
+        raise HTTPException(status_code=500, detail="Failed to update cohort.")
 
 
 @app.delete("/cohort", tags=["cohort"])
-async def delete_cohort_for_user(user_id: str, cohort_id: str):
+async def delete_cohort_for_user(request: Request, cohort_id: str):
     """
     Delete a cohort by its ID.
 
     Args:
-        user_id (str): The user ID (UUID) whose cohort to delete.
-        cohort_id (str): The ID of the cohort to delete.
+        cohort_id (str): The ID of the cohort to delete for the authenticated user.
 
     Returns:
         dict: Status and message of the operation.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         success = await db_manager.delete_cohort_for_user(user_id, cohort_id)
         if not success:
@@ -300,7 +269,7 @@ async def get_public_cohort(cohort_id: str):
         cohort = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
         if not cohort:
             raise HTTPException(
-                status_code=404, detail=f"Cohort not found for public user"
+                status_code=404, detail="Cohort not found for public user"
             )
         return cohort
     except HTTPException:
@@ -308,18 +277,17 @@ async def get_public_cohort(cohort_id: str):
     except Exception as e:
         logger.error(f"Error retrieving cohort for public user: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve cohort for public user"
+            status_code=500, detail="Failed to retrieve cohort for public user"
         )
 
 
 # Include the router from rag.py
-app.include_router(rag_router, prefix="/rag")
+# app.include_router(rag_router, prefix="/rag")
 
 
 @app.post("/cohort/suggest_changes", tags=["AI"])
 async def suggest_changes(
     request: Request,
-    user_id: str,
     cohort_id: str,
     model: Optional[str] = "gpt-4o-mini",
     return_updated_cohort: bool = False,
@@ -329,8 +297,7 @@ async def suggest_changes(
 
     Args:
         request (Request): The FastAPI request object containing the user request in the body.
-        user_id (str): The ID of the user.
-        cohort_id (str): The ID of the cohort to modify.
+        cohort_id (str): The ID of the cohort to modify for the authenticated user.
         model (str): The model to use for processing the request.
         return_updated_cohort (bool): Whether to return the updated cohort.
 
@@ -348,6 +315,7 @@ async def suggest_changes(
         else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
     )
 
+    user_id = _get_authenticated_user_id(request)
     current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
     if not current_cohort:
         raise HTTPException(
@@ -511,16 +479,16 @@ async def suggest_changes(
                     logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON: {e}")
-                    yield f"\n\nError: Failed to parse AI response JSON. Please try again."
+                    yield "\n\nError: Failed to parse AI response JSON. Please try again."
                 except Exception as e:
                     logger.error(f"Error processing cohort update: {e}")
-                    yield f"\n\nError: Failed to update cohort. Please try again."
+                    yield "\n\nError: Failed to update cohort. Please try again."
             else:
                 logger.warning("No JSON found in AI response")
 
         except Exception as e:
             logger.error(f"Error in stream_response: {e}")
-            yield f"\n\nError: Streaming failed. Please try again."
+            yield "\n\nError: Streaming failed. Please try again."
 
     return StreamingResponse(
         stream_response(),
@@ -534,17 +502,17 @@ async def suggest_changes(
 
 
 @app.get("/cohort/accept_changes", tags=["AI"])
-async def accept_changes(user_id: str, cohort_id: str):
+async def accept_changes(request: Request, cohort_id: str):
     """
     Accept changes made to a provisional cohort by setting is_provisional to False.
 
     Args:
-        user_id (str): The user ID (UUID).
-        cohort_id (str): The ID of the cohort to finalize.
+        cohort_id (str): The ID of the cohort to finalize for the authenticated user.
 
     Returns:
         dict: The finalized cohort data.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         success = await db_manager.accept_changes(user_id, cohort_id)
         if not success:
@@ -552,8 +520,6 @@ async def accept_changes(user_id: str, cohort_id: str):
                 status_code=404,
                 detail=f"No provisional changes found for cohort {cohort_id}",
             )
-
-        # Return the updated cohort
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         return cohort
     except HTTPException:
@@ -566,17 +532,17 @@ async def accept_changes(user_id: str, cohort_id: str):
 
 
 @app.get("/cohort/reject_changes", tags=["AI"])
-async def reject_changes(user_id: str, cohort_id: str):
+async def reject_changes(request: Request, cohort_id: str):
     """
     Reject changes made to a provisional cohort by deleting provisional versions.
 
     Args:
-        user_id (str): The user ID (UUID).
-        cohort_id (str): The ID of the cohort to discard provisional changes.
+        cohort_id (str): The ID of the cohort to discard provisional changes for authenticated user.
 
     Returns:
         dict: The non-provisional cohort data.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         await db_manager.reject_changes(user_id, cohort_id)
 
@@ -598,18 +564,18 @@ async def reject_changes(user_id: str, cohort_id: str):
 
 
 @app.get("/cohort/get_changes", tags=["AI"])
-async def get_changes(user_id: str, cohort_id: str):
+async def get_changes(request: Request, cohort_id: str):
     """
     Get differences between the provisional and non-provisional versions of a cohort.
     Returns empty dict if there is no provisional cohort.
 
     Args:
-        user_id (str): The user ID (UUID).
-        cohort_id (str): The ID of the cohort to compare.
+        cohort_id (str): The ID of the cohort to compare for the authenticated user.
 
     Returns:
         dict: Dictionary of changes between provisional and non-provisional versions.
     """
+    user_id = _get_authenticated_user_id(request)
     try:
         changes = await db_manager.get_changes_for_user(user_id, cohort_id)
         return changes
@@ -639,8 +605,6 @@ async def execute_study(
         StreamingResponse: A stream of execution logs followed by the final results.
     """
     import sys
-    import io
-    import contextlib
     import asyncio
     from queue import Queue
     import threading
@@ -795,7 +759,7 @@ async def execute_study(
                 logger.info("Finalizing and formatting results for return...")
                 append_count_to_cohort(px_cohort, cohort)
 
-                from json import loads, dumps
+                from json import loads
 
                 cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
                 cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
@@ -854,7 +818,7 @@ async def execute_study(
                     yield f"data: {json.dumps({'type': 'log', 'message': output})}\n\n"
                 else:
                     await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
-            except:
+            except Exception:
                 await asyncio.sleep(0.1)
 
         # Wait for thread to complete
@@ -948,7 +912,7 @@ async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
     save_codelist_file_for_cohort(cohort_id, file["id"], file)
     return {
         "status": "success",
-        "message": f"Uploaded {cohort_id} {file["id"]} successfully.",
+        "message": f"Uploaded {cohort_id} {file['id']} successfully.",
     }
 
 
@@ -986,7 +950,7 @@ def get_path_cohort_index_file(cohort_id):
     """
     The cohort index file is located in the cohort directory. It contains a listing of files related to a cohort, for example, a list of all codelist files that have been uploaded by a user. # TODO : track cohort checkpoints in index file as well
     """
-    return os.path.join(get_path_cohort_files(cohort_id), f"index.json")
+    return os.path.join(get_path_cohort_files(cohort_id), "index.json")
 
 
 def get_codelist_filenames_for_cohort(cohort_id):
@@ -1151,7 +1115,6 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict]):
     Returns:
         List of phenotypes with codelists prepared for phenex
     """
-    new_phenotypes = []
     # iterate over each phenotype
     for phenotype in phenotypes:
         # if it contains a codelist, prepare it for phenex
@@ -1188,7 +1151,7 @@ def prepare_codelists_for_phenotype(phenotype: dict):
 def prepare_time_range_phenotype(phenotype: dict):
     if (
         "relative_time_range" in phenotype.keys()
-        and phenotype["relative_time_range"] != None
+        and phenotype["relative_time_range"] is not None
     ):
         if isinstance(phenotype["relative_time_range"], list):
             phenotype["relative_time_range"] = phenotype["relative_time_range"][0]
@@ -1231,3 +1194,101 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict):
             phenex_cohort["phenotypes"]
         )
     return phenex_cohort
+
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+    username: str | None
+
+
+@app.post("/register")
+async def register(request: Request, user_data: LoginData):
+    """
+    Registers a new User.
+    """
+
+    if not config["auth"]["password"].exists():
+        raise ValueError("Registration is deactivated")
+    if not (
+        config["auth"]["password"]["secret"].exists()
+        and config["auth"]["password"]["secret"].get(str)
+    ):
+        raise ValueError("Registration is deactivated")
+
+    if not user_data.email or not user_data.password:
+        return {"error": "Email and password are required."}, 400
+
+    session: "Session" = request["db_session"]
+
+    if (
+        not user_data.email
+        or db.get_user_by_email(session, user_data.email) is not None
+    ):
+        raise ValueError("Registration failed.")
+
+    ph = PasswordHasher()
+    hashed_pw = ph.hash(user_data.password)
+
+    user = User(
+        id=new_userid(),
+        email=user_data.email,
+        password_hash=hashed_pw,
+        external_id="password",
+        name=user_data.username,
+    )
+
+    session.add(user)
+    session.commit()
+
+    return {
+        "status": "success",
+        "message": f"User {user.id} registered successfully.",
+    }
+
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/login")
+async def login(request: Request, login_data: LoginData):
+    """
+    Verifies the log in credentials and returns a new auth token.
+    """
+
+    if not config["auth"]["password"].exists():
+        raise ValueError("Password based Login is deactivated.")
+    if not (
+        config["auth"]["password"]["secret"].exists()
+        and config["auth"]["password"]["secret"].get(str)
+    ):
+        raise ValueError("Password based Login is deactivated")
+
+    session: "Session" = request["db_session"]
+
+    user = db.get_user_by_email(session, login_data.email)
+    if not (user and user.password_hash):
+        raise ValueError("Login failed.")
+
+    ph = PasswordHasher()
+    print(ph.hash("12345678"))
+    try:
+        ph.verify(user.password_hash, login_data.password)
+    except Exception:
+        raise ValueError("Login failed.")
+
+    if ph.check_needs_rehash(user.password_hash):
+        user.password_hash = ph.hash(login_data.password)
+
+    secret = config["auth"]["password"]["secret"].get(str)
+    payload = {
+        "sub": str(user.id),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24),
+        "name": user.name,
+        "email": user.email,
+    }
+    token = jwt.encode(payload, secret, algorithm="HS256")
+
+    return {"auth_token": token}
