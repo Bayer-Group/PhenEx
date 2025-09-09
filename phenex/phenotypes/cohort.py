@@ -356,7 +356,23 @@ class Cohort:
                 existing_hash = None
                 name_to_hash[node_name] = node_hash
 
+    def append_counts(self):
+        def append_count_to_phenotype(phenotype):
+            phenotype.count = phenotype.table.select('PERSON_ID').distinct().count()
+            if len(phenotype.children)>0:
+                for child in phenotype.children:
+                    append_count_to_phenotype(child)
 
+        def append_count_to_phenotypes(phenotypes):
+            for phenotype in phenotypes:
+                append_count_to_phenotype(phenotype)
+
+        append_count_to_phenotype(self.entry_criterion)
+        append_count_to_phenotypes(self.inclusions)
+        append_count_to_phenotypes(self.exclusions)
+        append_count_to_phenotypes(self.characteristics)
+        append_count_to_phenotypes(self.outcomes)
+        
 class Subcohort(Cohort):
     """
     A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.
