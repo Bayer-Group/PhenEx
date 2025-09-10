@@ -113,6 +113,9 @@ class Phenotype(Node):
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "/")
 
+    def __pow__(self, other: int) -> "ComputationGraph":
+        return ComputationGraph(self, other, "**")
+
     def __and__(
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
@@ -205,6 +208,9 @@ class ComputationGraph:
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "/")
 
+    def __pow__(self, other: int) -> "ComputationGraph":
+        return ComputationGraph(self, other, "**")
+
     def __and__(
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
@@ -263,6 +269,8 @@ class ComputationGraph:
             return left * right
         elif self.operator == "/":
             return left / right
+        elif self.operator == "**":
+            return left**right
         else:
             raise ValueError(f"Operator {self.operator} not supported.")
 
