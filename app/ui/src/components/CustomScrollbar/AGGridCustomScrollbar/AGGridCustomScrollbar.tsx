@@ -180,27 +180,16 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
 
       if (orientation === 'vertical') {
         const deltaY = e.clientY - dragStart.y;
+        const trackHeight = scrollInfo.clientHeight;
         const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
-        const thumbRange = 100 - ((scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
-        
-        // Calculate the actual scrollbar track height accounting for margins
-        const actualTrackHeight = scrollInfo.clientHeight - marginTop - marginBottom;
-        
-        const scrollRatio = deltaY / (actualTrackHeight * (thumbRange / 100));
-        
-        scrollableElement.scrollTop = dragStart.scrollTop + (scrollRatio * scrollRange);
+        const scrollDelta = (deltaY / trackHeight) * scrollRange;
+        scrollableElement.scrollTop = Math.max(0, Math.min(scrollRange, dragStart.scrollTop + scrollDelta));
       } else {
         const deltaX = e.clientX - dragStart.x;
+        const trackWidth = scrollInfo.clientWidth;
         const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
-        const thumbRange = 100 - ((scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
-        
-        // Calculate the actual scrollbar track width accounting for margins
-        const actualTrackWidth = scrollInfo.clientWidth - marginLeft - marginRight;
-                
-        // Use the actual track width for sensitivity calculation
-        const scrollRatio = deltaX / (actualTrackWidth * (thumbRange / 100));
-        
-        scrollableElement.scrollLeft = dragStart.scrollLeft + (scrollRatio * scrollRange);
+        const scrollDelta = (deltaX / trackWidth) * scrollRange;
+        scrollableElement.scrollLeft = Math.max(0, Math.min(scrollRange, dragStart.scrollLeft + scrollDelta));
       }
     };
 

@@ -2,7 +2,7 @@
   position: absolute;
   user-select: none;
   right: 30px;
-  top: 10px;
+  bottom: 30px;
   transition: all 0.3s ease;
   z-index: 1001;
 }
@@ -14,7 +14,7 @@
 
 .issuesButton {
   position: absolute;
-  top: 0px !important;
+  bottom: 0px !important;
   right: 0px;
   margin: 0px !important;
   padding: 0px !important;
