@@ -58,6 +58,9 @@ class Node:
         ```
     """
 
+    # Class-level lock for thread-safe hash updates
+    _hash_update_lock = threading.Lock()
+
     def __init__(self, name: Optional[str] = None):
         self._name = name or type(self).__name__
         self._children = []
@@ -192,12 +195,13 @@ class Node:
         Returns:
             str: The MD5 hash of the node's attributes as a hexadecimal string.
         """
-        con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
-        if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
-            table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-            table = table[table.NODE_NAME == self.name]
-            if len(table):
-                return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
+        with Node._hash_update_lock:
+            con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+            if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                table = table[table.NODE_NAME == self.name]
+                if len(table):
+                    return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
 
     def _get_current_hash(self):
         """
@@ -221,23 +225,25 @@ class Node:
         return self._get_current_hash()
 
     def _update_current_hash(self):
-        con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+        # Use class-level lock to ensure thread-safe updates to the node states table
+        with Node._hash_update_lock:
+            con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
 
-        df = pd.DataFrame.from_dict(
-            {
-                "NODE_NAME": [self.name],
-                "LAST_HASH": [self._get_current_hash()],
-                "NODE_PARAMS": [json.dumps(self.to_dict())],
-            }
-        )
+            df = pd.DataFrame.from_dict(
+                {
+                    "NODE_NAME": [self.name],
+                    "LAST_HASH": [self._get_current_hash()],
+                    "NODE_PARAMS": [json.dumps(self.to_dict())],
+                }
+            )
 
-        if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
-            table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-            table = table[table.NODE_NAME != self.name]
-            df = pd.concat([table, df])
+            if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                table = table[table.NODE_NAME != self.name]
+                df = pd.concat([table, df])
 
-        table = ibis.memtable(df)
-        con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
+            table = ibis.memtable(df)
+            con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
 
         return True
 
@@ -313,18 +319,20 @@ class Node:
                 logger.info(
                     f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
                 )
-                self.table = self._execute(tables)
+                table = self._execute(tables)
                 logger.info(f"Node '{self.name}': writing table to {self.name} ...")
                 con.create_table(
-                    self.table,
+                    table,
                     self.name,
                     overwrite=overwrite,
                 )
+                self.table = con.get_dest_table(self.name)
                 self._update_current_hash()
             else:
                 logger.info(
                     f"Node '{self.name}': unchanged since last computation -- skipping!"
                 )
+                # use reference to materialized table
                 self.table = con.get_dest_table(self.name)
 
         else:
@@ -336,6 +344,8 @@ class Node:
                     self.name,
                     overwrite=overwrite,
                 )
+                # use reference to materialized table
+                self.table = con.get_dest_table(self.name)
 
         logger.info(f"Node '{self.name}': execution completed.")
         return self.table
@@ -424,6 +434,7 @@ class Node:
                                 table is not None
                             ):  # Only create table if _execute returns something
                                 con.create_table(table, node_name, overwrite=overwrite)
+                                table = con.get_dest_table(node_name)
                             node._update_current_hash()
                         else:
                             logger.info(
@@ -436,6 +447,7 @@ class Node:
                             con and table is not None
                         ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
+                            table = con.get_dest_table(node_name)
 
                     node.table = table
 
