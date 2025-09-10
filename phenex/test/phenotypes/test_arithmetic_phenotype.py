@@ -138,19 +138,19 @@ class ArithmeticPhenotypeArithmeticPhenotypeTestGenerator(PhenotypeTestGenerator
             "phenotype": ArithmeticPhenotype(expression=(c1 / (c2 * 2))),
         }
 
-        # arithmetic5 = {
-        #     "name": "arithmetic5",
-        #     "persons": ["P1", "P2"],
-        #     "values": [0, 3 / 16],
-        #     "phenotype": ArithmeticPhenotype(expression=(c1 / (c2**2))),
-        # }
+        arithmetic5 = {
+            "name": "arithmetic5",
+            "persons": ["P1", "P2"],
+            "values": [0, 3 / 16],
+            "phenotype": ArithmeticPhenotype(expression=(c1 / (c2**2))),
+        }
 
-        # arithmetic6 = {
-        #     "name": "arithmetic6_bmi",
-        #     "persons": ["P1", "P5"],
-        #     "values": [1 / (2 / 100) ** 2, 8 / (9 / 100) ** 2],
-        #     "phenotype": ArithmeticPhenotype(expression=c2 / (c3 / 100) ** 2),
-        # }
+        arithmetic6 = {
+            "name": "arithmetic6_bmi",
+            "persons": ["P1", "P5"],
+            "values": [1 / (2 / 100) ** 2, 8 / (9 / 100) ** 2],
+            "phenotype": ArithmeticPhenotype(expression=c2 / (c3 / 100) ** 2),
+        }
 
         test_infos = [
             arithmetic1,
@@ -161,8 +161,8 @@ class ArithmeticPhenotypeArithmeticPhenotypeTestGenerator(PhenotypeTestGenerator
             arithmetic2_1,
             arithmetic3_1,
             arithmetic4_1,
-            # arithmetic5,
-            # arithmetic6,
+            arithmetic5,
+            arithmetic6,
         ]
         for test_info in test_infos:
             test_info["phenotype"].name = test_info["name"]
