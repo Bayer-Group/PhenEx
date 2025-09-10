@@ -24,6 +24,10 @@
   overflow: hidden;
 }
 
+.popover.draggable{
+  background-color: red!important;
+  bottom: none;
+}
 .popover.noIssues {
   border-color: var(--phenex-green);
 }
