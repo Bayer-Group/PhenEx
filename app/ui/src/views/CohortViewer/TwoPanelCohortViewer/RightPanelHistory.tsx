@@ -20,8 +20,8 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const maxCards = 3; // Number of cards to display
-  const AUTO_HIDE_DELAY = 300; // 2 seconds
+  const maxCards = 1; // Number of cards to display
+  const AUTO_HIDE_DELAY = 0; // 2 seconds
 
   useEffect(() => {
     const updateHistory = () => {
