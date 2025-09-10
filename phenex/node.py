@@ -195,12 +195,13 @@ class Node:
         Returns:
             str: The MD5 hash of the node's attributes as a hexadecimal string.
         """
-        con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
-        if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
-            table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-            table = table[table.NODE_NAME == self.name]
-            if len(table):
-                return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
+        with Node._hash_update_lock:
+            con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+            if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                table = table[table.NODE_NAME == self.name]
+                if len(table):
+                    return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
 
     def _get_current_hash(self):
         """
