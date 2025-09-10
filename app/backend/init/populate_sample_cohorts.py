@@ -10,11 +10,10 @@ import os
 import random
 import string
 import logging
-from typing import Optional
 
 # Add parent directory to path to import DatabaseManager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database import DatabaseManager
+from ..database import DatabaseManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

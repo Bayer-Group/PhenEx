@@ -1,15 +1,11 @@
-let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-if (!BACKEND_URL) {
-  console.warn('VITE_BACKEND_URL is undefined. Defaulting BACKEND_URL to http://localhost:8000');
-  BACKEND_URL = 'http://localhost:8000';
-}
+import { authFetch, BACKEND_URL } from '../httpClient';
 
 export const executeStudy = async (
   data: any,
   onProgress?: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void
 ) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/execute_study`, {
+    const response = await authFetch(`${BACKEND_URL}/execute_study`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

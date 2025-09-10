@@ -1,15 +1,8 @@
-import axios from 'axios';
-import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
-
-let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-if (!BACKEND_URL) {
-  console.warn('VITE_BACKEND_URL is undefined. Defaulting BACKEND_URL to http://localhost:8000');
-  BACKEND_URL = 'http://localhost:8000';
-}
+import { api, authFetch, buildUrl } from '../httpClient';
 
 export const getPublicCohorts = async () => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/cohorts/public`);
+    const response = await api.get('/cohorts/public');
     return response.data;
   } catch (error) {
     console.error('Error in getPublicCohorts:', error);
@@ -19,15 +12,15 @@ export const getPublicCohorts = async () => {
 
 export const getPublicCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
-    const response = await axios.get(
-      `${BACKEND_URL}/cohort/public?cohort_id=${cohort_id}&provisional=${provisional}`
-    );
-    
+    const response = await api.get('/cohort/public', {
+      params: { cohort_id, provisional },
+    });
+
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
       return JSON.parse(response.data.cohort_data);
     }
-    
+
     // Fallback to return the original data if cohort_data is not present or already parsed
     return response.data.cohort_data || response.data;
   } catch (error) {
@@ -38,11 +31,7 @@ export const getPublicCohort = async (cohort_id: string, provisional: boolean = 
 
 export const getUserCohorts = async () => {
   try {
-    const login_service = LoginDataService.getInstance();
-
-    const response = await axios.get(
-      `${BACKEND_URL}/cohorts?user_id=${login_service.getUserId()}`
-    );
+    const response = await api.get('/cohorts');
     return response.data;
   } catch (error) {
     console.error('Error in getUserCohorts:', error);
@@ -52,16 +41,15 @@ export const getUserCohorts = async () => {
 
 export const getUserCohort = async (cohort_id: string, provisional: boolean = false) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    const response = await axios.get(
-      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}&provisional=${provisional}`
-    );
-    
+    const response = await api.get('/cohort', {
+      params: { cohort_id, provisional },
+    });
+
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
       return JSON.parse(response.data.cohort_data);
     }
-    
+
     // Fallback to return the original data if cohort_data is not present or already parsed
     return response.data.cohort_data || response.data;
   } catch (error) {
@@ -72,12 +60,10 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    console.log("I AM UPDATING THE COHORT", cohort_data)
-    const response = await axios.post(
-      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`,
-      cohort_data
-    );
+    console.log('I AM UPDATING THE COHORT', cohort_data);
+    const response = await api.post('/cohort', cohort_data, {
+      params: { cohort_id },
+    });
     return response.data.cohort_data;
   } catch (error) {
     console.error('Error in updateCohort:', error);
@@ -87,10 +73,9 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
 
 export const deleteCohort = async (cohort_id: string) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    const response = await axios.delete(
-      `${BACKEND_URL}/cohort?user_id=${login_service.getUserId()}&cohort_id=${cohort_id}`
-    );
+    const response = await api.delete('/cohort', {
+      params: { cohort_id },
+    });
     return response.data.cohort_data;
   } catch (error) {
     console.error('Error in deleteCohort:', error);
@@ -100,16 +85,15 @@ export const deleteCohort = async (cohort_id: string) => {
 
 export const acceptChanges = async (cohort_id: string) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    const response = await axios.get(`${BACKEND_URL}/cohort/accept_changes`, {
-      params: { user_id: login_service.getUserId(), cohort_id },
+    const response = await api.get('/cohort/accept_changes', {
+      params: { cohort_id },
     });
-    
+
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
       return JSON.parse(response.data.cohort_data);
     }
-    
+
     // Fallback to return the original data if cohort_data is not present or already parsed
     return response.data.cohort_data || response.data;
   } catch (error) {
@@ -120,16 +104,15 @@ export const acceptChanges = async (cohort_id: string) => {
 
 export const rejectChanges = async (cohort_id: string) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    const response = await axios.get(`${BACKEND_URL}/cohort/reject_changes`, {
-      params: { user_id: login_service.getUserId(), cohort_id },
+    const response = await api.get('/cohort/reject_changes', {
+      params: { cohort_id },
     });
-    
+
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
       return JSON.parse(response.data.cohort_data);
     }
-    
+
     // Fallback to return the original data if cohort_data is not present or already parsed
     return response.data.cohort_data || response.data;
   } catch (error) {
@@ -141,26 +124,21 @@ export const rejectChanges = async (cohort_id: string) => {
 export const suggestChanges = async (
   cohort_id: string,
   user_request: string,
-  model: string = "gpt-4o-mini",
+  model: string = 'gpt-4o-mini',
   return_updated_cohort: boolean = false
 ) => {
   try {
-    const login_service = LoginDataService.getInstance();
-    
     // Ensure cohort_id is a string and properly encoded
     const cohortIdString = String(cohort_id);
-    const params = new URLSearchParams({
-      user_id: login_service.getUserId(),
+    const url = buildUrl('/cohort/suggest_changes', {
       cohort_id: cohortIdString,
-      model: model,
-      return_updated_cohort: String(return_updated_cohort)
+      model,
+      return_updated_cohort: String(return_updated_cohort),
     });
-    
-    const response = await fetch(`${BACKEND_URL}/cohort/suggest_changes?${params.toString()}`, {
+
+    const response = await authFetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: user_request,
     });
 

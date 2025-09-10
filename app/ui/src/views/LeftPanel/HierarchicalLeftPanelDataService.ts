@@ -18,8 +18,8 @@
 import { ViewType } from '../MainView/MainView';
 import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
 import { CohortsDataService } from './CohortsDataService';
-import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
 import { MainViewService } from '../MainView/MainView';
+import { getCurrentUser, onUserChange } from '@/auth/userProviderBridge';
 
 interface CohortData {
   id: string;
@@ -33,7 +33,6 @@ export class HierarchicalLeftPanelDataService {
   private changeListeners: ChangeListener[] = [];
   private treeData: HierarchicalTreeNode[] = [];
   private dataService = CohortsDataService.getInstance();
-  private loginService = LoginDataService.getInstance();
 
   private cachedPublicCohortNamesAndIds: CohortData[] = [];
   private cachedUserCohortNamesAndIds: CohortData[] = [];
@@ -47,8 +46,8 @@ export class HierarchicalLeftPanelDataService {
       this.updateTreeData();
     });
 
-    this.loginService.addListener(() => {
-      // When cohort data changes, refresh the cohort names and IDs
+    // Listen for auth user changes to rebuild tree if needed
+    onUserChange(() => {
       this.updateTreeData();
     });
   }
@@ -60,7 +59,11 @@ export class HierarchicalLeftPanelDataService {
     return HierarchicalLeftPanelDataService.instance;
   }
 
-  private createCohortNode = (cohort: CohortData, level: number, isSelected: boolean = false): HierarchicalTreeNode => {
+  private createCohortNode = (
+    cohort: CohortData,
+    level: number,
+    isSelected: boolean = false
+  ): HierarchicalTreeNode => {
     return {
       id: cohort.id,
       displayName: cohort.name,
@@ -77,11 +80,11 @@ export class HierarchicalLeftPanelDataService {
 
   public async updateTreeData() {
     console.log('🔄 updateTreeData called - preserving selection states');
-    
+
     // Capture currently selected node ID before rebuilding
     const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
     console.log('🔄 Currently selected node ID:', currentlySelectedNodeId);
-    
+
     this.cachedPublicCohortNamesAndIds = (await this.dataService.publicCohortNamesAndIds()) || [];
     this.cachedUserCohortNamesAndIds = (await this.dataService.userCohortNamesAndIds()) || [];
 
@@ -102,19 +105,19 @@ export class HierarchicalLeftPanelDataService {
     });
 
     const createPublicCohorts = () => {
-      return this.cachedPublicCohortNamesAndIds.map(cohort => 
+      return this.cachedPublicCohortNamesAndIds.map(cohort =>
         this.createCohortNode(cohort, 1, cohort.id === currentlySelectedNodeId)
       );
     };
 
     const createUserCohorts = () => {
-      return this.cachedUserCohortNamesAndIds.map(cohort => 
+      return this.cachedUserCohortNamesAndIds.map(cohort =>
         this.createCohortNode(cohort, 1, cohort.id === currentlySelectedNodeId)
       );
     };
 
     this.treeData = [];
-    if (this.loginService.isLoggedIn()) {
+    if (!getCurrentUser()?.isAnonymous) {
       this.treeData.push(createRootNode('mycohorts', 'My Cohorts'));
     }
     this.treeData.push(createRootNode('publiccohorts', 'Public Cohorts'));
@@ -189,7 +192,7 @@ export class HierarchicalLeftPanelDataService {
   // Set selected state for a specific node
   public selectNode(nodeId: string) {
     console.log('🎯 selectNode called with nodeId:', nodeId);
-    
+
     // First deselect all nodes
     this.deselectAllNodes(this.treeData);
 
@@ -210,13 +213,16 @@ export class HierarchicalLeftPanelDataService {
 
     const found = findAndSelectNode(this.treeData);
     console.log('🎯 Node selection result:', found ? 'SUCCESS' : 'FAILED');
-    
+
     this.notifyListeners();
-    
+
     // Add a small delay to check if selection state persists
     setTimeout(() => {
       const selectedNode = this.findNodeById(nodeId);
-      console.log('🎯 Selection state after 100ms:', selectedNode ? selectedNode.selected : 'NODE NOT FOUND');
+      console.log(
+        '🎯 Selection state after 100ms:',
+        selectedNode ? selectedNode.selected : 'NODE NOT FOUND'
+      );
     }, 100);
   }
 

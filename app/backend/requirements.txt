@@ -10,3 +10,8 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 asyncpg
+confuse
+authlib
+SQLAlchemy
+psycopg[binary]
+argon2-cffi

@@ -1,39 +1,50 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useContext, useState } from 'react';
 import styles from './UserLogin.module.css';
-import { LoggedIn } from './LoggedIn';
-import { NotLoggedIn } from './NotLoggedIn';
-import { LoginDataService } from '@/views/LeftPanel/UserLogin/LoginDataService';
+import { AuthContext } from '@/auth/AuthProvider';
 
-interface UserLoginProps {}
+import { UserButton } from '../../../components/User';
+import { ModernButton } from '../../../components/Form';
+import { LoginModal } from '../../../components/Form';
 
-export const UserLogin: FC<UserLoginProps> = ({}) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const loginService = LoginDataService.getInstance();
+export const UserLogin: FC = () => {
+  const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    // Initial check of login state
-    setIsLoggedIn(loginService.isLoggedIn());
+  const isLoggedIn = !user.isAnonymous;
 
-    // Add listener for auth state changes
-    const handleAuthChange = () => {
-      setIsLoggedIn(loginService.isLoggedIn());
-    };
+  return <div className={styles.controls}>{isLoggedIn ? <LoggedIn /> : <NotLoggedIn />}</div>;
+};
 
-    loginService.addListener(handleAuthChange);
+const LoggedIn: FC = () => {
+  return (
+    <div className={styles.container}>
+      <UserButton className={styles.userButton} />
+    </div>
+  );
+};
 
-    // Cleanup listener on unmount
-    return () => {
-      loginService.removeListener(handleAuthChange);
-    };
-  }, [loginService]);
+const NotLoggedIn: FC = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
+    setIsLoginModalOpen(false);
   };
 
   return (
-    <div className={styles.controls}>
-      {isLoggedIn ? <LoggedIn /> : <NotLoggedIn onLoginSuccess={handleLoginSuccess} />}
+    <div className={styles.container}>
+      <ModernButton
+        variant="primary"
+        size="md"
+        onClick={() => setIsLoginModalOpen(true)}
+        className={styles.loginTriggerButton}
+      >
+        Sign In
+      </ModernButton>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 };
