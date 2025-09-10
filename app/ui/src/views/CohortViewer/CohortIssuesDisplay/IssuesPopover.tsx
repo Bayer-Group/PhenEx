@@ -12,10 +12,9 @@ import { color, group } from 'd3';
 interface IssuesPopoverProps {
   issues: CohortIssue[];
   onClick: (event: MouseEvent) => void;
-  draggable?: boolean;
 }
 
-export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick, draggable = false }) => {
+export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Subscribe to right panel changes
@@ -139,7 +138,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick, d
   const allIssues = Object.values(groupedIssues).flat();
   // Iterate over each, rendering a phenotype
   return (
-    <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''} ${draggable ? styles.draggable : ''}`}>
+    <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       <PopoverHeader onClick={onClick} className={`${styles.popoverheader}`} classNameXButton={`${styles.xButton}`}>
         {renderTitleLabel()}
       </PopoverHeader>

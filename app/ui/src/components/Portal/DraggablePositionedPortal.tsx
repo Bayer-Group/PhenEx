@@ -14,6 +14,7 @@ interface DraggablePositionedPortalProps {
   onDragStart?: () => void; // Called when drag starts
   onDragEnd?: (wasDragged: boolean) => void; // Called when drag ends
   onClose?: () => void; // Called when X button is clicked
+  resetToPositioned?: boolean; // When true, forces portal back to positioned mode
   debug?: boolean; // Debug flag
 }
 
@@ -35,6 +36,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
   onDragStart,
   onDragEnd,
   onClose,
+  resetToPositioned = false,
   debug = false,
 }) => {
   const [container] = useState(() => document.createElement('div'));
@@ -211,6 +213,22 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     };
   }, [isPositioned, userHasDragged, updatePortalPosition, triggerRef]);
 
+  // Reset to positioned mode when resetToPositioned prop changes
+  useEffect(() => {
+    if (resetToPositioned) {
+      setIsPositioned(true);
+      setUserHasDragged(false);
+      setHasDragged(false);
+      setIsDragging(false);
+      // Update position immediately to positioned coordinates
+      updatePortalPosition();
+      
+      if (debug) {
+        console.log('[DraggablePositionedPortal] Reset to positioned mode');
+      }
+    }
+  }, [resetToPositioned, updatePortalPosition, debug]);
+
   // Dragging logic
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
@@ -269,12 +287,9 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
         }
       }
 
-      // Keep the portal within viewport bounds
-      const maxX = window.innerWidth - 100;
-      const maxY = window.innerHeight - 100;
-
-      const clampedX = Math.max(0, Math.min(newX, maxX));
-      const clampedY = Math.max(0, Math.min(newY, maxY));
+      // NO CONSTRAINTS - allow portal to move anywhere freely
+      const clampedX = newX;
+      const clampedY = newY;
 
       setPortalPosition({ x: clampedX, y: clampedY });
       container.style.left = `${clampedX}px`;

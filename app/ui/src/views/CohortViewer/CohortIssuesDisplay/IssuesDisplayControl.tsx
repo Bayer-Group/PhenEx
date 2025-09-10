@@ -13,7 +13,7 @@ export interface CohortIssue {
 export const IssuesDisplayControl: React.FC = () => {
   const [showPopover, setShowPopover] = useState(false);
   const [issues, setIssues] = useState<CohortIssue[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const issuesService = dataService.issues_service;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,14 +53,10 @@ export const IssuesDisplayControl: React.FC = () => {
   };
   const closePopover = () => {
     setShowPopover(false);
-  };
-
-  const handleDragStart = () => {
-    setIsDragging(true);
-  };
-
-  const handleDragEnd = (wasDragged: boolean) => {
-    setIsDragging(false);
+    // Reset portal to positioned mode when closing
+    setResetPortalToPositioned(true);
+    // Reset the flag after a brief delay to allow the effect to trigger
+    setTimeout(() => setResetPortalToPositioned(false), 50);
   };
 
   return (
@@ -77,11 +73,10 @@ export const IssuesDisplayControl: React.FC = () => {
           position="below" 
           offsetY={5} 
           alignment="right"
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          resetToPositioned={resetPortalToPositioned}
         >
           <div className={styles.popover}>
-            <IssuesPopover issues={issues} onClick={closePopover} draggable={isDragging} />
+            <IssuesPopover issues={issues} onClick={closePopover} />
           </div>
         </DraggablePositionedPortal>
       )}
