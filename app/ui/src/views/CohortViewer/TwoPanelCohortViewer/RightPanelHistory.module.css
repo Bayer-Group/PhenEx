@@ -3,11 +3,10 @@
     position: absolute;
     top: 0px;
     right: -1px;
-    width: 40px; /* Base width */
+    width: 160px; /* Base width */
     height: 80px; /* Enough to contain the cards */
     overflow: hidden; /* This creates the masking effect */
     z-index: 10;
-    transition: width .5s ease-in-out; /* Much slower width expansion */
     
     /* Debug border - remove in production */
     /* border: 2px solid red; */
@@ -15,9 +14,7 @@
 
 /* Expanded state - wider on hover to show more history */
 .historyContainer:hover {
-    width: 700px;
      /* Much wider to show full history items */
-    transition: width 0.2s ease-in-out; /* Fast expansion on hover */
 }
 
 .rightPanelHistory {

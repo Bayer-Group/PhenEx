@@ -242,7 +242,7 @@
 .bottomPanel {
   background-color: var(--background-color) !important;
   position: relative;
-  border-top: 1px solid var(--color-accent-bright);
+  border-top: var(--border);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
   transition:
