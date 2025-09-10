@@ -11,10 +11,10 @@ import { color, group } from 'd3';
 
 interface IssuesPopoverProps {
   issues: CohortIssue[];
-  onClick: (event: MouseEvent) => void;
+  onClose?: () => void; // Add back onClose prop for X button
 }
 
-export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick }) => {
+export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Subscribe to right panel changes
@@ -131,15 +131,56 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClick })
     );
   };
 
-  const hidePopover = (event: MouseEvent) => {
-    onClick();
+  const hidePopover = () => {
+    // This function is no longer needed since close logic moved to portal
   };
   // Flatten all issues
   const allIssues = Object.values(groupedIssues).flat();
   // Iterate over each, rendering a phenotype
   return (
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      <PopoverHeader onClick={onClick} className={`${styles.popoverheader}`} classNameXButton={`${styles.xButton}`}>
+      {/* Custom X button - top right */}
+      <button
+        onClick={() => {
+          console.log('[IssuesPopover] Custom X button clicked, calling onClose:', onClose);
+          if (onClose) {
+            onClose();
+          }
+        }}
+        style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          background: 'transparent',
+          border: 'none',
+          fontSize: '20px',
+          cursor: 'pointer',
+          color: '#666',
+          zIndex: 1000,
+          width: '24px',
+          height: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '4px'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#f0f0f0';
+          e.currentTarget.style.color = '#000';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = '#666';
+        }}
+      >
+        ×
+      </button>
+      
+      <PopoverHeader 
+        onClick={() => {}} // Disable PopoverHeader's close functionality
+        className={`${styles.popoverheader}`} 
+        classNameXButton={`${styles.xButton}`}
+      >
         {renderTitleLabel()}
       </PopoverHeader>
       <div className={styles.body}>

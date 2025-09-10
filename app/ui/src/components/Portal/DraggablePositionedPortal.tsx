@@ -13,7 +13,7 @@ interface DraggablePositionedPortalProps {
   enableDragging?: boolean; // Allow disabling drag functionality
   onDragStart?: () => void; // Called when drag starts
   onDragEnd?: (wasDragged: boolean) => void; // Called when drag ends
-  onClose?: () => void; // Called when X button is clicked
+  onClose?: () => void; // Called when portal should close
   resetToPositioned?: boolean; // When true, forces portal back to positioned mode
   debug?: boolean; // Debug flag
 }
@@ -140,12 +140,15 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
       container.style.top = `${newPos.y}px`;
       onPositionChange?.(newPos.x, newPos.y);
     } else {
-      // In draggable mode, use the current portal position
-      container.style.left = `${portalPosition.x}px`;
-      container.style.top = `${portalPosition.y}px`;
-      onPositionChange?.(portalPosition.x, portalPosition.y);
+      // In draggable mode, use the current portal position (read from state)
+      setPortalPosition(current => {
+        container.style.left = `${current.x}px`;
+        container.style.top = `${current.y}px`;
+        onPositionChange?.(current.x, current.y);
+        return current; // No change to state
+      });
     }
-  }, [isPositioned, userHasDragged, calculatePositionedCoordinates, portalPosition, container, onPositionChange]);
+  }, [isPositioned, userHasDragged, calculatePositionedCoordinates, container, onPositionChange]);
 
   // Set up positioning monitoring (only when in positioned mode)
   useEffect(() => {
@@ -331,6 +334,12 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     const currentContainer = container;
 
     const mouseDownHandler = (e: MouseEvent) => {
+      // Allow buttons and other clickable elements to work normally
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'BUTTON' || target.closest('button')) {
+        return; // Don't interfere with button clicks
+      }
+      
       e.stopPropagation();
       handleMouseDown(e);
     };
@@ -341,6 +350,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     };
 
     currentContainer.addEventListener('mousedown', mouseDownHandler);
+    // REMOVED: click listener - no automatic click-to-close behavior
     currentContainer.addEventListener('dragstart', preventDragEvents);
     currentContainer.addEventListener('dragover', preventDragEvents);
     currentContainer.addEventListener('drop', preventDragEvents);
@@ -348,6 +358,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
 
     return () => {
       currentContainer.removeEventListener('mousedown', mouseDownHandler);
+      // REMOVED: click listener cleanup
       currentContainer.removeEventListener('dragstart', preventDragEvents);
       currentContainer.removeEventListener('dragover', preventDragEvents);
       currentContainer.removeEventListener('drop', preventDragEvents);
