@@ -8,9 +8,10 @@ interface HistoryCardProps {
   index: number; // 0 = topmost card, higher = further back
   onClick?: () => void;
   className?: string;
+  isHovered?: boolean;
 }
 
-export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, className }) => {
+export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, className, isHovered }) => {
   const hasExtraData = item.extraData && typeof item.extraData === 'object' && Object.keys(item.extraData).length > 0;
   const backgroundColor = hasExtraData ? undefined : 'var(--background-color)';
   const typeStyleClass = hasExtraData && item.extraData.class_name ? `typeStyles-${item.extraData.class_name}` : undefined;
@@ -27,8 +28,8 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
     typeStyleClass,
     className,
     typeStyles[`${item.extraData?.effective_type || ''}_color_block`] || '',
-    typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || ''
-
+    typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || '',
+    isHovered ? styles.cardHovered : '' // Apply cardHovered class when hovered
   ].filter(Boolean).join(' ');
 
   // Debug logging for classes

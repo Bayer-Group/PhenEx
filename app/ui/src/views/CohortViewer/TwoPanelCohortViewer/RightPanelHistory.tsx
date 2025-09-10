@@ -4,7 +4,6 @@ import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer';
 import { HistoryCard } from './HistoryCard';
 import { PositionedPortal } from '../../../components/Portal/PositionedPortal';
 import styles from './RightPanelHistory.module.css';
-import historyCardStyles from './HistoryCard.module.css';
 
 interface RightPanelHistoryProps {
   className?: string;
@@ -15,8 +14,8 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const cohortViewerService = TwoPanelCohortViewerService.getInstance();
   const [history, setHistory] = useState<RightPanelHistoryItem[]>(historyService.getHistory());
   const [currentItem, setCurrentItem] = useState<RightPanelHistoryItem | null>(historyService.getCurrentItem());
-  const [isHovered, setIsHovered] = useState(false);
   const [isSlideOut, setIsSlideOut] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +113,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const displayItems = previousItems.slice(-maxCards).reverse(); // Get last N, most recent first
   
   console.log('[RightPanelHistory] Rendering stack with previous items:', displayItems.map(item => item.displayName));
-  console.log('[RightPanelHistory] isHovered:', isHovered); // Debug log
 
   return (
     <div 
@@ -137,14 +135,14 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
         >
           <div className={styles.hoverZone}></div>
           <div className={`${styles.rightPanelHistory} ${isSlideOut ? styles.slideOut : styles.slideIn}`}>
-            <div className={`${styles.cardStack} ${isHovered ? styles.hovered : ''}`}>
+            <div className={styles.cardStack}>
               {displayItems.map((item, index) => (
                 <HistoryCard 
                   key={`${item.timestamp}-${index}`}
                   item={item}
                   index={index}
                   onClick={() => handleCardClick(item, index)}
-                  className={isHovered ? historyCardStyles.cardHovered : ''}
+                  isHovered={isHovered}
                 />
               ))}
             </div>
