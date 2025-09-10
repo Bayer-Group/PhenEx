@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { IssuesPopover } from './IssuesPopover';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
-import { PositionedPortal } from '../../../components/Portal/PositionedPortal';
+import { DraggablePositionedPortal } from '../../../components/Portal/DraggablePositionedPortal';
 import styles from './IssuesDisplayControl.module.css';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 
@@ -63,11 +63,11 @@ export const IssuesDisplayControl: React.FC = () => {
       onClick={handleClick}
     >
       {showPopover && (
-        <PositionedPortal triggerRef={containerRef} position="below" offsetY={5} alignment="right">
+        <DraggablePositionedPortal triggerRef={containerRef} position="below" offsetY={5} alignment="right">
           <div className={styles.popover}>
             <IssuesPopover issues={issues} onClick={closePopover} />
           </div>
-        </PositionedPortal>
+        </DraggablePositionedPortal>
       )}
       <div className={styles.issuesButton}>
         <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
