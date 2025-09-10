@@ -52,6 +52,7 @@ export const IssuesDisplayControl: React.FC = () => {
     }
   };
   const closePopover = () => {
+    console.log('[IssuesDisplayControl] closePopover called');
     setShowPopover(false);
     // Reset portal to positioned mode when closing
     setResetPortalToPositioned(true);
@@ -74,9 +75,10 @@ export const IssuesDisplayControl: React.FC = () => {
           offsetY={5} 
           alignment="right"
           resetToPositioned={resetPortalToPositioned}
+          onClose={closePopover}
         >
           <div className={styles.popover}>
-            <IssuesPopover issues={issues} onClick={closePopover} />
+            <IssuesPopover issues={issues} onClose={closePopover} />
           </div>
         </DraggablePositionedPortal>
       )}
