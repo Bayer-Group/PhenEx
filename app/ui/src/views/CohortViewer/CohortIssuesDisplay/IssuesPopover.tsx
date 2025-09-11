@@ -18,7 +18,7 @@ interface IssuesPopoverProps {
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose }) => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const ISSUEPOPOVER_TABS = ['phenex', 'Issues'];
+  const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
   const handleTabChange = (tabIndex: number) => {
     setActiveTabIndex(tabIndex);
   };
@@ -90,7 +90,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
 
   const renderTitleLabel = () => {
     return (
- <Tabs
+     <Tabs
         tabs={ISSUEPOPOVER_TABS}
         active_tab_index={activeTabIndex}
         onTabChange={handleTabChange}
@@ -98,12 +98,6 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
         classNameTabs={styles.tab}
         icons={{ 0: BirdIcon }}
       />
-      // <div className={styles.titleLabelDiv}>
-      //   {renderBird()}
-      //   <span className={styles.issuesText}>
-      //     Issues
-      //   </span>
-      // </div>
     );
   };
 
@@ -171,6 +165,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
   const renderTransparentHeader = () => {
     return (
       <div className={styles.transparentHeader}>
+        <div className={styles.transparentHeaderGradient}/>
         {renderCloseButton()}
         {renderTitleLabel()}
       </div>
