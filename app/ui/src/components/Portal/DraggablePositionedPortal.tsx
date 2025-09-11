@@ -317,13 +317,11 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'grabbing';
       document.body.style.userSelect = 'none';
 
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = '';
         document.body.style.userSelect = '';
       };
     }
@@ -370,13 +368,6 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     <div
       ref={containerRef}
       style={{
-        cursor: !enableDragging
-          ? 'default'
-          : isDragging
-            ? 'grabbing'
-            : dragHandleSelector
-              ? 'default'
-              : 'grab',
         position: 'relative',
         pointerEvents: 'auto',
       }}
