@@ -16,18 +16,25 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
   useEffect(() => {
     const cohortViewerService = TwoPanelCohortViewerService.getInstance();
     const handleRightPanelChange = (viewType: any, extraData: any) => {
+      // Debug log to trace selection sync
+      console.log('[IssuesPopoverList] Right panel change:', viewType, extraData);
       if (viewType === 'phenotype' && extraData && extraData.id) {
+        console.log("ENTERING")
         const matchingIssue = issues.find(issue => issue.phenotype_id === extraData.id);
         if (matchingIssue) {
+            console.log("matchingISSUE", matchingIssue);
           setSelectedId(matchingIssue.phenotype_id);
         } else {
+            console.log("SETTING NULL")
           setSelectedId(null);
         }
       } else {
+        console.log("FINLAL NULL")
         setSelectedId(null);
       }
     };
     cohortViewerService.addListener(handleRightPanelChange);
+    // Always sync selection to current right panel state on mount and issues change
     const currentViewType = cohortViewerService.getCurrentViewType();
     const currentExtraData = cohortViewerService.getExtraData();
     handleRightPanelChange(currentViewType, currentExtraData);
@@ -75,10 +82,12 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
     const isSelected = selectedId === issue.phenotype_id;
     const typeHoverClass = typeStyles[`${phenotypeType}_list_item`] || '';
     const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_list_item_selected`] : '';
+    // Add debug log to see which item is selected
+    // console.log('[IssuesPopoverList] Render', issue.phenotype_id, 'isSelected:', isSelected);
     return (
       <div
         key={`${issue.phenotype_id}-${index}`}
-        className={`${styles.phenotypeSection} ${typeHoverClass} ${typeSelectedClass} ${isSelected ? styles.selected : ''}`}
+        className={`${styles.phenotypeSection} ${typeHoverClass} ${typeSelectedClass}`}
         onClick={event => {
           event.stopPropagation();
           setSelectedId(issue.phenotype_id);

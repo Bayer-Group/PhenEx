@@ -24,7 +24,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
 
   useEffect(() => {
     const updateHistory = () => {
-      console.log('[RightPanelHistory] Updating history state');
       setHistory(historyService.getHistory());
       setCurrentItem(historyService.getCurrentItem());
       
@@ -58,19 +57,16 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
     
     hideTimeoutRef.current = setTimeout(() => {
       setIsSlideOut(true);
-      console.log('[RightPanelHistory] Auto-hiding after timeout');
     }, AUTO_HIDE_DELAY);
   };
 
   const handleMouseEnter = () => {
-    console.log('[RightPanelHistory] Mouse entered');
     setIsHovered(true);
     setIsSlideOut(false);
     clearTimeouts();
   };
 
   const handleMouseLeave = () => {
-    console.log('[RightPanelHistory] Mouse left');
     setIsHovered(false);
     
     // Start auto-hide timer again
@@ -87,7 +83,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   }, [currentItem, history.length, isHovered, isSlideOut]);
 
   const handleCardClick = (item: RightPanelHistoryItem, index: number) => {
-    console.log(`[RightPanelHistory] Card clicked at index ${index}:`, item.displayName);
     
     // Since we're showing previous items, index 0 is the most recent previous item
     // We need to pop (index + 1) times to reach the clicked item
@@ -103,7 +98,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   };
 
   if (!currentItem || history.length <= 1) {
-    console.log('[RightPanelHistory] No previous items to show, not rendering');
     return null;
   }
 
@@ -112,8 +106,6 @@ export const RightPanelHistory: FC<RightPanelHistoryProps> = ({ className }) => 
   const previousItems = history.slice(0, -1); // Remove current item
   const displayItems = previousItems.slice(-maxCards).reverse(); // Get last N, most recent first
   
-  console.log('[RightPanelHistory] Rendering stack with previous items:', displayItems.map(item => item.displayName));
-
   return (
     <div 
       ref={containerRef}
