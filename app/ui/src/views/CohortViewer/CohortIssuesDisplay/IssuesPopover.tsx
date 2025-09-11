@@ -18,7 +18,7 @@ interface IssuesPopoverProps {
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose }) => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
+  const ISSUEPOPOVER_TABS = ['phenex', 'Issues'];
   const handleTabChange = (tabIndex: number) => {
     setActiveTabIndex(tabIndex);
   };
@@ -94,8 +94,8 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
         tabs={ISSUEPOPOVER_TABS}
         active_tab_index={activeTabIndex}
         onTabChange={handleTabChange}
-        classNameTabsContainer={styles.titleLabelDiv}
-        classNameTabs={styles.issuesText}
+        classNameTabsContainer={styles.tabsContainer}
+        classNameTabs={styles.tab}
         icons={{ 0: BirdIcon }}
       />
       // <div className={styles.titleLabelDiv}>
