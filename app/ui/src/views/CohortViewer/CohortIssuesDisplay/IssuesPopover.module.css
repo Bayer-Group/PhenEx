@@ -7,26 +7,32 @@
 
 .customCloseButton {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 5px;
+  right: -12px;
   height:60px;
-  width: 60px;
+  width: 50px !important;
 
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 40px;
+  font-family: "IBMPlexSans-bold";
   cursor: pointer;
-  color: #666;
+  color: var(--color-accent-bright);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 14px;
+
 }
 
 .customCloseButton:hover {
-  background: #f0f0f0;
-  color: #000;
+  color:red;
+}
+
+.customCloseButton:focus{
+  border:none;
+  outline:none;
 }
 
 .popover {
