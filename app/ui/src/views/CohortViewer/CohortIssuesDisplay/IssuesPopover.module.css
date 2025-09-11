@@ -170,20 +170,21 @@
 
 .tabsContainer {
   position: absolute;
-  top: 20px;
-  left:20px;
+  top: 10px;
+  left:10px;
   height: 60px;
-  border-radius: 15px;
-  padding:10px;
-  gap:10px;
+  border-radius: 20px;
+  padding:5px;
+  gap:5px;
 }
 
 
 .tab{
   font-size:40px;
   padding: 2px 15px;
-  border-radius: 10px;
+  border-radius: 16px;
   height: 60px;
+  color: var(--color_entry);
 }
 
 .xButton{

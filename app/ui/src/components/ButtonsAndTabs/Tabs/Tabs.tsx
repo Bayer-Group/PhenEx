@@ -51,7 +51,7 @@ export const Tabs: FC<TabsProps> = ({
           onClick={() => handleTabClick(index)}
         >
             {icons && icons[index]
-              ? <img src={icons[index]} alt={tab} style={{ height: '1em', verticalAlign: 'middle' }} />
+              ? <img src={icons[index]} alt={tab} className={styles.icon} />
               : tab}
         </button>
       ))}
