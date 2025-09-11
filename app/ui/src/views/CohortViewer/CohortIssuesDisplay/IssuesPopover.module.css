@@ -163,34 +163,12 @@
 .titleLabelDiv {
   margin-left:0px;
 
-  background-color: red;
   position: absolute;
   top: 20px;
   left:20px;
+  height: 100px;
 }
 
-.titleLabelDiv {
-  display: flex;
-  /* flex-wrap: wrap; */
-  gap: 4px 6px;
-  border-radius: 12px;
-  border: var(--border);
-  padding: 4px;
-  background-color: var(--background_color_translucent);
-  backdrop-filter: blur(10px);
-  /* border: 1px solid var(--line-color); */
-  -webkit-backdrop-filter: blur(10px);
-  user-select: none;
-  flex-shrink: 0;
-  width: fit-content;
-  /* background-color: yellow; */
-}
-
-.titleLabelDiv:hover {
-  background-color: var(--color-accent-hover) !important;
-  border: 1px solid var(--dynamic-accent-color, var(--color-accent-bright));
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
 .popoverheader {
   color: black !important;
@@ -206,6 +184,7 @@
   padding: 2px 15px;
   border: var(--border);
   border-radius: 5px;
+  height: 100px;
 }
 
 .xButton{

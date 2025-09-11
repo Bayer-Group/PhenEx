@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
@@ -16,6 +17,11 @@ interface IssuesPopoverProps {
 }
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose }) => {
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
+  const handleTabChange = (tabIndex: number) => {
+    setActiveTabIndex(tabIndex);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Subscribe to right panel changes
@@ -84,12 +90,20 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
 
   const renderTitleLabel = () => {
     return (
-      <div className={styles.titleLabelDiv}>
-        {renderBird()}
-        <span className={styles.issuesText}>
-          Issues
-        </span>
-      </div>
+ <Tabs
+        tabs={ISSUEPOPOVER_TABS}
+        active_tab_index={activeTabIndex}
+        onTabChange={handleTabChange}
+        classNameTabsContainer={styles.titleLabelDiv}
+        classNameTabs={styles.issuesText}
+        icons={{ 0: BirdIcon }}
+      />
+      // <div className={styles.titleLabelDiv}>
+      //   {renderBird()}
+      //   <span className={styles.issuesText}>
+      //     Issues
+      //   </span>
+      // </div>
     );
   };
 
@@ -170,7 +184,6 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
       {renderTransparentHeader()}
 
       <div className={styles.body}>
-
         {allIssues.map((issue, index) => renderPhenotype(issue, index))}
       </div>
     </div>
