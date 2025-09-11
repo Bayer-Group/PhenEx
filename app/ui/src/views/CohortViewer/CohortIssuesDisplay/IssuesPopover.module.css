@@ -4,6 +4,31 @@
   --background_color_translucent: rgba(248, 249, 250, 0.8);
   --issues_popover_gutter:20px;
 }
+
+.customCloseButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  height:60px;
+  width: 60px;
+
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.customCloseButton:hover {
+  background: #f0f0f0;
+  color: #000;
+}
+
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);

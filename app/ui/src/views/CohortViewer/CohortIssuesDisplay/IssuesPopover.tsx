@@ -141,48 +141,17 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       {/* Custom X button - top right */}
       <button
+        className={styles.customCloseButton}
         onClick={() => {
           console.log('[IssuesPopover] Custom X button clicked, calling onClose:', onClose);
           if (onClose) {
             onClose();
           }
         }}
-        style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          background: 'transparent',
-          border: 'none',
-          fontSize: '20px',
-          cursor: 'pointer',
-          color: '#666',
-          zIndex: 1000,
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '4px'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#f0f0f0';
-          e.currentTarget.style.color = '#000';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = '#666';
-        }}
       >
         ×
       </button>
-      
-      <PopoverHeader 
-        onClick={() => {}} // Disable PopoverHeader's close functionality
-        className={`${styles.popoverheader}`} 
-        classNameXButton={`${styles.xButton}`}
-      >
         {renderTitleLabel()}
-      </PopoverHeader>
       <div className={styles.body}>
         {allIssues.map((issue, index) => renderPhenotype(issue, index))}
       </div>
