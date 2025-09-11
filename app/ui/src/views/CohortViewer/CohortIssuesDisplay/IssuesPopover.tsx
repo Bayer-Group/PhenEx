@@ -60,7 +60,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       {renderTransparentHeader()}
       {selectedView === 'issues' ? (
-        <IssuesPopoverList issues={issues} />
+        <div className={styles.body}><IssuesPopoverList issues={issues} /></div>
       ) : (
         <div className={styles.body}>
         hello
