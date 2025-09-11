@@ -6,6 +6,7 @@ import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import typeStyles from '../../../styles/study_types.module.css';
+import BirdIcon from '../../../assets/bird_icon.png'
 
 import { color, group } from 'd3';
 
@@ -84,15 +85,9 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
   const renderTitleLabel = () => {
     return (
       <div className={styles.titleLabelDiv}>
-        <span className={styles.issuesText}>Issues</span>
-        <br></br>
-        <span className={styles.labelSecondary}>
-          <span className={`${styles.number} ${styles.totalIssues}`}>{totalIssueCount}</span>
-          in
-          <span className={`${styles.number} ${styles.phenotypeIssues}`}>
-            {phenotypesWithIssues}
-          </span>{' '}
-          phenotypes
+        {renderBird()}
+        <span className={styles.issuesText}>
+          Issues
         </span>
       </div>
     );
@@ -134,25 +129,48 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
   const hidePopover = () => {
     // This function is no longer needed since close logic moved to portal
   };
+  
+  const renderBird = () => {
+    return (
+      <img src={BirdIcon} alt="No issues" className={`${styles.birdIcon}`} />
+    );
+  }
+
+  
+  const renderCloseButton = () => {
+    return (
+      <button
+          className={styles.customCloseButton}
+          onClick={() => {
+            console.log('[IssuesPopover] Custom X button clicked, calling onClose:', onClose);
+            if (onClose) {
+              onClose();
+            }
+          }}
+        >
+          ×
+      </button>
+    );
+  }
+
+
+  const renderTransparentHeader = () => {
+    return (
+      <div className={styles.transparentHeader}>
+        {renderCloseButton()}
+        {renderTitleLabel()}
+      </div>
+    );
+  }
   // Flatten all issues
   const allIssues = Object.values(groupedIssues).flat();
   // Iterate over each, rendering a phenotype
   return (
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      {/* Custom X button - top right */}
-      <button
-        className={styles.customCloseButton}
-        onClick={() => {
-          console.log('[IssuesPopover] Custom X button clicked, calling onClose:', onClose);
-          if (onClose) {
-            onClose();
-          }
-        }}
-      >
-        ×
-      </button>
-        {renderTitleLabel()}
+      {renderTransparentHeader()}
+
       <div className={styles.body}>
+
         {allIssues.map((issue, index) => renderPhenotype(issue, index))}
       </div>
     </div>
