@@ -66,114 +66,11 @@
 
 .body {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto!important;
   padding: 10px var(--issues_popover_gutter) 30px var(--issues_popover_gutter);
   margin-top: 0px;
 }
 
-.section {
-}
-
-.section:last-child {
-  margin-bottom: 0;
-}
-
-.sectionTitle {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 2 8px 0;
-}
-
-.phenotypeSection {
-  position: relative;
-  margin-bottom: 4px;
-  background-color: transparent;
-  border-radius: var(--border-radius);
-  padding: 4px 20px;
-  border: transparent solid 1px;
-}
-
-
-
-.phenotypeId {
-  font-family: 'IBMPlexSans-regular';
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.phenotypeSection.selected .phenotypeId {
-  font-family: 'IBMPlexSans-bold';
-}
-
-.issuesList {
-  margin: 0;
-  margin-top: 0px;
-  padding-left: 80px;
-  width: calc(100% - 50px);
-  font-size: 14px;
-}
-
-.issueItem {
-  font-size: 12px;
-  color: #333;
-  margin-bottom: 2px;
-  line-height: 1;
-}
-
-.phenotypeType {
-  font-size: 12px;
-  padding: 2px 6px;
-  font-family: 'IBMPlexSans-bolditalic';
-  border-radius: 4px;
-}
-
-.phenotypeId {
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Space between type label and name */
-  font-family: 'IBMPlexSans-regular';
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.phenotypeType {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  padding: 2px 6px;
-  font-family: 'IBMPlexSans-bolditalic';
-  border-radius: 4px;
-  background-color: #eee;
-  color: var(--text-color-secondary);
-}
-
-.index {
-  display: inline-block;
-}
-
-.number.phenotypeIssues {
-  margin-left: 5px;
-  font-size: 18px;
-}
-
-.labelSecondary {
-  font-size: 12px;
-  font-family: 'IBMPlexSans-bolditalic';
-}
-
-.totalIssues {
-  font-size: 18px;
-  margin-right: 5px;
-}
-
-
-.popoverheader {
-  color: black !important;
-  height: 60px;
-  border: 0px solid red !important;
-  box-shadow: none !important;
-}
 
 .tabsContainer {
   position: absolute;
@@ -192,24 +89,6 @@
   border-radius: 16px;
   height: 60px;
   color: var(--color_entry);
-}
-
-.xButton{
-  color: black;
-}
-
-.popoverheader .xButton{
-  font-size: 30px !important;
-  top:15px!important;
-  right: 15px!important;
-  color:var(--color-accent-bright) !important;
-}
-
-
-.birdIcon{
-  height: 50px;
-  width:50px;
-
 }
 
 .transparentHeader{
