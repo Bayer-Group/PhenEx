@@ -1,28 +1,31 @@
 from typing import Dict
 from phenex.mappers import DomainsDictionary
+from phenex.tables import PhenexTable
 import pandas as pd
 import numpy as np
-from dataclasses import asdict
+import ibis
 
 
 def generate_mock_mapped_tables(
-    n_patients: int, domains: DomainsDictionary
-) -> Dict[str, pd.DataFrame]:
+    domains: DomainsDictionary, n_patients: int = 10000
+) -> Dict[str, PhenexTable]:
     """
     Generate fake data for N patients based on the given domains.
 
     Args:
-        n_patients (int): The number of patients to generate data for.
         domains (DomainsDictionary): The domains dictionary containing the table mappers.
+        n_patients (int): The number of patients to generate data for.
 
     Returns:
-        Dict[str, pd.DataFrame]: A dictionary where keys are domain names and values are DataFrames with fake data.
+        Dict[str, PhenexTable]: A dictionary where keys are domain names and values are PhenexTable instances with fake data.
     """
     fake_data = {}
     for domain, mapper in domains.domains_dict.items():
-        columns = [field for field in asdict(mapper).keys() if field != "NAME_TABLE"]
+        # Get original column names from DEFAULT_MAPPING values
+        # DEFAULT_MAPPING maps from PhenEx field names to original column names
+        original_columns = list(mapper.DEFAULT_MAPPING.values())
         data = {}
-        for col in columns:
+        for col in original_columns:
             if "DATE" in col:
                 start_date = pd.to_datetime("2000-01-01")
                 end_date = pd.to_datetime("2020-12-31")
@@ -48,5 +51,10 @@ def generate_mock_mapped_tables(
                 )
             else:
                 data[col] = np.random.choice(range(1000), n_patients)
-        fake_data[domain] = pd.DataFrame(data)
+
+        # Create ibis table from pandas DataFrame
+        ibis_table = ibis.memtable(pd.DataFrame(data))
+
+        # Create PhenexTable instance using the mapper class with drop_unmapped=True
+        fake_data[domain] = mapper(ibis_table)
     return fake_data
