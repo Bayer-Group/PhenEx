@@ -5,9 +5,9 @@
 
 .row {
   padding: 0px !important;
-  background-color: var(--background_color_translucent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* background-color: var(--background_color_translucent); */
+  /* backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); */
   font-family: 'IBMPlexSans-bold';
   /* padding: 0px 20px; */
   border-radius: 10px;
@@ -31,7 +31,7 @@
 
 .row.noIssues {
   border-color: transparent;
-  opacity: 0;
+  /* opacity: 0; */
   pointer-events: none;
 }
 
@@ -47,7 +47,7 @@
 
 .row:hover .statusDot {
   /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
 
   /* border: 2px solid var(--color-accent); */
 }
@@ -85,8 +85,9 @@
   font-size: 22px;
   line-height: 1;
   color: white;
-  background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover));
+  /* background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover)); */
   border: 2px solid rgba(255, 255, 255, 0.2);
+  background-color:transparent;
 
   
 }
@@ -165,4 +166,21 @@
   text-align: right;
   position: absolute;
   padding-left: 20px;
+}
+
+
+.birdIcon{
+  height: 50px;
+  width:50px;
+  position: absolute;
+  right:0px;
+  top:-20px;
+}
+
+.birdIssues{
+  height: 30px;
+  width:30px;
+  position: absolute;
+  right:0px;
+  top:15px;
 }
