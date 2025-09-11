@@ -16,12 +16,6 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
   const backgroundColor = hasExtraData ? undefined : 'var(--background-color)';
   const typeStyleClass = hasExtraData && item.extraData.class_name ? `typeStyles-${item.extraData.class_name}` : undefined;
   
-  // Debug logging for extraData
-  console.log('[HistoryCard] Debug - item:', item.displayName);
-  console.log('[HistoryCard] Debug - extraData:', item.extraData);
-  console.log('[HistoryCard] Debug - extraData type:', item.extraData?.effective_type);
-  console.log('[HistoryCard] Debug - hasExtraData:', hasExtraData);
-  
   const cardClassName = [
     styles.historyCard,
     `${styles.cardIndex}${index}`, // Add specific index class for CSS targeting
@@ -31,12 +25,6 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
     typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || '',
     isHovered ? styles.cardHovered : '' // Apply cardHovered class when hovered
   ].filter(Boolean).join(' ');
-
-  // Debug logging for classes
-  console.log('[HistoryCard] Debug - index:', index);
-  console.log('[HistoryCard] Debug - className prop:', className);
-  console.log('[HistoryCard] Debug - final cardClassName:', cardClassName);
-  console.log('[HistoryCard] Debug - cardIndex class:', `${styles.cardIndex}${index}`);
 
   const cardStyle = {
     '--card-index': index,
