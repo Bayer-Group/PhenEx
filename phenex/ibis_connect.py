@@ -481,7 +481,7 @@ class DuckDBConnector:
 
         try:
             return self.dest_connection.create_view(
-                name=name_table, obj=table, overwrite=overwrite
+                name_table, obj=table, overwrite=overwrite
             )
         except AttributeError as e:
             print(f"Error creating view: {e}")
@@ -509,7 +509,7 @@ class DuckDBConnector:
                     "name_table must be provided if the table doesn't have a name."
                 )
         return self.dest_connection.create_table(
-            name=name_table, obj=table, overwrite=overwrite
+            name_table, obj=table, overwrite=overwrite
         )
 
     def drop_table(self, name_table):
