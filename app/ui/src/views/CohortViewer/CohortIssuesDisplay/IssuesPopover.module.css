@@ -108,3 +108,8 @@
   height:100%;
   background: linear-gradient(0deg, transparent, white);
 }
+
+.customScrollbarThumb {
+  background-color: var(--color-accent-bright);
+  border-radius: 4px;
+}

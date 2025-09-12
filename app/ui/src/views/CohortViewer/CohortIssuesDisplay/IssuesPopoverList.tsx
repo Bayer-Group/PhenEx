@@ -108,6 +108,7 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
 
   return (
     <>
+    <div className={styles.topPadding}/>
       {allIssues.map((issue, index) => renderPhenotype(issue, index))}
     </>
   );

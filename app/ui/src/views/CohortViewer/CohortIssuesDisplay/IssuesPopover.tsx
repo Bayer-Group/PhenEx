@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
@@ -8,6 +8,7 @@ import { CohortIssuesDisplay } from './CohortIssuesDisplay';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import typeStyles from '../../../styles/study_types.module.css';
 import BirdIcon from '../../../assets/bird_icon.png'
+import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 import { color, group } from 'd3';
 import IssuesPopoverList from './IssuesPopoverList';
@@ -21,6 +22,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
   const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
   const [activeTabIndex, setActiveTabIndex] = useState(ISSUEPOPOVER_TABS.length - 1);
   const selectedView = ISSUEPOPOVER_TABS[activeTabIndex];
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const onTabChange = (index: number) => {
     setActiveTabIndex(index);
@@ -60,13 +62,19 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
     <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
       {renderTransparentHeader()}
       {selectedView === 'issues' ? (
-        <div className={styles.body}><IssuesPopoverList issues={issues} /></div>
+        <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
       ) : (
-        <div className={styles.body}>
+        <div ref={bodyRef} className={styles.body}>
         hello
         </div>
-
       )}
+      <SimpleCustomScrollbar 
+        targetRef={bodyRef}
+        orientation="vertical"
+        marginTop={100}
+        marginBottom={5}
+        classNameThumb={styles.customScrollbarThumb}
+      />
     </div>
   );
 };
