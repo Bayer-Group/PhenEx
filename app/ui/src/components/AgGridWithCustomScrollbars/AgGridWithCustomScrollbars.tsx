@@ -10,6 +10,7 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
       enabled?: boolean;
       marginTop?: number;
       marginBottom?: number;
+      marginToEnd?: number; // marginRight for vertical scrollbar
       classNameThumb?: string;
       classNameTrack?: string;
     };
@@ -17,6 +18,7 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
       enabled?: boolean;
       marginLeft?: number;
       marginRight?: number;
+      marginToEnd?: number; // marginBottom for horizontal scrollbar
       classNameThumb?: string;
       classNameTrack?: string;
     };
@@ -40,6 +42,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       enabled: true,
       marginTop: 65, // Space for header
       marginBottom: 30,
+      marginToEnd: 10, // Default marginRight for vertical scrollbar
       classNameThumb: '',
       classNameTrack: '',
       ...scrollbarConfig?.vertical
@@ -49,6 +52,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       enabled: true,
       marginLeft: 10,
       marginRight: 10, // Space for vertical scrollbar area
+      marginToEnd: 30, // Default marginBottom for horizontal scrollbar
       classNameThumb: '',
       classNameTrack: '',
       ...scrollbarConfig?.horizontal
@@ -161,6 +165,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
               orientation="vertical"
               marginTop={verticalConfig.marginTop}
               marginBottom={verticalConfig.marginBottom}
+              marginToEnd={verticalConfig.marginToEnd}
               classNameThumb={verticalConfig.classNameThumb}
               classNameTrack={verticalConfig.classNameTrack}
             />
@@ -173,6 +178,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
               orientation="horizontal"
               marginLeft={horizontalConfig.marginLeft}
               marginRight={horizontalConfig.marginRight}
+              marginToEnd={horizontalConfig.marginToEnd}
               classNameThumb={horizontalConfig.classNameThumb}
               classNameTrack={horizontalConfig.classNameTrack}
             />

@@ -104,14 +104,14 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-
+      <div className = {styles.gridContainer}>
         <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
           ref={gridRef}
           theme={dataService.getTheme()}
           onCellValueChanged={onCellValueChanged}
-          scrollbarConfig={{ vertical: { classNameThumb: typeColor } }}
+          scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 } }}
           animateRows={false}
           
           getRowHeight={params => {
@@ -161,6 +161,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             return current_max_height;
           }}
         />
+      </div>
     );
   };
 
