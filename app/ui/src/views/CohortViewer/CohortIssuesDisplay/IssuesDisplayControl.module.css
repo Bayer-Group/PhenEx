@@ -1,7 +1,7 @@
 .container {
   position: absolute;
   user-select: none;
-  right: 30px;
+  right: 40px;
   bottom: 30px;
   transition: all 0.3s ease;
   z-index: 1001;

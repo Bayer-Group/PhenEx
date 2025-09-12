@@ -18,6 +18,7 @@
   z-index: 1;
   transition: color 0.3s ease-in-out !important;
   margin-top: 0px;
+  cursor: pointer;
 }
 
 .row.selected {
@@ -84,9 +85,9 @@
   font-family: 'IBMPlexSans-bold';
   font-size: 22px;
   line-height: 1;
-  color: white;
+  color: var(--color-accent-bright);
   /* background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover)); */
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--color-accent-bright);
   background-color:transparent;
 
   
@@ -110,17 +111,16 @@
 } */
 
 .row.noIssues .statusDot.green {
-  /* background-color: blue;
-  right:0px !important;
-  position: absolute !important; */
+  border-color: transparent;
+  color: transparent;
 }
 
 .statusDot.red {
-  background-color: var(--color-accent);
+  /* background-color: var(--color-accent); */
 }
 
 .statusDot.green {
-  background-color: transparent;
+  /* background-color: transparent; */
 }
 
 .statusDot.selected {
@@ -178,9 +178,9 @@
 }
 
 .birdIssues{
-  height: 30px;
-  width:30px;
+  height: 45px;
+  width:45px;
   position: absolute;
-  right:0px;
+  right:-15px;
   top:15px;
 }

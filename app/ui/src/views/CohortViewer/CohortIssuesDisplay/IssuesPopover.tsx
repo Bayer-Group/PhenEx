@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
+import { ChatPanel } from '../../ChatPanel/ChatPanel'
 import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
 import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
 import { CohortIssuesDisplay } from './CohortIssuesDisplay';
@@ -66,14 +67,14 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
         <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
       ) : (
         <div ref={bodyRef} className={styles.body}>
-        hello
+          <ChatPanel/>
         </div>
       )}
       <SimpleCustomScrollbar 
         targetRef={bodyRef}
         orientation="vertical"
         marginTop={100}
-        marginBottom={5}
+        marginBottom={20}
         classNameThumb={styles.customScrollbarThumb}
       />
     </div>
