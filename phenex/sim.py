@@ -42,6 +42,54 @@ class DomainsMocker:
         # Cache for source tables to ensure consistent data on multiple calls
         self._cached_source_tables = None
 
+    def _generate_random_datetimes_vectorized(
+        self,
+        count: int,
+        start_date: datetime,
+        end_date: datetime,
+        hour_range: tuple = (0, 24),
+    ) -> tuple:
+        """
+        Generate random dates and datetimes in a highly optimized vectorized way.
+
+        Args:
+            count: Number of datetime pairs to generate
+            start_date: Start of date range
+            end_date: End of date range
+            hour_range: Tuple of (min_hour, max_hour) for time generation
+
+        Returns:
+            tuple: (dates_list, datetimes_list)
+        """
+        if count == 0:
+            return [], []
+
+        # Calculate date range in days
+        date_range = (end_date - start_date).days
+
+        # Generate random days, hours, minutes all at once
+        random_days = np.random.uniform(0, date_range, size=count).astype(int)
+        random_hours = np.random.randint(hour_range[0], hour_range[1], size=count)
+        random_minutes = np.random.randint(0, 60, size=count)
+
+        # Generate dates as pandas DatetimeIndex for speed, then convert
+        base_dates = pd.to_datetime(start_date) + pd.to_timedelta(
+            random_days, unit="days"
+        )
+
+        # Add hours and minutes
+        datetimes = (
+            base_dates
+            + pd.to_timedelta(random_hours, unit="hours")
+            + pd.to_timedelta(random_minutes, unit="minutes")
+        )
+
+        # Convert to Python datetime objects
+        dates_list = [dt.date() for dt in base_dates]
+        datetimes_list = [dt.to_pydatetime() for dt in datetimes]
+
+        return dates_list, datetimes_list
+
     def _generate_person_ids(self, count: int, base: int = 1000000) -> np.ndarray:
         """
         Generate realistic-looking person IDs.
@@ -237,42 +285,46 @@ class DomainsMocker:
             common_condition_concepts, size=total_conditions
         )
 
-        # Generate dates - condition start dates over last 10 years
+        # Generate dates - condition start dates over last 10 years (HIGHLY OPTIMIZED)
         start_date = datetime(2014, 1, 1)
         end_date = datetime(2024, 12, 31)
-        date_range = (end_date - start_date).days
 
-        condition_start_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_conditions)
-        ]
-        condition_start_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
+        condition_start_dates, condition_start_datetimes = (
+            self._generate_random_datetimes_vectorized(
+                total_conditions, start_date, end_date, hour_range=(0, 24)
             )
-            for dt in condition_start_dates
+        )
+
+        # End dates - 70% have end dates, rest are ongoing (VECTORIZED)
+        has_end_date = np.random.random(total_conditions) < 0.7
+
+        # Generate all end date durations at once
+        days_durations = np.random.exponential(
+            30, size=total_conditions
+        )  # Average 30 days
+        days_durations = np.clip(days_durations, 1, 365)  # Between 1 day and 1 year
+
+        # Convert start dates to datetime for calculation
+        condition_start_datetimes_for_calc = [
+            datetime.combine(date, datetime.min.time())
+            for date in condition_start_dates
         ]
 
-        # End dates - 70% have end dates, rest are ongoing
-        has_end_date = np.random.random(total_conditions) < 0.7
+        # Calculate end dates and datetimes
         condition_end_dates = []
         condition_end_datetimes = []
+        end_hours = np.random.randint(0, 24, size=total_conditions)
+        end_minutes = np.random.randint(0, 60, size=total_conditions)
 
         for i, has_end in enumerate(has_end_date):
             if has_end:
-                # End date 1-365 days after start
-                days_duration = np.random.exponential(
-                    30
-                )  # Average 30 days, exponential distribution
-                days_duration = min(days_duration, 365)  # Cap at 1 year
-                end_dt = condition_start_dates[i] + timedelta(days=int(days_duration))
+                end_dt = condition_start_datetimes_for_calc[i] + timedelta(
+                    days=int(days_durations[i])
+                )
                 condition_end_dates.append(end_dt.date())
                 condition_end_datetimes.append(
                     end_dt
-                    + timedelta(
-                        hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
-                    )
+                    + timedelta(hours=int(end_hours[i]), minutes=int(end_minutes[i]))
                 )
             else:
                 condition_end_dates.append(None)
@@ -382,7 +434,7 @@ class DomainsMocker:
                 "CONDITION_OCCURRENCE_ID": condition_occurrence_ids,
                 "PERSON_ID": person_ids,
                 "CONDITION_CONCEPT_ID": condition_concept_ids,
-                "CONDITION_START_DATE": [dt.date() for dt in condition_start_dates],
+                "CONDITION_START_DATE": condition_start_dates,  # Already date objects from optimized function
                 "CONDITION_START_DATETIME": condition_start_datetimes,
                 "CONDITION_END_DATE": condition_end_dates,
                 "CONDITION_END_DATETIME": condition_end_datetimes,
@@ -440,21 +492,25 @@ class DomainsMocker:
             common_procedure_concepts, size=total_procedures
         )
 
-        # Generate dates - procedure dates over last 10 years
+        # Generate dates - procedure dates over last 10 years (VECTORIZED)
         start_date = datetime(2014, 1, 1)
         end_date = datetime(2024, 12, 31)
         date_range = (end_date - start_date).days
 
-        procedure_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_procedures)
-        ]
+        # Generate all random days at once (vectorized)
+        random_days = np.random.uniform(0, date_range, size=total_procedures).astype(
+            int
+        )
+        procedure_dates = [start_date + timedelta(days=int(day)) for day in random_days]
+
+        # Generate random hours and minutes during business hours (vectorized)
+        random_hours = np.random.randint(6, 18, size=total_procedures)  # Business hours
+        random_minutes = np.random.randint(0, 60, size=total_procedures)
+
+        # Create datetimes vectorized
         procedure_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(6, 18), minutes=np.random.randint(0, 60)
-            )  # During business hours
-            for dt in procedure_dates
+            dt + timedelta(hours=int(h), minutes=int(m))
+            for dt, h, m in zip(procedure_dates, random_hours, random_minutes)
         ]
 
         # Procedure type concept IDs (how procedure was recorded)
@@ -618,21 +674,23 @@ class DomainsMocker:
                 }
             )
 
-        # Generate death dates - deaths occur over last 5 years mainly
+        # Generate death dates - deaths occur over last 5 years mainly (VECTORIZED)
         start_date = datetime(2019, 1, 1)
         end_date = datetime(2024, 12, 31)
         date_range = (end_date - start_date).days
 
-        death_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_deaths)
-        ]
+        # Generate all random days at once (vectorized)
+        random_days = np.random.uniform(0, date_range, size=total_deaths).astype(int)
+        death_dates = [start_date + timedelta(days=int(day)) for day in random_days]
+
+        # Generate random hours and minutes vectorized
+        random_hours = np.random.randint(0, 24, size=total_deaths)
+        random_minutes = np.random.randint(0, 60, size=total_deaths)
+
+        # Create datetimes vectorized
         death_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
-            )
-            for dt in death_dates
+            dt + timedelta(hours=int(h), minutes=int(m))
+            for dt, h, m in zip(death_dates, random_hours, random_minutes)
         ]
 
         # Death type concept IDs (how death was recorded)
@@ -764,46 +822,52 @@ class DomainsMocker:
         ]
         drug_concept_ids = np.random.choice(common_drug_concepts, size=total_drugs)
 
-        # Generate dates - drug start dates over last 5 years
+        # Generate dates - drug start dates over last 5 years (HIGHLY OPTIMIZED)
         start_date = datetime(2019, 1, 1)
         end_date = datetime(2024, 12, 31)
-        date_range = (end_date - start_date).days
 
-        drug_start_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_drugs)
-        ]
-        drug_start_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(8, 18), minutes=np.random.randint(0, 60)
-            )  # During pharmacy hours
-            for dt in drug_start_dates
-        ]
+        drug_start_dates, drug_start_datetimes = (
+            self._generate_random_datetimes_vectorized(
+                total_drugs, start_date, end_date, hour_range=(8, 18)  # Pharmacy hours
+            )
+        )
 
-        # End dates - 60% have end dates (acute treatments), 40% are ongoing (chronic)
+        # End dates - 60% have end dates (acute treatments), 40% are ongoing (chronic) (VECTORIZED)
         has_end_date = np.random.random(total_drugs) < 0.6
+
+        # Generate all end date durations at once
+        days_durations = np.random.exponential(45, size=total_drugs)  # Average 45 days
+        days_durations = np.clip(days_durations, 7, 365)  # Between 7 days and 1 year
+
+        # Convert start dates to datetime for calculation
+        drug_start_datetimes_for_calc = [
+            datetime.combine(date, datetime.min.time()) for date in drug_start_dates
+        ]
+
+        # Pre-generate random hours/minutes for end times
+        end_hours = np.random.randint(8, 18, size=total_drugs)
+        end_minutes = np.random.randint(0, 60, size=total_drugs)
+        verbatim_mask = (
+            np.random.random(total_drugs) < 0.3
+        )  # 30% have verbatim end dates
+
+        # Calculate end dates and datetimes
         drug_end_dates = []
         drug_end_datetimes = []
         verbatim_end_dates = []
 
         for i, has_end in enumerate(has_end_date):
             if has_end:
-                # End date 7-365 days after start (with exponential distribution favoring shorter courses)
-                days_duration = np.random.exponential(45)  # Average 45 days
-                days_duration = max(
-                    7, min(days_duration, 365)
-                )  # Between 7 days and 1 year
-                end_dt = drug_start_dates[i] + timedelta(days=int(days_duration))
+                end_dt = drug_start_datetimes_for_calc[i] + timedelta(
+                    days=int(days_durations[i])
+                )
                 drug_end_dates.append(end_dt.date())
                 drug_end_datetimes.append(
                     end_dt
-                    + timedelta(
-                        hours=np.random.randint(8, 18), minutes=np.random.randint(0, 60)
-                    )
+                    + timedelta(hours=int(end_hours[i]), minutes=int(end_minutes[i]))
                 )
                 # 30% of drugs with end dates have verbatim end dates
-                if np.random.random() < 0.3:
+                if verbatim_mask[i]:
                     verbatim_end_dates.append(end_dt.date())
                 else:
                     verbatim_end_dates.append(None)
@@ -892,10 +956,12 @@ class DomainsMocker:
             None,
         )
 
-        # Lot numbers - only small percentage have lot numbers
+        # Lot numbers - only small percentage have lot numbers (VECTORIZED)
+        lot_mask = np.random.random(total_drugs) < 0.05  # 5% have lot numbers
+        lot_random_nums = np.random.randint(100000, 999999, size=total_drugs)
         lot_numbers = np.where(
-            np.random.random(total_drugs) < 0.05,  # 5% have lot numbers
-            [f"LOT{np.random.randint(100000, 999999)}" for _ in range(total_drugs)],
+            lot_mask,
+            [f"LOT{num}" for num in lot_random_nums],
             None,
         )
 
@@ -983,7 +1049,7 @@ class DomainsMocker:
                 "DRUG_EXPOSURE_ID": drug_exposure_ids,
                 "PERSON_ID": person_ids,
                 "DRUG_CONCEPT_ID": drug_concept_ids,
-                "DRUG_EXPOSURE_START_DATE": [dt.date() for dt in drug_start_dates],
+                "DRUG_EXPOSURE_START_DATE": drug_start_dates,  # Already date objects from optimized function
                 "DRUG_EXPOSURE_START_DATETIME": drug_start_datetimes,
                 "DRUG_EXPOSURE_END_DATE": drug_end_dates,
                 "DRUG_EXPOSURE_END_DATETIME": drug_end_datetimes,
@@ -1096,51 +1162,46 @@ class DomainsMocker:
             p=[0.65, 0.15, 0.12, 0.05, 0.03],
         )
 
-        # Generate dates - visit dates over last 3 years
+        # Generate dates - visit dates over last 3 years (HIGHLY OPTIMIZED)
         start_date = datetime(2021, 1, 1)
         end_date = datetime(2024, 12, 31)
-        date_range = (end_date - start_date).days
 
-        visit_start_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_visits)
-        ]
-        visit_start_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
+        visit_start_dates, visit_start_datetimes = (
+            self._generate_random_datetimes_vectorized(
+                total_visits, start_date, end_date, hour_range=(0, 24)
             )
-            for dt in visit_start_dates
+        )
+
+        # End dates - all visits have end dates (VECTORIZED APPROACH)
+        # Generate duration hours based on visit type using vectorized operations
+        duration_hours = np.zeros(total_visits)
+
+        # Outpatient visits (same day) - average 2 hours
+        outpatient_mask = visit_concepts == 9202
+        outpatient_durations = np.random.exponential(2, size=np.sum(outpatient_mask))
+        duration_hours[outpatient_mask] = np.clip(outpatient_durations, 0.5, 8)
+
+        # Inpatient visits - average 4 days (96 hours)
+        inpatient_mask = np.isin(visit_concepts, [9201, 581478])
+        inpatient_durations = np.random.exponential(96, size=np.sum(inpatient_mask))
+        duration_hours[inpatient_mask] = np.clip(inpatient_durations, 12, 720)
+
+        # ER visits - average 6 hours
+        er_mask = visit_concepts == 9203
+        er_durations = np.random.exponential(6, size=np.sum(er_mask))
+        duration_hours[er_mask] = np.clip(er_durations, 1, 24)
+
+        # Other visits (observation) - average 24 hours
+        other_mask = ~(outpatient_mask | inpatient_mask | er_mask)
+        other_durations = np.random.exponential(24, size=np.sum(other_mask))
+        duration_hours[other_mask] = np.clip(other_durations, 4, 72)
+
+        # Calculate end datetimes vectorized
+        visit_end_datetimes = [
+            start_dt + timedelta(hours=float(duration))
+            for start_dt, duration in zip(visit_start_datetimes, duration_hours)
         ]
-
-        # End dates - all visits have end dates
-        # Duration varies by visit type: Outpatient (same day), Inpatient (multiple days), ER (hours)
-        visit_end_dates = []
-        visit_end_datetimes = []
-
-        for i, concept in enumerate(visit_concepts):
-            if concept == 9202:  # Outpatient - same day
-                hours_duration = np.random.exponential(2)  # Average 2 hours
-                hours_duration = max(
-                    0.5, min(hours_duration, 8)
-                )  # Between 30 min - 8 hours
-            elif concept in [9201, 581478]:  # Inpatient - multiple days
-                hours_duration = np.random.exponential(96)  # Average 4 days
-                hours_duration = max(
-                    12, min(hours_duration, 720)
-                )  # Between 12 hours - 30 days
-            elif concept == 9203:  # ER - hours
-                hours_duration = np.random.exponential(6)  # Average 6 hours
-                hours_duration = max(1, min(hours_duration, 24))  # Between 1-24 hours
-            else:  # Observation - variable
-                hours_duration = np.random.exponential(24)  # Average 24 hours
-                hours_duration = max(
-                    4, min(hours_duration, 72)
-                )  # Between 4 hours - 3 days
-
-            end_dt = visit_start_datetimes[i] + timedelta(hours=hours_duration)
-            visit_end_dates.append(end_dt.date())
-            visit_end_datetimes.append(end_dt)
+        visit_end_dates = [dt.date() for dt in visit_end_datetimes]
 
         # Visit type concept IDs (how visit was recorded)
         visit_type_concepts = np.random.choice(
@@ -1242,7 +1303,7 @@ class DomainsMocker:
                 "VISIT_OCCURRENCE_ID": visit_occurrence_ids,
                 "PERSON_ID": person_ids,
                 "VISIT_CONCEPT_ID": visit_concepts,
-                "VISIT_START_DATE": [dt.date() for dt in visit_start_dates],
+                "VISIT_START_DATE": visit_start_dates,  # Already date objects from optimized function
                 "VISIT_START_DATETIME": visit_start_datetimes,
                 "VISIT_END_DATE": visit_end_dates,
                 "VISIT_END_DATETIME": visit_end_datetimes,
@@ -1319,46 +1380,54 @@ class DomainsMocker:
             p=[0.6, 0.25, 0.15],
         )
 
-        # Generate dates - visit detail dates over last 3 years
+        # Generate dates - visit detail dates over last 3 years (VECTORIZED)
         start_date = datetime(2021, 1, 1)
         end_date = datetime(2024, 12, 31)
         date_range = (end_date - start_date).days
 
+        # Generate all random days at once (vectorized)
+        random_days = np.random.uniform(0, date_range, size=total_visit_details).astype(
+            int
+        )
         visit_detail_start_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_visit_details)
+            start_date + timedelta(days=int(day)) for day in random_days
         ]
+
+        # Generate random hours and minutes vectorized
+        random_hours = np.random.randint(0, 24, size=total_visit_details)
+        random_minutes = np.random.randint(0, 60, size=total_visit_details)
+
+        # Create start datetimes vectorized
         visit_detail_start_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
-            )
-            for dt in visit_detail_start_dates
+            dt + timedelta(hours=int(h), minutes=int(m))
+            for dt, h, m in zip(visit_detail_start_dates, random_hours, random_minutes)
         ]
 
-        # End dates - all visit details have end dates
-        # Duration varies by type: ER (hours), ICU (days), etc.
-        visit_detail_end_dates = []
-        visit_detail_end_datetimes = []
+        # End dates - all visit details have end dates (VECTORIZED APPROACH)
+        # Generate duration hours based on visit detail type using vectorized operations
+        duration_hours = np.zeros(total_visit_details)
 
-        for i, concept in enumerate(visit_detail_concepts):
-            if concept == 581476:  # ER visit - typically hours
-                hours_duration = np.random.exponential(4)  # Average 4 hours
-                hours_duration = max(1, min(hours_duration, 24))  # Between 1-24 hours
-            elif concept == 581477:  # ICU - typically days
-                hours_duration = np.random.exponential(72)  # Average 3 days
-                hours_duration = max(
-                    6, min(hours_duration, 720)
-                )  # Between 6 hours - 30 days
-            else:  # Other - variable
-                hours_duration = np.random.exponential(12)  # Average 12 hours
-                hours_duration = max(
-                    2, min(hours_duration, 168)
-                )  # Between 2 hours - 7 days
+        # ER visits - average 4 hours
+        er_mask = visit_detail_concepts == 581476
+        er_durations = np.random.exponential(4, size=np.sum(er_mask))
+        duration_hours[er_mask] = np.clip(er_durations, 1, 24)
 
-            end_dt = visit_detail_start_datetimes[i] + timedelta(hours=hours_duration)
-            visit_detail_end_dates.append(end_dt.date())
-            visit_detail_end_datetimes.append(end_dt)
+        # ICU visits - average 3 days (72 hours)
+        icu_mask = visit_detail_concepts == 581477
+        icu_durations = np.random.exponential(72, size=np.sum(icu_mask))
+        duration_hours[icu_mask] = np.clip(icu_durations, 6, 720)
+
+        # Other visits - average 12 hours
+        other_mask = ~(er_mask | icu_mask)
+        other_durations = np.random.exponential(12, size=np.sum(other_mask))
+        duration_hours[other_mask] = np.clip(other_durations, 2, 168)
+
+        # Calculate end datetimes vectorized
+        visit_detail_end_datetimes = [
+            start_dt + timedelta(hours=float(duration))
+            for start_dt, duration in zip(visit_detail_start_datetimes, duration_hours)
+        ]
+        visit_detail_end_dates = [dt.date() for dt in visit_detail_end_datetimes]
 
         # Visit detail type concept IDs (how visit detail was recorded)
         visit_detail_type_concepts = np.random.choice(
@@ -1530,21 +1599,27 @@ class DomainsMocker:
             observation_concepts, size=total_observations
         )
 
-        # Generate dates - observation dates over last 5 years
+        # Generate dates - observation dates over last 5 years (VECTORIZED)
         start_date = datetime(2019, 1, 1)
         end_date = datetime(2024, 12, 31)
         date_range = (end_date - start_date).days
 
+        # Generate all random days at once (vectorized)
+        random_days = np.random.uniform(0, date_range, size=total_observations).astype(
+            int
+        )
         observation_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_observations)
+            start_date + timedelta(days=int(day)) for day in random_days
         ]
+
+        # Generate random hours and minutes vectorized
+        random_hours = np.random.randint(6, 20, size=total_observations)
+        random_minutes = np.random.randint(0, 60, size=total_observations)
+
+        # Create datetimes vectorized
         observation_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(6, 20), minutes=np.random.randint(0, 60)
-            )  # During clinic hours
-            for dt in observation_dates
+            dt + timedelta(hours=int(h), minutes=int(m))  # During clinic hours
+            for dt, h, m in zip(observation_dates, random_hours, random_minutes)
         ]
 
         # Observation type concept IDs (how observation was recorded)
@@ -1926,21 +2001,27 @@ class DomainsMocker:
             measurement_concepts, size=total_measurements
         )
 
-        # Generate dates - measurement dates over last 5 years
+        # Generate dates - measurement dates over last 5 years (VECTORIZED)
         start_date = datetime(2019, 1, 1)
         end_date = datetime(2024, 12, 31)
         date_range = (end_date - start_date).days
 
+        # Generate all random days at once (vectorized)
+        random_days = np.random.uniform(0, date_range, size=total_measurements).astype(
+            int
+        )
         measurement_dates = [
-            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
-            for _ in range(total_measurements)
+            start_date + timedelta(days=int(day)) for day in random_days
         ]
+
+        # Generate random hours and minutes during lab hours (vectorized)
+        random_hours = np.random.randint(6, 18, size=total_measurements)  # Lab hours
+        random_minutes = np.random.randint(0, 60, size=total_measurements)
+
+        # Create datetimes vectorized
         measurement_datetimes = [
-            dt
-            + timedelta(
-                hours=np.random.randint(6, 18), minutes=np.random.randint(0, 60)
-            )  # During lab hours
-            for dt in measurement_dates
+            dt + timedelta(hours=int(h), minutes=int(m))  # During lab hours
+            for dt, h, m in zip(measurement_dates, random_hours, random_minutes)
         ]
 
         # Measurement times (string format like "08:30")
