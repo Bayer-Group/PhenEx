@@ -21,10 +21,11 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
       classNameTrack?: string;
     };
   };
+  hideScrollbars?: boolean; // External control to hide all scrollbars
 }
 
 export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, className, ...agGridProps }, ref) => {
+  ({ scrollbarConfig, hideScrollbars = false, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
@@ -154,7 +155,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           />
           
           {/* Custom Vertical Scrollbar */}
-          {verticalConfig.enabled && (
+          {verticalConfig.enabled && !hideScrollbars && (
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="vertical"
@@ -166,7 +167,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           )}
 
           {/* Custom Horizontal Scrollbar */}
-          {horizontalConfig.enabled && (
+          {horizontalConfig.enabled && !hideScrollbars && (
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="horizontal"
