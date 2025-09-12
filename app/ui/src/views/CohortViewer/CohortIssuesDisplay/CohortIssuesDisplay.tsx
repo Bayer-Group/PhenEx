@@ -23,23 +23,17 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const phenotypesWithIssues = issues?.length || 0;
   const hasIssues = phenotypesWithIssues > 0;
 
-  const renderUnselectedTitleLabel = () => {
-    return (
-      <p>
-        <span className={styles.labelUnselected}>
-          {/* {totalIssueCount} Issues in {phenotypesWithIssues} phenotypes */}
-          Issues
-        </span>
-      </p>
-    );
-  };
 
   const renderXButton = () => {
     return <XButton onClick={undefined} className={styles.xButton} />;
   };
 
   const renderText = () => {
-    return renderUnselectedTitleLabel();
+    return (
+       <div className={styles.labelUnselected}>
+          Issues
+        </div>
+    );
   };
 
   const renderBird = () => {
