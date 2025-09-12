@@ -82,9 +82,11 @@
   border-radius: 20px;
   padding:5px;
   gap:5px;
-  background-color: transparent;
+  background-color: transparent!important;
 }
 
+.tabsContainer:hover{
+}
 
 .tab{
   font-size:40px;
@@ -92,6 +94,7 @@
   border-radius: 16px;
   height: 60px;
   color: var(--color_entry);
+  background-color: transparent!important;
 }
 
 .transparentHeader{

@@ -30,7 +30,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     setActiveTabIndex(index);
   };
 
-  const renderTitleLabel = () => (
+  const renderTabs = () => (
     <Tabs
       tabs={ISSUEPOPOVER_TABS}
       active_tab_index={activeTabIndex}
@@ -56,7 +56,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     <div ref={dragHandleRef} className={styles.transparentHeader}>
       <div className={styles.transparentHeaderGradient} />
       {renderCloseButton()}
-      {renderTitleLabel()}
+      {renderTabs()}
     </div>
   );
 
