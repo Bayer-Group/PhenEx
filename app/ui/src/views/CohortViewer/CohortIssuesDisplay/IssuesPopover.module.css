@@ -1,8 +1,8 @@
 :root {
-  --issue_popover_margin: 30px;
+  --issue_popover_margin: 20px;
   --issue_popover_radius: 20px;
   --background_color_translucent: rgba(248, 249, 250, 0.8);
-  --issues_popover_gutter:20px;
+  --issues_popover_gutter:0px;
 }
 
 .customCloseButton {
@@ -38,7 +38,7 @@
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
-  bottom: 30px;
+  bottom: 20px;
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -67,7 +67,7 @@
 .body {
   flex: 1;
   overflow: auto!important;
-  padding: 10px var(--issues_popover_gutter) 30px var(--issues_popover_gutter);
+  padding: 10px var(--issues_popover_gutter) 0 px var(--issues_popover_gutter);
   margin-top: 0px;
 }
 

@@ -28,7 +28,15 @@ class ChatPanelDataService {
   private lastMessageId = this.messages.length;
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
-  private cohortDataService = CohortDataService.getInstance();
+  private _cohortDataService: CohortDataService | null = null;
+  
+  private get cohortDataService(): CohortDataService {
+    if (!this._cohortDataService) {
+      this._cohortDataService = CohortDataService.getInstance();
+    }
+    return this._cohortDataService;
+  }
+  
   private constructor() {}
 
   public static getInstance(): ChatPanelDataService {

@@ -50,7 +50,7 @@
   --color-accent-hover: rgb(240, 240, 240);
 
   /* --color-accent-bright: hsl(24, 90%, 60%); */
-  /* --color-accent-bright: hsl(14, 100%, 63%); */
+  --color_accent_orange: hsl(14, 100%, 63%);
   --color-accent-bright: #413346;
   --phenex-dark: hsl(0, 40%, 5%);
   --border-accent: 1px solid var(--color-accent-bright);
