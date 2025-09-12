@@ -10,14 +10,26 @@ export interface CohortIssue {
   issues: string[];
 }
 
-export const IssuesDisplayControl: React.FC = () => {
-  const [showPopover, setShowPopover] = useState(false);
+interface IssuesDisplayControlProps {
+  showPopover?: boolean;
+  setShowPopover?: (show: boolean) => void;
+}
+
+export const IssuesDisplayControl: React.FC<IssuesDisplayControlProps> = ({
+  showPopover: externalShowPopover,
+  setShowPopover: externalSetShowPopover
+}) => {
+  const [internalShowPopover, setInternalShowPopover] = useState(false);
   const [issues, setIssues] = useState<CohortIssue[]>([]);
   const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const issuesService = dataService.issues_service;
   const containerRef = useRef<HTMLDivElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
+
+  // Use external state if provided, otherwise use internal state
+  const showPopover = externalShowPopover !== undefined ? externalShowPopover : internalShowPopover;
+  const setShowPopover = externalSetShowPopover || setInternalShowPopover;
 
   useEffect(() => {
     const listener = () => {
@@ -31,7 +43,7 @@ export const IssuesDisplayControl: React.FC = () => {
   }, [dataService]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (_event: MouseEvent) => {
       // if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
       //   setShowPopover(false);
       // }

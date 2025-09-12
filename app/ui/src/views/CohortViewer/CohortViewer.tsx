@@ -40,6 +40,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
     CohortDefinitionViewType.Cohort
   );
+  const [showIssuesPopover, setShowIssuesPopover] = useState(false);
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -250,6 +251,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         currentlyViewing={currentView}
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
+        hideScrollbars={showIssuesPopover}
         ref={gridRef}
       />
     );
@@ -260,7 +262,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       <div className={styles.topSection}>
         {renderTitle()}
         <AppNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-        <IssuesDisplayControl />
+        <IssuesDisplayControl 
+          showPopover={showIssuesPopover} 
+          setShowPopover={setShowIssuesPopover} 
+        />
         {renderSectionTabs()}
       </div>
       <div className={styles.bottomSection}>{renderTable()}</div>
