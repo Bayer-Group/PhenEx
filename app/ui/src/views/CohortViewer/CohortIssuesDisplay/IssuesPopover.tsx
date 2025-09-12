@@ -16,9 +16,10 @@ import IssuesPopoverList from './IssuesPopoverList';
 interface IssuesPopoverProps {
   issues: CohortIssue[];
   onClose?: () => void; // Add back onClose prop for X button
+  dragHandleRef?: React.RefObject<HTMLDivElement | null>; // Ref for the drag handle
 }
 
-export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose }) => {
+export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, dragHandleRef }) => {
   const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
   const [activeTabIndex, setActiveTabIndex] = useState(ISSUEPOPOVER_TABS.length - 1);
   const selectedView = ISSUEPOPOVER_TABS[activeTabIndex];
@@ -51,7 +52,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose })
   );
 
   const renderTransparentHeader = () => (
-    <div className={styles.transparentHeader}>
+    <div ref={dragHandleRef} className={styles.transparentHeader}>
       <div className={styles.transparentHeaderGradient} />
       {renderCloseButton()}
       {renderTitleLabel()}

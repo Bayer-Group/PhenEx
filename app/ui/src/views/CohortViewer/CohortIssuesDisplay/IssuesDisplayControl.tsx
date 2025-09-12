@@ -17,6 +17,7 @@ export const IssuesDisplayControl: React.FC = () => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const issuesService = dataService.issues_service;
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragHandleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const listener = () => {
@@ -76,9 +77,10 @@ export const IssuesDisplayControl: React.FC = () => {
           alignment="right"
           resetToPositioned={resetPortalToPositioned}
           onClose={closePopover}
+          dragHandleRef={dragHandleRef}
         >
           <div className={styles.popover}>
-            <IssuesPopover issues={issues} onClose={closePopover} />
+            <IssuesPopover issues={issues} onClose={closePopover} dragHandleRef={dragHandleRef} />
           </div>
         </DraggablePositionedPortal>
       )}
