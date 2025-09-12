@@ -75,12 +75,13 @@
 .cohortNameInput {
   border: none;
   padding: 0px;
-  font-size: 30px;
+  font-size: 40px !important;
   outline: none;
   width: 60%;
-  font-family: 'IBMPlexSans-Bold';
+  font-family: 'IBMPlexSans-bold' !important;
   margin-left: 60px;
-  margin-top: 8px;
+  margin-top: 0px;
+  color:var(--text-color-normal) !important;
 }
 
 .cohortNameInput::placeholder {

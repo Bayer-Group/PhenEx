@@ -6,46 +6,45 @@
 }
 
 .wrapper {
-  width: calc(100% - 20px - 15px);
+  margin: 0px 10px 10px 10px;
+  /* width: calc(100% - 0px); */
   height: calc(100% - 26px);
   /* padding: 0.8rem 1rem; */
   border-radius: 15px;
   /* word-wrap: break-word; */
   background-color: transparent;
   /* color: var(--text-color); */
-  border: var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  padding: 5px 10px;
+  /* padding: 5px 10px; */
   /* font-size: 16px; */
   border: solid 1px var(--color_accent_orange);
-  border-radius: 8px;
+  border-radius: 15px;
   font-family: 'IBMPlexSans-regular';
-  font-size: 12px;
-  margin-bottom: 10px;
+  font-size: 14px;
   transition: all 0.2s ease-in-out;
 }
 
 .wrapper:hover {
-  color: black;
-  transform: translateY(-1px);
+  color: var(--color-accent-bright);
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background:
+  /* background:
     linear-gradient(
         var(--interaction_area_background_color),
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box;
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box; */
 }
 
 .wrapper:focus-within {
-  background:
+  /* background:
     linear-gradient(
         var(--interaction_area_background_color),
         var(--interaction_area_background_color)
       )
       padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box;
+    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box; */
 }
 
 .textBox {
@@ -55,11 +54,11 @@
   min-height: 50px;
   max-height: 400px;
   overflow-y: auto;
-  padding: 0px;
+  padding: 10px;
   font-size: 14px;
   /* width: calc(100% - 40px); */
 
-  margin: 0px 0px 20px 0px;
+  /* margin: 0px 0px 20px 0px; */
   outline: none;
   /* border: solid 3px transparent;
   background:
@@ -77,20 +76,4 @@
 
 .textBox:focus {
   /* border: solid 3px transparent; */
-}
-
-.input {
-  position: relative;
-  height: 100px;
-  width: calc(100% - 20px);
-  background: var(--background-color);
-  border: solid 1px transparent;
-  color: var(--text-color);
-  font-size: 12px;
-  resize: none;
-  background:
-    linear-gradient(var(--background-color), var(--background-color)) padding-box,
-    linear-gradient(to right, var(--phenex-coral), var(--color-accent-bright)) border-box;
-  border-radius: 8px;
-  font-family: 'IBMPlexSans-regular';
 }

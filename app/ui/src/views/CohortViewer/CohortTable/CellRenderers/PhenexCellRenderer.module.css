@@ -1,6 +1,7 @@
 :global(.ag-cell) {
   /* overflow: visible !important; */
   transition: background-color 0.2s ease;
+  color: var(--text-color-normal) !important;
   /* border-radius: 4px; */
 }
 

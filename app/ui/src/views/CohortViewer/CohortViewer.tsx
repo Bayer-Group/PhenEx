@@ -216,7 +216,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         <EditableTextField
           value={cohortName}
           placeholder="Name your cohort..."
-          className={styles.cohortNameInput}
+          classNameInput={styles.cohortNameInput}
           onChange={newValue => {
             setCohortName(newValue);
             dataService.cohort_name = newValue;
