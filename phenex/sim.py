@@ -36,6 +36,9 @@ class DomainsMocker:
         # Pre-generate visit detail IDs for consistency across tables
         self._visit_detail_ids_pool = None
 
+        # Pre-generate visit occurrence IDs for consistency across tables
+        self._visit_occurrence_ids_pool = None
+
         # Cache for source tables to ensure consistent data on multiple calls
         self._cached_source_tables = None
 
@@ -1019,6 +1022,243 @@ class DomainsMocker:
             )
         return self._visit_detail_ids_pool
 
+    def _get_visit_occurrence_ids_pool(self) -> np.ndarray:
+        """
+        Generate a pool of visit occurrence IDs that can be consistently referenced across tables.
+
+        Returns:
+            np.ndarray: Array of visit occurrence IDs
+        """
+        if self._visit_occurrence_ids_pool is None:
+            # Generate enough visit occurrences to handle realistic visit patterns
+            # Use 2x patients to ensure we have enough IDs for various visit types
+            n_visit_occurrences = int(self.n_patients * 2)
+            self._visit_occurrence_ids_pool = self._generate_person_ids(
+                n_visit_occurrences, base=60000000
+            )
+        return self._visit_occurrence_ids_pool
+
+    def _mock_visit_occurrence_table(self) -> pd.DataFrame:
+        """
+        Mock the VISIT_OCCURRENCE table with OMOP schema.
+
+        Returns:
+            pd.DataFrame: Mocked visit occurrence table data
+        """
+        # Generate visit occurrences for patients - use Poisson distribution for number of visits per patient
+        visits_per_patient = np.random.poisson(
+            lam=1.8, size=self.n_patients
+        )  # Average 1.8 visits per patient
+        visits_per_patient = np.clip(visits_per_patient, 0, 10)  # Cap at 10 visits
+
+        total_visits = visits_per_patient.sum()
+
+        if total_visits == 0:
+            # Return empty DataFrame with correct schema
+            return pd.DataFrame(
+                {
+                    "VISIT_OCCURRENCE_ID": [],
+                    "PERSON_ID": [],
+                    "VISIT_CONCEPT_ID": [],
+                    "VISIT_START_DATE": [],
+                    "VISIT_START_DATETIME": [],
+                    "VISIT_END_DATE": [],
+                    "VISIT_END_DATETIME": [],
+                    "VISIT_TYPE_CONCEPT_ID": [],
+                    "PROVIDER_ID": [],
+                    "CARE_SITE_ID": [],
+                    "VISIT_SOURCE_VALUE": [],
+                    "VISIT_SOURCE_CONCEPT_ID": [],
+                    "ADMITTING_SOURCE_CONCEPT_ID": [],
+                    "ADMITTING_SOURCE_VALUE": [],
+                    "DISCHARGE_TO_CONCEPT_ID": [],
+                    "DISCHARGE_TO_SOURCE_VALUE": [],
+                    "PRECEDING_VISIT_OCCURRENCE_ID": [],
+                }
+            )
+
+        # Use the pre-generated visit occurrence IDs
+        visit_occurrence_ids = self._get_visit_occurrence_ids_pool()[:total_visits]
+
+        # Generate person IDs based on visits per patient
+        person_ids = np.repeat(self.base_patient_ids, visits_per_patient)
+
+        # Visit concept IDs (different types of visits)
+        visit_concepts = np.random.choice(
+            [
+                9202,  # Outpatient Visit
+                9201,  # Inpatient Visit
+                9203,  # Emergency Room Visit
+                581478,  # Emergency Room and Inpatient Visit
+                32037,  # Observation Visit
+            ],
+            size=total_visits,
+            p=[0.65, 0.15, 0.12, 0.05, 0.03],
+        )
+
+        # Generate dates - visit dates over last 3 years
+        start_date = datetime(2021, 1, 1)
+        end_date = datetime(2024, 12, 31)
+        date_range = (end_date - start_date).days
+
+        visit_start_dates = [
+            start_date + timedelta(days=int(np.random.uniform(0, date_range)))
+            for _ in range(total_visits)
+        ]
+        visit_start_datetimes = [
+            dt
+            + timedelta(
+                hours=np.random.randint(0, 24), minutes=np.random.randint(0, 60)
+            )
+            for dt in visit_start_dates
+        ]
+
+        # End dates - all visits have end dates
+        # Duration varies by visit type: Outpatient (same day), Inpatient (multiple days), ER (hours)
+        visit_end_dates = []
+        visit_end_datetimes = []
+
+        for i, concept in enumerate(visit_concepts):
+            if concept == 9202:  # Outpatient - same day
+                hours_duration = np.random.exponential(2)  # Average 2 hours
+                hours_duration = max(
+                    0.5, min(hours_duration, 8)
+                )  # Between 30 min - 8 hours
+            elif concept in [9201, 581478]:  # Inpatient - multiple days
+                hours_duration = np.random.exponential(96)  # Average 4 days
+                hours_duration = max(
+                    12, min(hours_duration, 720)
+                )  # Between 12 hours - 30 days
+            elif concept == 9203:  # ER - hours
+                hours_duration = np.random.exponential(6)  # Average 6 hours
+                hours_duration = max(1, min(hours_duration, 24))  # Between 1-24 hours
+            else:  # Observation - variable
+                hours_duration = np.random.exponential(24)  # Average 24 hours
+                hours_duration = max(
+                    4, min(hours_duration, 72)
+                )  # Between 4 hours - 3 days
+
+            end_dt = visit_start_datetimes[i] + timedelta(hours=hours_duration)
+            visit_end_dates.append(end_dt.date())
+            visit_end_datetimes.append(end_dt)
+
+        # Visit type concept IDs (how visit was recorded)
+        visit_type_concepts = np.random.choice(
+            [32817, 32020, 32810],  # Claim, EHR, Physical exam
+            size=total_visits,
+            p=[0.6, 0.35, 0.05],
+        )
+
+        # Optional fields with realistic presence rates
+        provider_mask = np.random.random(total_visits) < 0.90  # 90% have provider
+        provider_values = self._generate_person_ids(total_visits, base=800000)
+        provider_ids = np.where(provider_mask, provider_values, None)
+
+        care_site_mask = np.random.random(total_visits) < 0.85  # 85% have care site
+        care_site_values = self._generate_person_ids(total_visits, base=300000)
+        care_site_ids = np.where(care_site_mask, care_site_values, None)
+
+        # Admitting source - only for inpatient-like visits
+        admitting_mask = (visit_concepts != 9202) & (
+            np.random.random(total_visits) < 0.70
+        )  # 70% of non-outpatient have admitting source
+        admitting_values = np.random.choice(
+            [8844, 8870, 8863], size=total_visits, p=[0.4, 0.4, 0.2]
+        )  # Emergency Room, Physician Referral, Transfer
+        admitting_source_concept_ids = np.where(admitting_mask, admitting_values, None)
+
+        # Discharge to
+        discharge_mask = (
+            np.random.random(total_visits) < 0.80
+        )  # 80% have discharge destination
+        discharge_values = np.random.choice(
+            [8536, 8844, 8717], size=total_visits, p=[0.7, 0.15, 0.15]
+        )  # Home, Emergency Room, Skilled Nursing
+        discharge_to_concept_ids = np.where(discharge_mask, discharge_values, None)
+
+        # Preceding visit occurrence - 15% have preceding visit
+        preceding_mask = np.random.random(total_visits) < 0.15
+        preceding_values = np.random.choice(visit_occurrence_ids, size=total_visits)
+        preceding_visit_occurrence_ids = np.where(
+            preceding_mask, preceding_values, None
+        )
+
+        # Source values
+        visit_source_values = np.select(
+            [
+                visit_concepts == 9202,
+                visit_concepts == 9201,
+                visit_concepts == 9203,
+                visit_concepts == 581478,
+                visit_concepts == 32037,
+            ],
+            [
+                "Outpatient Visit",
+                "Inpatient Visit",
+                "Emergency Room Visit",
+                "Emergency Room and Inpatient Visit",
+                "Observation Visit",
+            ],
+            default="Other Visit",
+        )
+
+        visit_source_concept_ids = np.where(
+            np.random.random(total_visits) < 0.75,  # 75% have source concept
+            visit_concepts,
+            None,
+        )
+
+        # Admitting/discharge source values
+        admitting_source_values = np.where(
+            admitting_source_concept_ids != None,
+            np.select(
+                [
+                    admitting_source_concept_ids == 8844,
+                    admitting_source_concept_ids == 8870,
+                    admitting_source_concept_ids == 8863,
+                ],
+                ["Emergency Room", "Physician Referral", "Transfer"],
+                default="Other",
+            ),
+            None,
+        )
+
+        discharge_to_source_values = np.where(
+            discharge_to_concept_ids != None,
+            np.select(
+                [
+                    discharge_to_concept_ids == 8536,
+                    discharge_to_concept_ids == 8844,
+                    discharge_to_concept_ids == 8717,
+                ],
+                ["Home", "Emergency Room", "Skilled Nursing"],
+                default="Other",
+            ),
+            None,
+        )
+
+        return pd.DataFrame(
+            {
+                "VISIT_OCCURRENCE_ID": visit_occurrence_ids,
+                "PERSON_ID": person_ids,
+                "VISIT_CONCEPT_ID": visit_concepts,
+                "VISIT_START_DATE": [dt.date() for dt in visit_start_dates],
+                "VISIT_START_DATETIME": visit_start_datetimes,
+                "VISIT_END_DATE": visit_end_dates,
+                "VISIT_END_DATETIME": visit_end_datetimes,
+                "VISIT_TYPE_CONCEPT_ID": visit_type_concepts,
+                "PROVIDER_ID": provider_ids,
+                "CARE_SITE_ID": care_site_ids,
+                "VISIT_SOURCE_VALUE": visit_source_values,
+                "VISIT_SOURCE_CONCEPT_ID": visit_source_concept_ids,
+                "ADMITTING_SOURCE_CONCEPT_ID": admitting_source_concept_ids,
+                "ADMITTING_SOURCE_VALUE": admitting_source_values,
+                "DISCHARGE_TO_CONCEPT_ID": discharge_to_concept_ids,
+                "DISCHARGE_TO_SOURCE_VALUE": discharge_to_source_values,
+                "PRECEDING_VISIT_OCCURRENCE_ID": preceding_visit_occurrence_ids,
+            }
+        )
+
     def _mock_visit_detail_table(self) -> pd.DataFrame:
         """
         Mock the VISIT_DETAIL table with OMOP schema.
@@ -1217,8 +1457,9 @@ class DomainsMocker:
         visit_detail_parent_ids = np.where(parent_mask, parent_values, None)
 
         # Visit occurrence IDs - all visit details should be associated with visit occurrences
-        visit_occurrence_ids = self._generate_person_ids(
-            total_visit_details, base=60000000
+        # Use the visit occurrence pool to ensure foreign key consistency
+        visit_occurrence_ids = np.random.choice(
+            self._get_visit_occurrence_ids_pool(), size=total_visit_details
         )
 
         return pd.DataFrame(
@@ -1969,6 +2210,10 @@ class DomainsMocker:
                 source_tables[table_name] = ibis.memtable(
                     self._mock_visit_detail_table()
                 )
+            elif table_name == "VISIT_OCCURRENCE":
+                source_tables[table_name] = ibis.memtable(
+                    self._mock_visit_occurrence_table()
+                )
             elif table_name == "OBSERVATION":
                 source_tables[table_name] = ibis.memtable(
                     self._mock_observation_table()
@@ -1990,6 +2235,7 @@ class DomainsMocker:
                     "DEATH",
                     "DRUG_EXPOSURE",
                     "VISIT_DETAIL",
+                    "VISIT_OCCURRENCE",
                     "OBSERVATION",
                     "OBSERVATION_PERIOD",
                     "MEASUREMENT",
