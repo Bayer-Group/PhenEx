@@ -46,7 +46,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
 
     const horizontalConfig = {
       enabled: true,
-      marginLeft: 200,
+      marginLeft: 10,
       marginRight: 10, // Space for vertical scrollbar area
       classNameThumb: '',
       classNameTrack: '',

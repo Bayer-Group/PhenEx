@@ -34,7 +34,7 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
-  const customizableDropdownButtonRef = useRef(null);
+  const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
 
   useEffect(() => {
     const updateAccordionState = () => {

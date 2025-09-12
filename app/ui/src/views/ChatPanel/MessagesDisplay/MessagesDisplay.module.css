@@ -92,7 +92,7 @@
 }
 
 .messagesContainer > div:first-child.assistantMessage {
-  margin-top: 100vh;
+  margin-top: 100px;
 }
 
 .messagesContainer > div:last-child.assistantMessage {
