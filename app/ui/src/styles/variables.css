@@ -12,7 +12,7 @@
   --item-border-default: 1px solid var(--line-color);
   --item-margin-top: 5px;
 
-  --text-color-normal: black;
+  --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;/*#faf1e5;*/
   --background-color-content: white;
@@ -55,6 +55,7 @@
   --phenex-dark: hsl(0, 40%, 5%);
   --border-accent: 1px solid var(--color-accent-bright);
 
+  --color_text:var(--color-accent-bright);
   --color-accent: var(--color-accent-bright); /*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
@@ -72,7 +73,7 @@
 
   --button-size-default: 14px;
   --button-text-color-selected: var(--color-accent-bright);
-  --button-text-color-default: black;
+  --button-text-color-default: var(--color-accent-bright);
   --button-text-color-hover: var(--color-accent-bright);
 
   --button-background-color-selected: transparent;

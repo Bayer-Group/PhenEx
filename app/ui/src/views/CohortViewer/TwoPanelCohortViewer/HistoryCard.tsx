@@ -35,8 +35,8 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
 
   // Calculate font size based on text length and container width
   const calculateFontSize = (text: string): number => {
-    const minSize = 12;
-    const maxSize = 19;
+    const minSize = 10;
+    const maxSize = 16;
     const containerWidth = 120; // Available width after padding (150px - 30px padding)
     
     // More conservative character width estimates for different font sizes

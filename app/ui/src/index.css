@@ -35,6 +35,7 @@ body {
   /* Additional properties to ensure consistent behavior */
   overflow: auto;
   height: 100%;
+  color: var(--text-color-normal);
 }
 
 body {
