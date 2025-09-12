@@ -1,15 +1,28 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import styles from './InteractionArea.module.css';
 import { chatPanelDataService } from '../ChatPanelDataService';
 import { InteractionBar } from './InteractionBar';
 
 interface InteractionAreaProps {}
 
-export const InteractionArea: React.FC<InteractionAreaProps> = () => {
+export interface InteractionAreaRef {
+  focus: () => void;
+}
+
+export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({}, ref) => {
   const textBoxRef = useRef<HTMLDivElement>(null);
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
   >('empty');
+
+  // Expose focus method to parent components
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      if (textBoxRef.current) {
+        textBoxRef.current.focus();
+      }
+    }
+  }));
 
   useEffect(() => {
     const handleAICompletion = (success: boolean) => {
@@ -25,6 +38,13 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
     return () => {
       chatPanelDataService.removeAICompletionListener(handleAICompletion);
     };
+  }, []);
+
+  // Focus on mount/first render
+  useEffect(() => {
+    if (textBoxRef.current) {
+      textBoxRef.current.focus();
+    }
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -84,4 +104,6 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
       </div>
     </div>
   );
-};
+});
+
+InteractionArea.displayName = 'InteractionArea';

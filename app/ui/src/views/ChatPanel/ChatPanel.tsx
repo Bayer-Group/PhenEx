@@ -3,7 +3,7 @@ import styles from './ChatPanel.module.css';
 import phenexFeather from '../../assets/phenx_feather.png';
 
 import { VerticalSplitView } from './VerticalSplitView/VerticalSplitView';
-import { InteractionArea } from './InteractionArea/InteractionArea';
+import { InteractionArea, InteractionAreaRef } from './InteractionArea/InteractionArea';
 import { MessagesDisplay } from './MessagesDisplay/MessagesDisplay';
 interface ChatPanelProps {
   onTextEnter?: (text: string) => void;
@@ -11,6 +11,7 @@ interface ChatPanelProps {
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
   const [inputText, setInputText] = useState('');
+  const interactionAreaRef = useRef<InteractionAreaRef>(null);
 
   useEffect(() => {}, []);
 
@@ -21,10 +22,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
     }
   };
 
+  // Example function to focus the interaction area from outside
+  const focusInteractionArea = () => {
+    interactionAreaRef.current?.focus();
+  };
+
   return (
     <VerticalSplitView>
       <MessagesDisplay></MessagesDisplay>
-      <InteractionArea></InteractionArea>
+      <InteractionArea ref={interactionAreaRef}></InteractionArea>
     </VerticalSplitView>
   );
 };
