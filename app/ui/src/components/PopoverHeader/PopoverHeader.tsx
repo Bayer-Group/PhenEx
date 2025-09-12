@@ -22,6 +22,8 @@ export const PopoverHeader: FC<PopoverHeader> = ({
       className={`${styles.popoverheader} ${className} ${children && styles.hasChildren}`}
       title={title}
       aria-label={title}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
     >
       {!children && title}
       {children && <div className={styles.content}>{children}</div>}

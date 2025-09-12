@@ -7,7 +7,7 @@
   max-width:150px; */
   height: auto; /* Default to auto height */
   max-height:60px;
-  min-height:35px;
+  min-height:20px;
   border-radius: 8px;
   border: 1px solid var(--line-color);
   background: white;

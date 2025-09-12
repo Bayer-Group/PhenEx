@@ -1,5 +1,5 @@
 :root {
-  --issue_popover_margin: 20px;
+  --issue_popover_margin: 0px;
   --issue_popover_radius: 20px;
   --background_color_translucent: rgba(248, 249, 250, 0.8);
   --issues_popover_gutter:0px;
@@ -23,11 +23,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
+  transition: color .3s ease;
 
 }
 
 .customCloseButton:hover {
-  color:red;
+  color:var(--color_accent_orange);
 }
 
 .customCloseButton:focus{
@@ -38,7 +39,7 @@
 .popover {
   position: absolute;
   right: var(--issue_popover_margin);
-  bottom: 20px;
+  bottom: 0px;
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -69,6 +70,7 @@
   overflow: auto!important;
   padding: 10px var(--issues_popover_gutter) 0 px var(--issues_popover_gutter);
   margin-top: 0px;
+  background-color: transparent;
 }
 
 
@@ -80,6 +82,7 @@
   border-radius: 20px;
   padding:5px;
   gap:5px;
+  background-color: transparent;
 }
 
 
