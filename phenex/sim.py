@@ -9,9 +9,14 @@ from datetime import datetime, timedelta
 
 class DomainsMocker:
     """
-    A class to mock healthcare data domains for testing and simulation purposes.
+    DomainsMocker immitates healthcare data domains for testing purposes. The mock data is NOT FIT FOR SIMULATION. The data reflect the basic structure of the data without caring too much about accurate statistics. The statistics are generally chosen to be reasonable (e.g. Poisson, Gaussian, log-normal as appropriate), and the content is domain-appropriate (e.g. using relevant codes/code types) but we are NOT trying to accurately model real data.
 
-    This is a Mock - it represents the basic structure of the data without caring too much about accurate statistics. The statistics should be reasonable (e.g. Poisson, Gaussian, log-normal when appropriate), and the content should be domain-appropriate (e.g. using relevant codes/code types) but we are NOT trying to accurately model real data.
+    Note that DomainsMocker only supports OMOP structured data due to current license restrictions of other data formats.
+
+    Args:
+        domains_dict: The domains dictionary containing table mappers that define which tables to mock
+        n_patients: Number of patients to simulate. Defaults to 10000.
+        random_seed: Random seed for reproducible results. Defaults to 42.
     """
 
     def __init__(
@@ -20,21 +25,13 @@ class DomainsMocker:
         n_patients: int = 10000,
         random_seed: int = 42,
     ):
-        """
-        Initialize the DomainsMocker.
-
-        Args:
-            domains_dict (DomainsDictionary): The domains dictionary containing table mappers
-            n_patients (int): Number of patients to simulate
-            random_seed (int): Random seed for reproducible results
-        """
         self.domains_dict = domains_dict
         self.n_patients = n_patients
         self.random_seed = random_seed
         np.random.seed(random_seed)
 
         # Generate base patient IDs that look more realistic (7-8 digit numbers)
-        self.base_patient_ids = self._generate_realistic_ids(n_patients, base=1000000)
+        self.base_patient_ids = self._generate_person_ids(n_patients, base=1000000)
 
         # Pre-generate visit detail IDs for consistency across tables
         self._visit_detail_ids_pool = None
@@ -42,9 +39,9 @@ class DomainsMocker:
         # Cache for source tables to ensure consistent data on multiple calls
         self._cached_source_tables = None
 
-    def _generate_realistic_ids(self, count: int, base: int = 1000000) -> np.ndarray:
+    def _generate_person_ids(self, count: int, base: int = 1000000) -> np.ndarray:
         """
-        Generate realistic-looking IDs that don't follow simple sequential patterns.
+        Generate realistic-looking person IDs.
 
         Args:
             count (int): Number of IDs to generate
@@ -140,7 +137,7 @@ class DomainsMocker:
         # Optional fields - some patients will have these, others won't
         location_ids = np.where(
             np.random.random(self.n_patients) < 0.7,  # 70% have location
-            self._generate_realistic_ids(self.n_patients, base=200000)[
+            self._generate_person_ids(self.n_patients, base=200000)[
                 : self.n_patients
             ],  # 6-7 digit location IDs
             np.nan,
@@ -148,7 +145,7 @@ class DomainsMocker:
 
         provider_ids = np.where(
             np.random.random(self.n_patients) < 0.8,  # 80% have provider
-            self._generate_realistic_ids(self.n_patients, base=800000)[
+            self._generate_person_ids(self.n_patients, base=800000)[
                 : self.n_patients
             ],  # 6-7 digit provider IDs
             np.nan,
@@ -156,7 +153,7 @@ class DomainsMocker:
 
         care_site_ids = np.where(
             np.random.random(self.n_patients) < 0.6,  # 60% have care site
-            self._generate_realistic_ids(self.n_patients, base=300000)[
+            self._generate_person_ids(self.n_patients, base=300000)[
                 : self.n_patients
             ],  # 6-7 digit care site IDs
             np.nan,
@@ -213,7 +210,7 @@ class DomainsMocker:
         total_conditions = conditions_per_patient.sum()
 
         # Generate condition occurrence IDs that look realistic
-        condition_occurrence_ids = self._generate_realistic_ids(
+        condition_occurrence_ids = self._generate_person_ids(
             total_conditions, base=50000000
         )  # 8-digit IDs
 
@@ -297,15 +294,13 @@ class DomainsMocker:
 
         provider_ids = np.where(
             np.random.random(total_conditions) < 0.85,  # 85% have provider
-            self._generate_realistic_ids(total_conditions, base=800000)[
-                :total_conditions
-            ],
+            self._generate_person_ids(total_conditions, base=800000)[:total_conditions],
             None,
         )
 
         visit_occurrence_ids = np.where(
             np.random.random(total_conditions) < 0.90,  # 90% associated with visit
-            self._generate_realistic_ids(total_conditions, base=60000000)[
+            self._generate_person_ids(total_conditions, base=60000000)[
                 :total_conditions
             ],  # 8-digit visit IDs
             None,
@@ -418,7 +413,7 @@ class DomainsMocker:
         total_procedures = procedures_per_patient.sum()
 
         # Generate procedure occurrence IDs that look realistic
-        procedure_occurrence_ids = self._generate_realistic_ids(
+        procedure_occurrence_ids = self._generate_person_ids(
             total_procedures, base=40000000
         )  # 8-digit IDs
 
@@ -491,15 +486,13 @@ class DomainsMocker:
 
         provider_ids = np.where(
             np.random.random(total_procedures) < 0.90,  # 90% have provider
-            self._generate_realistic_ids(total_procedures, base=800000)[
-                :total_procedures
-            ],
+            self._generate_person_ids(total_procedures, base=800000)[:total_procedures],
             None,
         )
 
         visit_occurrence_ids = np.where(
             np.random.random(total_procedures) < 0.85,  # 85% associated with visit
-            self._generate_realistic_ids(total_procedures, base=60000000)[
+            self._generate_person_ids(total_procedures, base=60000000)[
                 :total_procedures
             ],
             None,
@@ -746,7 +739,7 @@ class DomainsMocker:
         total_drugs = drugs_per_patient.sum()
 
         # Generate drug exposure IDs that look realistic
-        drug_exposure_ids = self._generate_realistic_ids(
+        drug_exposure_ids = self._generate_person_ids(
             total_drugs, base=80000000
         )  # 8-digit IDs
 
@@ -905,13 +898,13 @@ class DomainsMocker:
 
         provider_ids = np.where(
             np.random.random(total_drugs) < 0.85,  # 85% have provider
-            self._generate_realistic_ids(total_drugs, base=800000)[:total_drugs],
+            self._generate_person_ids(total_drugs, base=800000)[:total_drugs],
             None,
         )
 
         visit_occurrence_ids = np.where(
             np.random.random(total_drugs) < 0.70,  # 70% associated with visit
-            self._generate_realistic_ids(total_drugs, base=60000000)[:total_drugs],
+            self._generate_person_ids(total_drugs, base=60000000)[:total_drugs],
             None,
         )
 
@@ -1021,7 +1014,7 @@ class DomainsMocker:
             # Generate enough visit details to handle Poisson distribution
             # Use 3x patients to ensure we have enough IDs for the Poisson distribution
             n_visit_details = int(self.n_patients * 3)
-            self._visit_detail_ids_pool = self._generate_realistic_ids(
+            self._visit_detail_ids_pool = self._generate_person_ids(
                 n_visit_details, base=70000000
             )
         return self._visit_detail_ids_pool
@@ -1138,15 +1131,13 @@ class DomainsMocker:
         provider_mask = (
             np.random.random(total_visit_details) < 0.90
         )  # 90% have provider
-        provider_values = self._generate_realistic_ids(total_visit_details, base=800000)
+        provider_values = self._generate_person_ids(total_visit_details, base=800000)
         provider_ids = np.where(provider_mask, provider_values, None)
 
         care_site_mask = (
             np.random.random(total_visit_details) < 0.85
         )  # 85% have care site
-        care_site_values = self._generate_realistic_ids(
-            total_visit_details, base=300000
-        )
+        care_site_values = self._generate_person_ids(total_visit_details, base=300000)
         care_site_ids = np.where(care_site_mask, care_site_values, None)
 
         # Admitting source - only for inpatient-like visits
@@ -1226,7 +1217,7 @@ class DomainsMocker:
         visit_detail_parent_ids = np.where(parent_mask, parent_values, None)
 
         # Visit occurrence IDs - all visit details should be associated with visit occurrences
-        visit_occurrence_ids = self._generate_realistic_ids(
+        visit_occurrence_ids = self._generate_person_ids(
             total_visit_details, base=60000000
         )
 
@@ -1274,7 +1265,7 @@ class DomainsMocker:
         total_observations = observations_per_patient.sum()
 
         # Generate observation IDs that look realistic
-        observation_ids = self._generate_realistic_ids(
+        observation_ids = self._generate_person_ids(
             total_observations, base=90000000
         )  # 8-digit IDs
 
@@ -1450,7 +1441,7 @@ class DomainsMocker:
 
         provider_ids = np.where(
             np.random.random(total_observations) < 0.85,  # 85% have provider
-            self._generate_realistic_ids(total_observations, base=800000)[
+            self._generate_person_ids(total_observations, base=800000)[
                 :total_observations
             ],
             None,
@@ -1458,7 +1449,7 @@ class DomainsMocker:
 
         visit_occurrence_ids = np.where(
             np.random.random(total_observations) < 0.80,  # 80% associated with visit
-            self._generate_realistic_ids(total_observations, base=60000000)[
+            self._generate_person_ids(total_observations, base=60000000)[
                 :total_observations
             ],
             None,
@@ -1555,7 +1546,7 @@ class DomainsMocker:
         total_periods = periods_per_patient.sum()
 
         # Generate observation period IDs that look realistic
-        observation_period_ids = self._generate_realistic_ids(
+        observation_period_ids = self._generate_person_ids(
             total_periods, base=10000000
         )  # 8-digit IDs
 
@@ -1670,7 +1661,7 @@ class DomainsMocker:
         total_measurements = measurements_per_patient.sum()
 
         # Generate measurement IDs that look realistic
-        measurement_ids = self._generate_realistic_ids(
+        measurement_ids = self._generate_person_ids(
             total_measurements, base=100000000
         )  # 9-digit IDs
 
@@ -1881,7 +1872,7 @@ class DomainsMocker:
         # Optional fields with realistic presence rates
         provider_ids = np.where(
             np.random.random(total_measurements) < 0.80,  # 80% have provider
-            self._generate_realistic_ids(total_measurements, base=800000)[
+            self._generate_person_ids(total_measurements, base=800000)[
                 :total_measurements
             ],
             None,
@@ -1889,7 +1880,7 @@ class DomainsMocker:
 
         visit_occurrence_ids = np.where(
             np.random.random(total_measurements) < 0.75,  # 75% associated with visit
-            self._generate_realistic_ids(total_measurements, base=60000000)[
+            self._generate_person_ids(total_measurements, base=60000000)[
                 :total_measurements
             ],
             None,
@@ -1941,7 +1932,10 @@ class DomainsMocker:
         Returns the exact same data on multiple calls for consistency.
 
         Returns:
-            Dict[str, pd.DataFrame]: Dictionary of source table names to DataFrames
+            Dict[str, pd.DataFrame]: Dictionary mapping table names to pandas DataFrames containing mock data
+
+        Raises:
+            ValueError: If an unknown table is requested that doesn't have a corresponding mock implementation
         """
         # Return cached tables if they exist
         if self._cached_source_tables is not None:
@@ -1987,8 +1981,23 @@ class DomainsMocker:
                 source_tables[table_name] = ibis.memtable(
                     self._mock_measurement_table()
                 )
-            # TODO: Add other table mocking as needed
-            # etc.
+            else:
+                # Raise an error for unknown tables
+                supported_tables = [
+                    "PERSON",
+                    "CONDITION_OCCURRENCE",
+                    "PROCEDURE_OCCURRENCE",
+                    "DEATH",
+                    "DRUG_EXPOSURE",
+                    "VISIT_DETAIL",
+                    "OBSERVATION",
+                    "OBSERVATION_PERIOD",
+                    "MEASUREMENT",
+                ]
+                raise ValueError(
+                    f"Unknown table '{table_name}' requested for simulation. "
+                    f"Supported tables are: {', '.join(supported_tables)}"
+                )
 
         # Cache the tables for future calls
         self._cached_source_tables = source_tables
@@ -2001,7 +2010,10 @@ class DomainsMocker:
         This mimics the behavior of DomainsDictionary.get_mapped_tables() but with mocked data.
 
         Returns:
-            Dict[str, PhenexTable]: Dictionary of domain names to PhenexTable instances
+            Dict[str, PhenexTable]: Dictionary mapping domain names to PhenexTable instances containing the mock data ready for use with PhenEx algorithms
+
+        Raises:
+            ValueError: If a domain mapper references a table that doesn't have a mock implementation
         """
         source_tables = self.get_source_tables()
         mapped_tables = {}
