@@ -166,3 +166,4 @@ cython_debug/
 phenex/test/phenotypes/artifacts/
 phenex/test/cohort/artifacts/
 phenex/test/serialization/artifacts
+app/ui/.vite
