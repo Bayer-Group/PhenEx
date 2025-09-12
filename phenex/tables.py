@@ -38,7 +38,7 @@ class PhenexTable:
         self.NAME_TABLE = name or self.NAME_TABLE
 
         self.column_mapping = self._get_column_mapping(column_mapping)
-        self._table = table.rename(**self.column_mapping)
+        self._table = table.mutate(**self.column_mapping)
 
         for key in self.REQUIRED_FIELDS:
             try:
