@@ -14,6 +14,7 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
 
   useEffect(() => {
     let quillInstance: Quill | null = null;
+    let keyDownHandler: ((e: KeyboardEvent) => void) | null = null;
 
     if (editorRef.current) {
       // Clean up any existing content
@@ -81,6 +82,17 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
         dataService.cohort_data.description = delta;
         dataService.saveChangesToCohort();
       });
+
+      // Handle escape key to unfocus
+      keyDownHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          quillInstance?.blur();
+          setIsFocused(false);
+        }
+      };
+      
+      // Add escape key listener to the editor container
+      editorContainer.addEventListener('keydown', keyDownHandler);
 
       // Handle focus/blur events for toolbar visibility
       let hideTimeoutId: number | null = null;
@@ -155,6 +167,12 @@ export const CohortTextArea: FC<CohortTextAreaProps> = () => {
         quillInstance.off('selection-change');
       }
       if (editorRef.current) {
+        // Remove keydown listener if it exists
+        const editorContainer = editorRef.current.querySelector(`.${styles.editorContent}`) as HTMLElement;
+        if (editorContainer && keyDownHandler) {
+          editorContainer.removeEventListener('keydown', keyDownHandler);
+        }
+        
         while (editorRef.current.firstChild) {
           editorRef.current.removeChild(editorRef.current.firstChild);
         }
