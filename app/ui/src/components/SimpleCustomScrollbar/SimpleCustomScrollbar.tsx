@@ -67,6 +67,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
 
   const handleThumbMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent propagation to parent draggable elements
     const element = targetRef.current;
     if (!element) return;
 
@@ -80,6 +81,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent propagation to parent draggable elements
     if (e.target === e.currentTarget) {
       const element = targetRef.current;
       if (!element) return;
@@ -237,6 +239,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     <div
       className={scrollbarClass}
       onClick={handleTrackClick}
+      onMouseDown={(e) => e.stopPropagation()} // Prevent any mousedown events from propagating
       style={scrollbarStyle}
     >
       <div

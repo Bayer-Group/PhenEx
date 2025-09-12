@@ -9,6 +9,7 @@ interface DraggablePositionedPortalProps {
   position?: 'below' | 'above' | 'right' | 'left';
   alignment?: 'left' | 'center' | 'right';
   dragHandleSelector?: string; // CSS selector for the drag handle
+  dragHandleRef?: React.RefObject<HTMLElement | null>; // Direct reference to drag handle element
   onPositionChange?: (x: number, y: number) => void;
   enableDragging?: boolean; // Allow disabling drag functionality
   onDragStart?: () => void; // Called when drag starts
@@ -31,6 +32,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
   position = 'below',
   alignment = 'left',
   dragHandleSelector,
+  dragHandleRef,
   onPositionChange,
   enableDragging = true,
   onDragStart,
@@ -241,10 +243,17 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
 
       // Check if we should handle this drag
       let shouldDrag = false;
-      if (dragHandleSelector) {
+      
+      // Check dragHandleRef first (direct element reference)
+      if (dragHandleRef?.current) {
+        shouldDrag = dragHandleRef.current === target || dragHandleRef.current.contains(target);
+      }
+      // Fall back to dragHandleSelector if no direct ref
+      else if (dragHandleSelector) {
         const selectors = dragHandleSelector.split(',').map(s => s.trim());
         shouldDrag = selectors.some(selector => target.closest(selector) !== null);
       } else {
+        // If neither is specified, default to old behavior (drag anywhere in container)
         shouldDrag = containerRef.current?.contains(target) || false;
       }
 
@@ -263,7 +272,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
       setIsDragging(true);
       onDragStart?.();
     },
-    [dragHandleSelector, container, enableDragging, onDragStart]
+    [dragHandleSelector, dragHandleRef, container, enableDragging, onDragStart, containerRef]
   );
 
   const handleMouseMove = useCallback(
@@ -332,10 +341,30 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     const currentContainer = container;
 
     const mouseDownHandler = (e: MouseEvent) => {
-      // Allow buttons and other clickable elements to work normally
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'BUTTON' || target.closest('button')) {
-        return; // Don't interfere with button clicks
+      // Only handle drag if we have a specific drag handle defined
+      if (dragHandleRef?.current || dragHandleSelector) {
+        const target = e.target as HTMLElement;
+        let shouldDrag = false;
+        
+        // Check dragHandleRef first (direct element reference)
+        if (dragHandleRef?.current) {
+          shouldDrag = dragHandleRef.current === target || dragHandleRef.current.contains(target);
+        }
+        // Fall back to dragHandleSelector if no direct ref
+        else if (dragHandleSelector) {
+          const selectors = dragHandleSelector.split(',').map(s => s.trim());
+          shouldDrag = selectors.some(selector => target.closest(selector) !== null);
+        }
+        
+        if (!shouldDrag) {
+          return; // Don't handle drag if target doesn't match the drag handle
+        }
+      } else {
+        // If no drag handle is specified, allow buttons and other clickable elements to work normally
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'BUTTON' || target.closest('button')) {
+          return; // Don't interfere with button clicks
+        }
       }
       
       e.stopPropagation();
@@ -348,7 +377,6 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     };
 
     currentContainer.addEventListener('mousedown', mouseDownHandler);
-    // REMOVED: click listener - no automatic click-to-close behavior
     currentContainer.addEventListener('dragstart', preventDragEvents);
     currentContainer.addEventListener('dragover', preventDragEvents);
     currentContainer.addEventListener('drop', preventDragEvents);
@@ -356,13 +384,12 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
 
     return () => {
       currentContainer.removeEventListener('mousedown', mouseDownHandler);
-      // REMOVED: click listener cleanup
       currentContainer.removeEventListener('dragstart', preventDragEvents);
       currentContainer.removeEventListener('dragover', preventDragEvents);
       currentContainer.removeEventListener('drop', preventDragEvents);
       currentContainer.removeEventListener('drag', preventDragEvents);
     };
-  }, [container, handleMouseDown]);
+  }, [container, handleMouseDown, dragHandleSelector, dragHandleRef]);
 
   const portalContent = (
     <div
