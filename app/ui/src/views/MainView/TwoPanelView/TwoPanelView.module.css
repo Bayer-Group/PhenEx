@@ -138,17 +138,18 @@
   padding: 0;
   line-height: 1;
   position: absolute;
-  top: 5px;
+  top: -5px;
   left: 20px;
   font-family: 'SNPro-black' !important;
   cursor: pointer;
+  transition: color .3s ease;
 
 }
 
 .collapseButton:hover {
   transition: transform 0.2s ease;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: var(--color-accent-bright);
+  color: var(--color_accent_orange);
   outline: none;
 }
 

@@ -132,7 +132,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  font-size: 20px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
