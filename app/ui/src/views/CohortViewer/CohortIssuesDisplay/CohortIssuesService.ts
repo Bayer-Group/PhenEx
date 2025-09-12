@@ -102,13 +102,6 @@ export class CohortIssuesService {
     };
   }
 
-  public getIssues() {
-    return {
-      issueCount: this.issueCount,
-      issues: this.issues,
-    };
-  }
-
   public addListener(listener: () => void) {
     this.listeners.push(listener);
   }

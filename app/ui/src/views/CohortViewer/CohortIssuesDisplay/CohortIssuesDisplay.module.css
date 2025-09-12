@@ -162,10 +162,10 @@
 .labelUnselected {
   font-family: 'IBMPlexSans-bold';
   font-size: 24px;
-  margin-top: -5px;
   text-align: right;
   position: absolute;
-  padding-left: 20px;
+  top:10px;
+  right:50px;
 }
 
 
