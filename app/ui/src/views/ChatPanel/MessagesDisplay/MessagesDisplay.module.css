@@ -1,7 +1,8 @@
 .container {
   background-color: transparent;
   height: 100%;
-  overflow-y: auto;
+  position: relative;
+  overflow: hidden;
 }
 
 .messagesContainer {
@@ -9,19 +10,16 @@
   flex-direction: column;
   display: flex;
   overflow-y: auto;
+  height: 100%;
   color: var(--text-color-normal);
-  /* position: fixed;
-  z-index: 2;
-  width: 100%;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  background-color: transparent;
-  height: calc(100%);
-  overflow-x: hidden;
-  background-color: blue;
-  overflow-y:auto; */
+  /* Hide default scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers */
+.messagesContainer::-webkit-scrollbar {
+  display: none;
 }
 
 .image {

@@ -405,7 +405,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
-            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft:35}}}
+            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft:35, marginToEnd:10}}}
             hideScrollbars={hideScrollbars}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}

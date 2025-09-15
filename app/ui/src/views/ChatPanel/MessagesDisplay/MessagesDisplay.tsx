@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './MessagesDisplay.module.css';
 import ReactMarkdown from 'react-markdown';
 import { Message, chatPanelDataService } from '../ChatPanelDataService';
+import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface MessagesDisplayProps {}
 
@@ -85,11 +86,11 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
   }, []);
 
   return (
-    <div
-      className={`${styles.container} ${!isScrolledToBottom ? styles.scrolling : ''}`}
-      ref={messagesContainerRef}
-    >
-      <div className={styles.messagesContainer}>
+    <div className={styles.container}>
+      <div
+        className={`${styles.messagesContainer} ${!isScrolledToBottom ? styles.scrolling : ''}`}
+        ref={messagesContainerRef}
+      >
         {messages.map(message => (
           <div
             key={message.id}
@@ -99,6 +100,12 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
           </div>
         ))}
       </div>
+      <SimpleCustomScrollbar 
+        targetRef={messagesContainerRef}
+        orientation="vertical"
+        marginTop={100}
+        marginBottom={10}
+      />
     </div>
   );
 };

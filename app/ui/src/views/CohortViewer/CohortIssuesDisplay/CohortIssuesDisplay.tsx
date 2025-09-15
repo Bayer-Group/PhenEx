@@ -24,10 +24,6 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const hasIssues = phenotypesWithIssues > 0;
 
 
-  const renderXButton = () => {
-    return <XButton onClick={undefined} className={styles.xButton} />;
-  };
-
   const renderText = () => {
     return (
        <div className={styles.labelUnselected}>
@@ -38,14 +34,14 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
 
   const renderBird = () => {
     return (
-      <img src={BirdIcon} alt="No issues" className={`${styles.birdIcon} ${hasIssues ? styles.birdIssues : styles.birdNoIssues}`} />
+      <img src={BirdIcon} alt="No issues" className={`${styles.birdIcon} ${hasIssues ? styles.birdIssues : styles.birdNoIssues}`} onClick={onClick} />
     );
   }
 
   return (
     <div
       className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}
-      onClick={selected ? onClick : undefined}
+      onClick={onClick}
     >
       <span className={styles.text}>
         {hasIssues ? renderText() : ''}
@@ -56,7 +52,6 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
         {totalIssueCount}
       </div>
       {renderBird()}
-      {selected && renderXButton()}
     </div>
   );
 };
