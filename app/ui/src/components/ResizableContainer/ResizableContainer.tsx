@@ -76,14 +76,14 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
       startY: e.clientY,
       startWidth: rect.width,
       startHeight: rect.height,
-      startOffsetX: 0,
-      startOffsetY: 0,
+      startOffsetX: positionAdjustment.x, // Store current adjustment
+      startOffsetY: positionAdjustment.y, // Store current adjustment
     });
 
     // Prevent text selection during resize
     document.body.style.userSelect = 'none';
     document.body.style.cursor = direction.includes('e') || direction.includes('w') ? 'ew-resize' : 'ns-resize';
-  }, []);
+  }, [positionAdjustment.x, positionAdjustment.y]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!resizeState.isResizing || !containerRef.current) return;
@@ -93,32 +93,32 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
 
     let newWidth = resizeState.startWidth;
     let newHeight = resizeState.startHeight;
-    let adjustX = 0;
-    let adjustY = 0;
+    let adjustX = resizeState.startOffsetX; // Start from the initial adjustment
+    let adjustY = resizeState.startOffsetY; // Start from the initial adjustment
 
     // Intuitive resizing: opposite edge stays fixed
     if (resizeState.direction.includes('e')) {
-      // Right edge - increase width BUT compensate for the translate(-width) change
+      // Right edge - increase width and compensate for translate(-width) change
       newWidth = resizeState.startWidth + deltaX;
-      adjustX = deltaX; // Compensate for the -width change in transform
+      adjustX = resizeState.startOffsetX + deltaX; // Add deltaX to compensate
     }
     
     if (resizeState.direction.includes('w')) {
-      // Left edge - increase width and shift position so right edge stays fixed
+      // Left edge - decrease width and shift position so right edge stays fixed  
       newWidth = resizeState.startWidth - deltaX;
-      adjustX = deltaX; // Shift right to keep right edge fixed
+      adjustX = resizeState.startOffsetX + deltaX; // Add deltaX to keep right edge fixed
     }
     
     if (resizeState.direction.includes('s')) {
-      // Bottom edge - increase height BUT compensate for the translate(-height) change
+      // Bottom edge - increase height and compensate for translate(-height) change
       newHeight = resizeState.startHeight + deltaY;
-      adjustY = deltaY; // Compensate for the -height change in transform
+      adjustY = resizeState.startOffsetY + deltaY; // Add deltaY to compensate
     }
     
     if (resizeState.direction.includes('n')) {
-      // Top edge - increase height and shift position so bottom edge stays fixed
+      // Top edge - decrease height and shift position so bottom edge stays fixed
       newHeight = resizeState.startHeight - deltaY;
-      adjustY = deltaY; // Shift down to keep bottom edge fixed
+      adjustY = resizeState.startOffsetY + deltaY; // Add deltaY to keep bottom edge fixed
     }
 
     // Apply constraints
