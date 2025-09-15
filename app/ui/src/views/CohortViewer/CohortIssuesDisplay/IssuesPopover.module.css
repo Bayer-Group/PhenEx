@@ -1,7 +1,16 @@
 :root {
   --issue_popover_margin: 15px;
   --issue_popover_radius: 20px;
-  --background_color_translucent: rgba(248, 249, 250, 0.8);
+  --.tabsContainer {
+  position:absolute;
+  top:10px;
+  left:10px;
+  height: 60px;
+  border-radius: 20px;
+  padding:5px;
+  gap:5px;
+  background-color: transparent!important;
+}lor_translucent: rgba(248, 249, 250, 0.8);
   --issues_popover_gutter:0px;
 }
 
@@ -105,6 +114,8 @@
   width:100%;
   z-index: 1000;
   cursor: grab;
+  /* Ensure it doesn't interfere with resize handles */
+  pointer-events: auto;
 }
 
 .transparentHeaderGradient{
@@ -118,4 +129,22 @@
 .customScrollbarThumb {
   background-color: var(--color-accent-bright);
   border-radius: 4px;
+}
+
+.resizablePopover .popover {
+  /* Make popover fill the resizable container */
+  width: 100% !important;
+  height: 100% !important;
+  position: relative;
+  right: auto;
+  bottom: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.resizablePopover .body {
+  /* Make body flexible to fill available space */
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* Allow flexbox shrinking */
 }

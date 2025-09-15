@@ -1,0 +1,69 @@
+.resizableContainer {
+  position: relative;
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.resizeHandle {
+  position: absolute;
+  background: transparent;
+  z-index: 1000;
+}
+
+.resizeHandleHorizontal {
+  cursor: ew-resize;
+}
+
+.resizeHandleVertical {
+  cursor: ns-resize;
+}
+
+/* Top resize handle */
+.resizeHandleN {
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Right resize handle */
+.resizeHandleE {
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  border-radius: 4px;
+}
+
+/* Bottom resize handle */
+.resizeHandleS {
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Left resize handle */
+.resizeHandleW {
+  top: 0;
+  left: -4px;
+  bottom: 0;
+  width: 8px;
+  border-radius: 4px;
+}
+
+/* Visual feedback on hover */
+.resizeHandle:hover {
+  background: rgba(0, 123, 255, 0.3);
+  transition: background 0.2s ease;
+}
+
+/* Prevent text selection during resize */
+.resizableContainer.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

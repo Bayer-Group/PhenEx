@@ -10,8 +10,7 @@ import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCoh
 import typeStyles from '../../../styles/study_types.module.css';
 import BirdIcon from '../../../assets/bird_icon.png'
 import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
-
-import { color, group } from 'd3';
+import { ResizableContainer } from '../../../components/ResizableContainer';
 import IssuesPopoverList from './IssuesPopoverList';
 
 interface IssuesPopoverProps {
@@ -61,22 +60,38 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
   );
 
   return (
-    <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
-      {renderTransparentHeader()}
-      {selectedView === 'issues' ? (
-        <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
-      ) : (
-        <div ref={bodyRef} className={styles.body}>
-          <ChatPanel/>
-        </div>
-      )}
-      <SimpleCustomScrollbar 
-        targetRef={bodyRef}
-        orientation="vertical"
-        marginTop={100}
-        marginBottom={20}
-        classNameThumb={styles.customScrollbarThumb}
-      />
-    </div>
+    <ResizableContainer
+      className={styles.resizablePopover}
+      initialWidth={400}
+      initialHeight={500}
+      minWidth={300}
+      minHeight={250}
+      maxWidth={600}
+      maxHeight={700}
+      enableResize={{
+        top: true,
+        right: true,
+        bottom: false,
+        left: false,
+      }}
+    >
+      <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
+        {renderTransparentHeader()}
+        {selectedView === 'issues' ? (
+          <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
+        ) : (
+          <div ref={bodyRef} className={styles.body}>
+            <ChatPanel/>
+          </div>
+        )}
+        <SimpleCustomScrollbar 
+          targetRef={bodyRef}
+          orientation="vertical"
+          marginTop={100}
+          marginBottom={20}
+          classNameThumb={styles.customScrollbarThumb}
+        />
+      </div>
+    </ResizableContainer>
   );
 };
