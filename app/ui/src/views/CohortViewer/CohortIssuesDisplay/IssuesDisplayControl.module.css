@@ -2,7 +2,7 @@
   position: absolute;
   user-select: none;
   right: 50px;
-  bottom: 38px;
+  bottom: 42px;
   transition: all 0.3s ease;
   z-index: 1001;
 }
@@ -31,5 +31,4 @@
 }
 
 .noIssues {
-  pointer-events: none;
 }

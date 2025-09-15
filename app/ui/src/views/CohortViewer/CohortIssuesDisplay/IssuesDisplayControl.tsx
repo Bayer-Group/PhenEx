@@ -59,6 +59,7 @@ export const IssuesDisplayControl: React.FC<IssuesDisplayControlProps> = ({
   }, [showPopover]);
 
   const handleClick = (event: React.MouseEvent) => {
+    console.log("HOWING OPOPER")
     event.stopPropagation();
     if (!showPopover) {
       setShowPopover(!showPopover);
