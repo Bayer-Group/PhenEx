@@ -13,7 +13,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
   const interactionAreaRef = useRef<InteractionAreaRef>(null);
 
   useEffect(() => {
-    // Check initial state
+    // Check initial state - only user messages count for interaction
     const userMessageCount = chatPanelDataService.getUserMessageCount();
     setUserHasInteracted(userMessageCount > 0);
 
