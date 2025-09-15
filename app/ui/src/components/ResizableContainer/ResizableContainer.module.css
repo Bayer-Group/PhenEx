@@ -20,38 +20,38 @@
 
 /* Top resize handle */
 .resizeHandleN {
-  top: -4px;
-  left: 0;
-  right: 0;
-  height: 8px;
-  border-radius: 4px;
+  top: -5px;
+  left: 10px;
+  right: 10px;
+  height: 10px;
+  border-radius: 5px;
 }
 
 /* Right resize handle */
 .resizeHandleE {
-  top: 0;
-  right: -4px;
-  bottom: 0;
-  width: 8px;
-  border-radius: 4px;
+  top: 10px;
+  right: -5px;
+  bottom: 10px;
+  width: 10px;
+  border-radius: 5px;
 }
 
 /* Bottom resize handle */
 .resizeHandleS {
-  bottom: -4px;
-  left: 0;
-  right: 0;
-  height: 8px;
-  border-radius: 4px;
+  bottom: -5px;
+  left: 10px;
+  right: 10px;
+  height: 10px;
+  border-radius: 5px;
 }
 
 /* Left resize handle */
 .resizeHandleW {
-  top: 0;
-  left: -4px;
-  bottom: 0;
-  width: 8px;
-  border-radius: 4px;
+  top: 10px;
+  left: -5px;
+  bottom: 10px;
+  width: 10px;
+  border-radius: 5px;
 }
 
 /* Visual feedback on hover */

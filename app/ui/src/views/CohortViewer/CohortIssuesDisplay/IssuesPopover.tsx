@@ -66,8 +66,8 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
       enableResize={{
         top: true,
         right: true,
-        bottom: false,
-        left: false,
+        bottom: true,
+        left: true,
       }}
       position="bottom-right"
       offsetX={15} // var(--issue_popover_margin)
