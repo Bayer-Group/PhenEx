@@ -171,9 +171,11 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     return {
       width: `${dimensions.width}px`,
       height: `${dimensions.height}px`,
-      position: 'relative',
+      position: 'absolute', // Use absolute positioning to remove from document flow
       // Position so bottom-right corner is at origin (0,0) + any adjustments for left/top resizing
       transform: `translate(${-dimensions.width + positionAdjustment.x}px, ${-dimensions.height + positionAdjustment.y}px)`,
+      // Prevent the container from affecting document scroll
+      willChange: 'transform',
     };
   };
 

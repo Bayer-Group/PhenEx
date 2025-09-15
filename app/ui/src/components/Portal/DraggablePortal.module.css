@@ -2,6 +2,7 @@
 
 .draggableContainer {
   position: relative;
+  background-color: red;
 }
 
 .dragHandle {
