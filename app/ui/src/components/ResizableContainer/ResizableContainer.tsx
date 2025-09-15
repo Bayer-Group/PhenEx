@@ -106,7 +106,7 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     if (resizeState.direction.includes('w')) {
       // Left edge - decrease width and shift position so right edge stays fixed  
       newWidth = resizeState.startWidth - deltaX;
-      adjustX = resizeState.startOffsetX + deltaX; // Add deltaX to keep right edge fixed
+      // No position adjustment needed - the width change handles the positioning
     }
     
     if (resizeState.direction.includes('s')) {
@@ -118,7 +118,7 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     if (resizeState.direction.includes('n')) {
       // Top edge - decrease height and shift position so bottom edge stays fixed
       newHeight = resizeState.startHeight - deltaY;
-      adjustY = resizeState.startOffsetY + deltaY; // Add deltaY to keep bottom edge fixed
+      // No position adjustment needed - the height change handles the positioning
     }
 
     // Apply constraints
