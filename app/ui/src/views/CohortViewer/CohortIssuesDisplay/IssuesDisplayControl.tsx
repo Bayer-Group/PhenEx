@@ -87,14 +87,12 @@ export const IssuesDisplayControl: React.FC<IssuesDisplayControlProps> = ({
           triggerRef={containerRef} 
           position="below" 
           offsetY={5} 
-          alignment="right"
+          alignment="right" // Right edge of trigger = bottom-right anchor point for ResizableContainer
           resetToPositioned={resetPortalToPositioned}
           onClose={closePopover}
           dragHandleRef={dragHandleRef}
         >
-          <div className={styles.popover}>
-            <IssuesPopover issues={issues} onClose={closePopover} dragHandleRef={dragHandleRef} />
-          </div>
+          <IssuesPopover issues={issues} onClose={closePopover} dragHandleRef={dragHandleRef} />
         </DraggablePositionedPortal>
       )}
       <div className={styles.issuesButton}>

@@ -58,6 +58,8 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     container.style.zIndex = '9999';
     container.style.pointerEvents = 'auto';
     container.style.isolation = 'isolate';
+    // Ensure the container doesn't contribute to document scrolling
+    container.style.contain = 'layout style';
     document.body.appendChild(container);
 
     return () => {
