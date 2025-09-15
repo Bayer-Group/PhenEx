@@ -29,6 +29,8 @@ interface ResizeState {
   startY: number;
   startWidth: number;
   startHeight: number;
+  startOffsetX: number;
+  startOffsetY: number;
 }
 
 export const ResizableContainer: React.FC<ResizableContainerProps> = ({
@@ -51,6 +53,10 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     width: initialWidth,
     height: initialHeight,
   });
+  const [positionOffset, setPositionOffset] = useState({
+    x: offsetX,
+    y: offsetY,
+  });
   const [resizeState, setResizeState] = useState<ResizeState>({
     isResizing: false,
     direction: '',
@@ -58,6 +64,8 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     startY: 0,
     startWidth: 0,
     startHeight: 0,
+    startOffsetX: 0,
+    startOffsetY: 0,
   });
 
   const handleMouseDown = useCallback((e: React.MouseEvent, direction: string) => {
@@ -74,12 +82,14 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
       startY: e.clientY,
       startWidth: rect.width,
       startHeight: rect.height,
+      startOffsetX: positionOffset.x,
+      startOffsetY: positionOffset.y,
     });
 
     // Prevent text selection during resize
     document.body.style.userSelect = 'none';
     document.body.style.cursor = direction.includes('e') || direction.includes('w') ? 'ew-resize' : 'ns-resize';
-  }, []);
+  }, [positionOffset.x, positionOffset.y]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!resizeState.isResizing || !containerRef.current) return;
@@ -89,19 +99,34 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
 
     let newWidth = resizeState.startWidth;
     let newHeight = resizeState.startHeight;
+    let newOffsetX = resizeState.startOffsetX;
+    let newOffsetY = resizeState.startOffsetY;
 
-    // Calculate new dimensions based on resize direction
+    // Handle resize based on direction and positioning anchor
     if (resizeState.direction.includes('e')) {
+      // Right edge - only change width for all positioning types
       newWidth = resizeState.startWidth + deltaX;
     }
+    
     if (resizeState.direction.includes('w')) {
+      // Left edge - change width and adjust position for right-anchored containers
       newWidth = resizeState.startWidth - deltaX;
+      if (position.includes('right')) {
+        newOffsetX = resizeState.startOffsetX + deltaX;
+      }
     }
+    
     if (resizeState.direction.includes('s')) {
+      // Bottom edge - only change height for top-anchored containers
       newHeight = resizeState.startHeight + deltaY;
     }
+    
     if (resizeState.direction.includes('n')) {
+      // Top edge - change height and adjust position for bottom-anchored containers
       newHeight = resizeState.startHeight - deltaY;
+      if (position.includes('bottom')) {
+        newOffsetY = resizeState.startOffsetY + deltaY;
+      }
     }
 
     // Apply constraints
@@ -109,11 +134,15 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
 
     setDimensions({ width: newWidth, height: newHeight });
+    setPositionOffset({ x: newOffsetX, y: newOffsetY });
     onResize?.(newWidth, newHeight);
-  }, [resizeState, minWidth, maxWidth, minHeight, maxHeight, onResize]);
+  }, [resizeState, minWidth, maxWidth, minHeight, maxHeight, onResize, position]);
 
   const handleMouseUp = useCallback(() => {
-    setResizeState(prev => ({ ...prev, isResizing: false }));
+    setResizeState(prev => ({ 
+      ...prev, 
+      isResizing: false 
+    }));
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
   }, []);
@@ -155,15 +184,15 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
 
     switch (position) {
       case 'top-left':
-        return { ...baseStyles, top: offsetY, left: offsetX };
+        return { ...baseStyles, top: positionOffset.y, left: positionOffset.x };
       case 'top-right':
-        return { ...baseStyles, top: offsetY, right: offsetX };
+        return { ...baseStyles, top: positionOffset.y, right: positionOffset.x };
       case 'bottom-left':
-        return { ...baseStyles, bottom: offsetY, left: offsetX };
+        return { ...baseStyles, bottom: positionOffset.y, left: positionOffset.x };
       case 'bottom-right':
-        return { ...baseStyles, bottom: offsetY, right: offsetX };
+        return { ...baseStyles, bottom: positionOffset.y, right: positionOffset.x };
       default:
-        return { ...baseStyles, top: offsetY, left: offsetX };
+        return { ...baseStyles, top: positionOffset.y, left: positionOffset.x };
     }
   };
 
