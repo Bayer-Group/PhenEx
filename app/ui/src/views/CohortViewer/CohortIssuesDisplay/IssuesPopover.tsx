@@ -69,7 +69,6 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
         bottom: true,
         left: true,
       }}
-      position="relative" // Use relative positioning since portal handles absolute positioning
     >
       <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
         {renderTransparentHeader()}

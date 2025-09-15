@@ -17,9 +17,6 @@ export interface ResizableContainerProps {
     bottom?: boolean;
     left?: boolean;
   };
-  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'relative';
-  offsetX?: number;
-  offsetY?: number;
 }
 
 interface ResizeState {
@@ -44,20 +41,13 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
   maxHeight = 800,
   onResize,
   enableResize = { top: true, right: true, bottom: false, left: false },
-  position = 'relative',
-  offsetX = 0,
-  offsetY = 0,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({
     width: initialWidth,
     height: initialHeight,
   });
-  const [positionOffset, setPositionOffset] = useState({
-    x: offsetX,
-    y: offsetY,
-  });
-  const [relativeTransform, setRelativeTransform] = useState({
+  const [positionAdjustment, setPositionAdjustment] = useState({
     x: 0,
     y: 0,
   });
@@ -86,14 +76,14 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
       startY: e.clientY,
       startWidth: rect.width,
       startHeight: rect.height,
-      startOffsetX: positionOffset.x,
-      startOffsetY: positionOffset.y,
+      startOffsetX: 0,
+      startOffsetY: 0,
     });
 
     // Prevent text selection during resize
     document.body.style.userSelect = 'none';
     document.body.style.cursor = direction.includes('e') || direction.includes('w') ? 'ew-resize' : 'ns-resize';
-  }, [positionOffset.x, positionOffset.y]);
+  }, []);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!resizeState.isResizing || !containerRef.current) return;
@@ -103,80 +93,42 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
 
     let newWidth = resizeState.startWidth;
     let newHeight = resizeState.startHeight;
-    let newOffsetX = resizeState.startOffsetX;
-    let newOffsetY = resizeState.startOffsetY;
+    let adjustX = 0;
+    let adjustY = 0;
 
-    if (position === 'relative') {
-      // For relative positioning within a portal
-      if (resizeState.direction.includes('e')) {
-        // Right edge - expand to the right (right edge moves, left stays fixed)
-        newWidth = resizeState.startWidth + deltaX;
-      }
-      
-      if (resizeState.direction.includes('w')) {
-        // Left edge - expand to the left (left edge moves, right stays fixed)
-        newWidth = resizeState.startWidth - deltaX;
-        // Move the container left to keep the right edge fixed
-        newOffsetX = resizeState.startOffsetX + deltaX;
-      }
-      
-      if (resizeState.direction.includes('s')) {
-        // Bottom edge - expand downward (bottom edge moves, top stays fixed)
-        newHeight = resizeState.startHeight + deltaY;
-      }
-      
-      if (resizeState.direction.includes('n')) {
-        // Top edge - expand upward (top edge moves, bottom stays fixed)
-        newHeight = resizeState.startHeight - deltaY;
-        // Move the container up to keep the bottom edge fixed
-        newOffsetY = resizeState.startOffsetY + deltaY;
-      }
-    } else {
-      // Original absolute positioning logic
-      if (resizeState.direction.includes('e')) {
-        newWidth = resizeState.startWidth + deltaX;
-      }
-      
-      if (resizeState.direction.includes('w')) {
-        newWidth = resizeState.startWidth - deltaX;
-        newOffsetX = resizeState.startOffsetX + deltaX;
-      }
-      
-      if (resizeState.direction.includes('s')) {
-        newHeight = resizeState.startHeight + deltaY;
-      }
-      
-      if (resizeState.direction.includes('n')) {
-        newHeight = resizeState.startHeight - deltaY;
-        newOffsetY = resizeState.startOffsetY + deltaY;
-      }
+    // Intuitive resizing: opposite edge stays fixed
+    if (resizeState.direction.includes('e')) {
+      // Right edge - increase width BUT compensate for the translate(-width) change
+      newWidth = resizeState.startWidth + deltaX;
+      adjustX = deltaX; // Compensate for the -width change in transform
+    }
+    
+    if (resizeState.direction.includes('w')) {
+      // Left edge - increase width and shift position so right edge stays fixed
+      newWidth = resizeState.startWidth - deltaX;
+      adjustX = deltaX; // Shift right to keep right edge fixed
+    }
+    
+    if (resizeState.direction.includes('s')) {
+      // Bottom edge - increase height BUT compensate for the translate(-height) change
+      newHeight = resizeState.startHeight + deltaY;
+      adjustY = deltaY; // Compensate for the -height change in transform
+    }
+    
+    if (resizeState.direction.includes('n')) {
+      // Top edge - increase height and shift position so bottom edge stays fixed
+      newHeight = resizeState.startHeight - deltaY;
+      adjustY = deltaY; // Shift down to keep bottom edge fixed
     }
 
     // Apply constraints
     const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
     const constrainedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
 
-    // If width was constrained, adjust offset accordingly
-    if (constrainedWidth !== newWidth && resizeState.direction.includes('w')) {
-      const widthDiff = newWidth - constrainedWidth;
-      newOffsetX = resizeState.startOffsetX + deltaX - widthDiff;
-    }
-
-    // If height was constrained, adjust offset accordingly
-    if (constrainedHeight !== newHeight && resizeState.direction.includes('n')) {
-      const heightDiff = newHeight - constrainedHeight;
-      newOffsetY = resizeState.startOffsetY + deltaY - heightDiff;
-    }
-
     setDimensions({ width: constrainedWidth, height: constrainedHeight });
-    if (position !== 'relative') {
-      setPositionOffset({ x: newOffsetX, y: newOffsetY });
-    } else {
-      // For relative positioning, update the transform state
-      setRelativeTransform({ x: newOffsetX, y: newOffsetY });
-    }
+    setPositionAdjustment({ x: adjustX, y: adjustY });
     onResize?.(constrainedWidth, constrainedHeight);
-  }, [resizeState, minWidth, maxWidth, minHeight, maxHeight, onResize, position, relativeTransform]);
+  }, [resizeState, minWidth, maxWidth, minHeight, maxHeight, onResize]);
 
   const handleMouseUp = useCallback(() => {
     setResizeState(prev => ({ 
@@ -216,40 +168,13 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
   };
 
   const getPositionStyles = (): React.CSSProperties => {
-    const baseStyles: React.CSSProperties = {
+    return {
       width: `${dimensions.width}px`,
       height: `${dimensions.height}px`,
+      position: 'relative',
+      // Position so bottom-right corner is at origin (0,0) + any adjustments for left/top resizing
+      transform: `translate(${-dimensions.width + positionAdjustment.x}px, ${-dimensions.height + positionAdjustment.y}px)`,
     };
-
-    if (position === 'relative') {
-      return {
-        ...baseStyles,
-        position: 'relative',
-        // Position the container so its bottom-right corner is at the origin (0,0)
-        // This means we need to offset it by its full width and height
-        // Plus any additional transform from resizing
-        transform: `translate(${-dimensions.width + relativeTransform.x}px, ${-dimensions.height + relativeTransform.y}px)`,
-      };
-    }
-
-    // Absolute positioning for other modes
-    const absoluteStyles: React.CSSProperties = {
-      ...baseStyles,
-      position: 'absolute',
-    };
-
-    switch (position) {
-      case 'top-left':
-        return { ...absoluteStyles, top: positionOffset.y, left: positionOffset.x };
-      case 'top-right':
-        return { ...absoluteStyles, top: positionOffset.y, right: positionOffset.x };
-      case 'bottom-left':
-        return { ...absoluteStyles, bottom: positionOffset.y, left: positionOffset.x };
-      case 'bottom-right':
-        return { ...absoluteStyles, bottom: positionOffset.y, right: positionOffset.x };
-      default:
-        return { ...absoluteStyles, top: positionOffset.y, left: positionOffset.x };
-    }
   };
 
   return (
