@@ -42,6 +42,9 @@ class DomainsMocker:
         # Cache for source tables to ensure consistent data on multiple calls
         self._cached_source_tables = None
 
+        # Cache for person birth years for consistency across tables
+        self._person_birth_years = None
+
     def _generate_random_datetimes_vectorized(
         self,
         count: int,
@@ -121,12 +124,8 @@ class DomainsMocker:
         )  # Female, Male
         gender_source_values = np.where(gender_concepts == 8507, "F", "M")
 
-        # Birth years: reasonable distribution from 1930-2010
-        birth_years = np.random.choice(
-            np.arange(1930, 2011),
-            size=self.n_patients,
-            p=self._generate_birth_year_probs(),
-        )
+        # Birth years: use the cached birth years to ensure consistency with death table
+        birth_years = self._get_person_birth_years()
 
         # Birth months and days
         birth_months = np.random.randint(1, 13, size=self.n_patients)
@@ -635,13 +634,8 @@ class DomainsMocker:
         Returns:
             pd.DataFrame: Mocked death table data
         """
-        # Only a subset of patients will have death records (mortality rate)
-        # Use age-stratified mortality - older patients more likely to have death records
-        birth_years = np.random.choice(
-            np.arange(1930, 2011),
-            size=self.n_patients,
-            p=self._generate_birth_year_probs(),
-        )
+        # Use the actual birth years from each person ID to ensure consistency
+        birth_years = self._get_person_birth_years()
         current_year = 2024
         ages = current_year - birth_years
 
@@ -658,6 +652,7 @@ class DomainsMocker:
 
         has_death = np.random.random(self.n_patients) < death_probs
         deceased_patient_ids = self.base_patient_ids[has_death]
+        deceased_birth_years = birth_years[has_death]
         total_deaths = len(deceased_patient_ids)
 
         if total_deaths == 0:
@@ -674,24 +669,56 @@ class DomainsMocker:
                 }
             )
 
-        # Generate death dates - deaths occur over last 5 years mainly (VECTORIZED)
-        start_date = datetime(2019, 1, 1)
-        end_date = datetime(2024, 12, 31)
-        date_range = (end_date - start_date).days
+        # Generate death dates
 
-        # Generate all random days at once (vectorized)
-        random_days = np.random.uniform(0, date_range, size=total_deaths).astype(int)
-        death_dates = [start_date + timedelta(days=int(day)) for day in random_days]
+        # Calculate valid death year ranges for each deceased patient
+        min_death_years = np.maximum(
+            deceased_birth_years + 1, 2019
+        )  # At least 2019, after birth
+        max_death_years = np.full(total_deaths, 2024)  # All can die up to 2024
 
-        # Generate random hours and minutes vectorized
+        # Handle edge case where min > max (very old people)
+        min_death_years = np.minimum(min_death_years, max_death_years)
+
+        # Generate random death years vectorized
+        year_ranges = max_death_years - min_death_years + 1
+        random_year_offsets = np.floor(
+            np.random.random(total_deaths) * year_ranges
+        ).astype(int)
+        death_years = min_death_years + random_year_offsets
+
+        # For vectorized date creation, use a simpler approach:
+        # Generate days since a reference date (Jan 1, 2019)
+        reference_date = datetime(2019, 1, 1)
+
+        # Calculate days since reference for start and end of valid ranges
+        days_since_ref_start = (death_years - 2019) * 365
+        days_since_ref_end = days_since_ref_start + 364  # ~365 days per year
+
+        # Generate random days within valid ranges
+        day_ranges = days_since_ref_end - days_since_ref_start + 1
+        random_day_offsets = np.floor(
+            np.random.random(total_deaths) * day_ranges
+        ).astype(int)
+        random_days_since_ref = days_since_ref_start + random_day_offsets
+
+        # Generate random hours and minutes (vectorized)
         random_hours = np.random.randint(0, 24, size=total_deaths)
         random_minutes = np.random.randint(0, 60, size=total_deaths)
 
-        # Create datetimes vectorized
-        death_datetimes = [
-            dt + timedelta(hours=int(h), minutes=int(m))
-            for dt, h, m in zip(death_dates, random_hours, random_minutes)
-        ]
+        # Convert to actual dates using pandas for speed
+        death_base_dates = pd.to_datetime(reference_date) + pd.to_timedelta(
+            random_days_since_ref, unit="days"
+        )
+        death_datetimes_pd = (
+            death_base_dates
+            + pd.to_timedelta(random_hours, unit="hours")
+            + pd.to_timedelta(random_minutes, unit="minutes")
+        )
+
+        # Convert to Python objects
+        death_dates = [dt.date() for dt in death_base_dates]
+        death_datetimes = [dt.to_pydatetime() for dt in death_datetimes_pd]
 
         # Death type concept IDs (how death was recorded)
         death_type_concepts = np.random.choice(
@@ -775,7 +802,7 @@ class DomainsMocker:
         return pd.DataFrame(
             {
                 "PERSON_ID": deceased_patient_ids,
-                "DEATH_DATE": [dt.date() for dt in death_dates],
+                "DEATH_DATE": death_dates,  # Already date objects
                 "DEATH_DATETIME": death_datetimes,
                 "DEATH_TYPE_CONCEPT_ID": death_type_concepts,
                 "CAUSE_CONCEPT_ID": cause_concept_ids,
@@ -1103,6 +1130,22 @@ class DomainsMocker:
                 n_visit_occurrences, base=60000000
             )
         return self._visit_occurrence_ids_pool
+
+    def _get_person_birth_years(self) -> np.ndarray:
+        """
+        Generate birth years for all patients that can be consistently referenced across tables.
+
+        Returns:
+            np.ndarray: Array of birth years
+        """
+        if self._person_birth_years is None:
+            # Generate birth years with realistic distribution
+            self._person_birth_years = np.random.choice(
+                np.arange(1930, 2011),
+                size=self.n_patients,
+                p=self._generate_birth_year_probs(),
+            )
+        return self._person_birth_years
 
     def _mock_visit_occurrence_table(self) -> pd.DataFrame:
         """
