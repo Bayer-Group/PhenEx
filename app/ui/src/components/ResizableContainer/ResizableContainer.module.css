@@ -1,5 +1,4 @@
 .resizableContainer {
-  position: absolute;
   min-width: 200px;
   min-height: 150px;
 }
