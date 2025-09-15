@@ -3,13 +3,15 @@ import styles from './InteractionArea.module.css';
 import { chatPanelDataService } from '../ChatPanelDataService';
 import { InteractionBar } from './InteractionBar';
 
-interface InteractionAreaProps {}
+interface InteractionAreaProps {
+  userHasInteracted?: boolean;
+}
 
 export interface InteractionAreaRef {
   focus: () => void;
 }
 
-export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({}, ref) => {
+export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({ userHasInteracted = false }, ref) => {
   const textBoxRef = useRef<HTMLDivElement>(null);
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
@@ -85,7 +87,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   };
 
   return (
-    <div className={styles.interactionArea}>
+    <div className={`${styles.interactionArea} ${userHasInteracted ? styles.experienced : styles.firstTimeUser}`}>
       <div className={styles.topBar}>
         <InteractionBar
           state={interactionState}
@@ -96,7 +98,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       </div>
       <div className={styles.wrapper}>
         <div
-          className={styles.textBox}
+          className={`${styles.textBox} ${userHasInteracted ? styles.textBoxExperienced : styles.textBoxFirstTime}`}
           contentEditable="true"
           ref={textBoxRef}
           onKeyDown={handleKeyDown}

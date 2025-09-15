@@ -1,3 +1,6 @@
+:root{
+  --chatSplitAnimation: 0.3s ease; 
+}
 .wrapper {
   height: 100%;
   width: 100%;
@@ -8,8 +11,18 @@
 .top {
   flex: 1;
   overflow-y: auto;
+  transition: flex var(--chatSplitAnimation);
 }
 
 .bottom {
   color: white;
+  transition: height var(--chatSplitAnimation), font-size var(--chatSplitAnimation);
+}
+
+.firstTimeUser {
+  height: calc(100% - 300px); /* Tall bottom section for first-time users */
+}
+
+.experienced {
+  height: 150px; /* Standard height after first interaction */
 }
