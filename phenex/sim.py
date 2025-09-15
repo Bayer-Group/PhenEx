@@ -267,24 +267,37 @@ class DomainsMocker:
         # Generate person IDs based on conditions per patient
         person_ids = np.repeat(self.base_patient_ids, conditions_per_patient)
 
-        # Common condition concept IDs (diabetes, hypertension, depression, etc.)
+        # Common condition concept IDs with tutorial-relevant codes
+        # Include codes from codelists_for_tutorial.csv for ATRIAL_FIBRILLATION and MYOCARDIAL_INFARCTION
         common_condition_concepts = [
             201820,  # Diabetes mellitus
             316866,  # Hypertensive disorder
             440383,  # Depressive disorder
             432867,  # Asthma
-            4329847,  # Myocardial infarction
             321596,  # Cough
             378253,  # Headache
-            312327,  # Back pain
+            134736,  # Back pain (changed from 312327 to avoid conflict)
             4170143,  # Chest pain
             200219,  # Pneumonia
+            # ATRIAL_FIBRILLATION codes from tutorial codelists
+            1569171,  # Chronic atrial fibrillation
+            4232691,  # Permanent atrial fibrillation
+            4154290,  # Paroxysmal atrial fibrillation
+            4232697,  # Persistent atrial fibrillation
+            4119602,  # Non-rheumatic atrial fibrillation
+            # MYOCARDIAL_INFARCTION codes from tutorial codelists
+            312327,  # Acute myocardial infarction (main tutorial code)
+            4296653,  # Acute ST segment elevation myocardial infarction
+            4270024,  # Acute non-ST segment elevation myocardial infarction
+            314666,  # Old myocardial infarction
+            4163874,  # History of myocardial infarction
+            438170,  # Acute myocardial infarction of inferior wall
         ]
         condition_concept_ids = np.random.choice(
             common_condition_concepts, size=total_conditions
         )
 
-        # Generate dates - condition start dates over last 10 years (HIGHLY OPTIMIZED)
+        # Generate dates - condition start dates over last 10 years
         start_date = datetime(2014, 1, 1)
         end_date = datetime(2024, 12, 31)
 
@@ -375,24 +388,48 @@ class DomainsMocker:
                 condition_concept_ids == 316866,
                 condition_concept_ids == 440383,
                 condition_concept_ids == 432867,
-                condition_concept_ids == 4329847,
                 condition_concept_ids == 321596,
                 condition_concept_ids == 378253,
-                condition_concept_ids == 312327,
+                condition_concept_ids == 134736,  # Back pain (updated concept ID)
                 condition_concept_ids == 4170143,
                 condition_concept_ids == 200219,
+                # ATRIAL_FIBRILLATION conditions
+                condition_concept_ids == 1569171,
+                condition_concept_ids == 4232691,
+                condition_concept_ids == 4154290,
+                condition_concept_ids == 4232697,
+                condition_concept_ids == 4119602,
+                # MYOCARDIAL_INFARCTION conditions
+                condition_concept_ids == 312327,  # Acute myocardial infarction
+                condition_concept_ids == 4296653,
+                condition_concept_ids == 4270024,
+                condition_concept_ids == 314666,
+                condition_concept_ids == 4163874,
+                condition_concept_ids == 438170,
             ],
             [
                 "Type 2 Diabetes",
                 "Hypertension",
                 "Depression",
                 "Asthma",
-                "Heart Attack",
                 "Cough",
                 "Headache",
                 "Back Pain",
                 "Chest Pain",
                 "Pneumonia",
+                # ATRIAL_FIBRILLATION labels
+                "Chronic Atrial Fibrillation",
+                "Permanent Atrial Fibrillation",
+                "Paroxysmal Atrial Fibrillation",
+                "Persistent Atrial Fibrillation",
+                "Non-rheumatic Atrial Fibrillation",
+                # MYOCARDIAL_INFARCTION labels
+                "Acute Myocardial Infarction",  # Main tutorial MI code
+                "Acute ST Elevation MI",
+                "Acute Non-ST Elevation MI",
+                "Old Myocardial Infarction",
+                "History of Myocardial Infarction",
+                "Acute Inferior MI",
             ],
             default="Other Condition",
         )
@@ -733,8 +770,10 @@ class DomainsMocker:
         )
 
         # Common causes of death with OMOP concept IDs
+        # Updated to include tutorial-relevant MI codes
         common_death_causes = [
-            4329847,  # Myocardial infarction
+            312327,  # Acute myocardial infarction (tutorial code)
+            4296653,  # Acute ST segment elevation myocardial infarction
             432867,  # Malignant neoplastic disease
             316866,  # Hypertensive disorder
             440383,  # Cerebrovascular accident
@@ -751,15 +790,27 @@ class DomainsMocker:
             np.random.choice(
                 common_death_causes[:-1],
                 size=total_deaths,  # Exclude unknown for this 85%
-                p=[0.25, 0.20, 0.10, 0.10, 0.08, 0.08, 0.07, 0.05, 0.07],
-            ),  # 9 probabilities for 9 causes
+                p=[
+                    0.20,
+                    0.10,
+                    0.18,
+                    0.10,
+                    0.10,
+                    0.08,
+                    0.08,
+                    0.07,
+                    0.05,
+                    0.04,
+                ],  # 10 probabilities for 10 causes
+            ),
             0,  # Unknown cause
         )
 
         # Cause source values - human readable causes
         cause_source_values = np.select(
             [
-                cause_concept_ids == 4329847,
+                cause_concept_ids == 312327,  # Acute myocardial infarction
+                cause_concept_ids == 4296653,  # Acute ST segment elevation MI
                 cause_concept_ids == 432867,
                 cause_concept_ids == 316866,
                 cause_concept_ids == 440383,
@@ -771,7 +822,8 @@ class DomainsMocker:
                 cause_concept_ids == 0,
             ],
             [
-                "Heart Attack",
+                "Acute Myocardial Infarction",
+                "Acute ST Elevation MI",
                 "Cancer",
                 "Hypertension",
                 "Stroke",
