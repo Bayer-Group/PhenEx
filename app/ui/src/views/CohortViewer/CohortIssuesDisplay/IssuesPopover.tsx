@@ -1,13 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { ChatPanel } from '../../ChatPanel/ChatPanel'
-import { PopoverHeader } from '../../../components/PopoverHeader/PopoverHeader';
-import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
-import { CohortIssuesDisplay } from './CohortIssuesDisplay';
-import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
-import typeStyles from '../../../styles/study_types.module.css';
 import BirdIcon from '../../../assets/bird_icon.png'
 import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { ResizableContainer } from '../../../components/ResizableContainer';
@@ -63,17 +58,20 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     <ResizableContainer
       className={styles.resizablePopover}
       initialWidth={400}
-      initialHeight={500}
+      initialHeight={400}
       minWidth={300}
       minHeight={250}
       maxWidth={600}
-      maxHeight={700}
+      maxHeight={window.innerHeight - 200} // Match original calc(100vh - 200px)
       enableResize={{
         top: true,
         right: true,
         bottom: false,
         left: false,
       }}
+      position="bottom-right"
+      offsetX={15} // var(--issue_popover_margin)
+      offsetY={0}
     >
       <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
         {renderTransparentHeader()}

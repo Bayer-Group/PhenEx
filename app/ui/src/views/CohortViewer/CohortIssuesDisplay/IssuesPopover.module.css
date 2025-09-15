@@ -135,9 +135,11 @@
   /* Make popover fill the resizable container */
   width: 100% !important;
   height: 100% !important;
-  position: relative;
-  right: auto;
-  bottom: auto;
+  position: relative !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  left: auto !important;
   display: flex;
   flex-direction: column;
 }
