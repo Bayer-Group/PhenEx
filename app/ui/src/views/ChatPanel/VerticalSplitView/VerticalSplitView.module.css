@@ -16,7 +16,19 @@
 
 .bottom {
   color: white;
+}
+
+.bottom.withTransition {
   transition: height var(--chatSplitAnimation), font-size var(--chatSplitAnimation);
+}
+
+.loading {
+  opacity: 0;
+}
+
+.ready {
+  opacity: 1;
+  transition: opacity 0.1s ease-in-out;
 }
 
 .firstTimeUser {
