@@ -58,10 +58,10 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     <ResizableContainer
       className={styles.resizablePopover}
       initialWidth={400}
-      initialHeight={400}
+      initialHeight={window.innerHeight*3/4}
       minWidth={300}
       minHeight={250}
-      maxWidth={600}
+      maxWidth={1200}
       maxHeight={window.innerHeight - 200} // Match original calc(100vh - 200px)
       enableResize={{
         top: true,

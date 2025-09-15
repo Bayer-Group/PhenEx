@@ -57,7 +57,6 @@
     var(--issue_popover_radius) var(--issue_popover_radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: 400px;
-  max-height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
