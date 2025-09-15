@@ -17,6 +17,9 @@ export interface ResizableContainerProps {
     bottom?: boolean;
     left?: boolean;
   };
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  offsetX?: number;
+  offsetY?: number;
 }
 
 interface ResizeState {
@@ -39,6 +42,9 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
   maxHeight = 800,
   onResize,
   enableResize = { top: true, right: true, bottom: false, left: false },
+  position = 'top-left',
+  offsetX = 0,
+  offsetY = 0,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({
@@ -140,14 +146,32 @@ export const ResizableContainer: React.FC<ResizableContainerProps> = ({
     );
   };
 
+  const getPositionStyles = (): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+      width: `${dimensions.width}px`,
+      height: `${dimensions.height}px`,
+      position: 'absolute',
+    };
+
+    switch (position) {
+      case 'top-left':
+        return { ...baseStyles, top: offsetY, left: offsetX };
+      case 'top-right':
+        return { ...baseStyles, top: offsetY, right: offsetX };
+      case 'bottom-left':
+        return { ...baseStyles, bottom: offsetY, left: offsetX };
+      case 'bottom-right':
+        return { ...baseStyles, bottom: offsetY, right: offsetX };
+      default:
+        return { ...baseStyles, top: offsetY, left: offsetX };
+    }
+  };
+
   return (
     <div
       ref={containerRef}
       className={`${styles.resizableContainer} ${className}`}
-      style={{
-        width: `${dimensions.width}px`,
-        height: `${dimensions.height}px`,
-      }}
+      style={getPositionStyles()}
     >
       {children}
       
