@@ -101,33 +101,34 @@ class TestDomainsMocker:
     def test_death_dates_are_after_birth_dates(self):
         """Test that all death dates occur after birth dates."""
         mapped_tables = self.mocker.get_mapped_tables()
-        
+
         # Check that both PERSON and DEATH tables exist
         assert "PERSON" in mapped_tables, "PERSON table not found in mapped tables"
         assert "DEATH" in mapped_tables, "DEATH table not found in mapped tables"
-        
+
         person_df = mapped_tables["PERSON"].table.to_pandas()
         death_df = mapped_tables["DEATH"].table.to_pandas()
-        
+
         # If no deaths, test passes trivially
         if len(death_df) == 0:
             return
-        
+
         # Merge person and death data on PERSON_ID
         merged_df = death_df.merge(person_df, on="PERSON_ID", how="inner")
-        
+
         # Create birth dates from year, month, day columns
         import pandas as pd
+
         birth_date_dict = {
-            'year': merged_df['YEAR_OF_BIRTH'],
-            'month': merged_df['MONTH_OF_BIRTH'], 
-            'day': merged_df['DAY_OF_BIRTH']
+            "year": merged_df["YEAR_OF_BIRTH"],
+            "month": merged_df["MONTH_OF_BIRTH"],
+            "day": merged_df["DAY_OF_BIRTH"],
         }
         merged_df["birth_date"] = pd.to_datetime(birth_date_dict)
-        
+
         # Compare death dates with birth dates
         invalid_deaths = merged_df[merged_df["DEATH_DATE"] <= merged_df["birth_date"]]
-        
+
         assert len(invalid_deaths) == 0, (
             f"Found {len(invalid_deaths)} patients with death dates on or before birth dates. "
             f"Person IDs: {invalid_deaths['PERSON_ID'].tolist()}"
