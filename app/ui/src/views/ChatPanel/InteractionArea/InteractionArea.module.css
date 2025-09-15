@@ -1,6 +1,12 @@
 :root {
   --interaction_area_background_color: white;
 }
+
+.interactionArea {
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+}
+
 .topBar {
   height: 35px;
 }
@@ -8,7 +14,7 @@
 .wrapper {
   margin: 0px 10px 10px 10px;
   /* width: calc(100% - 0px); */
-  height: calc(100% - 26px);
+  height: calc(100% - 45px);
   /* padding: 0.8rem 1rem; */
   border-radius: 15px;
   /* word-wrap: break-word; */
@@ -37,16 +43,6 @@
     linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box; */
 }
 
-.wrapper:focus-within {
-  /* background:
-    linear-gradient(
-        var(--interaction_area_background_color),
-        var(--interaction_area_background_color)
-      )
-      padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box; */
-}
-
 .textBox {
   /* background-color: white; */
   color: black;
@@ -56,6 +52,7 @@
   overflow-y: auto;
   padding: 10px;
   font-size: 14px;
+  transition: font-size 0.6s ease-in-out;
   /* width: calc(100% - 40px); */
 
   /* margin: 0px 0px 20px 0px; */
@@ -69,11 +66,17 @@
   font-size: 16px; */
 }
 
+.textBoxFirstTime {
+  font-size: 18px; /* Larger font for first-time users */
+  min-height: 60px;
+}
+
+.textBoxExperienced {
+  font-size: 14px; /* Standard font size */
+  min-height: 50px;
+}
+
 .textBox:empty::before {
   content: 'Ask a question...';
   color: #999;
-}
-
-.textBox:focus {
-  /* border: solid 3px transparent; */
 }

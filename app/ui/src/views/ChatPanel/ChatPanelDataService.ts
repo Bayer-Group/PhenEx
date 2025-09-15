@@ -50,6 +50,10 @@ class ChatPanelDataService {
     return [...this.messages];
   }
 
+  public getUserMessageCount(): number {
+    return this.messages.filter(message => message.isUser).length;
+  }
+
   public addUserMessageWithText(text: string): Message {
     const newMessage: Message = {
       id: ++this.lastMessageId,

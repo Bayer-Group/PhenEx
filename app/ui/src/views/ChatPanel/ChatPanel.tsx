@@ -1,36 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styles from './ChatPanel.module.css';
-import phenexFeather from '../../assets/phenx_feather.png';
-
 import { VerticalSplitView } from './VerticalSplitView/VerticalSplitView';
 import { InteractionArea, InteractionAreaRef } from './InteractionArea/InteractionArea';
 import { MessagesDisplay } from './MessagesDisplay/MessagesDisplay';
+import { chatPanelDataService } from './ChatPanelDataService';
+
 interface ChatPanelProps {
   onTextEnter?: (text: string) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ onTextEnter }) => {
-  const [inputText, setInputText] = useState('');
+export const ChatPanel: React.FC<ChatPanelProps> = () => {
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
   const interactionAreaRef = useRef<InteractionAreaRef>(null);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    // Check initial state
+    const userMessageCount = chatPanelDataService.getUserMessageCount();
+    setUserHasInteracted(userMessageCount > 0);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputText.trim()) {
-      onTextEnter?.(inputText.trim());
-      setInputText('');
-    }
-  };
+    // Listen for message updates to track when user first interacts
+    const handleMessagesUpdated = () => {
+      const currentUserMessageCount = chatPanelDataService.getUserMessageCount();
+      if (currentUserMessageCount > 0) {
+        setUserHasInteracted(true);
+      }
+    };
 
-  // Example function to focus the interaction area from outside
-  const focusInteractionArea = () => {
-    interactionAreaRef.current?.focus();
-  };
+    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
+  }, []);
 
   return (
-    <VerticalSplitView>
+    <VerticalSplitView userHasInteracted={userHasInteracted}>
       <MessagesDisplay></MessagesDisplay>
-      <InteractionArea ref={interactionAreaRef}></InteractionArea>
+      <InteractionArea ref={interactionAreaRef} userHasInteracted={userHasInteracted}></InteractionArea>
     </VerticalSplitView>
   );
 };
