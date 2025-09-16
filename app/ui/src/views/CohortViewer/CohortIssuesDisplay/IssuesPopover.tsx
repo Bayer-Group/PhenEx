@@ -62,7 +62,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
       minWidth={300}
       minHeight={250}
       maxWidth={1200}
-      maxHeight={window.innerHeight - 200} // Match original calc(100vh - 200px)
+      maxHeight={window.innerHeight} // Match original calc(100vh - 200px)
       enableResize={{
         top: true,
         right: true,
