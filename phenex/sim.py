@@ -28,7 +28,12 @@ class DomainsMocker:
         self.domains_dict = domains_dict
         self.n_patients = n_patients
         self.random_seed = random_seed
+
+        # Set random seeds for reproducible results
         np.random.seed(random_seed)
+        import random
+
+        random.seed(random_seed)
 
         # Generate base patient IDs that look more realistic (7-8 digit numbers)
         self.base_patient_ids = self._generate_person_ids(n_patients, base=1000000)
@@ -45,20 +50,131 @@ class DomainsMocker:
         # Cache for person birth years for consistency across tables
         self._person_birth_years = None
 
+        # Cache for death data for consistency across tables
+        self._death_data = None
+
+    def _generate_dates_within_lifespan(
+        self,
+        person_ids: np.ndarray,
+        count: int,
+        min_year: int = 2014,
+        max_year: int = 2024,
+        hour_range: tuple = (0, 24),
+    ) -> tuple[list, list]:
+        """
+        Generate random dates that respect patient birth and death dates.
+
+        Args:
+            person_ids: Array of person IDs for each record
+            count: Total number of dates to generate
+            min_year: Minimum year for date range (overridden by birth year + 1)
+            max_year: Maximum year for date range (overridden by death date)
+            hour_range: Tuple of (min_hour, max_hour) for datetime generation
+
+        Returns:
+            Tuple of (dates, datetimes) lists
+        """
+        birth_years = self._get_person_birth_years()
+        death_data = self._mock_death_table()
+
+        # Map each record to its patient's birth year (vectorized)
+        # Find the patient index for each person_id by looking it up in base_patient_ids
+        patient_id_to_index = {
+            pid: idx for idx, pid in enumerate(self.base_patient_ids)
+        }
+        patient_indices = np.array([patient_id_to_index[pid] for pid in person_ids])
+        record_birth_years = birth_years[patient_indices]
+
+        # Calculate start dates for each record (fully vectorized)
+        # Start year: max of (birth year + 1, min_year)
+        record_min_years = np.maximum(record_birth_years + 1, min_year)
+        record_min_dates = pd.to_datetime(dict(year=record_min_years, month=1, day=1))
+
+        # Calculate end dates (vectorized) - default to max year
+        default_max_date = pd.to_datetime(f"{max_year}-12-31")
+        record_max_dates = pd.Series([default_max_date] * count)
+
+        # Apply death dates (vectorized lookup if there are deaths)
+        if len(death_data) > 0:
+            # Convert death dates to pandas timestamps for consistent comparison
+            death_df = pd.DataFrame(
+                {
+                    "PERSON_ID": death_data["PERSON_ID"],
+                    "DEATH_DATE": pd.to_datetime(death_data["DEATH_DATE"]),
+                }
+            )
+
+            # Create DataFrame with record person IDs for merging
+            record_df = pd.DataFrame({"idx": range(count), "PERSON_ID": person_ids})
+
+            # Left join to get death dates (NaT for living patients)
+            merged = record_df.merge(death_df, on="PERSON_ID", how="left")
+
+            # Fill NaT values with default max date, then take minimum (fully vectorized)
+            death_dates = merged["DEATH_DATE"].fillna(default_max_date)
+
+            # Vectorized minimum operation
+            record_max_dates = pd.Series(death_dates).combine(
+                pd.Series([default_max_date] * count), min
+            )
+
+        # Ensure valid date ranges (vectorized)
+        invalid_mask = record_min_dates >= record_max_dates
+        record_max_dates[invalid_mask] = record_min_dates[invalid_mask] + pd.Timedelta(
+            days=1
+        )
+
+        # Use vectorized date generation with per-record ranges
+        generated_dates, generated_datetimes = (
+            self._generate_random_datetimes_vectorized(
+                count,
+                start_dates=record_min_dates,
+                end_dates=record_max_dates,
+                hour_range=hour_range,
+            )
+        )
+
+        # Additional safety check: ensure no generated dates violate death constraints
+        if len(death_data) > 0:
+            death_lookup = dict(
+                zip(death_data["PERSON_ID"], pd.to_datetime(death_data["DEATH_DATE"]))
+            )
+            for i, (person_id, gen_date) in enumerate(zip(person_ids, generated_dates)):
+                if person_id in death_lookup:
+                    death_date = death_lookup[person_id]
+                    if pd.to_datetime(gen_date) > death_date:
+                        # Force the date to be valid by setting it to death date minus 1 day
+                        valid_date = death_date - pd.Timedelta(days=1)
+                        generated_dates[i] = valid_date.date()
+                        generated_datetimes[i] = generated_datetimes[i].replace(
+                            year=valid_date.year,
+                            month=valid_date.month,
+                            day=valid_date.day,
+                        )
+
+        return generated_dates, generated_datetimes
+
     def _generate_random_datetimes_vectorized(
         self,
         count: int,
-        start_date: datetime,
-        end_date: datetime,
+        start_date=None,
+        end_date=None,
+        start_dates=None,
+        end_dates=None,
         hour_range: tuple = (0, 24),
     ) -> tuple:
         """
         Generate random dates and datetimes in a highly optimized vectorized way.
 
+        Can handle either uniform date ranges or per-record date ranges for
+        respecting individual patient birth/death constraints.
+
         Args:
             count: Number of datetime pairs to generate
-            start_date: Start of date range
-            end_date: End of date range
+            start_date: Single start date for uniform range (or None)
+            end_date: Single end date for uniform range (or None)
+            start_dates: Array of start dates for per-record ranges (or None)
+            end_dates: Array of end dates for per-record ranges (or None)
             hour_range: Tuple of (min_hour, max_hour) for time generation
 
         Returns:
@@ -67,18 +183,44 @@ class DomainsMocker:
         if count == 0:
             return [], []
 
-        # Calculate date range in days
-        date_range = (end_date - start_date).days
-
-        # Generate random days, hours, minutes all at once
-        random_days = np.random.uniform(0, date_range, size=count).astype(int)
+        # Generate random hours and minutes for all records
         random_hours = np.random.randint(hour_range[0], hour_range[1], size=count)
         random_minutes = np.random.randint(0, 60, size=count)
 
-        # Generate dates as pandas DatetimeIndex for speed, then convert
-        base_dates = pd.to_datetime(start_date) + pd.to_timedelta(
-            random_days, unit="days"
-        )
+        if start_dates is not None and end_dates is not None:
+            # Per-record date ranges (vectorized approach for patient lifespan constraints)
+            start_dates_pd = pd.to_datetime(start_dates)
+            end_dates_pd = pd.to_datetime(end_dates)
+
+            # Calculate date ranges in days for each record
+            date_ranges = (end_dates_pd - start_dates_pd).dt.days
+
+            # Ensure minimum 1 day range to avoid division by zero
+            date_ranges = np.maximum(date_ranges, 1)
+
+            # Generate random days within each record's valid range
+            random_day_fractions = np.random.random(size=count)
+            random_days = (random_day_fractions * date_ranges).astype(int)
+
+            # Generate base dates by adding random days to start dates
+            base_dates = start_dates_pd + pd.to_timedelta(random_days, unit="days")
+        else:
+            # Uniform date range (original behavior)
+            if start_date is None or end_date is None:
+                raise ValueError(
+                    "Must provide either (start_date, end_date) or (start_dates, end_dates)"
+                )
+
+            # Calculate date range in days
+            date_range = (end_date - start_date).days
+
+            # Generate random days for uniform range
+            random_days = np.random.uniform(0, date_range, size=count).astype(int)
+
+            # Generate dates as pandas DatetimeIndex for speed, then convert
+            base_dates = pd.to_datetime(start_date) + pd.to_timedelta(
+                random_days, unit="days"
+            )
 
         # Add hours and minutes
         datetimes = (
@@ -297,13 +439,14 @@ class DomainsMocker:
             common_condition_concepts, size=total_conditions
         )
 
-        # Generate dates - condition start dates over last 10 years
-        start_date = datetime(2014, 1, 1)
-        end_date = datetime(2024, 12, 31)
-
+        # Generate dates - condition start dates must be after birth and before death (vectorized)
         condition_start_dates, condition_start_datetimes = (
-            self._generate_random_datetimes_vectorized(
-                total_conditions, start_date, end_date, hour_range=(0, 24)
+            self._generate_dates_within_lifespan(
+                person_ids=person_ids,
+                count=total_conditions,
+                min_year=2014,
+                max_year=2024,
+                hour_range=(0, 24),
             )
         )
 
@@ -528,26 +671,14 @@ class DomainsMocker:
             common_procedure_concepts, size=total_procedures
         )
 
-        # Generate dates - procedure dates over last 10 years (VECTORIZED)
-        start_date = datetime(2014, 1, 1)
-        end_date = datetime(2024, 12, 31)
-        date_range = (end_date - start_date).days
-
-        # Generate all random days at once (vectorized)
-        random_days = np.random.uniform(0, date_range, size=total_procedures).astype(
-            int
+        # Generate dates - procedure dates must be after birth and before death (vectorized)
+        procedure_dates, procedure_datetimes = self._generate_dates_within_lifespan(
+            person_ids=person_ids,
+            count=total_procedures,
+            min_year=2014,
+            max_year=2024,
+            hour_range=(6, 18),  # Business hours
         )
-        procedure_dates = [start_date + timedelta(days=int(day)) for day in random_days]
-
-        # Generate random hours and minutes during business hours (vectorized)
-        random_hours = np.random.randint(6, 18, size=total_procedures)  # Business hours
-        random_minutes = np.random.randint(0, 60, size=total_procedures)
-
-        # Create datetimes vectorized
-        procedure_datetimes = [
-            dt + timedelta(hours=int(h), minutes=int(m))
-            for dt, h, m in zip(procedure_dates, random_hours, random_minutes)
-        ]
 
         # Procedure type concept IDs (how procedure was recorded)
         procedure_type_concepts = np.random.choice(
@@ -650,7 +781,7 @@ class DomainsMocker:
                 "PROCEDURE_OCCURRENCE_ID": procedure_occurrence_ids,
                 "PERSON_ID": person_ids,
                 "PROCEDURE_CONCEPT_ID": procedure_concept_ids,
-                "PROCEDURE_DATE": [dt.date() for dt in procedure_dates],
+                "PROCEDURE_DATE": procedure_dates,  # Already date objects from vectorized function
                 "PROCEDURE_DATETIME": procedure_datetimes,
                 "PROCEDURE_TYPE_CONCEPT_ID": procedure_type_concepts,
                 "MODIFIER_CONCEPT_ID": modifier_concept_ids,
@@ -667,10 +798,16 @@ class DomainsMocker:
     def _mock_death_table(self) -> pd.DataFrame:
         """
         Mock the DEATH table with OMOP schema.
+        Uses caching to ensure consistency across table generations.
 
         Returns:
             pd.DataFrame: Mocked death table data
         """
+        # Return cached death data if it exists
+        if self._death_data is not None:
+            return self._death_data
+
+        # Generate death data for the first time
         # Use the actual birth years from each person ID to ensure consistency
         birth_years = self._get_person_birth_years()
         current_year = 2024
@@ -851,7 +988,7 @@ class DomainsMocker:
             None,
         )
 
-        return pd.DataFrame(
+        death_data = pd.DataFrame(
             {
                 "PERSON_ID": deceased_patient_ids,
                 "DEATH_DATE": death_dates,  # Already date objects
@@ -862,6 +999,10 @@ class DomainsMocker:
                 "CAUSE_SOURCE_CONCEPT_ID": cause_source_concept_ids,
             }
         )
+
+        # Cache the death data for consistency across table generations
+        self._death_data = death_data
+        return death_data
 
     def _mock_drug_exposure_table(self) -> pd.DataFrame:
         """
@@ -901,14 +1042,13 @@ class DomainsMocker:
         ]
         drug_concept_ids = np.random.choice(common_drug_concepts, size=total_drugs)
 
-        # Generate dates - drug start dates over last 5 years (HIGHLY OPTIMIZED)
-        start_date = datetime(2019, 1, 1)
-        end_date = datetime(2024, 12, 31)
-
-        drug_start_dates, drug_start_datetimes = (
-            self._generate_random_datetimes_vectorized(
-                total_drugs, start_date, end_date, hour_range=(8, 18)  # Pharmacy hours
-            )
+        # Generate dates - drug start dates must be after birth and before death (vectorized)
+        drug_start_dates, drug_start_datetimes = self._generate_dates_within_lifespan(
+            person_ids=person_ids,
+            count=total_drugs,
+            min_year=2019,
+            max_year=2024,
+            hour_range=(8, 18),  # Pharmacy hours
         )
 
         # End dates - 60% have end dates (acute treatments), 40% are ongoing (chronic) (VECTORIZED)
@@ -1257,14 +1397,13 @@ class DomainsMocker:
             p=[0.65, 0.15, 0.12, 0.05, 0.03],
         )
 
-        # Generate dates - visit dates over last 3 years (HIGHLY OPTIMIZED)
-        start_date = datetime(2021, 1, 1)
-        end_date = datetime(2024, 12, 31)
-
-        visit_start_dates, visit_start_datetimes = (
-            self._generate_random_datetimes_vectorized(
-                total_visits, start_date, end_date, hour_range=(0, 24)
-            )
+        # Generate dates - visit start dates must be after birth and before death (vectorized)
+        visit_start_dates, visit_start_datetimes = self._generate_dates_within_lifespan(
+            person_ids=person_ids,
+            count=total_visits,
+            min_year=2021,
+            max_year=2024,
+            hour_range=(0, 24),
         )
 
         # End dates - all visits have end dates (VECTORIZED APPROACH)
@@ -1291,11 +1430,11 @@ class DomainsMocker:
         other_durations = np.random.exponential(24, size=np.sum(other_mask))
         duration_hours[other_mask] = np.clip(other_durations, 4, 72)
 
-        # Calculate end datetimes vectorized
-        visit_end_datetimes = [
-            start_dt + timedelta(hours=float(duration))
-            for start_dt, duration in zip(visit_start_datetimes, duration_hours)
-        ]
+        # Calculate end datetimes vectorized - ensure proper datetime handling
+        visit_end_datetimes = []
+        for start_dt, hours in zip(visit_start_datetimes, duration_hours):
+            end_dt = start_dt + timedelta(hours=float(hours))
+            visit_end_datetimes.append(end_dt)
         visit_end_dates = [dt.date() for dt in visit_end_datetimes]
 
         # Visit type concept IDs (how visit was recorded)
