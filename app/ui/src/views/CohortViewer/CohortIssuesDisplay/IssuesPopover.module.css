@@ -1,16 +1,7 @@
 :root {
   --issue_popover_margin: 15px;
   --issue_popover_radius: 20px;
-  --.tabsContainer {
-  position:absolute;
-  top:10px;
-  left:10px;
-  height: 60px;
-  border-radius: 20px;
-  padding:5px;
-  gap:5px;
-  background-color: transparent!important;
-}lor_translucent: rgba(248, 249, 250, 0.8);
+  --color_translucent: rgba(248, 249, 250, 0.8);
   --issues_popover_gutter:0px;
 }
 
@@ -50,8 +41,8 @@
   right: var(--issue_popover_margin);
   bottom: 0px;
   background-color: var(--background_color_translucent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: var(--border);
   border-radius: var(--issue_popover_radius) var(--issue_popover_radius)
     var(--issue_popover_radius) var(--issue_popover_radius);
@@ -81,7 +72,6 @@
   background-color: transparent;
 }
 
-
 .tabsContainer {
   position: absolute;
   top: 10px;
@@ -90,7 +80,7 @@
   border-radius: 20px;
   padding:5px;
   gap:5px;
-  background-color: transparent!important;
+  background-color: rgba(250,250,250,.4)!important;
 }
 
 .tabsContainer:hover{
