@@ -32,7 +32,7 @@
 }
 
 .firstTimeUser {
-  height: calc(100% - 300px); /* Tall bottom section for first-time users */
+  height: calc(100% - 400px); /* Tall bottom section for first-time users */
 }
 
 .experienced {
