@@ -8,25 +8,28 @@
 }
 
 .topBar {
-  background-color: blue;
   width: 100%;
   height: 35px;
+  position: absolute;
+  top: 0px;
+  background-color: transparent;
 }
 
 .wrapper {
   margin: 0px 10px 10px 10px;
   /* width: calc(100% - 0px); */
-  height: calc(100% - 45px);
+  height: 100%;
   /* padding: 0.8rem 1rem; */
   border-radius: 15px;
+  overflow: hidden;
   /* word-wrap: break-word; */
   background-color: var(--background-color);
   /* color: var(--text-color); */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
   /* padding: 5px 10px; */
   /* font-size: 16px; */
-  border: solid 1px var(--color_accent_orange);
-  border-radius: 15px;
+  /* border: solid 1px var(--color_accent_orange); */
+  /* border-radius: 15px; */
   font-family: 'IBMPlexSans-regular';
   font-size: 14px;
   transition: all 0.2s ease-in-out;
@@ -36,20 +39,21 @@
   color: var(--color-accent-bright);
   /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  /* background:
-    linear-gradient(
-        var(--interaction_area_background_color),
-        var(--interaction_area_background_color)
-      )
-      padding-box,
-    linear-gradient(to right, var(--phenex-red-active), var(--color-accent-bright)) border-box; */
+
 }
 
 .textBox {
-  /* background-color: white; */
   color: black;
-  /* this is 100% - 2* padding -whatever margin you want*/
+  margin-top: 35px;
+  
+
+  border: solid 1px var(--color_accent_orange);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  height: calc(100% - 45px);
   overflow-y: auto;
+  background-color: transparent;
+  /* this is 100% - 2* padding -whatever margin you want*/
   padding: 10px;
   font-size: 18px;
   transition: font-size 0.6s ease-in-out;
