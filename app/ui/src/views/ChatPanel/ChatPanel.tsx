@@ -38,14 +38,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%' }}>
       <MessagesDisplay bottomMargin={bottomContainerHeight} />
-      
-      <div style={{ 
-        position: 'absolute', 
-        bottom: 0, 
-        left: 0, 
-        right: 0,
-        zIndex: 10
-      }}>
       <div className={styles.heightAdjustableContainer}>
         <HeightAdjustableContainer
           initialHeight={200}
@@ -55,7 +47,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
         >
           <InteractionArea ref={interactionAreaRef} userHasInteracted={userHasInteracted} />
         </HeightAdjustableContainer>
-      </div>
       </div>
     </div>
   );

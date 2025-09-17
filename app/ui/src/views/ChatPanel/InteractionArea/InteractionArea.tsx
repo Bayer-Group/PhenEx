@@ -96,6 +96,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           onRetry={handleRetry}
         />
       </div>
+      <div className={styles.transparentHeaderGradient} />
       <div className={styles.wrapper}>
         <div
           className={`${styles.textBox} ${userHasInteracted ? styles.textBoxExperienced : styles.textBoxFirstTime}`}
@@ -103,6 +104,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           ref={textBoxRef}
           onKeyDown={handleKeyDown}
         ></div>
+
       </div>
     </div>
   );
