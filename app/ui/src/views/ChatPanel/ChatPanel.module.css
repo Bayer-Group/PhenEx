@@ -1,0 +1,6 @@
+.heightAdjustableContainer  {
+    background-color: red;
+    position: absolute;
+    bottom: 0px;
+    width:100%;
+}

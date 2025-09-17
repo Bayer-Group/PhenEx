@@ -4,28 +4,14 @@ import ReactMarkdown from 'react-markdown';
 import { Message, chatPanelDataService } from '../ChatPanelDataService';
 import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
-interface MessagesDisplayProps {}
+interface MessagesDisplayProps {
+  bottomMargin?: number;
+}
 
-export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
+export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({ bottomMargin = 10 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
-  const [featherOpacity, setFeatherOpacity] = useState(1);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const scrollPosition = container.scrollTop;
-      const maxScroll = 200;
-      const newOpacity = Math.max(0.4, 1 - scrollPosition / maxScroll);
-      setFeatherOpacity(newOpacity);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     setMessages(chatPanelDataService.getMessages());
@@ -104,7 +90,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
         targetRef={messagesContainerRef}
         orientation="vertical"
         marginTop={100}
-        marginBottom={10}
+        marginBottom={bottomMargin}
       />
     </div>
   );
