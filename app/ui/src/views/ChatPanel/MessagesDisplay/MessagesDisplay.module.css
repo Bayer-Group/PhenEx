@@ -87,14 +87,6 @@
   margin-top: 100px;
 }
 
-.messagesContainer > div:last-child.assistantMessage {
-  margin-bottom: 0px;
-}
-
-.messagesContainer > div:last-child.userMessage {
-  margin-bottom: 50px;
-}
-
 .messageBubble {
   font-family: 'IBMPlexSans-regular';
   font-size: 17px;

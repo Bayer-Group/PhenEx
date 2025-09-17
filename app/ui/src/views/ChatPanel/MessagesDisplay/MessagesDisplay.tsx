@@ -77,10 +77,13 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({ bottomMargin =
         className={`${styles.messagesContainer} ${!isScrolledToBottom ? styles.scrolling : ''}`}
         ref={messagesContainerRef}
       >
-        {messages.map(message => (
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={`${styles.messageBubble} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}
+            style={{
+              marginBottom: index === messages.length - 1 ? `${bottomMargin + 20}px` : undefined
+            }}
           >
             <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>
