@@ -1,6 +1,5 @@
 .heightAdjustableContainer {
   position: relative;
-  border: 1px solid #ccc;
   border-radius: 4px;
   overflow: visible;
   background-color: transparent;
@@ -9,13 +8,14 @@
 .dragHandle {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 40%;
+  right: 40%;
   height: 8px;
   background: #f0f0f0;
   border-bottom: 1px solid #ddd;
   cursor: ns-resize;
   z-index: 10;
+  border-radius: 4px;
 }
 
 .dragHandle:hover {

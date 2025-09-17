@@ -23,7 +23,7 @@
   border-radius: 15px;
   overflow: hidden;
   /* word-wrap: break-word; */
-  background-color: var(--background-color);
+  background-color: transparent;
   /* color: var(--text-color); */
   /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
   /* padding: 5px 10px; */
@@ -50,9 +50,9 @@
   border: solid 1px var(--color_accent_orange);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border-radius: 15px;
-  height: calc(100% - 45px);
+  height: calc(100% - 45px - 22px);
   overflow-y: auto;
-  background-color: transparent;
+  background-color: var(--background-color);
   /* this is 100% - 2* padding -whatever margin you want*/
   padding: 10px;
   font-size: 18px;
