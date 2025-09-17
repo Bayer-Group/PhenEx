@@ -6,7 +6,7 @@
 }
 
 .messagesContainer {
-  gap: 5px;
+  gap: 20px;
   flex-direction: column;
   display: flex;
   overflow-y: auto;
@@ -42,8 +42,8 @@
   font-size: 18px;
   color: var(--text-color-normal);
   background-color: var(--background-color);
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 
 }
 
@@ -74,12 +74,12 @@
 
 .assistantMessage {
   padding-left: 20px !important;
-  padding-right: 10px !important;
+  padding-right: 20px !important;
   align-self: flex-start;
   color: var(--text-color);
   /* border-top-left-radius: 0px; */
   margin-left: 10px;
-  margin-right: 10px;
+  margin-right: 24px;
   /* background: repeating-linear-gradient(-15deg, #f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 6px); */
 }
 
