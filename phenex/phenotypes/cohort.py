@@ -49,6 +49,7 @@ class Cohort:
         self.name = name
         self.description = description
         self.table = None  # Will be set during execution
+        self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions if inclusions is not None else []
@@ -57,37 +58,62 @@ class Cohort:
         self.derived_tables = derived_tables if derived_tables is not None else []
         self.outcomes = outcomes if outcomes is not None else []
 
-        #
-        # Entry stage
-        #
-        self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
-            stage="subset_entry", index_phenotype=entry_criterion
-        )
-        self.entry_stage = NodeGroup(name="entry", nodes=self.subset_tables_entry_nodes)
+        # stages
+        self.derived_tables_stage = None
+        self.entry_stage = None
+        self.index_stage = None
+        self.reporting_stage = None
+
+        # special Nodes that Cohort builds (later, in build_graph())
+        # need to be able to refer to later to get outputs
+        self.inclusions_table_node = None
+        self.exclusions_table_node = None
+        self.characteristics_table_node = None
+        self.outcomes_table_node = None
+        self.index_table_node = None
+        self.subset_tables_entry_nodes = None
+        self.subset_tables_index_nodes = None
+        self._table1 = None
+
+    def build_stages(self, tables: Dict[str, PhenexTable]):
+        """ """
+        # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
+        domains = tables.keys()
+        required_domains = self._get_domains()
+        for d in required_domains:
+            if d not in domains:
+                raise ValueError(f"Required domain {d} not present in input tables!")
 
         #
-        # Derived tables stage
+        # Entry stage: REQUIRED
         #
-        self.derived_tables_stage = None
-        if derived_tables:
+        self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
+            stage="subset_entry", domains=domains, index_phenotype=self.entry_criterion
+        )
+        self.entry_stage = NodeGroup(
+            name="entry_stage", nodes=self.subset_tables_entry_nodes
+        )
+
+        #
+        # Derived tables stage: OPTIONAL
+        #
+        if self.derived_tables:
             self.derived_tables_stage = NodeGroup(
-                name="entry", nodes=self.derived_tables
+                name="derived_tables_stage", nodes=self.derived_tables
             )
 
         #
-        # Index stage
+        # Index stage: REQUIRED
         #
-        self.inclusions_table_node = None
-        self.exclusions_table_node = None
         index_nodes = []
-        if inclusions:
+        if self.inclusions:
             self.inclusions_table_node = InclusionsTableNode(
                 name=f"{self.name}__inclusions".upper(),
                 index_phenotype=self.entry_criterion,
                 phenotypes=self.inclusions,
             )
             index_nodes.append(self.inclusions_table_node)
-        if exclusions:
+        if self.exclusions:
             self.exclusions_table_node = ExclusionsTableNode(
                 name=f"{self.name}__exclusions".upper(),
                 index_phenotype=self.entry_criterion,
@@ -103,20 +129,16 @@ class Cohort:
         )
         index_nodes.append(self.index_table_node)
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
-            stage="subset_index", index_phenotype=self.index_table_node
+            stage="subset_index", domains=domains, index_phenotype=self.index_table_node
         )
         self.index_stage = NodeGroup(
-            name="index",
+            name="index_stage",
             nodes=self.subset_tables_index_nodes + index_nodes,
         )
 
         #
-        # Post-index / reporting stage
+        # Post-index / reporting stage: OPTIONAL
         #
-        # Create HStackNodes for characteristics and outcomes
-        self.characteristics_table_node = None
-        self.outcomes_table_node = None
-        self.reporting_stage = None
         reporting_nodes = []
         if self.characteristics:
             self.characteristics_table_node = HStackNode(
@@ -130,9 +152,9 @@ class Cohort:
             )
             reporting_nodes.append(self.outcomes_table_node)
         if reporting_nodes:
-            self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
-
-        self._table1 = None
+            self.reporting_stage = NodeGroup(
+                name="reporting_stage", nodes=reporting_nodes
+            )
 
         # Validate that all nodes are unique across all stages
         self._validate_node_uniqueness()
@@ -170,11 +192,16 @@ class Cohort:
         domains = list(set(domains))
         return domains
 
-    def _get_subset_tables_nodes(self, stage: str, index_phenotype: Phenotype):
+    def _get_subset_tables_nodes(
+        self, stage: str, domains: List[str], index_phenotype: Phenotype
+    ):
         """
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
+
+        stage: A string for naming the nodes.
+        domains: List of domains to subset.
+        index_phenotype: The phenotype to use for subsetting patients.
         """
-        domains = self._get_domains()
         return [
             SubsetTable(
                 name=f"{self.name}__{stage}_{domain}".upper(),
@@ -228,7 +255,7 @@ class Cohort:
 
     def execute(
         self,
-        tables,
+        tables: Dict[str, PhenexTable],
         con: Optional["SnowflakeConnector"] = None,
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
@@ -247,6 +274,8 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        self.build_stages(tables)
+
         if self.derived_tables_stage:
             logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
             self.derived_tables_stage.execute(
