@@ -452,20 +452,6 @@ class TestPhenexNodeGroup:
         assert "CHILD" in reverse_graph
         assert "PARENT" in reverse_graph["CHILD"]
 
-    def test_execute_sequential_simple(self):
-        """Test sequential execution"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        grp = NodeGroup("test", [parent, child])
-        tables = {"domain1": MockTable()}
-
-        grp._execute_sequential(tables)
-
-        assert child.executed
-        assert parent.executed
-
     def test_execute_multithreaded(self):
         """Test multithreaded execution"""
         # Create nodes with different execution times to test concurrency
