@@ -403,6 +403,47 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=False, n_threads=2)
 
+    def test_execute_fail_fast_enabled(self):
+        """Test that fail_fast=True prevents new workers from starting when one fails"""
+        import time
+
+        # Create nodes where one fails quickly and others would normally run
+        failing_node = ConcreteNode("failing_node", fail=True)  # Fails immediately
+        node1 = ConcreteNode("node1")  # Would normally run
+        node2 = ConcreteNode("node2")  # Would normally run
+        node3 = ConcreteNode("node3")  # Would normally run
+
+        # Create a parent that depends on the failing node and other nodes
+        parent = ConcreteNode("parent")
+        parent.add_children([failing_node, node1, node2, node3])
+
+        tables = {"domain1": MockTable()}
+
+        with pytest.raises(RuntimeError, match="Node FAILING_NODE failed"):
+            parent.execute(tables, n_threads=4, fail_fast=True)
+
+        # The key test: other nodes should not have executed due to fail_fast
+        # Since failing_node has no dependencies, it should fail immediately
+        # and prevent node1, node2, node3 from executing
+        assert not node1.executed, "node1 should not execute due to fail_fast"
+        assert not node2.executed, "node2 should not execute due to fail_fast"
+        assert not node3.executed, "node3 should not execute due to fail_fast"
+
+    def test_execute_fail_fast_disabled(self):
+        """Test that fail_fast=False allows other workers to continue"""
+        # Create two failing nodes with slight delay to ensure one fails first
+        failing_node1 = ConcreteNode("failing_node1", execution_time=0.1, fail=True)
+        failing_node2 = ConcreteNode("failing_node2", execution_time=0.2, fail=True)
+
+        parent = ConcreteNode("parent")
+        parent.add_children([failing_node1, failing_node2])
+
+        tables = {"domain1": MockTable()}
+
+        # Should still raise an exception, but won't stop other workers immediately
+        with pytest.raises(RuntimeError):
+            parent.execute(tables, n_threads=3, fail_fast=False)
+
     def test_execute_lazy_execution_no_connector_error(self):
         """Test that lazy execution without connector raises error"""
         node = ConcreteNode("test")
