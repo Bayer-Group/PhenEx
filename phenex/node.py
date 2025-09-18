@@ -205,20 +205,21 @@ class Node:
                     return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
 
     @property
-    def last_executed(self):
+    def execution_metadata(self):
         """
-        Retrieve the timestamp when the node was last executed from the local DuckDB database.
+        Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            datetime: The timestamp when the node was last executed, or None if never executed.
+            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, and LAST_EXECUTED
+                          for this node, or None if the node has never been executed.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
             if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
                 table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
                 table = table[table.NODE_NAME == self.name]
-                if len(table) and "LAST_EXECUTED" in table.columns:
-                    return table[table.NODE_NAME == self.name].iloc[0].LAST_EXECUTED
+                if len(table):
+                    return table.iloc[0]
 
     def _get_current_hash(self):
         """
