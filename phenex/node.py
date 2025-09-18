@@ -11,6 +11,7 @@ import threading
 import queue
 from deepdiff import DeepDiff
 from collections import defaultdict
+from datetime import datetime
 
 logger = create_logger(__name__)
 
@@ -234,6 +235,7 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
+                    "LAST_EXECUTED": [datetime.now()],
                 }
             )
 

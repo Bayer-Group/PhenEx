@@ -48,23 +48,31 @@ class Cohort:
     ):
         self.name = name
         self.description = description
-        self.table = None  # Will be set during execution
+        self.table = None  # Will be set to index table during execution
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
-        self.inclusions = inclusions if inclusions is not None else []
-        self.exclusions = exclusions if exclusions is not None else []
-        self.characteristics = characteristics if characteristics is not None else []
-        self.derived_tables = derived_tables if derived_tables is not None else []
-        self.outcomes = outcomes if outcomes is not None else []
+        self.inclusions = inclusions or []
+        self.exclusions = exclusions or []
+        self.characteristics = characteristics or []
+        self.derived_tables = derived_tables or []
+        self.outcomes = outcomes or []
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
+        self._validate_node_uniqueness()
 
-        # stages
+        # stages: set at execute() time
         self.derived_tables_stage = None
         self.entry_stage = None
         self.index_stage = None
         self.reporting_stage = None
 
-        # special Nodes that Cohort builds (later, in build_graph())
+        # special Nodes that Cohort builds (later, in build_stages())
         # need to be able to refer to later to get outputs
         self.inclusions_table_node = None
         self.exclusions_table_node = None
@@ -75,14 +83,53 @@ class Cohort:
         self.subset_tables_index_nodes = None
         self._table1 = None
 
+        logger.info(
+            f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
+        )
+
     def build_stages(self, tables: Dict[str, PhenexTable]):
-        """ """
+        """
+        Build the computational stages for cohort execution.
+
+        This method constructs the directed acyclic graph (DAG) of computational stages required to execute the cohort. The stages are built in dependency order and include:
+
+        1. **Derived Tables Stage** (optional): Executes any derived table computations
+        2. **Entry Stage**: Computes entry phenotype and subsets tables filtered by the entry criterion phenotype
+        3. **Index Stage**: Applies inclusion/exclusion criteria and creates the final index table
+        4. **Reporting Stage** (optional): Computes characteristics and outcomes tables
+
+        Parameters:
+            tables: Dictionary mapping domain names to PhenexTable objects containing the source data tables required for phenotype computation.
+
+        Raises:
+            ValueError: If required domains are missing from the input tables.
+
+        Side Effects:
+            Sets the following instance attributes:
+            - self.entry_stage: NodeGroup for entry criterion processing
+            - self.derived_tables_stage: NodeGroup for derived tables (if any)
+            - self.index_stage: NodeGroup for inclusion/exclusion processing
+            - self.reporting_stage: NodeGroup for characteristics/outcomes (if any)
+            - Various table nodes for accessing intermediate results
+
+        Note:
+            This method must be called before execute() to initialize the computation graph.
+            Node uniqueness is validated across all stages to prevent naming conflicts.
+        """
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
         domains = tables.keys()
         required_domains = self._get_domains()
         for d in required_domains:
             if d not in domains:
                 raise ValueError(f"Required domain {d} not present in input tables!")
+
+        #
+        # Derived tables stage: OPTIONAL
+        #
+        if self.derived_tables:
+            self.derived_tables_stage = NodeGroup(
+                name="derived_tables_stage", nodes=self.derived_tables
+            )
 
         #
         # Entry stage: REQUIRED
@@ -93,14 +140,6 @@ class Cohort:
         self.entry_stage = NodeGroup(
             name="entry_stage", nodes=self.subset_tables_entry_nodes
         )
-
-        #
-        # Derived tables stage: OPTIONAL
-        #
-        if self.derived_tables:
-            self.derived_tables_stage = NodeGroup(
-                name="derived_tables_stage", nodes=self.derived_tables
-            )
 
         #
         # Index stage: REQUIRED
@@ -155,13 +194,6 @@ class Cohort:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes
             )
-
-        # Validate that all nodes are unique across all stages
-        self._validate_node_uniqueness()
-
-        logger.info(
-            f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
-        )
 
     def _get_domains(self):
         """
@@ -298,7 +330,7 @@ class Cohort:
             n_threads=n_threads,
             lazy_execution=lazy_execution,
         )
-        tables = self.get_subset_tables_entry(tables)
+        self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
         logger.info(f"Cohort '{self.name}': executing index stage ...")
@@ -344,48 +376,8 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
-        """
-        Validate that all nodes and dependencies are unique according to the rule:
-        node1.name == node2.name implies hash(node1) == hash(node2)
-
-        This ensures that nodes with the same name have identical parameters (same hash).
-        """
-        name_to_hash = {}
-
-        # Collect all nodes from all stages
-        all_nodes = []
-
-        # Add nodes from entry stage
-        if hasattr(self, "entry_stage") and self.entry_stage:
-            all_nodes += list(self.entry_stage.dependencies)
-
-        # Add nodes from derived tables stage
-        if hasattr(self, "derived_tables_stage") and self.derived_tables_stage:
-            all_nodes += list(self.derived_tables_stage.dependencies)
-
-        # Add nodes from index stage
-        if hasattr(self, "index_stage") and self.index_stage:
-            all_nodes += list(self.index_stage.dependencies)
-
-        # Add nodes from reporting stage
-        if hasattr(self, "reporting_stage") and self.reporting_stage:
-            all_nodes += list(self.reporting_stage.dependencies)
-
-        for node in all_nodes:
-            node_name = node.name
-            node_hash = hash(node)
-
-            # Check if we've seen this name before
-            if node_name in name_to_hash:
-                existing_hash = name_to_hash[node_name]
-                if existing_hash != node_hash:
-                    raise ValueError(
-                        f"Duplicate node name found: '{node_name}'."
-                        f"Nodes with the same name must have identical parameters."
-                    )
-            else:
-                existing_hash = None
-                name_to_hash[node_name] = node_hash
+        # This call below is just to check uniqueness of phenotypes, a safeguard until we agree on conventions for name-spacing
+        Node().add_children(self.phenotypes)
 
 
 class Subcohort(Cohort):
