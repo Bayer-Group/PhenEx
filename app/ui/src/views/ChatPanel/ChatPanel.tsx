@@ -41,7 +41,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
       <div className={styles.heightAdjustableContainer}>
         <HeightAdjustableContainer
           initialHeight={200}
-          minHeight={100}
+          minHeight={200}
           maxHeight={400}
           onHeightChange={handleHeightChange}
         >

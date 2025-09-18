@@ -20,7 +20,7 @@ export const HeightAdjustableContainer: React.FC<HeightAdjustableContainerProps>
   children,
   className = '',
   initialHeight = 300,
-  minHeight = 100,
+  minHeight = 200,
   maxHeight = 600,
   onHeightChange,
 }) => {
