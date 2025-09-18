@@ -291,98 +291,6 @@ class Node:
         if tables is None:
             tables = {}
 
-        # Use multithreaded execution if we have multiple children and n_threads > 1
-        if len(self.children) > 1 and n_threads > 1:
-            return self._execute_multithreaded(
-                tables, con, overwrite, lazy_execution, n_threads
-            )
-        else:
-            return self._execute_sequential(tables, con, overwrite, lazy_execution)
-
-    def _execute_sequential(
-        self,
-        tables: Dict[str, Table] = None,
-        con: Optional[object] = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-    ) -> Table:
-        """
-        Execute the node and its dependencies sequentially.
-        """
-        if tables is None:
-            tables = {}
-
-        # First recursively execute all children nodes
-        logger.info(f"Node '{self.name}': executing ...")
-        for child in self.children:
-            logger.info(f"Node '{self.name}': executing child node {child.name} ...")
-            child.execute(
-                tables=tables,
-                con=con,
-                overwrite=overwrite,
-                lazy_execution=lazy_execution,
-                n_threads=1,  # Sequential execution for children
-            )
-
-        # Execute current node
-        if lazy_execution:
-            if not overwrite:
-                raise ValueError("lazy_execution only works with overwrite=True.")
-            if con is None:
-                raise ValueError(
-                    "A DatabaseConnector is required for lazy execution. Computed tables will be materialized and only recomputed as needed."
-                )
-
-            # first time computing, _get_last_hash() will be None and execution will still be triggered
-            if self._get_current_hash() != self._get_last_hash():
-                logger.info(
-                    f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
-                )
-                table = self._execute(tables)
-                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                con.create_table(
-                    table,
-                    self.name,
-                    overwrite=overwrite,
-                )
-                self.table = con.get_dest_table(self.name)
-                self._update_current_hash()
-            else:
-                logger.info(
-                    f"Node '{self.name}': unchanged since last computation -- skipping!"
-                )
-                # use reference to materialized table
-                self.table = con.get_dest_table(self.name)
-
-        else:
-            self.table = self._execute(tables)
-            if con:
-                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                con.create_table(
-                    self.table,
-                    self.name,
-                    overwrite=overwrite,
-                )
-                # use reference to materialized table
-                self.table = con.get_dest_table(self.name)
-
-        logger.info(f"Node '{self.name}': execution completed.")
-        return self.table
-
-    def _execute_multithreaded(
-        self,
-        tables: Dict[str, Table] = None,
-        con: Optional[object] = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-        n_threads: int = 4,
-    ) -> Table:
-        """
-        Execute this node's dependencies using multithreading, then execute this node.
-        """
-        if tables is None:
-            tables = {}
-
         # Build dependency graph for all dependencies
         all_deps = self.dependencies
         nodes = {node.name: node for node in all_deps}
@@ -395,13 +303,10 @@ class Node:
         dependency_graph = self._build_dependency_graph(nodes)
         reverse_graph = self._build_reverse_graph(dependency_graph)
 
-        # Execute dependencies in parallel if n_threads > 1
-        if n_threads == 1 or len(all_deps) <= 1:
-            return self._execute_sequential(tables, con, overwrite, lazy_execution)
-
         # Track completion status and results
         completed = set()
         completion_lock = threading.Lock()
+        worker_exceptions = []  # Track exceptions from worker threads
 
         # Track in-degree for scheduling
         in_degree = {}
@@ -491,7 +396,9 @@ class Node:
 
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")
-                    raise
+                    with completion_lock:
+                        worker_exceptions.append(e)  # Store exception for main thread
+                    break  # Exit worker loop on error
                 finally:
                     ready_queue.task_done()
 
@@ -503,9 +410,20 @@ class Node:
             thread.start()
             threads.append(thread)
 
-        # Wait for all nodes to complete
-        while len(completed) < len(nodes):
+        # Wait for all nodes to complete or for an error to occur
+        while len(completed) < len(nodes) and not worker_exceptions:
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
+
+        # Check if any worker thread had an exception
+        if worker_exceptions:
+            # Signal workers to stop
+            for _ in threads:
+                ready_queue.put(None)
+            # Wait for threads to finish
+            for thread in threads:
+                thread.join(timeout=1)
+            # Re-raise the first exception
+            raise worker_exceptions[0]
 
         # Signal workers to stop and wait for them
         for _ in threads:
