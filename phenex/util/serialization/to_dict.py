@@ -39,6 +39,10 @@ def to_dict(obj) -> dict:
                 _dict[param] = value.to_dict()
             elif isinstance(value, (date, datetime)):
                 _dict[param] = {"__datetime__": value.isoformat()}
+            elif hasattr(value, "__class__") and "Table" in str(type(value)):
+                # Handle Ibis Table objects by storing a placeholder
+                # Tables are not serializable and are runtime objects
+                _dict[param] = {"__table__": f"<Table: {value.__class__.__name__}>"}
             else:
                 _dict[param] = value
 
