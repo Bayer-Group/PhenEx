@@ -48,7 +48,7 @@ class Cohort:
     ):
         self.name = name
         self.description = description
-        self.table = None  # Will be set to index table during execution
+        self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
@@ -57,6 +57,7 @@ class Cohort:
         self.characteristics = characteristics or []
         self.derived_tables = derived_tables or []
         self.outcomes = outcomes or []
+
         self.phenotypes = (
             [self.entry_criterion]
             + self.inclusions
@@ -194,6 +195,8 @@ class Cohort:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes
             )
+
+        self._table1 = None
 
     def _get_domains(self):
         """
@@ -336,7 +339,7 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         self.index_stage.execute(
-            tables=tables,
+            tables=self.subset_tables_entry,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,
@@ -347,10 +350,10 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
-        self.subset_tables_index = tables = self.get_subset_tables_index(tables)
+        self.subset_tables_index = self.get_subset_tables_index(tables)
         if self.reporting_stage:
             self.reporting_stage.execute(
-                tables=tables,
+                tables=self.subset_tables_index,
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
@@ -376,7 +379,7 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
-        # This call below is just to check uniqueness of phenotypes, a safeguard until we agree on conventions for name-spacing
+        # Use Node's capability to check for node uniqueness rather than reimplementing it here
         Node().add_children(self.phenotypes)
 
 
