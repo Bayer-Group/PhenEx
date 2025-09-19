@@ -184,7 +184,7 @@ class TestPhenexNode:
 
         # Mock table data
         mock_table_data = pd.DataFrame(
-            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": ["hash123", "hash456"]}
+            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": [123, 456]}
         )
         mock_table = Mock()
         mock_table.to_pandas.return_value = mock_table_data
@@ -194,7 +194,7 @@ class TestPhenexNode:
         node = Node("test")
         result = node._get_last_hash()
 
-        assert result == "hash123"
+        assert result == 123
 
     @patch("phenex.node.DuckDBConnector")
     @patch("phenex.node.ibis.memtable")
@@ -333,7 +333,7 @@ class TestPhenexNodeExecution:
         node = ConcreteNode("test")
         # Mock that node hasn't been computed before
         node._get_last_hash = Mock(return_value=None)
-        node._get_current_hash = Mock(return_value="hash123")
+        node._get_current_hash = Mock(return_value=12345678)
         node._update_current_hash = Mock(return_value=True)
 
         tables = {"domain1": MockTable()}
@@ -357,8 +357,8 @@ class TestPhenexNodeExecution:
 
         node = ConcreteNode("test")
         # Mock that node hasn't changed
-        node._get_last_hash = Mock(return_value="hash123")
-        node._get_current_hash = Mock(return_value="hash123")
+        node._get_last_hash = Mock(return_value=12345678)
+        node._get_current_hash = Mock(return_value=12345678)
 
         tables = {"domain1": MockTable()}
 
@@ -379,6 +379,29 @@ class TestPhenexNodeExecution:
             ValueError, match="lazy_execution only works with overwrite=True"
         ):
             node.execute(tables, lazy_execution=True, overwrite=False)
+
+    def test_execute_exception_propagation_in_threads(self):
+        """Test that exceptions in worker threads are properly propagated to main thread"""
+        failing_node = ConcreteNode("failing_node", fail=True)
+        parent = ConcreteNode("parent")
+        parent.add_children(failing_node)
+
+        tables = {"domain1": MockTable()}
+
+        # This should raise the RuntimeError from the failing node
+        with pytest.raises(RuntimeError, match="Node FAILING_NODE failed"):
+            parent.execute(tables, n_threads=2)
+
+    def test_execute_lazy_execution_exception_propagation(self):
+        """Test that lazy execution exceptions in worker threads are properly propagated"""
+        node = ConcreteNode("test")
+        tables = {"domain1": MockTable()}
+
+        # This should raise the ValueError about needing overwrite=True, not hang
+        with pytest.raises(
+            ValueError, match="lazy_execution only works with overwrite=True"
+        ):
+            node.execute(tables, lazy_execution=True, overwrite=False, n_threads=2)
 
     def test_execute_lazy_execution_no_connector_error(self):
         """Test that lazy execution without connector raises error"""
@@ -610,20 +633,6 @@ class TestPhenexNodeGroup:
         assert "CHILD" in reverse_graph
         assert "PARENT" in reverse_graph["CHILD"]
 
-    def test_execute_sequential_simple(self):
-        """Test sequential execution"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        grp = NodeGroup("test", [parent, child])
-        tables = {"domain1": MockTable()}
-
-        grp._execute_sequential(tables)
-
-        assert child.executed
-        assert parent.executed
-
     def test_execute_multithreaded(self):
         """Test multithreaded execution"""
         # Create nodes with different execution times to test concurrency
@@ -645,22 +654,6 @@ class TestPhenexNodeGroup:
         assert fast_child.executed
         assert slow_child.executed
         assert parent.executed
-
-    def test_execute_single_thread(self):
-        """Test execution with n_threads=1 falls back to sequential"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        grp = NodeGroup("test", [parent])
-        tables = {"domain1": MockTable()}
-
-        with patch.object(grp, "_execute_sequential") as mock_sequential:
-            mock_sequential.return_value = {"PARENT": MockTable(), "CHILD": MockTable()}
-
-            grp.execute(tables, n_threads=1)
-
-            mock_sequential.assert_called_once()
 
     def test_visualize_dependencies(self):
         """Test dependency visualization"""
