@@ -48,14 +48,23 @@ class Cohort:
     ):
         self.name = name
         self.description = description
-        self.table = None  # Will be set during execution
+        self.table = None  # Will be set during execution to index table
+        self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
-        self.inclusions = inclusions if inclusions is not None else []
-        self.exclusions = exclusions if exclusions is not None else []
-        self.characteristics = characteristics if characteristics is not None else []
-        self.derived_tables = derived_tables if derived_tables is not None else []
-        self.outcomes = outcomes if outcomes is not None else []
+        self.inclusions = inclusions or []
+        self.exclusions = exclusions or []
+        self.characteristics = characteristics or []
+        self.derived_tables = derived_tables or []
+        self.outcomes = outcomes or []
+
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
 
         #
         # Entry stage
@@ -63,7 +72,9 @@ class Cohort:
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
             stage="subset_entry", index_phenotype=entry_criterion
         )
-        self.entry_stage = NodeGroup(name="entry", nodes=self.subset_tables_entry_nodes)
+        self.entry_stage = NodeGroup(
+            name="entry_stage", nodes=self.subset_tables_entry_nodes
+        )
 
         #
         # Derived tables stage
@@ -71,7 +82,7 @@ class Cohort:
         self.derived_tables_stage = None
         if derived_tables:
             self.derived_tables_stage = NodeGroup(
-                name="entry", nodes=self.derived_tables
+                name="derived_tables_stage", nodes=self.derived_tables
             )
 
         #
@@ -106,7 +117,7 @@ class Cohort:
             stage="subset_index", index_phenotype=self.index_table_node
         )
         self.index_stage = NodeGroup(
-            name="index",
+            name="index_stage",
             nodes=self.subset_tables_index_nodes + index_nodes,
         )
 
@@ -130,7 +141,9 @@ class Cohort:
             )
             reporting_nodes.append(self.outcomes_table_node)
         if reporting_nodes:
-            self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
+            self.reporting_stage = NodeGroup(
+                name="reporting_stage", nodes=reporting_nodes
+            )
 
         self._table1 = None
 
@@ -273,13 +286,13 @@ class Cohort:
             lazy_execution=lazy_execution,
             fail_fast=fail_fast,
         )
-        tables = self.get_subset_tables_entry(tables)
+        self.subset_tables_entry = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         self.index_stage.execute(
-            tables=tables,
+            tables=self.subset_tables_entry,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,
@@ -291,10 +304,10 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
-        self.subset_tables_index = tables = self.get_subset_tables_index(tables)
+        self.subset_tables_index = self.get_subset_tables_index(tables)
         if self.reporting_stage:
             self.reporting_stage.execute(
-                tables=tables,
+                tables=self.subset_tables_index,
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
@@ -321,48 +334,8 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
-        """
-        Validate that all nodes and dependencies are unique according to the rule:
-        node1.name == node2.name implies hash(node1) == hash(node2)
-
-        This ensures that nodes with the same name have identical parameters (same hash).
-        """
-        name_to_hash = {}
-
-        # Collect all nodes from all stages
-        all_nodes = []
-
-        # Add nodes from entry stage
-        if hasattr(self, "entry_stage") and self.entry_stage:
-            all_nodes += list(self.entry_stage.dependencies)
-
-        # Add nodes from derived tables stage
-        if hasattr(self, "derived_tables_stage") and self.derived_tables_stage:
-            all_nodes += list(self.derived_tables_stage.dependencies)
-
-        # Add nodes from index stage
-        if hasattr(self, "index_stage") and self.index_stage:
-            all_nodes += list(self.index_stage.dependencies)
-
-        # Add nodes from reporting stage
-        if hasattr(self, "reporting_stage") and self.reporting_stage:
-            all_nodes += list(self.reporting_stage.dependencies)
-
-        for node in all_nodes:
-            node_name = node.name
-            node_hash = hash(node)
-
-            # Check if we've seen this name before
-            if node_name in name_to_hash:
-                existing_hash = name_to_hash[node_name]
-                if existing_hash != node_hash:
-                    raise ValueError(
-                        f"Duplicate node name found: '{node_name}'."
-                        f"Nodes with the same name must have identical parameters."
-                    )
-            else:
-                existing_hash = None
-                name_to_hash[node_name] = node_hash
+        # Use Node's capability to check for node uniqueness rather than reimplementing it here
+        Node().add_children(self.phenotypes)
 
 
 class Subcohort(Cohort):
