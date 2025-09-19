@@ -1,44 +1,37 @@
 # Usage
-#   Build:              docker compose build --no-cache --progress=plain
-#   Run:                docker compose up
-#   Stop:               docker compose down
+#   1. Build:               docker compose build --no-cache --progress=plain
+#   2. Initialize the DB:   2.1. docker compose up db # wait till inital DB setup is complete and restart it ^C
+#                           2.2. docker compose up db -d
+#                           2.3. ./backend/scripts/reset-databases-local.sh
+#   3. Run DEV              docker compose up be fe
+#   3. Run bundled          docker compose up be-bundle fe-bundle
+#   4. Stop                 docker compose down
 
 name: phenex
-
-networks:
-  phenex:
 
 services:
   backend:
     container_name: phenex-backend
-    image: phenex-be:dev-local
     build:
       context: ./backend
       dockerfile: Dockerfile
       platforms:
-      - "linux/amd64"
-    networks:
-      - phenex
+      - "linux/arm64/v8"
     ports:
       - "8001:8000"
     volumes:
-      - ${HOME}/data/phenex/cohorts:/app/data/cohorts
-      - ${HOME}/data/phenex/users:/app/data/users
-    env_file: ./.env
+      - ${HOME}/.phenex/data/phenex/cohorts:/app/data/cohorts
+      - ${HOME}/.phenex/data/phenex/users:/app/data/users
+    env_file: ./backend/.env
 
   frontend:
     container_name: phenex-frontend
-    image: phenex-fe:dev-local
     build:
       context: ./ui
       dockerfile: Dockerfile
-    networks:
-      - phenex
-    volumes:
-      - ./ui:/app
     ports:
       - "5173:5173"
-    env_file: ./.env
+    env_file: ./ui/.env
 
   be-bundle:
     build:
@@ -46,11 +39,9 @@ services:
       dockerfile: ./Dockerfile.model-bundle
       platforms:
       - "linux/amd64"
-    networks:
-      - phenex
     ports:
       - 9001:8000
-    env_file: ./.env
+    env_file: ./backend/.env
 
   fe-bundle:
     build:
@@ -58,36 +49,30 @@ services:
       dockerfile: ./Dockerfile.bundle
       platforms:
       - "linux/amd64"
-    networks:
-      - phenex
     ports:
-      - 9111:5173
-    env_file: ./.env.bundle
+      - "0.0.0.0:9111:5173"
+    env_file: ./ui/.env.bundle
 
   # Comment out everything below this point if you are using an external Postgres database
   db:
-    container_name: phenex-db
     image: postgres:15.8
+    container_name: phenex-db
     restart: unless-stopped
     volumes:
-      - ${HOME}/volumes/db/data:/var/lib/postgresql/data
+      - ${HOME}/.phenex/volumes/db/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-      - phenex
+    environment:
+      POSTGRES_PASSWORD: password-phenex
     ports:
       - 9444:5432
-    env_file:
-      - ./.env
 
   adminer:
     container_name: phenex-adminer
     image: ghcr.io/shyim/adminerevo:latest
     restart: unless-stopped
-    networks:
-      - phenex
     ports:
       - 9091:8080

@@ -7,5 +7,5 @@ docker exec -i -u postgres "$CONTAINER_ID" psql -d postgres -c 'DROP DATABASE ph
 docker exec -i -u postgres "$CONTAINER_ID" psql -d postgres -c 'CREATE DATABASE phenex' || true
 
 docker run --rm -v "$(pwd)/backend/migrate:/migrations" --network "${CONTAINER_NETWORK}" migrate/migrate:4 \
-   -database 'postgres://postgres:passwordphenex@phenex-db:5432/phenex?sslmode=disable' \
+   -database 'postgres://postgres:password-phenex@phenex-db/phenex?sslmode=disable' \
    -path=/migrations/ up
