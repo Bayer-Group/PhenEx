@@ -341,7 +341,6 @@ class Node:
 
                 # Check again before processing - another worker might have failed
                 if stop_all_workers.is_set():
-                    ready_queue.task_done()
                     break
 
                 try:
@@ -352,7 +351,6 @@ class Node:
 
                     # Check one more time before execution - another worker might have failed
                     if stop_all_workers.is_set():
-                        ready_queue.task_done()
                         break
 
                     # Execute the node (without recursive child execution since we handle dependencies here)
@@ -387,6 +385,13 @@ class Node:
                         ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
                             table = con.get_dest_table(node_name)
+
+                    # Check if we should abort this node's completion due to fail_fast
+                    if stop_all_workers.is_set():
+                        # Reset executed flag if the node set it, since we're aborting due to another failure
+                        if hasattr(node, "executed"):
+                            node.executed = False
+                        break
 
                     node.table = table
 

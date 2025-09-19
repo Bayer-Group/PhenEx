@@ -408,10 +408,12 @@ class TestPhenexNodeExecution:
         import time
 
         # Create nodes where one fails quickly and others would normally run
-        failing_node = ConcreteNode("failing_node", fail=True)  # Fails immediately
-        node1 = ConcreteNode("node1")  # Would normally run
-        node2 = ConcreteNode("node2")  # Would normally run
-        node3 = ConcreteNode("node3")  # Would normally run
+        failing_node = ConcreteNode(
+            "failing_node", execution_time=0.01, fail=True
+        )  # Fails after a tiny delay
+        node1 = ConcreteNode("node1", execution_time=0.05)  # Takes longer to complete
+        node2 = ConcreteNode("node2", execution_time=0.05)  # Takes longer to complete
+        node3 = ConcreteNode("node3", execution_time=0.05)  # Takes longer to complete
 
         # Create a parent that depends on the failing node and other nodes
         parent = ConcreteNode("parent")
