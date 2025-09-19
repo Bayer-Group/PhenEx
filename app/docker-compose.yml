@@ -1,61 +1,68 @@
 # Usage
-#   Start:              docker compose up
-#   With helpers:       docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml up
+#   Build:              docker compose build --no-cache --progress=plain
+#   Run:                docker compose up
 #   Stop:               docker compose down
-#   Destroy:            docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml down -v --remove-orphans
-#   Reset everything:  ./reset.sh
 
 name: phenex
+
+networks:
+  phenex:
 
 services:
   backend:
     container_name: phenex-backend
-    # in dev mode, mount local files and restart service while files change
+    image: phenex-be:dev-local
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: phenex-backend:latest
-    # mount your local disk to save cohorts
-    command: fastapi run main.py --reload
-    env_file: ./.env
-    depends_on:
-      db:
-        condition: service_healthy
+      platforms:
+      - "linux/amd64"
+    networks:
+      - phenex
     ports:
       - "8001:8000"
     volumes:
-      - ${HOME}/data/phenex/cohorts:/data/cohorts
-      - ${HOME}/data/phenex/users:/data/users
-      - ./backend:/app
-      - ../phenex:/app/phenex
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import requests; requests.get('http://localhost:8000/health')",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      - ${HOME}/data/phenex/cohorts:/app/data/cohorts
+      - ${HOME}/data/phenex/users:/app/data/users
+    env_file: ./.env
 
   frontend:
     container_name: phenex-frontend
-    env_file: ./.env
+    image: phenex-fe:dev-local
     build:
       context: ./ui
       dockerfile: Dockerfile
-    image: phenex-frontend:latest
-    command: bash -c "npm i && ./node_modules/.bin/vite --host 0.0.0.0"
+    networks:
+      - phenex
     volumes:
       - ./ui:/app
     ports:
       - "5173:5173"
-    depends_on:
-      backend:
-        condition: service_healthy
+    env_file: ./.env
+
+  be-bundle:
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile.model-bundle
+      platforms:
+      - "linux/amd64"
+    networks:
+      - phenex
+    ports:
+      - 9001:8000
+    env_file: ./.env
+
+  fe-bundle:
+    build:
+      context: ./ui
+      dockerfile: ./Dockerfile.bundle
+      platforms:
+      - "linux/amd64"
+    networks:
+      - phenex
+    ports:
+      - 9111:5173
+    env_file: ./.env.bundle
 
   # Comment out everything below this point if you are using an external Postgres database
   db:
@@ -63,12 +70,16 @@ services:
     image: postgres:15.8
     restart: unless-stopped
     volumes:
-      - ./volumes/db/data:/var/lib/postgresql/data
+      - ${HOME}/volumes/db/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - phenex
+    ports:
+      - 9444:5432
     env_file:
       - ./.env
 
@@ -76,8 +87,7 @@ services:
     container_name: phenex-adminer
     image: ghcr.io/shyim/adminerevo:latest
     restart: unless-stopped
+    networks:
+      - phenex
     ports:
       - 9091:8080
-
-volumes:
-  db-config:

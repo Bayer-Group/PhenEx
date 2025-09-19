@@ -9,6 +9,7 @@ import ast
 import phenex
 from examples import EXAMPLES
 from dotenv import load_dotenv
+from scripts.download_model import load_rag_model
 
 load_dotenv()
 
@@ -19,8 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Load a pre-trained sentence embedding model
-embeddings_model = TextEmbedding("sentence-transformers/all-MiniLM-L6-v2")
-
+embeddings_model = load_rag_model()
 
 def get_phenex_context_documents():
     # get context documents for LLM layer

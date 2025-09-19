@@ -4,7 +4,8 @@ import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColum
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { VisibilityCellRenderer } from './VisibilityCellRenderer';
 import VisibilityDescriptionCellRenderer from './VisibilityDescriptionCellRenderer';
-import parametersInfo from '../../../assets/parameters_info.json';
+import parametersInfoRaw from '/assets/parameters_info.json?raw';
+let parametersInfo = JSON.parse(parametersInfoRaw);
 
 const visibilityColumns: ColumnDefinition[] = [
   {

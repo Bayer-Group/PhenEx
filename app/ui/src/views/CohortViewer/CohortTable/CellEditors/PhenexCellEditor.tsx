@@ -6,7 +6,8 @@ import { SimpleCustomScrollbar } from '../../../../components/SimpleCustomScroll
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
-import parametersInfo from '../../../../assets/parameters_info.json';
+import parametersInfoRaw from '/assets/parameters_info.json?raw';
+let parametersInfo = JSON.parse(parametersInfoRaw);
 import typeStyles from '../../../../styles/study_types.module.css';
 import ReactMarkdown from 'react-markdown';
 

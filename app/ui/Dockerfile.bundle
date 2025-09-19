@@ -1,0 +1,21 @@
+FROM node:18 AS builder
+WORKDIR /app
+COPY package.json ./
+COPY package-lock.json ./
+COPY src/ ./src/
+COPY public/ ./public/
+COPY vite.config.ts ./
+COPY index.html ./
+COPY .env ./
+RUN ls -al
+RUN env
+RUN npm install && npx vite build
+RUN ls -al
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.cfg /etc/nginx/conf.d/default.conf
+RUN ls -al /
+RUN ls -al /usr/share/nginx/html
+RUN ls -al /etc/nginx/conf.d
+RUN env

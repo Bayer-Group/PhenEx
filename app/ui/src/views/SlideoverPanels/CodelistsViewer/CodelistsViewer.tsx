@@ -6,7 +6,7 @@ import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';
 import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummarytable';
+import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummaryTable';
 interface CodelistsViewerProps {
   showTitle?: boolean;
 }

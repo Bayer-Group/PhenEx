@@ -32,7 +32,7 @@ load_dotenv()
 from openai import AzureOpenAI, OpenAI
 
 # Constants and configuration
-COHORTS_DIR = "/data/cohorts"
+COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
 
 # Initialize database manager
 sessionmaker = get_sm(config["database"])

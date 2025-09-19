@@ -1,5 +1,6 @@
 import { themeQuartz } from 'ag-grid-community';
-import classDefinitions from '../../../assets/class_definitions.json';
+import classDefinitionsRaw from '/assets/class_definitions.json?raw';
+let classDefinitions = JSON.parse(classDefinitionsRaw);
 import { defaultColumns } from './PhenotypeColumnDefinitions';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 export interface Phenotype {
