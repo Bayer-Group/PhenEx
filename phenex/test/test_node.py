@@ -390,6 +390,187 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=True)
 
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_removes_hash(self, mock_connector_class):
+        """Test that clear_cache removes node hash from state table"""
+        # Mock the DuckDB connector for node states
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = [
+            NODE_STATES_TABLE_NAME
+        ]
+
+        # Create mock table data with our node and another node
+        mock_table_data = pd.DataFrame(
+            {
+                "NODE_NAME": ["TEST", "OTHER_NODE"],
+                "LAST_HASH": ["hash123", "hash456"],
+                "NODE_PARAMS": ["{}", "{}"],
+                "LAST_EXECUTED": ["2023-01-01", "2023-01-02"],
+            }
+        )
+        mock_table = Mock()
+        mock_table.to_pandas.return_value = mock_table_data
+        mock_duckdb_con.get_dest_table.return_value = mock_table
+
+        # Mock ibis.memtable
+        mock_updated_table = Mock()
+        with patch("phenex.node.ibis.memtable", return_value=mock_updated_table):
+            mock_connector_class.return_value = mock_duckdb_con
+
+            node = ConcreteNode("test")
+            node.table = MockTable()  # Set a table to be reset
+
+            # Clear cache
+            node.clear_cache()
+
+            # Verify table attribute was reset
+            assert node.table is None
+
+            # Verify create_table was called to update the states table
+            mock_duckdb_con.create_table.assert_called_once_with(
+                mock_updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
+            )
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_with_connector_drops_table(self, mock_connector_class):
+        """Test that clear_cache drops materialized table when connector provided"""
+        # Mock the DuckDB connector for node states
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        # Mock the user connector
+        mock_user_con = Mock()
+        mock_user_con.dest_connection.list_tables.return_value = ["TEST"]
+
+        node = ConcreteNode("test")
+        node.table = MockTable()
+
+        # Clear cache with connector
+        node.clear_cache(con=mock_user_con)
+
+        # Verify materialized table was dropped
+        mock_user_con.dest_connection.drop_table.assert_called_once_with("TEST")
+        assert node.table is None
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_recursive(self, mock_connector_class):
+        """Test that clear_cache recursively clears child nodes when recursive=True"""
+        # Mock the DuckDB connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        parent = ConcreteNode("parent")
+        child1 = ConcreteNode("child1")
+        child2 = ConcreteNode("child2")
+        parent.add_children([child1, child2])
+
+        # Set tables to verify they get reset
+        parent.table = MockTable()
+        child1.table = MockTable()
+        child2.table = MockTable()
+
+        # Clear cache recursively
+        parent.clear_cache(recursive=True)
+
+        # Verify all tables were reset
+        assert parent.table is None
+        assert child1.table is None
+        assert child2.table is None
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_non_recursive(self, mock_connector_class):
+        """Test that clear_cache only clears current node when recursive=False"""
+        # Mock the DuckDB connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        parent = ConcreteNode("parent")
+        child = ConcreteNode("child")
+        parent.add_children(child)
+
+        # Set tables
+        parent.table = MockTable()
+        child.table = MockTable()
+
+        # Clear cache non-recursively
+        parent.clear_cache(recursive=False)
+
+        # Verify only parent table was reset
+        assert parent.table is None
+        assert child.table is not None  # Child should be unchanged
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_all_cache(self, mock_connector_class):
+        """Test clear_all_cache convenience method"""
+        # Mock the DuckDB connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        parent = ConcreteNode("parent")
+        child = ConcreteNode("child")
+        parent.add_children(child)
+
+        # Set tables
+        parent.table = MockTable()
+        child.table = MockTable()
+
+        # Use clear_all_cache
+        parent.clear_all_cache()
+
+        # Verify both tables were reset (recursive=True by default)
+        assert parent.table is None
+        assert child.table is None
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_forces_reexecution(self, mock_connector_class):
+        """Test that clearing cache forces re-execution in lazy mode"""
+        # Mock the DuckDB connector for both node states and user connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        # Mock user connector
+        mock_user_con = Mock()
+        mock_user_con.dest_connection.list_tables.return_value = []
+        mock_result_table = MockTable()
+        mock_user_con.get_dest_table.return_value = mock_result_table
+
+        node = ConcreteNode("test")
+        tables = {"domain1": MockTable()}
+
+        # First execution - should execute
+        node._get_last_hash = Mock(return_value=None)
+        node._get_current_hash = Mock(return_value="hash123")
+        node._update_current_hash = Mock(return_value=True)
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert node.executed
+
+        # Reset execution flag
+        node.executed = False
+
+        # Second execution without cache clear - should skip
+        node._get_last_hash = Mock(return_value="hash123")
+        node._get_current_hash = Mock(return_value="hash123")
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert not node.executed  # Should have skipped
+
+        # Clear cache
+        node.clear_cache(con=mock_user_con)
+
+        # Third execution after cache clear - should execute again
+        node._get_last_hash = Mock(return_value=None)  # Cache was cleared
+        node._get_current_hash = Mock(return_value="hash123")
+        node._update_current_hash = Mock(return_value=True)
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert node.executed  # Should have executed again
+
     def test_add_children_circular_dependency(self):
         """Test that adding a child that would create circular dependency raises ValueError"""
         node1 = Node("node1")
