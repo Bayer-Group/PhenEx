@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { VerticalSplitView } from './VerticalSplitView/VerticalSplitView';
-import { InteractionArea, InteractionAreaRef } from './InteractionArea/InteractionArea';
 import { MessagesDisplay } from './MessagesDisplay/MessagesDisplay';
+import { HeightAdjustableContainer } from '../../components/HeightAdjustableContainer/HeightAdjustableContainer';
+import styles from './ChatPanel.module.css'
+import { InteractionArea, InteractionAreaRef } from './InteractionArea/InteractionArea';
 import { chatPanelDataService } from './ChatPanelDataService';
 
 interface ChatPanelProps {
@@ -10,7 +11,12 @@ interface ChatPanelProps {
 
 export const ChatPanel: React.FC<ChatPanelProps> = () => {
   const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [bottomContainerHeight, setBottomContainerHeight] = useState(200);
   const interactionAreaRef = useRef<InteractionAreaRef>(null);
+
+  const handleHeightChange = (height: number) => {
+    setBottomContainerHeight(height);
+  };
 
   useEffect(() => {
     // Check initial state - only user messages count for interaction
@@ -30,9 +36,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
   }, []);
 
   return (
-    <VerticalSplitView userHasInteracted={userHasInteracted}>
-      <MessagesDisplay></MessagesDisplay>
-      <InteractionArea ref={interactionAreaRef} userHasInteracted={userHasInteracted}></InteractionArea>
-    </VerticalSplitView>
+    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+      <MessagesDisplay bottomMargin={bottomContainerHeight} />
+      <div className={styles.heightAdjustableContainer}>
+        <HeightAdjustableContainer
+          initialHeight={200}
+          minHeight={200}
+          maxHeight={400}
+          onHeightChange={handleHeightChange}
+        >
+          <InteractionArea ref={interactionAreaRef} userHasInteracted={userHasInteracted} />
+        </HeightAdjustableContainer>
+      </div>
+    </div>
   );
 };
