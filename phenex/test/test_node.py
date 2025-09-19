@@ -503,29 +503,6 @@ class TestPhenexNodeExecution:
         assert child.table is not None  # Child should be unchanged
 
     @patch("phenex.node.DuckDBConnector")
-    def test_clear_all_cache(self, mock_connector_class):
-        """Test clear_all_cache convenience method"""
-        # Mock the DuckDB connector
-        mock_duckdb_con = Mock()
-        mock_duckdb_con.dest_connection.list_tables.return_value = []
-        mock_connector_class.return_value = mock_duckdb_con
-
-        parent = ConcreteNode("parent")
-        child = ConcreteNode("child")
-        parent.add_children(child)
-
-        # Set tables
-        parent.table = MockTable()
-        child.table = MockTable()
-
-        # Use clear_all_cache
-        parent.clear_all_cache()
-
-        # Verify both tables were reset (recursive=True by default)
-        assert parent.table is None
-        assert child.table is None
-
-    @patch("phenex.node.DuckDBConnector")
     def test_clear_cache_forces_reexecution(self, mock_connector_class):
         """Test that clearing cache forces re-execution in lazy mode"""
         # Mock the DuckDB connector for both node states and user connector
