@@ -2,29 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './MessagesDisplay.module.css';
 import ReactMarkdown from 'react-markdown';
 import { Message, chatPanelDataService } from '../ChatPanelDataService';
+import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
-interface MessagesDisplayProps {}
+interface MessagesDisplayProps {
+  bottomMargin?: number;
+}
 
-export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
+export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({ bottomMargin = 10 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
-  const [featherOpacity, setFeatherOpacity] = useState(1);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const scrollPosition = container.scrollTop;
-      const maxScroll = 200;
-      const newOpacity = Math.max(0.4, 1 - scrollPosition / maxScroll);
-      setFeatherOpacity(newOpacity);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     setMessages(chatPanelDataService.getMessages());
@@ -85,20 +72,29 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = () => {
   }, []);
 
   return (
-    <div
-      className={`${styles.container} ${!isScrolledToBottom ? styles.scrolling : ''}`}
-      ref={messagesContainerRef}
-    >
-      <div className={styles.messagesContainer}>
-        {messages.map(message => (
+    <div className={styles.container}>
+      <div
+        className={`${styles.messagesContainer} ${!isScrolledToBottom ? styles.scrolling : ''}`}
+        ref={messagesContainerRef}
+      >
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={`${styles.messageBubble} ${message.isUser ? styles.userMessage : styles.assistantMessage}`}
+            style={{
+              marginBottom: index === messages.length - 1 ? `${bottomMargin + 20}px` : undefined
+            }}
           >
             <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>
         ))}
       </div>
+      <SimpleCustomScrollbar 
+        targetRef={messagesContainerRef}
+        orientation="vertical"
+        marginTop={100}
+        marginBottom={bottomMargin}
+      />
     </div>
   );
 };

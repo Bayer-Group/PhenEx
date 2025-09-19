@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './CohortIssuesDisplay.module.css';
 import { XButton } from '../../../components/ButtonsAndTabs/XButton/XButton';
+import BirdIcon from '../../../assets/bird_icon.png'
 
 export interface CohortIssue {
   phenotype_id: string;
@@ -22,39 +23,35 @@ export const CohortIssuesDisplay: React.FC<CohortIssuesDisplayProps> = ({
   const phenotypesWithIssues = issues?.length || 0;
   const hasIssues = phenotypesWithIssues > 0;
 
-  const renderUnselectedTitleLabel = () => {
+
+  const renderText = () => {
     return (
-      <p>
-        <span className={styles.labelUnselected}>
-          {/* {totalIssueCount} Issues in {phenotypesWithIssues} phenotypes */}
+       <div className={styles.labelUnselected}>
           Issues
-        </span>
-      </p>
+        </div>
     );
   };
 
-  const renderXButton = () => {
-    return <XButton onClick={undefined} className={styles.xButton} />;
-  };
-
-  const renderText = () => {
-    return renderUnselectedTitleLabel();
-  };
+  const renderBird = () => {
+    return (
+      <img src={BirdIcon} alt="No issues" className={`${styles.birdIcon} ${hasIssues ? styles.birdIssues : styles.birdNoIssues}`} onClick={onClick} />
+    );
+  }
 
   return (
     <div
       className={`${styles.row} ${selected ? styles.selected : ''} ${hasIssues ? styles.hasIssues : styles.noIssues}`}
-      onClick={selected ? onClick : undefined}
+      onClick={onClick}
     >
       <span className={styles.text}>
-        {hasIssues ? renderText() : <span className={styles.labelNoIssues}></span>}
+        {hasIssues ? renderText() : ''}
       </span>
       <div
         className={`${styles.statusDot} ${hasIssues ? styles.red : styles.green} ${selected ? styles.selected : ''}`}
       >
         {totalIssueCount}
       </div>
-      {selected && renderXButton()}
+      {renderBird()}
     </div>
   );
 };

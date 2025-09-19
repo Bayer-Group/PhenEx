@@ -2,7 +2,7 @@ import React from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
 import styles from './PhenexCellRenderer.module.css';
 import { NARenderer } from './NARenderer';
-import { columnNameToApplicablePhenotypeMapping } from '../../CohortDataService/CohortColumnDefinitions';
+import { columnNameToApplicablePhenotypeMapping } from '../../../../assets/phenotype_applicable_parameters';
 import typeStyles from '../../../../styles/study_types.module.css';
 
 export interface PhenexCellRendererProps extends ICellRendererParams {
@@ -47,7 +47,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       }}
       style={containerStyle}
     >
-      {props.children}
+      {props.children ? props.children : props.value}
     </div>
   );
 };

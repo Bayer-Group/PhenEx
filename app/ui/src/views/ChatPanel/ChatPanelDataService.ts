@@ -21,14 +21,22 @@ class ChatPanelDataService {
   private messages: Message[] = [
     {
       id: 123,
-      text: '# Create cohorts with AI\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
+      text: '# Hi, I\'m Fox. How can I help?\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
       isUser: false,
     },
   ];
   private lastMessageId = this.messages.length;
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
-  private cohortDataService = CohortDataService.getInstance();
+  private _cohortDataService: CohortDataService | null = null;
+  
+  private get cohortDataService(): CohortDataService {
+    if (!this._cohortDataService) {
+      this._cohortDataService = CohortDataService.getInstance();
+    }
+    return this._cohortDataService;
+  }
+  
   private constructor() {}
 
   public static getInstance(): ChatPanelDataService {
@@ -40,6 +48,10 @@ class ChatPanelDataService {
 
   public getMessages(): Message[] {
     return [...this.messages];
+  }
+
+  public getUserMessageCount(): number {
+    return this.messages.filter(message => message.isUser).length;
   }
 
   public addUserMessageWithText(text: string): Message {

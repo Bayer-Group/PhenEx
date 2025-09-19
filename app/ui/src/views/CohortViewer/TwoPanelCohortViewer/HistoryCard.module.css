@@ -7,7 +7,7 @@
   max-width:150px; */
   height: auto; /* Default to auto height */
   max-height:60px;
-  min-height:35px;
+  min-height:20px;
   border-radius: 8px;
   border: 1px solid var(--line-color);
   background: white;
@@ -132,7 +132,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 22px;
+  font-size: 20px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;

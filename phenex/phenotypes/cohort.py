@@ -287,7 +287,7 @@ class Cohort:
 
         self.subset_tables_index = tables = self.get_subset_tables_index(tables)
         self.reporting_stage.execute(
-            tables=tables,
+            tables=self.subset_tables_index,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,

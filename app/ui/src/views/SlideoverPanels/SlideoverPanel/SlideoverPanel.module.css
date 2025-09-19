@@ -10,9 +10,9 @@
   margin: 0;
   box-sizing: border-box;
   /* background-color: red; */
-  border-left: 1px solid transparent;
+  border-left: var(--border);
   border-right: 1px solid transparent;
-
+  
 }
 
 .title {
@@ -100,10 +100,12 @@ code {
   position: absolute !important;
   right: 20px;
   top: 10px;
+  color: var(--button-text-color-default);
+
 }
 
 .infoButton.open {
-  color: var(--color-accent-bright);
+  color: var(--button-text-color-default);
   background-color: var(--button-background-color-selected) !important;
   color: var(--button-text-color-selected);
   border: 1px solid var(--button-border-color-selected);
@@ -123,7 +125,7 @@ code {
   /* padding: 10px 10px 10px 20px; */
   padding: 10px;
   background-color: var(--background-color) !important;
-  color: black !important;
+  color: var(--color-text-normal) !important;
   border-radius: 10px;
   font-size: 14px;
   border: var(--border);

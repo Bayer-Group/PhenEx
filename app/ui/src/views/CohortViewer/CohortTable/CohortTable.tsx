@@ -41,10 +41,11 @@ interface CohortTableProps {
   currentlyViewing: string;
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
+  hideScrollbars?: boolean;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars }, ref) => {
     const myTheme = themeQuartz.withParams({
       accentColor: 'var(--color-accent-bright)',
       borderColor: 'var(--line-color-grid)',
@@ -404,7 +405,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
-            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft:340}}}
+            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft:35, marginToEnd:10}}}
+            hideScrollbars={hideScrollbars}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}
             noRowsOverlayComponent={NoRowsOverlayText()}

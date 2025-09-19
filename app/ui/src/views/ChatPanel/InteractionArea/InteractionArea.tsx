@@ -1,15 +1,30 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import styles from './InteractionArea.module.css';
 import { chatPanelDataService } from '../ChatPanelDataService';
 import { InteractionBar } from './InteractionBar';
 
-interface InteractionAreaProps {}
+interface InteractionAreaProps {
+  userHasInteracted?: boolean;
+}
 
-export const InteractionArea: React.FC<InteractionAreaProps> = () => {
+export interface InteractionAreaRef {
+  focus: () => void;
+}
+
+export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({ userHasInteracted = false }, ref) => {
   const textBoxRef = useRef<HTMLDivElement>(null);
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
   >('empty');
+
+  // Expose focus method to parent components
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      if (textBoxRef.current) {
+        textBoxRef.current.focus();
+      }
+    }
+  }));
 
   useEffect(() => {
     const handleAICompletion = (success: boolean) => {
@@ -25,6 +40,13 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
     return () => {
       chatPanelDataService.removeAICompletionListener(handleAICompletion);
     };
+  }, []);
+
+  // Focus on mount/first render
+  useEffect(() => {
+    if (textBoxRef.current) {
+      textBoxRef.current.focus();
+    }
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -65,7 +87,7 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
   };
 
   return (
-    <div className={styles.interactionArea}>
+    <div className={`${styles.interactionArea} ${userHasInteracted ? styles.experienced : styles.firstTimeUser}`}>
       <div className={styles.topBar}>
         <InteractionBar
           state={interactionState}
@@ -74,14 +96,18 @@ export const InteractionArea: React.FC<InteractionAreaProps> = () => {
           onRetry={handleRetry}
         />
       </div>
+      <div className={styles.transparentHeaderGradient} />
       <div className={styles.wrapper}>
         <div
-          className={styles.textBox}
+          className={`${styles.textBox} ${userHasInteracted ? styles.textBoxExperienced : styles.textBoxFirstTime}`}
           contentEditable="true"
           ref={textBoxRef}
           onKeyDown={handleKeyDown}
         ></div>
+
       </div>
     </div>
   );
-};
+});
+
+InteractionArea.displayName = 'InteractionArea';

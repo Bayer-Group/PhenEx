@@ -8,6 +8,7 @@ export interface AGGridCustomScrollbarProps {
   marginBottom?: number; // Bottom margin in pixels  
   marginLeft?: number; // Left margin in pixels
   marginRight?: number; // Right margin in pixels
+  marginToEnd?: number; // marginRight for vertical, marginBottom for horizontal
   classNameThumb?: string; // Additional class for the thumb
   classNameTrack?: string; // Additional class for the track
 }
@@ -19,6 +20,7 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
   marginBottom = 0, 
   marginLeft = 0,
   marginRight = 0,
+  marginToEnd = 0,
   classNameThumb = '',
   classNameTrack = ''
 }) => {
@@ -180,27 +182,16 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
 
       if (orientation === 'vertical') {
         const deltaY = e.clientY - dragStart.y;
+        const trackHeight = scrollInfo.clientHeight;
         const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
-        const thumbRange = 100 - ((scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
-        
-        // Calculate the actual scrollbar track height accounting for margins
-        const actualTrackHeight = scrollInfo.clientHeight - marginTop - marginBottom;
-        
-        const scrollRatio = deltaY / (actualTrackHeight * (thumbRange / 100));
-        
-        scrollableElement.scrollTop = dragStart.scrollTop + (scrollRatio * scrollRange);
+        const scrollDelta = (deltaY / trackHeight) * scrollRange;
+        scrollableElement.scrollTop = Math.max(0, Math.min(scrollRange, dragStart.scrollTop + scrollDelta));
       } else {
         const deltaX = e.clientX - dragStart.x;
+        const trackWidth = scrollInfo.clientWidth;
         const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
-        const thumbRange = 100 - ((scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
-        
-        // Calculate the actual scrollbar track width accounting for margins
-        const actualTrackWidth = scrollInfo.clientWidth - marginLeft - marginRight;
-                
-        // Use the actual track width for sensitivity calculation
-        const scrollRatio = deltaX / (actualTrackWidth * (thumbRange / 100));
-        
-        scrollableElement.scrollLeft = dragStart.scrollLeft + (scrollRatio * scrollRange);
+        const scrollDelta = (deltaX / trackWidth) * scrollRange;
+        scrollableElement.scrollLeft = Math.max(0, Math.min(scrollRange, dragStart.scrollLeft + scrollDelta));
       }
     };
 
@@ -479,6 +470,7 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     scrollbarStyle = { 
       top: `${marginTop}px`,
       bottom: `${marginBottom}px`,
+      right: `${marginToEnd}px`,
       height: `calc(100% - ${marginTop + marginBottom}px)`,
     };
     
@@ -495,6 +487,7 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     scrollbarStyle = { 
       left: `${marginLeft}px`,
       right: `${marginRight}px`,
+      bottom: `${marginToEnd}px`,
       width: `calc(100% - ${marginLeft + marginRight}px)`,
     };
     

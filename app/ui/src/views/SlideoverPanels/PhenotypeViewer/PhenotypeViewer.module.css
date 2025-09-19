@@ -41,10 +41,10 @@
 }
 
 .gridContainer {
-  margin-top: 20px;
-  width: 100%;
+  margin-right:25px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
+  width: calc(100% - 25px);
   flex: 1;
-  overflow: hidden;
+  height: 100%;
 }
 
 

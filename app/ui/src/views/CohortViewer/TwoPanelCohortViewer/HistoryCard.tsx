@@ -8,18 +8,13 @@ interface HistoryCardProps {
   index: number; // 0 = topmost card, higher = further back
   onClick?: () => void;
   className?: string;
+  isHovered?: boolean;
 }
 
-export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, className }) => {
+export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, className, isHovered }) => {
   const hasExtraData = item.extraData && typeof item.extraData === 'object' && Object.keys(item.extraData).length > 0;
   const backgroundColor = hasExtraData ? undefined : 'var(--background-color)';
   const typeStyleClass = hasExtraData && item.extraData.class_name ? `typeStyles-${item.extraData.class_name}` : undefined;
-  
-  // Debug logging for extraData
-  console.log('[HistoryCard] Debug - item:', item.displayName);
-  console.log('[HistoryCard] Debug - extraData:', item.extraData);
-  console.log('[HistoryCard] Debug - extraData type:', item.extraData?.effective_type);
-  console.log('[HistoryCard] Debug - hasExtraData:', hasExtraData);
   
   const cardClassName = [
     styles.historyCard,
@@ -27,15 +22,9 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
     typeStyleClass,
     className,
     typeStyles[`${item.extraData?.effective_type || ''}_color_block`] || '',
-    typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || ''
-
+    typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || '',
+    isHovered ? styles.cardHovered : '' // Apply cardHovered class when hovered
   ].filter(Boolean).join(' ');
-
-  // Debug logging for classes
-  console.log('[HistoryCard] Debug - index:', index);
-  console.log('[HistoryCard] Debug - className prop:', className);
-  console.log('[HistoryCard] Debug - final cardClassName:', cardClassName);
-  console.log('[HistoryCard] Debug - cardIndex class:', `${styles.cardIndex}${index}`);
 
   const cardStyle = {
     '--card-index': index,
@@ -46,8 +35,8 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
 
   // Calculate font size based on text length and container width
   const calculateFontSize = (text: string): number => {
-    const minSize = 12;
-    const maxSize = 19;
+    const minSize = 10;
+    const maxSize = 16;
     const containerWidth = 120; // Available width after padding (150px - 30px padding)
     
     // More conservative character width estimates for different font sizes

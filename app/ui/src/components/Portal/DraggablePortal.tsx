@@ -69,6 +69,8 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
     container.style.top = `${position.y}px`;
     container.style.zIndex = '9999';
     container.style.pointerEvents = 'auto';
+    // Ensure the container fully captures mouse events
+    container.style.isolation = 'isolate';
     document.body.appendChild(container);
 
     return () => {
@@ -196,13 +198,29 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
     const currentContainer = container;
 
     const mouseDownHandler = (e: MouseEvent) => {
+      // Always stop propagation to prevent underlying elements from receiving the event
+      e.stopPropagation();
       handleMouseDown(e);
     };
 
+    // Also prevent other drag-related events from reaching underlying elements
+    const preventDragEvents = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
     currentContainer.addEventListener('mousedown', mouseDownHandler);
+    currentContainer.addEventListener('dragstart', preventDragEvents);
+    currentContainer.addEventListener('dragover', preventDragEvents);
+    currentContainer.addEventListener('drop', preventDragEvents);
+    currentContainer.addEventListener('drag', preventDragEvents);
 
     return () => {
       currentContainer.removeEventListener('mousedown', mouseDownHandler);
+      currentContainer.removeEventListener('dragstart', preventDragEvents);
+      currentContainer.removeEventListener('dragover', preventDragEvents);
+      currentContainer.removeEventListener('drop', preventDragEvents);
+      currentContainer.removeEventListener('drag', preventDragEvents);
     };
   }, [container, handleMouseDown]);
 
@@ -218,6 +236,16 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
               ? 'default'
               : 'grab',
         position: 'relative',
+        pointerEvents: 'auto', // Ensure this captures all pointer events
+      }}
+      onMouseDown={(e) => {
+        // Prevent mouse events from reaching underlying elements
+        e.stopPropagation();
+      }}
+      onDragStart={(e) => {
+        // Prevent native drag behavior
+        e.preventDefault();
+        e.stopPropagation();
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 :root {
-  --margin_top_right_panel: 10px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --margin_top_right_panel: 0px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
   --border_radius_right_panel: 8px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
 }
 .container {
@@ -40,7 +40,7 @@
 }
 
 .rightPanel {
-  border-radius: 20px 0px 0px 20px;
+  /* border-radius: 20px 0px 0px 20px; */
   background-color: red; /*var(--background-color) !important;*/
 }
 
@@ -60,14 +60,15 @@
   position: relative;
   height: 100%;
   z-index: 0;
-  border-radius: var(--border_radius_right_panel) var(--border_radius_right_panel) 0px
-    var(--border_radius_right_panel);
+  /* border-radius: var(--border_radius_right_panel) var(--border_radius_right_panel) 0px
+    var(--border_radius_right_panel); */
   background-color: var(--background-color) !important;
-  border-left: 1px solid var(--line-color);
+  /* border-left: 1px solid var(--line-color);
   border-top: 1px solid var(--line-color);
-  border-right: 1px solid var(--line-color) !important;
-  margin-right: 10px !important;
+  border-right: 1px solid var(--line-color) !important; */
+  /* margin-right: 10px !important; */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* border-left: var(--border); */
   margin-top: var(--margin_top_right_panel);
   overflow: hidden;
 }
@@ -137,17 +138,18 @@
   padding: 0;
   line-height: 1;
   position: absolute;
-  top: 5px;
+  top: -5px;
   left: 20px;
   font-family: 'SNPro-black' !important;
   cursor: pointer;
+  transition: color .3s ease;
 
 }
 
 .collapseButton:hover {
   transition: transform 0.2s ease;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: var(--color-accent-bright);
+  color: var(--color_accent_orange);
   outline: none;
 }
 
@@ -242,7 +244,7 @@
 .bottomPanel {
   background-color: var(--background-color) !important;
   position: relative;
-  border-top: 1px solid var(--color-accent-bright);
+  border-top: var(--border);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
   transition:

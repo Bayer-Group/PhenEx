@@ -64,16 +64,17 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
         style={{ 
           fontSize: '18px', 
           fontStyle: 'italic', 
-          color: 'var(--line-color)',
+          color: 'var(--text-color-normal)',
           padding: '5px 5px',
           lineHeight: '1.4',
-          fontFamily: 'IBMPlexSans-bolditalic',
+          fontFamily: 'IBMPlexSans-regular',
           textWrap: 'wrap',
           margin: '0px',
           display: 'flex',
           alignItems: 'flex-start',
           height: '100%',
           boxSizing: 'border-box',
+          marginRight:'100px!important',
         }}
       >
         <div style={{ margin: '0px', padding: '0px' }}>

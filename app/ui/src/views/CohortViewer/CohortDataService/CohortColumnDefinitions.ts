@@ -4,6 +4,8 @@ import DescriptionCellRenderer from '../CohortTable/CellRenderers/DescriptionCel
 import CodelistCellRenderer from '../CohortTable/CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer';
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
+import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
+
 import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
@@ -217,7 +219,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'direction',
@@ -226,7 +228,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'component_date_select',
@@ -235,7 +237,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'anchor_phenotype',
@@ -244,7 +246,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'further_value_filter_phenotype',
@@ -253,7 +255,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'date_range',
@@ -262,7 +264,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'clean_nonphysiologicals_value_filter',
@@ -271,7 +273,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: ValueFilterCellRenderer,
   },
   {
     field: 'expression',
@@ -289,7 +291,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'function',
@@ -298,7 +300,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'min_change',
@@ -307,7 +309,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'max_change',
@@ -316,7 +318,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'min_days_between',
@@ -325,7 +327,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'max_days_between',
@@ -334,7 +336,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'return_value',
@@ -343,7 +345,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'value_aggregation',
@@ -352,7 +354,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'clean_null_values',
@@ -361,7 +363,7 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
   {
     field: 'allow_null_end_date',
@@ -370,6 +372,6 @@ export const defaultColumns = [
     editable: true,
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
+    cellRenderer: PhenexCellRenderer,
   },
 ];

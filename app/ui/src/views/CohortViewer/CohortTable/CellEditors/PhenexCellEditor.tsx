@@ -91,6 +91,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   };
 
   const handleDone = () => {
+    console.log("Handling done")
     if (recentlyDragged) {
       return; // Don't close if we just finished dragging
     }
@@ -243,6 +244,13 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           data-drag-handle="true"
           onMouseDown={() => {
             // Don't stop propagation here - let it bubble up to DraggablePortal
+          }}
+          onClick={() => {
+            // Only handle click if we haven't recently dragged
+            if (!recentlyDragged) {
+              console.log("Drag handle clicked, calling handleDone");
+              handleDone();
+            }
           }}
         >
           <span className={styles.topLine}>

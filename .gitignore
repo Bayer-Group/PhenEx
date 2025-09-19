@@ -168,3 +168,4 @@ phenex/test/cohort/artifacts/
 phenex/test/serialization/artifacts
 
 app/ui/public/assets/databases.json
+app/ui/.vite

@@ -141,7 +141,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           <div className={styles.bottomSection}>
           <TwoPanelView 
                 split="horizontal" 
-                initialSizeLeft={300} 
+                initialSizeLeft={800} 
                 minSizeLeft={100}
                 // collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
               >

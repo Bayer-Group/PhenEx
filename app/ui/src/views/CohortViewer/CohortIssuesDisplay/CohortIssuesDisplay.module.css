@@ -1,13 +1,14 @@
 :root {
   --box_shadow_selected_no_hover: 0 2px 4px rgba(0, 0, 0, 0.1);
   --box_shadow_selected_hover: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --orange_transition:  0.3s ease;
 }
 
 .row {
   padding: 0px !important;
-  background-color: var(--background_color_translucent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* background-color: var(--background_color_translucent); */
+  /* backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); */
   font-family: 'IBMPlexSans-bold';
   /* padding: 0px 20px; */
   border-radius: 10px;
@@ -16,8 +17,13 @@
   width: 160px;
   /* transition: all 0.3s ease-in-out; */
   z-index: 1;
-  transition: color 0.3s ease-in-out !important;
+  transition: color var(--orange_transition) !important;
   margin-top: 0px;
+  cursor: pointer;
+}
+.row .statusDot{
+  transition: all var(--orange_transition) !important;
+
 }
 
 .row.selected {
@@ -31,8 +37,7 @@
 
 .row.noIssues {
   border-color: transparent;
-  opacity: 0;
-  pointer-events: none;
+  /* opacity: 0; */
 }
 
 .issuesText {
@@ -46,8 +51,11 @@
 }
 
 .row:hover .statusDot {
+  transition: all var(--orange_transition) !important;
+  border-color: var(--color_accent_orange);
+  color: var(--color_accent_orange);
   /* transform: translateY(-1px); */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
 
   /* border: 2px solid var(--color-accent); */
 }
@@ -84,9 +92,10 @@
   font-family: 'IBMPlexSans-bold';
   font-size: 22px;
   line-height: 1;
-  color: white;
-  background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover));
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-accent-bright);
+  /* background: linear-gradient(135deg, var(--color-accent-bright), var(--accent-color-hover)); */
+  border: 2px solid var(--color-accent-bright);
+  background-color:transparent;
 
   
 }
@@ -109,17 +118,16 @@
 } */
 
 .row.noIssues .statusDot.green {
-  /* background-color: blue;
-  right:0px !important;
-  position: absolute !important; */
+  border-color: transparent;
+  color: transparent;
 }
 
 .statusDot.red {
-  background-color: var(--color-accent);
+  /* background-color: var(--color-accent); */
 }
 
 .statusDot.green {
-  background-color: transparent;
+  /* background-color: transparent; */
 }
 
 .statusDot.selected {
@@ -138,8 +146,6 @@
   z-index: 2;
   height: 65px;
   border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top) 0px 0px;
-  transition: box-shadow 0.3s ease-in-out;
-  transition: transform 0.3s ease-in-out;
   box-shadow: var(--box_shadow_selected_no_hover);
 }
 
@@ -161,8 +167,35 @@
 .labelUnselected {
   font-family: 'IBMPlexSans-bold';
   font-size: 24px;
-  margin-top: -5px;
   text-align: right;
   position: absolute;
-  padding-left: 20px;
+  top:10px;
+  right:50px;
+}
+
+
+.birdIcon{
+  height: 50px;
+  width:50px;
+  position: absolute;
+  right:0px;
+  top:-20px;
+  transition: filter var(--orange_transition) !important;
+
+}
+
+.birdIssues{
+  height: 45px;
+  width:45px;
+  position: absolute;
+  right:-15px;
+  top:15px;
+}
+
+.row:hover .birdIssues {
+  filter: brightness(1.5) saturate(1.0);
+}
+
+.row:hover{
+  color: var(--color_accent_orange);
 }
