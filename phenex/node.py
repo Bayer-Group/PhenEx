@@ -296,9 +296,6 @@ class Node:
         nodes = {node.name: node for node in all_deps}
         nodes[self.name] = self  # Add self to the nodes
 
-        # Validate node uniqueness
-        self._validate_node_uniqueness(nodes)
-
         # Build dependency and reverse graphs
         dependency_graph = self._build_dependency_graph(nodes)
         reverse_graph = self._build_reverse_graph(dependency_graph)
@@ -436,30 +433,6 @@ class Node:
             f"Node '{self.name}': completed multithreaded execution of {len(nodes)} nodes"
         )
         return self.table
-
-    def _validate_node_uniqueness(self, nodes: Dict[str, "Node"]):
-        """
-        Validate that all nodes are unique according to the rule:
-        node1.name == node2.name implies hash(node1) == hash(node2)
-
-        This ensures that nodes with the same name have identical parameters (same hash).
-        """
-        name_to_hash = {}
-
-        for node_name, node in nodes.items():
-            node_hash = hash(node)
-
-            # Check if we've seen this name before
-            if node_name in name_to_hash:
-                existing_hash = name_to_hash[node_name]
-                if existing_hash != node_hash:
-                    raise ValueError(
-                        f"Node uniqueness violation: Found nodes with the same name '{node_name}' "
-                        f"but different hashes ({existing_hash} vs {node_hash}). "
-                        f"Nodes with the same name must have identical parameters."
-                    )
-            else:
-                name_to_hash[node_name] = node_hash
 
     def _build_dependency_graph(self, nodes: Dict[str, "Node"]) -> Dict[str, Set[str]]:
         """
