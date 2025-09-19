@@ -329,28 +329,6 @@ class Node:
 
         logger.info(f"Node '{self.name}': cache cleared successfully.")
 
-    def clear_all_cache(self, con: Optional[object] = None):
-        """
-        Clear the cached state for this node and all its dependencies, forcing complete re-execution.
-
-        This is a convenience method that calls clear_cache(recursive=True) to clear the cache
-        for the entire dependency tree starting from this node.
-
-        Parameters:
-            con: Database connector. If provided, will also drop all materialized tables
-                 from the database.
-
-        Example:
-            ```python
-            # Clear cache for entire dependency tree
-            root_node.clear_all_cache()
-
-            # Clear cache and drop all materialized tables
-            root_node.clear_all_cache(con=my_connector)
-            ```
-        """
-        self.clear_cache(con=con, recursive=True)
-
     def execute(
         self,
         tables: Dict[str, Table] = None,
