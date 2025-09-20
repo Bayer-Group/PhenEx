@@ -118,7 +118,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   const renderTypeLabel = (item: AttritionItem) => {
     const type = item.phenotype.type as PhenotypeType;
     return (
-      <div className={`${attritionStyles.phenotypeType} ${getColorClass(type)}`}>
+      <div className={`${attritionStyles.phenotypeType}`}/*${getColorClass(type)}`}*/>
         {type}
         {renderIndex(item.phenotype)}
       </div>
@@ -144,15 +144,17 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     
     return (
       <div className={attritionStyles.barContainer}>
-        <div 
-          className={`${attritionStyles.bar} ${colorClass}`}
-          style={{ 
-            width: `${barWidth}%`,
-          }}
-        >
-          <span className={attritionStyles.barText}>
-            {percentage.toFixed(1)}%
-          </span>
+        <div className={attritionStyles.barArea}>
+          <div 
+            className={`${attritionStyles.bar} ${colorClass}`}
+            style={{ 
+              width: `${barWidth}%`,
+            }}
+          >
+            <span className={attritionStyles.barText}>
+              {percentage.toFixed(1)}%
+            </span>
+          </div>
         </div>
         <span className={attritionStyles.countText}>
           ({item.count || 0})
@@ -187,7 +189,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
         <div className={attritionStyles.itemHeader}>
           <div className={attritionStyles.itemTitle}>
             {renderTypeLabel(item)}
-            <span className={attritionStyles.phenotypeName}>
+            <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.phenotype.type}_text_color`]}`}>
               {item.phenotype.name}
               {item.realPhenotype ? '' : ' (from report data)'}
             </span>
