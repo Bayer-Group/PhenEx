@@ -1,6 +1,5 @@
 import { FC, useState, useEffect } from 'react';
 import { ReportDataService } from './ReportDataService';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import styles from './CohortReportView.module.css';
 import attritionStyles from './AttritionGraph.module.css';
 import typeStyles from '../../../styles/study_types.module.css';
@@ -19,13 +18,12 @@ interface AttritionItem {
 }
 
 export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
-  const [cohortDataService] = useState(() => CohortDataService.getInstance());
   const [attritionItems, setAttritionItems] = useState<AttritionItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     updateAttritionData();
-  }, [dataService.row_data, cohortDataService.cohort_data]);
+  }, [dataService.row_data]);
 
   useEffect(() => {
     const cohortViewerService = TwoPanelCohortViewerService.getInstance();
@@ -49,50 +47,41 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   const updateAttritionData = () => {
     const items: AttritionItem[] = [];
-    const cohortData = cohortDataService.cohort_data;
     
-    if (!cohortData || !dataService.row_data) {
+    if (!dataService.row_data || dataService.row_data.length === 0) {
       setAttritionItems([]);
       return;
     }
 
-    // Get phenotypes in order: entry, inclusions, exclusions
-    const phenotypesToProcess = [];
-    
-    // Add entry criterion
-    if (cohortData.entry_criterion) {
-      phenotypesToProcess.push(cohortData.entry_criterion);
-    }
-    
-    // Add inclusions
-    if (cohortData.inclusions) {
-      phenotypesToProcess.push(...cohortData.inclusions);
-    }
-    
-    // Add exclusions
-    if (cohortData.exclusions) {
-      phenotypesToProcess.push(...cohortData.exclusions);
-    }
+    console.log('ReportDataService row_data:', dataService.row_data);
 
-    // Match phenotypes with report data
-    phenotypesToProcess.forEach(phenotype => {
-      // Find matching report data by name
-      const reportRow = dataService.row_data.find(row => 
-        row.name === phenotype.name || 
-        row.phenotype === phenotype.name ||
-        row.criterion === phenotype.name
-      );
-      
+    // Process each row from the waterfall data directly
+    dataService.row_data.forEach((row, index) => {
+      // Skip the final_cohort row as it's just a summary
+      if (row.Type === 'final_cohort') {
+        return;
+      }
+
+      // Create a mock phenotype object for display purposes
+      // We'll use the data from the report rather than trying to match with cohort phenotypes
+      const mockPhenotype = {
+        id: `report-${index}`,
+        name: row.Name || `${row.Type} criterion`,
+        type: row.Type || 'inclusion', // Default to inclusion if no type
+        index: index
+      };
+
       const item: AttritionItem = {
-        phenotype,
-        reportData: reportRow || {},
-        percentage: reportRow?.['%'] || reportRow?.percentage || 0,
-        count: reportRow?.count || reportRow?.n || 0
+        phenotype: mockPhenotype,
+        reportData: row,
+        percentage: parseFloat(row['%']) || 0,
+        count: parseInt(row.Remaining) || parseInt(row.N) || 0
       };
       
       items.push(item);
     });
 
+    console.log('Processed attrition items:', items);
     setAttritionItems(items);
   };
 
@@ -123,18 +112,27 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     const type = item.phenotype.type as PhenotypeType;
     const colorClass = getColorClass(type);
     
+    // Calculate relative width: first bar should be 100% width, others relative to first
+    const maxPercentage = attritionItems.length > 0 ? Math.max(...attritionItems.map(i => i.percentage || 0)) : 100;
+    const relativeWidth = maxPercentage > 0 ? (percentage / maxPercentage) * 100 : 0;
+    
+    console.log(`Item: ${item.phenotype.name}, Percentage: ${percentage}%, Max: ${maxPercentage}%, Relative width: ${relativeWidth}%`);
+    console.log('All items percentages:', attritionItems.map(i => i.percentage));
+    
     return (
       <div className={attritionStyles.barContainer}>
         <div 
           className={`${attritionStyles.bar} ${colorClass}`}
-          style={{ width: `${percentage}%` }}
+          style={{ 
+            width: `${relativeWidth}%`,
+          }}
         >
           <span className={attritionStyles.barText}>
             {percentage.toFixed(1)}%
           </span>
         </div>
         <span className={attritionStyles.countText}>
-          ({item.count || 0})
+          ({item.count || 0}) - {relativeWidth.toFixed(1)}%
         </span>
       </div>
     );
@@ -174,8 +172,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   };
 
   return (
-    <div className={styles.attritionGraph}>
-      <div className={attritionStyles.container}>
+    <div className={attritionStyles.attritionGraph}>
         <div className={attritionStyles.header}>
           <h3>Attrition Flow</h3>
         </div>
@@ -187,7 +184,6 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
             <p>No attrition data available. Execute your cohort to see results.</p>
           </div>
         )}
-      </div>
     </div>
   );
 };
