@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from 'react';
 import styles from './CohortReportView.module.css';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-
+import { AttritionGraph } from'./AttritionGraph'
 import { ReportTable } from './ReportTable';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 interface CohortReportViewProps {
@@ -27,7 +27,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
     CohortReportViewType.Attrition
   );
   const [currentGraphView, setCurrentGraphView] = useState<GraphViewType>(
-    GraphViewType.Table
+    GraphViewType.Graph
   );
 
   const [, forceUpdate] = useState({});
@@ -67,7 +67,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
       case GraphViewType.Table:
         return <ReportTable dataService={dataService.report_service} />;
       case GraphViewType.Graph:
-        return null;
+        return <AttritionGraph dataService={dataService.report_service} />;
     }
   }
 

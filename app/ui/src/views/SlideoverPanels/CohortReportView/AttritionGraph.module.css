@@ -1,0 +1,134 @@
+.container {
+  padding: 20px;
+  font-family: 'IBMPlexSans-regular';
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.header h3 {
+  margin: 0;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--color-accent-bright);
+  font-size: 18px;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attritionItem {
+  position: relative;
+  background-color: transparent;
+  border-radius: 15px;
+  padding: 12px 20px;
+  border: transparent solid 1px;
+  cursor: pointer;
+  transition: var(--item-transition);
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.itemTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phenotypeType {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 2px 6px;
+  font-family: 'IBMPlexSans-bolditalic';
+  border-radius: 4px;
+  background-color: #eee;
+  color: var(--text-color-secondary);
+}
+
+.index {
+  display: inline-block;
+}
+
+.phenotypeName {
+  font-family: 'IBMPlexSans-regular';
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.attritionItem.selected .phenotypeName {
+  font-family: 'IBMPlexSans-bold';
+}
+
+.itemContent {
+  margin-left: 0;
+}
+
+.barContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 24px;
+}
+
+.bar {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  transition: width 0.3s ease-in-out;
+  position: relative;
+}
+
+.barText {
+  color: white;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-bold';
+  white-space: nowrap;
+}
+
+.countText {
+  font-size: 12px;
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-regular';
+  min-width: 50px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .barContainer {
+    height: 20px;
+  }
+  
+  .phenotypeName {
+    font-size: 14px;
+  }
+}
