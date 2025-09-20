@@ -60,17 +60,13 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
     const viewTypes = Object.values(GraphViewType);
     const selectedView = viewTypes[index];
     setCurrentGraphView(selectedView);
-    console.log("CHANGING", selectedView)
   };
 
   const renderAttrition = () =>{
-    console.log("RENDERING ATTRITION", currentGraphView)
     switch (currentGraphView){
       case GraphViewType.Table:
-        console.log("RENDERING THE TABLE")
         return <ReportTable dataService={dataService.report_service} />;
       case GraphViewType.Graph:
-        console.log("RENDERING THE GRAPH");
         return null;
     }
   }
@@ -79,7 +75,7 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
     switch (currentView) {
       case CohortReportViewType.Attrition:
         dataService.report_service.setCurrentDataKey('waterfall');
-        renderAttrition();
+        return renderAttrition();
       case CohortReportViewType.Table1:
         dataService.report_service.setCurrentDataKey('table1');
         return (
