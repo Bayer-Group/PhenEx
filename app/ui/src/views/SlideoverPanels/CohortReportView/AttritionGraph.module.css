@@ -1,24 +1,19 @@
+:root{
+    --graph_bar_height_main: 18px;
+    --graph_border_radius: calc(var(--graph_bar_height_main) / 2);
+
+}
 .container {
   padding: 10px;
   font-family: 'IBMPlexSans-regular';
   width: 100%;
-}
-
-.header {
-  margin-bottom: 20px;
-}
-
-.header h3 {
-  margin: 0;
-  font-family: 'IBMPlexSans-bold';
-  color: var(--color-accent-bright);
-  font-size: 18px;
+  max-width: 800px;
 }
 
 .itemsList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .attritionItem {
@@ -29,6 +24,7 @@
   border: transparent solid 1px;
   cursor: pointer;
   transition: var(--item-transition);
+
 }
 
 .itemHeader {
@@ -39,19 +35,20 @@
 }
 
 .itemTitle {
-  display: flex;
-  align-items: center;
+  /* display: flex;
+  align-items: center; */
   gap: 8px;
+  width:100%;
 }
 
 .phenotypeType {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 20px;
   padding: 2px 6px;
   font-family: 'IBMPlexSans-bolditalic';
-  border-radius: 4px;
+  border-radius: var(--graph_border_radius);
   background-color: #eee;
   color: var(--text-color-secondary);
 }
@@ -62,8 +59,8 @@
 
 .phenotypeName {
   font-family: 'IBMPlexSans-bold';
-  font-size: 16px;
-  line-height: 1.2;
+  font-size: 20px;
+  margin-left:5px;
 }
 
 .attritionItem.selected .phenotypeName {
@@ -77,29 +74,35 @@
   margin-left: 0;
 }
 
-.barContainer {
+.barContainer, .subBarContainer {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 24px;
+  height: var(--graph_bar_height_main);
   max-width: 800px; /* Maximum width for the full bar */
   width: 100%; /* Take available width up to max */
 }
 
-.barArea {
-    background-color: var(--line-color);
-    border-radius: 10px;
+.barArea, .subBarArea {
+    background-color: rgb(240, 240, 240);
+  border-radius: var(--graph_border_radius);
   flex: 1; /* Take remaining space after count text */
   height: 100%;
   position: relative;
   margin-left:0px;
-  max-width: calc(100% - 80px); /* Reserve space for count text and gap */
+  max-width: calc(100% - 150px); /* Reserve space for count text and gap */
 }
 
-.bar {
+
+.subBarContainer {
+    margin-top:5px;
+  height: 12px;
+}
+
+.bar, .subBar {
   height: 100%;
   min-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--graph_border_radius);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -107,6 +110,11 @@
   transition: width 0.3s ease-in-out;
   position: relative;
   /* Width will be set via inline style for proper reactivity */
+}
+
+.subBar {
+
+  background-color: var(--line-color);
 }
 
 .barText {
@@ -121,6 +129,31 @@
   color: var(--color-accent-bright);
   font-family: 'IBMPlexSans-regular';
   min-width: 50px;
+}
+
+.deltaContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 18px;
+  /* color: var(--line-color); */
+  font-family: 'IBMPlexSans-regular';
+  position: absolute;
+  bottom: 10px;
+  right: 0px;
+}
+
+.deltaText {
+    position: absolute;
+    right:0px;
+    font-size:18px;
+    text-align: right;
+  font-family: 'IBMPlexSans-bold';
+}
+
+.deltaFiller{
+    font-size: 12px;
+    font-family: 'IBMPlexSans-bolditalic';
 }
 
 .emptyState {

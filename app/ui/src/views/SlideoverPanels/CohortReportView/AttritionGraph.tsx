@@ -16,6 +16,7 @@ interface AttritionItem {
   reportData: any;
   percentage?: number;
   count?: number;
+  delta?: string | number; // Delta value from report data
 }
 
 export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
@@ -99,7 +100,8 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
         realPhenotype: realPhenotype, // Store the real phenotype if found
         reportData: row,
         percentage: parseFloat(row['%']) || 0,
-        count: parseInt(row.Remaining) || parseInt(row.N) || 0
+        count: parseInt(row.Remaining) || parseInt(row.N) || 0,
+        delta: row.Delta || 0 // Extract delta from report data
       };
       
       items.push(item);
@@ -128,6 +130,28 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   // Render index if present
   const renderIndex = (phenotype: any) => {
     return <span className={attritionStyles.index}>{phenotype && phenotype.type !== 'entry' && phenotype.index}</span>;
+  };
+
+  // Render delta if non-zero
+  const renderDelta = (item: AttritionItem) => {
+    const delta = item.delta;
+    const deltaValue = typeof delta === 'string' ? parseFloat(delta) || 0 : delta || 0;
+    
+    console.log(`Delta for ${item.phenotype.name}: raw="${delta}", parsed=${deltaValue}`);
+    
+    // Only render if delta is non-zero
+    if (deltaValue === 0 || delta === '' || delta === null || delta === undefined) {
+      return null;
+    }
+    
+    return (
+        <span className={`${attritionStyles.deltaText} ${typeStyles[`${item.phenotype.type}_text_color`]}`}>
+          {/* <span className={attritionStyles.deltaFiller}>lose </span> */}
+          {/* {deltaValue > 0 ? '+' : ''}{deltaValue.toString().replace("-", "")}  */}
+          {deltaValue.toString()} 
+          {/* <span className={attritionStyles.deltaFiller}>patients</span> */}
+        </span>
+    );
   };
 
   // Render bar visualization
@@ -163,12 +187,44 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     );
   };
 
+  // Render bar visualization
+  const renderSubBar = (item: AttritionItem, index: int) => {
+    const percentage = (item.count/attritionItems[0].count)*100 || 0;
+    const type = item.phenotype.type as PhenotypeType;
+    const colorClass = getColorClass(type);
+    
+    // Use the actual percentage directly for width (not relative to max)
+    // This way 100% = full width, 80% = 80% width, etc.
+    const barWidth = Math.max(percentage, 0); // Ensure non-negative
+    
+    console.log(`Item: ${item.phenotype.name}, Percentage: ${percentage}%, Bar width: ${barWidth}%`);
+    if (index<2){
+        return null;
+    }
+    return (
+      <div className={attritionStyles.subBarContainer}>
+        <div className={attritionStyles.subBarArea}>
+          <div 
+            className={`${attritionStyles.subBar}`}
+            style={{ 
+              width: `${barWidth}%`,
+            }}
+          >
+            <span className={attritionStyles.barText}>
+              {percentage.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Render phenotype item
   const renderAttritionItem = (item: AttritionItem, index: number) => {
     const phenotypeType = item.phenotype.type as PhenotypeType;
     const isSelected = selectedId === item.phenotype.id;
-    const typeHoverClass = typeStyles[`${phenotypeType}_list_item`] || '';
-    const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_list_item_selected`] : '';
+    const typeHoverClass = typeStyles[`${phenotypeType}_color_block`] || '';
+    const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_color_block`] : '';
     
     return (
       <div
@@ -188,15 +244,19 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
       >
         <div className={attritionStyles.itemHeader}>
           <div className={attritionStyles.itemTitle}>
-            {renderTypeLabel(item)}
-            <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.phenotype.type}_text_color`]}`}>
+            {/* {renderTypeLabel(item)}
+            <br></br> */}
+            <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.phenotype.type}_color_block`]}`}>
               {item.phenotype.name}
               {item.realPhenotype ? '' : ' (from report data)'}
             </span>
+            {renderDelta(item)}
           </div>
         </div>
         <div className={attritionStyles.itemContent}>
           {renderBar(item)}
+          {renderSubBar(item, index)}
+
         </div>
       </div>
     );
@@ -204,9 +264,6 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   return (
     <div className={attritionStyles.container}>
-        <div className={attritionStyles.header}>
-          <h3>Attrition Flow</h3>
-        </div>
         <div className={attritionStyles.itemsList}>
           {attritionItems.map((item, index) => renderAttritionItem(item, index))}
         </div>
