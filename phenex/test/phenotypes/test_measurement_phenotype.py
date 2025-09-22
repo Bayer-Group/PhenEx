@@ -190,9 +190,10 @@ class MeasurementPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGene
         return test_infos
 
 
-class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
-    name_space = "mmpt_valueaggregation"
+class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenerator):
+    name_space = "mmpt_valueaggregation_daily"
     test_values = True
+    test_date = True
 
     def define_input_tables(self):
         def create_copy_with_changes(df_d1_1, lab, date):
@@ -270,6 +271,280 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
                 "df": df_final,
             }
         ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+        c1 = {
+            "name": "nearest_prior_return_all_values",
+            "persons": [f"P{x}" for x in range(self.N)] * 2,
+            "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")]
+            * self.N
+            * 2,
+            "values": [3] * self.N + [4] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="nearest_prior_return_all_values",
+                return_date="last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+            ),
+        }
+
+        c2 = {
+            "name": "nearest_prior_return_daily_mean",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
+            "values": [3.5] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="nearest_prior_return_daily_mean",
+                return_date="last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMean(),
+            ),
+        }
+
+        cmed1 = {
+            "name": "nearest_prior_return_daily_median",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
+            "values": [3.5] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="nearest_prior_return_daily_median",
+                return_date="last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMedian(),
+            ),
+        }
+
+        c3 = {
+            "name": "nearest_post_return_all_values",
+            "persons": [f"P{x}" for x in range(self.N)] * 2,
+            "dates": [datetime.datetime.strptime("12-01-2022", "%m-%d-%Y")]
+            * self.N
+            * 2,
+            "values": [5] * self.N + [6] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="nearest_post_return_all_values",
+                return_date="first",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+            ),
+        }
+
+        c4 = {
+            "name": "nearest_post_return_daily_mean",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "dates": [datetime.datetime.strptime("12-01-2022", "%m-%d-%Y")] * self.N,
+            "values": [5.5] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="nearest_post_return_daily_mean",
+                return_date="first",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMean(),
+            ),
+        }
+
+        # cmed2 = {
+        #     "name": "nearest_post_return_daily_median",
+        #     "persons": [f"P{x}" for x in range(self.N)],
+        #     "dates": [datetime.datetime.strptime("12-01-2022", "%m-%d-%Y")] * self.N,
+        #     "values": [5.5] * self.N,
+        #     "phenotype": MeasurementPhenotype(
+        #         name="nearest_post_return_daily_median",
+        #         return_date="nearest",
+        #         relative_time_range=RelativeTimeRangeFilter(
+        #             min_days=GreaterThanOrEqualTo(0), when="after"
+        #         ),
+        #         codelist=codelist_factory.get_codelist("c1"),
+
+        #         domain='MEASUREMENT',
+        #         return_value="first",
+        #         value_aggregation="daily_median",
+        #     ),
+        # }
+
+        c5 = {
+            "name": "last_post_return_all_values",
+            "persons": [f"P{x}" for x in range(self.N)] * 3,
+            "dates": [datetime.datetime.strptime("12-02-2022", "%m-%d-%Y")]
+            * self.N
+            * 3,
+            "values": [3] * self.N + [8] * self.N + [10] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="last_post_return_all_values",
+                return_date="last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+            ),
+        }
+
+        c6 = {
+            "name": "last_post_return_daily_mean",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "dates": [datetime.datetime.strptime("12-02-2022", "%m-%d-%Y")] * self.N,
+            "values": [7] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="last_post_return_daily_mean",
+                return_date="last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMean(),
+            ),
+        }
+
+        # cmed3 = {
+        #     "name": "last_post_return_daily_median",
+        #     "persons": [f"P{x}" for x in range(self.N)],
+        #     "dates": [datetime.datetime.strptime("12-02-2022", "%m-%d-%Y")] * self.N,
+        #     "values": [8] * self.N,
+        #     "phenotype": MeasurementPhenotype(
+        #         name="last_post_return_daily_median",
+        #         return_date="last",
+        #         relative_time_range=RelativeTimeRangeFilter(
+        #             min_days=GreaterThanOrEqualTo(0), when="after"
+        #         ),
+        #         codelist=codelist_factory.get_codelist("c1"),
+
+        #         domain='MEASUREMENT',
+        #         return_value="last",
+        #         value_aggregation="daily_median",
+        #     ),
+        # }
+
+
+        c_max_daily_values_post_index = {
+            "name": "postindex_return_max_daily_values",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "values": [10] * self.N,
+            "dates": [datetime.datetime.strptime("12-02-2022", "%m-%d-%Y")] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="postindex_return_max_daily_values",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMax(),
+                return_date="last",
+            ),
+        }
+
+        c_max_daily_values_pre_index_last = {
+            "name": "preindex_return_max_daily_values_last",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "values": [4] * self.N,
+            "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="preindex_return_max_daily_values_last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMax(),
+                return_date="last",
+            ),
+        }
+
+        c_max_daily_values_pre_index_first = {
+            "name": "preindex_return_max_daily_values_first",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "values": [2] * self.N,
+            "dates": [datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="preindex_return_max_daily_values_first",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMax(),
+                return_date="first",
+            ),
+        }
+
+        c_min_daily_values_post_index = {
+            "name": "postindex_return_min_daily_values_first",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "values": [5] * self.N,
+            "dates": [datetime.datetime.strptime("12-01-2022", "%m-%d-%Y")] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="postindex_return_min_daily_values_first",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMin(),
+                return_date="first",
+            ),
+        }
+
+        c_min_daily_values_pre_index_last = {
+            "name": "preindex_return_min_daily_values_last",
+            "persons": [f"P{x}" for x in range(self.N)],
+            "values": [3] * self.N,
+            "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
+            "phenotype": MeasurementPhenotype(
+                name="preindex_return_min_daily_values_last",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="MEASUREMENT",
+                value_aggregation=DailyMin(),
+                return_date="last",
+            ),
+        }
+        test_infos = [
+            c1,
+            c2,
+            c3,
+            c4,
+            c5,
+            c6,
+            # cmed1,
+            # cmed2,
+            # cmed3,
+            c_max_daily_values_post_index,
+            c_max_daily_values_pre_index_last,
+            c_max_daily_values_pre_index_first,
+            c_min_daily_values_post_index,
+            c_min_daily_values_pre_index_last,
+        ]
+        return test_infos
+
+
+class MeasurementPhenotypeValueAllAggregationTestGenerator(MeasurementPhenotypeValueDailyAggregationTestGenerator):
+    name_space = "mmpt_valueaggregation_all"
+    test_values = True
+    test_date = False
+
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
@@ -646,15 +921,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
             ),
         }
         test_infos = [
-            c1,
-            c2,
-            c3,
-            c4,
-            c5,
-            c6,
-            # cmed1,
-            # cmed2,
-            # cmed3,
             c_mean_all_values_pre_index,
             c_mean_all_values_post_index,
             # c_median_all_values_pre_index,
@@ -663,11 +929,6 @@ class MeasurementPhenotypeValueAggregationTestGenerator(PhenotypeTestGenerator):
             c_max_all_values_pre_index,
             c_min_all_values_post_index,
             c_min_all_values_pre_index,
-            c_max_daily_values_post_index,
-            c_max_daily_values_pre_index_last,
-            c_max_daily_values_pre_index_first,
-            c_min_daily_values_post_index,
-            c_min_daily_values_pre_index_last,
         ]
         return test_infos
 
@@ -747,13 +1008,17 @@ def test_measurement_phenotype_return_values():
     spg.run_tests(verbose=False)
 
 
-def test_measurement_phenotype_value_aggregation():
-    spg = MeasurementPhenotypeValueAggregationTestGenerator()
+def test_measurement_phenotype_value_daily_aggregation():
+    spg = MeasurementPhenotypeValueDailyAggregationTestGenerator()
     spg.run_tests(verbose=False)
 
+def test_measurement_phenotype_value_all_aggregation():
+    spg = MeasurementPhenotypeValueAllAggregationTestGenerator()
+    spg.run_tests(verbose=False)
 
 if __name__ == "__main__":
-    test_measurement_phenotype()
-    test_measurement_phenotype_return_all_values()
-    test_measurement_phenotype_return_values()
-    test_measurement_phenotype_value_aggregation()
+    # test_measurement_phenotype()
+    # test_measurement_phenotype_return_all_values()
+    # test_measurement_phenotype_return_values()
+    # test_measurement_phenotype_value_daily_aggregation()
+    test_measurement_phenotype_value_all_aggregation()
