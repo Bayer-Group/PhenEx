@@ -273,7 +273,6 @@ class Node:
         overwrite: bool = False,
         lazy_execution: bool = False,
         n_threads: int = 1,
-        fail_fast: bool = True,
     ) -> Table:
         """
         Executes the Node computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing Node's that have already executed.
@@ -284,7 +283,6 @@ class Node:
             overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed.
             lazy_execution: If True, only re-executes if the node's definition has changed. Defaults to False. You should pass overwrite=True with lazy_execution as lazy_execution is intended precisely for iterative updates to a node definition. You must pass a connector (to cache results) for lazy_execution to work.
             n_threads: Max number of Node's to execute simultaneously when this node has multiple children.
-            fail_fast: If True, stops all worker threads immediately when any worker encounters an error. If False, allows other workers to continue running even if one fails. Defaults to True.
 
         Returns:
             Table: The resulting table for this node. Also accessible through self.table after calling self.execute().
@@ -331,27 +329,17 @@ class Node:
             while not stop_all_workers.is_set():
                 try:
                     node_name = ready_queue.get(timeout=1)
+                    # timeout forces to wait 1 second to avoid busy waiting
                     if node_name is None:  # Sentinel value to stop worker
                         break
                 except queue.Empty:
-                    # Check if we should stop due to error in another worker
-                    if stop_all_workers.is_set():
-                        break
                     continue
-
-                # Check again before processing - another worker might have failed
-                if stop_all_workers.is_set():
-                    break
 
                 try:
                     logger.info(
                         f"Thread {threading.current_thread().name}: executing node '{node_name}'"
                     )
                     node = nodes[node_name]
-
-                    # Check one more time before execution - another worker might have failed
-                    if stop_all_workers.is_set():
-                        break
 
                     # Execute the node (without recursive child execution since we handle dependencies here)
                     if lazy_execution:
@@ -386,13 +374,6 @@ class Node:
                             con.create_table(table, node_name, overwrite=overwrite)
                             table = con.get_dest_table(node_name)
 
-                    # Check if we should abort this node's completion due to fail_fast
-                    if stop_all_workers.is_set():
-                        # Reset executed flag if the node set it, since we're aborting due to another failure
-                        if hasattr(node, "executed"):
-                            node.executed = False
-                        break
-
                     node.table = table
 
                     with completion_lock:
@@ -417,10 +398,11 @@ class Node:
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")
                     with completion_lock:
-                        worker_exceptions.append(e)  # Store exception for main thread
-                        if fail_fast:
-                            stop_all_workers.set()  # Signal all workers to stop immediately
-                    break  # Exit worker loop on error
+                        # Store exception for main thread
+                        worker_exceptions.append(e)
+                        # Signal all workers to stop immediately and exit worker loop
+                        stop_all_workers.set()
+                        break
                 finally:
                     ready_queue.task_done()
 
@@ -440,14 +422,12 @@ class Node:
         ):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
 
+        if not stop_all_workers.is_set():
+            # Time to stop workers and cleanup
+            stop_all_workers.set()
+
         # Check if any worker thread had an exception
         if worker_exceptions:
-            if not stop_all_workers.is_set():
-                # If fail_fast=False, we still need to signal workers to stop when we're ready to exit
-                stop_all_workers.set()
-            # Signal workers to stop by sending sentinel values
-            for _ in threads:
-                ready_queue.put(None)
             # Wait for threads to finish
             for thread in threads:
                 thread.join(timeout=1)
