@@ -736,16 +736,6 @@ class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
 
         return test_infos
 
-
-# def generate_test_suite():
-
-#     spg = MeasurementPhenotypeValueAggregationTestGenerator()
-#     spg.generate()
-
-#     spg = MeasurementPhenotypeFurtherFilterTestGenerator()
-#     spg.generate()
-
-
 def test_measurement_phenotype():
     spg = MeasurementPhenotypeValueFilterTestGenerator()
     spg.run_tests()
@@ -770,8 +760,8 @@ def test_measurement_phenotype_value_all_aggregation():
     spg.run_tests(verbose=False)
 
 if __name__ == "__main__":
-    # test_measurement_phenotype()
-    # test_measurement_phenotype_return_all_values()
-    # test_measurement_phenotype_return_values()
+    test_measurement_phenotype()
+    test_measurement_phenotype_return_all_values()
+    test_measurement_phenotype_return_values()
     test_measurement_phenotype_value_daily_aggregation()
     test_measurement_phenotype_value_all_aggregation()

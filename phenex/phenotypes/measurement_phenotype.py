@@ -128,8 +128,6 @@ class MeasurementPhenotype(CodelistPhenotype):
 
     def _perform_value_aggregation(self, code_table):
         if self.value_aggregation is not None:
-            if self.return_date in ['first', 'last']:
-                self.value_aggregation.return_date = True
             code_table = self.value_aggregation.aggregate(code_table)
         return code_table
 
