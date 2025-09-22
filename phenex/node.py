@@ -266,6 +266,69 @@ class Node:
 
         return True
 
+    def clear_cache(self, con: Optional[object] = None, recursive: bool = False):
+        """
+        Clear the cached state for this node, forcing re-execution on the next call to execute().
+
+        This method removes the node's hash from the node states table and optionally drops the materialized table from the database. After calling this method, the node will be treated as if it has never been executed before.
+
+        Parameters:
+            con: Database connector. If provided, will also drop the materialized table from the database.
+            recursive: If True, also clear the cache for all child nodes recursively. Defaults to False.
+
+        Example:
+            ```python
+            # Clear cache for a single node
+            my_node.clear_cache()
+
+            # Clear cache and drop materialized table
+            my_node.clear_cache(con=my_connector)
+
+            # Clear cache for node and all its dependencies
+            my_node.clear_cache(recursive=True)
+            ```
+        """
+        logger.info(f"Node '{self.name}': clearing cached state...")
+
+        # Clear the hash from the node states table
+        with Node._hash_update_lock:
+            duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+            if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
+                table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                # Remove this node's entry
+                table = table[table.NODE_NAME != self.name]
+
+                # Update the table
+                if len(table) > 0:
+                    updated_table = ibis.memtable(table)
+                    duckdb_con.create_table(
+                        updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
+                    )
+                else:
+                    # Drop the table if it's empty
+                    duckdb_con.dest_connection.drop_table(NODE_STATES_TABLE_NAME)
+
+        # Drop materialized table if connector is provided
+        if con is not None:
+            try:
+                if self.name in con.dest_connection.list_tables():
+                    logger.info(f"Node '{self.name}': dropping materialized table...")
+                    con.dest_connection.drop_table(self.name)
+            except Exception as e:
+                logger.warning(
+                    f"Node '{self.name}': failed to drop materialized table: {e}"
+                )
+
+        # Reset the table attribute
+        self.table = None
+
+        # Recursively clear children if requested
+        if recursive:
+            for child in self.children:
+                child.clear_cache(con=con, recursive=recursive)
+
+        logger.info(f"Node '{self.name}': cache cleared successfully.")
+
     def execute(
         self,
         tables: Dict[str, Table] = None,
