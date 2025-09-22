@@ -246,7 +246,6 @@ class Cohort:
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
         lazy_execution: Optional[bool] = False,
-        fail_fast: Optional[bool] = True,
     ):
         """
         The execute method executes the full cohort in order of computation. The order is entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
@@ -257,7 +256,6 @@ class Cohort:
             overwrite: Whether to overwrite existing tables
             lazy_execution: Whether to use lazy execution with change detection
             n_threads: Max number of jobs to run simultaneously.
-            fail_fast: If True, stops all worker threads immediately when any worker encounters an error. If False, allows other workers to continue running even if one fails. Defaults to True.
 
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
@@ -270,7 +268,6 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                fail_fast=fail_fast,
             )
             logger.info(f"Cohort '{self.name}': completed derived tables stage.")
             for node in self.derived_tables:
@@ -284,7 +281,6 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
-            fail_fast=fail_fast,
         )
         self.subset_tables_entry = self.get_subset_tables_entry(tables)
 
@@ -297,7 +293,6 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
-            fail_fast=fail_fast,
         )
         self.table = self.index_table_node.table
 
@@ -312,7 +307,6 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                fail_fast=fail_fast,
             )
 
         return self.index_table
