@@ -246,6 +246,9 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
       <div
         key={`${item.phenotype.id}-${index}`}
         className={`${attritionStyles.attritionItem} ${typeHoverClass} ${typeSelectedClass}`}
+        style={{
+              marginBottom: index === attritionItems.length - 1 ? `${220 + 20}px` : undefined
+            }}
         onClick={event => {
           event.stopPropagation();
           setSelectedId(item.phenotype.id);
@@ -298,7 +301,6 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
         {/* <div className ={attritionStyles.content}> */}
         <div className={attritionStyles.itemsList} ref={messagesContainerRef}>
           {attritionItems.map((item, index) => renderAttritionItem(item, index))}
-          <div className={attritionStyles.bottomItem}> HELLOW THERE</div>
           {attritionItems.length === 0 && (
             <div className={attritionStyles.emptyState}>
               <p>No attrition data available. Execute your cohort to see results.</p>
