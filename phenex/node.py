@@ -367,6 +367,9 @@ class Node:
         completed = set()
         completion_lock = threading.Lock()
         worker_exceptions = []  # Track exceptions from worker threads
+        stop_all_workers = (
+            threading.Event()
+        )  # Signal to stop all workers on first error
 
         # Track in-degree for scheduling
         in_degree = {}
@@ -386,13 +389,14 @@ class Node:
 
         def worker():
             """Worker function for thread pool"""
-            while True:
+            while not stop_all_workers.is_set():
                 try:
                     node_name = ready_queue.get(timeout=1)
+                    # timeout forces to wait 1 second to avoid busy waiting
                     if node_name is None:  # Sentinel value to stop worker
                         break
                 except queue.Empty:
-                    break
+                    continue
 
                 try:
                     logger.info(
@@ -457,8 +461,11 @@ class Node:
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")
                     with completion_lock:
-                        worker_exceptions.append(e)  # Store exception for main thread
-                    break  # Exit worker loop on error
+                        # Store exception for main thread
+                        worker_exceptions.append(e)
+                        # Signal all workers to stop immediately and exit worker loop
+                        stop_all_workers.set()
+                        break
                 finally:
                     ready_queue.task_done()
 
@@ -471,8 +478,16 @@ class Node:
             threads.append(thread)
 
         # Wait for all nodes to complete or for an error to occur
-        while len(completed) < len(nodes) and not worker_exceptions:
+        while (
+            len(completed) < len(nodes)
+            and not worker_exceptions
+            and not stop_all_workers.is_set()
+        ):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
+
+        if not stop_all_workers.is_set():
+            # Time to stop workers and cleanup
+            stop_all_workers.set()
 
         # Check if any worker thread had an exception
         if worker_exceptions:
