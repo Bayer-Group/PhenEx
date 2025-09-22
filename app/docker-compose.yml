@@ -3,7 +3,7 @@
 #   2. Initialize the DB:   2.1. docker compose up db # wait till inital DB setup is complete and restart it ^C
 #                           2.2. docker compose up db -d
 #                           2.3. ./backend/scripts/reset-databases-local.sh
-#   3. Run DEV              docker compose up be fe
+#   3. Run DEV              docker compose up backend frontend
 #   3. Run bundled          docker compose up be-bundle fe-bundle
 #   4. Stop                 docker compose down
 
