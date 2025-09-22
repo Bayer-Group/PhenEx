@@ -81,6 +81,7 @@ class ValueAggregator:
         aggregation_column=None,
         aggregation_function="min",
         aggregation_index=["PERSON_ID"],
+        return_date = False,
         reduce=True,
     ):
         # allowed values for aggregation_function are any valid aggregation
@@ -88,6 +89,7 @@ class ValueAggregator:
         self.aggregation_column = aggregation_column
         self.aggregation_function = aggregation_function
         self.aggregation_index = aggregation_index
+        self.return_date = return_date
 
         self.reduce = reduce
         # if true, max one row per unique combination of index columns
@@ -128,7 +130,8 @@ class ValueAggregator:
         # Apply the distinct reduction if required
         if self.reduce:
             input_table = input_table.select(selected_columns).distinct()
-            input_table = input_table.mutate(EVENT_DATE=ibis.null(date))
+            if not self.return_date:
+                input_table = input_table.mutate(EVENT_DATE=ibis.null().cast("int32"))
             return input_table
         else:
             return input_table.select(selected_columns)
@@ -160,13 +163,13 @@ class DailyValueAggregator(ValueAggregator):
 
 
 class DailyMean(DailyValueAggregator):
-    def __init__(self):
-        super(DailyMean, self).__init__(aggregation_function="mean")
+    def __init__(self, **kwargs):
+        super(DailyMean, self).__init__(aggregation_function="mean", **kwargs)
 
 
 class DailyMedian(DailyValueAggregator):
-    def __init__(self):
-        super(DailyMedian, self).__init__(aggregation_function="median")
+    def __init__(self, **kwargs):
+        super(DailyMedian, self).__init__(aggregation_function="median", **kwargs)
 
 
 class DailyMax(DailyValueAggregator):
