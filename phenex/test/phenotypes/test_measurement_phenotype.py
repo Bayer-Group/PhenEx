@@ -276,7 +276,7 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
         codelist_factory = LocalCSVCodelistFactory(
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
-       
+
         c2 = {
             "name": "nearest_prior_return_daily_mean",
             "persons": [f"P{x}" for x in range(self.N)],
@@ -340,8 +340,7 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
                     min_days=GreaterThanOrEqualTo(0), when="after"
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
-
-                domain='MEASUREMENT',
+                domain="MEASUREMENT",
                 return_value="first",
                 value_aggregation=DailyMedian(),
             ),
@@ -376,13 +375,11 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
                     min_days=GreaterThanOrEqualTo(0), when="after"
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
-
-                domain='MEASUREMENT',
+                domain="MEASUREMENT",
                 return_value="last",
                 value_aggregation=DailyMedian(),
             ),
         }
-
 
         c_max_daily_values_post_index = {
             "name": "postindex_return_max_daily_values",
@@ -484,11 +481,12 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
         return test_infos
 
 
-class MeasurementPhenotypeValueAllAggregationTestGenerator(MeasurementPhenotypeValueDailyAggregationTestGenerator):
+class MeasurementPhenotypeValueAllAggregationTestGenerator(
+    MeasurementPhenotypeValueDailyAggregationTestGenerator
+):
     name_space = "mmpt_valueaggregation_all"
     test_values = True
     test_date = False
-
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
@@ -548,7 +546,6 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(MeasurementPhenotypeV
             ),
         }
 
-
         c_mean_all_values_pre_index = {
             "name": "preindex_return_mean_all_values",
             "persons": [f"P{x}" for x in range(self.N)],
@@ -589,7 +586,7 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(MeasurementPhenotypeV
                     min_days=GreaterThanOrEqualTo(0), when="before"
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
-                domain='MEASUREMENT',
+                domain="MEASUREMENT",
                 value_aggregation=Median(),
             ),
         }
@@ -604,8 +601,7 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(MeasurementPhenotypeV
                     min_days=GreaterThanOrEqualTo(0), when="after"
                 ),
                 codelist=codelist_factory.get_codelist("c1"),
-
-                domain='MEASUREMENT',
+                domain="MEASUREMENT",
                 return_value="all",
                 value_aggregation=Median(),
             ),
@@ -736,6 +732,7 @@ class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
 
         return test_infos
 
+
 def test_measurement_phenotype():
     spg = MeasurementPhenotypeValueFilterTestGenerator()
     spg.run_tests()
@@ -755,9 +752,11 @@ def test_measurement_phenotype_value_daily_aggregation():
     spg = MeasurementPhenotypeValueDailyAggregationTestGenerator()
     spg.run_tests(verbose=False)
 
+
 def test_measurement_phenotype_value_all_aggregation():
     spg = MeasurementPhenotypeValueAllAggregationTestGenerator()
     spg.run_tests(verbose=False)
+
 
 if __name__ == "__main__":
     test_measurement_phenotype()

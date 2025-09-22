@@ -81,7 +81,7 @@ class ValueAggregator:
         aggregation_column=None,
         aggregation_function="min",
         aggregation_index=["PERSON_ID"],
-        force_return_date = False,
+        force_return_date=False,
         reduce=True,
     ):
         # allowed values for aggregation_function are any valid aggregation
@@ -146,9 +146,11 @@ class Mean(ValueAggregator):
     def __init__(self, **kwargs):
         super(Mean, self).__init__(aggregation_function="mean", **kwargs)
 
+
 class Median(ValueAggregator):
     def __init__(self, **kwargs):
         super(Median, self).__init__(aggregation_function="median", **kwargs)
+
 
 class Max(ValueAggregator):
     def __init__(self, **kwargs):
@@ -163,9 +165,7 @@ class Min(ValueAggregator):
 class DailyValueAggregator(ValueAggregator):
     def __init__(self, aggregation_index=["PERSON_ID", "EVENT_DATE"], **kwargs):
         super(DailyValueAggregator, self).__init__(
-            aggregation_index=aggregation_index, 
-            force_return_date=True,
-            **kwargs
+            aggregation_index=aggregation_index, force_return_date=True, **kwargs
         )
 
 
