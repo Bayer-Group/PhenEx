@@ -428,6 +428,9 @@ class Node:
 
         # Check if any worker thread had an exception
         if worker_exceptions:
+            # Signal workers to stop
+            for _ in threads:
+                ready_queue.put(None)
             # Wait for threads to finish
             for thread in threads:
                 thread.join(timeout=1)
