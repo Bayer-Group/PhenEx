@@ -5,6 +5,7 @@ import attritionStyles from './AttritionGraph.module.css';
 import typeStyles from '../../../styles/study_types.module.css';
 import { PhenotypeType } from '../PhenotypeViewer/phenotype';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 
 interface AttritionGraphProps {
   dataService: ReportDataService;
@@ -19,11 +20,28 @@ interface AttritionItem {
   delta?: string | number; // Delta value from report data
 }
 
+enum DisplayType {
+  Count = 'count',
+  Percentage = 'percentage',
+}
+
 export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   const [cohortDataService] = useState(() => CohortDataService.getInstance());
   const [attritionItems, setAttritionItems] = useState<AttritionItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [currentDisplayType, setCurrentDisplayType] = useState<DisplayType>(
+    DisplayType.Percentage
+  );
+  const graphTabs = Object.values(DisplayType).map(value => {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  });
 
+
+  const onGraphTabChange = (index: number) => {
+    const viewTypes = Object.values(DisplayType);
+    const selectedView = viewTypes[index];
+    setCurrentDisplayType(selectedView);
+  };
   useEffect(() => {
     updateAttritionData();
   }, [dataService.row_data]);
@@ -136,19 +154,16 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   const renderDelta = (item: AttritionItem) => {
     const delta = item.delta;
     const deltaValue = typeof delta === 'string' ? parseFloat(delta) || 0 : delta || 0;
-    
-    console.log(`Delta for ${item.phenotype.name}: raw="${delta}", parsed=${deltaValue}`);
-    
+        
     // Only render if delta is non-zero
     if (deltaValue === 0 || delta === '' || delta === null || delta === undefined) {
       return null;
     }
     
     return (
-        <span className={`${attritionStyles.deltaText} ${typeStyles[`${item.phenotype.type}_text_color`]}`}>
+        <span className={`${attritionStyles.deltaText} ${typeStyles[`$entry_text_color`]}`}>
           {/* <span className={attritionStyles.deltaFiller}>lose </span> */}
-          {/* {deltaValue > 0 ? '+' : ''}{deltaValue.toString().replace("-", "")}  */}
-          {deltaValue.toString()} 
+          {deltaValue > 0 ? '+' : ''}{deltaValue.toString()} 
           {/* <span className={attritionStyles.deltaFiller}>patients</span> */}
         </span>
     );
@@ -157,8 +172,8 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   // Render bar visualization
   const renderBar = (item: AttritionItem) => {
     const percentage = item.percentage || 0;
-    const type = item.phenotype.type as PhenotypeType;
-    const colorClass = getColorClass(type);
+    const type = item.realPhenotype.type as PhenotypeType;
+    const colorClass = typeStyles[`${item.realPhenotype.type}_color_block`];
     
     // Use the actual percentage directly for width (not relative to max)
     // This way 100% = full width, 80% = 80% width, etc.
@@ -175,56 +190,63 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
               width: `${barWidth}%`,
             }}
           >
-            <span className={attritionStyles.barText}>
-              {percentage.toFixed(1)}%
-            </span>
           </div>
+            <span className={attritionStyles.barText}>
+              {currentDisplayType === DisplayType.Percentage ? percentage.toFixed(1) : item.count}
+              {currentDisplayType === DisplayType.Percentage ? '%' : ''}
+            </span>
         </div>
-        <span className={attritionStyles.countText}>
-          ({item.count || 0})
-        </span>
+        {/* <span className={`${attritionStyles.countText} ${typeStyles[`${item.realPhenotype.type}_text_color`]}`}>
+          {item.count || 0}
+        </span> */}
       </div>
     );
   };
 
   // Render bar visualization
   const renderSubBar = (item: AttritionItem, index: int) => {
-    const percentage = (item.count/attritionItems[0].count)*100 || 0;
+    console.log(item, "RENDERING SUBBAR")
+    const percentage = (item.reportData.N/attritionItems[0].reportData.N)*100 || 0;
     const type = item.phenotype.type as PhenotypeType;
-    const colorClass = getColorClass(type);
+    const colorClass = typeStyles[`${item.realPhenotype.type}_color_block`];
     
     // Use the actual percentage directly for width (not relative to max)
     // This way 100% = full width, 80% = 80% width, etc.
     const barWidth = Math.max(percentage, 0); // Ensure non-negative
-    
+    console.log("BAR WIDTH IS", barWidth, percentage)
     console.log(`Item: ${item.phenotype.name}, Percentage: ${percentage}%, Bar width: ${barWidth}%`);
-    if (index<2){
-        return null;
-    }
+    // if (index<2){
+    //     return null;
+    // }
     return (
       <div className={attritionStyles.subBarContainer}>
         <div className={attritionStyles.subBarArea}>
           <div 
-            className={`${attritionStyles.subBar}`}
+            className={`${attritionStyles.subBar} ${colorClass}`}
             style={{ 
               width: `${barWidth}%`,
             }}
           >
-            <span className={attritionStyles.barText}>
-              {percentage.toFixed(1)}%
-            </span>
           </div>
+            <span className={attritionStyles.subBarText}>
+              {currentDisplayType === DisplayType.Percentage ? percentage.toFixed(1) : item.reportData.N}
+              {currentDisplayType === DisplayType.Percentage ? '%' : ''}
+            </span>
         </div>
+
+            {/* <span className={attritionStyles.countText}>
+          {item.reportData.N || 0}
+        </span> */}
       </div>
     );
   };
 
   // Render phenotype item
   const renderAttritionItem = (item: AttritionItem, index: number) => {
-    const phenotypeType = item.phenotype.type as PhenotypeType;
+    const phenotypeType = item.realPhenotype.type as PhenotypeType;
     const isSelected = selectedId === item.phenotype.id;
-    const typeHoverClass = typeStyles[`${phenotypeType}_color_block`] || '';
-    const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_color_block`] : '';
+    const typeHoverClass = typeStyles[`${phenotypeType}_list_item`] || '';
+    const typeSelectedClass = isSelected ? typeStyles[`${phenotypeType}_list_item_selected`] : '';
     
     return (
       <div
@@ -246,7 +268,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
           <div className={attritionStyles.itemTitle}>
             {/* {renderTypeLabel(item)}
             <br></br> */}
-            <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.phenotype.type}_color_block`]}`}>
+            <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.realPhenotype.type}_text_color`]}`}>
               {item.phenotype.name}
               {item.realPhenotype ? '' : ' (from report data)'}
             </span>
@@ -264,6 +286,13 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   return (
     <div className={attritionStyles.container}>
+        <div className={attritionStyles.tabsContainer}>
+          <Tabs
+            tabs={graphTabs}
+            onTabChange={onGraphTabChange}
+            active_tab_index={Object.values(DisplayType).indexOf(currentDisplayType)}
+          />
+        </div>
         <div className={attritionStyles.itemsList}>
           {attritionItems.map((item, index) => renderAttritionItem(item, index))}
         </div>

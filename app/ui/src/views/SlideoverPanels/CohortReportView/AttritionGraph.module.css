@@ -1,6 +1,6 @@
 :root{
     --graph_bar_height_main: 18px;
-    --graph_border_radius: calc(var(--graph_bar_height_main) / 2);
+    --graph_border_radius: 4px;/*calc(var(--graph_bar_height_main) / 2);*/
 
 }
 .container {
@@ -8,12 +8,19 @@
   font-family: 'IBMPlexSans-regular';
   width: 100%;
   max-width: 800px;
+  overflow: visible;
+}
+
+.tabsContainer{
+    position: absolute;
+    right:10px;
+    top:40px;
 }
 
 .itemsList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 3px;
 }
 
 .attritionItem {
@@ -31,7 +38,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
 }
 
 .itemTitle {
@@ -59,8 +66,9 @@
 
 .phenotypeName {
   font-family: 'IBMPlexSans-bold';
-  font-size: 20px;
+  font-size: 18px;
   margin-left:5px;
+  color: var(--color-accent-bright) !important;
 }
 
 .attritionItem.selected .phenotypeName {
@@ -84,19 +92,20 @@
 }
 
 .barArea, .subBarArea {
-    background-color: rgb(240, 240, 240);
+    background-color: rgba(230, 230, 230, 0.6);
   border-radius: var(--graph_border_radius);
   flex: 1; /* Take remaining space after count text */
   height: 100%;
   position: relative;
   margin-left:0px;
-  max-width: calc(100% - 150px); /* Reserve space for count text and gap */
+  max-width: calc(100% - 120px); /* Reserve space for count text and gap */
 }
 
 
 .subBarContainer {
-    margin-top:5px;
-  height: 12px;
+    margin-top:4px;
+  height: 2px;
+  border-radius: 1px;
 }
 
 .bar, .subBar {
@@ -105,50 +114,50 @@
   border-radius: var(--graph_border_radius);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 8px;
   transition: width 0.3s ease-in-out;
   position: relative;
-  /* Width will be set via inline style for proper reactivity */
+  background-color: white;
 }
 
 .subBar {
-
-  background-color: var(--line-color);
+  background-color: var(--color-accent-bright);
+  border-radius: 1px;
 }
 
-.barText {
-  color: white;
-  font-size: 12px;
+
+
+.barText, .subBarText {
+    position: absolute;
+    left: calc(100% + 8px);
+    top:-6px;
+  color: var(--color-accent-bright);
+  font-size: 18px;
   font-family: 'IBMPlexSans-bold';
   white-space: nowrap;
+  /* margin-left:10px; */
+
+}
+
+.subBarText{
+    top:-3px;
+    font-size:8px;
 }
 
 .countText {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--color-accent-bright);
-  font-family: 'IBMPlexSans-regular';
+  font-family: 'IBMPlexSans-bold';
   min-width: 50px;
 }
 
-.deltaContainer {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 18px;
-  /* color: var(--line-color); */
-  font-family: 'IBMPlexSans-regular';
-  position: absolute;
-  bottom: 10px;
-  right: 0px;
-}
 
 .deltaText {
     position: absolute;
-    right:0px;
-    font-size:18px;
+    right:10px;
+    top:20px;
+    font-size:12px;
     text-align: right;
-  font-family: 'IBMPlexSans-bold';
+  font-family: 'IBMPlexSans-bolditalic';
 }
 
 .deltaFiller{
