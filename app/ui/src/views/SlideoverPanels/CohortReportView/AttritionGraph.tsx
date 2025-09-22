@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { ReportDataService } from './ReportDataService';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import attritionStyles from './AttritionGraph.module.css';
@@ -6,6 +6,7 @@ import typeStyles from '../../../styles/study_types.module.css';
 import { PhenotypeType } from '../PhenotypeViewer/phenotype';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface AttritionGraphProps {
   dataService: ReportDataService;
@@ -32,6 +33,8 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
   const [currentDisplayType, setCurrentDisplayType] = useState<DisplayType>(
     DisplayType.Percentage
   );
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   const graphTabs = Object.values(DisplayType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
   });
@@ -136,11 +139,12 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   // Render type label
   const renderTypeLabel = (item: AttritionItem) => {
-    const type = item.phenotype.type as PhenotypeType;
+    console.log("FOR TYEP LABEL", item.realPhenotype)
+    const type = item.realPhenotype.type as PhenotypeType;
     return (
-      <div className={`${attritionStyles.phenotypeType}`}/*${getColorClass(type)}`}*/>
+      <div className={`${attritionStyles.phenotypeType} ${typeStyles[`${type}_text_color`]}`}>
         {type}
-        {renderIndex(item.phenotype)}
+        {renderIndex(item.realPhenotype)}
       </div>
     );
   };
@@ -190,11 +194,12 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
               width: `${barWidth}%`,
             }}
           >
-          </div>
             <span className={attritionStyles.barText}>
               {currentDisplayType === DisplayType.Percentage ? percentage.toFixed(1) : item.count}
               {currentDisplayType === DisplayType.Percentage ? '%' : ''}
             </span>
+          </div>
+
         </div>
         {/* <span className={`${attritionStyles.countText} ${typeStyles[`${item.realPhenotype.type}_text_color`]}`}>
           {item.count || 0}
@@ -209,15 +214,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     const percentage = (item.reportData.N/attritionItems[0].reportData.N)*100 || 0;
     const type = item.phenotype.type as PhenotypeType;
     const colorClass = typeStyles[`${item.realPhenotype.type}_color_block`];
-    
-    // Use the actual percentage directly for width (not relative to max)
-    // This way 100% = full width, 80% = 80% width, etc.
     const barWidth = Math.max(percentage, 0); // Ensure non-negative
-    console.log("BAR WIDTH IS", barWidth, percentage)
-    console.log(`Item: ${item.phenotype.name}, Percentage: ${percentage}%, Bar width: ${barWidth}%`);
-    // if (index<2){
-    //     return null;
-    // }
     return (
       <div className={attritionStyles.subBarContainer}>
         <div className={attritionStyles.subBarArea}>
@@ -227,16 +224,13 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
               width: `${barWidth}%`,
             }}
           >
-          </div>
             <span className={attritionStyles.subBarText}>
               {currentDisplayType === DisplayType.Percentage ? percentage.toFixed(1) : item.reportData.N}
               {currentDisplayType === DisplayType.Percentage ? '%' : ''}
             </span>
-        </div>
+              </div>
 
-            {/* <span className={attritionStyles.countText}>
-          {item.reportData.N || 0}
-        </span> */}
+        </div>
       </div>
     );
   };
@@ -266,8 +260,7 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
       >
         <div className={attritionStyles.itemHeader}>
           <div className={attritionStyles.itemTitle}>
-            {/* {renderTypeLabel(item)}
-            <br></br> */}
+            {renderTypeLabel(item)}
             <span className={`${attritionStyles.phenotypeName} ${typeStyles[`${item.realPhenotype.type}_text_color`]}`}>
               {item.phenotype.name}
               {item.realPhenotype ? '' : ' (from report data)'}
@@ -284,6 +277,15 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     );
   };
 
+  const renderFooter = () => {
+    return (
+        <div className = {attritionStyles.footer}>
+
+            footer
+        </div>
+    )
+  }
+
   return (
     <div className={attritionStyles.container}>
         <div className={attritionStyles.tabsContainer}>
@@ -293,14 +295,23 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
             active_tab_index={Object.values(DisplayType).indexOf(currentDisplayType)}
           />
         </div>
-        <div className={attritionStyles.itemsList}>
+        {/* <div className ={attritionStyles.content}> */}
+        <div className={attritionStyles.itemsList} ref={messagesContainerRef}>
           {attritionItems.map((item, index) => renderAttritionItem(item, index))}
+          {attritionItems.length === 0 && (
+            <div className={attritionStyles.emptyState}>
+              <p>No attrition data available. Execute your cohort to see results.</p>
+            </div>
+          )}
         </div>
-        {attritionItems.length === 0 && (
-          <div className={attritionStyles.emptyState}>
-            <p>No attrition data available. Execute your cohort to see results.</p>
-          </div>
-        )}
+        <SimpleCustomScrollbar 
+          targetRef={messagesContainerRef}
+          orientation="vertical"
+          marginTop={100}
+          marginBottom={120}
+        />
+        {renderFooter()}
+        {/* </div> */}
     </div>
   );
 };

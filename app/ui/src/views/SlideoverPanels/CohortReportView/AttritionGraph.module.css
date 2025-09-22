@@ -52,12 +52,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 20px;
-  padding: 2px 6px;
+  font-size: 12px;
+  margin-left: 0px;
   font-family: 'IBMPlexSans-bolditalic';
   border-radius: var(--graph_border_radius);
-  background-color: #eee;
-  color: var(--text-color-secondary);
 }
 
 .index {
@@ -98,7 +96,7 @@
   height: 100%;
   position: relative;
   margin-left:0px;
-  max-width: calc(100% - 120px); /* Reserve space for count text and gap */
+  max-width: calc(100% - 150px); /* Reserve space for count text and gap */
 }
 
 
@@ -129,9 +127,9 @@
 .barText, .subBarText {
     position: absolute;
     left: calc(100% + 8px);
-    top:-6px;
+    top:-12px;
   color: var(--color-accent-bright);
-  font-size: 18px;
+  font-size: 24px;
   font-family: 'IBMPlexSans-bold';
   white-space: nowrap;
   /* margin-left:10px; */
@@ -139,7 +137,7 @@
 }
 
 .subBarText{
-    top:-3px;
+    top:-5px;
     font-size:8px;
 }
 
