@@ -280,14 +280,26 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     );
   };
 
-  const renderFooter = () => {
-    return (
-        <div className = {attritionStyles.footer}>
+const renderFooter = () => {
+    console.log(attritionItems);
 
-            footer
+    // Check if attritionItems exists and has at least one item
+    const finalCohortSize = attritionItems && attritionItems.length > 0 
+        ? attritionItems[attritionItems.length - 1].reportData.Remaining 
+        : "N/A"; // Default value if attritionItems is empty or undefined
+    const finalCohortPercentage = attritionItems && attritionItems.length > 0 
+        ? attritionItems[attritionItems.length - 1].reportData['%'] 
+        : "N/A"; // Default value if attritionItems is empty or undefined
+
+        console.log("TRYING TO GET ATTRITION ITEMS", attritionItems)
+    return (
+        <div className={attritionStyles.footer}>
+            Final cohort size: <span className={attritionStyles.finalCohortSize}>
+                {finalCohortSize} ({finalCohortPercentage})
+            </span>
         </div>
-    )
-  }
+    );
+};
 
   return (
     <div className={attritionStyles.container}>
