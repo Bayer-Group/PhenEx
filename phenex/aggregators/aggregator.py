@@ -144,6 +144,9 @@ class Mean(ValueAggregator):
     def __init__(self, **kwargs):
         super(Mean, self).__init__(aggregation_function="mean", **kwargs)
 
+class Median(ValueAggregator):
+    def __init__(self, **kwargs):
+        super(Median, self).__init__(aggregation_function="median", **kwargs)
 
 class Max(ValueAggregator):
     def __init__(self, **kwargs):
