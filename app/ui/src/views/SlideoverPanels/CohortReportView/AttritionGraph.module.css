@@ -8,7 +8,7 @@
   font-family: 'IBMPlexSans-regular';
   width: 100%;
   max-width: 800px;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .tabsContainer{
@@ -21,6 +21,8 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .attritionItem {
@@ -175,3 +177,25 @@
   font-size: 14px;
 }
 
+.footer{
+    position: absolute;
+    left: 10px;
+    bottom:10px;
+    height:200px;
+    width: calc(100% - 20px);
+      background-color: var(--background_color_translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: var(--border);
+  border-radius: var(--issue_popover_radius) var(--issue_popover_radius)
+    var(--issue_popover_radius) var(--issue_popover_radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+}
+
+
+.bottomItem{
+    height: 200px;
+    background-color: red;
+    width: 100%;
+}

@@ -298,20 +298,21 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
         {/* <div className ={attritionStyles.content}> */}
         <div className={attritionStyles.itemsList} ref={messagesContainerRef}>
           {attritionItems.map((item, index) => renderAttritionItem(item, index))}
+          <div className={attritionStyles.bottomItem}> HELLOW THERE</div>
           {attritionItems.length === 0 && (
             <div className={attritionStyles.emptyState}>
               <p>No attrition data available. Execute your cohort to see results.</p>
             </div>
           )}
         </div>
+
+        {renderFooter()}
         <SimpleCustomScrollbar 
           targetRef={messagesContainerRef}
           orientation="vertical"
           marginTop={100}
-          marginBottom={120}
+          marginBottom={250}
         />
-        {renderFooter()}
-        {/* </div> */}
     </div>
   );
 };
