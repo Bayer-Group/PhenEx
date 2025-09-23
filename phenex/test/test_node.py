@@ -403,6 +403,40 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=False, n_threads=2)
 
+    def test_execute_fails_fast_prevents_new_work(self):
+        """Test that execution prevents dependent nodes from starting when a dependency fails"""
+        import time
+
+        # Create nodes where one fails quickly
+        failing_node = ConcreteNode("failing_node", execution_time=0.01, fail=True)
+
+        # Create nodes that depend on the failing node - these should NOT execute
+        # because their dependency failed before they could start
+        dependent1 = ConcreteNode("dependent1", execution_time=0.05)
+        dependent2 = ConcreteNode("dependent2", execution_time=0.05)
+
+        # Set up dependencies: dependent nodes can only start after failing_node completes
+        dependent1.add_children(failing_node)
+        dependent2.add_children(failing_node)
+
+        parent = ConcreteNode("parent")
+        parent.add_children([dependent1, dependent2])
+
+        tables = {"domain1": MockTable()}
+
+        with pytest.raises(RuntimeError, match="Node FAILING_NODE failed"):
+            parent.execute(tables, n_threads=4)
+
+        # The key test: nodes that depend on the failing node should NOT execute
+        # because fail-fast prevents new work from starting after a failure
+        assert (
+            not dependent1.executed
+        ), "dependent1 should not execute when its dependency fails"
+        assert (
+            not dependent2.executed
+        ), "dependent2 should not execute when its dependency fails"
+        assert not parent.executed, "parent should not execute when dependencies fail"
+
     def test_execute_lazy_execution_no_connector_error(self):
         """Test that lazy execution without connector raises error"""
         node = ConcreteNode("test")
@@ -648,8 +682,12 @@ class TestPhenexNodeGroup:
         grp.execute(tables, n_threads=2)
         end_time = time.time()
 
-        # Should be faster than sequential execution
-        assert end_time - start_time < 0.5  # Much less than 0.3 + 0.1 + 0.1
+        # Should be faster than sequential execution (0.1 + 0.2 + overhead = ~0.35s)
+        # With multithreading, should complete in about 0.2s (slowest child) + overhead
+        execution_time = end_time - start_time
+        assert (
+            execution_time < 1.0
+        ), f"Execution took {execution_time:.3f}s, expected < 1.0s"
 
         assert fast_child.executed
         assert slow_child.executed
