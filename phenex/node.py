@@ -4,6 +4,7 @@ from typing import Dict, List, Set, Optional
 import pandas as pd
 import ibis
 from ibis.expr.types.relations import Table
+from datetime import datetime
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.ibis_connect import DuckDBConnector
@@ -203,6 +204,23 @@ class Node:
                 if len(table):
                     return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
 
+    @property
+    def execution_metadata(self):
+        """
+        Retrieve the full execution metadata row for this node from the local DuckDB database.
+
+        Returns:
+            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, and LAST_EXECUTED
+                          for this node, or None if the node has never been executed.
+        """
+        with Node._hash_update_lock:
+            con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+            if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
+                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                table = table[table.NODE_NAME == self.name]
+                if len(table):
+                    return table.iloc[0]
+
     def _get_current_hash(self):
         """
         Computes the hash of the node's defining parameters for change detection in lazy execution.
@@ -234,6 +252,7 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
+                    "LAST_EXECUTED": [datetime.now()],
                 }
             )
 
@@ -246,6 +265,69 @@ class Node:
             con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
 
         return True
+
+    def clear_cache(self, con: Optional[object] = None, recursive: bool = False):
+        """
+        Clear the cached state for this node, forcing re-execution on the next call to execute().
+
+        This method removes the node's hash from the node states table and optionally drops the materialized table from the database. After calling this method, the node will be treated as if it has never been executed before.
+
+        Parameters:
+            con: Database connector. If provided, will also drop the materialized table from the database.
+            recursive: If True, also clear the cache for all child nodes recursively. Defaults to False.
+
+        Example:
+            ```python
+            # Clear cache for a single node
+            my_node.clear_cache()
+
+            # Clear cache and drop materialized table
+            my_node.clear_cache(con=my_connector)
+
+            # Clear cache for node and all its dependencies
+            my_node.clear_cache(recursive=True)
+            ```
+        """
+        logger.info(f"Node '{self.name}': clearing cached state...")
+
+        # Clear the hash from the node states table
+        with Node._hash_update_lock:
+            duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
+            if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
+                table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                # Remove this node's entry
+                table = table[table.NODE_NAME != self.name]
+
+                # Update the table
+                if len(table) > 0:
+                    updated_table = ibis.memtable(table)
+                    duckdb_con.create_table(
+                        updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
+                    )
+                else:
+                    # Drop the table if it's empty
+                    duckdb_con.dest_connection.drop_table(NODE_STATES_TABLE_NAME)
+
+        # Drop materialized table if connector is provided
+        if con is not None:
+            try:
+                if self.name in con.dest_connection.list_tables():
+                    logger.info(f"Node '{self.name}': dropping materialized table...")
+                    con.dest_connection.drop_table(self.name)
+            except Exception as e:
+                logger.warning(
+                    f"Node '{self.name}': failed to drop materialized table: {e}"
+                )
+
+        # Reset the table attribute
+        self.table = None
+
+        # Recursively clear children if requested
+        if recursive:
+            for child in self.children:
+                child.clear_cache(con=con, recursive=recursive)
+
+        logger.info(f"Node '{self.name}': cache cleared successfully.")
 
     def execute(
         self,
@@ -272,117 +354,22 @@ class Node:
         if tables is None:
             tables = {}
 
-        # Use multithreaded execution if we have multiple children and n_threads > 1
-        if len(self.children) > 1 and n_threads > 1:
-            return self._execute_multithreaded(
-                tables, con, overwrite, lazy_execution, n_threads
-            )
-        else:
-            return self._execute_sequential(tables, con, overwrite, lazy_execution)
-
-    def _execute_sequential(
-        self,
-        tables: Dict[str, Table] = None,
-        con: Optional[object] = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-    ) -> Table:
-        """
-        Execute the node and its dependencies sequentially.
-        """
-        if tables is None:
-            tables = {}
-
-        # First recursively execute all children nodes
-        logger.info(f"Node '{self.name}': executing ...")
-        for child in self.children:
-            logger.info(f"Node '{self.name}': executing child node {child.name} ...")
-            child.execute(
-                tables=tables,
-                con=con,
-                overwrite=overwrite,
-                lazy_execution=lazy_execution,
-                n_threads=1,  # Sequential execution for children
-            )
-
-        # Execute current node
-        if lazy_execution:
-            if not overwrite:
-                raise ValueError("lazy_execution only works with overwrite=True.")
-            if con is None:
-                raise ValueError(
-                    "A DatabaseConnector is required for lazy execution. Computed tables will be materialized and only recomputed as needed."
-                )
-
-            # first time computing, _get_last_hash() will be None and execution will still be triggered
-            if self._get_current_hash() != self._get_last_hash():
-                logger.info(
-                    f"Node '{self.name}': not yet computed or changed since last computation -- recomputing ..."
-                )
-                table = self._execute(tables)
-                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                con.create_table(
-                    table,
-                    self.name,
-                    overwrite=overwrite,
-                )
-                self.table = con.get_dest_table(self.name)
-                self._update_current_hash()
-            else:
-                logger.info(
-                    f"Node '{self.name}': unchanged since last computation -- skipping!"
-                )
-                # use reference to materialized table
-                self.table = con.get_dest_table(self.name)
-
-        else:
-            self.table = self._execute(tables)
-            if con:
-                logger.info(f"Node '{self.name}': writing table to {self.name} ...")
-                con.create_table(
-                    self.table,
-                    self.name,
-                    overwrite=overwrite,
-                )
-                # use reference to materialized table
-                self.table = con.get_dest_table(self.name)
-
-        logger.info(f"Node '{self.name}': execution completed.")
-        return self.table
-
-    def _execute_multithreaded(
-        self,
-        tables: Dict[str, Table] = None,
-        con: Optional[object] = None,
-        overwrite: bool = False,
-        lazy_execution: bool = False,
-        n_threads: int = 4,
-    ) -> Table:
-        """
-        Execute this node's dependencies using multithreading, then execute this node.
-        """
-        if tables is None:
-            tables = {}
-
         # Build dependency graph for all dependencies
         all_deps = self.dependencies
         nodes = {node.name: node for node in all_deps}
         nodes[self.name] = self  # Add self to the nodes
 
-        # Validate node uniqueness
-        self._validate_node_uniqueness(nodes)
-
         # Build dependency and reverse graphs
         dependency_graph = self._build_dependency_graph(nodes)
         reverse_graph = self._build_reverse_graph(dependency_graph)
 
-        # Execute dependencies in parallel if n_threads > 1
-        if n_threads == 1 or len(all_deps) <= 1:
-            return self._execute_sequential(tables, con, overwrite, lazy_execution)
-
         # Track completion status and results
         completed = set()
         completion_lock = threading.Lock()
+        worker_exceptions = []  # Track exceptions from worker threads
+        stop_all_workers = (
+            threading.Event()
+        )  # Signal to stop all workers on first error
 
         # Track in-degree for scheduling
         in_degree = {}
@@ -402,13 +389,14 @@ class Node:
 
         def worker():
             """Worker function for thread pool"""
-            while True:
+            while not stop_all_workers.is_set():
                 try:
                     node_name = ready_queue.get(timeout=1)
+                    # timeout forces to wait 1 second to avoid busy waiting
                     if node_name is None:  # Sentinel value to stop worker
                         break
                 except queue.Empty:
-                    break
+                    continue
 
                 try:
                     logger.info(
@@ -472,7 +460,12 @@ class Node:
 
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")
-                    raise
+                    with completion_lock:
+                        # Store exception for main thread
+                        worker_exceptions.append(e)
+                        # Signal all workers to stop immediately and exit worker loop
+                        stop_all_workers.set()
+                        break
                 finally:
                     ready_queue.task_done()
 
@@ -484,9 +477,28 @@ class Node:
             thread.start()
             threads.append(thread)
 
-        # Wait for all nodes to complete
-        while len(completed) < len(nodes):
+        # Wait for all nodes to complete or for an error to occur
+        while (
+            len(completed) < len(nodes)
+            and not worker_exceptions
+            and not stop_all_workers.is_set()
+        ):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
+
+        if not stop_all_workers.is_set():
+            # Time to stop workers and cleanup
+            stop_all_workers.set()
+
+        # Check if any worker thread had an exception
+        if worker_exceptions:
+            # Signal workers to stop
+            for _ in threads:
+                ready_queue.put(None)
+            # Wait for threads to finish
+            for thread in threads:
+                thread.join(timeout=1)
+            # Re-raise the first exception
+            raise worker_exceptions[0]
 
         # Signal workers to stop and wait for them
         for _ in threads:
@@ -499,30 +511,6 @@ class Node:
             f"Node '{self.name}': completed multithreaded execution of {len(nodes)} nodes"
         )
         return self.table
-
-    def _validate_node_uniqueness(self, nodes: Dict[str, "Node"]):
-        """
-        Validate that all nodes are unique according to the rule:
-        node1.name == node2.name implies hash(node1) == hash(node2)
-
-        This ensures that nodes with the same name have identical parameters (same hash).
-        """
-        name_to_hash = {}
-
-        for node_name, node in nodes.items():
-            node_hash = hash(node)
-
-            # Check if we've seen this name before
-            if node_name in name_to_hash:
-                existing_hash = name_to_hash[node_name]
-                if existing_hash != node_hash:
-                    raise ValueError(
-                        f"Node uniqueness violation: Found nodes with the same name '{node_name}' "
-                        f"but different hashes ({existing_hash} vs {node_hash}). "
-                        f"Nodes with the same name must have identical parameters."
-                    )
-            else:
-                name_to_hash[node_name] = node_hash
 
     def _build_dependency_graph(self, nodes: Dict[str, "Node"]) -> Dict[str, Set[str]]:
         """
