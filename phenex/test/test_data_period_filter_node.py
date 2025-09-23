@@ -8,7 +8,7 @@ from datetime import date
 import pandas as pd
 from phenex.phenotypes.cohort import DataPeriodFilterNode
 from phenex.filters import DateFilter
-from phenex.filters.date_filter import AfterOrOn, BeforeOrOn
+from phenex.filters.date_filter import AfterOrOn, BeforeOrOn, Before, After
 
 
 @pytest.fixture
@@ -582,3 +582,287 @@ if __name__ == "__main__":
     print("\nFiltered data:")
     print(result)
     print("\nTest completed successfully!")
+
+
+# Tests for operator edge cases - moved from test_operator_edge_cases.py
+
+
+def test_operator_edge_cases_death_dates():
+    """
+    Test that death date filtering respects the operator (< vs <=) properly.
+    This is especially important for death dates where the boundary matters.
+
+    Example scenarios:
+    - If max_date is <= Jan 1, 2020, then deaths that occur on Jan 1 should be included.
+    - If max_date is < Jan 1, 2020, then deaths that occur on Jan 1 should be set to null.
+    """
+    # Test data without EVENT_DATE to avoid initial filtering complications
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "DATE_OF_DEATH": [
+            date(2019, 12, 31),
+            date(2020, 1, 1),
+            date(2020, 1, 2),
+            date(2020, 12, 31),
+        ],
+        "DEATH_DATE": [
+            date(2019, 12, 31),
+            date(2020, 1, 1),
+            date(2020, 1, 2),
+            date(2020, 12, 31),
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    # Test with BeforeOrOn (<=) - deaths ON Jan 1 should be INCLUDED
+    date_filter_inclusive = DateFilter(
+        min_date=AfterOrOn("2019-01-01"), max_date=BeforeOrOn("2020-01-01")
+    )
+    node_inclusive = DataPeriodFilterNode(
+        name="test_node_inclusive", domain="TEST", date_filter=date_filter_inclusive
+    )
+    result_inclusive = node_inclusive._execute({"TEST": table}).to_pandas()
+
+    # Check that death on Jan 1 is kept (not set to NULL)
+    jan_1_rows = result_inclusive[result_inclusive["PERSON_ID"] == 2]
+    assert len(jan_1_rows) == 1
+    assert jan_1_rows.iloc[0]["DATE_OF_DEATH"] == date(2020, 1, 1)  # Should NOT be NULL
+    assert jan_1_rows.iloc[0]["DEATH_DATE"] == date(2020, 1, 1)  # Should NOT be NULL
+
+    # Check that death after Jan 1 is set to NULL
+    jan_2_rows = result_inclusive[result_inclusive["PERSON_ID"] == 3]
+    assert len(jan_2_rows) == 1
+    assert pd.isna(jan_2_rows.iloc[0]["DATE_OF_DEATH"])  # Should be NULL (after Jan 1)
+    assert pd.isna(jan_2_rows.iloc[0]["DEATH_DATE"])  # Should be NULL (after Jan 1)
+
+    # Test with Before (<) - deaths ON Jan 1 should be EXCLUDED (set to NULL)
+    date_filter_exclusive = DateFilter(
+        min_date=AfterOrOn("2019-01-01"), max_date=Before("2020-01-01")
+    )
+    node_exclusive = DataPeriodFilterNode(
+        name="test_node_exclusive", domain="TEST", date_filter=date_filter_exclusive
+    )
+    result_exclusive = node_exclusive._execute({"TEST": table}).to_pandas()
+
+    # Check that death on Jan 1 is set to NULL (because it's not < Jan 1)
+    jan_1_rows_excl = result_exclusive[result_exclusive["PERSON_ID"] == 2]
+    assert len(jan_1_rows_excl) == 1
+    assert pd.isna(
+        jan_1_rows_excl.iloc[0]["DATE_OF_DEATH"]
+    )  # Should be NULL (not < Jan 1)
+    assert pd.isna(
+        jan_1_rows_excl.iloc[0]["DEATH_DATE"]
+    )  # Should be NULL (not < Jan 1)
+
+    # Check that death before Jan 1 is kept
+    dec_31_rows = result_exclusive[result_exclusive["PERSON_ID"] == 1]
+    assert len(dec_31_rows) == 1
+    assert dec_31_rows.iloc[0]["DATE_OF_DEATH"] == date(
+        2019, 12, 31
+    )  # Should NOT be NULL
+    assert dec_31_rows.iloc[0]["DEATH_DATE"] == date(2019, 12, 31)  # Should NOT be NULL
+
+
+def test_operator_edge_cases_end_dates():
+    """
+    Test that end date filtering respects the operator (< vs <=) properly.
+    """
+    # Test data without EVENT_DATE to avoid filtering complications
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "TREATMENT_END_DATE": [
+            date(2020, 12, 30),
+            date(2020, 12, 31),
+            date(2021, 1, 1),
+            date(2021, 1, 2),
+        ],
+        "CONDITION_END_DATE": [
+            date(2020, 12, 30),
+            date(2020, 12, 31),
+            date(2021, 1, 1),
+            date(2021, 1, 2),
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    # Test with BeforeOrOn (<=) - end dates ON Dec 31 should be KEPT
+    date_filter_inclusive = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node_inclusive = DataPeriodFilterNode(
+        name="test_node_inclusive", domain="TEST", date_filter=date_filter_inclusive
+    )
+    result_inclusive = node_inclusive._execute({"TEST": table}).to_pandas()
+
+    # Check that end date on Dec 31 is kept
+    dec_31_rows = result_inclusive[result_inclusive["PERSON_ID"] == 2]
+    assert len(dec_31_rows) == 1
+    assert dec_31_rows.iloc[0]["TREATMENT_END_DATE"] == date(
+        2020, 12, 31
+    )  # Should NOT be NULL
+    assert dec_31_rows.iloc[0]["CONDITION_END_DATE"] == date(
+        2020, 12, 31
+    )  # Should NOT be NULL
+
+    # Check that end dates after Dec 31 are set to NULL
+    jan_1_rows = result_inclusive[result_inclusive["PERSON_ID"] == 3]
+    assert len(jan_1_rows) == 1
+    assert pd.isna(jan_1_rows.iloc[0]["TREATMENT_END_DATE"])  # Should be NULL
+    assert pd.isna(jan_1_rows.iloc[0]["CONDITION_END_DATE"])  # Should be NULL
+
+    # Test with Before (<) - end dates ON Dec 31 should be EXCLUDED (set to NULL)
+    date_filter_exclusive = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=Before("2020-12-31")
+    )
+    node_exclusive = DataPeriodFilterNode(
+        name="test_node_exclusive", domain="TEST", date_filter=date_filter_exclusive
+    )
+    result_exclusive = node_exclusive._execute({"TEST": table}).to_pandas()
+
+    # Check that end date on Dec 31 is set to NULL (because it's not < Dec 31)
+    dec_31_rows_excl = result_exclusive[result_exclusive["PERSON_ID"] == 2]
+    assert len(dec_31_rows_excl) == 1
+    assert pd.isna(dec_31_rows_excl.iloc[0]["TREATMENT_END_DATE"])  # Should be NULL
+    assert pd.isna(dec_31_rows_excl.iloc[0]["CONDITION_END_DATE"])  # Should be NULL
+
+    # Check that end date before Dec 31 is kept
+    dec_30_rows = result_exclusive[result_exclusive["PERSON_ID"] == 1]
+    assert len(dec_30_rows) == 1
+    assert dec_30_rows.iloc[0]["TREATMENT_END_DATE"] == date(
+        2020, 12, 30
+    )  # Should NOT be NULL
+    assert dec_30_rows.iloc[0]["CONDITION_END_DATE"] == date(
+        2020, 12, 30
+    )  # Should NOT be NULL
+
+
+def test_operator_edge_cases_start_dates():
+    """
+    Test that start date adjustment works correctly.
+    Note: START_DATE adjustment should always use max(start_date, min_value)
+    regardless of whether min_value operator is > or >=.
+    """
+    # Test data without EVENT_DATE to avoid filtering complications
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "TREATMENT_START_DATE": [
+            date(2019, 12, 30),
+            date(2019, 12, 31),
+            date(2020, 1, 1),
+            date(2020, 1, 2),
+        ],
+        "PROCEDURE_START_DATE": [
+            date(2019, 12, 30),
+            date(2019, 12, 31),
+            date(2020, 1, 1),
+            date(2020, 1, 2),
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    # Test with AfterOrOn (>=) - start dates should be adjusted to at least Jan 1
+    date_filter_inclusive = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node_inclusive = DataPeriodFilterNode(
+        name="test_node_inclusive", domain="TEST", date_filter=date_filter_inclusive
+    )
+    result_inclusive = node_inclusive._execute({"TEST": table}).to_pandas()
+
+    # All start dates should be at least Jan 1, 2020
+    for _, row in result_inclusive.iterrows():
+        assert row["TREATMENT_START_DATE"] >= date(2020, 1, 1)
+        assert row["PROCEDURE_START_DATE"] >= date(2020, 1, 1)
+
+    # Test with After (>) - start dates should be adjusted to at least the min_value.value
+    date_filter_exclusive = DateFilter(
+        min_date=After("2019-12-31"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node_exclusive = DataPeriodFilterNode(
+        name="test_node_exclusive", domain="TEST", date_filter=date_filter_exclusive
+    )
+    result_exclusive = node_exclusive._execute({"TEST": table}).to_pandas()
+
+    # All start dates should be at least the min_value.value (2019-12-31)
+    min_expected_date = date(2019, 12, 31)
+    for _, row in result_exclusive.iterrows():
+        assert row["TREATMENT_START_DATE"] >= min_expected_date
+        assert row["PROCEDURE_START_DATE"] >= min_expected_date
+
+
+def test_row_exclusion_end_date_before_min():
+    """
+    Test that rows with END_DATE strictly before min_date are excluded entirely.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "TREATMENT_END_DATE": [
+            date(2019, 12, 30),
+            date(2020, 1, 1),
+            date(2020, 6, 15),
+            date(2020, 12, 31),
+        ],
+        "OTHER_COLUMN": ["A", "B", "C", "D"],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    # Person 1 should be excluded (END_DATE 2019-12-30 < min_date 2020-01-01)
+    person_ids = result["PERSON_ID"].tolist()
+    assert 1 not in person_ids, "Row with END_DATE before min_date should be excluded"
+
+    # Other persons should remain
+    assert 2 in person_ids
+    assert 3 in person_ids
+    assert 4 in person_ids
+
+
+def test_row_exclusion_start_date_after_max():
+    """
+    Test that rows with START_DATE strictly after max_date are excluded entirely.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "TREATMENT_START_DATE": [
+            date(2019, 6, 15),
+            date(2020, 1, 1),
+            date(2020, 12, 31),
+            date(2021, 1, 2),
+        ],
+        "OTHER_COLUMN": ["A", "B", "C", "D"],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    # Person 4 should be excluded (START_DATE 2021-01-02 > max_date 2020-12-31)
+    person_ids = result["PERSON_ID"].tolist()
+    assert 4 not in person_ids, "Row with START_DATE after max_date should be excluded"
+
+    # Other persons should remain
+    assert 1 in person_ids
+    assert 2 in person_ids
+    assert 3 in person_ids

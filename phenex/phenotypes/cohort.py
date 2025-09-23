@@ -25,7 +25,7 @@ class Cohort:
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
-        date_range: Restrict all input data to a specific date range. The input data will be modified to only include records within the date range before any phenotypes are computed. Tables with date ranges will be truncated if needed to fit within the date range (e.g. if END_DATE occurs outside the date range, it will be set to NULL to indicate the end has not yet been observed).
+        date_range: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the date_range was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -129,6 +129,23 @@ class Cohort:
                 raise ValueError(f"Required domain {d} not present in input tables!")
 
         #
+        # Data period filter stage: OPTIONAL
+        #
+        self.data_period_filter_stage = None
+        if self.date_range:
+            data_period_filter_nodes = [
+                DataPeriodFilterNode(
+                    name=f"{self.name}__data_period_filter_{domain}".upper(),
+                    domain=domain,
+                    date_filter=self.date_range,
+                )
+                for domain in domains
+            ]
+            self.data_period_filter_stage = NodeGroup(
+                name="data_period_filter", nodes=data_period_filter_nodes
+            )
+
+        #
         # Derived tables stage: OPTIONAL
         #
         if self.derived_tables:
@@ -198,24 +215,6 @@ class Cohort:
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes
-            )
-
-        #
-        # Data period filter stage (created after all other stages)
-        #
-        self.data_period_filter_stage = None
-        if self.date_range:
-            domains = self._get_domains()
-            data_period_filter_nodes = [
-                DataPeriodFilterNode(
-                    name=f"{self.name}__data_period_filter_{domain}".upper(),
-                    domain=domain,
-                    date_filter=self.date_range,
-                )
-                for domain in domains
-            ]
-            self.data_period_filter_stage = NodeGroup(
-                name="data_period_filter", nodes=data_period_filter_nodes
             )
 
         self._table1 = None
@@ -468,12 +467,21 @@ class DataPeriodFilterNode(Node):
         2. **START_DATE Columns** (substring matching):
            Any column containing "START_DATE" as a substring (e.g., TREATMENT_START_DATE, START_DATE_PROCEDURE, MEDICATION_START_DATE_TIME) adjusts values to max(original_value, date_filter.min_date) to ensure start dates are not before the study period.
 
+           **Row Exclusion**: If START_DATE is strictly after date_filter.max_date, the entire row is dropped as the period doesn't overlap with the study period. This filtering respects the operator semantics: with BeforeOrOn (<=), drops if start_date > max_value; with Before (<), drops if start_date >= max_value.
+
         3. **END_DATE Columns** (substring matching):
            Any column containing "END_DATE" as a substring (e.g., TREATMENT_END_DATE, END_DATE_PROCEDURE, CONDITION_END_DATE) sets value to NULL if original_value > date_filter.max_date to indicate that the end event occurred outside the observation period.
+
+           **Row Exclusion**: If END_DATE is strictly before date_filter.min_date, the entire row is dropped as the period doesn't overlap with the study period. This filtering respects the operator semantics: with AfterOrOn (>=), drops if end_date < min_value; with After (>), drops if end_date <= min_value.
 
         4. **Death Date Columns** (substring matching):
            Any column containing "DATE_OF_DEATH" or "DEATH_DATE" as substrings
            (e.g., DATE_OF_DEATH, DEATH_DATE, PATIENT_DATE_OF_DEATH, DEATH_DATE_RECORDED) sets value to NULL if original_value > date_filter.max_date to indicate that death occurred outside the observation period.
+
+    Implementation Notes:
+        - Row exclusion filtering is applied before column mutations to ensure proper ibis relation handling
+        - The DateFilter class provides operator-aware filtering that respects boundary conditions (< vs <=, > vs >=)
+        - For column-based filtering operations, DateFilter is used directly for consistent operator semantics
 
     Parameters:
         name: Unique identifier for this node in the computation graph.
@@ -507,16 +515,16 @@ class DataPeriodFilterNode(Node):
         filtered_table = filter_node.execute({"CONDITION_OCCURRENCE": source_table})
         ```
 
-        Example: Data Transformation
+        Example: Data Transformation with Row Exclusion
 
         Input Table:
         ```
         PERSON_ID | EVENT_DATE | TREATMENT_START_DATE | CONDITION_END_DATE | DATE_OF_DEATH
         ----------|------------|---------------------|-------------------|---------------
-        1         | 2019-11-15 | 2019-10-01         | 2020-11-01       | NULL
+        1         | 2019-11-15 | 2019-10-01         | 2019-11-01       | NULL           # Row excluded: END_DATE < min_date
         2         | 2020-06-01 | 2020-05-01         | 2021-03-01       | 2021-01-15
         3         | 2020-12-31 | 2019-11-15         | 2020-12-31       | 2020-10-01
-        4         | 2021-02-15 | 2020-01-15         | 2021-01-01       | 2021-06-01
+        4         | 2021-02-15 | 2021-01-15         | 2021-01-01       | 2021-06-01    # Row excluded: START_DATE > max_date
         ```
 
         After applying DateFilter(2020-01-01 to 2020-12-31):
@@ -528,10 +536,10 @@ class DataPeriodFilterNode(Node):
         ```
 
         Transformations applied:
-        - Row 1: Filtered out (EVENT_DATE before range)
+        - Row 1: Excluded entirely (CONDITION_END_DATE 2019-11-01 < min_date 2020-01-01)
         - Row 2: CONDITION_END_DATE → NULL (after max_date), DATE_OF_DEATH → NULL (after max_date)
         - Row 3: TREATMENT_START_DATE adjusted from 2019-11-15 → 2020-01-01 (before min_date)
-        - Row 4: Filtered out (EVENT_DATE after range)
+        - Row 4: Excluded entirely (TREATMENT_START_DATE 2021-01-15 > max_date 2020-12-31)
     """
 
     def __init__(self, name: str, domain: str, date_filter: DateFilter):
@@ -543,49 +551,88 @@ class DataPeriodFilterNode(Node):
         table = tables[self.domain]
         columns = table.columns
 
-        # Build mutations dictionary for column updates
-        mutations = {}
+        # 1. Filter rows that fall entirely outside data period
+        # These need to be evaluated on the original table BEFORE mutations
 
-        # 1. Filter EVENT_DATE if it exists
-        if "EVENT_DATE" in columns:
+        # 1a. Filter self.date_filter.column_name if it exists
+        if self.date_filter.column_name in columns:
             table = self.date_filter.filter(table)
 
-        # 2. Handle columns containing START_DATE - set to max(column_value, min_date)
+        # 1b. Filter ranges that fall entirely outside the data period:
+        #   START_DATE columns that are strictly after max_date
+        #   END_DATE columns that are strictly before min_date
         start_date_columns = [col for col in columns if "START_DATE" in col]
+        end_date_columns = [col for col in columns if "END_DATE" in col]
+        date_filters = [
+            DateFilter(max_date=self.date_filter.max_value, column_name=col)
+            for col in start_date_columns
+        ]
+        date_filters += [
+            DateFilter(min_date=self.date_filter.min_value, column_name=col)
+            for col in end_date_columns
+        ]
+        for date_filter in date_filters:
+            table = date_filter.filter(table)
+
+        # 2. Build mutations dictionary for column updates
+        mutations = {}
+
+        # 2a. Handle columns containing START_DATE - set to max(column_value, min_date)
         if start_date_columns and self.date_filter.min_value is not None:
             for col in start_date_columns:
+                # Always use greatest to ensure start dates are at least min_value
+                # This is appropriate regardless of whether min_value is > or >=
                 mutations[col] = ibis.greatest(
                     table[col], ibis.literal(self.date_filter.min_value.value)
                 )
 
-        # 3. Handle columns containing END_DATE - set to NULL if after max_date
-        end_date_columns = [col for col in columns if "END_DATE" in col]
+        # 2b. Handle columns containing END_DATE - set to NULL if outside max_date boundary
         if end_date_columns and self.date_filter.max_value is not None:
             for col in end_date_columns:
-                mutations[col] = (
-                    ibis.case()
-                    .when(
-                        table[col] > ibis.literal(self.date_filter.max_value.value),
-                        ibis.null(),
+                # Respect the operator from max_value
+                if self.date_filter.max_value.operator == "<=":
+                    # BeforeOrOn: set to NULL if date > max_value
+                    condition = table[col] > ibis.literal(
+                        self.date_filter.max_value.value
                     )
-                    .else_(table[col])
-                    .end()
+                elif self.date_filter.max_value.operator == "<":
+                    # Before: set to NULL if date >= max_value
+                    condition = table[col] >= ibis.literal(
+                        self.date_filter.max_value.value
+                    )
+                else:
+                    raise ValueError(
+                        f"Unsupported max_value operator: {self.date_filter.max_value.operator}"
+                    )
+
+                mutations[col] = (
+                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
                 )
 
-        # 4. Handle columns containing DATE_OF_DEATH or DEATH_DATE - set to NULL if after max_date
+        # 2c. Handle columns containing DATE_OF_DEATH or DEATH_DATE - set to NULL if outside max_date boundary
         death_date_columns = [
             col for col in columns if "DATE_OF_DEATH" in col or "DEATH_DATE" in col
         ]
         if death_date_columns and self.date_filter.max_value is not None:
             for col in death_date_columns:
-                mutations[col] = (
-                    ibis.case()
-                    .when(
-                        table[col] > ibis.literal(self.date_filter.max_value.value),
-                        ibis.null(),
+                # Respect the operator from max_value
+                if self.date_filter.max_value.operator == "<=":
+                    # BeforeOrOn: set to NULL if date > max_value
+                    condition = table[col] > ibis.literal(
+                        self.date_filter.max_value.value
                     )
-                    .else_(table[col])
-                    .end()
+                elif self.date_filter.max_value.operator == "<":
+                    # Before: set to NULL if date >= max_value
+                    condition = table[col] >= ibis.literal(
+                        self.date_filter.max_value.value
+                    )
+                else:
+                    raise ValueError(
+                        f"Unsupported max_value operator: {self.date_filter.max_value.operator}"
+                    )
+
+                mutations[col] = (
+                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
                 )
 
         # Apply all mutations if any exist
