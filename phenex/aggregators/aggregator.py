@@ -3,6 +3,7 @@ from ibis.expr.types.relations import Table
 import ibis
 from phenex.util.serialization.to_dict import to_dict
 
+
 class VerticalDateAggregator:
     def __init__(
         self,
@@ -129,14 +130,25 @@ class ValueAggregator:
             # Join back with original table to get the date
             aggregated_table = input_table.select(selected_columns).distinct()
 
-            original_with_date = input_table.select(_aggregation_index_cols + [_aggregation_column, "EVENT_DATE"])
-            input_table = aggregated_table.join(
-                original_with_date,
-                predicates=[
-                    *[agg_col == orig_col for agg_col, orig_col in zip(_aggregation_index_cols, _aggregation_index_cols)],
-                    aggregated_table.VALUE == _aggregation_column
-                ]
-            ).select(_aggregation_index_cols + ["VALUE", "EVENT_DATE"]).distinct()
+            original_with_date = input_table.select(
+                _aggregation_index_cols + [_aggregation_column, "EVENT_DATE"]
+            )
+            input_table = (
+                aggregated_table.join(
+                    original_with_date,
+                    predicates=[
+                        *[
+                            agg_col == orig_col
+                            for agg_col, orig_col in zip(
+                                _aggregation_index_cols, _aggregation_index_cols
+                            )
+                        ],
+                        aggregated_table.VALUE == _aggregation_column,
+                    ],
+                )
+                .select(_aggregation_index_cols + ["VALUE", "EVENT_DATE"])
+                .distinct()
+            )
             return input_table
 
         # Apply the distinct reduction if required

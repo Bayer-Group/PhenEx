@@ -546,7 +546,7 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
             c_max_all_values_post_index,
             c_max_all_values_pre_index,
             c_min_all_values_post_index,
-            c_min_all_values_pre_index
+            c_min_all_values_pre_index,
         ]
         return test_infos
 
@@ -677,8 +677,6 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(
             ),
         }
 
- 
-
         test_infos = [
             c_mean_all_values_pre_index,
             c_mean_all_values_post_index,
@@ -686,9 +684,11 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(
             c_median_all_values_post_index,
         ]
         return test_infos
-    
 
-class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(PhenotypeTestGenerator):
+
+class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(
+    PhenotypeTestGenerator
+):
     name_space = "mmpt_valueaggregation_duplicates"
     test_values = True
     test_date = True
@@ -739,7 +739,6 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
         df_d2_4 = create_copy_with_changes(df_d1_1, 4, d2)
         df_d2_1_duplicate = create_copy_with_changes(df_d1_1, 1, d2)
 
-
         df_final = pd.concat(
             [
                 df_d1_1,
@@ -768,7 +767,7 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
             "name": "nearest_prior_return_daily_mean",
             "persons": [f"P{x}" for x in range(self.N)],
             "dates": [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
-            "values": [8/3] * self.N,
+            "values": [8 / 3] * self.N,
             "phenotype": MeasurementPhenotype(
                 name="nearest_prior_return_daily_mean",
                 return_date="last",
@@ -798,7 +797,6 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
             ),
         }
 
-
         c_max_daily_values_pre_index_last = {
             "name": "preindex_return_max_daily_values_last",
             "persons": [f"P{x}" for x in range(self.N)],
@@ -815,7 +813,6 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
                 return_date="last",
             ),
         }
-
 
         c_min_daily_values_pre_index_last = {
             "name": "preindex_return_min_daily_values_last",
@@ -853,9 +850,10 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
 
         c_min_all_values_pre_index = {
             "name": "preindex_return_min_all_values",
-            "persons": [f"P{x}" for x in range(self.N)]*2,
-            "values": ([1] * self.N )*2,
-            "dates": [datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")] * self.N + [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
+            "persons": [f"P{x}" for x in range(self.N)] * 2,
+            "values": ([1] * self.N) * 2,
+            "dates": [datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")] * self.N
+            + [datetime.datetime.strptime("01-02-2022", "%m-%d-%Y")] * self.N,
             "phenotype": MeasurementPhenotype(
                 name="preindex_return_min_all_values",
                 relative_time_range=RelativeTimeRangeFilter(
@@ -872,7 +870,7 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(Phenotype
             c_max_daily_values_pre_index_last,
             c_min_daily_values_pre_index_last,
             c_max_all_values_pre_index,
-            c_min_all_values_pre_index
+            c_min_all_values_pre_index,
         ]
         return test_infos
 
@@ -952,9 +950,11 @@ def test_measurement_phenotype_value_all_aggregation():
     spg = MeasurementPhenotypeValueAllAggregationTestGenerator()
     spg.run_tests(verbose=False)
 
+
 def test_measurement_phenotype_value_aggregation_duplicate_values():
     spg = MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator()
     spg.run_tests(verbose=False)
+
 
 if __name__ == "__main__":
     test_measurement_phenotype()
