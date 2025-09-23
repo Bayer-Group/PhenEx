@@ -50,7 +50,7 @@ services:
       platforms:
       - "linux/amd64"
     ports:
-      - "0.0.0.0:9111:5173"
+      - "9111:5173"
     env_file: ./ui/.env.bundle
 
   # Comment out everything below this point if you are using an external Postgres database
