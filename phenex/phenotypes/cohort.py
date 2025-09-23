@@ -462,26 +462,21 @@ class DataPeriodFilterNode(Node):
     Filtering Rules:
 
         1. **EVENT_DATE Column**:
-           If an EVENT_DATE column exists, filters the entire table to only include rows where EVENT_DATE falls within the date filter range using the existing DateFilter.filter() method.
+           If an EVENT_DATE column exists, filters the entire table to only include rows where EVENT_DATE falls within the date filter range.
 
-        2. **START_DATE Columns** (substring matching):
+        2. **START_DATE Columns**:
            Any column containing "START_DATE" as a substring (e.g., TREATMENT_START_DATE, START_DATE_PROCEDURE, MEDICATION_START_DATE_TIME) adjusts values to max(original_value, date_filter.min_date) to ensure start dates are not before the study period.
 
-           **Row Exclusion**: If START_DATE is strictly after date_filter.max_date, the entire row is dropped as the period doesn't overlap with the study period. This filtering respects the operator semantics: with BeforeOrOn (<=), drops if start_date > max_value; with Before (<), drops if start_date >= max_value.
+           **Row Exclusion**: If START_DATE is strictly after date_filter.max_date, the entire row is dropped as the period doesn't overlap with the study period.
 
-        3. **END_DATE Columns** (substring matching):
+        3. **END_DATE Columns**:
            Any column containing "END_DATE" as a substring (e.g., TREATMENT_END_DATE, END_DATE_PROCEDURE, CONDITION_END_DATE) sets value to NULL if original_value > date_filter.max_date to indicate that the end event occurred outside the observation period.
 
-           **Row Exclusion**: If END_DATE is strictly before date_filter.min_date, the entire row is dropped as the period doesn't overlap with the study period. This filtering respects the operator semantics: with AfterOrOn (>=), drops if end_date < min_value; with After (>), drops if end_date <= min_value.
+           **Row Exclusion**: If END_DATE is strictly before date_filter.min_date, the entire row is dropped as the period doesn't overlap with the study period.
 
         4. **Death Date Columns** (substring matching):
            Any column containing "DATE_OF_DEATH" or "DEATH_DATE" as substrings
            (e.g., DATE_OF_DEATH, DEATH_DATE, PATIENT_DATE_OF_DEATH, DEATH_DATE_RECORDED) sets value to NULL if original_value > date_filter.max_date to indicate that death occurred outside the observation period.
-
-    Implementation Notes:
-        - Row exclusion filtering is applied before column mutations to ensure proper ibis relation handling
-        - The DateFilter class provides operator-aware filtering that respects boundary conditions (< vs <=, > vs >=)
-        - For column-based filtering operations, DateFilter is used directly for consistent operator semantics
 
     Parameters:
         name: Unique identifier for this node in the computation graph.
