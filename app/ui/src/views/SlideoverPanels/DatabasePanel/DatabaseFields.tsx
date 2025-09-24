@@ -6,7 +6,7 @@ import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
 import editPencilIcon from '../../../../../assets/icons/edit-pencil.svg';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
-import databasesDataRaw from '/assets/databases.json?raw';
+import databasesDataRaw from '../../../assets/databases.json?raw';
 let databasesData = JSON.parse(databasesDataRaw);
 
 interface DatabaseFieldsProps {}
