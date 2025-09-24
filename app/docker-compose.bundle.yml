@@ -10,6 +10,7 @@ name: phenex
 
 services:
   be-bundle:
+    container_name: phenex-be-bundle
     build:
       context: ./backend
       dockerfile: ./Dockerfile.model-bundle
@@ -20,14 +21,14 @@ services:
     env_file: ./backend/.env
 
   fe-bundle:
+    container_name: phenex-fe-bundle
     build:
       context: ./ui
       dockerfile: ./Dockerfile.bundle
       platforms:
       - "linux/amd64"
     ports:
-      - "9111:5173"
-    env_file: ./ui/.env.bundle
+      - "9111:80"
 
   # Comment out everything below this point if you are using an external Postgres database
   db:
