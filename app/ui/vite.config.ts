@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8001', // backend API
+        target: 'http://phenex-backend:8000', // backend API
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, '')
       }

@@ -1,36 +1,33 @@
 # Usage
-#   1. Build:               docker compose build --no-cache --progress=plain
-#   2. Initialize the DB:   2.1. docker compose up db # wait till inital DB setup is complete and restart it ^C
-#                           2.2. docker compose up db -d
+#   1. Build:               docker compose -f docker-compose.bundle.yml build --no-cache --progress=plain
+#   2. Initialize the DB:   2.1. docker compose -f docker-compose.bundle.yml up db # wait till inital DB setup is complete and restart it ^C
+#                           2.2. docker compose -f docker-compose.bundle.yml up db -d
 #                           2.3. ./backend/scripts/reset-databases-local.sh
-#   3. Run                  docker compose up backend frontend
-#   4. Stop                 docker compose down
+#   3. Run bundled          docker compose -f docker-compose.bundle.yml up be-bundle fe-bundle
+#   4. Stop                 docker compose -f docker-compose.bundle.yml down
 
 name: phenex
 
 services:
-  backend:
-    container_name: phenex-backend
+  be-bundle:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile.model-bundle
       platforms:
-      - "linux/arm64/v8"
+      - "linux/amd64"
     ports:
-      - "8001:8000"
-    volumes:
-      - ${HOME}/.phenex/data/phenex/cohorts:/app/data/cohorts
-      - ${HOME}/.phenex/data/phenex/users:/app/data/users
+      - 9001:8000
     env_file: ./backend/.env
 
-  frontend:
-    container_name: phenex-frontend
+  fe-bundle:
     build:
       context: ./ui
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile.bundle
+      platforms:
+      - "linux/amd64"
     ports:
-      - "5173:5173"
-    env_file: ./ui/.env
+      - "9111:5173"
+    env_file: ./ui/.env.bundle
 
   # Comment out everything below this point if you are using an external Postgres database
   db:

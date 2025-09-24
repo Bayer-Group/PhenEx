@@ -1,0 +1,19 @@
+[
+    {
+        "database": "DATABASE_NAME_1",
+        "mapper": "Mapper reference", // https://bayer-group.github.io/PhenEx/api/mappers/
+        "schemas": [
+            "SCHEMA_1",
+            "SCHEMA_2",
+        ]
+    },
+    {
+        "database": "DATABASE_NAME_2",
+        "mapper": "Mapper reference",
+        "schemas": [
+            "SCHEMA_1",
+            "SCHEMA_2",
+            "SCHEMA_3",
+        ]
+    },
+]
