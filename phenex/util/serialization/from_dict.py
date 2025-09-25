@@ -14,13 +14,13 @@ def from_dict(data: dict):
     """
     Method to decode all PhenEx classes. Given encoded PhenEx data, it will return the corresponding PhenEx class.
     """
-    # logger.debug(f"Decoding data: {data}")
+    logger.debug(f"Decoding data: {data}")
 
     class_name = data.pop("class_name")
-    # logger.debug(f"Class name: {class_name}")
+    logger.debug(f"Class name: {class_name}", data)
     cls = globals()[class_name]
     all_params = get_phenex_init_params(cls)
-    # logger.debug(f"Current params: {all_params}")
+    logger.debug(f"Current params: {all_params}")
 
     init_args = {}
     kwargs = {}

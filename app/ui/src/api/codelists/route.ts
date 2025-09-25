@@ -26,13 +26,19 @@ export const getCodelistFileForCohort = async (cohort_id: string, file_id: strin
 
 export const uploadCodelistFileToCohort = async (cohort_id: string, file: any) => {
   try {
-    const response = await api.post(`/upload_codelist_file_to_cohort`, file, {
-      params: { cohort_id },
-      headers: { 'Content-Type': 'multipart/form-data' },
+    console.log("ATTEMPTING TO UPLOAD FILE", cohort_id, file);
+    const response = await api.post(`/upload_codelist_file_to_cohort`, {
+      cohort_id: cohort_id,
+      file: file
     });
+    console.log("SAVED FILE");
     return response.data;
   } catch (error) {
     console.error('Error in uploadCodelistFileToCohort:', error);
+    // Log the full error response to see validation details
+    if (error.response) {
+      console.error('Error details:', error.response.data);
+    }
     throw error;
   }
 };

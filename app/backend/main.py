@@ -4,8 +4,14 @@ from fastapi import FastAPI, Body, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.authentication import AuthenticationMiddleware
+import sys
+# TODO figure out how to make this sustainably only during development
+# sys.path = ['/app'] + sys.path
+import phenex 
+print("RIGHT NOW2", phenex.__file__)
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
+
 from dotenv import load_dotenv
 import os
 import json
@@ -723,8 +729,9 @@ async def execute_study(
                     json.dump(processed_cohort, f, indent=4)
 
                 print("Creating phenex cohort object...")
-                logger.info("Creating phenex cohort object from processed data...")
+                logger.info("Creating phenex cohort object from processed data... CHANGES ARE HERE 2")
                 px_cohort = from_dict(processed_cohort)
+                logger.info("HERE IS THE DESEARLIAZED", px_cohort)
 
                 logger.debug("Saving cohort object to cohort.json")
                 with open("./cohort.json", "w") as f:
@@ -909,7 +916,9 @@ async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
     Returns:
         dict: The cohort data.
     """
+    print("RECEIVED FILE", cohort_id, file)
     save_codelist_file_for_cohort(cohort_id, file["id"], file)
+    print("SAVED FILE")
     return {
         "status": "success",
         "message": f"Uploaded {cohort_id} {file['id']} successfully.",
