@@ -12,9 +12,11 @@ class DomainsDictionary:
         domains_dict (Dict[str, class]): A dictionary where keys are domain names and values are uninstantiated PhenexTable class objects.
 
     Methods:
-        get_mapped_tables(con, database=None) -> Dict[str, Table]:
+        get_mapped_tables(con) -> Dict[str, Table]:
             Get all tables mapped to PhenEx representation using the given connection.
-        set_mapped_tables(con, con, overwrite=False) -> None:
+        get_source_tables(con) -> Dict[str, Table]:
+            Get all source tables using the given connection.
+        set_mapped_tables(con, overwrite=False) -> None:
             Create a view for all mapped tables in the destination database.
     """
 
@@ -23,13 +25,11 @@ class DomainsDictionary:
 
     def set_mapped_tables(self, con, overwrite=False) -> Dict[str, Table]:
         """
-        Get all tables mapped to PhenEx representation using the given connection.
-
-        If a database is not provided, the current database of the connection is used to find the tables.
+        Create a view for all mapped tables in the destination database.
 
         Args:
             con: The connection to the database.
-            database (Optional[str]): The name of the database. Defaults to the current database of the connection.
+            overwrite: Whether to overwrite existing views if found. Otherwise, throws an error.
 
         Returns:
             Dict[str, Table]: A dictionary where keys are domain names and values are mapped tables.
@@ -38,9 +38,10 @@ class DomainsDictionary:
             database=con.SNOWFLAKE_DEST_DATABASE
         )
         for domain, mapper in self.domains_dict.items():
-            if domain not in existing_tables or overwrite:
+            if domain not in existing_tables:
                 t = con.get_source_table(mapper.NAME_TABLE)
                 mapped_table = mapper(t).table
+                # overwrite error handling handled in create_view call
                 con.create_view(
                     mapped_table, name_table=mapper.NAME_TABLE, overwrite=overwrite
                 )
@@ -53,7 +54,6 @@ class DomainsDictionary:
 
         Args:
             con: The connection to the database.
-            database (Optional[str]): The name of the database. Defaults to the current database of the connection.
 
         Returns:
             Dict[str, PhenexTable]: A dictionary where keys are domain names and values are mapped tables.
@@ -63,6 +63,23 @@ class DomainsDictionary:
         for domain, mapper in self.domains_dict.items():
             mapped_tables[domain] = mapper(con.get_source_table(mapper.NAME_TABLE))
         return mapped_tables
+
+    def get_source_tables(self, con) -> Dict[str, str]:
+        """
+        Get all source tables using the given connection.
+
+        Args:
+            con: The connection to the database.
+
+        Returns:
+            Dict[str, str]: A dictionary where keys are the source table names and values are table names.
+        """
+        source_tables = {}
+        for mapper in self.domains_dict.values():
+            table_name = mapper.NAME_TABLE
+            if table_name not in source_tables:
+                source_tables[table_name] = con.get_source_table(table_name)
+        return source_tables
 
 
 #
@@ -268,9 +285,9 @@ class OMOPConceptTable(PhenexTable):
 
 
 #
-# Domains
+# OMOP Mappers
 #
-OMOPs = {
+OMOPMappersDict = {
     "PERSON": OMOPPersonTable,
     "VISIT_OCCURRENCE": OMOPVisitOccurrenceTable,
     "VISIT_DETAIL": OMOPVisitDetailTable,
@@ -286,4 +303,4 @@ OMOPs = {
     "OBSERVATION": OMOPObservationTable,
     "MEASUREMENT": OMOPMeasurementTable,
 }
-OMOPDomains = DomainsDictionary(OMOPs)
+OMOPDomains = DomainsDictionary(OMOPMappersDict)
