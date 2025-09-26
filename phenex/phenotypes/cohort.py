@@ -482,12 +482,12 @@ class SubsetTable(Node):
         # Check if EVENT_DATE exists in the index table
         if "EVENT_DATE" in index_table.columns:
             index_table = index_table.rename({"INDEX_DATE": "EVENT_DATE"})
-            columns = list(set(["INDEX_DATE"] + table.columns))
+            columns = list(set(["INDEX_DATE"] + list(table.columns)))
         else:
             logger.warning(
                 f"EVENT_DATE column not found in index_phenotype table for SubsetTable '{self.name}'. INDEX_DATE will not be set."
             )
-            columns = table.columns
+            columns = list(table.columns)
 
         subset_table = table.inner_join(index_table, "PERSON_ID")
         subset_table = subset_table.select(columns)
@@ -518,7 +518,7 @@ class InclusionsTableNode(Node):
                 }
             )
             inclusions_table = inclusions_table.left_join(pt_table, ["PERSON_ID"])
-            columns = inclusions_table.columns
+            columns = list(inclusions_table.columns)
             columns.remove("PERSON_ID_right")
             inclusions_table = inclusions_table.select(columns)
 
@@ -562,7 +562,7 @@ class ExclusionsTableNode(Node):
                 }
             )
             exclusions_table = exclusions_table.left_join(pt_table, ["PERSON_ID"])
-            columns = exclusions_table.columns
+            columns = list(exclusions_table.columns)
             columns.remove("PERSON_ID_right")
             exclusions_table = exclusions_table.select(columns)
 

@@ -92,7 +92,7 @@ class MeasurementChangePhenotype(Phenotype):
             rname="{name}_2",
         ).filter(_.EVENT_DATE_1 < _.EVENT_DATE_2)
         # Calculate the change in value and the days apart
-        days_between = joined_table.EVENT_DATE_2.delta(joined_table.EVENT_DATE_1, "day")
+        days_between = joined_table.EVENT_DATE_2.delta(joined_table.EVENT_DATE_1, unit="day")
         value_change = joined_table.VALUE_2 - joined_table.VALUE_1
         joined_table = joined_table.mutate(
             VALUE_CHANGE=value_change, DAYS_BETWEEN=days_between

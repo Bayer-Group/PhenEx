@@ -46,7 +46,7 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         join_table = join_table.mutate(
             PERSON_ID=ibis.coalesce(join_table.PERSON_ID, join_table.PERSON_ID_right)
         )
-        columns = join_table.columns
+        columns = list(join_table.columns)
         columns.remove("PERSON_ID_right")
         join_table = join_table.select(columns)
 

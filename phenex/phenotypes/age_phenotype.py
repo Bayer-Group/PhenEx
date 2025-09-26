@@ -125,7 +125,7 @@ class AgePhenotype(Phenotype):
             reference_column = table.INDEX_DATE
 
         YEARS_FROM_ANCHOR = (
-            reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
+            reference_column.delta(table.EVENT_DATE, unit="day") / self.DAYS_IN_YEAR
         ).floor()
         table = table.mutate(YEARS_FROM_ANCHOR=YEARS_FROM_ANCHOR)
 
