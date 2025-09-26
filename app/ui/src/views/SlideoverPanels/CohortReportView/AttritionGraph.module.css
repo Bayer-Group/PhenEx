@@ -1,0 +1,208 @@
+:root{
+    --graph_bar_height_main: 18px;
+    --graph_border_radius: 4px;/*calc(var(--graph_bar_height_main) / 2);*/
+
+}
+.container {
+  padding: 10px;
+  font-family: 'IBMPlexSans-regular';
+  width: 100%;
+  max-width: 800px;
+  overflow: hidden;
+}
+
+.tabsContainer{
+    position: absolute;
+    right:10px;
+    top:40px;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  height: 100%;
+  overflow-y: auto;
+  margin-bottom: 250px !important;
+}
+
+.attritionItem {
+  position: relative;
+  background-color: transparent;
+  border-radius: 15px;
+  padding: 12px 10px;
+  border: transparent solid 1px;
+  cursor: pointer;
+  transition: var(--item-transition);
+
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0px;
+}
+
+.itemTitle {
+  /* display: flex;
+  align-items: center; */
+  gap: 8px;
+  width:100%;
+}
+
+.phenotypeType {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  margin-left: 0px;
+  margin-right:10px;
+  font-family: 'IBMPlexSans-bolditalic';
+  border-radius: var(--graph_border_radius);
+}
+
+.index {
+  display: inline-block;
+}
+
+.phenotypeName {
+  font-family: 'IBMPlexSans-bold';
+  font-size: 20px;
+  margin-left:5px;
+  color: var(--color-accent-bright) !important;
+}
+
+.attritionItem.selected .phenotypeName {
+  font-family: 'IBMPlexSans-bold';
+}
+.attritionGraph{
+    width: 100%;
+    height: 100%;
+}
+.itemContent {
+  margin-left: 0;
+}
+
+.barContainer, .subBarContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--graph_bar_height_main);
+  max-width: 800px; /* Maximum width for the full bar */
+  width: 100%; /* Take available width up to max */
+}
+
+.barArea, .subBarArea {
+    background-color: rgba(230, 230, 230, 0.6);
+  border-radius: var(--graph_border_radius);
+  flex: 1; /* Take remaining space after count text */
+  height: 100%;
+  position: relative;
+  margin-left:0px;
+  max-width: calc(100% - 150px); /* Reserve space for count text and gap */
+}
+
+
+.subBarContainer {
+    margin-top:10px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.bar, .subBar {
+  height: 100%;
+  min-width: 2px;
+  border-radius: var(--graph_border_radius);
+  display: flex;
+  align-items: center;
+  transition: width 0.3s ease-in-out;
+  position: relative;
+  background-color: white;
+}
+
+.subBar {
+  background-color: var(--color-accent-bright);
+  border-radius: 1px;
+}
+
+
+
+.barText, .subBarText {
+    position: absolute;
+    left: calc(100% + 8px);
+    top:-12px;
+  color: var(--color-accent-bright);
+  font-size: 24px;
+  font-family: 'IBMPlexSans-bold';
+  white-space: nowrap;
+  /* margin-left:10px; */
+
+}
+
+.subBarText{
+    top:-8px;
+    font-size:12px;
+    background-color: var(--background-color);
+    padding:2px 4px;
+}
+
+.countText {
+  font-size: 18px;
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-bold';
+  min-width: 50px;
+}
+
+
+.deltaText {
+    position: absolute;
+    right:10px;
+    top:40px;
+    font-size:12px;
+    text-align: right;
+  font-family: 'IBMPlexSans-bolditalic';
+}
+
+.deltaFiller{
+    font-size: 12px;
+    font-family: 'IBMPlexSans-bolditalic';
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.footer{
+    position: absolute;
+    left: 0px;
+    bottom:0px;
+    width:100%;
+    height:200px;
+    /* width: calc(100% - 20px); */
+      background-color: var(--background_color_translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: var(--border);
+  font-size:24px;
+    padding:20px 20px;
+  /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius)
+    var(--issue_popover_radius) var(--issue_popover_radius); */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); */
+
+}
+
+
+.finalCohortSize{
+    margin-left:20px;
+    font-size: 32px;
+    font-family: "IBMPlexSans-bold";
+}

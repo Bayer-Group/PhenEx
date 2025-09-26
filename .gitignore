@@ -166,6 +166,10 @@ cython_debug/
 phenex/test/phenotypes/artifacts/
 phenex/test/cohort/artifacts/
 phenex/test/serialization/artifacts
+<<<<<<< HEAD
 
 app/ui/public/assets/databases.json
 app/ui/.vite
+=======
+app/ui/.vite
+>>>>>>> ui_reportview

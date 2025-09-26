@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from 'react';
 import styles from './CohortReportView.module.css';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-
+import { AttritionGraph } from'./AttritionGraph'
 import { ReportTable } from './ReportTable';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 interface CohortReportViewProps {
@@ -16,11 +16,20 @@ enum CohortReportViewType {
   KaplanMeier = 'KaplanMeier',
 }
 
+enum GraphViewType {
+  Table = 'table',
+  Graph = 'graph',
+}
+
 export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortReportViewType>(
     CohortReportViewType.Attrition
   );
+  const [currentGraphView, setCurrentGraphView] = useState<GraphViewType>(
+    GraphViewType.Graph
+  );
+
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
@@ -37,7 +46,9 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
   const tabs = Object.values(CohortReportViewType).map(value => {
     return value.charAt(0).toUpperCase() + value.slice(1);
   });
-
+  const graphTabs = Object.values(GraphViewType).map(value => {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  });
   const onTabChange = (index: number) => {
     const viewTypes = Object.values(CohortReportViewType);
     const selectedView = viewTypes[index];
@@ -45,15 +56,26 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
     document.getElementById(selectedView)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
+  const onGraphTabChange = (index: number) => {
+    const viewTypes = Object.values(GraphViewType);
+    const selectedView = viewTypes[index];
+    setCurrentGraphView(selectedView);
+  };
+
+  const renderAttrition = () =>{
+    switch (currentGraphView){
+      case GraphViewType.Table:
+        return <ReportTable dataService={dataService.report_service} />;
+      case GraphViewType.Graph:
+        return <AttritionGraph dataService={dataService.report_service} />;
+    }
+  }
+
   const renderViewContent = () => {
     switch (currentView) {
       case CohortReportViewType.Attrition:
         dataService.report_service.setCurrentDataKey('waterfall');
-        return (
-          <>
-            <ReportTable dataService={dataService.report_service} />
-          </>
-        );
+        return renderAttrition();
       case CohortReportViewType.Table1:
         dataService.report_service.setCurrentDataKey('table1');
         return (
@@ -61,17 +83,6 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
             <ReportTable dataService={dataService.report_service} />
           </>
         );
-      // case CohortReportViewType.Baseline:
-      //   return (
-      //     <>
-      //       <ReportCard title={'Age'} />
-      //       <ReportCard title={'Sex'} />
-      //       <ReportCard title={'Ethnicity'} />
-      //       <ReportCard title={'Baseline Characteristics'} />
-      //     </>
-      //   );
-      // case CohortReportViewType.Outcomes:
-      //   return <ReportCard title={'Outcomes'} />;
       default:
         return null;
     }
@@ -119,11 +130,14 @@ export const CohortReportView: FC<CohortReportViewProps> = ({ data }) => {
       <div className={styles.container}>
         <div className={styles.controlsContainer}>
           <Tabs
-            width={400}
-            height={25}
             tabs={tabs}
             onTabChange={onTabChange}
             active_tab_index={Object.values(CohortReportViewType).indexOf(currentView)}
+          />
+          <Tabs
+            tabs={graphTabs}
+            onTabChange={onGraphTabChange}
+            active_tab_index={Object.values(GraphViewType).indexOf(currentGraphView)}
           />
         </div>
         <div className={styles.bottomSection}>{renderViewContent()}</div>

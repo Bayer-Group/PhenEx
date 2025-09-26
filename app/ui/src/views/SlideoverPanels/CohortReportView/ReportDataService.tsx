@@ -14,6 +14,7 @@ export class ReportDataService {
   public setCurrentDataKey(key: string) {
     this.current_data_key = key;
     this.updateReportData();
+    console.log("UPDATING CURRENT DATA", key, this.cohortDataService?.cohort_data, this.columns)
   }
 
   private updateReportData() {
