@@ -19,66 +19,89 @@ const useCodelistState = (initialValue: any, onValueChange?: (value: any) => voi
   const [filenames, setFilenames] = useState<string[]>([]);
 
   useEffect(() => {
-    const codelistFilenames = cohortDataService.codelists_service._filenames || [];
-    setFilenames(codelistFilenames);
+    const loadFilenamesAndFiles = async () => {
+      // Make sure we have the filenames and files loaded
+      await cohortDataService.codelists_service.setFilenamesForCohort();
+      
+      const codelistFilenames = cohortDataService.codelists_service._filenames || [];
+      console.log('FileCodelistEditor: loaded filenames:', codelistFilenames);
+      console.log('FileCodelistEditor: loaded files:', cohortDataService.codelists_service.files);
+      
+      setFilenames(codelistFilenames);
 
-    if (initialValue) {
-      setSelectedFileName(initialValue.file_name || '');
-      setSelectedCodeColumn(initialValue.code_column || '');
-      setSelectedCodeTypeColumn(initialValue.code_type_column || '');
-      setSelectedCodelistColumn(initialValue.codelist_column || '');
-      setSelectedCodelist(initialValue.codelist_name || '');
-    }
-    if (codelistFilenames.length > 0) {
-      console.log('there are codelists', codelistFilenames);
-      setSelectedFileName(codelistFilenames[0]);
-      setSelectedFileColumnnames(
-        cohortDataService.codelists_service.getColumnsForFile(codelistFilenames[0]) || []
-      );
-    }
-    console.log('SETT THE INITILA VAlUES', selectedFileColumnnames);
+      if (initialValue) {
+        setSelectedFileName(initialValue.file_name || '');
+        setSelectedCodeColumn(initialValue.code_column || '');
+        setSelectedCodeTypeColumn(initialValue.code_type_column || '');
+        setSelectedCodelistColumn(initialValue.codelist_column || '');
+        setSelectedCodelist(initialValue.codelist_name || '');
+      }
+      if (codelistFilenames.length > 0) {
+        console.log('FileCodelistEditor: setting first filename as default');
+        const firstFileName = codelistFilenames[0];
+        setSelectedFileName(firstFileName);
+        
+        const columns = cohortDataService.codelists_service.getColumnsForFile(firstFileName) || [];
+        console.log('FileCodelistEditor: columns for first file:', columns);
+        setSelectedFileColumnnames(columns);
+      }
+    };
+    
+    loadFilenamesAndFiles();
   }, []);
 
   useEffect(() => {
-    setSelectedFileColumnnames(
-      cohortDataService.codelists_service.getColumnsForFile(selectedFileName) || []
-    );
+    console.log('FileCodelistEditor: selectedFileName changed:', selectedFileName);
+    
+    if (!selectedFileName) {
+      console.log('FileCodelistEditor: No selectedFileName, skipping column setup');
+      return;
+    }
+    
+    const columns = cohortDataService.codelists_service.getColumnsForFile(selectedFileName) || [];
+    console.log('FileCodelistEditor: columns for file:', selectedFileName, columns);
+    setSelectedFileColumnnames(columns);
 
-    setSelectedCodeColumn(
-      cohortDataService.codelists_service.getDefaultColumnForFile(
-        selectedFileName,
-        'code_column'
-      ) || ''
-    );
+    const codeColumn = cohortDataService.codelists_service.getDefaultColumnForFile(
+      selectedFileName,
+      'code_column'
+    ) || '';
+    console.log('FileCodelistEditor: default code_column:', codeColumn);
+    setSelectedCodeColumn(codeColumn);
 
-    setSelectedCodeTypeColumn(
-      cohortDataService.codelists_service.getDefaultColumnForFile(
-        selectedFileName,
-        'code_type_column'
-      ) || ''
-    );
+    const codeTypeColumn = cohortDataService.codelists_service.getDefaultColumnForFile(
+      selectedFileName,
+      'code_type_column'
+    ) || '';
+    console.log('FileCodelistEditor: default code_type_column:', codeTypeColumn);
+    setSelectedCodeTypeColumn(codeTypeColumn);
 
-    setSelectedCodelistColumn(
-      cohortDataService.codelists_service.getDefaultColumnForFile(
-        selectedFileName,
-        'codelist_column'
-      ) || ''
-    );
+    const codelistColumn = cohortDataService.codelists_service.getDefaultColumnForFile(
+      selectedFileName,
+      'codelist_column'
+    ) || '';
+    console.log('FileCodelistEditor: default codelist_column:', codelistColumn);
+    setSelectedCodelistColumn(codelistColumn);
   }, [selectedFileName]);
 
   useEffect(() => {
     if (selectedFileName && selectedCodelistColumn) {
+      console.log('FileCodelistEditor: Getting codelists for file:', selectedFileName, 'column:', selectedCodelistColumn);
+      
       const codelists =
         cohortDataService.codelists_service.getCodelistsForFileInColumn(
           selectedFileName,
           selectedCodelistColumn
         ) || [];
+        
+      console.log('FileCodelistEditor: Found codelists:', codelists);
       setSelectedFileCodelists(codelists);
+      
       if (codelists.length > 0 && !selectedCodelist) {
+        console.log('FileCodelistEditor: Setting first codelist as default:', codelists[0]);
         setSelectedCodelist(codelists[0]);
       }
     }
-    console.log('SETTING codelsits');
   }, [selectedFileName, selectedCodelistColumn]);
 
   const handleDropdownChange = (field: string, value: string) => {

@@ -63,14 +63,30 @@ export class CodelistDataService {
   public async setFilenamesForCohort() {
     const oldFilenames = this._filenames;
     const filenames = await getCodelistFilenamesForCohort(this.cohortDataService.cohort_data.id);
-    this._filenames = filenames.map(fileinfo => fileinfo.filename);
+    console.log('setFilenamesForCohort: raw filenames from API:', filenames);
+    
+    // Remove any surrounding quotes from filenames
+    this._filenames = filenames.map(fileinfo => {
+      let filename = fileinfo.filename;
+      // Remove surrounding quotes if they exist
+      if (filename.startsWith('"') && filename.endsWith('"')) {
+        filename = filename.slice(1, -1);
+      }
+      return filename;
+    });
+    console.log('setFilenamesForCohort: processed _filenames:', this._filenames);
+    
     const filePromises = await Promise.all(
       filenames.map(fileinfo =>
         getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
       )
     );
+    console.log('setFilenamesForCohort: raw file promises:', filePromises);
+    
     // Filter out any undefined/null results
     this.files = filePromises.filter(file => file && file.contents && file.contents.data);
+    console.log('setFilenamesForCohort: filtered files:', this.files);
+    console.log('setFilenamesForCohort: file filenames:', this.files.map(f => f.filename));
     this.notifyListeners();
   }
 
@@ -314,9 +330,23 @@ export class CodelistDataService {
   }
 
   public getColumnsForFile(filename: string) {
-    const file = this.files.find(file => file.filename === filename);
-    if (!file) return [];
-    return file.contents.headers;
+    console.log('getColumnsForFile called with filename:', filename);
+    console.log('Available files:', this.files.map(f => f.filename));
+    
+    // Remove quotes if they exist in the search filename
+    let searchFilename = filename;
+    if (searchFilename.startsWith('"') && searchFilename.endsWith('"')) {
+      searchFilename = searchFilename.slice(1, -1);
+    }
+    
+    const file = this.files.find(file => file.filename === searchFilename);
+    if (!file) {
+      console.log('File not found:', filename, 'searched for:', searchFilename);
+      return [];
+    }
+    
+    console.log('Found file:', file.filename, 'columns:', file.contents.headers);
+    return file.contents.headers || [];
   }
 
   public getFileIdForName(filename: string) {
@@ -326,15 +356,57 @@ export class CodelistDataService {
   }
 
   public getCodelistsForFileInColumn(filename: string, column: string) {
-    const file = this.files.find(file => file.filename === filename);
-    if (!file) return [];
+    console.log('getCodelistsForFileInColumn:', filename, column);
+    console.log('Available files:', this.files.map(f => f.filename));
+    
+    // Remove quotes if they exist in the search filename
+    let searchFilename = filename;
+    if (searchFilename.startsWith('"') && searchFilename.endsWith('"')) {
+      searchFilename = searchFilename.slice(1, -1);
+    }
+    
+    const file = this.files.find(file => file.filename === searchFilename);
+    if (!file) {
+      console.log('File not found:', filename, 'searched for:', searchFilename);
+      return [];
+    }
+    
+    console.log('Found file:', file.filename);
+    console.log('File contents:', file.contents);
+    console.log('Available columns:', Object.keys(file.contents?.data || {}));
+    
+    if (!file.contents?.data || !file.contents.data[column]) {
+      console.log('Column not found or no data:', column);
+      return [];
+    }
+    
     const uniqueCodelistNames = Array.from(new Set(file.contents.data[column]));
+    console.log('Unique codelist names:', uniqueCodelistNames);
     return uniqueCodelistNames;
   }
 
   public getDefaultColumnForFile(filename: string, column: string) {
-    const file = this.files.find(file => file.filename === filename);
-    if (!file) return null;
+    console.log('getDefaultColumnForFile:', filename, column);
+    
+    // Remove quotes if they exist in the search filename
+    let searchFilename = filename;
+    if (searchFilename.startsWith('"') && searchFilename.endsWith('"')) {
+      searchFilename = searchFilename.slice(1, -1);
+    }
+    
+    const file = this.files.find(file => file.filename === searchFilename);
+    if (!file) {
+      console.log('File not found for getDefaultColumnForFile:', filename, 'searched for:', searchFilename);
+      console.log('Available filenames:', this.files.map(f => f.filename));
+      return null;
+    }
+    
+    console.log('Found file for getDefaultColumnForFile:', file);
+    console.log('File column mappings:', {
+      code_column: file.code_column,
+      code_type_column: file.code_type_column,
+      codelist_column: file.codelist_column
+    });
     
     switch (column) {
       case 'code_column':
