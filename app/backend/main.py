@@ -597,6 +597,7 @@ async def get_changes(request: Request, cohort_id: str):
 
 @app.post("/execute_study")
 async def execute_study(
+    request: Request,
     cohort: Dict = None,
     database_config: Dict = None,
 ):
@@ -604,12 +605,17 @@ async def execute_study(
     Execute a study using the provided cohort and database configuration with streaming output.
 
     Args:
+        request (Request): The request object for authentication.
         cohort (Dict): The cohort definition.
         database_config (Dict): The database configuration for the study.
 
     Returns:
         StreamingResponse: A stream of execution logs followed by the final results.
     """
+    # Get authenticated user_id and add it to cohort
+    user_id = _get_authenticated_user_id(request)
+    if cohort:
+        cohort["user_id"] = user_id
     import sys
     import asyncio
     from queue import Queue
@@ -721,7 +727,13 @@ async def execute_study(
                 del cohort["phenotypes"]
                 print("Preparing cohort for phenex...")
                 logger.info("Converting cohort data structure for phenex processing...")
-                processed_cohort = prepare_cohort_for_phenex(cohort)
+                
+                # Extract user_id from cohort before processing
+                user_id = cohort.get("user_id")
+                if not user_id:
+                    logger.warning("No user_id found in cohort, some operations may fail")
+                
+                processed_cohort = prepare_cohort_for_phenex(cohort, user_id)
 
                 print("Saving processed cohort...")
                 logger.debug("Saving processed cohort to processed_cohort.json")
@@ -744,13 +756,8 @@ async def execute_study(
                 logger.info("Appending patient counts to cohort results...")
                 px_cohort.append_counts()
 
-                path_cohort = get_path_cohort_files(cohort["id"])
-                print(f"Saving results to: {path_cohort}")
-                logger.info(f"Saving results to directory: {path_cohort}")
-
                 print("Generating table1...")
                 logger.info("Generating Table 1 (baseline characteristics)...")
-                px_cohort.table1.to_csv(os.path.join(path_cohort, "table1.csv"))
 
                 print("Generating waterfall report...")
                 logger.info("Generating waterfall/attrition report...")
@@ -758,9 +765,6 @@ async def execute_study(
 
                 r = Waterfall()
                 df_waterfall = r.execute(px_cohort)
-                df_waterfall.to_csv(
-                    os.path.join(path_cohort, "waterfall.csv"), index=False
-                )
 
                 print("Finalizing results...")
                 logger.info("Finalizing and formatting results for return...")
@@ -772,15 +776,6 @@ async def execute_study(
                 cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
 
                 final_result["cohort"] = cohort
-
-                print("Saving final results...")
-                logger.debug("Saving executed cohort to executed_cohort.json")
-                with open("./executed_cohort.json", "w") as f:
-                    json.dump(px_cohort.to_dict(), f, indent=4)
-
-                logger.debug("Saving returned cohort to returned_cohort.json")
-                with open("./returned_cohort.json", "w") as f:
-                    json.dump(cohort, f, indent=4)
 
                 print("Execution completed successfully!")
                 logger.info("Cohort execution completed successfully!")
@@ -1146,33 +1141,42 @@ async def delete_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: s
 # TODO import to codelist_file_management.py
 
 
-def resolve_phenexui_codelist_file(phenexui_codelist):
+def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
     """
     Resolves a phenexui codelist file to a codelist object dict representation. PhenEx UI codelists of file type do not contain actual codes, rather only the name of the codelist file, a mapping of codelist columns, and the name of codelist to extract.
     Args:
         phenexui_codelist: The phenexui codelist representation.
+        user_id (str): The authenticated user ID.
     Returns:
         dict: The resolved PhenEx Codelist object dict representation with codes and code_type.
     """
     # For execution time, create a sync wrapper around the async function
     import asyncio
-    try:
-        # Get the cohort to determine user_id
-        loop = asyncio.get_event_loop()
-        cohort = loop.run_until_complete(
-            db_manager.get_cohort_for_user(None, phenexui_codelist["cohort_id"])
-        )
-        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
-            raise ValueError(f"Could not find user_id for cohort {phenexui_codelist['cohort_id']}")
-        
-        user_id = cohort["cohort_data"]["user_id"]
+    
+    async def _resolve_codelist_file():
+        if not user_id:
+            raise ValueError(f"user_id is required for codelist resolution")
         
         # Get the codelist file
-        codelist_file = loop.run_until_complete(
-            get_codelist_file_for_cohort(
-                db_manager, phenexui_codelist["cohort_id"], phenexui_codelist["file_id"], user_id
-            )
+        codelist_file = await get_codelist_file_for_cohort(
+            db_manager, phenexui_codelist["cohort_id"], phenexui_codelist["file_id"], user_id
         )
+        return codelist_file
+    
+    try:
+        # Try to get the current event loop, if it doesn't exist create a new one
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # No event loop in current thread, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        codelist_file = loop.run_until_complete(_resolve_codelist_file())
+        
+        if not codelist_file:
+            raise ValueError(f"Codelist file {phenexui_codelist['file_id']} not found")
+            
     except Exception as e:
         logger.error(f"Failed to resolve codelist file during execution: {e}")
         raise ValueError(f"Could not resolve codelist file {phenexui_codelist['file_id']} for execution")
@@ -1216,11 +1220,12 @@ def resolve_medconb_codelist(phenexui_codelist):
     return phenexui_codelist
 
 
-def prepare_codelist_for_phenex(phenexui_codelist):
+def prepare_codelist_for_phenex(phenexui_codelist, user_id):
     """
     Prepares a single codelist from PhenEx UI for PhenEx execution by resolving codelists if necessary.
     Args:
         phenexui_codelist: A dictionary representing a codelist in the PhenEx UI.
+        user_id (str): The authenticated user ID.
     Returns:
         A dictionary representing PhenEx codelist with codes resolved
     """
@@ -1230,18 +1235,19 @@ def prepare_codelist_for_phenex(phenexui_codelist):
     if codelist_type == "manual":
         return phenexui_codelist
     elif codelist_type == "from file":
-        return resolve_phenexui_codelist_file(phenexui_codelist)
+        return resolve_phenexui_codelist_file(phenexui_codelist, user_id)
     elif codelist_type == "from medconb":
         return resolve_medconb_codelist(phenexui_codelist)
     raise ValueError(f"Unknown codelist class: {phenexui_codelist['class_name']}")
 
 
-def prepare_phenotypes_for_phenex(phenotypes: list[dict]):
+def prepare_phenotypes_for_phenex(phenotypes: list[dict], user_id):
     """
     Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
 
     Args:
         phenotypes : List of phenotypes from PhenEx UI with codelists of various types
+        user_id (str): The authenticated user ID.
     Returns:
         List of phenotypes with codelists prepared for phenex
     """
@@ -1249,32 +1255,33 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict]):
     for phenotype in phenotypes:
         # if it contains a codelist, prepare it for phenex
         if phenotype["class_name"] in ["CodelistPhenotype", "MeasurementPhenotype"]:
-            phenotype = prepare_codelists_for_phenotype(phenotype)
+            phenotype = prepare_codelists_for_phenotype(phenotype, user_id)
         elif phenotype["class_name"] == "TimeRangePhenotype":
             phenotype = prepare_time_range_phenotype(phenotype)
     return phenotypes
 
 
-def prepare_codelists_for_phenotype(phenotype: dict):
+def prepare_codelists_for_phenotype(phenotype: dict, user_id):
     """
     Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
 
     Args:
         phenotype: A phenotype from PhenEx UI with codelists of various types
+        user_id (str): The authenticated user ID.
     Returns:
         Phenotype with codelists prepared for phenex
     """
     # iterate over each phenotype
     # if it is a list, create a composite codelist
     if isinstance(phenotype["codelist"], list):
-        codelist = [prepare_codelist_for_phenex(x) for x in phenotype["codelist"]]
+        codelist = [prepare_codelist_for_phenex(x, user_id) for x in phenotype["codelist"]]
         composite_codelist = {
             "class_name": "CompositeCodelist",
             "codelists": codelist,
         }
         phenotype["codelist"] = composite_codelist
     else:
-        phenotype["codelist"] = prepare_codelist_for_phenex(phenotype["codelist"])
+        phenotype["codelist"] = prepare_codelist_for_phenex(phenotype["codelist"], user_id)
     return phenotype
 
 
@@ -1288,12 +1295,13 @@ def prepare_time_range_phenotype(phenotype: dict):
     return phenotype
 
 
-def prepare_cohort_for_phenex(phenexui_cohort: dict):
+def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
     """
     Codelists in the UI are of three types : manual, from file, from medconb. Additionally, a single phenotype can receive a list of codelists, each of various types (manual, file, medconb). Prior to PhenEx execution, we resolve each codelist individually i.e. getting codes from the csv file or pulling them from medconb. Then, if a list of codelists is passed, we combine them into a single codelist and store original references in a CompositeCodelist class.
 
     Args:
         phenexui_cohort : The cohort dictionary representation generated by PhenExUI.
+        user_id (str): The authenticated user ID.
     Returns:
         phenex_cohort : The cohort dictionary representation with codelists ready for PhenEx execution
     """
@@ -1301,27 +1309,27 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict):
 
     phenex_cohort = copy.deepcopy(phenexui_cohort)
     phenex_cohort["entry_criterion"] = prepare_phenotypes_for_phenex(
-        [phenex_cohort["entry_criterion"]]
+        [phenex_cohort["entry_criterion"]], user_id
     )[0]
     if "inclusions" in phenex_cohort.keys():
         phenex_cohort["inclusions"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["inclusions"]
+            phenex_cohort["inclusions"], user_id
         )
     if "exclusions" in phenex_cohort.keys():
         phenex_cohort["exclusions"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["exclusions"]
+            phenex_cohort["exclusions"], user_id
         )
     if "characteristics" in phenex_cohort.keys():
         phenex_cohort["characteristics"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["characteristics"]
+            phenex_cohort["characteristics"], user_id
         )
     if "outcomes" in phenex_cohort.keys():
         phenex_cohort["outcomes"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["outcomes"]
+            phenex_cohort["outcomes"], user_id
         )
     if "phenotypes" in phenex_cohort.keys():
         phenex_cohort["phenotypes"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["phenotypes"]
+            phenex_cohort["phenotypes"], user_id
         )
     return phenex_cohort
 
