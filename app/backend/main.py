@@ -996,7 +996,39 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str,
         # Get codelist using the user_id and file_id
         codelist = await db_manager.get_codelist(user_id, file_id)
         
-        return codelist
+        if not codelist:
+            return None
+            
+        logger.info(f"Retrieved codelist from database: {codelist}")
+        
+        # Parse JSON strings if they are strings (database returns JSONB as strings sometimes)
+        codelist_data = codelist.get("codelist_data", {})
+        if isinstance(codelist_data, str):
+            import json
+            codelist_data = json.loads(codelist_data)
+            
+        column_mapping = codelist.get("column_mapping", {})
+        if isinstance(column_mapping, str):
+            import json
+            column_mapping = json.loads(column_mapping)
+        
+        # Create the reconstructed file structure
+        reconstructed_file = {
+            "id": file_id,
+            "filename": codelist_data.get("filename", ""),
+            "code_column": column_mapping.get("code_column", ""),
+            "code_type_column": column_mapping.get("code_type_column", ""),
+            "codelist_column": column_mapping.get("codelist_column", ""),
+            "contents": codelist_data.get("contents", {}),
+            "codelists": codelist.get("codelists", []),
+            "version": codelist.get("version"),
+            "created_at": codelist.get("created_at"),
+            "updated_at": codelist.get("updated_at")
+        }
+        
+        logger.info(f"Reconstructed file structure: {reconstructed_file}")
+        return reconstructed_file
+        
     except Exception as e:
         logger.error(f"Failed to retrieve codelist file {file_id} for cohort {cohort_id}: {e}")
         return None
