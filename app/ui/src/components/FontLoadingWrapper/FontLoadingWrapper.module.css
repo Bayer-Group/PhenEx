@@ -1,0 +1,46 @@
+.fontWrapper {
+  transition: opacity 0.4s ease-in-out;
+}
+
+.fontsLoading {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.fontsLoaded {
+  opacity: 1;
+  visibility: visible;
+}
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--background-color, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loadingDot {
+  width: 12px;
+  height: 12px;
+  background-color: var(--color_accent_orange, #ff6b35);
+  border-radius: 50%;
+  animation: moveLeftRight 1.5s ease-in-out infinite;
+}
+
+@keyframes moveLeftRight {
+  0% {
+    transform: translateX(-30px);
+  }
+  50% {
+    transform: translateX(30px);
+  }
+  100% {
+    transform: translateX(-30px);
+  }
+}
