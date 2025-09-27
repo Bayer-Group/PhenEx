@@ -3,13 +3,12 @@
   user-select: none;
   right: 50px;
   bottom: 42px;
-  transition: all 0.3s ease;
+  transition: bottom 0.3s ease, opacity 0.3s ease;
   z-index: 1001;
 }
 
 .showingPopover {
-  /* top: 4px; */
-  right: 8px;
+  bottom: 50px; /* Move up instead of changing x position */
 }
 
 .issuesButton {
