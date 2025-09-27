@@ -63,11 +63,13 @@ export class CodelistDataService {
     const oldFilenames = this._filenames;
     const filenames = await getCodelistFilenamesForCohort(this.cohortDataService.cohort_data.id);
     this._filenames = filenames.map(fileinfo => fileinfo.filename);
-    this.files = await Promise.all(
+    const filePromises = await Promise.all(
       filenames.map(fileinfo =>
         getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
       )
     );
+    // Filter out any undefined/null results
+    this.files = filePromises.filter(file => file && file.contents && file.contents.data);
     this.notifyListeners();
   }
 
@@ -326,6 +328,10 @@ export class CodelistDataService {
 
   public summarizeCodelistFile(file) {
     if (!file) return [];
+    if (!file.contents || !file.contents.data) {
+      console.warn('File missing contents or data:', file);
+      return [];
+    }
 
     const codelistColumn = file.codelist_column;
     const codeColumn = file.code_column;

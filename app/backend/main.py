@@ -890,34 +890,51 @@ async def codelist_filesnames_for_cohort(cohort_id: str):
     return await get_codelist_filenames_for_cohort(db_manager, cohort_id)
 
 @app.get("/codelist_file_for_cohort", tags=["codelist"])
-async def codelist_file_for_cohort(cohort_id: str, file_id: str):
+async def codelist_file_for_cohort(request: Request, cohort_id: str, file_id: str):
     """
     Get the contents of a codelist file for a given cohort ID and file ID.
 
     Args:
+        request (Request): The request object for authentication.
         cohort_id (str): The ID of the cohort to retrieve.
         file_id (str): The ID of the file to retrieve.
 
     Returns:
         dict: codelist file contents
     """
-    return get_codelist_file_for_cohort(db_manager, cohort_id, file_id)
+    user_id = _get_authenticated_user_id(request)
+    result = await get_codelist_file_for_cohort(db_manager, cohort_id, file_id, user_id)
+    
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Codelist file {file_id} not found for cohort {cohort_id}")
+    
+    return result
 
 
 @app.post("/upload_codelist_file_to_cohort", tags=["codelist"])
-async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
+async def upload_codelist_file_to_cohort(request: Request, file: dict, cohort_id: str = None):
     """
-    Delete a cohort by its ID.
+    Upload a codelist file to a cohort.
 
     Args:
-        cohort_id (str): The ID of the cohort to retrieve.
+        request (Request): The request object for authentication.
         file (dict): The file to upload.
+        cohort_id (str): The ID of the cohort to retrieve (from query parameter).
 
     Returns:
         dict: The cohort data.
     """
-    print("RECEIVED FILE", cohort_id,file["id"])
-    await save_codelist_file_for_cohort(db_manager, cohort_id, file["id"], file)
+    user_id = _get_authenticated_user_id(request)
+    
+    # Get cohort_id from query parameters if not provided as function parameter
+    if cohort_id is None:
+        cohort_id = request.query_params.get("cohort_id")
+    
+    if not cohort_id:
+        raise HTTPException(status_code=400, detail="cohort_id is required")
+    
+    print("RECEIVED FILE", cohort_id, file["id"])
+    await save_codelist_file_for_cohort(db_manager, cohort_id, file["id"], file, user_id)
     print("SAVED FILE")
     return {
         "status": "success",
@@ -962,7 +979,7 @@ async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
         return []
 
 
-async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str) -> Optional[dict]:
+async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str, user_id: str) -> Optional[dict]:
     """
     Get a codelist file for a given cohort ID and file ID from database.
     
@@ -970,19 +987,12 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str)
         db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
+        user_id (str): The ID of the authenticated user.
         
     Returns:
         dict: The codelist file or None if not found.
     """
     try:
-        # Get cohort to determine user_id
-        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
-        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
-            logger.error(f"Could not find user_id for cohort {cohort_id}")
-            return None
-        
-        user_id = cohort["cohort_data"]["user_id"]
-        
         # Get codelist using the user_id and file_id
         codelist = await db_manager.get_codelist(user_id, file_id)
         
@@ -992,7 +1002,7 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str)
         return None
 
 
-async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str, codelist_file: dict) -> bool:
+async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str, codelist_file: dict, user_id: str) -> bool:
     """
     Save a codelist file for a given cohort ID and file ID to database.
     
@@ -1001,6 +1011,7 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
         cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
         codelist_file (dict): The codelist file data.
+        user_id (str): The ID of the authenticated user.
         
     Returns:
         bool: True if successful, False otherwise.
@@ -1008,14 +1019,6 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
     print("🚀 STARTING save_codelist_file_for_cohort")
 
     try:
-        # Get cohort to determine user_id
-        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
-        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
-            logger.error(f"Could not find user_id for cohort {cohort_id}")
-            return False
-        logger.info("save_codelist_file_for_cohort : Got cohort")
-        user_id = cohort["cohort_data"]["user_id"]
-        
         # Extract needed data
         column_mapping = codelist_file.get("column_mapping", {})
         codelists = codelist_file.get("codelists", [])
@@ -1069,9 +1072,28 @@ def resolve_phenexui_codelist_file(phenexui_codelist):
     Returns:
         dict: The resolved PhenEx Codelist object dict representation with codes and code_type.
     """
-    codelist_file = get_codelist_file_for_cohort(
-        phenexui_codelist["cohort_id"], phenexui_codelist["file_id"]
-    )
+    # For execution time, create a sync wrapper around the async function
+    import asyncio
+    try:
+        # Get the cohort to determine user_id
+        loop = asyncio.get_event_loop()
+        cohort = loop.run_until_complete(
+            db_manager.get_cohort_for_user(None, phenexui_codelist["cohort_id"])
+        )
+        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
+            raise ValueError(f"Could not find user_id for cohort {phenexui_codelist['cohort_id']}")
+        
+        user_id = cohort["cohort_data"]["user_id"]
+        
+        # Get the codelist file
+        codelist_file = loop.run_until_complete(
+            get_codelist_file_for_cohort(
+                db_manager, phenexui_codelist["cohort_id"], phenexui_codelist["file_id"], user_id
+            )
+        )
+    except Exception as e:
+        logger.error(f"Failed to resolve codelist file during execution: {e}")
+        raise ValueError(f"Could not resolve codelist file {phenexui_codelist['file_id']} for execution")
 
     # variables phenexui codelist components (for ease of reading...)
     code_column = phenexui_codelist["code_column"]
@@ -1156,9 +1178,9 @@ def prepare_codelists_for_phenotype(phenotype: dict):
     Iterates over a list of phenotypes and prepares the codelist of each one for phenex.
 
     Args:
-        phenotypes : List of phenotypes from PhenEx UI with codelists of various types
+        phenotype: A phenotype from PhenEx UI with codelists of various types
     Returns:
-        List of phenotypes with codelists prepared for phenex
+        Phenotype with codelists prepared for phenex
     """
     # iterate over each phenotype
     # if it is a list, create a composite codelist
