@@ -42,3 +42,25 @@ export const uploadCodelistFileToCohort = async (cohort_id: string, file: any) =
     throw error;
   }
 };
+
+export const updateCodelistFileColumnMapping = async (file_id: string, column_mapping: {
+  code_column: string;
+  code_type_column: string;
+  codelist_column: string;
+}) => {
+  try {
+    console.log("UPDATING COLUMN MAPPING", file_id, column_mapping);
+    const response = await api.patch(
+      `/codelist_file_column_mapping?file_id=${encodeURIComponent(file_id)}`,
+      column_mapping
+    );
+    console.log("UPDATED COLUMN MAPPING", response);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error in updateCodelistFileColumnMapping:', error);
+    if (error.response) {
+      console.error('Error details:', error.response.data);
+    }
+    throw error;
+  }
+};

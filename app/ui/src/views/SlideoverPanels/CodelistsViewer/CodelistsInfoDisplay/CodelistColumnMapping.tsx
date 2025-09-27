@@ -28,12 +28,14 @@ export const CodelistColumnMapping: React.FC = () => {
     }
   }, [activeFile]);
 
-  const onCellValueChanged = event => {
+  const onCellValueChanged = async (event: any) => {
     const field = event.data.content + '_column';
     console.log('onCellValueChanged', event, field);
     dataService.codelists_service.activeFile[field] = event.newValue;
     console.log('CODELIST DATA onCellValueChanged', dataService.codelists_service.activeFile);
-    dataService.codelists_service.saveChangesToActiveFile();
+    
+    // Use the new column mapping update method instead of full file save
+    await dataService.codelists_service.saveColumnMappingForActiveFile();
   };
 
   const getColumnDefs = () => {

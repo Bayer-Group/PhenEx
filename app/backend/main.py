@@ -959,6 +959,56 @@ async def delete_codelist_file(cohort_id: str, file_id: str):
     }
 
 
+@app.patch("/codelist_file_column_mapping", tags=["codelist"])
+async def update_codelist_file_column_mapping(request: Request, file_id: str, column_mapping: dict):
+    """
+    Update only the column mapping for a codelist file.
+
+    Args:
+        request (Request): The request object for authentication.
+        file_id (str): The ID of the file to update.
+        column_mapping (dict): Dictionary with code_column, code_type_column, codelist_column.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    
+    # Validate column_mapping structure
+    required_keys = {"code_column", "code_type_column", "codelist_column"}
+    if not all(key in column_mapping for key in required_keys):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"column_mapping must contain all keys: {required_keys}"
+        )
+    
+    try:
+        success = await db_manager.update_codelist(
+            user_id, file_id, column_mapping=column_mapping
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Codelist file {file_id} not found for user {user_id}"
+            )
+        
+        logger.info(f"Updated column mapping for codelist {file_id} for user {user_id}")
+        return {
+            "status": "success",
+            "message": f"Column mapping updated for codelist file {file_id}",
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update column mapping for codelist {file_id}: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Failed to update column mapping"
+        )
+
+
 # -- CODELIST FILE MANAGEMENT --
 async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
     """

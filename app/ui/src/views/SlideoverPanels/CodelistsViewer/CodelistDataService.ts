@@ -3,6 +3,7 @@ import {
   getCodelistFilenamesForCohort,
   getCodelistFileForCohort,
   uploadCodelistFileToCohort,
+  updateCodelistFileColumnMapping,
 } from '../../../api/codelists/route';
 import { createID } from '../../../types/createID';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
@@ -288,6 +289,28 @@ export class CodelistDataService {
   public saveChangesToActiveFile() {
     console.log('saveChangesToActiveFile', this.activeFile);
     uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, this.activeFile);
+  }
+
+  public async saveColumnMappingForActiveFile() {
+    if (!this.activeFile || !this.activeFile.id) {
+      console.error('No active file or file ID to save column mapping');
+      return;
+    }
+
+    const columnMapping = {
+      code_column: this.activeFile.code_column,
+      code_type_column: this.activeFile.code_type_column,
+      codelist_column: this.activeFile.codelist_column,
+    };
+
+    try {
+      console.log('Saving column mapping for file:', this.activeFile.id, columnMapping);
+      await updateCodelistFileColumnMapping(this.activeFile.id, columnMapping);
+      console.log('Column mapping saved successfully');
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Failed to save column mapping:', error);
+    }
   }
 
   public getColumnsForFile(filename: string) {
