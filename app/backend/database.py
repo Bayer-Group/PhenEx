@@ -122,7 +122,6 @@ class DatabaseManager:
                 SELECT * FROM prioritized_cohorts
                 ORDER BY updated_at DESC
             """
-            print(query)
 
             rows = await conn.fetch(query, user_id)
 
@@ -889,7 +888,9 @@ class DatabaseManager:
             bool: True if successful.
         """
         conn = None
+        logger.info(f"save_codelist: Getting to save codelist {codelist_id} for user {user_id}")
         try:
+            print("TRYING TO SAVE", user_id, codelist_id)
             conn = await self.get_connection()
 
             # Get the current max version

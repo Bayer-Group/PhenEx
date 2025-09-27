@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.authentication import AuthenticationMiddleware
 import sys
-# TODO figure out how to make this sustainably only during development
-# sys.path = ['/app'] + sys.path
+# TODO sys.path = ['/app'] + sys.path following is required for phenex import for development.
+# is currently being set with PYTHONPATH=/app in the /backend/.env file
 import phenex 
 print("RIGHT NOW2", phenex.__file__)
 from phenex.ibis_connect import SnowflakeConnector
@@ -886,8 +886,8 @@ async def codelist_filesnames_for_cohort(cohort_id: str):
     Returns:
         list: list of filenames
     """
-    return get_codelist_filenames_for_cohort(cohort_id)
-
+    # Add await here - this is critical!
+    return await get_codelist_filenames_for_cohort(db_manager, cohort_id)
 
 @app.get("/codelist_file_for_cohort", tags=["codelist"])
 async def codelist_file_for_cohort(cohort_id: str, file_id: str):
@@ -901,7 +901,7 @@ async def codelist_file_for_cohort(cohort_id: str, file_id: str):
     Returns:
         dict: codelist file contents
     """
-    return get_codelist_file_for_cohort(cohort_id, file_id)
+    return get_codelist_file_for_cohort(db_manager, cohort_id, file_id)
 
 
 @app.post("/upload_codelist_file_to_cohort", tags=["codelist"])
@@ -916,8 +916,8 @@ async def upload_codelist_file_to_cohort(cohort_id: str, file: dict):
     Returns:
         dict: The cohort data.
     """
-    print("RECEIVED FILE", cohort_id, file)
-    save_codelist_file_for_cohort(cohort_id, file["id"], file)
+    print("RECEIVED FILE", cohort_id,file["id"])
+    await save_codelist_file_for_cohort(db_manager, cohort_id, file["id"], file)
     print("SAVED FILE")
     return {
         "status": "success",
@@ -934,7 +934,7 @@ async def delete_codelist_file(cohort_id: str, file_id: str):
         cohort_id (str): The ID of the cohort to retrieve.
         file_id (str): The ID of the file to retrieve.
     """
-    delete_codelist_file_for_cohort(cohort_id, file_id)
+    delete_codelist_file_for_cohort(db_manager, cohort_id, file_id)
 
     return {
         "status": "success",
@@ -943,102 +943,119 @@ async def delete_codelist_file(cohort_id: str, file_id: str):
 
 
 # -- CODELIST FILE MANAGEMENT --
-# TODO import to codelist_file_management.py
-def get_path_cohort_files(cohort_id):
-    path_cohort_files = os.path.join(COHORTS_DIR, f"cohort_{cohort_id}")
-    if not os.path.exists(path_cohort_files):
-        os.makedirs(path_cohort_files)
-    return path_cohort_files
-
-
-def get_path_codelist(cohort_id, file_id):
-    return os.path.join(get_path_cohort_files(cohort_id), f"codelist_{file_id}.json")
-
-
-def get_path_cohort_index_file(cohort_id):
+async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
     """
-    The cohort index file is located in the cohort directory. It contains a listing of files related to a cohort, for example, a list of all codelist files that have been uploaded by a user. # TODO : track cohort checkpoints in index file as well
-    """
-    return os.path.join(get_path_cohort_files(cohort_id), "index.json")
-
-
-def get_codelist_filenames_for_cohort(cohort_id):
-    """
-    Get a list of codelist filenames for a given cohort ID.
+    Get a list of codelist filenames for a given cohort ID using database.
+    
     Args:
+        db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
+        
     Returns:
         list: A list of codelist filenames.
     """
-    index_file_path = get_path_cohort_index_file(cohort_id)
-    if not os.path.exists(index_file_path):
+    try:
+        codelists = await db_manager.get_codelists_for_cohort(cohort_id)
+        return [{"id": cl["id"], "filename": cl["filename"]} for cl in codelists]
+    except Exception as e:
+        logger.error(f"Failed to retrieve codelist filenames for cohort {cohort_id}: {e}")
         return []
-    with open(index_file_path, "r") as f:
-        index = json.load(f)
-    return index["uploaded_codelist_files"]
 
 
-def get_codelist_file_for_cohort(cohort_id, file_id):
+async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str) -> Optional[dict]:
     """
-    Get a codelist file for a given cohort ID and file ID.
+    Get a codelist file for a given cohort ID and file ID from database.
+    
     Args:
+        db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
+        
     Returns:
-        dict: The codelist file.
+        dict: The codelist file or None if not found.
     """
-    codelist_file_path = get_path_codelist(cohort_id, file_id)
-    if not os.path.exists(codelist_file_path):
+    try:
+        # Get cohort to determine user_id
+        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
+        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
+            logger.error(f"Could not find user_id for cohort {cohort_id}")
+            return None
+        
+        user_id = cohort["cohort_data"]["user_id"]
+        
+        # Get codelist using the user_id and file_id
+        codelist = await db_manager.get_codelist(user_id, file_id)
+        
+        return codelist
+    except Exception as e:
+        logger.error(f"Failed to retrieve codelist file {file_id} for cohort {cohort_id}: {e}")
         return None
-    with open(codelist_file_path, "r") as f:
-        codelist_file = json.load(f)
-    return codelist_file
 
 
-def save_codelist_file_for_cohort(cohort_id, file_id, codelist_file):
+async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str, codelist_file: dict) -> bool:
     """
-    Save a codelist file for a given cohort ID and file ID.
+    Save a codelist file for a given cohort ID and file ID to database.
+    
     Args:
+        db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
-        codelist_file (dict): The codelist file.
+        codelist_file (dict): The codelist file data.
+        
+    Returns:
+        bool: True if successful, False otherwise.
     """
-    codelist_file_path = get_path_codelist(cohort_id, file_id)
-    with open(codelist_file_path, "w") as f:
-        json.dump(codelist_file, f)
-    index_file_path = get_path_cohort_index_file(cohort_id)
-    if not os.path.exists(index_file_path):
-        index = {"uploaded_codelist_files": []}
-    else:
-        with open(index_file_path, "r") as f:
-            index = json.load(f)
-    if file_id not in [x["id"] for x in index["uploaded_codelist_files"]]:
-        index["uploaded_codelist_files"].append(
-            {"id": file_id, "filename": codelist_file["filename"]}
+    print("🚀 STARTING save_codelist_file_for_cohort")
+
+    try:
+        # Get cohort to determine user_id
+        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
+        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
+            logger.error(f"Could not find user_id for cohort {cohort_id}")
+            return False
+        logger.info("save_codelist_file_for_cohort : Got cohort")
+        user_id = cohort["cohort_data"]["user_id"]
+        
+        # Extract needed data
+        column_mapping = codelist_file.get("column_mapping", {})
+        codelists = codelist_file.get("codelists", [])
+        codelist_data = codelist_file.get("codelist_data", codelist_file)
+        logger.info("save_codelist_file_for_cohort : sending codelist data")
+        # Save codelist to database
+        return await db_manager.save_codelist(
+            user_id, file_id, codelist_data, column_mapping, codelists, cohort_id
         )
-    with open(index_file_path, "w") as f:
-        json.dump(index, f)
+    except Exception as e:
+        logger.error(f"Failed to save codelist file {file_id} for cohort {cohort_id}: {e}")
+        return False
 
 
-def delete_codelist_file_for_cohort(cohort_id, file_id):
+async def delete_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str) -> bool:
     """
-    Delete a codelist file for a given cohort ID and file ID.
+    Delete a codelist file for a given cohort ID and file ID from database.
+    
     Args:
+        db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
+        
+    Returns:
+        bool: True if successful, False otherwise.
     """
-    codelist_file_path = get_path_codelist(cohort_id, file_id)
-    if os.path.exists(codelist_file_path):
-        os.remove(codelist_file_path)
-    index_file_path = get_path_cohort_index_file(cohort_id)
-    if os.path.exists(index_file_path):
-        with open(index_file_path, "r") as f:
-            index = json.load(f)
-        if file_id in index["uploaded_codelist_files"]:
-            index["uploaded_codelist_files"].remove(file_id)
-        with open(index_file_path, "w") as f:
-            json.dump(index, f)
-
+    try:
+        # Get cohort to determine user_id
+        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
+        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
+            logger.error(f"Could not find user_id for cohort {cohort_id}")
+            return False
+        
+        user_id = cohort["cohort_data"]["user_id"]
+        
+        # Delete codelist from database
+        return await db_manager.delete_codelist(user_id, file_id)
+    except Exception as e:
+        logger.error(f"Failed to delete codelist file {file_id} for cohort {cohort_id}: {e}")
+        return False
 
 # -- EXECUTION CODELIST MANAGEMENT --
 # TODO import to codelist_file_management.py

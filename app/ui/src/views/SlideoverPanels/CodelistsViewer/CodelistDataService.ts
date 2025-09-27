@@ -106,6 +106,7 @@ export class CodelistDataService {
 
   public addFile(file: { filename: string; contents: any }): void {
     const csvData = this.parseCSVContents(file.contents);
+    console.log("Parsed data", csvData)
     const newFile: CodelistFile = {
       filename: file.filename,
       id: createID(),
@@ -114,6 +115,7 @@ export class CodelistDataService {
       codelist_column: 'codelist',
       contents: csvData,
     };
+    console.log("Parsed, files are", this.files)
     this.files.push(newFile);
     this._filenames.push(newFile.filename);
     this.notifyListeners();
