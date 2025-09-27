@@ -675,6 +675,11 @@ async def execute_study(
             phenex_logger = logging.getLogger("phenex")
             phenex_original_level = phenex_logger.level
             phenex_original_handlers = phenex_logger.handlers.copy()
+            
+            # Also capture the main app logger specifically
+            app_logger = logging.getLogger(__name__)
+            app_original_level = app_logger.level
+            app_original_handlers = app_logger.handlers.copy()
 
             # Clear existing handlers and add our queue handler
             root_logger.handlers.clear()
@@ -686,6 +691,12 @@ async def execute_study(
             phenex_logger.addHandler(queue_handler)
             phenex_logger.setLevel(logging.INFO)
             phenex_logger.propagate = True  # Ensure messages propagate to root logger
+            
+            # Ensure app logger also uses our handler
+            app_logger.handlers.clear()
+            app_logger.addHandler(queue_handler)
+            app_logger.setLevel(logging.INFO)
+            app_logger.propagate = True  # Ensure messages propagate to root logger
 
             sys.stdout = StreamCapture(output_queue, "[STDOUT] ")
             sys.stderr = StreamCapture(output_queue, "[STDERR] ")
@@ -733,19 +744,22 @@ async def execute_study(
                 if not user_id:
                     logger.warning("No user_id found in cohort, some operations may fail")
                 
+                print("🏥 PREPARING COHORT FOR PHENEX...")
+                logger.info("🏥 PREPARING COHORT FOR PHENEX...")
                 processed_cohort = prepare_cohort_for_phenex(cohort, user_id)
+                print("🏥 COHORT PREPARATION COMPLETED!")
+                logger.info("🏥 COHORT PREPARATION COMPLETED!")
 
                 print("Saving processed cohort...")
-                logger.debug("Saving processed cohort to processed_cohort.json")
+                logger.info("Saving processed cohort to processed_cohort.json")
                 with open("./processed_cohort.json", "w") as f:
                     json.dump(processed_cohort, f, indent=4)
 
                 print("Creating phenex cohort object...")
-                logger.info("Creating phenex cohort object from processed data... CHANGES ARE HERE 2")
+                logger.info("Creating phenex cohort object from processed data...")
                 px_cohort = from_dict(processed_cohort)
-                logger.info("HERE IS THE DESEARLIAZED", px_cohort)
 
-                logger.debug("Saving cohort object to cohort.json")
+                logger.info("Saving cohort object to cohort.json")
                 with open("./cohort.json", "w") as f:
                     json.dump(px_cohort.to_dict(), f, indent=4)
 
@@ -802,6 +816,12 @@ async def execute_study(
                 for handler in phenex_original_handlers:
                     phenex_logger.addHandler(handler)
                 phenex_logger.setLevel(phenex_original_level)
+                
+                # Restore app logger configuration
+                app_logger.handlers.clear()
+                for handler in app_original_handlers:
+                    app_logger.addHandler(handler)
+                app_logger.setLevel(app_original_level)
 
                 output_queue.put("__EXECUTION_COMPLETE__")
 
@@ -928,9 +948,7 @@ async def upload_codelist_file_to_cohort(request: Request, file: dict, cohort_id
     if not cohort_id:
         raise HTTPException(status_code=400, detail="cohort_id is required")
     
-    print("RECEIVED FILE", cohort_id, file["id"])
     await save_codelist_file_for_cohort(db_manager, cohort_id, file["id"], file, user_id)
-    print("SAVED FILE")
     return {
         "status": "success",
         "message": f"Uploaded {cohort_id} {file['id']} successfully.",
@@ -1042,10 +1060,7 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str,
         codelist = await db_manager.get_codelist(user_id, file_id)
         
         if not codelist:
-            return None
-            
-        logger.info(f"Retrieved codelist from database: {codelist}")
-        
+            return None        
         # Parse JSON strings if they are strings (database returns JSONB as strings sometimes)
         codelist_data = codelist.get("codelist_data", {})
         if isinstance(codelist_data, str):
@@ -1071,7 +1086,6 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str,
             "updated_at": codelist.get("updated_at")
         }
         
-        logger.info(f"Reconstructed file structure: {reconstructed_file}")
         return reconstructed_file
         
     except Exception as e:
@@ -1093,7 +1107,6 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
     Returns:
         bool: True if successful, False otherwise.
     """
-    print("🚀 STARTING save_codelist_file_for_cohort")
 
     try:
         # Extract needed data
@@ -1153,14 +1166,31 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
     # For execution time, create a sync wrapper around the async function
     import asyncio
     
+    file_id = phenexui_codelist.get("file_id", "Unknown")
+    cohort_id = phenexui_codelist.get("cohort_id", "Unknown")
+    codelist_name = phenexui_codelist.get("codelist_name", "Unknown")
+    
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Resolving codelist file '{file_id}' for codelist '{codelist_name}' in cohort '{cohort_id}' for user {user_id}")
+    logger.info(f"📄 Resolving codelist file '{file_id}' for codelist '{codelist_name}' in cohort '{cohort_id}'")
+    
     async def _resolve_codelist_file():
         if not user_id:
             raise ValueError(f"user_id is required for codelist resolution")
         
+        print(f"📄 INSIDE _resolve_codelist_file - Fetching codelist file '{file_id}' for user '{user_id}'")
+        logger.info(f"📄 Fetching codelist file '{file_id}' for user '{user_id}'")
         # Get the codelist file
         codelist_file = await get_codelist_file_for_cohort(
             db_manager, phenexui_codelist["cohort_id"], phenexui_codelist["file_id"], user_id
         )
+        
+        if codelist_file:
+            print(f"📄 INSIDE _resolve_codelist_file - Successfully retrieved codelist file '{file_id}': {codelist_file.get('filename', 'No filename')}")
+            logger.info(f"📄 Successfully retrieved codelist file '{file_id}': {codelist_file.get('filename', 'No filename')}")
+        else:
+            print(f"📄 INSIDE _resolve_codelist_file - Failed to retrieve codelist file '{file_id}'")
+            logger.error(f"📄 Failed to retrieve codelist file '{file_id}'")
+            
         return codelist_file
     
     try:
@@ -1186,6 +1216,38 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
     code_type_column = phenexui_codelist["code_type_column"]
     codelist_column = phenexui_codelist["codelist_column"]
     data = codelist_file["contents"]["data"]
+    
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - File data structure - columns: {list(data.keys())}")
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Looking for codes in column '{code_column}', code_types in '{code_type_column}', codelist names in '{codelist_column}'")
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Total rows in file: {len(data.get(code_column, []))}")
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Target codelist name: '{codelist_name}'")
+    logger.info(f"📄 File data structure - columns: {list(data.keys())}")
+    logger.info(f"📄 Looking for codes in column '{code_column}', code_types in '{code_type_column}', codelist names in '{codelist_column}'")
+    logger.info(f"📄 Total rows in file: {len(data.get(code_column, []))}")
+    logger.info(f"📄 Target codelist name: '{codelist_name}'")
+    
+    # Check if the required columns exist
+    if code_column not in data:
+        logger.error(f"📄 Code column '{code_column}' not found in file data")
+        raise ValueError(f"Code column '{code_column}' not found in file")
+    if code_type_column not in data:
+        logger.error(f"📄 Code type column '{code_type_column}' not found in file data")
+        raise ValueError(f"Code type column '{code_type_column}' not found in file")
+    if codelist_column not in data:
+        logger.error(f"📄 Codelist column '{codelist_column}' not found in file data")
+        raise ValueError(f"Codelist column '{codelist_column}' not found in file")
+    
+    # Check what codelist names are available
+    unique_codelists = set(data[codelist_column])
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Available codelist names in file: {sorted(unique_codelists)}")
+    logger.info(f"📄 Available codelist names in file: {sorted(unique_codelists)}")
+    
+    if codelist_name not in unique_codelists:
+        print(f"📄 INSIDE resolve_phenexui_codelist_file - WARNING: Target codelist '{codelist_name}' not found in available codelists: {sorted(unique_codelists)}")
+        logger.warning(f"📄 Target codelist '{codelist_name}' not found in available codelists: {sorted(unique_codelists)}")
+    else:
+        print(f"📄 INSIDE resolve_phenexui_codelist_file - Target codelist '{codelist_name}' found in file")
+        logger.info(f"📄 Target codelist '{codelist_name}' found in file")
 
     # data are three parallel lists of code, code_type, codelist_name
     # get all codes/code_type for codelist_name
@@ -1196,6 +1258,9 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
         )
         if codelist == phenexui_codelist["codelist_name"]
     ]
+    
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Found {len(codes_and_code_type)} matching codes for codelist '{codelist_name}'")
+    logger.info(f"📄 Found {len(codes_and_code_type)} matching codes for codelist '{codelist_name}'")
 
     # convert into phenex codelist representation {code_type:[codes...]}
     phenex_codelist = {}
@@ -1203,6 +1268,14 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
         if code_type not in phenex_codelist.keys():
             phenex_codelist[code_type] = []
         phenex_codelist[code_type].append(code)
+    
+    # Log summary of code types and counts (but don't print the actual codes)
+    for code_type, codes in phenex_codelist.items():
+        print(f"📄 INSIDE resolve_phenexui_codelist_file - Code type '{code_type}': {len(codes)} codes")
+        logger.info(f"📄 Code type '{code_type}': {len(codes)} codes")
+
+    print(f"📄 INSIDE resolve_phenexui_codelist_file - Successfully resolved codelist '{codelist_name}' with {sum(len(codes) for codes in phenex_codelist.values())} total codes across {len(phenex_codelist)} code types")
+    logger.info(f"📄 Successfully resolved codelist '{codelist_name}' with {sum(len(codes) for codes in phenex_codelist.values())} total codes across {len(phenex_codelist)} code types")
 
     # return phenex Codelist representation
     return {
@@ -1230,14 +1303,34 @@ def prepare_codelist_for_phenex(phenexui_codelist, user_id):
         A dictionary representing PhenEx codelist with codes resolved
     """
     codelist_type = phenexui_codelist.get("codelist_type")
+    codelist_name = phenexui_codelist.get("name", "Unknown")
+    print(f"📋 INSIDE prepare_codelist_for_phenex - Preparing codelist '{codelist_name}' of type: {codelist_type} for user {user_id}")
+    logger.info(f"📋 Preparing codelist '{codelist_name}' of type: {codelist_type}")
+    
     if codelist_type is None:
+        print(f"📋 INSIDE prepare_codelist_for_phenex - Codelist '{codelist_name}' has no type, returning as-is")
+        logger.info(f"📋 Codelist '{codelist_name}' has no type, returning as-is")
         return phenexui_codelist
     if codelist_type == "manual":
+        codes_count = len(phenexui_codelist.get("codelist", {}).get("codes", []))
+        print(f"📋 INSIDE prepare_codelist_for_phenex - Manual codelist '{codelist_name}' has {codes_count} codes")
+        logger.info(f"📋 Manual codelist '{codelist_name}' has {codes_count} codes")
         return phenexui_codelist
     elif codelist_type == "from file":
-        return resolve_phenexui_codelist_file(phenexui_codelist, user_id)
+        print(f"📋 INSIDE prepare_codelist_for_phenex - Resolving file-based codelist '{codelist_name}' for user {user_id}")
+        logger.info(f"📋 Resolving file-based codelist '{codelist_name}' for user {user_id}")
+        resolved = resolve_phenexui_codelist_file(phenexui_codelist, user_id)
+        codes_count = sum(len(codes) for codes in resolved.get("codelist", {}).values())
+        print(f"📋 INSIDE prepare_codelist_for_phenex - File-based codelist '{codelist_name}' resolved with {codes_count} codes")
+        logger.info(f"📋 File-based codelist '{codelist_name}' resolved with {codes_count} codes")
+        logger.info(f"📋 File-based codelist '{codelist_name}' resolved with {codes_count} total codes")
+        return resolved
     elif codelist_type == "from medconb":
+        print(f"📋 INSIDE prepare_codelist_for_phenex - Using MedConB codelist '{codelist_name}'")
+        logger.info(f"📋 Using MedConB codelist '{codelist_name}'")
         return resolve_medconb_codelist(phenexui_codelist)
+    
+    print(f"📋 INSIDE prepare_codelist_for_phenex - ERROR: Unknown codelist class: {phenexui_codelist['class_name']}")
     raise ValueError(f"Unknown codelist class: {phenexui_codelist['class_name']}")
 
 
@@ -1251,13 +1344,30 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict], user_id):
     Returns:
         List of phenotypes with codelists prepared for phenex
     """
+    print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Preparing {len(phenotypes)} phenotypes for user {user_id}")
+    logger.info(f"🧬 Preparing {len(phenotypes)} phenotypes for user {user_id}")
+    
     # iterate over each phenotype
-    for phenotype in phenotypes:
+    for i, phenotype in enumerate(phenotypes):
+        phenotype_name = phenotype.get("name", f"Phenotype_{i}")
+        phenotype_class = phenotype.get("class_name", "Unknown")
+        print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Processing phenotype '{phenotype_name}' ({phenotype_class})")
+        logger.info(f"🧬 Processing phenotype '{phenotype_name}' ({phenotype_class})")
+        
         # if it contains a codelist, prepare it for phenex
         if phenotype["class_name"] in ["CodelistPhenotype", "MeasurementPhenotype"]:
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' has codelist, preparing...")
             phenotype = prepare_codelists_for_phenotype(phenotype, user_id)
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' codelist preparation completed")
         elif phenotype["class_name"] == "TimeRangePhenotype":
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' is TimeRangePhenotype, preparing...")
             phenotype = prepare_time_range_phenotype(phenotype)
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' TimeRange preparation completed")
+        else:
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' requires no preparation")
+            
+    print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Completed preparing {len(phenotypes)} phenotypes")
+    logger.info(f"🧬 Completed preparing {len(phenotypes)} phenotypes")
     return phenotypes
 
 
@@ -1271,17 +1381,28 @@ def prepare_codelists_for_phenotype(phenotype: dict, user_id):
     Returns:
         Phenotype with codelists prepared for phenex
     """
-    # iterate over each phenotype
+    phenotype_name = phenotype.get("name", "Unknown")
+    print(f"📋 INSIDE prepare_codelists_for_phenotype - Preparing codelists for phenotype '{phenotype_name}' with user {user_id}")
+    logger.info(f"Preparing codelists for phenotype '{phenotype_name}'")
     # if it is a list, create a composite codelist
     if isinstance(phenotype["codelist"], list):
+        print(f"🧬 INSIDE prepare_codelists_for_phenotype - Phenotype '{phenotype_name}' has {len(phenotype['codelist'])} codelists to prepare")
+        logger.info(f"🧬 Phenotype '{phenotype_name}' has {len(phenotype['codelist'])} codelists to prepare")
         codelist = [prepare_codelist_for_phenex(x, user_id) for x in phenotype["codelist"]]
         composite_codelist = {
             "class_name": "CompositeCodelist",
             "codelists": codelist,
         }
         phenotype["codelist"] = composite_codelist
+        print(f"🧬 INSIDE prepare_codelists_for_phenotype - Created CompositeCodelist for phenotype '{phenotype_name}'")
+        logger.info(f"🧬 Created CompositeCodelist for phenotype '{phenotype_name}'")
     else:
+        print(f"🧬 INSIDE prepare_codelists_for_phenotype - Phenotype '{phenotype_name}' has single codelist to prepare")
+        logger.info(f"🧬 Phenotype '{phenotype_name}' has single codelist to prepare")
         phenotype["codelist"] = prepare_codelist_for_phenex(phenotype["codelist"], user_id)
+        print(f"🧬 INSIDE prepare_codelists_for_phenotype - Single codelist prepared for phenotype '{phenotype_name}'")
+    
+    print(f"🧬 INSIDE prepare_codelists_for_phenotype - COMPLETED phenotype '{phenotype_name}' codelist preparation")
     return phenotype
 
 
@@ -1307,30 +1428,44 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
     """
     import copy
 
+    cohort_name = phenexui_cohort.get("name", "Unknown")
+    print(f"🏥 INSIDE prepare_cohort_for_phenex - Starting cohort preparation for '{cohort_name}' (user: {user_id})")
+    logger.info(f"🏥 Starting cohort preparation for '{cohort_name}' (user: {user_id})")
+
     phenex_cohort = copy.deepcopy(phenexui_cohort)
+    
+    logger.info(f"🏥 Preparing entry criterion for cohort '{cohort_name}'")
     phenex_cohort["entry_criterion"] = prepare_phenotypes_for_phenex(
         [phenex_cohort["entry_criterion"]], user_id
     )[0]
+    
     if "inclusions" in phenex_cohort.keys():
+        logger.info(f"🏥 Preparing {len(phenex_cohort['inclusions'])} inclusions for cohort '{cohort_name}'")
         phenex_cohort["inclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["inclusions"], user_id
         )
     if "exclusions" in phenex_cohort.keys():
+        logger.info(f"🏥 Preparing {len(phenex_cohort['exclusions'])} exclusions for cohort '{cohort_name}'")
         phenex_cohort["exclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["exclusions"], user_id
         )
     if "characteristics" in phenex_cohort.keys():
+        logger.info(f"🏥 Preparing {len(phenex_cohort['characteristics'])} characteristics for cohort '{cohort_name}'")
         phenex_cohort["characteristics"] = prepare_phenotypes_for_phenex(
             phenex_cohort["characteristics"], user_id
         )
     if "outcomes" in phenex_cohort.keys():
+        logger.info(f"🏥 Preparing {len(phenex_cohort['outcomes'])} outcomes for cohort '{cohort_name}'")
         phenex_cohort["outcomes"] = prepare_phenotypes_for_phenex(
             phenex_cohort["outcomes"], user_id
         )
     if "phenotypes" in phenex_cohort.keys():
+        logger.info(f"🏥 Preparing {len(phenex_cohort['phenotypes'])} phenotypes for cohort '{cohort_name}'")
         phenex_cohort["phenotypes"] = prepare_phenotypes_for_phenex(
             phenex_cohort["phenotypes"], user_id
         )
+    
+    logger.info(f"🏥 Completed cohort preparation for '{cohort_name}'")
     return phenex_cohort
 
 
