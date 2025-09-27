@@ -730,6 +730,317 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def get_all_codelists_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Retrieve all codelists for a specific user from the database.
+        Returns only the latest version of each codelist.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelists to retrieve.
+
+        Returns:
+            List[Dict]: A list of codelist objects.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get the latest version of each codelist
+            query = """
+                WITH latest_codelists AS (
+                    SELECT codelist_id, MAX(version) as max_version
+                    FROM codelistfile 
+                    WHERE user_id = $1
+                    GROUP BY codelist_id
+                )
+                SELECT c.codelist_id, c.codelist_data->'filename' as filename, c.codelists, c.created_at, c.updated_at 
+                FROM codelistfile c
+                INNER JOIN latest_codelists lc ON c.codelist_id = lc.codelist_id AND c.version = lc.max_version
+                WHERE c.user_id = $1
+                ORDER BY c.updated_at DESC
+            """
+
+            rows = await conn.fetch(query, user_id)
+
+            codelists = []
+            for row in rows:
+                codelists.append({
+                    "id": row["codelist_id"],
+                    "filename": row["filename"],
+                    "codelists": row["codelists"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                })
+
+            logger.info(f"Retrieved {len(codelists)} codelists for user {user_id}")
+            return codelists
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve codelists for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_codelists_for_cohort(self, cohort_id: str) -> List[Dict]:
+        """
+        Retrieve all codelists associated with a specific cohort.
+
+        Args:
+            cohort_id (str): The ID of the cohort.
+
+        Returns:
+            List[Dict]: A list of codelist objects associated with the cohort.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = """
+                SELECT codelist_id, codelist_data->'filename' as filename, codelists, created_at, updated_at 
+                FROM codelistfile 
+                WHERE cohort_id = $1
+                ORDER BY updated_at DESC
+            """
+
+            rows = await conn.fetch(query, cohort_id)
+
+            codelists = []
+            for row in rows:
+                codelists.append({
+                    "id": row["codelist_id"],
+                    "filename": row["filename"],
+                    "codelists": row["codelists"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                })
+
+            logger.info(f"Retrieved {len(codelists)} codelists for cohort {cohort_id}")
+            return codelists
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve codelists for cohort {cohort_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_codelist(self, user_id: str, codelist_id: str) -> Optional[Dict]:
+        """
+        Retrieve a specific codelist for a user from the database.
+        Returns the latest version.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelist to retrieve.
+            codelist_id (str): The ID of the codelist to retrieve.
+
+        Returns:
+            Optional[Dict]: The codelist data or None if not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the highest version
+            query = """
+                SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                FROM codelistfile 
+                WHERE user_id = $1 AND codelist_id = $2
+                ORDER BY version DESC
+                LIMIT 1
+            """
+
+            row = await conn.fetchrow(query, user_id, codelist_id)
+
+            if not row:
+                return None
+
+            codelist_data = {
+                "codelist_data": row["codelist_data"],
+                "column_mapping": row["column_mapping"],
+                "codelists": row["codelists"],
+                "version": row["version"],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            }
+
+            return codelist_data
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve codelist {codelist_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def save_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict, column_mapping: Dict, codelists: List[str], cohort_id: Optional[str] = None) -> bool:
+        """
+        Save a codelist to the database. Creates a new version if it already exists.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            codelist_id (str): The ID of the codelist.
+            codelist_data (Dict): The codelist data.
+            column_mapping (Dict): The column mapping.
+            codelists (List[str]): List of codelist names contained in the file.
+            cohort_id (Optional[str]): The ID of the associated cohort, if applicable.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the current max version
+            version_query = """
+                SELECT MAX(version) as max_version 
+                FROM codelistfile 
+                WHERE codelist_id = $1
+            """
+
+            version_row = await conn.fetchrow(version_query, codelist_id)
+            current_max_version = version_row["max_version"] if version_row and version_row["max_version"] else 0
+            target_version = current_max_version + 1
+
+            # Insert the new version
+            if cohort_id:
+                insert_query = """
+                    INSERT INTO codelistfile (codelist_id, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                """
+                await conn.execute(insert_query, codelist_id, user_id, cohort_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+            else:
+                insert_query = """
+                    INSERT INTO codelistfile (codelist_id, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                """
+                await conn.execute(insert_query, codelist_id, user_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+
+            logger.info(f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save codelist {codelist_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict = None, column_mapping: Dict = None, codelists: List[str] = None) -> bool:
+        """
+        Update an existing codelist without creating a new version.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            codelist_id (str): The ID of the codelist.
+            codelist_data (Dict, optional): The codelist data to update.
+            column_mapping (Dict, optional): The column mapping to update.
+            codelists (List[str], optional): List of codelist names to update.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the current max version
+            version_query = """
+                SELECT MAX(version) as max_version 
+                FROM codelistfile 
+                WHERE codelist_id = $1 AND user_id = $2
+            """
+
+            version_row = await conn.fetchrow(version_query, codelist_id, user_id)
+            
+            if not version_row or not version_row["max_version"]:
+                return False  # Codelist doesn't exist
+
+            current_version = version_row["max_version"]
+            
+            # Prepare update query parts
+            update_parts = []
+            params = [user_id, codelist_id, current_version]
+            param_idx = 4
+            
+            if codelist_data is not None:
+                update_parts.append(f"codelist_data = ${param_idx}")
+                params.append(json.dumps(codelist_data))
+                param_idx += 1
+                
+            if column_mapping is not None:
+                update_parts.append(f"column_mapping = ${param_idx}")
+                params.append(json.dumps(column_mapping))
+                param_idx += 1
+                
+            if codelists is not None:
+                update_parts.append(f"codelists = ${param_idx}")
+                params.append(codelists)
+                param_idx += 1
+            
+            update_parts.append("updated_at = NOW()")
+            
+            if not update_parts:
+                return True  # Nothing to update
+            
+            # Construct and execute the update query
+            update_query = f"""
+                UPDATE codelistfile 
+                SET {", ".join(update_parts)}
+                WHERE user_id = $1 AND codelist_id = $2 AND version = $3
+            """
+            
+            result = await conn.execute(update_query, *params)
+            
+            if result == "UPDATE 0":
+                return False  # No rows updated
+            
+            logger.info(f"Successfully updated codelist {codelist_id} for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update codelist {codelist_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_codelist(self, user_id: str, codelist_id: str) -> bool:
+        """
+        Delete a codelist for a user from the database.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelist to delete.
+            codelist_id (str): The ID of the codelist to delete.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = """
+                DELETE FROM codelistfile 
+                WHERE user_id = $1 AND codelist_id = $2
+            """
+
+            result = await conn.execute(query, user_id, codelist_id)
+
+            if result == "DELETE 0":
+                return False  # Codelist not found
+
+            logger.info(f"Successfully deleted codelist {codelist_id} for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete codelist {codelist_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
     def get_user_by_id(self, user_id: str) -> User: ...
 
 
