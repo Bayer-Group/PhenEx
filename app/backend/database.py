@@ -64,6 +64,11 @@ class DatabaseManager:
         self.cohorts_table = os.getenv("COHORTS_TABLE", "cohort")
         self.cohorts_schema = os.getenv("COHORTS_SCHEMA", "public")
         self.full_table_name = f"{self.cohorts_schema}.{self.cohorts_table}"
+        
+        # Studies table configuration
+        self.studies_table = os.getenv("STUDIES_TABLE", "study")
+        self.studies_schema = os.getenv("STUDIES_SCHEMA", "public")
+        self.full_studies_table_name = f"{self.studies_schema}.{self.studies_table}"
 
     def _build_connection_string(self) -> str:
         """Build PostgreSQL connection string from environment variables."""
@@ -269,8 +274,10 @@ class DatabaseManager:
         user_id: str,
         cohort_id: str,
         cohort_data: Dict,
+        study_id: str,
         provisional: bool = False,
         new_version: bool = False,
+        parent_cohort_id: str = None,
     ) -> bool:
         """
         Update or create a cohort for a user in the database.
@@ -279,8 +286,10 @@ class DatabaseManager:
             user_id (str): The user ID (UUID) whose cohort to update.
             cohort_id (str): The ID of the cohort to update.
             cohort_data (Dict): The cohort data.
+            study_id (str): The ID of the study this cohort belongs to.
             provisional (bool): Whether to save as provisional.
             new_version (bool): If True, increment version. If False, replace existing version.
+            parent_cohort_id (str, optional): The ID of the parent cohort for subcohorts.
 
         Returns:
             bool: True if successful.
@@ -307,14 +316,16 @@ class DatabaseManager:
 
                 # Insert the new version
                 insert_query = f"""
-                    INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                    INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                 """
 
                 await conn.execute(
                     insert_query,
                     cohort_id,
                     user_id,
+                    study_id,
+                    parent_cohort_id,
                     target_version,
                     json.dumps(cohort_data),
                     provisional,
@@ -344,14 +355,16 @@ class DatabaseManager:
                     target_version = 1
 
                     insert_query = f"""
-                        INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
-                        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                        INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                     """
 
                     await conn.execute(
                         insert_query,
                         cohort_id,
                         user_id,
+                        study_id,
+                        parent_cohort_id,
                         target_version,
                         json.dumps(cohort_data),
                         provisional,
@@ -382,14 +395,16 @@ class DatabaseManager:
                         if result == "UPDATE 0":
                             # No existing provisional row found, insert new one
                             insert_query = f"""
-                                INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
-                                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                             """
 
                             await conn.execute(
                                 insert_query,
                                 cohort_id,
                                 user_id,
+                                study_id,
+                                parent_cohort_id,
                                 target_version,
                                 json.dumps(cohort_data),
                                 True,  # Always provisional for this case
@@ -421,14 +436,16 @@ class DatabaseManager:
                         if result == "UPDATE 0":
                             # No non-provisional version found, insert new one
                             insert_query = f"""
-                                INSERT INTO {self.full_table_name} (cohort_id, user_id, version, cohort_data, is_provisional, created_at, updated_at)
-                                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                             """
 
                             await conn.execute(
                                 insert_query,
                                 cohort_id,
                                 user_id,
+                                study_id,
+                                parent_cohort_id,
                                 target_version,
                                 json.dumps(cohort_data),
                                 False,
@@ -1042,6 +1059,320 @@ class DatabaseManager:
                 await conn.close()
 
     def get_user_by_id(self, user_id: str) -> User: ...
+
+    # Study management methods
+    async def get_all_studies_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Retrieve all studies for a specific user from the database.
+        Returns studies where the user is the creator or is in the visible_by list.
+
+        Args:
+            user_id (str): The user ID (UUID) whose studies to retrieve.
+
+        Returns:
+            List[Dict]: A list of study objects with id, name, and metadata.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get studies where user is creator or in visible_by list
+            query = """
+                SELECT study_id, name, description, is_public, created_at, updated_at,
+                       user_id as creator_id, visible_by
+                FROM study 
+                WHERE user_id = $1 OR $1 = ANY(visible_by) OR is_public = TRUE
+                ORDER BY updated_at DESC
+            """
+
+            rows = await conn.fetch(query, user_id)
+
+            studies = []
+            for row in rows:
+                studies.append({
+                    "id": row["study_id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "is_public": row["is_public"],
+                    "creator_id": row["creator_id"],
+                    "visible_by": row["visible_by"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                })
+
+            logger.info(f"Retrieved {len(studies)} studies for user {user_id}")
+            return studies
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve studies for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_study_for_user(self, user_id: str, study_id: str) -> Optional[Dict]:
+        """
+        Retrieve a specific study for a user from the database.
+        Returns the study if the user has access (creator, in visible_by list, or public).
+
+        Args:
+            user_id (str): The user ID (UUID) requesting the study.
+            study_id (str): The ID of the study to retrieve.
+
+        Returns:
+            Optional[Dict]: The study data or None if not found or no access.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = """
+                SELECT study_id, name, description, baseline_characteristics, outcomes, analysis,
+                       is_public, user_id as creator_id, visible_by, created_at, updated_at
+                FROM study 
+                WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
+            """
+
+            row = await conn.fetchrow(query, study_id, user_id)
+
+            if not row:
+                return None
+
+            study_data = {
+                "id": row["study_id"],
+                "name": row["name"],
+                "description": row["description"],
+                "baseline_characteristics": row["baseline_characteristics"],
+                "outcomes": row["outcomes"],
+                "analysis": row["analysis"],
+                "is_public": row["is_public"],
+                "creator_id": row["creator_id"],
+                "visible_by": row["visible_by"],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            }
+
+            return study_data
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_for_user(
+        self,
+        user_id: str,
+        study_id: str,
+        name: str,
+        description: str = None,
+        baseline_characteristics: Dict = None,
+        outcomes: Dict = None,
+        analysis: Dict = None,
+        visible_by: List[str] = None,
+        is_public: bool = False,
+    ) -> bool:
+        """
+        Update or create a study for a user in the database.
+
+        Args:
+            user_id (str): The user ID (UUID) creating/updating the study.
+            study_id (str): The ID of the study to update/create.
+            name (str): The name of the study.
+            description (str, optional): The description of the study.
+            baseline_characteristics (Dict, optional): The baseline characteristics.
+            outcomes (Dict, optional): The outcomes.
+            analysis (Dict, optional): The analysis parameters.
+            visible_by (List[str], optional): List of user IDs who can see this study.
+            is_public (bool): Whether the study is public.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Check if study already exists
+            check_query = "SELECT study_id FROM study WHERE study_id = $1"
+            existing = await conn.fetchrow(check_query, study_id)
+
+            if existing:
+                # Update existing study (only if user is the creator)
+                update_query = """
+                    UPDATE study 
+                    SET name = $3, description = $4, baseline_characteristics = $5, 
+                        outcomes = $6, analysis = $7, visible_by = $8, is_public = $9,
+                        updated_at = NOW()
+                    WHERE study_id = $1 AND user_id = $2
+                """
+
+                result = await conn.execute(
+                    update_query,
+                    study_id,
+                    user_id,
+                    name,
+                    description,
+                    json.dumps(baseline_characteristics) if baseline_characteristics else None,
+                    json.dumps(outcomes) if outcomes else None,
+                    json.dumps(analysis) if analysis else None,
+                    visible_by or [],
+                    is_public,
+                )
+
+                if result == "UPDATE 0":
+                    logger.error(f"User {user_id} is not authorized to update study {study_id}")
+                    return False
+
+                logger.info(f"Successfully updated study {study_id} for user {user_id}")
+            else:
+                # Create new study
+                insert_query = """
+                    INSERT INTO study (study_id, user_id, name, description, baseline_characteristics,
+                                     outcomes, analysis, visible_by, is_public, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                """
+
+                await conn.execute(
+                    insert_query,
+                    study_id,
+                    user_id,
+                    name,
+                    description,
+                    json.dumps(baseline_characteristics) if baseline_characteristics else None,
+                    json.dumps(outcomes) if outcomes else None,
+                    json.dumps(analysis) if analysis else None,
+                    visible_by or [],
+                    is_public,
+                )
+
+                logger.info(f"Successfully created study {study_id} for user {user_id}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_study_for_user(self, user_id: str, study_id: str) -> bool:
+        """
+        Delete a study and all associated cohorts for a user from the database.
+        Uses cascading deletion to remove all cohorts associated with the study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to delete.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Begin transaction for cascading deletion
+            async with conn.transaction():
+                # First, delete all cohorts associated with this study
+                delete_cohorts_query = f"""
+                    DELETE FROM {self.full_table_name} 
+                    WHERE study_id = $1
+                """
+                cohorts_result = await conn.execute(delete_cohorts_query, study_id)
+
+                # Then delete the study itself (only if user is the creator)
+                delete_study_query = """
+                    DELETE FROM study 
+                    WHERE study_id = $1 AND user_id = $2
+                """
+                study_result = await conn.execute(delete_study_query, study_id, user_id)
+
+                if study_result == "DELETE 0":
+                    logger.error(f"User {user_id} is not authorized to delete study {study_id} or study not found")
+                    return False
+
+            logger.info(f"Successfully deleted study {study_id} and associated cohorts for user {user_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_cohorts_for_study(self, study_id: str, user_id: str = None) -> List[Dict]:
+        """
+        Retrieve all cohorts associated with a specific study.
+
+        Args:
+            study_id (str): The ID of the study.
+            user_id (str, optional): The user ID for access control.
+
+        Returns:
+            List[Dict]: A list of cohort objects associated with the study.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # If user_id is provided, check if user has access to the study
+            if user_id:
+                access_query = """
+                    SELECT study_id FROM study 
+                    WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
+                """
+                access_check = await conn.fetchrow(access_query, study_id, user_id)
+                if not access_check:
+                    return []  # No access to study
+
+            # Get all cohorts for the study (latest versions only)
+            query = f"""
+                WITH latest_cohorts AS (
+                    SELECT cohort_id, MAX(version) as max_version
+                    FROM {self.full_table_name} 
+                    WHERE study_id = $1
+                    GROUP BY cohort_id
+                ),
+                prioritized_cohorts AS (
+                    SELECT DISTINCT ON (c.cohort_id) 
+                           c.cohort_id, c.cohort_data->>'name' as name, c.version, 
+                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at
+                    FROM {self.full_table_name} c
+                    INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
+                    WHERE c.study_id = $1
+                    ORDER BY c.cohort_id, c.is_provisional DESC  -- Prioritize provisional versions
+                )
+                SELECT * FROM prioritized_cohorts
+                ORDER BY updated_at DESC
+            """
+
+            rows = await conn.fetch(query, study_id)
+
+            cohorts = []
+            for row in rows:
+                cohorts.append({
+                    "id": row["cohort_id"],
+                    "name": row["name"] or f"Cohort {row['cohort_id']}",
+                    "version": row["version"],
+                    "is_provisional": row["is_provisional"],
+                    "parent_cohort_id": row["parent_cohort_id"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                })
+
+            logger.info(f"Retrieved {len(cohorts)} cohorts for study {study_id}")
+            return cohorts
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve cohorts for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
 
 
 # Global instance

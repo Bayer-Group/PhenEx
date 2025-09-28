@@ -31,11 +31,38 @@ class SampleCohortsInitializer:
         """Generate a random cohort ID similar to uXoMEOgXuC (10 characters)."""
         return "".join(random.choices(string.ascii_letters + string.digits, k=10))
 
-    def get_sample_cohorts(self):
-        """Get sample cohort data."""
-        return [
-            {
-                "id": self.generate_cohort_id(),
+    def generate_study_id(self) -> str:
+        """Generate a random study ID similar to cohort IDs (10 characters)."""
+        return "".join(random.choices(string.ascii_letters + string.digits, k=10))
+
+    def get_sample_cohorts_and_studies(self):
+        """Get sample cohort and study data."""
+        sample_data = []
+        
+        # Atrial Fibrillation Study and Cohort
+        cohort_1_id = self.generate_cohort_id()
+        study_1_id = self.generate_study_id()
+        sample_data.append({
+            "study": {
+                "id": study_1_id,
+                "name": "Atrial Fibrillation Study",
+                "description": "Comprehensive study of patients diagnosed with atrial fibrillation",
+                "baseline_characteristics": {
+                    "age_range": "18+",
+                    "demographics": "Adult population"
+                },
+                "outcomes": {
+                    "primary": "Cardiovascular events",
+                    "secondary": "Medication adherence"
+                },
+                "analysis": {
+                    "type": "observational",
+                    "follow_up": "2 years"
+                }
+            },
+            "cohort": {
+                "id": cohort_1_id,
+                "study_id": study_1_id,
                 "name": "Atrial Fibrillation Cohort",
                 "class_name": "Cohort",
                 "description": "Patients diagnosed with atrial fibrillation",
@@ -47,13 +74,7 @@ class SampleCohortsInitializer:
                         "class_name": "CodelistPhenotype",
                         "codelist": {
                             "ICD10": [
-                                "I48",
-                                "I48.0",
-                                "I48.1",
-                                "I48.2",
-                                "I48.3",
-                                "I48.4",
-                                "I48.9",
+                                "I48", "I48.0", "I48.1", "I48.2", "I48.3", "I48.4", "I48.9"
                             ]
                         },
                     },
@@ -65,9 +86,33 @@ class SampleCohortsInitializer:
                         "min_age": 18,
                     },
                 ],
+            }
+        })
+
+        # Type 2 Diabetes Study and Cohort
+        cohort_2_id = self.generate_cohort_id()
+        study_2_id = self.generate_study_id()
+        sample_data.append({
+            "study": {
+                "id": study_2_id,
+                "name": "Type 2 Diabetes Study",
+                "description": "Longitudinal study of adult patients with Type 2 diabetes mellitus",
+                "baseline_characteristics": {
+                    "age_range": "18+",
+                    "exclusions": "Type 1 diabetes"
+                },
+                "outcomes": {
+                    "primary": "Glycemic control",
+                    "secondary": "Complications"
+                },
+                "analysis": {
+                    "type": "cohort",
+                    "follow_up": "5 years"
+                }
             },
-            {
-                "id": self.generate_cohort_id(),
+            "cohort": {
+                "id": cohort_2_id,
+                "study_id": study_2_id,
                 "name": "Type 2 Diabetes Cohort",
                 "class_name": "Cohort",
                 "description": "Adult patients with Type 2 diabetes mellitus",
@@ -79,17 +124,8 @@ class SampleCohortsInitializer:
                         "class_name": "CodelistPhenotype",
                         "codelist": {
                             "ICD10": [
-                                "E11",
-                                "E11.0",
-                                "E11.1",
-                                "E11.2",
-                                "E11.3",
-                                "E11.4",
-                                "E11.5",
-                                "E11.6",
-                                "E11.7",
-                                "E11.8",
-                                "E11.9",
+                                "E11", "E11.0", "E11.1", "E11.2", "E11.3", "E11.4",
+                                "E11.5", "E11.6", "E11.7", "E11.8", "E11.9"
                             ]
                         },
                     },
@@ -107,24 +143,39 @@ class SampleCohortsInitializer:
                         "class_name": "CodelistPhenotype",
                         "codelist": {
                             "ICD10": [
-                                "E10",
-                                "E10.0",
-                                "E10.1",
-                                "E10.2",
-                                "E10.3",
-                                "E10.4",
-                                "E10.5",
-                                "E10.6",
-                                "E10.7",
-                                "E10.8",
-                                "E10.9",
+                                "E10", "E10.0", "E10.1", "E10.2", "E10.3", "E10.4",
+                                "E10.5", "E10.6", "E10.7", "E10.8", "E10.9"
                             ]
                         },
                     },
                 ],
+            }
+        })
+
+        # Hypertension Study and Cohort
+        cohort_3_id = self.generate_cohort_id()
+        study_3_id = self.generate_study_id()
+        sample_data.append({
+            "study": {
+                "id": study_3_id,
+                "name": "Hypertension Study",
+                "description": "Study of patients with essential hypertension",
+                "baseline_characteristics": {
+                    "age_range": "21+",
+                    "condition": "Essential hypertension"
+                },
+                "outcomes": {
+                    "primary": "Blood pressure control",
+                    "secondary": "Cardiovascular events"
+                },
+                "analysis": {
+                    "type": "observational",
+                    "follow_up": "3 years"
+                }
             },
-            {
-                "id": self.generate_cohort_id(),
+            "cohort": {
+                "id": cohort_3_id,
+                "study_id": study_3_id,
                 "name": "Hypertension Cohort",
                 "class_name": "Cohort",
                 "description": "Patients with essential hypertension",
@@ -144,9 +195,33 @@ class SampleCohortsInitializer:
                         "min_age": 21,
                     },
                 ],
+            }
+        })
+
+        # Acute Myocardial Infarction Study and Cohort
+        cohort_4_id = self.generate_cohort_id()
+        study_4_id = self.generate_study_id()
+        sample_data.append({
+            "study": {
+                "id": study_4_id,
+                "name": "Acute Myocardial Infarction Study",
+                "description": "Study of patients with acute myocardial infarction (heart attack)",
+                "baseline_characteristics": {
+                    "age_range": "18+",
+                    "exclusions": "Previous MI"
+                },
+                "outcomes": {
+                    "primary": "30-day mortality",
+                    "secondary": "Readmission rates"
+                },
+                "analysis": {
+                    "type": "case-control",
+                    "follow_up": "1 year"
+                }
             },
-            {
-                "id": self.generate_cohort_id(),
+            "cohort": {
+                "id": cohort_4_id,
+                "study_id": study_4_id,
                 "name": "Acute Myocardial Infarction Cohort",
                 "class_name": "Cohort",
                 "description": "Patients with acute myocardial infarction (heart attack)",
@@ -158,13 +233,7 @@ class SampleCohortsInitializer:
                         "class_name": "CodelistPhenotype",
                         "codelist": {
                             "ICD10": [
-                                "I21",
-                                "I21.0",
-                                "I21.1",
-                                "I21.2",
-                                "I21.3",
-                                "I21.4",
-                                "I21.9",
+                                "I21", "I21.0", "I21.1", "I21.2", "I21.3", "I21.4", "I21.9"
                             ]
                         },
                     },
@@ -183,9 +252,33 @@ class SampleCohortsInitializer:
                         "codelist": {"ICD10": ["I25.2"]},
                     },
                 ],
+            }
+        })
+
+        # Chronic Kidney Disease Study and Cohort
+        cohort_5_id = self.generate_cohort_id()
+        study_5_id = self.generate_study_id()
+        sample_data.append({
+            "study": {
+                "id": study_5_id,
+                "name": "Chronic Kidney Disease Study",
+                "description": "Study of patients with chronic kidney disease stages 3-5",
+                "baseline_characteristics": {
+                    "age_range": "18+",
+                    "ckd_stages": "3-5"
+                },
+                "outcomes": {
+                    "primary": "Progression to ESRD",
+                    "secondary": "Cardiovascular outcomes"
+                },
+                "analysis": {
+                    "type": "prospective cohort",
+                    "follow_up": "10 years"
+                }
             },
-            {
-                "id": self.generate_cohort_id(),
+            "cohort": {
+                "id": cohort_5_id,
+                "study_id": study_5_id,
                 "name": "Chronic Kidney Disease Cohort",
                 "class_name": "Cohort",
                 "description": "Patients with chronic kidney disease stages 3-5",
@@ -213,18 +306,15 @@ class SampleCohortsInitializer:
                         "class_name": "CodelistPhenotype",
                         "codelist": {
                             "ICD10": [
-                                "N17",
-                                "N17.0",
-                                "N17.1",
-                                "N17.2",
-                                "N17.8",
-                                "N17.9",
+                                "N17", "N17.0", "N17.1", "N17.2", "N17.8", "N17.9"
                             ]
                         },
                     },
                 ],
-            },
-        ]
+            }
+        })
+        
+        return sample_data
 
     async def wait_for_database(
         self, max_retries: int = 30, delay: float = 2.0
@@ -263,15 +353,39 @@ class SampleCohortsInitializer:
             logger.error(f"❌ Error checking existing public cohorts: {e}")
             return False
 
-    async def create_sample_cohort(self, cohort_data: dict) -> bool:
-        """Create a single sample cohort using DatabaseManager."""
+    async def create_sample_study_and_cohort(self, data: dict) -> bool:
+        """Create a single sample study and its associated cohort."""
         try:
-            # Create the cohort using DatabaseManager
-            success = await self.db_manager.update_cohort_for_user(
-                self.public_user_id, cohort_data["id"], cohort_data, provisional=False
+            study_data = data["study"]
+            cohort_data = data["cohort"]
+            
+            # First create the study
+            study_success = await self.db_manager.update_study_for_user(
+                user_id=self.public_user_id,
+                study_id=study_data["id"],
+                name=study_data["name"],
+                description=study_data["description"],
+                baseline_characteristics=study_data.get("baseline_characteristics"),
+                outcomes=study_data.get("outcomes"),
+                analysis=study_data.get("analysis"),
+                visible_by=[],
+                is_public=True
             )
 
-            if success:
+            if not study_success:
+                logger.error(f"❌ Failed to create study {study_data['name']}")
+                return False
+
+            # Then create the cohort associated with the study
+            cohort_success = await self.db_manager.update_cohort_for_user(
+                user_id=self.public_user_id,
+                cohort_id=cohort_data["id"],
+                cohort_data=cohort_data,
+                study_id=cohort_data["study_id"],
+                provisional=False
+            )
+
+            if cohort_success:
                 # Mark the cohort as public by directly updating the database
                 conn = await self.db_manager.get_connection()
                 await conn.execute(
@@ -292,37 +406,46 @@ class SampleCohortsInitializer:
             return False
 
     async def create_sample_cohorts(self) -> bool:
-        """Create all sample cohorts."""
-        sample_cohorts = self.get_sample_cohorts()
+        """Create all sample studies and cohorts."""
+        sample_data = self.get_sample_cohorts_and_studies()
         success_count = 0
 
-        logger.info(f"🚀 Creating {len(sample_cohorts)} sample cohorts...")
+        logger.info(f"🚀 Creating {len(sample_data)} sample studies and cohorts...")
 
-        for i, cohort_data in enumerate(sample_cohorts, 1):
+        for i, data in enumerate(sample_data, 1):
+            study_name = data['study']['name']
+            cohort_name = data['cohort']['name']
             logger.info(
-                f"📝 Creating cohort {i}/{len(sample_cohorts)}: {cohort_data['name']}"
+                f"📝 Creating study and cohort {i}/{len(sample_data)}: {study_name} / {cohort_name}"
             )
 
-            if await self.create_sample_cohort(cohort_data):
+            if await self.create_sample_study_and_cohort(data):
                 success_count += 1
 
-        logger.info(f"📊 Created {success_count}/{len(sample_cohorts)} sample cohorts")
-        return success_count == len(sample_cohorts)
+        logger.info(f"📊 Created {success_count}/{len(sample_data)} sample studies and cohorts")
+        return success_count == len(sample_data)
 
     async def verify_sample_cohorts(self) -> bool:
-        """Verify that sample cohorts were created correctly using DatabaseManager."""
+        """Verify that sample studies and cohorts were created correctly using DatabaseManager."""
         try:
+            # Check public cohorts
             public_cohorts = await self.db_manager.get_public_cohorts()
-
             logger.info(f"📋 Found {len(public_cohorts)} public cohorts:")
             for cohort in public_cohorts:
                 name = cohort.get("name", f"Cohort {cohort.get('id', 'Unknown')}")
                 logger.info(f"  - {name} (ID: {cohort.get('id', 'Unknown')})")
 
-            return len(public_cohorts) >= 5  # Expect at least 5 sample cohorts
+            # Check public studies
+            public_studies = await self.db_manager.get_all_studies_for_user(self.public_user_id)
+            logger.info(f"📋 Found {len(public_studies)} public studies:")
+            for study in public_studies:
+                name = study.get("name", f"Study {study.get('id', 'Unknown')}")
+                logger.info(f"  - {name} (ID: {study.get('id', 'Unknown')})")
+
+            return len(public_cohorts) >= 5 and len(public_studies) >= 5  # Expect at least 5 of each
 
         except Exception as e:
-            logger.error(f"❌ Error verifying sample cohorts: {e}")
+            logger.error(f"❌ Error verifying sample cohorts and studies: {e}")
             return False
 
     async def initialize(self) -> bool:
