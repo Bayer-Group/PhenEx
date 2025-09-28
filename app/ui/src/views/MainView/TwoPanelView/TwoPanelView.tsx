@@ -149,7 +149,7 @@ export const TwoPanelView = React.forwardRef<
     >
       {split === 'vertical' ? (
         <>
-          <div className={styles.leftPanel} style={{ width: isRightCollapsed ? '100%' : leftWidth }}>
+          <div className={`${styles.leftPanel} ${isRightCollapsed ? styles.rightCollapsed : ''}`} style={{ width: isRightCollapsed ? '100%' : leftWidth }}>
             {children[0]}
           </div>
 
