@@ -100,14 +100,18 @@
   height: 16px;
   border: none;
   /* font-size:10px; */
-  color: rgb(230, 230, 230);
+  color: green;
   background: transparent;
   cursor: pointer;
   padding: 0;
   transition: transform 0.2s ease;
-  margin-left: -8px;
+  margin-left: -7.5px;
   bottom: 8px;
   position: absolute;
+    transition: transform 0.2s ease;
+  display: block;
+  font-family: 'SNPro-regular';
+  font-size: 20px;
 }
 
 .toggleButton:focus {
@@ -118,15 +122,8 @@
   outline: none;
 }
 
-.toggleButton span {
-  transition: transform 0.2s ease;
-  color: black;
-  display: block;
-  font-family: 'SNPro-black';
-  font-size: 20px;
-}
 
-.toggleButton.open span {
+.toggleButton.open {
   transform: rotate(90deg);
 }
 
