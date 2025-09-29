@@ -40,7 +40,13 @@ button.studyArrow.studyArrow.studyArrow {
   height: 20px !important;
   bottom: 12px !important; /* Override the default bottom: 8px */
   margin-left: -10px;
+  transition: color .2s ease;
 
+}
+
+
+button.studyArrow.studyArrow.studyArrow:hover{
+  color: var(--color_accent_orange);
 }
 
 .studyArrow span{

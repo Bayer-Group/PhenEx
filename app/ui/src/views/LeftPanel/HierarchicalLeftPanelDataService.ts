@@ -155,7 +155,7 @@ export class HierarchicalLeftPanelDataService {
         collapsed: false,
         selected: id === currentlySelectedNodeId,
         hasButton: id === 'mystudies' ? true : false,
-        buttonTitle: 'New Study',
+        buttonTitle: 'New',
         buttonOnClick: this.addNewStudy.bind(this),
       });
       
@@ -199,15 +199,15 @@ export class HierarchicalLeftPanelDataService {
       collapsed: false,
       selected: id === currentlySelectedNodeId,
       hasButton: id === 'mystudies' ? true : false,
-      buttonTitle: 'New Study',
+      buttonTitle: 'New',
       buttonOnClick: this.addNewStudy.bind(this),
     });
 
     this.treeData = [];
     if (!getCurrentUser()?.isAnonymous) {
-      this.treeData.push(await createRootNode('mystudies', 'My Studies'));
+      this.treeData.push(await createRootNode('mystudies', 'Studies'));
     }
-    this.treeData.push(await createRootNode('publicstudies', 'Public Studies'));
+    this.treeData.push(await createRootNode('publicstudies', 'Public'));
 
     console.log('🔄 Tree rebuilt with preserved selection for:', currentlySelectedNodeId);
     this.notifyListeners();

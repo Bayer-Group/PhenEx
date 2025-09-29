@@ -205,7 +205,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 rendererProps={this.props.rendererProps}
                 classNameArrow={child.classNameArrow || this.props.classNameArrow}
                 isLastChild={index === node.children.length - 1}
-                hideButton={this.props.hideButton}
+                hideButton={this.props.node.hideButton}
               />
             ))}
           </div>
