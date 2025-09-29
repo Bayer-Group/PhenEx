@@ -168,6 +168,7 @@ async def update_cohort_for_user(
     request: Request,
     cohort_id: str,
     cohort: Dict = Body(...),
+    study_id: str = None,
     provisional: bool = False,
     new_version: bool = False,
 ):
@@ -177,6 +178,7 @@ async def update_cohort_for_user(
     Args:
         cohort_id (str): The ID of the cohort to update for the authenticated user.
         cohort (Dict): The complete JSON specification of the cohort.
+        study_id (str): The ID of the study this cohort belongs to.
         provisional (bool): Whether to save the cohort as provisional.
         new_version (bool): If True, increment version. If False, replace existing version.
 
@@ -184,9 +186,20 @@ async def update_cohort_for_user(
         dict: Status and message of the operation.
     """
     user_id = _get_authenticated_user_id(request)
+    
+    # Get study_id from cohort data if not provided as parameter
+    if not study_id:
+        study_id = cohort.get("study_id")
+    
+    if not study_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="study_id is required for cohort creation/update"
+        )
+    
     try:
         await db_manager.update_cohort_for_user(
-            user_id, cohort_id, cohort, provisional, new_version
+            user_id, cohort_id, cohort, study_id, provisional, new_version
         )
         return {"status": "success", "message": "Cohort updated successfully."}
     except Exception as e:
@@ -284,6 +297,250 @@ async def get_public_cohort(cohort_id: str):
         logger.error(f"Error retrieving cohort for public user: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to retrieve cohort for public user"
+        )
+
+
+# ========== STUDY MANAGEMENT ENDPOINTS ==========
+
+@app.get("/studies", tags=["study"])
+async def get_all_studies_for_user(request: Request):
+    """
+    Retrieve a list of all available studies for the authenticated user.
+
+    Returns:
+        list: A list of study objects with id, name, and metadata.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        return await db_manager.get_all_studies_for_user(user_id)
+    except Exception as e:
+        logger.error(f"Failed to retrieve studies for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve studies.")
+
+
+@app.get("/studies/public", tags=["study"])
+async def get_all_public_studies():
+    """
+    Retrieve a list of all public studies.
+
+    Returns:
+        list: A list of public study objects.
+    """
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        studies = await db_manager.get_all_studies_for_user(public_user_id)
+        # Filter to only return truly public studies
+        public_studies = [study for study in studies if study.get("is_public", False)]
+        return public_studies
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to retrieve public studies: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve public studies.")
+
+
+@app.get("/study", tags=["study"])
+async def get_study_for_user(request: Request, study_id: str):
+    """
+    Retrieve a study by its ID for the authenticated user.
+
+    Args:
+        study_id (str): The ID of the study to retrieve.
+
+    Returns:
+        dict: The study data.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        study = await db_manager.get_study_for_user(user_id, study_id)
+        if not study:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Study {study_id} not found or access denied for user {user_id}",
+            )
+        return study
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving study {study_id} for user {user_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve study {study_id} for user {user_id}",
+        )
+
+
+@app.get("/study/public", tags=["study"])
+async def get_public_study(study_id: str):
+    """
+    Retrieve a public study by its ID.
+
+    Args:
+        study_id (str): The ID of the study to retrieve.
+
+    Returns:
+        dict: The study data.
+    """
+    try:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if not public_user_id:
+            raise HTTPException(
+                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
+            )
+
+        study = await db_manager.get_study_for_user(public_user_id, study_id)
+        if not study or not study.get("is_public", False):
+            raise HTTPException(
+                status_code=404, detail="Public study not found"
+            )
+        return study
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving public study {study_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve public study"
+        )
+
+
+@app.post("/study", tags=["study"])
+async def update_study_for_user(
+    request: Request,
+    study_id: str,
+    study: Dict = Body(...),
+):
+    """
+    Update or create a study for the authenticated user.
+
+    Args:
+        study_id (str): The ID of the study to update.
+        study (Dict): The complete JSON specification of the study.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_study_for_user(
+            user_id=user_id,
+            study_id=study_id,
+            name=study.get("name", "Untitled Study"),
+            description=study.get("description"),
+            baseline_characteristics=study.get("baseline_characteristics"),
+            outcomes=study.get("outcomes"),
+            analysis=study.get("analysis"),
+            visible_by=study.get("visible_by", []),
+            is_public=study.get("is_public", False)
+        )
+        
+        if success:
+            return {"status": "success", "message": "Study updated successfully."}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update study.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update study {study_id} for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update study.")
+
+
+@app.post("/study/new", tags=["study"])
+async def create_new_study(
+    request: Request,
+    study: Dict = Body(...),
+):
+    """
+    Create a new study for the authenticated user.
+
+    Args:
+        study (Dict): The study data including name, description, etc.
+
+    Returns:
+        dict: The created study data.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_study_for_user(
+            user_id=user_id,
+            study_id=study.get("id"),
+            name=study.get("name", "New Study"),
+            description=study.get("description", ""),
+            baseline_characteristics=study.get("baseline_characteristics", {}),
+            outcomes=study.get("outcomes", {}),
+            analysis=study.get("analysis", {}),
+            visible_by=study.get("visible_by", []),
+            is_public=study.get("is_public", False)
+        )
+        
+        if success:
+            return study
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create study.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create new study for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create study.")
+
+
+@app.delete("/study", tags=["study"])
+async def delete_study_for_user(request: Request, study_id: str):
+    """
+    Delete a study and all associated cohorts for the authenticated user.
+
+    Args:
+        study_id (str): The ID of the study to delete.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        success = await db_manager.delete_study_for_user(user_id, study_id)
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Study {study_id} not found or access denied for user {user_id}.",
+            )
+
+        return {
+            "status": "success",
+            "message": f"Study {study_id} and all associated cohorts deleted successfully.",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete study {study_id} for user {user_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete study {study_id} for user {user_id}",
+        )
+
+
+@app.get("/study/cohorts", tags=["study"])
+async def get_cohorts_for_study(request: Request, study_id: str):
+    """
+    Retrieve all cohorts associated with a specific study.
+
+    Args:
+        study_id (str): The ID of the study.
+
+    Returns:
+        list: A list of cohort objects associated with the study.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        cohorts = await db_manager.get_cohorts_for_study(study_id, user_id)
+        return cohorts
+    except Exception as e:
+        logger.error(f"Failed to retrieve cohorts for study {study_id}: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to retrieve cohorts for study {study_id}"
         )
 
 
