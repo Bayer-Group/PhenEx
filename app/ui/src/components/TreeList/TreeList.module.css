@@ -163,3 +163,9 @@
   bottom: 5px;
   padding: 2px 4px !important;
 }
+
+/* Styling for last child items - can be used to adjust height or remove vertical lines */
+.verticalLine.lastChild {
+  /* Default: no special styling, but available for customization */
+  height: 80%;
+}

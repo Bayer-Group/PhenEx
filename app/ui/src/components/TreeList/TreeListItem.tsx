@@ -34,6 +34,7 @@ export interface TreeListItemProps {
   onToggle?: (isOpen: boolean) => void;
   rendererProps?: Record<string, any>;
   classNameArrow?: string;
+  isLastChild?: boolean; // Whether this is the last child in its parent's children array
 }
 
 export class TreeListItem extends React.Component<TreeListItemProps> {
@@ -80,8 +81,10 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       const lines = [];
       // Start from level 1 (not 0) up to current level
       for (let i = 0; i <= node.level; i++) {
+        // Only apply lastChild class to the last vertical line (at current node's level)
+        const isLastChildClass = (this.props.isLastChild && i === node.level) ? styles.lastChild : '';
         lines.push(
-          <div key={`line-${i}`} className={`${styles.verticalLine} ${styles[`level${i}`]}`} />
+          <div key={`line-${i}`} className={`${styles.verticalLine} ${styles[`level${i}`]} ${isLastChildClass}`} />
         );
       }
       return lines;
@@ -151,6 +154,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                   node={child}
                   rendererProps={this.props.rendererProps}
                   classNameArrow={child.classNameArrow || this.props.classNameArrow}
+                  isLastChild={index === node.children.length - 1}
                 />
               ))}
             </div>
@@ -196,6 +200,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 node={child}
                 rendererProps={this.props.rendererProps}
                 classNameArrow={child.classNameArrow || this.props.classNameArrow}
+                isLastChild={index === node.children.length - 1}
               />
             ))}
           </div>
