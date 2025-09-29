@@ -10,7 +10,8 @@ const TreeList: React.FC<TreeListProps> = ({ data }) => {
   return (
     <div className={styles.treeList}>
       {data.map((node, index) => {
-        const ItemComponent = node.treeListItem || TreeListItem;
+        console.log("THIS IS NODE", node)
+        const ItemComponent = node.renderer || TreeListItem;
         return <ItemComponent key={`${node.displayName}-${index}`} node={node} />;
       })}
     </div>

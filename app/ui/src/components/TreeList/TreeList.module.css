@@ -100,12 +100,12 @@
   height: 16px;
   border: none;
   /* font-size:10px; */
-  color: green;
+  color: var(--color-accent-bright);
   background: transparent;
   cursor: pointer;
   padding: 0;
   transition: transform 0.2s ease;
-  margin-left: -7.5px;
+  margin-left: -5px;
   bottom: 8px;
   position: absolute;
     transition: transform 0.2s ease;

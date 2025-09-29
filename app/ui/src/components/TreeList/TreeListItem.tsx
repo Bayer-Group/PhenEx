@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from './TreeList.module.css';
 import { Button } from '../ButtonsAndTabs/Button/Button';
 
@@ -16,6 +16,7 @@ export interface TreeNode {
   hasButton?: boolean;
   buttonTitle?: string;
   buttonOnClick?: any;
+  classNameArrow?: string; // Optional CSS class for the toggle arrow
 }
 
 export interface TreeItemRendererProps {
@@ -23,12 +24,16 @@ export interface TreeItemRendererProps {
   isOpen: boolean;
   onToggle: () => void;
   additionalProps?: Record<string, any>;
+  // Pass the caret element to the renderer so it can style and position it
+  caretElement?: React.ReactElement | null;
+  defaultArrowClassName?: string;
 }
 
 export interface TreeListItemProps {
   node: TreeNode;
   onToggle?: (isOpen: boolean) => void;
   rendererProps?: Record<string, any>;
+  classNameArrow?: string;
 }
 
 export class TreeListItem extends React.Component<TreeListItemProps> {
@@ -70,17 +75,6 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       console.log('CLIKED VUTRONN');
     };
 
-    const content = Renderer ? (
-      <Renderer
-        node={node}
-        isOpen={isOpen}
-        onToggle={this.toggleOpen}
-        additionalProps={this.props.rendererProps}
-      />
-    ) : (
-      this.renderDefaultContent()
-    );
-
     // Create an array of indices up to current level for vertical lines
     const renderVerticalLines = () => {
       const lines = [];
@@ -93,24 +87,79 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
       return lines;
     };
 
-    const renderCaret = () => {
-      return (
-        node.children.length > 0 && (
-          <div className={styles.toggleContainer}>
-            <button
-              className={`${styles.toggleButton} ${isOpen ? styles.open : ''}`}
-              onClick={e => {
-                e.stopPropagation();
-                this.toggleOpen();
-              }}
-            >
-              <span>{'>'}</span>
-            </button>
-          </div>
-        )
-      );
+    // Create the default caret element that can be passed to renderer
+    const createCaretElement = (customClassName?: string) => {
+      const finalArrowClassName = customClassName || node.classNameArrow || this.props.classNameArrow || '';
+      
+      return node.children.length > 0 ? (
+        <div className={styles.toggleContainer}>
+          <button
+            className={`${styles.toggleButton} ${isOpen ? styles.open : ''} ${finalArrowClassName}`}
+            onClick={e => {
+              e.stopPropagation();
+              this.toggleOpen();
+            }}
+          >
+            {'>'}
+          </button>
+        </div>
+      ) : null;
     };
 
+    // If using a custom renderer, let it handle the entire layout including caret
+    if (Renderer) {
+      const defaultArrowClassName = node.classNameArrow || this.props.classNameArrow || '';
+      const caretElement = createCaretElement(defaultArrowClassName);
+      
+      return (
+        <div className={styles.treeItem}>
+          <div
+            className={`${styles.container} ${styles[`level${node.level}`]}`}
+            onClick={this.handleClick}
+          >
+            <div
+              className={`${styles.itemContent} ${styles[`level${node.level}`]}`}
+              style={{
+                height: `${node.height || 30}px`,
+                fontSize: `${node.fontSize || 20}px`,
+                fontFamily: `${node.fontFamily || 'IBMPlexSans-regular'}`,
+              }}
+            >
+              {renderVerticalLines()}
+              <Renderer
+                node={node}
+                isOpen={isOpen}
+                onToggle={this.toggleOpen}
+                additionalProps={this.props.rendererProps}
+                caretElement={caretElement}
+                defaultArrowClassName={defaultArrowClassName}
+              />
+              {node.hasButton && (
+                <Button
+                  title={node.buttonTitle}
+                  onClick={() => clickedOnButton(new MouseEvent('click') as any)}
+                  className={styles.button}
+                />
+              )}
+            </div>
+          </div>
+          {isOpen && node.children.length > 0 && (
+            <div className={styles.children}>
+              {node.children.map((child, index) => (
+                <TreeListItem
+                  key={`${child.displayName}-${index}`}
+                  node={child}
+                  rendererProps={this.props.rendererProps}
+                  classNameArrow={child.classNameArrow || this.props.classNameArrow}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Default rendering when no custom renderer
     return (
       <div className={styles.treeItem}>
         <div
@@ -126,15 +175,17 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
             }}
           >
             {renderVerticalLines()}
-            {renderCaret()}
+            {createCaretElement()}
             {node.hasButton && (
               <Button
                 title={node.buttonTitle}
-                onClick={clickedOnButton}
+                onClick={() => clickedOnButton(new MouseEvent('click') as any)}
                 className={styles.button}
               />
             )}
-            <div className={styles.content}>{content}</div>
+            <div className={styles.content}>
+              {this.renderDefaultContent()}
+            </div>
           </div>
         </div>
         {isOpen && node.children.length > 0 && (
@@ -144,6 +195,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 key={`${child.displayName}-${index}`}
                 node={child}
                 rendererProps={this.props.rendererProps}
+                classNameArrow={child.classNameArrow || this.props.classNameArrow}
               />
             ))}
           </div>
