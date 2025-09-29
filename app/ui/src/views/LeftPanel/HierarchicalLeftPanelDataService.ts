@@ -117,6 +117,7 @@ export class HierarchicalLeftPanelDataService {
       hasButton: !isPublic,
       buttonTitle: 'Add Cohort',
       buttonOnClick: () => this.addNewCohortToStudy(study.id),
+      hideButton: true, // Hide button by default, show on hover
     };
     
     console.log(`📁 Study node created: "${study.name}", children: ${children.length}`);

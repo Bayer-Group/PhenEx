@@ -17,6 +17,7 @@ export interface TreeNode {
   buttonTitle?: string;
   buttonOnClick?: any;
   classNameArrow?: string; // Optional CSS class for the toggle arrow
+  classNameButton?: string; // Optional CSS class for the button
 }
 
 export interface TreeItemRendererProps {
@@ -34,7 +35,9 @@ export interface TreeListItemProps {
   onToggle?: (isOpen: boolean) => void;
   rendererProps?: Record<string, any>;
   classNameArrow?: string;
+  classNameButton?: string;
   isLastChild?: boolean; // Whether this is the last child in its parent's children array
+  hideButton?: boolean; // Whether to hide button by default and show on hover
 }
 
 export class TreeListItem extends React.Component<TreeListItemProps> {
@@ -108,12 +111,12 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
         </div>
       ) : null;
     };
+      console.log("THE HIDE BUTRTON IS", this.props)
 
     // If using a custom renderer, let it handle the entire layout including caret
     if (Renderer) {
       const defaultArrowClassName = node.classNameArrow || this.props.classNameArrow || '';
       const caretElement = createCaretElement(defaultArrowClassName);
-      
       return (
         <div className={styles.treeItem}>
           <div
@@ -141,7 +144,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 <Button
                   title={node.buttonTitle}
                   onClick={() => clickedOnButton(new MouseEvent('click') as any)}
-                  className={styles.button}
+                  className={`${styles.button} ${this.props.node.hideButton ? styles.buttonHidden : ''}`.trim()}
                 />
               )}
             </div>
@@ -155,6 +158,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                   rendererProps={this.props.rendererProps}
                   classNameArrow={child.classNameArrow || this.props.classNameArrow}
                   isLastChild={index === node.children.length - 1}
+                  hideButton={this.props.node.hideButton}
                 />
               ))}
             </div>
@@ -184,7 +188,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
               <Button
                 title={node.buttonTitle}
                 onClick={() => clickedOnButton(new MouseEvent('click') as any)}
-                className={styles.button}
+                className={`${styles.button} ${this.props.hideButton ? styles.buttonHidden : ''}`.trim()}
               />
             )}
             <div className={styles.content}>
@@ -201,6 +205,7 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
                 rendererProps={this.props.rendererProps}
                 classNameArrow={child.classNameArrow || this.props.classNameArrow}
                 isLastChild={index === node.children.length - 1}
+                hideButton={this.props.hideButton}
               />
             ))}
           </div>
