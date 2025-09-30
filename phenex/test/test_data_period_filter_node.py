@@ -393,12 +393,6 @@ def test_operator_edge_cases_end_dates():
             date(2021, 1, 1),
             date(2021, 1, 2),
         ],
-        "END_DATE": [
-            date(2020, 12, 30),
-            date(2020, 12, 31),
-            date(2021, 1, 1),
-            date(2021, 1, 2),
-        ],
     }
 
     df = pd.DataFrame(data)
@@ -417,12 +411,10 @@ def test_operator_edge_cases_end_dates():
     dec_31_rows = result_inclusive[result_inclusive["PERSON_ID"] == 2]
     assert len(dec_31_rows) == 1
     assert dec_31_rows.iloc[0]["END_DATE"] == date(2020, 12, 31)  # Should NOT be NULL
-    assert dec_31_rows.iloc[0]["END_DATE"] == date(2020, 12, 31)  # Should NOT be NULL
 
     # Check that end dates after Dec 31 are set to NULL
     jan_1_rows = result_inclusive[result_inclusive["PERSON_ID"] == 3]
     assert len(jan_1_rows) == 1
-    assert pd.isna(jan_1_rows.iloc[0]["END_DATE"])  # Should be NULL
     assert pd.isna(jan_1_rows.iloc[0]["END_DATE"])  # Should be NULL
 
     # Test with Before (<) - end dates ON Dec 31 should be EXCLUDED (set to NULL)
@@ -438,30 +430,21 @@ def test_operator_edge_cases_end_dates():
     dec_31_rows_excl = result_exclusive[result_exclusive["PERSON_ID"] == 2]
     assert len(dec_31_rows_excl) == 1
     assert pd.isna(dec_31_rows_excl.iloc[0]["END_DATE"])  # Should be NULL
-    assert pd.isna(dec_31_rows_excl.iloc[0]["END_DATE"])  # Should be NULL
 
     # Check that end date before Dec 31 is kept
     dec_30_rows = result_exclusive[result_exclusive["PERSON_ID"] == 1]
     assert len(dec_30_rows) == 1
     assert dec_30_rows.iloc[0]["END_DATE"] == date(2020, 12, 30)  # Should NOT be NULL
-    assert dec_30_rows.iloc[0]["END_DATE"] == date(2020, 12, 30)  # Should NOT be NULL
 
 
 def test_operator_edge_cases_start_dates():
     """
-    Test that start date adjustment works correctly.
-    Note: START_DATE adjustment should always use max(start_date, min_value)
-    regardless of whether min_value operator is > or >=.
+    Test that start date adjustment works correctly with different operators.
+    START_DATE adjustment should use max(start_date, min_value) for both > and >= operators.
     """
     # Test data without EVENT_DATE to avoid filtering complications
     data = {
         "PERSON_ID": [1, 2, 3, 4],
-        "START_DATE": [
-            date(2019, 12, 30),
-            date(2019, 12, 31),
-            date(2020, 1, 1),
-            date(2020, 1, 2),
-        ],
         "START_DATE": [
             date(2019, 12, 30),
             date(2019, 12, 31),
@@ -485,7 +468,6 @@ def test_operator_edge_cases_start_dates():
     # All start dates should be at least Jan 1, 2020
     for _, row in result_inclusive.iterrows():
         assert row["START_DATE"] >= date(2020, 1, 1)
-        assert row["START_DATE"] >= date(2020, 1, 1)
 
     # Test with After (>) - start dates should be adjusted to at least the min_value.value
     date_filter_exclusive = DateFilter(
@@ -500,7 +482,117 @@ def test_operator_edge_cases_start_dates():
     min_expected_date = date(2019, 12, 31)
     for _, row in result_exclusive.iterrows():
         assert row["START_DATE"] >= min_expected_date
-        assert row["START_DATE"] >= min_expected_date
+
+
+def test_invalid_column_name_error():
+    """
+    Test that DataPeriodFilterNode raises ValueError for non-EVENT_DATE column names.
+    """
+    # Should work with EVENT_DATE
+    date_filter_valid = DateFilter(
+        min_date=AfterOrOn("2020-01-01"),
+        max_date=BeforeOrOn("2020-12-31"),
+        column_name="EVENT_DATE",
+    )
+    node_valid = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter_valid
+    )
+    # Should not raise an error
+    assert node_valid.date_filter.column_name == "EVENT_DATE"
+
+    # Should raise error with non-EVENT_DATE column name
+    date_filter_invalid = DateFilter(
+        min_date=AfterOrOn("2020-01-01"),
+        max_date=BeforeOrOn("2020-12-31"),
+        column_name="DIAGNOSIS_DATE",  # Invalid column name
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="DataPeriodFilterNode only supports filtering by EVENT_DATE column",
+    ):
+        DataPeriodFilterNode(
+            name="test_node", domain="TEST", date_filter=date_filter_invalid
+        )
+
+
+def test_operator_edge_cases_comprehensive():
+    """
+    Test comprehensive coverage of operator edge cases for all supported operators.
+    This ensures our operator handling logic works correctly for > vs >= and < vs <=.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "START_DATE": [
+            date(2019, 12, 31),  # Before boundary
+            date(2020, 1, 1),  # On boundary
+            date(2020, 6, 15),  # Within range
+            date(2020, 12, 31),  # On boundary
+        ],
+        "END_DATE": [
+            date(2020, 1, 1),  # On boundary
+            date(2020, 6, 15),  # Within range
+            date(2020, 12, 31),  # On boundary
+            date(2021, 1, 1),  # After boundary
+        ],
+        "DATE_OF_DEATH": [
+            date(2020, 1, 1),  # On boundary
+            date(2020, 6, 15),  # Within range
+            date(2020, 12, 31),  # On boundary
+            date(2021, 1, 1),  # After boundary
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    # Test all supported operator combinations
+    test_cases = [
+        (AfterOrOn("2020-01-01"), BeforeOrOn("2020-12-31"), ">=", "<="),
+        (After("2019-12-31"), Before("2021-01-01"), ">", "<"),
+        (AfterOrOn("2020-01-01"), Before("2021-01-01"), ">=", "<"),
+        (After("2019-12-31"), BeforeOrOn("2020-12-31"), ">", "<="),
+    ]
+
+    for min_date, max_date, min_op, max_op in test_cases:
+        date_filter = DateFilter(min_date=min_date, max_date=max_date)
+        node = DataPeriodFilterNode(
+            name=f"test_node_{min_op}_{max_op}", domain="TEST", date_filter=date_filter
+        )
+        result = node._execute({"TEST": table}).to_pandas()
+
+        # Verify the operations completed without error
+        assert len(result) > 0, f"No results for operators {min_op}/{max_op}"
+
+        # Verify START_DATE adjustments
+        min_expected = min_date.value
+        for _, row in result.iterrows():
+            assert (
+                row["START_DATE"] >= min_expected
+            ), f"START_DATE not properly adjusted for {min_op}"
+
+        # Verify END_DATE and DATE_OF_DEATH nullification
+        max_expected = max_date.value
+        for _, row in result.iterrows():
+            if pd.notna(row["END_DATE"]):
+                if max_op == "<=":
+                    assert (
+                        row["END_DATE"] <= max_expected
+                    ), f"END_DATE not properly handled for {max_op}"
+                else:  # max_op == "<"
+                    assert (
+                        row["END_DATE"] < max_expected
+                    ), f"END_DATE not properly handled for {max_op}"
+
+            if pd.notna(row["DATE_OF_DEATH"]):
+                if max_op == "<=":
+                    assert (
+                        row["DATE_OF_DEATH"] <= max_expected
+                    ), f"DATE_OF_DEATH not properly handled for {max_op}"
+                else:  # max_op == "<"
+                    assert (
+                        row["DATE_OF_DEATH"] < max_expected
+                    ), f"DATE_OF_DEATH not properly handled for {max_op}"
 
 
 def test_row_exclusion_end_date_before_min():
