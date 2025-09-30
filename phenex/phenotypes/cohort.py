@@ -492,48 +492,83 @@ class DataPeriodFilterNode(Node):
         from phenex.filters import DateFilter
         from phenex.filters.date_filter import AfterOrOn, BeforeOrOn
 
-        # Create date filter for study period
+        # Create date filter for study period 2020
         date_filter = DateFilter(
             min_date=AfterOrOn("2020-01-01"),
             max_date=BeforeOrOn("2020-12-31")
         )
 
-        # Create filter node for conditions table
+        # Filter condition occurrences table
         filter_node = DataPeriodFilterNode(
             name="CONDITIONS_FILTER",
             domain="CONDITION_OCCURRENCE",
             date_filter=date_filter
         )
-
-        # Apply filtering
-        filtered_table = filter_node.execute({"CONDITION_OCCURRENCE": source_table})
         ```
 
-        Example: Data Transformation with Row Exclusion
-
-        Input Table:
+        Example: Condition Occurrence Table (EVENT_DATE based)
+        
+        Input CONDITION_OCCURRENCE Table:
         ```
-        PERSON_ID | EVENT_DATE | START_DATE | END_DATE | DATE_OF_DEATH
-        ----------|------------|---------------------|-------------------|---------------
-        1         | 2019-11-15 | 2019-10-01         | 2019-11-01       | NULL           # Row excluded: END_DATE < min_date
-        2         | 2020-06-01 | 2020-05-01         | 2021-03-01       | 2021-01-15
-        3         | 2020-12-31 | 2019-11-15         | 2020-12-31       | 2020-10-01
-        4         | 2021-02-15 | 2021-01-15         | 2021-01-01       | 2021-06-01    # Row excluded: START_DATE > max_date
+        PERSON_ID | EVENT_DATE | CONDITION_CONCEPT_ID
+        ----------|------------|--------------------
+        1         | 2019-11-15 | 201826            # Excluded: before study period
+        2         | 2020-06-01 | 201826            # Kept: within study period
+        3         | 2020-12-31 | 443767            # Kept: within study period  
+        4         | 2021-02-15 | 443767            # Excluded: after study period
         ```
 
         After applying DateFilter(2020-01-01 to 2020-12-31):
         ```
-        PERSON_ID | EVENT_DATE | START_DATE | END_DATE | DATE_OF_DEATH
-        ----------|------------|---------------------|-------------------|---------------
-        2         | 2020-06-01 | 2020-05-01         | NULL              | NULL
-        3         | 2020-12-31 | 2020-01-01         | 2020-12-31       | 2020-10-01
+        PERSON_ID | EVENT_DATE | CONDITION_CONCEPT_ID
+        ----------|------------|--------------------
+        2         | 2020-06-01 | 201826
+        3         | 2020-12-31 | 443767
         ```
 
-        Transformations applied:
-        - Row 1: Excluded entirely (END_DATE 2019-11-01 < min_date 2020-01-01)
-        - Row 2: END_DATE → NULL (after max_date), DATE_OF_DEATH → NULL (after max_date)
-        - Row 3: START_DATE adjusted from 2019-11-15 → 2020-01-01 (before min_date)
-        - Row 4: Excluded entirely (START_DATE 2021-01-15 > max_date 2020-12-31)
+        Example: Drug Exposure Table (START_DATE/END_DATE based)
+        
+        Input DRUG_EXPOSURE Table:
+        ```
+        PERSON_ID | START_DATE | END_DATE   | DRUG_CONCEPT_ID
+        ----------|------------|------------|----------------
+        1         | 2019-10-01| 2019-11-01| 1124300         # Excluded: ends before study period
+        2         | 2019-11-01| 2020-03-01| 1124300         # Kept: overlaps study period (START_DATE adjusted)
+        3         | 2020-06-01| 2020-08-01| 1124300         # Kept: entirely within study period
+        4         | 2020-10-01| 2021-03-01| 1124300         # Kept: starts in study period (END_DATE nulled)
+        5         | 2021-01-01| 2021-06-01| 1124300         # Excluded: starts after study period
+        ```
+
+        After applying DateFilter(2020-01-01 to 2020-12-31):
+        ```
+        PERSON_ID | START_DATE | END_DATE   | DRUG_CONCEPT_ID
+        ----------|------------|------------|----------------
+        2         | 2020-01-01| 2020-03-01| 1124300         # START_DATE adjusted to study start
+        3         | 2020-06-01| 2020-08-01| 1124300         # No changes needed
+        4         | 2020-10-01| NULL      | 1124300         # END_DATE nulled (beyond study end)
+        ```
+
+        Example: Person Table (DATE_OF_DEATH)
+        
+        Input PERSON Table:
+        ```
+        PERSON_ID | BIRTH_DATE | DATE_OF_DEATH
+        ----------|------------|---------------
+        1         | 1985-03-15 | 2019-05-10   # Death before study: DATE_OF_DEATH nulled
+        2         | 1970-08-22 | 2020-07-15   # Death during study: kept as-is
+        3         | 1992-11-30 | 2021-04-20   # Death after study: DATE_OF_DEATH nulled
+        4         | 1988-01-05 | NULL         # No death recorded: no change
+        ```
+
+        After applying DateFilter(2020-01-01 to 2020-12-31):
+        ```
+        PERSON_ID | BIRTH_DATE | DATE_OF_DEATH
+        ----------|------------|---------------
+        1         | 1985-03-15 | NULL
+        2         | 1970-08-22 | 2020-07-15
+        3         | 1992-11-30 | NULL
+        4         | 1988-01-05 | NULL
+        ```
     """
 
     def __init__(self, name: str, domain: str, date_filter: DateFilter):
