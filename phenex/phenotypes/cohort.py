@@ -464,19 +464,18 @@ class DataPeriodFilterNode(Node):
         1. **EVENT_DATE Column**:
            If an EVENT_DATE column exists, filters the entire table to only include rows where EVENT_DATE falls within the date filter range.
 
-        2. **START_DATE Columns**:
-           Any column containing "START_DATE" as a substring (e.g., TREATMENT_START_DATE, START_DATE_PROCEDURE, MEDICATION_START_DATE_TIME) adjusts values to max(original_value, date_filter.min_date) to ensure start dates are not before the study period.
+        2. **START_DATE Column** (exact match):
+           If a START_DATE column exists, adjusts values to max(original_value, date_filter.min_date) to ensure start dates are not before the study period.
 
            **Row Exclusion**: If START_DATE is strictly after date_filter.max_date, the entire row is dropped as the period doesn't overlap with the study period.
 
-        3. **END_DATE Columns**:
-           Any column containing "END_DATE" as a substring (e.g., TREATMENT_END_DATE, END_DATE_PROCEDURE, CONDITION_END_DATE) sets value to NULL if original_value > date_filter.max_date to indicate that the end event occurred outside the observation period.
+        3. **END_DATE Column** (exact match):
+           If an END_DATE column exists, sets value to NULL if original_value > date_filter.max_date to indicate that the end event occurred outside the observation period.
 
            **Row Exclusion**: If END_DATE is strictly before date_filter.min_date, the entire row is dropped as the period doesn't overlap with the study period.
 
-        4. **Death Date Columns** (substring matching):
-           Any column containing "DATE_OF_DEATH" or "DEATH_DATE" as substrings
-           (e.g., DATE_OF_DEATH, DEATH_DATE, PATIENT_DATE_OF_DEATH, DEATH_DATE_RECORDED) sets value to NULL if original_value > date_filter.max_date to indicate that death occurred outside the observation period.
+        4. **DATE_OF_DEATH Column** (exact match):
+           If a DATE_OF_DEATH column exists, sets value to NULL if original_value > date_filter.max_date to indicate that death occurred outside the observation period.
 
     Parameters:
         name: Unique identifier for this node in the computation graph.
@@ -543,7 +542,8 @@ class DataPeriodFilterNode(Node):
         self.date_filter = date_filter
 
     def _execute(self, tables: Dict[str, Table]) -> Table:
-        table = tables[self.domain]
+        phenex_table = tables[self.domain]
+        table = phenex_table.table  # Get the underlying ibis table
         columns = table.columns
 
         # 1. Filter rows that fall entirely outside data period
@@ -553,11 +553,14 @@ class DataPeriodFilterNode(Node):
         if self.date_filter.column_name in columns:
             table = self.date_filter.filter(table)
 
+        # 1b. Check for exact column name matches (no substring matching)
+        start_date_columns = [col for col in ["START_DATE"] if col in columns]
+        end_date_columns = [col for col in ["END_DATE"] if col in columns]
+        death_date_columns = [col for col in ["DATE_OF_DEATH"] if col in columns]
+        
         # 1b. Filter ranges that fall entirely outside the data period:
-        #   START_DATE columns that are strictly after max_date
-        #   END_DATE columns that are strictly before min_date
-        start_date_columns = [col for col in columns if "START_DATE" in col]
-        end_date_columns = [col for col in columns if "END_DATE" in col]
+        #   START_DATE fields that are strictly after max_date
+        #   END_DATE fields that are strictly before min_date
         date_filters = [
             DateFilter(max_date=self.date_filter.max_value, column_name=col)
             for col in start_date_columns
@@ -572,7 +575,7 @@ class DataPeriodFilterNode(Node):
         # 2. Build mutations dictionary for column updates
         mutations = {}
 
-        # 2a. Handle columns containing START_DATE - set to max(column_value, min_date)
+        # 2a. Handle START_DATE fields - set to max(column_value, min_date)
         if start_date_columns and self.date_filter.min_value is not None:
             for col in start_date_columns:
                 # Always use greatest to ensure start dates are at least min_value
@@ -581,7 +584,7 @@ class DataPeriodFilterNode(Node):
                     table[col], ibis.literal(self.date_filter.min_value.value)
                 )
 
-        # 2b. Handle columns containing END_DATE - set to NULL if outside max_date boundary
+        # 2b. Handle END_DATE fields - set to NULL if outside max_date boundary
         if end_date_columns and self.date_filter.max_value is not None:
             for col in end_date_columns:
                 # Respect the operator from max_value
@@ -604,10 +607,7 @@ class DataPeriodFilterNode(Node):
                     ibis.case().when(condition, ibis.null()).else_(table[col]).end()
                 )
 
-        # 2c. Handle columns containing DATE_OF_DEATH or DEATH_DATE - set to NULL if outside max_date boundary
-        death_date_columns = [
-            col for col in columns if "DATE_OF_DEATH" in col or "DEATH_DATE" in col
-        ]
+        # 2c. Handle DATE_OF_DEATH fields - set to NULL if outside max_date boundary
         if death_date_columns and self.date_filter.max_value is not None:
             for col in death_date_columns:
                 # Respect the operator from max_value
