@@ -513,7 +513,7 @@ class DataPeriodFilterNode(Node):
 
         Input Table:
         ```
-        PERSON_ID | EVENT_DATE | TREATMENT_START_DATE | CONDITION_END_DATE | DATE_OF_DEATH
+        PERSON_ID | EVENT_DATE | START_DATE | END_DATE | DATE_OF_DEATH
         ----------|------------|---------------------|-------------------|---------------
         1         | 2019-11-15 | 2019-10-01         | 2019-11-01       | NULL           # Row excluded: END_DATE < min_date
         2         | 2020-06-01 | 2020-05-01         | 2021-03-01       | 2021-01-15
@@ -523,17 +523,17 @@ class DataPeriodFilterNode(Node):
 
         After applying DateFilter(2020-01-01 to 2020-12-31):
         ```
-        PERSON_ID | EVENT_DATE | TREATMENT_START_DATE | CONDITION_END_DATE | DATE_OF_DEATH
+        PERSON_ID | EVENT_DATE | START_DATE | END_DATE | DATE_OF_DEATH
         ----------|------------|---------------------|-------------------|---------------
         2         | 2020-06-01 | 2020-05-01         | NULL              | NULL
         3         | 2020-12-31 | 2020-01-01         | 2020-12-31       | 2020-10-01
         ```
 
         Transformations applied:
-        - Row 1: Excluded entirely (CONDITION_END_DATE 2019-11-01 < min_date 2020-01-01)
-        - Row 2: CONDITION_END_DATE → NULL (after max_date), DATE_OF_DEATH → NULL (after max_date)
-        - Row 3: TREATMENT_START_DATE adjusted from 2019-11-15 → 2020-01-01 (before min_date)
-        - Row 4: Excluded entirely (TREATMENT_START_DATE 2021-01-15 > max_date 2020-12-31)
+        - Row 1: Excluded entirely (END_DATE 2019-11-01 < min_date 2020-01-01)
+        - Row 2: END_DATE → NULL (after max_date), DATE_OF_DEATH → NULL (after max_date)
+        - Row 3: START_DATE adjusted from 2019-11-15 → 2020-01-01 (before min_date)
+        - Row 4: Excluded entirely (START_DATE 2021-01-15 > max_date 2020-12-31)
     """
 
     def __init__(self, name: str, domain: str, date_filter: DateFilter):
@@ -542,8 +542,8 @@ class DataPeriodFilterNode(Node):
         self.date_filter = date_filter
 
     def _execute(self, tables: Dict[str, Table]) -> Table:
-        phenex_table = tables[self.domain]
-        table = phenex_table.table  # Get the underlying ibis table
+
+        table = tables[self.domain]
         columns = table.columns
 
         # 1. Filter rows that fall entirely outside data period
@@ -557,7 +557,7 @@ class DataPeriodFilterNode(Node):
         start_date_columns = [col for col in ["START_DATE"] if col in columns]
         end_date_columns = [col for col in ["END_DATE"] if col in columns]
         death_date_columns = [col for col in ["DATE_OF_DEATH"] if col in columns]
-        
+
         # 1b. Filter ranges that fall entirely outside the data period:
         #   START_DATE fields that are strictly after max_date
         #   END_DATE fields that are strictly before min_date

@@ -56,14 +56,6 @@ def sample_data():
             date(2021, 1, 15),  # After range - should become NULL
             date(2020, 5, 1),  # Within range - should stay
         ],
-        "DEATH_DATE": [
-            date(2021, 2, 1),  # After range - should become NULL
-            date(2020, 8, 1),  # Within range - should stay
-            date(2021, 6, 1),  # After range - should become NULL
-            None,  # NULL - should stay NULL
-            date(2020, 3, 1),  # Within range - should stay
-            date(2021, 1, 1),  # After range - should become NULL
-        ],
     }
 
 
@@ -155,10 +147,6 @@ def test_death_date_nullification(date_filter, sample_data):
         # Check DATE_OF_DEATH
         if pd.notna(row["DATE_OF_DEATH"]):
             assert row["DATE_OF_DEATH"] <= max_date
-
-        # Check DEATH_DATE
-        if pd.notna(row["DEATH_DATE"]):
-            assert row["DEATH_DATE"] <= max_date
 
 
 def test_no_relevant_columns():
@@ -344,12 +332,6 @@ def test_operator_edge_cases_death_dates():
             date(2020, 1, 2),
             date(2020, 12, 31),
         ],
-        "DEATH_DATE": [
-            date(2019, 12, 31),
-            date(2020, 1, 1),
-            date(2020, 1, 2),
-            date(2020, 12, 31),
-        ],
     }
 
     df = pd.DataFrame(data)
@@ -368,13 +350,11 @@ def test_operator_edge_cases_death_dates():
     jan_1_rows = result_inclusive[result_inclusive["PERSON_ID"] == 2]
     assert len(jan_1_rows) == 1
     assert jan_1_rows.iloc[0]["DATE_OF_DEATH"] == date(2020, 1, 1)  # Should NOT be NULL
-    assert jan_1_rows.iloc[0]["DEATH_DATE"] == date(2020, 1, 1)  # Should NOT be NULL
 
     # Check that death after Jan 1 is set to NULL
     jan_2_rows = result_inclusive[result_inclusive["PERSON_ID"] == 3]
     assert len(jan_2_rows) == 1
     assert pd.isna(jan_2_rows.iloc[0]["DATE_OF_DEATH"])  # Should be NULL (after Jan 1)
-    assert pd.isna(jan_2_rows.iloc[0]["DEATH_DATE"])  # Should be NULL (after Jan 1)
 
     # Test with Before (<) - deaths ON Jan 1 should be EXCLUDED (set to NULL)
     date_filter_exclusive = DateFilter(
@@ -391,9 +371,6 @@ def test_operator_edge_cases_death_dates():
     assert pd.isna(
         jan_1_rows_excl.iloc[0]["DATE_OF_DEATH"]
     )  # Should be NULL (not < Jan 1)
-    assert pd.isna(
-        jan_1_rows_excl.iloc[0]["DEATH_DATE"]
-    )  # Should be NULL (not < Jan 1)
 
     # Check that death before Jan 1 is kept
     dec_31_rows = result_exclusive[result_exclusive["PERSON_ID"] == 1]
@@ -401,7 +378,6 @@ def test_operator_edge_cases_death_dates():
     assert dec_31_rows.iloc[0]["DATE_OF_DEATH"] == date(
         2019, 12, 31
     )  # Should NOT be NULL
-    assert dec_31_rows.iloc[0]["DEATH_DATE"] == date(2019, 12, 31)  # Should NOT be NULL
 
 
 def test_operator_edge_cases_end_dates():
@@ -411,13 +387,13 @@ def test_operator_edge_cases_end_dates():
     # Test data without EVENT_DATE to avoid filtering complications
     data = {
         "PERSON_ID": [1, 2, 3, 4],
-        "TREATMENT_END_DATE": [
+        "END_DATE": [
             date(2020, 12, 30),
             date(2020, 12, 31),
             date(2021, 1, 1),
             date(2021, 1, 2),
         ],
-        "CONDITION_END_DATE": [
+        "END_DATE": [
             date(2020, 12, 30),
             date(2020, 12, 31),
             date(2021, 1, 1),
@@ -440,18 +416,14 @@ def test_operator_edge_cases_end_dates():
     # Check that end date on Dec 31 is kept
     dec_31_rows = result_inclusive[result_inclusive["PERSON_ID"] == 2]
     assert len(dec_31_rows) == 1
-    assert dec_31_rows.iloc[0]["TREATMENT_END_DATE"] == date(
-        2020, 12, 31
-    )  # Should NOT be NULL
-    assert dec_31_rows.iloc[0]["CONDITION_END_DATE"] == date(
-        2020, 12, 31
-    )  # Should NOT be NULL
+    assert dec_31_rows.iloc[0]["END_DATE"] == date(2020, 12, 31)  # Should NOT be NULL
+    assert dec_31_rows.iloc[0]["END_DATE"] == date(2020, 12, 31)  # Should NOT be NULL
 
     # Check that end dates after Dec 31 are set to NULL
     jan_1_rows = result_inclusive[result_inclusive["PERSON_ID"] == 3]
     assert len(jan_1_rows) == 1
-    assert pd.isna(jan_1_rows.iloc[0]["TREATMENT_END_DATE"])  # Should be NULL
-    assert pd.isna(jan_1_rows.iloc[0]["CONDITION_END_DATE"])  # Should be NULL
+    assert pd.isna(jan_1_rows.iloc[0]["END_DATE"])  # Should be NULL
+    assert pd.isna(jan_1_rows.iloc[0]["END_DATE"])  # Should be NULL
 
     # Test with Before (<) - end dates ON Dec 31 should be EXCLUDED (set to NULL)
     date_filter_exclusive = DateFilter(
@@ -465,18 +437,14 @@ def test_operator_edge_cases_end_dates():
     # Check that end date on Dec 31 is set to NULL (because it's not < Dec 31)
     dec_31_rows_excl = result_exclusive[result_exclusive["PERSON_ID"] == 2]
     assert len(dec_31_rows_excl) == 1
-    assert pd.isna(dec_31_rows_excl.iloc[0]["TREATMENT_END_DATE"])  # Should be NULL
-    assert pd.isna(dec_31_rows_excl.iloc[0]["CONDITION_END_DATE"])  # Should be NULL
+    assert pd.isna(dec_31_rows_excl.iloc[0]["END_DATE"])  # Should be NULL
+    assert pd.isna(dec_31_rows_excl.iloc[0]["END_DATE"])  # Should be NULL
 
     # Check that end date before Dec 31 is kept
     dec_30_rows = result_exclusive[result_exclusive["PERSON_ID"] == 1]
     assert len(dec_30_rows) == 1
-    assert dec_30_rows.iloc[0]["TREATMENT_END_DATE"] == date(
-        2020, 12, 30
-    )  # Should NOT be NULL
-    assert dec_30_rows.iloc[0]["CONDITION_END_DATE"] == date(
-        2020, 12, 30
-    )  # Should NOT be NULL
+    assert dec_30_rows.iloc[0]["END_DATE"] == date(2020, 12, 30)  # Should NOT be NULL
+    assert dec_30_rows.iloc[0]["END_DATE"] == date(2020, 12, 30)  # Should NOT be NULL
 
 
 def test_operator_edge_cases_start_dates():
@@ -488,13 +456,13 @@ def test_operator_edge_cases_start_dates():
     # Test data without EVENT_DATE to avoid filtering complications
     data = {
         "PERSON_ID": [1, 2, 3, 4],
-        "TREATMENT_START_DATE": [
+        "START_DATE": [
             date(2019, 12, 30),
             date(2019, 12, 31),
             date(2020, 1, 1),
             date(2020, 1, 2),
         ],
-        "PROCEDURE_START_DATE": [
+        "START_DATE": [
             date(2019, 12, 30),
             date(2019, 12, 31),
             date(2020, 1, 1),
@@ -516,8 +484,8 @@ def test_operator_edge_cases_start_dates():
 
     # All start dates should be at least Jan 1, 2020
     for _, row in result_inclusive.iterrows():
-        assert row["TREATMENT_START_DATE"] >= date(2020, 1, 1)
-        assert row["PROCEDURE_START_DATE"] >= date(2020, 1, 1)
+        assert row["START_DATE"] >= date(2020, 1, 1)
+        assert row["START_DATE"] >= date(2020, 1, 1)
 
     # Test with After (>) - start dates should be adjusted to at least the min_value.value
     date_filter_exclusive = DateFilter(
@@ -531,8 +499,8 @@ def test_operator_edge_cases_start_dates():
     # All start dates should be at least the min_value.value (2019-12-31)
     min_expected_date = date(2019, 12, 31)
     for _, row in result_exclusive.iterrows():
-        assert row["TREATMENT_START_DATE"] >= min_expected_date
-        assert row["PROCEDURE_START_DATE"] >= min_expected_date
+        assert row["START_DATE"] >= min_expected_date
+        assert row["START_DATE"] >= min_expected_date
 
 
 def test_row_exclusion_end_date_before_min():
@@ -541,7 +509,7 @@ def test_row_exclusion_end_date_before_min():
     """
     data = {
         "PERSON_ID": [1, 2, 3, 4],
-        "TREATMENT_END_DATE": [
+        "END_DATE": [
             date(2019, 12, 30),
             date(2020, 1, 1),
             date(2020, 6, 15),
@@ -577,7 +545,7 @@ def test_row_exclusion_start_date_after_max():
     """
     data = {
         "PERSON_ID": [1, 2, 3, 4],
-        "TREATMENT_START_DATE": [
+        "START_DATE": [
             date(2019, 6, 15),
             date(2020, 1, 1),
             date(2020, 12, 31),
