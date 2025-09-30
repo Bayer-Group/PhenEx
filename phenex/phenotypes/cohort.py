@@ -575,6 +575,12 @@ class DataPeriodFilterNode(Node):
         super(DataPeriodFilterNode, self).__init__(name=name)
         self.domain = domain
         self.date_filter = date_filter
+        
+        # Validate that column_name is EVENT_DATE if specified
+        if self.date_filter.column_name is not None and self.date_filter.column_name != "EVENT_DATE":
+            raise ValueError(
+                f"DataPeriodFilterNode only supports filtering by EVENT_DATE column, but date_filter.column_name is '{self.date_filter.column_name}'. Use EVENT_DATE as the column_name in your DateFilter."
+            )
 
     def _execute(self, tables: Dict[str, Table]) -> Table:
 
