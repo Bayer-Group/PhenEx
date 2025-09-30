@@ -1,21 +1,16 @@
 import pandas as pd
 import numpy as np
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 
 from phenex.reporting.reporter import Reporter
 from phenex.util import create_logger
-
-if TYPE_CHECKING:
-    from phenex.phenotypes.phenotype import Phenotype
-    from phenex.phenotypes.cohort import Cohort
 
 logger = create_logger(__name__)
 
 
 class Table2(Reporter):
     """
-    Table2 generates a simple epidemiological association table showing unadjusted odds ratios
-    and incidence rates for each outcome at specified time points.
+    Table2 generates a simple epidemiological association table showing unadjusted odds ratios and incidence rates for each outcome at specified time points.
 
     For each outcome, reports:
     - N events in exposed vs unexposed groups
@@ -25,8 +20,7 @@ class Table2(Reporter):
     - Confidence interval for odds ratio
     - P-value
 
-    Time under risk accounts for censoring from competing events (e.g., death) and
-    administrative censoring at end of study period.
+    Time under risk accounts for censoring from competing events (e.g., death) and administrative censoring at end of study period.
 
     Parameters:
         exposure: Single exposure phenotype (binary: exposed vs unexposed)
@@ -34,9 +28,6 @@ class Table2(Reporter):
         confidence_level: Confidence level for intervals (default: 0.95 for 95% CI)
         right_censor_phenotypes: List of phenotypes for right censoring (e.g., death)
         end_of_study_period: End date of study period for administrative censoring
-
-    Note:
-        Outcomes are automatically derived from cohort.outcomes (like Table1)
 
     Example:
         ```python
