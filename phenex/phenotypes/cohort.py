@@ -507,14 +507,14 @@ class DataPeriodFilterNode(Node):
         ```
 
         Example: Condition Occurrence Table (EVENT_DATE based)
-        
+
         Input CONDITION_OCCURRENCE Table:
         ```
         PERSON_ID | EVENT_DATE | CONDITION_CONCEPT_ID
         ----------|------------|--------------------
         1         | 2019-11-15 | 201826            # Excluded: before study period
         2         | 2020-06-01 | 201826            # Kept: within study period
-        3         | 2020-12-31 | 443767            # Kept: within study period  
+        3         | 2020-12-31 | 443767            # Kept: within study period
         4         | 2021-02-15 | 443767            # Excluded: after study period
         ```
 
@@ -527,7 +527,7 @@ class DataPeriodFilterNode(Node):
         ```
 
         Example: Drug Exposure Table (START_DATE/END_DATE based)
-        
+
         Input DRUG_EXPOSURE Table:
         ```
         PERSON_ID | START_DATE | END_DATE   | DRUG_CONCEPT_ID
@@ -549,7 +549,7 @@ class DataPeriodFilterNode(Node):
         ```
 
         Example: Person Table (DATE_OF_DEATH)
-        
+
         Input PERSON Table:
         ```
         PERSON_ID | BIRTH_DATE | DATE_OF_DEATH
@@ -575,9 +575,12 @@ class DataPeriodFilterNode(Node):
         super(DataPeriodFilterNode, self).__init__(name=name)
         self.domain = domain
         self.date_filter = date_filter
-        
+
         # Validate that column_name is EVENT_DATE if specified
-        if self.date_filter.column_name is not None and self.date_filter.column_name != "EVENT_DATE":
+        if (
+            self.date_filter.column_name is not None
+            and self.date_filter.column_name != "EVENT_DATE"
+        ):
             raise ValueError(
                 f"DataPeriodFilterNode only supports filtering by EVENT_DATE column, but date_filter.column_name is '{self.date_filter.column_name}'. Use EVENT_DATE as the column_name in your DateFilter."
             )
