@@ -25,7 +25,7 @@ class Cohort:
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
-        date_range: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the date_range was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
+        data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -46,7 +46,7 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
-        date_range: DateFilter = None,
+        data_period: DateFilter = None,
         description: Optional[str] = None,
     ):
         self.name = name
@@ -60,7 +60,7 @@ class Cohort:
         self.characteristics = characteristics or []
         self.derived_tables = derived_tables or []
         self.outcomes = outcomes or []
-        self.date_range = date_range
+        self.data_period = data_period
 
         self.phenotypes = (
             [self.entry_criterion]
@@ -132,12 +132,12 @@ class Cohort:
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
-        if self.date_range:
+        if self.data_period:
             data_period_filter_nodes = [
                 DataPeriodFilterNode(
                     name=f"{self.name}__data_period_filter_{domain}".upper(),
                     domain=domain,
-                    date_filter=self.date_range,
+                    date_filter=self.data_period,
                 )
                 for domain in domains
             ]
@@ -445,7 +445,7 @@ class Subcohort(Cohort):
             entry_criterion=cohort.entry_criterion,
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,
-            date_range=cohort.date_range,
+            data_period=cohort.data_period,
         )
         self.cohort = cohort
 
