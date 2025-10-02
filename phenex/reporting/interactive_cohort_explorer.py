@@ -302,88 +302,199 @@ class InteractiveCohortExplorer(Reporter):
             width=self.width
         )
         
-        # JavaScript callback following working_callback_example.py pattern
+        # JavaScript callback using modern CustomJS interface with extensive debugging
         callback_code = """
-        console.log('Cohort Explorer callback triggered');
-        
-        const phenotype = phenotype_select.value;
-        const viz_mode = viz_mode_select.value;
-        const pheno_info = phenotype_data[phenotype];
-        
-        if (!pheno_info) {
-            console.error('No data for phenotype:', phenotype);
-            return;
-        }
-        
-        const viz_data = pheno_info.viz_data;
-        let x_data = [], y_data = [], title = pheno_info.display_name;
-        let x_label = "Value", color = colors.histogram;
-        
-        if (viz_mode === "histogram" && viz_data.value_hist.values.length > 0) {
-            x_data = viz_data.value_hist.values;
-            y_data = viz_data.value_hist.counts;
-            title += " - Value Distribution";
-            color = colors.histogram;
-        } else if (viz_mode === "histogram_std" && viz_data.value_hist_std.values.length > 0) {
-            x_data = viz_data.value_hist_std.values;
-            y_data = viz_data.value_hist_std.counts;
-            title += " - Standardized Values (0-1)";
-            x_label = "Standardized Value";
-            color = colors.standardized;
-        } else if (viz_mode === "timeline" && viz_data.timeline.x.length > 0) {
-            x_data = viz_data.timeline.x;
-            y_data = viz_data.timeline.y;
-            title += " - Timeline";
-            x_label = "Date";
-            color = colors.timeline;
-        } else if (viz_mode === "frequency" && viz_data.frequency.values.length > 0) {
-            x_data = viz_data.frequency.values;
-            y_data = viz_data.frequency.counts;
-            title += " - Events per Patient";
-            x_label = "Events per Patient";
-            color = colors.frequency;
-        } else {
-            x_data = []; y_data = []; title += " - No Data Available";
-        }
-        
-        let width_val = 1;
-        if (x_data.length > 1) {
-            const range = Math.max(...x_data) - Math.min(...x_data);
-            width_val = range / x_data.length * 0.8;
-        }
-        
-        // Update plot data (key step from working example!)
-        source.data = {
-            x: x_data, top: y_data,
-            width: Array(y_data.length).fill(width_val),
-            color: Array(y_data.length).fill(color)
+        export default (args, obj, data, context) => {
+            console.log('=== COHORT EXPLORER CALLBACK START ===');
+            console.log('Callback triggered by object:', obj);
+            console.log('Event data:', data);
+            console.log('Context:', context);
+            console.log('Arguments available:', Object.keys(args));
+            
+            // Extract arguments with detailed logging
+            const {
+                phenotype_select,
+                viz_mode_select,
+                source,
+                plot,
+                info_div,
+                phenotype_data,
+                colors
+            } = args;
+            
+            console.log('phenotype_select.value:', phenotype_select.value);
+            console.log('viz_mode_select.value:', viz_mode_select.value);
+            console.log('Available phenotypes:', Object.keys(phenotype_data));
+            console.log('Available colors:', colors);
+            
+            const phenotype = phenotype_select.value;
+            const viz_mode = viz_mode_select.value;
+            
+            console.log('Selected phenotype:', phenotype);
+            console.log('Selected visualization mode:', viz_mode);
+            
+            const pheno_info = phenotype_data[phenotype];
+            
+            if (!pheno_info) {
+                console.error('ERROR: No data for phenotype:', phenotype);
+                console.log('Available phenotypes are:', Object.keys(phenotype_data));
+                return;
+            }
+            
+            console.log('Phenotype info:', pheno_info);
+            console.log('Phenotype display name:', pheno_info.display_name);
+            console.log('Phenotype type:', pheno_info.type);
+            console.log('Has values:', pheno_info.has_values);
+            console.log('Has dates:', pheno_info.has_dates);
+            
+            const viz_data = pheno_info.viz_data;
+            console.log('Visualization data structure:', Object.keys(viz_data));
+            console.log('Value histogram data length:', viz_data.value_hist ? viz_data.value_hist.values.length : 'N/A');
+            console.log('Timeline data length:', viz_data.timeline ? viz_data.timeline.x.length : 'N/A');
+            console.log('Frequency data length:', viz_data.frequency ? viz_data.frequency.values.length : 'N/A');
+            
+            let x_data = [], y_data = [], title = pheno_info.display_name;
+            let x_label = "Value", color = colors.histogram;
+            
+            console.log('Processing visualization mode:', viz_mode);
+            
+            if (viz_mode === "histogram" && viz_data.value_hist.values.length > 0) {
+                console.log('Using histogram mode');
+                x_data = viz_data.value_hist.values;
+                y_data = viz_data.value_hist.counts;
+                title += " - Value Distribution";
+                color = colors.histogram;
+                console.log('Histogram x_data length:', x_data.length);
+                console.log('Histogram y_data length:', y_data.length);
+                console.log('First few x values:', x_data.slice(0, 5));
+                console.log('First few y values:', y_data.slice(0, 5));
+                
+            } else if (viz_mode === "histogram_std" && viz_data.value_hist_std.values.length > 0) {
+                console.log('Using standardized histogram mode');
+                x_data = viz_data.value_hist_std.values;
+                y_data = viz_data.value_hist_std.counts;
+                title += " - Standardized Values (0-1)";
+                x_label = "Standardized Value";
+                color = colors.standardized;
+                console.log('Std histogram x_data length:', x_data.length);
+                console.log('Std histogram y_data length:', y_data.length);
+                
+            } else if (viz_mode === "timeline" && viz_data.timeline.x.length > 0) {
+                console.log('Using timeline mode');
+                x_data = viz_data.timeline.x;
+                y_data = viz_data.timeline.y;
+                title += " - Timeline";
+                x_label = "Date";
+                color = colors.timeline;
+                console.log('Timeline x_data length:', x_data.length);
+                console.log('Timeline y_data length:', y_data.length);
+                console.log('First few timeline x values:', x_data.slice(0, 5));
+                console.log('First few timeline y values:', y_data.slice(0, 5));
+                
+            } else if (viz_mode === "frequency" && viz_data.frequency.values.length > 0) {
+                console.log('Using frequency mode');
+                x_data = viz_data.frequency.values;
+                y_data = viz_data.frequency.counts;
+                title += " - Events per Patient";
+                x_label = "Events per Patient";
+                color = colors.frequency;
+                console.log('Frequency x_data length:', x_data.length);
+                console.log('Frequency y_data length:', y_data.length);
+                
+            } else {
+                console.warn('No valid data available for mode:', viz_mode);
+                console.log('Available modes and their data lengths:');
+                console.log('  - histogram:', viz_data.value_hist ? viz_data.value_hist.values.length : 'N/A');
+                console.log('  - histogram_std:', viz_data.value_hist_std ? viz_data.value_hist_std.values.length : 'N/A');
+                console.log('  - timeline:', viz_data.timeline ? viz_data.timeline.x.length : 'N/A');
+                console.log('  - frequency:', viz_data.frequency ? viz_data.frequency.values.length : 'N/A');
+                x_data = []; 
+                y_data = []; 
+                title += " - No Data Available";
+            }
+            
+            console.log('Final data arrays:');
+            console.log('  x_data:', x_data);
+            console.log('  y_data:', y_data);
+            console.log('  title:', title);
+            console.log('  x_label:', x_label);
+            console.log('  color:', color);
+            
+            // Calculate bar width
+            let width_val = 1;
+            if (x_data.length > 1) {
+                const range = Math.max(...x_data) - Math.min(...x_data);
+                width_val = range / x_data.length * 0.8;
+                console.log('Calculated width_val:', width_val, 'from range:', range, 'and length:', x_data.length);
+            } else {
+                console.log('Using default width_val:', width_val);
+            }
+            
+            // Update plot data (key step!)
+            console.log('Current source.data before update:', source.data);
+            
+            const new_data = {
+                x: x_data, 
+                top: y_data,
+                width: Array(y_data.length).fill(width_val),
+                color: Array(y_data.length).fill(color)
+            };
+            
+            console.log('New source data being set:', new_data);
+            source.data = new_data;
+            
+            console.log('Source data after update:', source.data);
+            
+            // Update plot properties
+            console.log('Updating plot title from:', plot.title.text, 'to:', title);
+            plot.title.text = title;
+            
+            // Update x-axis label using modern Bokeh API
+            // NOTE: plot.xaxis[0] is undefined in modern Bokeh versions
+            // Use plot.below[0] to access the bottom (x) axis instead
+            console.log('Updating x-axis label to:', x_label);
+            
+            if (plot.below && plot.below.length > 0) {
+                console.log('Current x-axis label:', plot.below[0].axis_label);
+                plot.below[0].axis_label = x_label;
+                console.log('Successfully updated x-axis label via plot.below[0]');
+            } else {
+                console.warn('Could not access x-axis via plot.below[0] - axis label update skipped');
+            }
+            
+            // Update info panel
+            console.log('Updating info panel...');
+            let info = "<div style='background:#f8f9fa;padding:15px;border-radius:8px;'>";
+            info += "<h4 style='margin:0 0 10px 0;color:#2E86AB;'>" + pheno_info.display_name + "</h4>";
+            info += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:15px;'>";
+            info += "<div><strong>Type:</strong> " + pheno_info.type + "</div>";
+            info += "<div><strong>Patients:</strong> " + pheno_info.n_patients.toLocaleString() + "</div>";
+            info += "<div><strong>Events:</strong> " + pheno_info.n_events.toLocaleString() + "</div>";
+            info += "<div><strong>Data Points:</strong> " + y_data.length + "</div>";
+            
+            if (viz_mode === "histogram" && viz_data.summary && viz_data.summary.count > 0) {
+                console.log('Adding summary statistics to info panel');
+                info += "<div><strong>Mean:</strong> " + viz_data.summary.mean.toFixed(2) + "</div>";
+                info += "<div><strong>Std:</strong> " + viz_data.summary.std.toFixed(2) + "</div>";
+            }
+            
+            info += "</div></div>";
+            
+            console.log('Setting info_div.text to:', info);
+            info_div.text = info;
+            
+            console.log('=== COHORT EXPLORER CALLBACK COMPLETE ===');
         };
-        
-        plot.title.text = title;
-        plot.xaxis[0].axis_label = x_label;
-        
-        // Update info panel
-        let info = "<div style='background:#f8f9fa;padding:15px;border-radius:8px;'>";
-        info += "<h4 style='margin:0 0 10px 0;color:#2E86AB;'>" + pheno_info.display_name + "</h4>";
-        info += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:15px;'>";
-        info += "<div><strong>Type:</strong> " + pheno_info.type + "</div>";
-        info += "<div><strong>Patients:</strong> " + pheno_info.n_patients.toLocaleString() + "</div>";
-        info += "<div><strong>Events:</strong> " + pheno_info.n_events.toLocaleString() + "</div>";
-        info += "<div><strong>Data Points:</strong> " + y_data.length + "</div>";
-        if (viz_mode === "histogram" && viz_data.summary.count > 0) {
-            info += "<div><strong>Mean:</strong> " + viz_data.summary.mean.toFixed(2) + "</div>";
-            info += "<div><strong>Std:</strong> " + viz_data.summary.std.toFixed(2) + "</div>";
-        }
-        info += "</div></div>";
-        info_div.text = info;
         """
         
-        # Create callback with ALL required data
+        # Create callback with ALL required data using modern CustomJS interface
         callback = CustomJS(
             args=dict(
                 phenotype_select=phenotype_select,
                 viz_mode_select=viz_mode_select,
-                source=source, plot=plot, info_div=info_div,
+                source=source, 
+                plot=plot, 
+                info_div=info_div,
                 phenotype_data=self.phenotype_data,
                 colors=self.colors
             ),
