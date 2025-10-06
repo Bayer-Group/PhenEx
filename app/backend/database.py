@@ -1081,7 +1081,7 @@ class DatabaseManager:
                 SELECT study_id, name, description, is_public, created_at, updated_at,
                        user_id as creator_id, visible_by
                 FROM study 
-                WHERE user_id = $1 OR $1 = ANY(visible_by) OR is_public = TRUE
+                WHERE user_id = $1 OR $1 = ANY(visible_by)
                 ORDER BY updated_at DESC
             """
 
@@ -1105,6 +1105,51 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Failed to retrieve studies for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_all_public_studies(self) -> List[Dict]:
+        """
+        Retrieve all public studies (is_public=True) from the database.
+        
+        Returns:
+            List[Dict]: A list of public study objects with id, name, and metadata.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get only studies that are marked as public
+            query = """
+                SELECT study_id, name, description, is_public, created_at, updated_at,
+                       user_id as creator_id, visible_by
+                FROM study 
+                WHERE is_public = TRUE
+                ORDER BY updated_at DESC
+            """
+
+            rows = await conn.fetch(query)
+
+            studies = []
+            for row in rows:
+                studies.append({
+                    "id": row["study_id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "is_public": row["is_public"],
+                    "creator_id": row["creator_id"],
+                    "visible_by": row["visible_by"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                })
+
+            logger.info(f"Retrieved {len(studies)} public studies")
+            return studies
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve public studies: {e}")
             raise
         finally:
             if conn:

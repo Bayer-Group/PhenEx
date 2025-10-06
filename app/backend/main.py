@@ -321,22 +321,15 @@ async def get_all_studies_for_user(request: Request):
 @app.get("/studies/public", tags=["study"])
 async def get_all_public_studies():
     """
-    Retrieve a list of all public studies.
+    Retrieve a list of all public studies (studies with is_public=True).
 
     Returns:
         list: A list of public study objects.
     """
     try:
-        public_user_id = os.getenv("PUBLIC_USER_ID")
-        if not public_user_id:
-            raise HTTPException(
-                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
-            )
-
-        studies = await db_manager.get_all_studies_for_user(public_user_id)
-        # Filter to only return truly public studies
-        public_studies = [study for study in studies if study.get("is_public", False)]
-        return public_studies
+        # Get all studies where is_public=True, regardless of owner
+        studies = await db_manager.get_all_public_studies()
+        return studies
     except HTTPException:
         raise
     except Exception as e:
