@@ -69,10 +69,10 @@ class CohortExplorer(Reporter):
         decimal_places: int = 2,
         pretty_display: bool = True,
         show_waterfall: bool = True,
-        show_timeline: bool = True,
         show_table1: bool = True,
         show_correlation: bool = True,
         show_phenotype_explorer: bool = True,
+        show_counts: bool = True,
     ):
         """
         Initialize Interactive Cohort Explorer.
@@ -84,23 +84,22 @@ class CohortExplorer(Reporter):
             decimal_places: Number of decimal places for display
             pretty_display: Use pretty formatting
             show_waterfall: Include waterfall/attrition plot (default: True)
-            show_timeline: Include cohort entry timeline plot (default: True)
             show_table1: Include baseline characteristics table (default: True)
             show_correlation: Include correlation heatmap (default: True)
             show_phenotype_explorer: Include interactive phenotype explorer (default: True)
+            show_counts: Include counts table for inclusion/exclusion criteria (default: True)
         """
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
-        print("hello3")
         self.title = title
         self.width = width
         self.height = height
 
         # Dashboard configuration
         self.show_waterfall = show_waterfall
-        self.show_timeline = show_timeline
         self.show_table1 = show_table1
         self.show_correlation = show_correlation
         self.show_phenotype_explorer = show_phenotype_explorer
+        self.show_counts = show_counts
 
         # Data containers
         self.cohort = None
@@ -108,6 +107,7 @@ class CohortExplorer(Reporter):
         self.waterfall_data = None
         self.table1_data = None
         self.correlation_matrix = None
+        self.counts_data = None
         self.dashboard_layout = None
 
         # Color scheme - PhenEx brand colors from logo
@@ -152,6 +152,9 @@ class CohortExplorer(Reporter):
         if self.show_waterfall:
             self.waterfall_data = self._generate_waterfall_data()
 
+        if self.show_counts:
+            self.counts_data = self._generate_counts_data()
+
         if self.show_table1:
             self.table1_data = self._generate_table1_data()
 
@@ -164,7 +167,7 @@ class CohortExplorer(Reporter):
         enabled_sections = sum(
             [
                 self.show_waterfall,
-                self.show_timeline,
+                self.show_counts,
                 self.show_table1,
                 self.show_correlation,
                 self.show_phenotype_explorer,
@@ -478,6 +481,32 @@ class CohortExplorer(Reporter):
             logger.warning(f"Could not generate waterfall data: {e}")
             return pd.DataFrame()
 
+    def _generate_counts_data(self):
+        """Generate inclusion/exclusion counts data."""
+        try:
+            # Check if we have inclusion or exclusion criteria
+            has_inclusions = hasattr(self.cohort, 'inclusions') and self.cohort.inclusions
+            has_exclusions = hasattr(self.cohort, 'exclusions') and self.cohort.exclusions
+            
+            if has_inclusions or has_exclusions:
+                from phenex.reporting.counts import InExCounts
+
+                counts_reporter = InExCounts(
+                    decimal_places=self.decimal_places,
+                    pretty_display=self.pretty_display,
+                )
+                counts_data = counts_reporter.execute(self.cohort)
+                logger.debug(
+                    f"Generated Counts data with {len(counts_data)} criteria"
+                )
+                return counts_data
+            else:
+                logger.info("No inclusion/exclusion criteria defined for Counts")
+                return pd.DataFrame()
+        except Exception as e:
+            logger.warning(f"Could not generate Counts data: {e}")
+            return pd.DataFrame()
+
     def _generate_table1_data(self):
         """Generate baseline characteristics (Table 1) data."""
         try:
@@ -650,7 +679,7 @@ class CohortExplorer(Reporter):
         ):
             sections.append(
                 self._create_section_header(
-                    "Patient Flow (Waterfall Analysis)",
+                    "Patient Flow",
                     "📊",
                     "Visualize patient attrition through inclusion and exclusion criteria",
                     section_id="waterfall",
@@ -658,17 +687,23 @@ class CohortExplorer(Reporter):
             )
             sections.append(self._create_waterfall_plot())
 
-        # Timeline plot (if enabled)
-        if self.show_timeline:
+        # Counts table (if enabled and data available)
+        if (
+            self.show_counts
+            and self.counts_data is not None
+            and not self.counts_data.empty
+        ):
             sections.append(
                 self._create_section_header(
-                    "Cohort Entry Timeline",
-                    "📈",
-                    "Track when patients entered the cohort over time",
-                    section_id="timeline",
+                    "Inclusion/Exclusion Counts",
+                    "🔢",
+                    "Patient counts for inclusion and exclusion criteria",
+                    section_id="counts",
                 )
             )
-            sections.append(self._create_timeline_plot())
+            sections.append(self._create_counts_display())
+
+        # Timeline functionality now provided in Interactive Phenotype Explorer section
 
         # Table 1 and/or Correlation Matrix (if enabled)
         has_table1 = (
@@ -686,7 +721,7 @@ class CohortExplorer(Reporter):
             sections.append(
                 self._create_section_header(
                     "Baseline Characteristics",
-                    "📋",
+                    "�",
                     "Summary statistics and correlations for patient characteristics",
                     section_id="characteristics",
                 )
@@ -815,98 +850,10 @@ class CohortExplorer(Reporter):
 
         return p
 
-    def _create_timeline_plot(self):
-        """Create cohort entry timeline showing patient enrollment over time."""
-        try:
-            if (
-                not hasattr(self.cohort, "index_table")
-                or self.cohort.index_table is None
-            ):
-                return Div(
-                    text="<p style='color:#666;font-style:italic;'>Timeline data not available - no index table</p>",
-                    width=self.width,
-                )
 
-            df = (
-                self.cohort.index_table.to_pandas()
-                if hasattr(self.cohort.index_table, "to_pandas")
-                else self.cohort.index_table
-            )
-
-            if "INDEX_DATE" not in df.columns or len(df) == 0:
-                return Div(
-                    text="<p style='color:#666;font-style:italic;'>Timeline data not available - no index dates</p>",
-                    width=self.width,
-                )
-
-            df["INDEX_DATE"] = pd.to_datetime(df["INDEX_DATE"], errors="coerce")
-            df = df.dropna(subset=["INDEX_DATE"])
-
-            if len(df) == 0:
-                return Div(
-                    text="<p style='color:#666;font-style:italic;'>Timeline data not available - no valid dates</p>",
-                    width=self.width,
-                )
-
-            # Monthly aggregation
-            df["year_month"] = df["INDEX_DATE"].dt.to_period("M")
-            monthly_counts = df.groupby("year_month").size().sort_index()
-
-            p = figure(
-                title="Patient Cohort Entry Timeline",
-                x_axis_label="Date",
-                y_axis_label="Patients Entering Cohort",
-                width=self.width,
-                height=300,
-                tools="pan,wheel_zoom,box_zoom,reset,save",
-                x_axis_type="datetime",
-            )
-
-            timestamps = [
-                pd.Timestamp(period.start_time) for period in monthly_counts.index
-            ]
-            source = ColumnDataSource(
-                dict(
-                    x=timestamps,
-                    y=monthly_counts.values,
-                    month=[str(p) for p in monthly_counts.index],
-                )
-            )
-
-            p.line(
-                "x",
-                "y",
-                source=source,
-                line_width=3,
-                color=self.colors["timeline"],
-                alpha=0.8,
-            )
-            circles = p.scatter(
-                "x",
-                "y",
-                source=source,
-                size=8,
-                color=self.colors["timeline"],
-                alpha=0.9,
-            )
-
-            hover = HoverTool(
-                renderers=[circles],
-                tooltips=[("Month", "@month"), ("Patients", "@y{0,0}")],
-            )
-            p.add_tools(hover)
-
-            return p
-
-        except Exception as e:
-            logger.warning(f"Could not create timeline plot: {e}")
-            return Div(
-                text=f"<p style='color:#dc3545;'>Timeline error: {str(e)}</p>",
-                width=self.width,
-            )
 
     def _create_table1_display(self):
-        """Create Table 1 (baseline characteristics) display."""
+        """Create Table 1 (baseline characteristics) display with sortable columns."""
         if self.table1_data is None or self.table1_data.empty:
             return Div(
                 text="<p style='color:#666;font-style:italic;'>No baseline characteristics available</p>",
@@ -914,19 +861,22 @@ class CohortExplorer(Reporter):
             )
 
         df = self.table1_data.copy()
+        table_id = "characteristics-table"
 
-        # Create HTML table with all columns from Table1
-        html = """
+        # Create HTML table with sortable headers
+        html = f"""
         <div style='background:#f8f9fa;padding:15px;border-radius:8px;max-height:600px;overflow-y:auto;'>
             <h3 style='margin:0 0 12px 0;color:#1B365D;font-size:16px;'>Baseline Characteristics</h3>
-            <table style='width:100%;border-collapse:collapse;font-size:12px;'>
+            <table id='{table_id}' style='width:100%;border-collapse:collapse;font-size:12px;'>
                 <thead style='position:sticky;top:0;background:#1B365D;'>
                     <tr style='background:#1B365D;color:white;'>
         """
 
-        # Add column headers dynamically
-        for col in df.columns:
-            html += f"<th style='padding:10px;text-align:right;border:1px solid #ddd;white-space:nowrap;'>{col}</th>"
+        # Add sortable column headers
+        for col_idx, col in enumerate(df.columns):
+            html += f"""<th onclick='sortTable({col_idx}, "{table_id}")' 
+                        style='padding:10px;text-align:right;border:1px solid #ddd;white-space:nowrap;cursor:pointer;user-select:none;'
+                        title='Click to sort'>{col} <span style='font-size:10px;'>⇅</span></th>"""
 
         html += """
                     </tr>
@@ -954,9 +904,148 @@ class CohortExplorer(Reporter):
                 </tbody>
             </table>
         </div>
+        <script>
+        function sortTable(columnIndex, tableId) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determine if column contains numbers
+            const isNumeric = rows.every(row => {
+                const cellText = row.cells[columnIndex].textContent.trim();
+                return cellText === '-' || cellText === '' || !isNaN(parseFloat(cellText.replace(/[,%]/g, '')));
+            });
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal = a.cells[columnIndex].textContent.trim();
+                let bVal = b.cells[columnIndex].textContent.trim();
+                
+                if (isNumeric) {
+                    aVal = aVal === '-' || aVal === '' ? -Infinity : parseFloat(aVal.replace(/[,%]/g, ''));
+                    bVal = bVal === '-' || bVal === '' ? -Infinity : parseFloat(bVal.replace(/[,%]/g, ''));
+                    return aVal - bVal;
+                } else {
+                    return aVal.localeCompare(bVal);
+                }
+            });
+            
+            // Re-insert sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update row colors
+            rows.forEach((row, index) => {
+                row.style.background = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+            });
+        }
+        </script>
         """
 
         return Div(text=html, width=int(self.width * 0.48))
+
+    def _create_counts_display(self):
+        """Create counts table display with sortable columns."""
+        if self.counts_data is None or self.counts_data.empty:
+            return Div(
+                text="<p style='color:#666;font-style:italic;'>No inclusion/exclusion criteria available</p>",
+                width=self.width,
+            )
+
+        df = self.counts_data.copy()
+        table_id = "counts-table"
+
+        # Rename columns for better display
+        if 'phenotype' in df.columns:
+            df = df.rename(columns={'phenotype': 'Phenotype'})
+        if 'n' in df.columns:
+            df = df.rename(columns={'n': 'Count'})
+        if 'category' in df.columns:
+            df = df.rename(columns={'category': 'Type'})
+
+        # Create HTML table with sortable headers
+        html = f"""
+        <div style='background:#f8f9fa;padding:15px;border-radius:8px;max-height:600px;overflow-y:auto;'>
+            <h3 style='margin:0 0 12px 0;color:#1B365D;font-size:16px;'>Inclusion/Exclusion Counts</h3>
+            <table id='{table_id}' style='width:100%;border-collapse:collapse;font-size:12px;'>
+                <thead style='position:sticky;top:0;background:#1B365D;'>
+                    <tr style='background:#1B365D;color:white;'>
+        """
+
+        # Add sortable column headers
+        for col_idx, col in enumerate(df.columns):
+            align = "left" if col in ['Phenotype', 'Type'] else "right"
+            html += f"""<th onclick='sortTable({col_idx}, "{table_id}")' 
+                        style='padding:10px;text-align:{align};border:1px solid #ddd;white-space:nowrap;cursor:pointer;user-select:none;'
+                        title='Click to sort'>{col} <span style='font-size:10px;'>⇅</span></th>"""
+
+        html += """
+                    </tr>
+                </thead>
+                <tbody>
+        """
+
+        # Add data rows
+        for idx, row in df.iterrows():
+            bg_color = "#ffffff" if idx % 2 == 0 else "#f8f9fa"
+            html += f"<tr style='background:{bg_color};'>"
+
+            for col_idx, col in enumerate(df.columns):
+                value = row[col]
+                align = "left" if col in ['Phenotype', 'Type'] else "right"
+                # Format the value nicely
+                if pd.isna(value) or value == "" or str(value) == "nan":
+                    value = "-"
+                # Add color coding for Type column
+                if col == 'Type':
+                    color = '#28a745' if str(value).lower() == 'inclusion' else '#dc3545' if str(value).lower() == 'exclusion' else '#000'
+                    html += f"<td style='padding:8px;border:1px solid #ddd;text-align:{align};color:{color};font-weight:bold;'>{value}</td>"
+                else:
+                    html += f"<td style='padding:8px;border:1px solid #ddd;text-align:{align};'>{value}</td>"
+
+            html += "</tr>"
+
+        html += """
+                </tbody>
+            </table>
+        </div>
+        <script>
+        function sortTable(columnIndex, tableId) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determine if column contains numbers
+            const isNumeric = rows.every(row => {
+                const cellText = row.cells[columnIndex].textContent.trim();
+                return cellText === '-' || cellText === '' || !isNaN(parseFloat(cellText.replace(/[,%]/g, '')));
+            });
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal = a.cells[columnIndex].textContent.trim();
+                let bVal = b.cells[columnIndex].textContent.trim();
+                
+                if (isNumeric) {
+                    aVal = aVal === '-' || aVal === '' ? -Infinity : parseFloat(aVal.replace(/[,%]/g, ''));
+                    bVal = bVal === '-' || bVal === '' ? -Infinity : parseFloat(bVal.replace(/[,%]/g, ''));
+                    return aVal - bVal;
+                } else {
+                    return aVal.localeCompare(bVal);
+                }
+            });
+            
+            // Re-insert sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update row colors
+            rows.forEach((row, index) => {
+                row.style.background = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+            });
+        }
+        </script>
+        """
+
+        return Div(text=html, width=self.width)
 
     def _create_correlation_heatmap(self):
         """Create correlation heatmap for numeric baseline characteristics."""
@@ -1101,8 +1190,8 @@ class CohortExplorer(Reporter):
                         min_date = dates.min().strftime("%Y-%m-%d")
                         max_date = dates.max().strftime("%Y-%m-%d")
                         date_range_display = f"""
-                        <div style='background:#f8f9fa;padding:10px 15px;border-radius:8px;border-left:3px solid #00A9E0;'>
-                            <strong style='color:#1B365D;'>📅 Date Range:</strong> {min_date} to {max_date}
+                        <div style='background:#f8f9fa;padding:10px 15px;border-radius:8px;border-left:3px solid #00A9E0;color:#000;'>
+                            <strong style='color:#1B365D;'>📅 Date Range:</strong> <span style='color:#333;'>{min_date} to {max_date}</span>
                         </div>"""
         except Exception as e:
             logger.debug(f"Could not compute date range: {e}")
