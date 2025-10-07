@@ -90,7 +90,7 @@ class CohortExplorer(Reporter):
             show_phenotype_explorer: Include interactive phenotype explorer (default: True)
         """
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
-        print("hello2")
+        print("hello3")
         self.title = title
         self.width = width
         self.height = height
@@ -558,9 +558,8 @@ class CohortExplorer(Reporter):
             self.dashboard_layout = column(*sections, width=self.width)
             return
 
-        # Get list of available phenotypes
-        phenotype_names = list(self.phenotype_data.keys())
-        default_phenotype = phenotype_names[0]
+        # Organize phenotypes by role with entry criterion as default
+        organized_options, default_phenotype = self._create_organized_dropdown_options()
 
         # Get initial visualization data to determine default mode
         initial_viz = self._get_initial_visualization(default_phenotype)
@@ -576,13 +575,10 @@ class CohortExplorer(Reporter):
 
         # Create control widgets
         phenotype_select = Select(
-            title="Select Characteristic:",
+            title="Select Phenotype:",
             value=default_phenotype,
-            options=[
-                (name, self.phenotype_data[name]["display_name"])
-                for name in phenotype_names
-            ],
-            width=300,
+            options=organized_options,
+            width=350,
         )
 
         # Remove visualization mode selector - we'll show all three plots always
@@ -606,7 +602,7 @@ class CohortExplorer(Reporter):
 
         # Create callback to update all three data sources when phenotype changes
         callback = self._create_three_source_callback(
-            phenotype_select, timeline_source, relative_source, value_source, info_div
+            phenotype_select, timeline_source, relative_source, value_source, info_div, relative_plot
         )
 
         # Register callback only for phenotype selection
@@ -1276,6 +1272,64 @@ class CohortExplorer(Reporter):
 
         return Div(text=instructions_html, width=self.width)
 
+    def _create_organized_dropdown_options(self):
+        """Create organized dropdown options with role prefixes and return default phenotype."""
+        
+        # Find entry criterion first (it will be the default)
+        entry_name = None
+        if hasattr(self.cohort, 'entry_criterion') and self.cohort.entry_criterion:
+            entry_name = self.cohort.entry_criterion.name
+            
+        default_phenotype = entry_name if entry_name else list(self.phenotype_data.keys())[0]
+        
+        # Organize phenotypes by role (using a mapping to handle singular/plural differences)
+        sections = {
+            'Entry': [],
+            'Inclusion': [], 
+            'Exclusion': [],
+            'Characteristics': [],
+            'Outcomes': []
+        }
+        
+        # Map from actual role names to section names
+        role_mapping = {
+            'Entry': 'Entry',
+            'Inclusion': 'Inclusion',
+            'Exclusion': 'Exclusion', 
+            'Characteristic': 'Characteristics',  # Map singular to plural
+            'Outcome': 'Outcomes'  # Map singular to plural
+        }
+        
+        for name, info in self.phenotype_data.items():
+            role = info['role']
+            display_name = info['display_name']
+            if role not in role_mapping:
+                raise ValueError(f"Unknown phenotype role '{role}' for phenotype '{name}'. Expected one of: {list(role_mapping.keys())}")
+            section_name = role_mapping[role]
+            sections[section_name].append((name, display_name))
+        
+        # Build options list with role prefixes
+        options = []
+        
+        # Order sections logically
+        section_order = ['Entry', 'Inclusion', 'Exclusion', 'Characteristics', 'Outcomes']
+        
+        for section_name in section_order:
+            phenotypes = sections.get(section_name, [])
+            if phenotypes:  # Only add sections that have phenotypes
+                # Add phenotypes with role prefix
+                for name, display_name in sorted(phenotypes, key=lambda x: x[1]):
+                    role_emoji = {
+                        'Entry': '🎯',
+                        'Inclusion': '✅', 
+                        'Exclusion': '❌',
+                        'Characteristics': '📊',
+                        'Outcomes': '🎯'
+                    }.get(section_name, '📋')
+                    options.append((name, f"{role_emoji} {display_name}"))
+        
+        return options, default_phenotype
+
     def _create_plot_sources(self, phenotype_name: str):
         """Create data sources for all three plots based on initial phenotype."""
         viz_data = self.phenotype_data[phenotype_name]["viz_data"]
@@ -1419,12 +1473,13 @@ class CohortExplorer(Reporter):
         
         return p
 
-    def _create_three_source_callback(self, phenotype_select, timeline_source, relative_source, value_source, info_div):
+    def _create_three_source_callback(self, phenotype_select, timeline_source, relative_source, value_source, info_div, relative_plot):
         """Create callback that updates all three data sources when phenotype changes."""
         callback_code = """
         console.log('=== THREE PLOT CALLBACK START ===');
         const phenotype = phenotype_select.value;
         console.log('Selected phenotype:', phenotype);
+        
         const pheno_info = phenotype_data[phenotype];
         
         if (!pheno_info) {
@@ -1466,6 +1521,18 @@ class CohortExplorer(Reporter):
                 width: Array(rel_y.length).fill(width)
             };
             relative_source.change.emit();
+            
+            // Only intervene if Bokeh's automatic range would be too small
+            setTimeout(function() {
+                const current_range = relative_plot.x_range.end - relative_plot.x_range.start;
+                if (current_range < 30) {
+                    const min_x = Math.min(...rel_x);
+                    const max_x = Math.max(...rel_x);
+                    const center = (min_x + max_x) / 2;
+                    relative_plot.x_range.start = center - 15;
+                    relative_plot.x_range.end = center + 15;
+                }
+            }, 100);
         } else {
             relative_source.data = {x: [], top: [], width: []};
             relative_source.change.emit();
@@ -1524,6 +1591,7 @@ class CohortExplorer(Reporter):
                 relative_source=relative_source, 
                 value_source=value_source,
                 info_div=info_div,
+                relative_plot=relative_plot,
                 phenotype_data=self.phenotype_data,
             ),
             code=callback_code,
