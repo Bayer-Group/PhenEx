@@ -19,110 +19,74 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
-def _clean_markdown_for_pdf(text):
+def _convert_markdown_to_html(text):
     """
-    Clean markdown formatting for better PDF rendering.
-    Converts markdown to ReportLab-compatible HTML while preserving structure.
-    Special handling for numbered lists to ensure proper paragraph breaks.
+    Convert markdown text to proper HTML using markdown2.
+    This is much better than using terrible regex hacks.
     """
     if not text:
         return text
     
-    # Convert markdown headers to bold text with line breaks
-    text = re.sub(r'^#{4,6}\s*(.+)$', r'<b>\1</b>', text, flags=re.MULTILINE)  # #### and smaller to bold
-    text = re.sub(r'^#{1,3}\s*(.+)$', r'<b>\1</b>', text, flags=re.MULTILINE)  # ### and larger to bold
+    if MARKDOWN_AVAILABLE:
+        try:
+            # Use markdown2 to convert markdown to HTML
+            html = markdown2.markdown(text, extras=['fenced-code-blocks', 'tables', 'task_list'])
+            return html
+        except Exception as e:
+            logger.warning(f"Markdown conversion failed: {e}")
     
-    # Convert markdown bold/italic to HTML tags
-    text = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', text)  # Bold
-    text = re.sub(r'\*([^*]+)\*', r'<i>\1</i>', text)      # Italic
-    text = re.sub(r'_([^_]+)_', r'<i>\1</i>', text)        # Underscore italic
-    
-    # Remove markdown links but keep the text
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    
-    # Special handling for numbered lists - ensure they have paragraph breaks
-    # Look for numbered items and ensure proper separation
-    text = re.sub(r'(\d+\.\s+<b>[^<]+</b>[^0-9]+?)(?=\d+\.\s+<b>)', r'\1\n\n', text)
-    
-    # Preserve paragraph structure - convert double line breaks to paragraph markers
-    text = re.sub(r'\n\s*\n', ' <PARAGRAPH_BREAK> ', text)
-    
-    # Convert single line breaks within paragraphs to spaces
-    text = re.sub(r'(?<![.!?])\n(?!\s*[-•\d])', ' ', text)
-    
-    # Clean up extra whitespace but preserve paragraph breaks
-    text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single space
-    text = re.sub(r' <PARAGRAPH_BREAK> ', '\n\n', text)  # Restore paragraph breaks
-    
-    return text.strip()
+    # Fallback: just wrap in paragraph tags
+    return f"<p>{text}</p>"
 
 
-def _add_text_as_paragraphs(story, text, style, spacer_height=12):
+def _add_html_content(story, html_content, base_style):
     """
-    Add text to PDF story as separate paragraphs, splitting on double newlines.
-    This ensures proper paragraph formatting instead of one big text blob.
-    Special handling for numbered lists to ensure each item gets its own paragraph.
+    Add HTML content to PDF story using proper HTML parsing.
+    Much cleaner than trying to parse markdown with regex.
     """
-    if not text:
+    if not html_content:
         return
     
-    # Import here to avoid circular imports
     from reportlab.platypus import Paragraph, Spacer
-    from reportlab.lib.styles import ParagraphStyle
     
-    # Create an indented style for numbered list items
-    indented_style = ParagraphStyle(
-        'IndentedStyle',
-        parent=style,
-        leftIndent=20,  # 20 points indentation
-        spaceBefore=6,
-        spaceAfter=6
-    )
+    # ReportLab can handle basic HTML directly
+    # Split on common block elements
+    import re
     
-    # Split text into paragraphs
-    paragraphs = text.split('\n\n')
+    # Split HTML into meaningful blocks
+    blocks = re.split(r'(</p>|</li>|</h[1-6]>|</div>)', html_content)
     
-    for i, paragraph in enumerate(paragraphs):
-        paragraph = paragraph.strip()
-        if not paragraph:
-            continue
-        
-        # Check if paragraph contains numbered items that need to be split
-        numbered_items = re.findall(r'\d+\.\s+<b>[^<]+</b>[^0-9]*?(?=\d+\.\s+<b>|$)', paragraph)
-        
-        if numbered_items:
-            # This paragraph has numbered items, handle each separately
-            remaining_text = paragraph
-            
-            for item in numbered_items:
-                # Find the exact match and extract it cleanly
-                match = re.search(re.escape(item), remaining_text)
-                if match:
-                    # Add text before this item (if any)
-                    before_text = remaining_text[:match.start()].strip()
-                    if before_text and not re.match(r'^\d+\.\s+<b>', before_text):
-                        story.append(Paragraph(before_text, style))
+    current_block = ""
+    for part in blocks:
+        if part and part.startswith('</'):
+            # End tag - complete the block
+            current_block += part
+            if current_block.strip():
+                try:
+                    # ReportLab can handle basic HTML tags
+                    story.append(Paragraph(current_block.strip(), base_style))
+                    story.append(Spacer(1, 6))
+                except Exception as e:
+                    # Fallback to plain text if HTML parsing fails
+                    logger.debug(f"HTML parsing failed, using plain text: {e}")
+                    clean_text = re.sub(r'<[^>]+>', '', current_block)
+                    if clean_text.strip():
+                        story.append(Paragraph(clean_text.strip(), base_style))
                         story.append(Spacer(1, 6))
-                    
-                    # Add the numbered item with indentation
-                    clean_item = item.strip()
-                    if clean_item:
-                        story.append(Paragraph(clean_item, indented_style))
-                        story.append(Spacer(1, 8))
-                    
-                    # Update remaining text
-                    remaining_text = remaining_text[match.end():].strip()
-            
-            # Add any remaining text after the last numbered item
-            if remaining_text and not re.match(r'^\d+\.\s+<b>', remaining_text):
-                story.append(Paragraph(remaining_text, style))
+            current_block = ""
         else:
-            # Regular paragraph without numbered items
-            story.append(Paragraph(paragraph, style))
-            
-        # Add spacing between major paragraphs (except after the last one)
-        if i < len(paragraphs) - 1:
-            story.append(Spacer(1, spacer_height))
+            current_block += part
+    
+    # Handle any remaining content
+    if current_block.strip():
+        try:
+            story.append(Paragraph(current_block.strip(), base_style))
+            story.append(Spacer(1, 6))
+        except Exception as e:
+            clean_text = re.sub(r'<[^>]+>', '', current_block)
+            if clean_text.strip():
+                story.append(Paragraph(clean_text.strip(), base_style))
+                story.append(Spacer(1, 6))
 
 # Optional imports for document generation
 try:
@@ -136,6 +100,14 @@ try:
 except ImportError:
     logger.warning("ReportLab not available. PDF generation will not work. Install with: pip install reportlab")
     REPORTLAB_AVAILABLE = False
+
+# Better markdown parsing
+try:
+    import markdown2
+    MARKDOWN_AVAILABLE = True
+except ImportError:
+    logger.warning("markdown2 not available. Install with: pip install markdown2")
+    MARKDOWN_AVAILABLE = False
 
 try:
     from docx import Document
@@ -982,7 +954,7 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         return df.set_index('Characteristic') if not df.empty else pd.DataFrame()
     
     def to_pdf(self, filename: str, output_dir: str = ".") -> str:
-        """Generate PDF report."""
+        """Generate PDF report using ReportLab with proper markdown conversion."""
         if not REPORTLAB_AVAILABLE:
             raise ImportError("ReportLab is required for PDF generation. Install with: pip install reportlab")
         
@@ -1055,25 +1027,25 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         # Cohort Definition
         story.append(Paragraph("1. Cohort Definition", heading_style))
         cohort_def = self.report_sections.get('cohort_definition', 'No description available.')
-        # Clean markdown formatting for PDF
-        cohort_def_clean = _clean_markdown_for_pdf(cohort_def)
-        _add_text_as_paragraphs(story, cohort_def_clean, normal_style)
+        # Convert markdown to HTML properly
+        cohort_def_html = _convert_markdown_to_html(cohort_def)
+        _add_html_content(story, cohort_def_html, normal_style)
         story.append(Spacer(1, 15))
         
         # Data Analysis
         story.append(Paragraph("2. Data Analysis", heading_style))
         data_analysis = self.report_sections.get('data_analysis', 'No description available.')
-        # Clean markdown formatting for PDF
-        data_analysis_clean = _clean_markdown_for_pdf(data_analysis)
-        _add_text_as_paragraphs(story, data_analysis_clean, normal_style)
+        # Convert markdown to HTML properly
+        data_analysis_html = _convert_markdown_to_html(data_analysis)
+        _add_html_content(story, data_analysis_html, normal_style)
         story.append(Spacer(1, 15))
         
         # Study Variables
         story.append(Paragraph("3. Study Variables", heading_style))
         study_vars = self.report_sections.get('study_variables', 'No description available.')
-        # Clean markdown formatting for PDF
-        study_vars_clean = _clean_markdown_for_pdf(study_vars)
-        _add_text_as_paragraphs(story, study_vars_clean, normal_style)
+        # Convert markdown to HTML properly
+        study_vars_html = _convert_markdown_to_html(study_vars)
+        _add_html_content(story, study_vars_html, normal_style)
         story.append(Spacer(1, 15))
         
         # Waterfall Table
@@ -1104,9 +1076,9 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             waterfall_commentary = self.report_sections.get('waterfall_commentary')
             if waterfall_commentary:
                 story.append(Paragraph("Clinical Interpretation", heading_style))
-                # Clean markdown formatting for PDF
-                commentary_clean = _clean_markdown_for_pdf(waterfall_commentary)
-                _add_text_as_paragraphs(story, commentary_clean, normal_style)
+                # Convert markdown to HTML properly
+                commentary_html = _convert_markdown_to_html(waterfall_commentary)
+                _add_html_content(story, commentary_html, normal_style)
                 story.append(Spacer(1, 15))
             
             # Add waterfall plot if available
@@ -1118,9 +1090,9 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
                 temp_plot_path.parent.mkdir(parents=True, exist_ok=True)
                 self.figures['waterfall']['figure'].savefig(temp_plot_path, dpi=self.plot_dpi, bbox_inches='tight')
                 story.append(Image(str(temp_plot_path), width=6*inch, height=3.6*inch))
-                # Clean markdown formatting for PDF caption
-                caption_clean = _clean_markdown_for_pdf(self.figures['waterfall']['caption'])
-                story.append(Paragraph(caption_clean, styles['Normal']))
+                # Convert markdown caption to HTML properly
+                caption_html = _convert_markdown_to_html(self.figures['waterfall']['caption'])
+                _add_html_content(story, caption_html, styles['Normal'])
                 story.append(Spacer(1, 15))
         
         # Table 1
@@ -1156,9 +1128,9 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             table1_commentary = self.report_sections.get('table1_commentary')
             if table1_commentary:
                 story.append(Paragraph("Clinical Interpretation", heading_style))
-                # Clean markdown formatting for PDF
-                commentary_clean = _clean_markdown_for_pdf(table1_commentary)
-                _add_text_as_paragraphs(story, commentary_clean, normal_style)
+                # Convert markdown to HTML properly
+                commentary_html = _convert_markdown_to_html(table1_commentary)
+                _add_html_content(story, commentary_html, normal_style)
                 story.append(Spacer(1, 15))
         
         # Table 2 (Outcomes)
@@ -1189,9 +1161,9 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             table2_commentary = self.report_sections.get('table2_commentary')
             if table2_commentary:
                 story.append(Paragraph("Clinical Interpretation", heading_style))
-                # Clean markdown formatting for PDF
-                commentary_clean = _clean_markdown_for_pdf(table2_commentary)
-                _add_text_as_paragraphs(story, commentary_clean, normal_style)
+                # Convert markdown to HTML properly
+                commentary_html = _convert_markdown_to_html(table2_commentary)
+                _add_html_content(story, commentary_html, normal_style)
                 story.append(Spacer(1, 15))
         
         # Build PDF
