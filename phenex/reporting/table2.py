@@ -10,22 +10,17 @@ logger = create_logger(__name__)
 
 class Table2(Reporter):
     """
-    Table2 generates a simple epidemiological association table showing unadjusted odds ratios and incidence rates for each outcome at specified time points.
+    Table2 generates outcome incidence rates and event counts for a cohort at specified time points.
 
     For each outcome, reports:
-    - N events in exposed vs unexposed groups
-    - Time under risk in 100 patient-years for exposed and unexposed groups (accounting for censoring)
-    - Incidence rate per 100 patient-years for exposed and unexposed groups
-    - Unadjusted odds ratio (exposed vs unexposed)
-    - Confidence interval for odds ratio
-    - P-value
+    - N events in the cohort
+    - Time under risk in 100 patient-years (accounting for censoring)
+    - Incidence rate per 100 patient-years
 
     Time under risk accounts for censoring from competing events (e.g., death) and administrative censoring at end of study period.
 
     Parameters:
-        exposure: Single exposure phenotype (binary: exposed vs unexposed)
         time_points: List of days from index to evaluate outcomes (e.g., [90, 365])
-        confidence_level: Confidence level for intervals (default: 0.95 for 95% CI)
         right_censor_phenotypes: List of phenotypes for right censoring (e.g., death)
         end_of_study_period: End date of study period for administrative censoring
 
@@ -33,16 +28,12 @@ class Table2(Reporter):
         ```python
         # Simple analysis without censoring
         table2 = Table2(
-            exposure=statin_use,
             time_points=[90, 365, 730],  # 3 months, 1 year, 2 years
-            confidence_level=0.95
         )
 
         # Analysis with right censoring
         table2_censored = Table2(
-            exposure=statin_use,
             time_points=[90, 365, 730],
-            confidence_level=0.95,
             right_censor_phenotypes=[death_phenotype],
             end_of_study_period="2023-12-31"
         )
@@ -52,57 +43,32 @@ class Table2(Reporter):
 
     def __init__(
         self,
-        exposure: "Phenotype",
         time_points: List[int] = [365],  # Default to 1 year
-        confidence_level: float = 0.95,
         decimal_places: int = 3,
         pretty_display: bool = True,
         right_censor_phenotypes: Optional[List["Phenotype"]] = None,
         end_of_study_period: Optional[str] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
-        self.exposure = exposure
         self.time_points = sorted(time_points)  # Sort time points
-        self.confidence_level = confidence_level
         self.right_censor_phenotypes = right_censor_phenotypes or []
         self.end_of_study_period = end_of_study_period
-
-        # Check for scipy for statistical calculations
-        try:
-            import scipy.stats as stats
-
-            self.stats = stats
-            self.has_scipy = True
-        except ImportError:
-            logger.warning(
-                "scipy not available. P-values will not be calculated. Install with: pip install scipy"
-            )
-            self.stats = None
-            self.has_scipy = False
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         """
         Execute Table2 analysis for the provided cohort.
 
         Args:
-            cohort: The cohort containing outcomes and exposure
+            cohort: The cohort containing outcomes
 
         Returns:
             DataFrame with columns:
             - Outcome: Name of outcome variable
             - Time_Point_Days: Days from index date
-            - N_Exposed_Events: Events in exposed group
-            - N_Exposed_Total: Total exposed patients
-            - N_Unexposed_Events: Events in unexposed group
-            - N_Unexposed_Total: Total unexposed patients
-            - Exposed_Time_Under_Risk: Follow-up time in patient-years (exposed group)
-            - Unexposed_Time_Under_Risk: Follow-up time in patient-years (unexposed group)
-            - Exposed_Incidence_Rate: Incidence rate per 100 patient-years (exposed)
-            - Unexposed_Incidence_Rate: Incidence rate per 100 patient-years (unexposed)
-            - Odds_Ratio: Unadjusted odds ratio
-            - CI_Lower: Lower confidence bound
-            - CI_Upper: Upper confidence bound
-            - P_Value: Fisher's exact test p-value (if scipy available)
+            - N_Events: Number of events in cohort
+            - N_Total: Total patients in cohort
+            - Time_Under_Risk: Follow-up time in patient-years
+            - Incidence_Rate: Incidence rate per 100 patient-years
         """
         self.cohort = cohort
 
@@ -126,14 +92,8 @@ class Table2(Reporter):
         for phenotype in self.right_censor_phenotypes:
             phenotype.execute(cohort.subset_tables_index)
 
-        # Get exposure data
-        exposure_data = self._get_exposure_data()
-        if exposure_data.empty:
-            logger.error("No exposure data available")
-            return pd.DataFrame()
-
-        # Merge index and exposure
-        analysis_data = index_data.merge(exposure_data, on="PERSON_ID", how="inner")
+        # Use index data as analysis data (all patients in cohort)
+        analysis_data = index_data
         logger.debug(f"Analysis dataset: {len(analysis_data)} patients")
 
         # Analyze each outcome at each time point
@@ -172,28 +132,6 @@ class Table2(Reporter):
             return index_data
         except Exception as e:
             logger.error(f"Failed to get cohort index data: {e}")
-            return pd.DataFrame()
-
-    def _get_exposure_data(self) -> pd.DataFrame:
-        """Get exposure status for each patient."""
-        try:
-            exposure_table = self.exposure.table.select(
-                ["PERSON_ID", "BOOLEAN"]
-            ).distinct()
-            exposure_data = exposure_table.to_pandas()
-
-            # Convert boolean exposure to 0/1
-            exposure_data["EXPOSED"] = (
-                exposure_data["BOOLEAN"].fillna(False).astype(int)
-            )
-            exposure_data = exposure_data[["PERSON_ID", "EXPOSED"]]
-
-            logger.debug(
-                f"Exposure data: {len(exposure_data)} patients, {exposure_data['EXPOSED'].sum()} exposed"
-            )
-            return exposure_data
-        except Exception as e:
-            logger.error(f"Failed to get exposure data: {e}")
             return pd.DataFrame()
 
     def _get_outcome_events(
@@ -256,105 +194,31 @@ class Table2(Reporter):
                 outcome, analysis_data, time_point
             )
 
-            # Create 2x2 table: Exposure (rows) vs Outcome (columns)
-            exposed_events = (
-                (data_with_events["EXPOSED"] == 1)
-                & (data_with_events["EVENT_WITHIN_TIMEPOINT"] == 1)
-            ).sum()
-            exposed_total = (data_with_events["EXPOSED"] == 1).sum()
-            unexposed_events = (
-                (data_with_events["EXPOSED"] == 0)
-                & (data_with_events["EVENT_WITHIN_TIMEPOINT"] == 1)
-            ).sum()
-            unexposed_total = (data_with_events["EXPOSED"] == 0).sum()
+            # Count events and total patients
+            n_events = (data_with_events["EVENT_WITHIN_TIMEPOINT"] == 1).sum()
+            n_total = len(data_with_events)
 
-            # Check if we have enough data
-            if exposed_total == 0 or unexposed_total == 0:
-                logger.warning(
-                    f"No exposed or unexposed patients for {outcome.name} at {time_point} days"
-                )
+            # Check if we have data
+            if n_total == 0:
+                logger.warning(f"No patients for {outcome.name} at {time_point} days")
                 return None
 
-            # Calculate risks
-            risk_exposed = exposed_events / exposed_total if exposed_total > 0 else 0
-            risk_unexposed = (
-                unexposed_events / unexposed_total if unexposed_total > 0 else 0
-            )
-
-            # Calculate odds ratio with continuity correction for zero cells
-            a, b = exposed_events, exposed_total - exposed_events
-            c, d = unexposed_events, unexposed_total - unexposed_events
-
-            # Add 0.5 to all cells if any are zero (Haldane correction)
-            if a == 0 or b == 0 or c == 0 or d == 0:
-                a, b, c, d = a + 0.5, b + 0.5, c + 0.5, d + 0.5
-
-            odds_ratio = (a * d) / (b * c)
-
-            # Calculate confidence interval
-            log_or = np.log(odds_ratio)
-            se_log_or = np.sqrt(1 / a + 1 / b + 1 / c + 1 / d)
-            z_score = (
-                self.stats.norm.ppf((1 + self.confidence_level) / 2)
-                if self.has_scipy
-                else 1.96
-            )
-
-            ci_lower = np.exp(log_or - z_score * se_log_or)
-            ci_upper = np.exp(log_or + z_score * se_log_or)
-
-            # Calculate p-value using Fisher's exact test
-            p_value = None
-            if self.has_scipy:
-                # Use original counts (without continuity correction) for p-value
-                original_a = exposed_events
-                original_b = exposed_total - exposed_events
-                original_c = unexposed_events
-                original_d = unexposed_total - unexposed_events
-
-                contingency_table = [[original_a, original_b], [original_c, original_d]]
-                try:
-                    _, p_value = self.stats.fisher_exact(
-                        contingency_table, alternative="two-sided"
-                    )
-                except:
-                    p_value = None
-
-            # Calculate time under risk and incidence rates
+            # Calculate time under risk and incidence rate
             time_under_risk = self._calculate_time_under_risk(
                 data_with_events, outcome, time_point
             )
 
-            # Convert to 100 patient-years and calculate incidence rates
-            exposed_time_years = time_under_risk["exposed_years"]
-            unexposed_time_years = time_under_risk["unexposed_years"]
-
-            exposed_incidence_rate = (
-                (exposed_events / exposed_time_years * 100)
-                if exposed_time_years > 0
-                else 0
-            )
-            unexposed_incidence_rate = (
-                (unexposed_events / unexposed_time_years * 100)
-                if unexposed_time_years > 0
-                else 0
-            )
+            # Convert to patient-years and calculate incidence rate
+            time_years = time_under_risk["total_years"]
+            incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
 
             return {
                 "Outcome": outcome.name,
                 "Time_Point_Days": time_point,
-                "N_Exposed_Events": int(exposed_events),
-                "N_Exposed_Total": int(exposed_total),
-                "N_Unexposed_Events": int(unexposed_events),
-                "N_Unexposed_Total": int(unexposed_total),
-                "Exposed_Time_Under_Risk": round(exposed_time_years, 1),
-                "Unexposed_Time_Under_Risk": round(unexposed_time_years, 1),
-                "Exposed_Incidence_Rate": round(exposed_incidence_rate, 2),
-                "Unexposed_Incidence_Rate": round(unexposed_incidence_rate, 2),
-                "Odds_Ratio": odds_ratio,
-                "CI_Lower": ci_lower,
-                "CI_Upper": ci_upper,
-                "P_Value": p_value,
+                "N_Events": int(n_events),
+                "N_Total": int(n_total),
+                "Time_Under_Risk": round(time_years, 1),
+                "Incidence_Rate": round(incidence_rate, 2),
             }
 
         except Exception as e:
@@ -370,42 +234,21 @@ class Table2(Reporter):
 
         # Round numeric columns
         numeric_columns = [
-            "Risk_Exposed",
-            "Risk_Unexposed",
-            "Odds_Ratio",
-            "CI_Lower",
-            "CI_Upper",
+            "Incidence_Rate",
+            "Time_Under_Risk",
         ]
         for col in numeric_columns:
             if col in self.df.columns:
                 self.df[col] = self.df[col].round(self.decimal_places)
 
-        # Format p-values
-        if "P_Value" in self.df.columns:
-            self.df["P_Value"] = self.df["P_Value"].apply(self._format_p_value)
-
-        # Create confidence interval string
-        if all(col in self.df.columns for col in ["CI_Lower", "CI_Upper"]):
-            confidence_pct = int(self.confidence_level * 100)
-            self.df[f"{confidence_pct}% CI"] = (
-                self.df["CI_Lower"].astype(str)
-                + " - "
-                + self.df["CI_Upper"].astype(str)
-            )
-
         # Reorder columns for display
         display_columns = [
             "Outcome",
             "Time_Point_Days",
-            "N_Exposed_Events",
-            "N_Unexposed_Events",
-            "Exposed_Time_Under_Risk",
-            "Unexposed_Time_Under_Risk",
-            "Exposed_Incidence_Rate",
-            "Unexposed_Incidence_Rate",
-            "Odds_Ratio",
-            f"{int(self.confidence_level * 100)}% CI",
-            "P_Value",
+            "N_Events",
+            "N_Total",
+            "Time_Under_Risk",
+            "Incidence_Rate",
         ]
 
         # Only include columns that exist
@@ -415,36 +258,28 @@ class Table2(Reporter):
     def _calculate_time_under_risk(
         self, data_with_events: pd.DataFrame, outcome: "Phenotype", time_point: int
     ) -> dict:
-        """Calculate time under risk in patient-years for exposed and unexposed groups."""
+        """Calculate time under risk in patient-years for the cohort."""
         try:
             # Add censoring information
             data_with_censoring = self._add_censoring_information(
                 data_with_events, outcome, time_point
             )
 
-            # Calculate follow-up time for each patient
-            exposed_df = data_with_censoring[data_with_censoring["EXPOSED"] == 1]
-            unexposed_df = data_with_censoring[data_with_censoring["EXPOSED"] == 0]
-
             # Sum follow-up time and convert to years
-            exposed_years = exposed_df["FOLLOWUP_DAYS"].sum() / 365.25
-            unexposed_years = unexposed_df["FOLLOWUP_DAYS"].sum() / 365.25
+            total_years = data_with_censoring["FOLLOWUP_DAYS"].sum() / 365.25
 
             logger.debug(
                 f"Time under risk for {outcome.name} at {time_point} days: "
-                f"{exposed_years:.1f} exposed years, {unexposed_years:.1f} unexposed years"
+                f"{total_years:.1f} patient-years"
             )
 
-            return {
-                "exposed_years": round(exposed_years, 2),
-                "unexposed_years": round(unexposed_years, 2),
-            }
+            return {"total_years": round(total_years, 2)}
 
         except Exception as e:
             logger.warning(
                 f"Could not calculate time under risk for {outcome.name}: {e}"
             )
-            return {"exposed_years": 0.0, "unexposed_years": 0.0}
+            return {"total_years": 0.0}
 
     def _add_censoring_information(
         self, analysis_data: pd.DataFrame, outcome: "Phenotype", time_point: int
@@ -550,14 +385,3 @@ class Table2(Reporter):
         data["FOLLOWUP_DAYS"] = data["FOLLOWUP_DAYS"].clip(lower=0)
 
         return data
-
-    def _format_p_value(self, p_val) -> str:
-        """Format p-value for display."""
-        if pd.isna(p_val):
-            return ""
-        elif p_val < 0.001:
-            return "<0.001"
-        elif p_val < 0.01:
-            return f"{p_val:.3f}"
-        else:
-            return f"{p_val:.3f}"
