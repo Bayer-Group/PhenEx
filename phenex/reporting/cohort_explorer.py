@@ -386,7 +386,8 @@ class CohortExplorer(Reporter):
                         # Convert to JavaScript-compatible timestamps but keep as datetime values
                         # Use milliseconds since epoch for JavaScript/Bokeh datetime compatibility
                         timestamps = [
-                            pd.Timestamp(p.start_time).value // 1000000  # Convert nanoseconds to milliseconds
+                            pd.Timestamp(p.start_time).value
+                            // 1000000  # Convert nanoseconds to milliseconds
                             for p in monthly.index
                         ]
                         viz_data["timeline"] = {
@@ -485,9 +486,13 @@ class CohortExplorer(Reporter):
         """Generate inclusion/exclusion counts data."""
         try:
             # Check if we have inclusion or exclusion criteria
-            has_inclusions = hasattr(self.cohort, 'inclusions') and self.cohort.inclusions
-            has_exclusions = hasattr(self.cohort, 'exclusions') and self.cohort.exclusions
-            
+            has_inclusions = (
+                hasattr(self.cohort, "inclusions") and self.cohort.inclusions
+            )
+            has_exclusions = (
+                hasattr(self.cohort, "exclusions") and self.cohort.exclusions
+            )
+
             if has_inclusions or has_exclusions:
                 from phenex.reporting.counts import InExCounts
 
@@ -496,9 +501,7 @@ class CohortExplorer(Reporter):
                     pretty_display=self.pretty_display,
                 )
                 counts_data = counts_reporter.execute(self.cohort)
-                logger.debug(
-                    f"Generated Counts data with {len(counts_data)} criteria"
-                )
+                logger.debug(f"Generated Counts data with {len(counts_data)} criteria")
                 return counts_data
             else:
                 logger.info("No inclusion/exclusion criteria defined for Counts")
@@ -614,13 +617,19 @@ class CohortExplorer(Reporter):
 
         # Create three separate plots with data sources that can be updated
         plot_height = 300
-        
+
         # Create data sources for all three plots
-        timeline_source, relative_source, value_source = self._create_plot_sources(default_phenotype)
-        
+        timeline_source, relative_source, value_source = self._create_plot_sources(
+            default_phenotype
+        )
+
         # Create the three plots
-        timeline_plot = self._create_timeline_plot_with_source(timeline_source, plot_height)
-        relative_plot = self._create_relative_plot_with_source(relative_source, plot_height) 
+        timeline_plot = self._create_timeline_plot_with_source(
+            timeline_source, plot_height
+        )
+        relative_plot = self._create_relative_plot_with_source(
+            relative_source, plot_height
+        )
         value_plot = self._create_value_plot_with_source(value_source, plot_height)
 
         # Info panel showing current selection details
@@ -631,7 +640,12 @@ class CohortExplorer(Reporter):
 
         # Create callback to update all three data sources when phenotype changes
         callback = self._create_three_source_callback(
-            phenotype_select, timeline_source, relative_source, value_source, info_div, relative_plot
+            phenotype_select,
+            timeline_source,
+            relative_source,
+            value_source,
+            info_div,
+            relative_plot,
         )
 
         # Register callback only for phenotype selection
@@ -660,7 +674,7 @@ class CohortExplorer(Reporter):
         sections.append(instructions)
         sections.append(controls)
         sections.append(info_div)
-        
+
         # Add the three plots in a grid layout
         plots_grid = gridplot([[timeline_plot, relative_plot], [value_plot, None]])
         sections.append(plots_grid)
@@ -850,8 +864,6 @@ class CohortExplorer(Reporter):
 
         return p
 
-
-
     def _create_table1_display(self):
         """Create Table 1 (baseline characteristics) display with sortable columns."""
         if self.table1_data is None or self.table1_data.empty:
@@ -955,12 +967,12 @@ class CohortExplorer(Reporter):
         table_id = "counts-table"
 
         # Rename columns for better display
-        if 'phenotype' in df.columns:
-            df = df.rename(columns={'phenotype': 'Phenotype'})
-        if 'n' in df.columns:
-            df = df.rename(columns={'n': 'Count'})
-        if 'category' in df.columns:
-            df = df.rename(columns={'category': 'Type'})
+        if "phenotype" in df.columns:
+            df = df.rename(columns={"phenotype": "Phenotype"})
+        if "n" in df.columns:
+            df = df.rename(columns={"n": "Count"})
+        if "category" in df.columns:
+            df = df.rename(columns={"category": "Type"})
 
         # Create HTML table with sortable headers
         html = f"""
@@ -973,7 +985,7 @@ class CohortExplorer(Reporter):
 
         # Add sortable column headers
         for col_idx, col in enumerate(df.columns):
-            align = "left" if col in ['Phenotype', 'Type'] else "right"
+            align = "left" if col in ["Phenotype", "Type"] else "right"
             html += f"""<th onclick='sortTable({col_idx}, "{table_id}")' 
                         style='padding:10px;text-align:{align};border:1px solid #ddd;white-space:nowrap;cursor:pointer;user-select:none;'
                         title='Click to sort'>{col} <span style='font-size:10px;'>⇅</span></th>"""
@@ -991,13 +1003,17 @@ class CohortExplorer(Reporter):
 
             for col_idx, col in enumerate(df.columns):
                 value = row[col]
-                align = "left" if col in ['Phenotype', 'Type'] else "right"
+                align = "left" if col in ["Phenotype", "Type"] else "right"
                 # Format the value nicely
                 if pd.isna(value) or value == "" or str(value) == "nan":
                     value = "-"
                 # Add color coding for Type column
-                if col == 'Type':
-                    color = '#28a745' if str(value).lower() == 'inclusion' else '#dc3545' if str(value).lower() == 'exclusion' else '#000'
+                if col == "Type":
+                    color = (
+                        "#28a745"
+                        if str(value).lower() == "inclusion"
+                        else "#dc3545" if str(value).lower() == "exclusion" else "#000"
+                    )
                     html += f"<td style='padding:8px;border:1px solid #ddd;text-align:{align};color:{color};font-weight:bold;'>{value}</td>"
                 else:
                     html += f"<td style='padding:8px;border:1px solid #ddd;text-align:{align};'>{value}</td>"
@@ -1363,78 +1379,90 @@ class CohortExplorer(Reporter):
 
     def _create_organized_dropdown_options(self):
         """Create organized dropdown options with role prefixes and return default phenotype."""
-        
+
         # Find entry criterion first (it will be the default)
         entry_name = None
-        if hasattr(self.cohort, 'entry_criterion') and self.cohort.entry_criterion:
+        if hasattr(self.cohort, "entry_criterion") and self.cohort.entry_criterion:
             entry_name = self.cohort.entry_criterion.name
-            
-        default_phenotype = entry_name if entry_name else list(self.phenotype_data.keys())[0]
-        
+
+        default_phenotype = (
+            entry_name if entry_name else list(self.phenotype_data.keys())[0]
+        )
+
         # Organize phenotypes by role (using a mapping to handle singular/plural differences)
         sections = {
-            'Entry': [],
-            'Inclusion': [], 
-            'Exclusion': [],
-            'Characteristics': [],
-            'Outcomes': []
+            "Entry": [],
+            "Inclusion": [],
+            "Exclusion": [],
+            "Characteristics": [],
+            "Outcomes": [],
         }
-        
+
         # Map from actual role names to section names
         role_mapping = {
-            'Entry': 'Entry',
-            'Inclusion': 'Inclusion',
-            'Exclusion': 'Exclusion', 
-            'Characteristic': 'Characteristics',  # Map singular to plural
-            'Outcome': 'Outcomes'  # Map singular to plural
+            "Entry": "Entry",
+            "Inclusion": "Inclusion",
+            "Exclusion": "Exclusion",
+            "Characteristic": "Characteristics",  # Map singular to plural
+            "Outcome": "Outcomes",  # Map singular to plural
         }
-        
+
         for name, info in self.phenotype_data.items():
-            role = info['role']
-            display_name = info['display_name']
+            role = info["role"]
+            display_name = info["display_name"]
             if role not in role_mapping:
-                raise ValueError(f"Unknown phenotype role '{role}' for phenotype '{name}'. Expected one of: {list(role_mapping.keys())}")
+                raise ValueError(
+                    f"Unknown phenotype role '{role}' for phenotype '{name}'. Expected one of: {list(role_mapping.keys())}"
+                )
             section_name = role_mapping[role]
             sections[section_name].append((name, display_name))
-        
+
         # Build options list with role prefixes
         options = []
-        
+
         # Order sections logically
-        section_order = ['Entry', 'Inclusion', 'Exclusion', 'Characteristics', 'Outcomes']
-        
+        section_order = [
+            "Entry",
+            "Inclusion",
+            "Exclusion",
+            "Characteristics",
+            "Outcomes",
+        ]
+
         for section_name in section_order:
             phenotypes = sections.get(section_name, [])
             if phenotypes:  # Only add sections that have phenotypes
                 # Add phenotypes with role prefix
                 for name, display_name in sorted(phenotypes, key=lambda x: x[1]):
                     role_emoji = {
-                        'Entry': '🎯',
-                        'Inclusion': '✅', 
-                        'Exclusion': '❌',
-                        'Characteristics': '📊',
-                        'Outcomes': '🎯'
-                    }.get(section_name, '📋')
+                        "Entry": "🎯",
+                        "Inclusion": "✅",
+                        "Exclusion": "❌",
+                        "Characteristics": "📊",
+                        "Outcomes": "🎯",
+                    }.get(section_name, "📋")
                     options.append((name, f"{role_emoji} {display_name}"))
-        
+
         return options, default_phenotype
 
     def _create_plot_sources(self, phenotype_name: str):
         """Create data sources for all three plots based on initial phenotype."""
         viz_data = self.phenotype_data[phenotype_name]["viz_data"]
-        
+
         # Timeline source
         if len(viz_data["timeline"]["x"]) > 0:
             # Convert milliseconds to datetime objects for Bokeh datetime axis
-            timeline_x = [pd.Timestamp(ts, unit='ms') for ts in viz_data["timeline"]["x"]]
+            timeline_x = [
+                pd.Timestamp(ts, unit="ms") for ts in viz_data["timeline"]["x"]
+            ]
             timeline_y = viz_data["timeline"]["y"]
         else:
             timeline_x = []
             timeline_y = []
-        
+
         timeline_source = ColumnDataSource(dict(x=timeline_x, y=timeline_y))
-        
-        # Relative time source  
+
+        # Relative time source
         if len(viz_data["relative_time"]["values"]) > 0:
             relative_x = viz_data["relative_time"]["values"]
             relative_y = viz_data["relative_time"]["counts"]
@@ -1447,19 +1475,17 @@ class CohortExplorer(Reporter):
             relative_x = []
             relative_y = []
             width = 1
-            
-        relative_source = ColumnDataSource(dict(
-            x=relative_x, 
-            top=relative_y,
-            width=[width] * len(relative_y)
-        ))
-        
+
+        relative_source = ColumnDataSource(
+            dict(x=relative_x, top=relative_y, width=[width] * len(relative_y))
+        )
+
         # Value distribution source
         if len(viz_data["value_hist"]["values"]) > 0:
             value_x = viz_data["value_hist"]["values"]
             value_y = viz_data["value_hist"]["counts"]
             is_categorical = viz_data["value_hist"].get("is_categorical", False)
-            
+
             # Calculate bar width
             if is_categorical:
                 width = 0.8
@@ -1467,7 +1493,7 @@ class CohortExplorer(Reporter):
                 width = (max(value_x) - min(value_x)) / len(value_x) * 0.8
             else:
                 width = 1
-                
+
             # Create labels
             if is_categorical and viz_data["value_hist"].get("labels"):
                 labels = viz_data["value_hist"]["labels"]
@@ -1478,63 +1504,73 @@ class CohortExplorer(Reporter):
             value_y = []
             width = 1
             labels = []
-            
-        value_source = ColumnDataSource(dict(
-            x=value_x,
-            top=value_y, 
-            width=[width] * len(value_y),
-            label=labels
-        ))
-        
+
+        value_source = ColumnDataSource(
+            dict(x=value_x, top=value_y, width=[width] * len(value_y), label=labels)
+        )
+
         return timeline_source, relative_source, value_source
 
     def _create_timeline_plot_with_source(self, source: ColumnDataSource, height: int):
         """Create timeline plot using provided data source."""
         p = figure(
             title="Timeline (Absolute Time)",
-            x_axis_label="Date", 
+            x_axis_label="Date",
             y_axis_label="Events Count",
-            width=int(self.width/2),
+            width=int(self.width / 2),
             height=height,
             tools="pan,wheel_zoom,box_zoom,reset,save",
             x_axis_type="datetime",
         )
-        
-        p.line("x", "y", source=source, line_width=3, color=self.colors["timeline"], alpha=0.8)
-        circles = p.scatter("x", "y", source=source, size=8, color=self.colors["timeline"], alpha=0.9)
-        
+
+        p.line(
+            "x",
+            "y",
+            source=source,
+            line_width=3,
+            color=self.colors["timeline"],
+            alpha=0.8,
+        )
+        circles = p.scatter(
+            "x", "y", source=source, size=8, color=self.colors["timeline"], alpha=0.9
+        )
+
         hover = HoverTool(
             renderers=[circles],
             tooltips=[("Date", "@x{%Y-%m}"), ("Count", "@y")],
-            formatters={"@x": "datetime"}
+            formatters={"@x": "datetime"},
         )
         p.add_tools(hover)
-        
+
         return p
 
     def _create_relative_plot_with_source(self, source: ColumnDataSource, height: int):
-        """Create relative time plot using provided data source.""" 
+        """Create relative time plot using provided data source."""
         p = figure(
             title="Time Relative to Index",
             x_axis_label="Days from Index (negative = before, positive = after)",
-            y_axis_label="Events Count", 
-            width=int(self.width/2),
+            y_axis_label="Events Count",
+            width=int(self.width / 2),
             height=height,
             tools="pan,wheel_zoom,box_zoom,reset,save,hover",
         )
-        
+
         bars = p.vbar(
-            x="x", top="top", width="width", source=source,
-            color=self.colors["relative_time"], alpha=0.7,
-            line_color="white", line_width=1
+            x="x",
+            top="top",
+            width="width",
+            source=source,
+            color=self.colors["relative_time"],
+            alpha=0.7,
+            line_color="white",
+            line_width=1,
         )
-        
+
         hover = HoverTool(
-            renderers=[bars],
-            tooltips=[("Days from Index", "@x"), ("Count", "@top")]
+            renderers=[bars], tooltips=[("Days from Index", "@x"), ("Count", "@top")]
         )
         p.add_tools(hover)
-        
+
         return p
 
     def _create_value_plot_with_source(self, source: ColumnDataSource, height: int):
@@ -1543,26 +1579,38 @@ class CohortExplorer(Reporter):
             title="Value Distribution",
             x_axis_label="Value",
             y_axis_label="Count",
-            width=int(self.width/2),
-            height=height, 
+            width=int(self.width / 2),
+            height=height,
             tools="pan,wheel_zoom,box_zoom,reset,save,hover",
         )
-        
+
         bars = p.vbar(
-            x="x", top="top", width="width", source=source,
-            color=self.colors["histogram"], alpha=0.7,
-            line_color="white", line_width=1
+            x="x",
+            top="top",
+            width="width",
+            source=source,
+            color=self.colors["histogram"],
+            alpha=0.7,
+            line_color="white",
+            line_width=1,
         )
-        
+
         hover = HoverTool(
-            renderers=[bars],
-            tooltips=[("Value", "@label"), ("Count", "@top")]
+            renderers=[bars], tooltips=[("Value", "@label"), ("Count", "@top")]
         )
         p.add_tools(hover)
-        
+
         return p
 
-    def _create_three_source_callback(self, phenotype_select, timeline_source, relative_source, value_source, info_div, relative_plot):
+    def _create_three_source_callback(
+        self,
+        phenotype_select,
+        timeline_source,
+        relative_source,
+        value_source,
+        info_div,
+        relative_plot,
+    ):
         """Create callback that updates all three data sources when phenotype changes."""
         callback_code = """
         console.log('=== THREE PLOT CALLBACK START ===');
@@ -1672,12 +1720,12 @@ class CohortExplorer(Reporter):
         info_div.text = info;
         console.log('=== THREE PLOT CALLBACK COMPLETE ===');
         """
-        
+
         return CustomJS(
             args=dict(
                 phenotype_select=phenotype_select,
                 timeline_source=timeline_source,
-                relative_source=relative_source, 
+                relative_source=relative_source,
                 value_source=value_source,
                 info_div=info_div,
                 relative_plot=relative_plot,
