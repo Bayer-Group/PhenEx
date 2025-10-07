@@ -90,7 +90,7 @@ class CohortExplorer(Reporter):
             show_phenotype_explorer: Include interactive phenotype explorer (default: True)
         """
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
-        print("hello")
+        print("hello2")
         self.title = title
         self.width = width
         self.height = height
@@ -380,9 +380,10 @@ class CohortExplorer(Reporter):
                     # Monthly aggregation for timeline
                     monthly = dates.dt.to_period("M").value_counts().sort_index()
                     if len(monthly) > 0:
-                        # Convert to JavaScript timestamps (milliseconds since epoch)
+                        # Convert to JavaScript-compatible timestamps but keep as datetime values
+                        # Use milliseconds since epoch for JavaScript/Bokeh datetime compatibility
                         timestamps = [
-                            int(pd.Timestamp(p.start_time).timestamp() * 1000)
+                            pd.Timestamp(p.start_time).value // 1000000  # Convert nanoseconds to milliseconds
                             for p in monthly.index
                         ]
                         viz_data["timeline"] = {
@@ -511,11 +512,7 @@ class CohortExplorer(Reporter):
                 if not hasattr(char, "table") or char.table is None:
                     continue
 
-                df = (
-                    char.table.to_pandas()
-                    if hasattr(char.table, "to_pandas")
-                    else char.table
-                )
+                df = char.table.to_pandas()
 
                 if "VALUE" in df.columns and "PERSON_ID" in df.columns:
                     # Try to convert to numeric
@@ -588,344 +585,32 @@ class CohortExplorer(Reporter):
             width=300,
         )
 
-        viz_mode_select = Select(
-            title="Visualization Mode:",
-            value=initial_viz_mode,
-            options=[
-                ("histogram", "Value Distribution"),
-                ("histogram_std", "Standardized Values (0-1)"),
-                ("timeline", "Timeline"),
-                ("relative_time", "Time Relative to Index"),
-            ],
-            width=250,
-        )
+        # Remove visualization mode selector - we'll show all three plots always
 
-        # Get initial visualization data
-        initial_viz = self._get_initial_visualization(default_phenotype)
-
-        # Check if categorical and add labels to source data
-        viz_data = self.phenotype_data[default_phenotype]["viz_data"]
-        is_categorical = viz_data["value_hist"].get("is_categorical", False)
-
-        source_data = dict(
-            x=initial_viz["x"],
-            top=initial_viz["y"],
-            width=[initial_viz["width"]] * len(initial_viz["y"]),
-            color=[self.colors["histogram"]] * len(initial_viz["y"]),
-        )
-
-        # Add labels if categorical
-        if is_categorical and viz_data["value_hist"].get("labels"):
-            source_data["label"] = viz_data["value_hist"]["labels"]
-        else:
-            source_data["label"] = [str(x) for x in initial_viz["x"]]
-
-        # Create plot data source with initial data
-        source = ColumnDataSource(data=source_data)
-
-        # Create main plot
-        plot = figure(
-            title=f"{self.phenotype_data[default_phenotype]['display_name']} - {initial_viz['title_suffix']}",
-            x_axis_label=initial_viz["x_label"],
-            y_axis_label="Count",
-            width=self.width,
-            height=self.height,
-            tools="pan,wheel_zoom,box_zoom,reset,save,hover",
-        )
-
-        # Set up categorical tick labels for initial plot if needed
-        if viz_data["value_hist"].get("is_categorical", False) and viz_data[
-            "value_hist"
-        ].get("labels"):
-            from bokeh.models import FixedTicker
-
-            # Set categorical tick labels
-            category_labels = viz_data["value_hist"]["labels"]
-            x_positions = viz_data["value_hist"]["values"]
-
-            ticker = FixedTicker(ticks=x_positions)
-            plot.xaxis.ticker = ticker
-
-            # Create label overrides dictionary
-            label_dict = {
-                pos: label for pos, label in zip(x_positions, category_labels)
-            }
-            plot.xaxis.major_label_overrides = label_dict
-
-        # Add bars to plot
-        bars = plot.vbar(
-            x="x",
-            top="top",
-            width="width",
-            color="color",
-            alpha=0.7,
-            source=source,
-            line_color="white",
-            line_width=1,
-        )
-
-        # Add hover tool with category label support
-        hover = HoverTool(
-            renderers=[bars], tooltips=[("Value", "@label"), ("Count", "@top")]
-        )
-        plot.add_tools(hover)
+        # Create three separate plots with data sources that can be updated
+        plot_height = 300
+        
+        # Create data sources for all three plots
+        timeline_source, relative_source, value_source = self._create_plot_sources(default_phenotype)
+        
+        # Create the three plots
+        timeline_plot = self._create_timeline_plot_with_source(timeline_source, plot_height)
+        relative_plot = self._create_relative_plot_with_source(relative_source, plot_height) 
+        value_plot = self._create_value_plot_with_source(value_source, plot_height)
 
         # Info panel showing current selection details
         info_div = Div(
-            text=self._create_info_text(default_phenotype, initial_viz_mode),
+            text=self._create_info_text(default_phenotype),
             width=self.width,
         )
 
-        # JavaScript callback using modern CustomJS interface with extensive debugging
-        callback_code = """
-        export default (args, obj, data, context) => {
-            console.log('=== COHORT EXPLORER CALLBACK START ===');
-            console.log('Callback triggered by object:', obj);
-            console.log('Event data:', data);
-            console.log('Context:', context);
-            console.log('Arguments available:', Object.keys(args));
-            
-            // Extract arguments with detailed logging
-            const {
-                phenotype_select,
-                viz_mode_select,
-                source,
-                plot,
-                info_div,
-                phenotype_data,
-                colors
-            } = args;
-            
-            console.log('phenotype_select.value:', phenotype_select.value);
-            console.log('viz_mode_select.value:', viz_mode_select.value);
-            console.log('Available phenotypes:', Object.keys(phenotype_data));
-            console.log('Available colors:', colors);
-            
-            const phenotype = phenotype_select.value;
-            const viz_mode = viz_mode_select.value;
-            
-            console.log('Selected phenotype:', phenotype);
-            console.log('Selected visualization mode:', viz_mode);
-            
-            const pheno_info = phenotype_data[phenotype];
-            
-            if (!pheno_info) {
-                console.error('ERROR: No data for phenotype:', phenotype);
-                console.log('Available phenotypes are:', Object.keys(phenotype_data));
-                return;
-            }
-            
-            console.log('Phenotype info:', pheno_info);
-            console.log('Phenotype display name:', pheno_info.display_name);
-            console.log('Phenotype type:', pheno_info.type);
-            console.log('Has values:', pheno_info.has_values);
-            console.log('Has dates:', pheno_info.has_dates);
-            
-            const viz_data = pheno_info.viz_data;
-            console.log('Visualization data structure:', Object.keys(viz_data));
-            console.log('Value histogram data length:', viz_data.value_hist ? viz_data.value_hist.values.length : 'N/A');
-            console.log('Timeline data length:', viz_data.timeline ? viz_data.timeline.x.length : 'N/A');
-            console.log('Relative time data length:', viz_data.relative_time ? viz_data.relative_time.values.length : 'N/A');
-            
-            let x_data = [], y_data = [], title = pheno_info.display_name;
-            let x_label = "Value", color = colors.histogram;
-            let is_categorical = false;
-            let category_labels = [];
-            
-            console.log('Processing visualization mode:', viz_mode);
-            
-            if (viz_mode === "histogram" && viz_data.value_hist.values.length > 0) {
-                console.log('Using histogram mode');
-                x_data = viz_data.value_hist.values;
-                y_data = viz_data.value_hist.counts;
-                is_categorical = viz_data.value_hist.is_categorical || false;
-                category_labels = viz_data.value_hist.labels || [];
-                title += " - Value Distribution";
-                color = colors.histogram;
-                console.log('Histogram x_data length:', x_data.length);
-                console.log('Histogram y_data length:', y_data.length);
-                console.log('Is categorical:', is_categorical);
-                console.log('Category labels:', category_labels);
-                console.log('First few x values:', x_data.slice(0, 5));
-                console.log('First few y values:', y_data.slice(0, 5));
-                
-            } else if (viz_mode === "histogram_std" && viz_data.value_hist_std.values.length > 0) {
-                console.log('Using standardized histogram mode');
-                x_data = viz_data.value_hist_std.values;
-                y_data = viz_data.value_hist_std.counts;
-                title += " - Standardized Values (0-1)";
-                x_label = "Standardized Value";
-                color = colors.standardized;
-                console.log('Std histogram x_data length:', x_data.length);
-                console.log('Std histogram y_data length:', y_data.length);
-                
-            } else if (viz_mode === "timeline" && viz_data.timeline.x.length > 0) {
-                console.log('Using timeline mode');
-                x_data = viz_data.timeline.x;
-                y_data = viz_data.timeline.y;
-                title += " - Timeline";
-                x_label = "Date";
-                color = colors.timeline;
-                console.log('Timeline x_data length:', x_data.length);
-                console.log('Timeline y_data length:', y_data.length);
-                console.log('First few timeline x values:', x_data.slice(0, 5));
-                console.log('First few timeline y values:', y_data.slice(0, 5));
-                
-            } else if (viz_mode === "relative_time" && viz_data.relative_time.values.length > 0) {
-                console.log('Using relative time mode');
-                x_data = viz_data.relative_time.values;
-                y_data = viz_data.relative_time.counts;
-                title += " - Time Relative to Index";
-                x_label = "Days from Index (negative = before, positive = after)";
-                color = colors.relative_time;
-                console.log('Relative time x_data length:', x_data.length);
-                console.log('Relative time y_data length:', y_data.length);
-                console.log('First few relative time x values:', x_data.slice(0, 5));
-                console.log('First few relative time y values:', y_data.slice(0, 5));
-                
-            } else {
-                console.warn('No valid data available for mode:', viz_mode);
-                console.log('Available modes and their data lengths:');
-                console.log('  - histogram:', viz_data.value_hist ? viz_data.value_hist.values.length : 'N/A');
-                console.log('  - histogram_std:', viz_data.value_hist_std ? viz_data.value_hist_std.values.length : 'N/A');
-                console.log('  - timeline:', viz_data.timeline ? viz_data.timeline.x.length : 'N/A');
-                console.log('  - relative_time:', viz_data.relative_time ? viz_data.relative_time.values.length : 'N/A');
-                x_data = []; 
-                y_data = []; 
-                title += " - No Data Available";
-            }
-            
-            console.log('Final data arrays:');
-            console.log('  x_data:', x_data);
-            console.log('  y_data:', y_data);
-            console.log('  title:', title);
-            console.log('  x_label:', x_label);
-            console.log('  color:', color);
-            
-            // Calculate bar width
-            let width_val = 1;
-            if (is_categorical) {
-                // For categorical data, use uniform width of 0.8
-                width_val = 0.8;
-                console.log('Using categorical width_val:', width_val);
-            } else if (x_data.length > 1) {
-                const range = Math.max(...x_data) - Math.min(...x_data);
-                width_val = range / x_data.length * 0.8;
-                console.log('Calculated width_val:', width_val, 'from range:', range, 'and length:', x_data.length);
-            } else {
-                console.log('Using default width_val:', width_val);
-            }
-            
-            // Update plot data (key step!)
-            console.log('Current source.data before update:', source.data);
-            
-            // Create labels for hover tooltips
-            let labels = [];
-            if (is_categorical && category_labels.length > 0) {
-                labels = category_labels;
-            } else {
-                labels = x_data.map(x => x.toFixed(2));
-            }
-            
-            const new_data = {
-                x: x_data, 
-                top: y_data,
-                width: Array(y_data.length).fill(width_val),
-                color: Array(y_data.length).fill(color),
-                label: labels
-            };
-            
-            console.log('New source data being set:', new_data);
-            source.data = new_data;
-            
-            console.log('Source data after update:', source.data);
-            
-            // Update plot properties
-            console.log('Updating plot title from:', plot.title.text, 'to:', title);
-            plot.title.text = title;
-            
-            // Update x-axis label and ticks using modern Bokeh API
-            // NOTE: plot.xaxis[0] is undefined in modern Bokeh versions
-            // Use plot.below[0] to access the bottom (x) axis instead
-            console.log('Updating x-axis label to:', x_label);
-            
-            if (plot.below && plot.below.length > 0) {
-                console.log('Current x-axis label:', plot.below[0].axis_label);
-                plot.below[0].axis_label = x_label;
-                console.log('Successfully updated x-axis label via plot.below[0]');
-                
-                // Handle categorical data tick labels
-                if (is_categorical && category_labels.length > 0) {
-                    console.log('Setting categorical tick labels:', category_labels);
-                    // Use FixedTicker for categorical positions
-                    const ticker = new Bokeh.FixedTicker({ticks: x_data});
-                    plot.below[0].ticker = ticker;
-                    
-                    // Set major label overrides for categorical labels
-                    const label_dict = {};
-                    for (let i = 0; i < x_data.length; i++) {
-                        label_dict[x_data[i]] = category_labels[i];
-                    }
-                    plot.below[0].major_label_overrides = label_dict;
-                    console.log('Set major_label_overrides:', label_dict);
-                } else {
-                    // Reset to default for numeric data
-                    plot.below[0].major_label_overrides = {};
-                    // Reset to default ticker
-                    plot.below[0].ticker = new Bokeh.BasicTicker();
-                    console.log('Reset to default numeric tick labels');
-                }
-            } else {
-                console.warn('Could not access x-axis via plot.below[0] - axis label update skipped');
-            }
-            
-            // Update info panel
-            console.log('Updating info panel...');
-            let info = "<div style='background:#f8f9fa;padding:15px;border-radius:8px;'>";
-            info += "<h4 style='margin:0 0 10px 0;color:#1B365D;'>" + pheno_info.display_name + "</h4>";
-            info += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:15px;'>";
-            info += "<div><strong>Role:</strong> " + pheno_info.role + "</div>";
-            info += "<div><strong>Type:</strong> " + pheno_info.type + "</div>";
-            info += "<div><strong>Patients:</strong> " + pheno_info.n_patients.toLocaleString() + "</div>";
-            info += "<div><strong>Data Points:</strong> " + y_data.length + "</div>";
-            
-            if (viz_mode === "histogram" && viz_data.summary && viz_data.summary.count > 0) {
-                console.log('Adding summary statistics to info panel');
-                if (is_categorical && viz_data.summary.n_categories) {
-                    info += "<div><strong>Categories:</strong> " + viz_data.summary.n_categories + "</div>";
-                    info += "<div><strong>Total Values:</strong> " + viz_data.summary.count.toLocaleString() + "</div>";
-                } else {
-                    info += "<div><strong>Mean:</strong> " + viz_data.summary.mean.toFixed(2) + "</div>";
-                    info += "<div><strong>Std:</strong> " + viz_data.summary.std.toFixed(2) + "</div>";
-                }
-            }
-            
-            info += "</div></div>";
-            
-            console.log('Setting info_div.text to:', info);
-            info_div.text = info;
-            
-            console.log('=== COHORT EXPLORER CALLBACK COMPLETE ===');
-        };
-        """
-
-        # Create callback with ALL required data using modern CustomJS interface
-        callback = CustomJS(
-            args=dict(
-                phenotype_select=phenotype_select,
-                viz_mode_select=viz_mode_select,
-                source=source,
-                plot=plot,
-                info_div=info_div,
-                phenotype_data=self.phenotype_data,
-                colors=self.colors,
-            ),
-            code=callback_code,
+        # Create callback to update all three data sources when phenotype changes
+        callback = self._create_three_source_callback(
+            phenotype_select, timeline_source, relative_source, value_source, info_div
         )
 
-        # Register callbacks (crucial step!)
+        # Register callback only for phenotype selection
         phenotype_select.js_on_change("value", callback)
-        viz_mode_select.js_on_change("value", callback)
 
         # Build dashboard sections
         sections = []
@@ -946,11 +631,14 @@ class CohortExplorer(Reporter):
         )
 
         instructions = self._create_instructions()
-        controls = row(phenotype_select, viz_mode_select)
+        controls = row(phenotype_select)  # Only phenotype selector now
         sections.append(instructions)
         sections.append(controls)
         sections.append(info_div)
-        sections.append(plot)
+        
+        # Add the three plots in a grid layout
+        plots_grid = gridplot([[timeline_plot, relative_plot], [value_plot, None]])
+        sections.append(plots_grid)
 
         # Create complete dashboard layout
         self.dashboard_layout = column(*sections, width=self.width)
@@ -1583,12 +1271,265 @@ class CohortExplorer(Reporter):
         instructions_html = """
         <div style='background:#e8f4f8;padding:15px;border-radius:8px;margin-bottom:15px;
                     border-left:5px solid #00A9E0;'>
-            <p style='margin:0;'><strong>How to use:</strong> Select a phenotype from the dropdown and choose a visualization mode to explore VALUE distributions, event timelines, and temporal patterns. Hover over charts for detailed information.</p>
+            <p style='margin:0;'><strong>How to use:</strong> Select a phenotype from the dropdown to explore three visualizations: <strong>Timeline</strong> shows events over absolute time, <strong>Relative Time</strong> shows events relative to index date, and <strong>Value Distribution</strong> shows the spread of values. Hover over charts for detailed information.</p>
         </div>"""
 
         return Div(text=instructions_html, width=self.width)
 
-    def _create_info_text(self, phenotype_name: str, viz_mode: str) -> str:
+    def _create_plot_sources(self, phenotype_name: str):
+        """Create data sources for all three plots based on initial phenotype."""
+        viz_data = self.phenotype_data[phenotype_name]["viz_data"]
+        
+        # Timeline source
+        if len(viz_data["timeline"]["x"]) > 0:
+            # Convert milliseconds to datetime objects for Bokeh datetime axis
+            timeline_x = [pd.Timestamp(ts, unit='ms') for ts in viz_data["timeline"]["x"]]
+            timeline_y = viz_data["timeline"]["y"]
+        else:
+            timeline_x = []
+            timeline_y = []
+        
+        timeline_source = ColumnDataSource(dict(x=timeline_x, y=timeline_y))
+        
+        # Relative time source  
+        if len(viz_data["relative_time"]["values"]) > 0:
+            relative_x = viz_data["relative_time"]["values"]
+            relative_y = viz_data["relative_time"]["counts"]
+            # Calculate bar width
+            if len(relative_x) > 1:
+                width = (max(relative_x) - min(relative_x)) / len(relative_x) * 0.8
+            else:
+                width = 1
+        else:
+            relative_x = []
+            relative_y = []
+            width = 1
+            
+        relative_source = ColumnDataSource(dict(
+            x=relative_x, 
+            top=relative_y,
+            width=[width] * len(relative_y)
+        ))
+        
+        # Value distribution source
+        if len(viz_data["value_hist"]["values"]) > 0:
+            value_x = viz_data["value_hist"]["values"]
+            value_y = viz_data["value_hist"]["counts"]
+            is_categorical = viz_data["value_hist"].get("is_categorical", False)
+            
+            # Calculate bar width
+            if is_categorical:
+                width = 0.8
+            elif len(value_x) > 1:
+                width = (max(value_x) - min(value_x)) / len(value_x) * 0.8
+            else:
+                width = 1
+                
+            # Create labels
+            if is_categorical and viz_data["value_hist"].get("labels"):
+                labels = viz_data["value_hist"]["labels"]
+            else:
+                labels = [f"{x:.2f}" for x in value_x]
+        else:
+            value_x = []
+            value_y = []
+            width = 1
+            labels = []
+            
+        value_source = ColumnDataSource(dict(
+            x=value_x,
+            top=value_y, 
+            width=[width] * len(value_y),
+            label=labels
+        ))
+        
+        return timeline_source, relative_source, value_source
+
+    def _create_timeline_plot_with_source(self, source: ColumnDataSource, height: int):
+        """Create timeline plot using provided data source."""
+        p = figure(
+            title="Timeline (Absolute Time)",
+            x_axis_label="Date", 
+            y_axis_label="Events Count",
+            width=int(self.width/2),
+            height=height,
+            tools="pan,wheel_zoom,box_zoom,reset,save",
+            x_axis_type="datetime",
+        )
+        
+        p.line("x", "y", source=source, line_width=3, color=self.colors["timeline"], alpha=0.8)
+        circles = p.scatter("x", "y", source=source, size=8, color=self.colors["timeline"], alpha=0.9)
+        
+        hover = HoverTool(
+            renderers=[circles],
+            tooltips=[("Date", "@x{%Y-%m}"), ("Count", "@y")],
+            formatters={"@x": "datetime"}
+        )
+        p.add_tools(hover)
+        
+        return p
+
+    def _create_relative_plot_with_source(self, source: ColumnDataSource, height: int):
+        """Create relative time plot using provided data source.""" 
+        p = figure(
+            title="Time Relative to Index",
+            x_axis_label="Days from Index (negative = before, positive = after)",
+            y_axis_label="Events Count", 
+            width=int(self.width/2),
+            height=height,
+            tools="pan,wheel_zoom,box_zoom,reset,save,hover",
+        )
+        
+        bars = p.vbar(
+            x="x", top="top", width="width", source=source,
+            color=self.colors["relative_time"], alpha=0.7,
+            line_color="white", line_width=1
+        )
+        
+        hover = HoverTool(
+            renderers=[bars],
+            tooltips=[("Days from Index", "@x"), ("Count", "@top")]
+        )
+        p.add_tools(hover)
+        
+        return p
+
+    def _create_value_plot_with_source(self, source: ColumnDataSource, height: int):
+        """Create value distribution plot using provided data source."""
+        p = figure(
+            title="Value Distribution",
+            x_axis_label="Value",
+            y_axis_label="Count",
+            width=int(self.width/2),
+            height=height, 
+            tools="pan,wheel_zoom,box_zoom,reset,save,hover",
+        )
+        
+        bars = p.vbar(
+            x="x", top="top", width="width", source=source,
+            color=self.colors["histogram"], alpha=0.7,
+            line_color="white", line_width=1
+        )
+        
+        hover = HoverTool(
+            renderers=[bars],
+            tooltips=[("Value", "@label"), ("Count", "@top")]
+        )
+        p.add_tools(hover)
+        
+        return p
+
+    def _create_three_source_callback(self, phenotype_select, timeline_source, relative_source, value_source, info_div):
+        """Create callback that updates all three data sources when phenotype changes."""
+        callback_code = """
+        console.log('=== THREE PLOT CALLBACK START ===');
+        const phenotype = phenotype_select.value;
+        console.log('Selected phenotype:', phenotype);
+        const pheno_info = phenotype_data[phenotype];
+        
+        if (!pheno_info) {
+            console.error('No data for phenotype:', phenotype);
+            return;
+        }
+        
+        const viz_data = pheno_info.viz_data;
+        console.log('Timeline data length:', viz_data.timeline ? viz_data.timeline.x.length : 'N/A');
+        
+        // Update timeline source
+        if (viz_data.timeline && viz_data.timeline.x.length > 0) {
+            console.log('Updating timeline with', viz_data.timeline.x.length, 'data points');
+            console.log('First few timeline x values:', viz_data.timeline.x.slice(0, 3));
+            // Keep data as milliseconds - Bokeh datetime axis will handle the conversion
+            timeline_source.data = {
+                x: viz_data.timeline.x,
+                y: viz_data.timeline.y
+            };
+            timeline_source.change.emit();
+            console.log('Timeline source updated and change emitted');
+        } else {
+            console.log('No timeline data available, clearing source');
+            timeline_source.data = {x: [], y: []};
+            timeline_source.change.emit();
+        }
+        
+        // Update relative time source
+        if (viz_data.relative_time && viz_data.relative_time.values.length > 0) {
+            const rel_x = viz_data.relative_time.values;
+            const rel_y = viz_data.relative_time.counts;
+            let width = 1;
+            if (rel_x.length > 1) {
+                width = (Math.max(...rel_x) - Math.min(...rel_x)) / rel_x.length * 0.8;
+            }
+            relative_source.data = {
+                x: rel_x,
+                top: rel_y,
+                width: Array(rel_y.length).fill(width)
+            };
+            relative_source.change.emit();
+        } else {
+            relative_source.data = {x: [], top: [], width: []};
+            relative_source.change.emit();
+        }
+        
+        // Update value distribution source  
+        if (viz_data.value_hist && viz_data.value_hist.values.length > 0) {
+            const val_x = viz_data.value_hist.values;
+            const val_y = viz_data.value_hist.counts;
+            const is_categorical = viz_data.value_hist.is_categorical || false;
+            
+            let width = 1;
+            if (is_categorical) {
+                width = 0.8;
+            } else if (val_x.length > 1) {
+                width = (Math.max(...val_x) - Math.min(...val_x)) / val_x.length * 0.8;
+            }
+            
+            let labels = [];
+            if (is_categorical && viz_data.value_hist.labels) {
+                labels = viz_data.value_hist.labels;
+            } else {
+                labels = val_x.map(x => x.toFixed(2));
+            }
+            
+            value_source.data = {
+                x: val_x,
+                top: val_y,
+                width: Array(val_y.length).fill(width),
+                label: labels
+            };
+            value_source.change.emit();
+        } else {
+            value_source.data = {x: [], top: [], width: [], label: []};
+            value_source.change.emit();
+        }
+        
+        // Update info panel
+        let info = "<div style='background:#f8f9fa;padding:15px;border-radius:8px;'>";
+        info += "<h4 style='margin:0 0 10px 0;color:#1B365D;'>" + pheno_info.display_name + "</h4>";
+        info += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:15px;'>";
+        info += "<div><strong>Role:</strong> " + pheno_info.role + "</div>";
+        info += "<div><strong>Type:</strong> " + pheno_info.type + "</div>";
+        info += "<div><strong>Patients:</strong> " + pheno_info.n_patients.toLocaleString() + "</div>";
+        info += "<div><strong>Events:</strong> " + pheno_info.n_events.toLocaleString() + "</div>";
+        info += "</div></div>";
+        
+        info_div.text = info;
+        console.log('=== THREE PLOT CALLBACK COMPLETE ===');
+        """
+        
+        return CustomJS(
+            args=dict(
+                phenotype_select=phenotype_select,
+                timeline_source=timeline_source,
+                relative_source=relative_source, 
+                value_source=value_source,
+                info_div=info_div,
+                phenotype_data=self.phenotype_data,
+            ),
+            code=callback_code,
+        )
+
+    def _create_info_text(self, phenotype_name: str) -> str:
         """Create info panel text for a phenotype."""
         pheno_info = self.phenotype_data[phenotype_name]
 
@@ -1599,7 +1540,7 @@ class CohortExplorer(Reporter):
                 <div><strong>Role:</strong> {pheno_info['role']}</div>
                 <div><strong>Type:</strong> {pheno_info['type']}</div>
                 <div><strong>Patients:</strong> {pheno_info['n_patients']:,}</div>
-                <div><strong>Has Values:</strong> {'Yes' if pheno_info['has_values'] else 'No'}</div>
+                <div><strong>Events:</strong> {pheno_info['n_events']:,}</div>
             </div>
         </div>"""
 
