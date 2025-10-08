@@ -368,6 +368,7 @@ CONTENT STANDARDS:
 FORMATTING:
 - Use clean markdown formatting
 - Structure content with clear headings and sections
+- Begin your response at the subsection (##) level
 - Use bullet points for lists where appropriate
 - Ensure proper medical/scientific citation style"""
 
@@ -453,6 +454,44 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             context_parts.append(f"\nREPORT AUTHOR: {self.author}")
         if hasattr(self, "institution") and self.institution:
             context_parts.append(f"INSTITUTION: {self.institution}")
+
+        # Include generated table data if available
+        context_parts.append("\n=== GENERATED TABLE DATA ===")
+
+        # Waterfall table data
+        if (
+            hasattr(self, "report_sections")
+            and "waterfall_table" in self.report_sections
+        ):
+            waterfall_df = self.report_sections["waterfall_table"]
+            if not waterfall_df.empty:
+                context_parts.append(f"\nWATERFALL TABLE ({len(waterfall_df)} rows):")
+                context_parts.append(
+                    "Patient attrition through inclusion/exclusion criteria:"
+                )
+                context_parts.append(waterfall_df.to_string())
+
+        # Table 1 (baseline characteristics) data
+        if hasattr(self, "report_sections") and "table1" in self.report_sections:
+            table1_df = self.report_sections["table1"]
+            if not table1_df.empty:
+                context_parts.append(
+                    f"\nTABLE 1 - BASELINE CHARACTERISTICS ({len(table1_df)} rows):"
+                )
+                context_parts.append(
+                    "Demographic and clinical characteristics at baseline:"
+                )
+                context_parts.append(table1_df.to_string())
+
+        # Table 2 (outcomes) data
+        if hasattr(self, "report_sections") and "table2" in self.report_sections:
+            table2_df = self.report_sections["table2"]
+            if not table2_df.empty:
+                context_parts.append(
+                    f"\nTABLE 2 - OUTCOMES SUMMARY ({len(table2_df)} rows):"
+                )
+                context_parts.append("Clinical outcomes and incidence rates:")
+                context_parts.append(table2_df.to_string())
 
         context_parts.append("\n=== END GLOBAL CONTEXT ===")
 
@@ -589,7 +628,7 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         - **Entry Criterion:** section with rationale
         - **Inclusion Criteria:** section with bullet points (use * for bullets)
         - **Exclusion Criteria:** section with bullet points (use * for bullets)
-        - Clinical rationale for each criterion
+        - Clinical rationale for each criterion (max one sentence)
         
         Use clean markdown formatting with proper line breaks between sections.
         """
@@ -646,23 +685,10 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         """Generate data analysis description."""
         logger.info("Generating data analysis description")
 
-        n_patients = (
-            cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
-
         prompt = f"""
-        Write a description of the data analysis for this medical research study:
+        Write a description of the data analysis for the described medical research study.
         
-        - Final cohort size: {n_patients} patients
-        - Analysis period: {self.date_range_start or 'Study period'} to {self.date_range_end or 'End of follow-up'}
-        - Characteristics analyzed: {len(cohort.characteristics or [])} baseline characteristics
-        - Outcomes analyzed: {len(cohort.outcomes or [])} outcome measures
-        
-        Describe the analytical approach, patient population, and study period.
+        Your summary should consist of three sections: analytical approach, patient population, and study period.
         """
         return self._generate_ai_text(prompt)
 
@@ -693,131 +719,12 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         REQUIREMENTS:
         - Use numbered lists for each variable (1. Variable Name: Description)
         - Group baseline characteristics separately from outcome variables
-        - Explain the clinical relevance of each variable
+        - Explain the clinical relevance of each variable (max one sentence)
         - Include measurement methods where appropriate
         
         Write a comprehensive study variables section.
         """
         return self._generate_ai_text(prompt)
-
-    def _build_comprehensive_study_context(
-        self, cohort=None, additional_context=""
-    ) -> str:
-        """
-        Build comprehensive study context for AI prompts to ensure consistency and accuracy.
-        This context should be included at the start of all AI generation prompts.
-        """
-        context_parts = []
-
-        # Study Overview
-        context_parts.append(
-            f"""
-=== COMPREHENSIVE STUDY CONTEXT ===
-
-STUDY TITLE: {getattr(self, 'title', 'Medical Research Study')}
-COHORT NAME: {getattr(self, 'cohort_name', 'Study Cohort')}
-
-STUDY DESIGN: This is a comprehensive medical research study analyzing patient outcomes and characteristics.
-"""
-        )
-
-        # Cohort Information
-        if cohort:
-            try:
-                # Get patient count
-                n_patients = (
-                    cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-                    .select("PERSON_ID")
-                    .distinct()
-                    .count()
-                    .execute()
-                )
-                context_parts.append(f"FINAL COHORT SIZE: {n_patients} patients")
-            except:
-                context_parts.append("FINAL COHORT SIZE: [To be determined]")
-
-            # Entry criteria
-            if hasattr(cohort, "name"):
-                context_parts.append(f"PRIMARY COHORT DEFINITION: {cohort.name}")
-
-            # Inclusions
-            if cohort.inclusions:
-                context_parts.append(
-                    f"\nINCLUSION CRITERIA ({len(cohort.inclusions)} criteria):"
-                )
-                for i, inclusion in enumerate(cohort.inclusions, 1):
-                    name = (
-                        inclusion.display_name
-                        if hasattr(inclusion, "display_name")
-                        else inclusion.name
-                    )
-                    context_parts.append(f"  {i}. {name}")
-
-            # Exclusions
-            if cohort.exclusions:
-                context_parts.append(
-                    f"\nEXCLUSION CRITERIA ({len(cohort.exclusions)} criteria):"
-                )
-                for i, exclusion in enumerate(cohort.exclusions, 1):
-                    name = (
-                        exclusion.display_name
-                        if hasattr(exclusion, "display_name")
-                        else exclusion.name
-                    )
-                    context_parts.append(f"  {i}. {name}")
-
-            # Characteristics
-            if cohort.characteristics:
-                context_parts.append(
-                    f"\nBASELINE CHARACTERISTICS ({len(cohort.characteristics)} variables):"
-                )
-                for i, char in enumerate(cohort.characteristics, 1):
-                    name = (
-                        char.display_name
-                        if hasattr(char, "display_name")
-                        else char.name
-                    )
-                    context_parts.append(f"  {i}. {name}")
-
-            # Outcomes
-            if cohort.outcomes:
-                context_parts.append(
-                    f"\nOUTCOME MEASURES ({len(cohort.outcomes)} variables):"
-                )
-                for i, outcome in enumerate(cohort.outcomes, 1):
-                    name = (
-                        outcome.display_name
-                        if hasattr(outcome, "display_name")
-                        else outcome.name
-                    )
-                    context_parts.append(f"  {i}. {name}")
-
-        # Existing report sections for consistency
-        if hasattr(self, "report_sections") and self.report_sections:
-            existing_sections = []
-            for k in self.report_sections.keys():
-                value = self.report_sections.get(k)
-                # Handle DataFrames and other objects properly
-                if value is not None:
-                    if hasattr(value, "empty"):  # DataFrame
-                        if not value.empty:
-                            existing_sections.append(k)
-                    elif isinstance(value, str) and value.strip():  # String
-                        existing_sections.append(k)
-                    elif value:  # Other truthy values
-                        existing_sections.append(k)
-            if existing_sections:
-                context_parts.append(
-                    f"\nEXISTING REPORT SECTIONS: {', '.join(existing_sections)}"
-                )
-
-        # Additional context
-        if additional_context:
-            context_parts.append(f"\nADDITIONAL CONTEXT: {additional_context}")
-
-        context_parts.append("\n=== END STUDY CONTEXT ===\n")
-
-        return "\n".join(context_parts)
 
     def _generate_waterfall_commentary(self, waterfall_df):
         """Generate AI commentary for waterfall table."""
@@ -954,11 +861,7 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         if not self.title:
             self.title = f"Study Report: {cohort.name}"
 
-        # STEP 1: Build the global AI context once at the beginning and set as class variable
-        logger.info("Building global AI context...")
-        self._global_context = self._build_global_ai_context(cohort)
-
-        # STEP 2: Generate data tables first (for context enhancement)
+        # STEP 1: Generate data tables first
         logger.info("=== PHASE 1: Generating Data Tables ===")
 
         # Generate Waterfall Table
@@ -1038,6 +941,10 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             "n_inclusions": len(cohort.inclusions or []),
             "n_exclusions": len(cohort.exclusions or []),
         }
+
+        # STEP 2: Build the global AI context after tables are generated (includes table data)
+        logger.info("Building comprehensive global AI context with table data...")
+        self._global_context = self._build_global_ai_context(cohort)
 
         # STEP 3: Generate AI-Powered Content (using class variable for global context)
         logger.info("=== PHASE 2: Generating AI-Powered Content ===")
@@ -1172,7 +1079,6 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             waterfall_section += self._dataframe_to_markdown_table(waterfall_df)
             waterfall_section += "\n\n"
             if "waterfall_commentary" in self.report_sections:
-                waterfall_section += "## Clinical Commentary\n\n"
                 waterfall_section += self.report_sections["waterfall_commentary"]
             pdf.add_section(Section(waterfall_section, toc=True), user_css=css)
             section_number += 1
@@ -1518,15 +1424,19 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         doc.add_paragraph(f"Report Generated: {datetime.now().strftime('%B %d, %Y')}")
         doc.add_page_break()
 
-        # Executive Summary
+        # Executive Summary - Use AI-generated content if available
         doc.add_heading("Executive Summary", level=1)
-        stats = self.report_sections.get("summary_stats", {})
-        summary_text = f"""
-        This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
-        The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
-        Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria.
-        """
-        doc.add_paragraph(summary_text)
+        if "executive_summary" in self.report_sections:
+            # Add AI-generated executive summary
+            exec_summary = self.report_sections["executive_summary"]
+            doc.add_paragraph(exec_summary)
+        else:
+            # Fallback to basic summary if AI summary not available
+            stats = self.report_sections.get("summary_stats", {})
+            summary_text = f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
+The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
+Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria."""
+            doc.add_paragraph(summary_text)
 
         # Cohort Definition
         doc.add_heading("1. Cohort Definition", level=1)
@@ -1584,27 +1494,35 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                 doc.add_picture(str(temp_plot_path), width=Inches(6))
                 doc.add_paragraph(self.figures["waterfall"]["caption"])
 
+            # Add AI commentary if available
+            if "waterfall_commentary" in self.report_sections:
+                doc.add_heading("Clinical Commentary", level=2)
+                doc.add_paragraph(self.report_sections["waterfall_commentary"])
+
         # Table 1
         table1_df = self.report_sections.get("table1")
         if table1_df is not None and not table1_df.empty:
             doc.add_heading("5. Baseline Characteristics (Table 1)", level=1)
 
-            # Create table
-            table = doc.add_table(rows=1, cols=3)
+            # Create table with all columns from DataFrame
+            table = doc.add_table(rows=1, cols=len(table1_df.columns))
             table.style = "Table Grid"
 
-            # Header
+            # Header row
             hdr_cells = table.rows[0].cells
-            hdr_cells[0].text = "Characteristic"
-            hdr_cells[1].text = "N"
-            hdr_cells[2].text = "%"
+            for i, col in enumerate(table1_df.columns):
+                hdr_cells[i].text = str(col)
 
             # Data rows
-            for idx, row in table1_df.iterrows():
+            for _, row in table1_df.iterrows():
                 row_cells = table.add_row().cells
-                row_cells[0].text = str(idx)
-                row_cells[1].text = str(row.get("N", ""))
-                row_cells[2].text = str(row.get("%", ""))
+                for i, value in enumerate(row):
+                    row_cells[i].text = str(value)
+
+            # Add AI commentary if available
+            if "table1_commentary" in self.report_sections:
+                doc.add_heading("Clinical Commentary", level=2)
+                doc.add_paragraph(self.report_sections["table1_commentary"])
 
         # Table 2 (Outcomes)
         table2_df = self.report_sections.get("table2")
@@ -1625,6 +1543,11 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                 row_cells = table.add_row().cells
                 for i, value in enumerate(row):
                     row_cells[i].text = str(value)
+
+            # Add AI commentary if available
+            if "table2_commentary" in self.report_sections:
+                doc.add_heading("Clinical Commentary", level=2)
+                doc.add_paragraph(self.report_sections["table2_commentary"])
 
         # Save document
         doc.save(str(output_path))
