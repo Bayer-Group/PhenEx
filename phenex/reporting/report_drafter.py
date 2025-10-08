@@ -298,21 +298,21 @@ class ReportDrafter(Reporter):
             self._is_azure = False
 
     def _generate_ai_text(
-        self, prompt: str, max_tokens: int = 16384, cohort=None
+        self,
+        prompt: str,
+        max_tokens: int = 16384,
     ) -> str:
         """Generate text using AI or fallback to rules-based generation."""
         if not self.use_ai:
             logger.debug("AI disabled, using fallback text generation")
-            return self._fallback_text_generation(prompt, cohort)
+            return self._fallback_text_generation(prompt, None)
 
         logger.info(
             f"🤖 Making AI API call for text generation (max_tokens: {max_tokens})..."
         )
 
-        # Build comprehensive global context - this is injected into every AI call
-        global_context = self._build_global_ai_context(cohort)
-
-        # Combine global context with specific task prompt
+        # Inject global context automatically from class variable
+        global_context = getattr(self, "_global_context", "")
         full_prompt = f"{global_context}\n\n{prompt}"
 
         logger.debug(f"AI prompt preview: {prompt[:100]}...")
@@ -341,7 +341,7 @@ class ReportDrafter(Reporter):
             logger.warning(
                 f"❌ AI text generation failed, falling back to rules-based: {e}"
             )
-            return self._fallback_text_generation(prompt, cohort)
+            return self._fallback_text_generation(prompt, None)
 
     def _get_global_ai_system_instructions(self) -> str:
         """Get global system instructions for all AI text generation calls."""
@@ -371,101 +371,82 @@ FORMATTING:
 - Use bullet points for lists where appropriate
 - Ensure proper medical/scientific citation style"""
 
-    def _build_global_ai_context(self, cohort=None) -> str:
+    def _build_global_ai_context(self, cohort) -> str:
         """
         Build comprehensive global context that is automatically injected into every AI call.
         This ensures all AI responses have complete study awareness and consistency.
         """
-        if cohort is None:
-            return "=== STUDY CONTEXT UNAVAILABLE ==="
-
         context_parts = []
 
         # Study Overview
         context_parts.append(
             f"""=== COMPREHENSIVE STUDY CONTEXT ===
-This context is provided to ensure all AI responses are consistent, accurate, and contextually appropriate.
-
 STUDY TITLE: {getattr(self, 'title', 'Medical Research Study')}
 COHORT NAME: {getattr(cohort, 'name', 'Study Cohort')}
+COHORT DESCRIPTION: {getattr(cohort, 'description', 'Not available')}
 STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and characteristics"""
         )
 
         # Cohort Information
-        if cohort:
-            try:
-                # Get patient count
-                n_patients = (
-                    cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-                    .select("PERSON_ID")
-                    .distinct()
-                    .count()
-                    .execute()
-                )
-                context_parts.append(f"FINAL COHORT SIZE: {n_patients} patients")
-            except:
-                context_parts.append("FINAL COHORT SIZE: [To be determined]")
+        n_entry_patients = (
+            cohort.entry_criterion.table.select("PERSON_ID")
+            .distinct()
+            .count()
+            .execute()
+        )
+        n_index_patients = cohort.table.select("PERSON_ID").distinct().count().execute()
+        context_parts.append(
+            f"ENTRY COHORT SIZE (ENTRY CRITERION ONLY): {n_entry_patients} patients"
+        )
+        context_parts.append(
+            f"FINAL COHORT SIZE (ALL INEX CRITERIA APPLIED): {n_index_patients} patients"
+        )
 
-            # Entry criteria
-            if hasattr(cohort, "entry_criterion") and cohort.entry_criterion:
-                entry_name = getattr(
-                    cohort.entry_criterion,
-                    "display_name",
-                    getattr(cohort.entry_criterion, "name", "Entry criterion"),
-                )
-                context_parts.append(f"PRIMARY ENTRY CRITERION: {entry_name}")
+        # Entry criteria
+        context_parts.append(f"ENTRY CRITERION: {cohort.entry_criterion.name}")
+        context_parts.append(
+            f"\n\t{json.dumps(cohort.entry_criterion.to_dict(), indent=4)}"
+        )
 
-            # Inclusions
-            if hasattr(cohort, "inclusions") and cohort.inclusions:
-                context_parts.append(
-                    f"\nINCLUSION CRITERIA ({len(cohort.inclusions)} criteria):"
-                )
-                for i, inclusion in enumerate(cohort.inclusions, 1):
-                    name = getattr(
-                        inclusion,
-                        "display_name",
-                        getattr(inclusion, "name", f"Inclusion {i}"),
-                    )
-                    context_parts.append(f"  {i}. {name}")
+        # Inclusions
+        if hasattr(cohort, "inclusions") and cohort.inclusions:
+            context_parts.append(
+                f"\nINCLUSION CRITERIA ({len(cohort.inclusions)} criteria):"
+            )
+            for i, inclusion in enumerate(cohort.inclusions, 1):
+                name = getattr(inclusion, "name", f"Inclusion {i}")
+                context_parts.append(f"  {i}. {name}")
+                context_parts.append(f"\n\t{json.dumps(inclusion.to_dict(), indent=4)}")
 
-            # Exclusions
-            if hasattr(cohort, "exclusions") and cohort.exclusions:
-                context_parts.append(
-                    f"\nEXCLUSION CRITERIA ({len(cohort.exclusions)} criteria):"
-                )
-                for i, exclusion in enumerate(cohort.exclusions, 1):
-                    name = getattr(
-                        exclusion,
-                        "display_name",
-                        getattr(exclusion, "name", f"Exclusion {i}"),
-                    )
-                    context_parts.append(f"  {i}. {name}")
+        # Exclusions
+        if hasattr(cohort, "exclusions") and cohort.exclusions:
+            context_parts.append(
+                f"\nEXCLUSION CRITERIA ({len(cohort.exclusions)} criteria):"
+            )
+            for i, exclusion in enumerate(cohort.exclusions, 1):
+                name = getattr(exclusion, "name", f"Exclusion {i}")
+                context_parts.append(f"  {i}. {name}")
+                context_parts.append(f"\n\t{json.dumps(exclusion.to_dict(), indent=4)}")
 
-            # Characteristics
-            if hasattr(cohort, "characteristics") and cohort.characteristics:
-                context_parts.append(
-                    f"\nBASELINE CHARACTERISTICS ({len(cohort.characteristics)} variables):"
-                )
-                for i, char in enumerate(cohort.characteristics, 1):
-                    name = getattr(
-                        char,
-                        "display_name",
-                        getattr(char, "name", f"Characteristic {i}"),
-                    )
-                    context_parts.append(f"  {i}. {name}")
+        # Characteristics
+        if hasattr(cohort, "characteristics") and cohort.characteristics:
+            context_parts.append(
+                f"\nBASELINE CHARACTERISTICS ({len(cohort.characteristics)} variables):"
+            )
+            for i, char in enumerate(cohort.characteristics, 1):
+                name = getattr(char, "name", f"Characteristic {i}")
+                context_parts.append(f"  {i}. {name}")
+                context_parts.append(f"\n\t{json.dumps(char.to_dict(), indent=4)}")
 
-            # Outcomes
-            if hasattr(cohort, "outcomes") and cohort.outcomes:
-                context_parts.append(
-                    f"\nOUTCOME MEASURES ({len(cohort.outcomes)} variables):"
-                )
-                for i, outcome in enumerate(cohort.outcomes, 1):
-                    name = getattr(
-                        outcome,
-                        "display_name",
-                        getattr(outcome, "name", f"Outcome {i}"),
-                    )
-                    context_parts.append(f"  {i}. {name}")
+        # Outcomes
+        if hasattr(cohort, "outcomes") and cohort.outcomes:
+            context_parts.append(
+                f"\nOUTCOME MEASURES ({len(cohort.outcomes)} variables):"
+            )
+            for i, outcome in enumerate(cohort.outcomes, 1):
+                name = getattr(outcome, "name", f"Outcome {i}")
+                context_parts.append(f"  {i}. {name}")
+                context_parts.append(f"\n\t{json.dumps(outcome.to_dict(), indent=4)}")
 
         # Report generation metadata
         if hasattr(self, "author") and self.author:
@@ -560,7 +541,7 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
 
         return formatted
 
-    def _create_executive_summary(self, cohort) -> str:
+    def _create_executive_summary(self) -> str:
         """Generate AI-powered executive summary in journal abstract style."""
         logger.info("Generating AI executive summary")
 
@@ -573,14 +554,14 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         - **Conclusions:** Clinical implications and significance
         
         SPECIFIC REQUIREMENTS:
-        - Medical journal abstract format (300-400 words)
+        - Medical journal abstract format (150-250 words)
         - Focus on clinical significance and real-world implications
         - Use realistic medical findings appropriate for the study population
         - Include key statistical insights where clinically relevant
         
         Write a complete executive summary that reads like a published medical research abstract."""
 
-        return self._generate_ai_text(prompt, cohort=cohort)
+        return self._generate_ai_text(prompt)
 
     def _create_cohort_description(self, cohort) -> str:
         """Generate cohort definition description."""
@@ -967,38 +948,20 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
 
         # Ensure cohort is executed
         if cohort.index_table is None:
-            logger.info("Cohort not yet executed. Running cohort execution first.")
-            cohort.execute()
+            logger.error("Cohort not yet executed. Run cohort execution first.")
 
         # Generate title if not provided
         if not self.title:
             self.title = f"Study Report: {cohort.name}"
 
-        # 1. Executive Summary (AI-generated)
-        logger.info("Generating AI executive summary...")
-        self.report_sections["executive_summary"] = self._create_executive_summary(
-            cohort
-        )
+        # STEP 1: Build the global AI context once at the beginning and set as class variable
+        logger.info("Building global AI context...")
+        self._global_context = self._build_global_ai_context(cohort)
 
-        # 2. Cohort Definition Description
-        logger.info("Generating cohort definition description...")
-        self.report_sections["cohort_definition"] = self._create_cohort_description(
-            cohort
-        )
+        # STEP 2: Generate data tables first (for context enhancement)
+        logger.info("=== PHASE 1: Generating Data Tables ===")
 
-        # 3. Data Analysis Description
-        logger.info("Generating data analysis description...")
-        self.report_sections["data_analysis"] = self._create_data_analysis_description(
-            cohort
-        )
-
-        # 4. Study Variables Description
-        logger.info("Generating study variables description...")
-        self.report_sections["study_variables"] = self._create_variables_description(
-            cohort
-        )
-
-        # 5. Generate Waterfall Table
+        # Generate Waterfall Table
         logger.info("Generating waterfall table...")
         waterfall_reporter = Waterfall(
             decimal_places=self.decimal_places, pretty_display=self.pretty_display
@@ -1006,20 +969,7 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         waterfall_df = waterfall_reporter.execute(cohort)
         self.report_sections["waterfall_table"] = waterfall_df
 
-        # 6. Generate waterfall plot if requested
-        if self.include_plots and not waterfall_df.empty:
-            logger.info("Generating waterfall plot...")
-            fig, img_b64 = self._create_waterfall_plot(waterfall_df)
-            self.figures["waterfall"] = {
-                "figure": fig,
-                "base64": img_b64,
-                "caption": self._generate_ai_image_caption(
-                    img_b64,
-                    "Patient attrition waterfall chart showing how inclusion and exclusion criteria affected the final cohort size",
-                ),
-            }
-
-        # 7. Generate Table 1 (Baseline Characteristics)
+        # Generate Table 1 (Baseline Characteristics)
         if cohort.characteristics:
             logger.info("Generating Table 1 (baseline characteristics)...")
             table1_reporter = Table1(
@@ -1034,23 +984,6 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             except Exception as e:
                 logger.error(f"FATAL: Table1 generation failed: {e}")
                 logger.error(f"Error type: {type(e).__name__}")
-                logger.error(
-                    f"Cohort has {len(cohort.characteristics)} characteristics"
-                )
-
-                # Debug cohort characteristics structure
-                for i, char in enumerate(
-                    cohort.characteristics[:3]
-                ):  # Show first 3 characteristics for debugging
-                    logger.error(
-                        f"  Characteristic {i}: {char.name} (type: {type(char).__name__})"
-                    )
-                    if hasattr(char, "table"):
-                        logger.error(f"    Has table: {hasattr(char.table, 'data')}")
-                        if hasattr(char.table, "data"):
-                            logger.error(
-                                f"    Table columns: {list(char.table.data.columns) if hasattr(char.table.data, 'columns') else 'No columns'}"
-                            )
 
                 # The Table1 reporter is a core component and should work with properly structured cohorts
                 # If it's failing, the issue is likely with our mock data structure
@@ -1081,7 +1014,6 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             except Exception as e:
                 logger.error(f"FATAL: Table2 generation failed: {e}")
                 logger.error(f"Error type: {type(e).__name__}")
-                logger.error(f"Cohort has {len(cohort.outcomes)} outcomes")
 
                 # Table2 reporter is a core component and should work with properly structured cohorts
                 raise RuntimeError(
@@ -1091,7 +1023,45 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             logger.info("No outcomes defined. Skipping Table 2.")
             self.report_sections["table2"] = pd.DataFrame()
 
-        # 9. Generate AI commentary for tables and figures
+        # Generate summary statistics
+        n_patients = (
+            cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
+            .select("PERSON_ID")
+            .distinct()
+            .count()
+            .execute()
+        )
+        self.report_sections["summary_stats"] = {
+            "total_patients": n_patients,
+            "n_characteristics": len(cohort.characteristics or []),
+            "n_outcomes": len(cohort.outcomes or []),
+            "n_inclusions": len(cohort.inclusions or []),
+            "n_exclusions": len(cohort.exclusions or []),
+        }
+
+        # STEP 3: Generate AI-Powered Content (using class variable for global context)
+        logger.info("=== PHASE 2: Generating AI-Powered Content ===")
+
+        # Generate AI text sections using global context class variable
+        logger.info("Generating AI executive summary...")
+        self.report_sections["executive_summary"] = self._create_executive_summary()
+
+        logger.info("Generating cohort definition description...")
+        self.report_sections["cohort_definition"] = self._create_cohort_description(
+            cohort
+        )
+
+        logger.info("Generating data analysis description...")
+        self.report_sections["data_analysis"] = self._create_data_analysis_description(
+            cohort
+        )
+
+        logger.info("Generating study variables description...")
+        self.report_sections["study_variables"] = self._create_variables_description(
+            cohort
+        )
+
+        # Generate AI commentary for tables and figures
         if self.ai_client:
             logger.info("Generating AI commentary for waterfall table...")
             self.report_sections["waterfall_commentary"] = (
@@ -1110,21 +1080,18 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
                 self._generate_table2_commentary(self.report_sections.get("table2"))
             )
 
-        # 10. Generate summary statistics
-        n_patients = (
-            cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
-        self.report_sections["summary_stats"] = {
-            "total_patients": n_patients,
-            "n_characteristics": len(cohort.characteristics or []),
-            "n_outcomes": len(cohort.outcomes or []),
-            "n_inclusions": len(cohort.inclusions or []),
-            "n_exclusions": len(cohort.exclusions or []),
-        }
+        # Generate plots if requested (with AI captions that now have full context)
+        if self.include_plots and not waterfall_df.empty:
+            logger.info("Generating waterfall plot...")
+            fig, img_b64 = self._create_waterfall_plot(waterfall_df)
+            self.figures["waterfall"] = {
+                "figure": fig,
+                "base64": img_b64,
+                "caption": self._generate_ai_image_caption(
+                    img_b64,
+                    "Patient attrition waterfall chart showing how inclusion and exclusion criteria affected the final cohort size",
+                ),
+            }
 
         logger.info("Report generation completed successfully")
         return self.report_sections
@@ -1169,7 +1136,7 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
 
         # Add title section (not in TOC)
         title_section = self._build_title_section()
-        pdf.add_section(Section(title_section, toc=False), user_css=css)
+        pdf.add_section(Section(title_section, toc=True), user_css=css)
 
         # Add each major section separately for proper TOC
         section_number = 1
@@ -1254,8 +1221,25 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             title_section += f"**Author:** {self.author}\n\n"
         if self.institution:
             title_section += f"**Institution:** {self.institution}\n\n"
-        if self.date:
+        if hasattr(self, "date") and self.date:
             title_section += f"**Date:** {self.date}\n\n"
+        else:
+            title_section += (
+                f"**Report Generated:** {datetime.now().strftime('%B %d, %Y')}\n\n"
+            )
+
+        # Add the AI-generated executive summary
+        title_section += "## Executive Summary\n\n"
+        if "executive_summary" in self.report_sections:
+            title_section += self.report_sections["executive_summary"]
+        else:
+            # Fallback to basic summary if AI summary not available
+            stats = self.report_sections.get("summary_stats", {})
+            title_section += f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
+The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
+Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria."""
+
+        title_section += "\n\n"
         if title_section:
             title_section += "---\n\n"  # Horizontal rule separator
         return title_section
@@ -1367,26 +1351,6 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             section_number += 1
 
         return report_md
-
-    def _build_title_section(self) -> str:
-        """Build the title page section in markdown."""
-        title_md = f"# {self.title}\n\n"
-
-        if self.author:
-            title_md += f"**Author:** {self.author}\n\n"
-        if self.institution:
-            title_md += f"**Institution:** {self.institution}\n\n"
-
-        title_md += f"**Report Generated:** {datetime.now().strftime('%B %d, %Y')}\n\n"
-
-        # Executive Summary
-        title_md += "## Executive Summary\n\n"
-        stats = self.report_sections.get("summary_stats", {})
-        title_md += f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
-The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
-Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria.\n\n"""
-
-        return title_md
 
     def _build_waterfall_section(self) -> str:
         """Build the waterfall table section in markdown."""
