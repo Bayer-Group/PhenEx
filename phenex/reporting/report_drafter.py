@@ -171,8 +171,6 @@ class ReportDrafter(Reporter):
                     load_dotenv(env_path)
                     logger.info(f"✅ Successfully loaded environment from: {env_path}")
                     break
-                except ImportError:
-                    logger.debug("dotenv not available, skipping .env file loading")
                 except Exception as e:
                     logger.warning(f"Failed to load .env from {env_path}: {e}")
             else:
@@ -194,18 +192,6 @@ class ReportDrafter(Reporter):
             logger.debug(f"  OPENAI_API_VERSION: {api_version}")
             logger.debug(f"  Selected AI Model: {self.ai_model}")
 
-            # Validate endpoint format
-            if azure_endpoint and not azure_endpoint.startswith("https://"):
-                logger.warning(
-                    f"⚠️ Azure endpoint should start with 'https://': {azure_endpoint}"
-                )
-
-            # Validate API key format (basic check)
-            if azure_api_key and len(azure_api_key) < 10:
-                logger.warning(
-                    f"⚠️ Azure API key seems too short: {len(azure_api_key)} characters"
-                )
-
             if azure_endpoint and azure_api_key:
                 logger.info(
                     f"Found Azure OpenAI credentials - endpoint: {azure_endpoint[:50]}..., API version: {api_version}"
@@ -217,45 +203,14 @@ class ReportDrafter(Reporter):
                 # Initialize Azure OpenAI client with minimal parameters
                 logger.info("Initializing Azure OpenAI client...")
 
-                # For corporate environments with SSL certificate issues, try with SSL verification disabled
-                import ssl
-                import httpx
+                # First try with normal SSL verification
+                self.ai_client = AzureOpenAI(
+                    azure_endpoint=azure_endpoint.strip(),
+                    api_key=azure_api_key.strip(),
+                    api_version=api_version.strip(),
+                )
+                logger.debug("✅ Azure OpenAI client initialized with SSL verification")
 
-                try:
-                    # First try with normal SSL verification
-                    self.ai_client = AzureOpenAI(
-                        azure_endpoint=azure_endpoint.strip(),
-                        api_key=azure_api_key.strip(),
-                        api_version=api_version.strip(),
-                    )
-                    logger.debug(
-                        "✅ Azure OpenAI client initialized with SSL verification"
-                    )
-                except Exception as ssl_error:
-                    if "CERTIFICATE_VERIFY_FAILED" in str(ssl_error) or "SSL" in str(
-                        ssl_error
-                    ):
-                        logger.warning(
-                            "⚠️ SSL certificate verification failed, trying with SSL verification disabled..."
-                        )
-                        logger.warning(
-                            "   This is common in corporate environments with proxy/firewall"
-                        )
-
-                        # Create custom HTTP client with SSL verification disabled
-                        custom_client = httpx.Client(verify=False)
-
-                        self.ai_client = AzureOpenAI(
-                            azure_endpoint=azure_endpoint.strip(),
-                            api_key=azure_api_key.strip(),
-                            api_version=api_version.strip(),
-                            http_client=custom_client,
-                        )
-                        logger.info(
-                            "✅ Azure OpenAI client initialized with SSL verification disabled"
-                        )
-                    else:
-                        raise ssl_error
                 # Keep the model name as specified in constructor (gpt-4o-mini by default)
                 self._is_azure = True
                 logger.info(
@@ -342,7 +297,9 @@ class ReportDrafter(Reporter):
             self.use_ai = False
             self._is_azure = False
 
-    def _generate_ai_text(self, prompt: str, max_tokens: int = 500, cohort=None) -> str:
+    def _generate_ai_text(
+        self, prompt: str, max_tokens: int = 16384, cohort=None
+    ) -> str:
         """Generate text using AI or fallback to rules-based generation."""
         if not self.use_ai:
             logger.debug("AI disabled, using fallback text generation")
@@ -351,6 +308,13 @@ class ReportDrafter(Reporter):
         logger.info(
             f"🤖 Making AI API call for text generation (max_tokens: {max_tokens})..."
         )
+
+        # Build comprehensive global context - this is injected into every AI call
+        global_context = self._build_global_ai_context(cohort)
+
+        # Combine global context with specific task prompt
+        full_prompt = f"{global_context}\n\n{prompt}"
+
         logger.debug(f"AI prompt preview: {prompt[:100]}...")
 
         try:
@@ -360,12 +324,12 @@ class ReportDrafter(Reporter):
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a professional medical researcher writing for a scientific publication.",
+                        "content": self._get_global_ai_system_instructions(),
                     },
-                    {"role": "user", "content": prompt},
+                    {"role": "user", "content": full_prompt},
                 ],
                 max_tokens=max_tokens,
-                temperature=0.7,
+                temperature=0,
             )
             generated_text = response.choices[0].message.content.strip()
             logger.info(
@@ -378,6 +342,140 @@ class ReportDrafter(Reporter):
                 f"❌ AI text generation failed, falling back to rules-based: {e}"
             )
             return self._fallback_text_generation(prompt, cohort)
+
+    def _get_global_ai_system_instructions(self) -> str:
+        """Get global system instructions for all AI text generation calls."""
+        return """You are a professional medical researcher and biostatistician writing for a high-impact scientific publication.
+
+WRITING STYLE REQUIREMENTS:
+- Keep answers concise yet insightful and informative
+- Use professional medical research language suitable for peer-reviewed journals
+- Provide clinical context and significance for all findings
+- Be precise with statistical interpretations
+- Include relevant clinical implications
+- Use appropriate medical terminology consistently
+- Write in active voice where appropriate
+- Ensure content is publication-ready
+
+CONTENT STANDARDS:
+- All statistical claims must be clinically meaningful
+- Include appropriate caveats and limitations where relevant  
+- Focus on actionable clinical insights
+- Maintain scientific objectivity and accuracy
+- Reference established clinical guidelines and norms when relevant
+- Ensure content flows logically and cohesively
+
+FORMATTING:
+- Use clean markdown formatting
+- Structure content with clear headings and sections
+- Use bullet points for lists where appropriate
+- Ensure proper medical/scientific citation style"""
+
+    def _build_global_ai_context(self, cohort=None) -> str:
+        """
+        Build comprehensive global context that is automatically injected into every AI call.
+        This ensures all AI responses have complete study awareness and consistency.
+        """
+        if cohort is None:
+            return "=== STUDY CONTEXT UNAVAILABLE ==="
+
+        context_parts = []
+
+        # Study Overview
+        context_parts.append(
+            f"""=== COMPREHENSIVE STUDY CONTEXT ===
+This context is provided to ensure all AI responses are consistent, accurate, and contextually appropriate.
+
+STUDY TITLE: {getattr(self, 'title', 'Medical Research Study')}
+COHORT NAME: {getattr(cohort, 'name', 'Study Cohort')}
+STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and characteristics"""
+        )
+
+        # Cohort Information
+        if cohort:
+            try:
+                # Get patient count
+                n_patients = (
+                    cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
+                    .select("PERSON_ID")
+                    .distinct()
+                    .count()
+                    .execute()
+                )
+                context_parts.append(f"FINAL COHORT SIZE: {n_patients} patients")
+            except:
+                context_parts.append("FINAL COHORT SIZE: [To be determined]")
+
+            # Entry criteria
+            if hasattr(cohort, "entry_criterion") and cohort.entry_criterion:
+                entry_name = getattr(
+                    cohort.entry_criterion,
+                    "display_name",
+                    getattr(cohort.entry_criterion, "name", "Entry criterion"),
+                )
+                context_parts.append(f"PRIMARY ENTRY CRITERION: {entry_name}")
+
+            # Inclusions
+            if hasattr(cohort, "inclusions") and cohort.inclusions:
+                context_parts.append(
+                    f"\nINCLUSION CRITERIA ({len(cohort.inclusions)} criteria):"
+                )
+                for i, inclusion in enumerate(cohort.inclusions, 1):
+                    name = getattr(
+                        inclusion,
+                        "display_name",
+                        getattr(inclusion, "name", f"Inclusion {i}"),
+                    )
+                    context_parts.append(f"  {i}. {name}")
+
+            # Exclusions
+            if hasattr(cohort, "exclusions") and cohort.exclusions:
+                context_parts.append(
+                    f"\nEXCLUSION CRITERIA ({len(cohort.exclusions)} criteria):"
+                )
+                for i, exclusion in enumerate(cohort.exclusions, 1):
+                    name = getattr(
+                        exclusion,
+                        "display_name",
+                        getattr(exclusion, "name", f"Exclusion {i}"),
+                    )
+                    context_parts.append(f"  {i}. {name}")
+
+            # Characteristics
+            if hasattr(cohort, "characteristics") and cohort.characteristics:
+                context_parts.append(
+                    f"\nBASELINE CHARACTERISTICS ({len(cohort.characteristics)} variables):"
+                )
+                for i, char in enumerate(cohort.characteristics, 1):
+                    name = getattr(
+                        char,
+                        "display_name",
+                        getattr(char, "name", f"Characteristic {i}"),
+                    )
+                    context_parts.append(f"  {i}. {name}")
+
+            # Outcomes
+            if hasattr(cohort, "outcomes") and cohort.outcomes:
+                context_parts.append(
+                    f"\nOUTCOME MEASURES ({len(cohort.outcomes)} variables):"
+                )
+                for i, outcome in enumerate(cohort.outcomes, 1):
+                    name = getattr(
+                        outcome,
+                        "display_name",
+                        getattr(outcome, "name", f"Outcome {i}"),
+                    )
+                    context_parts.append(f"  {i}. {name}")
+
+        # Report generation metadata
+        if hasattr(self, "author") and self.author:
+            context_parts.append(f"\nREPORT AUTHOR: {self.author}")
+        if hasattr(self, "institution") and self.institution:
+            context_parts.append(f"INSTITUTION: {self.institution}")
+
+        context_parts.append("\n=== END GLOBAL CONTEXT ===")
+
+        return "\n".join(context_parts)
 
     def _generate_ai_image_caption(self, image_base64: str, context: str) -> str:
         """Generate caption for image using AI text generation (no vision API needed)."""
@@ -413,7 +511,6 @@ class ReportDrafter(Reporter):
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=300,
                 temperature=0.7,
             )
             generated_caption = response.choices[0].message.content.strip()
@@ -467,31 +564,7 @@ class ReportDrafter(Reporter):
         """Generate AI-powered executive summary in journal abstract style."""
         logger.info("Generating AI executive summary")
 
-        # Get key statistics
-        n_patients = (
-            cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
-
-        # Build comprehensive study context
-        study_context = self._build_comprehensive_study_context(
-            cohort, "Generating executive summary in medical journal abstract style"
-        )
-
-        prompt = f"""
-        {study_context}
-        
-        TASK: Write a professional medical journal-style executive summary/abstract for this study.
-        
-        STUDY STATISTICS:
-        - Final cohort size: {n_patients} patients
-        - Baseline characteristics: {len(cohort.characteristics or [])} variables
-        - Outcome measures: {len(cohort.outcomes or [])} variables
-        - Inclusion criteria: {len(cohort.inclusions or [])} criteria
-        - Exclusion criteria: {len(cohort.exclusions or [])} criteria
+        prompt = """TASK: Write a professional medical journal-style executive summary/abstract for this study.
         
         ABSTRACT STRUCTURE REQUIREMENTS:
         - **Objective:** What was studied and why
@@ -499,16 +572,15 @@ class ReportDrafter(Reporter):
         - **Results:** Key findings from baseline characteristics and outcomes (use realistic clinical interpretations)
         - **Conclusions:** Clinical implications and significance
         
-        STYLE REQUIREMENTS:
-        - Medical journal abstract format
-        - Professional scientific language
-        - Concise but comprehensive (300-400 words)
-        - Focus on clinical significance
+        SPECIFIC REQUIREMENTS:
+        - Medical journal abstract format (300-400 words)
+        - Focus on clinical significance and real-world implications
         - Use realistic medical findings appropriate for the study population
+        - Include key statistical insights where clinically relevant
         
-        Write a complete executive summary that reads like a published medical research abstract.
-        """
-        return self._generate_ai_text(prompt, max_tokens=500, cohort=cohort)
+        Write a complete executive summary that reads like a published medical research abstract."""
+
+        return self._generate_ai_text(prompt, cohort=cohort)
 
     def _create_cohort_description(self, cohort) -> str:
         """Generate cohort definition description."""
@@ -523,7 +595,7 @@ class ReportDrafter(Reporter):
         Cohort Name: {formatted_cohort_name}
         Cohort Description: {cohort.description or 'Not provided'}
         
-        Entry Criterion: {cohort.entry_criterion.display_name if hasattr(cohort.entry_criterion, 'display_name') else cohort.entry_criterion.name}
+        Entry Criterion: {cohort.entry_criterion.to_dict()}
         
         Inclusion Criteria:
         {chr(10).join([f"- {inc.display_name if hasattr(inc, 'display_name') else inc.name}" for inc in (cohort.inclusions or [])])}
@@ -537,11 +609,10 @@ class ReportDrafter(Reporter):
         - **Inclusion Criteria:** section with bullet points (use * for bullets)
         - **Exclusion Criteria:** section with bullet points (use * for bullets)
         - Clinical rationale for each criterion
-        - Professional medical language suitable for publication
         
         Use clean markdown formatting with proper line breaks between sections.
         """
-        return self._generate_ai_text(prompt, max_tokens=800, cohort=cohort)
+        return self._generate_ai_text(prompt)
 
     def _create_specific_cohort_description(self, cohort) -> str:
         """Create specific cohort description with actual criteria listed."""
@@ -610,19 +681,13 @@ class ReportDrafter(Reporter):
         - Characteristics analyzed: {len(cohort.characteristics or [])} baseline characteristics
         - Outcomes analyzed: {len(cohort.outcomes or [])} outcome measures
         
-        Describe the analytical approach, patient population, and study period. This should be suitable for the methods section of a medical research publication.
+        Describe the analytical approach, patient population, and study period.
         """
-        return self._generate_ai_text(prompt, max_tokens=600)
+        return self._generate_ai_text(prompt)
 
     def _create_variables_description(self, cohort) -> str:
         """Generate description of study variables."""
         logger.info("Generating study variables description")
-
-        # Build comprehensive study context
-        study_context = self._build_comprehensive_study_context(
-            cohort,
-            "Generating study variables description with proper formatting for numbered lists",
-        )
 
         characteristics = cohort.characteristics or []
         outcomes = cohort.outcomes or []
@@ -636,25 +701,23 @@ class ReportDrafter(Reporter):
         ]
 
         prompt = f"""
-        {study_context}
+        Write a professional description of the study variables for this medical research study.
         
-        TASK: Write a professional description of the study variables for this medical research study.
+        Baseline Characteristics ({len(characteristics)}):
+        {chr(10).join([f"- {name}" for name in char_names])}
         
-        FORMATTING REQUIREMENTS:
+        Outcome Variables ({len(outcomes)}):
+        {chr(10).join([f"- {name}" for name in outcome_names])}
+        
+        REQUIREMENTS:
         - Use numbered lists for each variable (1. Variable Name: Description)
-        - Put each variable on a separate line with double line breaks between sections
         - Group baseline characteristics separately from outcome variables
-        - Use clear, descriptive explanations for each variable's clinical significance
-        
-        SPECIFIC FOCUS:
-        - Explain the clinical relevance of each baseline characteristic
-        - Describe the importance of each outcome measure
+        - Explain the clinical relevance of each variable
         - Include measurement methods where appropriate
-        - Use professional medical research language suitable for publication
         
-        Write a comprehensive study variables section that builds upon the study context provided above.
+        Write a comprehensive study variables section.
         """
-        return self._generate_ai_text(prompt, max_tokens=700)
+        return self._generate_ai_text(prompt)
 
     def _build_comprehensive_study_context(
         self, cohort=None, additional_context=""
@@ -790,15 +853,8 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         inclusion_steps = waterfall_df[waterfall_df["Type"] == "inclusion"]
         exclusion_steps = waterfall_df[waterfall_df["Type"] == "exclusion"]
 
-        # Build comprehensive study context
-        study_context = self._build_comprehensive_study_context(
-            additional_context="Analyzing patient attrition waterfall table for clinical interpretation"
-        )
-
         prompt = f"""
-        {study_context}
-        
-        TASK: Analyze this patient attrition waterfall table and write a professional clinical commentary.
+        Analyze this patient attrition waterfall table and write a professional clinical commentary.
         
         WATERFALL DATA:
         Initial patient pool: {initial_n}
@@ -809,16 +865,14 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         Detailed attrition steps:
         {waterfall_df[['Type', 'Name', 'N', 'Remaining']].to_string()}
         
-        SPECIFIC FOCUS:
+        Focus on:
         - Clinical interpretation of patient selection process
         - Analysis of attrition rates and their implications
         - Assessment of study representativeness and generalizability
         - Discussion of potential selection bias considerations
-        
-        Write a clinical interpretation that builds upon the comprehensive study context provided above.
         """
 
-        return self._generate_ai_text(prompt, max_tokens=500)
+        return self._generate_ai_text(prompt)
 
     def _generate_table1_commentary(self, table1_df):
         """Generate AI commentary for Table 1 baseline characteristics."""
@@ -827,30 +881,21 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         if table1_df is None or table1_df.empty:
             return "No baseline characteristics data available for analysis."
 
-        # Build comprehensive study context
-        study_context = self._build_comprehensive_study_context(
-            additional_context="Analyzing Table 1 baseline characteristics for clinical interpretation"
-        )
-
         prompt = f"""
-        {study_context}
-        
-        TASK: Analyze this Table 1 baseline characteristics and write a professional clinical commentary.
+        Analyze this Table 1 baseline characteristics and write a professional clinical commentary.
         
         BASELINE CHARACTERISTICS DATA:
         {table1_df.to_string()}
         
-        SPECIFIC FOCUS:
+        Focus on:
         - Clinical interpretation of baseline demographics and characteristics
         - Assessment of population representativeness
         - Clinical implications for study outcomes
         - Comparison to relevant population norms where appropriate
         - Risk factor assessment and clinical significance
-        
-        Write a clinical interpretation that builds upon the comprehensive study context provided above.
         """
 
-        return self._generate_ai_text(prompt, max_tokens=500)
+        return self._generate_ai_text(prompt)
 
     def _generate_table2_commentary(self, table2_df):
         """Generate AI commentary for Table 2 outcomes."""
@@ -859,30 +904,21 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         if table2_df is None or table2_df.empty:
             return "No outcomes data available for analysis."
 
-        # Build comprehensive study context
-        study_context = self._build_comprehensive_study_context(
-            additional_context="Analyzing Table 2 outcomes summary for clinical interpretation"
-        )
-
         prompt = f"""
-        {study_context}
-        
-        TASK: Analyze this Table 2 outcomes summary and write a professional clinical commentary.
+        Analyze this Table 2 outcomes summary and write a professional clinical commentary.
         
         OUTCOMES DATA:
         {table2_df.to_string()}
         
-        SPECIFIC FOCUS:
+        Focus on:
         - Clinical interpretation of outcome results
         - Assessment of key findings and their significance
         - Clinical implications for patient care and clinical practice
         - Risk assessment and prognostic implications
         - Comparison to published literature where appropriate
-        
-        Write a clinical interpretation that builds upon the comprehensive study context provided above.
         """
 
-        return self._generate_ai_text(prompt, max_tokens=500)
+        return self._generate_ai_text(prompt)
 
     def _plot_to_base64(self, fig) -> str:
         """Convert matplotlib figure to base64 string."""
@@ -1028,27 +1064,9 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
         # 8. Generate Table 2 (Outcomes) if outcomes exist
         if cohort.outcomes:
             logger.info("Generating Table 2 (outcomes)...")
-            # Table2 requires an exposure variable - use the first boolean characteristic as exposure
-            exposure_phenotype = None
-
-            # Find a suitable exposure phenotype from characteristics
-            for char in cohort.characteristics or []:
-                if hasattr(char, "has_boolean_result") and char.has_boolean_result:
-                    exposure_phenotype = char
-                    logger.info(f"Using '{char.name}' as exposure variable for Table2")
-                    break
-
-            if exposure_phenotype is None:
-                logger.error(
-                    "FATAL: No suitable exposure phenotype found for Table2 reporter"
-                )
-                raise RuntimeError(
-                    "Table2 reporter requires an exposure phenotype but none was found in cohort characteristics"
-                )
 
             # Initialize Table2 reporter with the exposure phenotype
             table2_reporter = Table2(
-                exposure=exposure_phenotype,
                 time_points=[365],  # 1 year follow-up
                 decimal_places=self.decimal_places,
                 pretty_display=True,
@@ -1063,9 +1081,6 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             except Exception as e:
                 logger.error(f"FATAL: Table2 generation failed: {e}")
                 logger.error(f"Error type: {type(e).__name__}")
-                logger.error(
-                    f"Exposure phenotype: {exposure_phenotype.name if exposure_phenotype else 'None'}"
-                )
                 logger.error(f"Cohort has {len(cohort.outcomes)} outcomes")
 
                 # Table2 reporter is a core component and should work with properly structured cohorts
@@ -1151,7 +1166,10 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
 
         # Build complete report in single section to avoid page breaks
         complete_report = self._build_complete_report()
-        pdf.add_section(Section(complete_report, toc=False))
+
+        # Combine all CSS styles for tables
+        css = self._get_global_css()
+        pdf.add_section(Section(complete_report, toc=False), user_css=css)
 
         # Save the PDF
         pdf.save(str(output_path))
@@ -1354,9 +1372,27 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         return headers + separator + rows
 
-    def _get_waterfall_table_css(self) -> str:
-        """Get CSS styling for waterfall table with clean professional look."""
+    def _get_global_css(self) -> str:
+        """Get comprehensive CSS styling for all tables in the report."""
         return """
+        /* Global document styling */
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            background: none;
+        }
+        
+        /* Header styling */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Times New Roman', serif;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        /* Table styling - comprehensive for all tables */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -1364,39 +1400,7 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             font-family: 'Times New Roman', serif;
             font-size: 11pt;
             background: none;
-        }
-        
-        th {
-            background-color: #e3f2fd;
-            font-weight: bold;
-            padding: 10px 8px;
-            text-align: center;
-            border: 1px solid #ccc;
-        }
-        
-        td {
-            padding: 8px;
-            border: 1px solid #ccc;
-            text-align: center;
-            background-color: #f8f9fa;
-        }
-        
-        /* Remove any background shadows or effects */
-        body { background: none; }
-        p { background: none; }
-        div { background: none; }
-        """
-
-    def _get_table1_css(self) -> str:
-        """Get CSS styling for Table 1 with clean professional look."""
-        return """
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-family: 'Times New Roman', serif;
-            font-size: 11pt;
-            background: none;
+            border: 2px solid #333;
         }
         
         th {
@@ -1404,53 +1408,33 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             font-weight: bold;
             padding: 10px 8px;
             text-align: left;
-            border: 1px solid #ccc;
+            border: 2px solid #333;
+            color: #333;
         }
         
         td {
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #333;
             text-align: left;
             background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        /* Center-aligned tables (for waterfall and outcomes) */
+        table.center-align td,
+        table.center-align th {
+            text-align: center;
         }
         
         /* Remove any background shadows or effects */
-        body { background: none; }
-        p { background: none; }
-        div { background: none; }
-        """
-
-    def _get_table2_css(self) -> str:
-        """Get CSS styling for Table 2 with clean professional look."""
-        return """
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-family: 'Times New Roman', serif;
-            font-size: 11pt;
+        p, div, section, article {
             background: none;
         }
         
-        th {
-            background-color: #e3f2fd;
-            font-weight: bold;
-            padding: 10px 8px;
-            text-align: center;
-            border: 1px solid #ccc;
+        /* Ensure text is readable */
+        * {
+            color: #333 !important;
         }
-        
-        td {
-            padding: 8px;
-            border: 1px solid #ccc;
-            text-align: center;
-            background-color: #f8f9fa;
-        }
-        
-        /* Remove any background shadows or effects */
-        body { background: none; }
-        p { background: none; }
-        div { background: none; }
         """
 
     def to_word(self, filename: str, output_dir: str = ".") -> str:
