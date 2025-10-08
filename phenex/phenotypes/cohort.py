@@ -622,11 +622,21 @@ class DataPeriodFilterNode(Node):
         # 2a. Handle START_DATE fields - set to max(column_value, min_date)
         if start_date_columns and self.date_filter.min_value is not None:
             for col in start_date_columns:
-                # Always use greatest to ensure start dates are at least min_value
-                # This is appropriate regardless of whether min_value is > or >=
-                mutations[col] = ibis.greatest(
-                    table[col], ibis.literal(self.date_filter.min_value.value)
-                )
+                # Respect the operator from min_value
+                if self.date_filter.min_value.operator == ">=":
+                    # AfterOrOn: use min_value as-is
+                    min_date_literal = ibis.literal(self.date_filter.min_value.value)
+                elif self.date_filter.min_value.operator == ">":
+                    # After: add one day to min_value to ensure start date is after, not on
+                    min_date_literal = ibis.literal(
+                        self.date_filter.min_value.value
+                    ) + ibis.interval(days=1)
+                else:
+                    raise ValueError(
+                        f"Unsupported min_value operator: {self.date_filter.min_value.operator}"
+                    )
+
+                mutations[col] = ibis.greatest(table[col], min_date_literal)
 
         # 2b. Handle END_DATE fields - set to NULL if outside max_date boundary
         if end_date_columns and self.date_filter.max_value is not None:

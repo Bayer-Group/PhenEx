@@ -440,7 +440,9 @@ def test_operator_edge_cases_end_dates():
 def test_operator_edge_cases_start_dates():
     """
     Test that start date adjustment works correctly with different operators.
-    START_DATE adjustment should use max(start_date, min_value) for both > and >= operators.
+    This is the critical test for the bug fix:
+    - AfterOrOn (>=) should use max(start_date, min_value)
+    - After (>) should use max(start_date, min_value + 1 day) to ensure "after" not "after or on"
     """
     # Test data without EVENT_DATE to avoid filtering complications
     data = {
@@ -465,23 +467,113 @@ def test_operator_edge_cases_start_dates():
     )
     result_inclusive = node_inclusive._execute({"TEST": table}).to_pandas()
 
-    # All start dates should be at least Jan 1, 2020
+    # All start dates should be at least Jan 1, 2020 (inclusive)
     for _, row in result_inclusive.iterrows():
         assert row["START_DATE"] >= date(2020, 1, 1)
 
-    # Test with After (>) - start dates should be adjusted to at least the min_value.value
+    # CRITICAL TEST: Test with After (>) - start dates should be adjusted to ensure they are truly "after"
     date_filter_exclusive = DateFilter(
-        min_date=After("2019-12-31"), max_date=BeforeOrOn("2020-12-31")
+        min_date=After("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
     )
     node_exclusive = DataPeriodFilterNode(
         name="test_node_exclusive", domain="TEST", date_filter=date_filter_exclusive
     )
     result_exclusive = node_exclusive._execute({"TEST": table}).to_pandas()
 
-    # All start dates should be at least the min_value.value (2019-12-31)
-    min_expected_date = date(2019, 12, 31)
+    # All start dates should be at least Jan 2, 2020 (because > Jan 1 means >= Jan 2)
     for _, row in result_exclusive.iterrows():
-        assert row["START_DATE"] >= min_expected_date
+        assert row["START_DATE"] >= date(
+            2020, 1, 2
+        ), f"START_DATE {row['START_DATE']} should be >= 2020-01-02 for After(2020-01-01)"
+
+    # Verify specific cases:
+    # Person 1: START_DATE was 2019-12-30 -> should become 2020-01-02
+    # Person 2: START_DATE was 2019-12-31 -> should become 2020-01-02
+    # Person 3: START_DATE was 2020-01-01 -> should become 2020-01-02 (critical!)
+    # Person 4: START_DATE was 2020-01-02 -> should remain 2020-01-02
+
+    result_dict = {
+        row["PERSON_ID"]: row["START_DATE"] for _, row in result_exclusive.iterrows()
+    }
+    assert result_dict[1] == date(
+        2020, 1, 2
+    ), "Person 1 START_DATE should be adjusted to Jan 2"
+    assert result_dict[2] == date(
+        2020, 1, 2
+    ), "Person 2 START_DATE should be adjusted to Jan 2"
+    assert result_dict[3] == date(
+        2020, 1, 2
+    ), "Person 3 START_DATE should be adjusted to Jan 2 (was exactly on boundary)"
+    assert result_dict[4] == date(2020, 1, 2), "Person 4 START_DATE should remain Jan 2"
+
+
+def test_start_date_after_vs_after_or_on_boundary():
+    """
+    CRITICAL TEST: This specifically tests the bug fix for > vs >= operators with START_DATE.
+
+    If min_date is > 2020-01-01, then START_DATE values of exactly 2020-01-01 should be adjusted
+    to 2020-01-02 (because they need to be "after", not "after or on" 2020-01-01).
+
+    If min_date is >= 2020-01-01, then START_DATE values of exactly 2020-01-01 should remain
+    as 2020-01-01 (because they are "after or on" 2020-01-01).
+    """
+    # Focus on the exact boundary case
+    data = {
+        "PERSON_ID": [1, 2],
+        "START_DATE": [
+            date(2020, 1, 1),  # Exactly on the boundary - critical test case
+            date(2019, 12, 31),  # Just before the boundary
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    # Test 1: AfterOrOn (>=) - START_DATE of 2020-01-01 should be KEPT as 2020-01-01
+    date_filter_after_or_on = DateFilter(
+        min_date=AfterOrOn("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node_after_or_on = DataPeriodFilterNode(
+        name="test_after_or_on", domain="TEST", date_filter=date_filter_after_or_on
+    )
+    result_after_or_on = node_after_or_on._execute({"TEST": table}).to_pandas()
+
+    # Person 1 with START_DATE 2020-01-01 should keep that date (>= allows equality)
+    person_1_after_or_on = result_after_or_on[result_after_or_on["PERSON_ID"] == 1]
+    assert len(person_1_after_or_on) == 1
+    assert person_1_after_or_on.iloc[0]["START_DATE"] == date(
+        2020, 1, 1
+    ), "AfterOrOn should keep START_DATE of 2020-01-01"
+
+    # Person 2 with START_DATE 2019-12-31 should be adjusted to 2020-01-01
+    person_2_after_or_on = result_after_or_on[result_after_or_on["PERSON_ID"] == 2]
+    assert len(person_2_after_or_on) == 1
+    assert person_2_after_or_on.iloc[0]["START_DATE"] == date(
+        2020, 1, 1
+    ), "AfterOrOn should adjust START_DATE to 2020-01-01"
+
+    # Test 2: After (>) - START_DATE of 2020-01-01 should be ADJUSTED to 2020-01-02
+    date_filter_after = DateFilter(
+        min_date=After("2020-01-01"), max_date=BeforeOrOn("2020-12-31")
+    )
+    node_after = DataPeriodFilterNode(
+        name="test_after", domain="TEST", date_filter=date_filter_after
+    )
+    result_after = node_after._execute({"TEST": table}).to_pandas()
+
+    # Person 1 with START_DATE 2020-01-01 should be adjusted to 2020-01-02 (> requires strictly after)
+    person_1_after = result_after[result_after["PERSON_ID"] == 1]
+    assert len(person_1_after) == 1
+    assert person_1_after.iloc[0]["START_DATE"] == date(
+        2020, 1, 2
+    ), "After should adjust START_DATE from 2020-01-01 to 2020-01-02"
+
+    # Person 2 with START_DATE 2019-12-31 should also be adjusted to 2020-01-02
+    person_2_after = result_after[result_after["PERSON_ID"] == 2]
+    assert len(person_2_after) == 1
+    assert person_2_after.iloc[0]["START_DATE"] == date(
+        2020, 1, 2
+    ), "After should adjust START_DATE to 2020-01-02"
 
 
 def test_invalid_column_name_error():
