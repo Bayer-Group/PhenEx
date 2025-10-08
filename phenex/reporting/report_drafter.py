@@ -1388,47 +1388,71 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
     def _get_global_css(self) -> str:
         """Get comprehensive CSS styling for all tables in the report."""
         return """
+        /* Import Google Fonts for better typography */
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+        
         /* Global document styling */
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: Georgia, 'EB Garamond', 'Computer Modern', 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1.6;
-            color: #333;
+            line-height: 1.7;
+            color: #2c2c2c;
             background: none;
+            max-width: none;
         }
         
         /* Header styling */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Times New Roman', serif;
-            color: #333;
-            margin-top: 20px;
-            margin-bottom: 10px;
+            font-family: Georgia, 'EB Garamond', 'Computer Modern', serif;
+            color: #1a1a1a;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
         }
         
+        h1 { font-size: 24pt; margin-top: 0; }
+        h2 { font-size: 18pt; }
+        h3 { font-size: 16pt; }
+        h4 { font-size: 14pt; }
+        
+        /* Paragraph styling */
+        p {
+            font-family: Georgia, 'EB Garamond', serif;
+            margin-bottom: 12pt;
+            text-align: justify;
+        }
+        
+        /* Table styling - Clean single borders */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            font-family: 'Times New Roman', serif;
-            font-size: 11pt;
+            margin: 16px 0;
+            font-family: Georgia, 'EB Garamond', serif;
+            font-size: 10pt;
             background: none;
         }
         
+        /* Header row */
         th {
-            font-weight: bold;
-            padding: 10px 8px;
+            font-weight: 600;
+            padding: 6px 8px;
             text-align: left;
-            border: 1px solid #333;
-            color: #333;
+            border: 1px solid #666;
+            color: #1a1a1a;
+            background-color: #f5f5f5;
+            font-family: Georgia, 'EB Garamond', serif;
         }
         
+        /* Data cells */
         td {
-            padding: 8px;
-            border: 1px solid #333;
+            padding: 5px 8px;
+            border: 1px solid #666;
             text-align: left;
-            color: #333;
+            color: #2c2c2c;
+            font-family: Georgia, 'EB Garamond', serif;
         }
         
+        /* Ensure border-collapse eliminates double borders */
         table tbody tr {
             border: none;
         }
@@ -1448,9 +1472,22 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             background: none;
         }
         
-        /* Ensure text is readable */
+        /* Figure captions */
+        em, i {
+            font-style: italic;
+            color: #555;
+            font-size: 11pt;
+        }
+        
+        /* Bold text */
+        strong, b {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        /* Improve readability */
         * {
-            color: #333 !important;
+            color: inherit;
         }
         """
 
@@ -1510,6 +1547,177 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             else:
                 # Regular text
                 paragraph.add_run(part)
+
+    def to_markdown(self, filename: str, output_dir: str = ".") -> str:
+        """
+        Generate a clean Markdown report file.
+
+        Args:
+            filename: Name of the Markdown file to create
+            output_dir: Base directory to save the report in
+
+        Returns:
+            Path to the generated Markdown file
+        """
+        if not self.report_sections:
+            raise ValueError("No report data available. Call execute() first.")
+
+        # Create a dedicated directory for this cohort's report
+        cohort_name = getattr(self, "cohort_name", "report")
+        cohort_name = (
+            cohort_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+        )  # Clean filename
+        cohort_dir = Path(output_dir) / cohort_name
+        cohort_dir.mkdir(parents=True, exist_ok=True)
+
+        output_path = cohort_dir / filename
+        if not output_path.suffix:
+            output_path = output_path.with_suffix(".md")
+
+        logger.info(f"Generating Markdown report: {output_path}")
+
+        # Build the complete markdown content
+        markdown_content = self._build_markdown_content(cohort_dir)
+
+        # Write to file
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(markdown_content)
+
+        logger.info(f"Markdown report generated: {output_path}")
+        return str(output_path)
+
+    def _build_markdown_content(self, cohort_dir: Path) -> str:
+        """Build the complete markdown content for the report."""
+        md_content = ""
+
+        # Title and metadata
+        if self.title:
+            md_content += f"# {self.title}\n\n"
+
+        if self.author:
+            md_content += f"**Author:** {self.author}\n\n"
+        if self.institution:
+            md_content += f"**Institution:** {self.institution}\n\n"
+        if hasattr(self, "date") and self.date:
+            md_content += f"**Date:** {self.date}\n\n"
+        else:
+            md_content += (
+                f"**Report Generated:** {datetime.now().strftime('%B %d, %Y')}\n\n"
+            )
+
+        # Executive Summary
+        md_content += "## Executive Summary\n\n"
+        if "executive_summary" in self.report_sections:
+            md_content += self.report_sections["executive_summary"] + "\n\n"
+        else:
+            # Fallback summary
+            stats = self.report_sections.get("summary_stats", {})
+            md_content += f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
+The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
+Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria.\n\n"""
+
+        md_content += "---\n\n"
+
+        section_number = 1
+
+        # 1. Cohort Definition
+        if "cohort_definition" in self.report_sections:
+            md_content += f"## {section_number}. Cohort Definition\n\n"
+            md_content += self.report_sections["cohort_definition"] + "\n\n"
+            section_number += 1
+
+        # 2. Data Analysis
+        if "data_analysis" in self.report_sections:
+            md_content += f"## {section_number}. Data Analysis\n\n"
+            md_content += self.report_sections["data_analysis"] + "\n\n"
+            section_number += 1
+
+        # 3. Study Variables
+        if "study_variables" in self.report_sections:
+            md_content += f"## {section_number}. Study Variables\n\n"
+            md_content += self.report_sections["study_variables"] + "\n\n"
+            section_number += 1
+
+        # 4. Patient Attrition (Waterfall Table)
+        if (
+            "waterfall_table" in self.report_sections
+            and not self.report_sections["waterfall_table"].empty
+        ):
+            md_content += f"## {section_number}. Patient Attrition\n\n"
+
+            # Add the waterfall figure if available
+            if "waterfall" in self.figures:
+                # Save figure to the cohort directory
+                fig_filename = "figure_1_waterfall_plot.png"
+                fig_path = cohort_dir / fig_filename
+                self.figures["waterfall"]["figure"].savefig(
+                    fig_path, format="png", dpi=300, bbox_inches="tight"
+                )
+                md_content += f"![Waterfall Plot]({fig_filename})\n\n"
+                if "caption" in self.figures["waterfall"]:
+                    md_content += f"*Figure {section_number}.1: {self.figures['waterfall']['caption']}*\n\n"
+
+            # Add waterfall table
+            waterfall_df = self.report_sections["waterfall_table"]
+            md_content += self._dataframe_to_markdown_table(waterfall_df) + "\n\n"
+
+            if "waterfall_commentary" in self.report_sections:
+                md_content += self.report_sections["waterfall_commentary"] + "\n\n"
+            section_number += 1
+
+        # 5. Baseline Characteristics (Table 1)
+        if (
+            "table1" in self.report_sections
+            and not self.report_sections["table1"].empty
+        ):
+            md_content += f"## {section_number}. Baseline Characteristics\n\n"
+            table1_df = self.report_sections["table1"]
+            md_content += self._dataframe_to_markdown_table(table1_df) + "\n\n"
+            if "table1_commentary" in self.report_sections:
+                md_content += self.report_sections["table1_commentary"] + "\n\n"
+            section_number += 1
+
+        # 6. Outcomes Summary (Table 2)
+        if (
+            "table2" in self.report_sections
+            and not self.report_sections["table2"].empty
+        ):
+            md_content += f"## {section_number}. Outcomes Summary\n\n"
+            table2_df = self.report_sections["table2"]
+            md_content += self._dataframe_to_markdown_table(table2_df) + "\n\n"
+            if "table2_commentary" in self.report_sections:
+                md_content += self.report_sections["table2_commentary"] + "\n\n"
+            section_number += 1
+
+        return md_content
+
+    def _dataframe_to_markdown_table(self, df: pd.DataFrame) -> str:
+        """Convert a DataFrame to a clean markdown table."""
+        if df.empty:
+            return "No data available."
+
+        # Start with headers
+        headers = df.columns.tolist()
+        if not headers:
+            return "No data available."
+
+        # Build header row
+        header_row = "| " + " | ".join(str(h) for h in headers) + " |"
+
+        # Build separator row
+        separator_row = "| " + " | ".join("---" for _ in headers) + " |"
+
+        # Build data rows
+        data_rows = []
+        for _, row in df.iterrows():
+            row_str = (
+                "| "
+                + " | ".join(str(v) if pd.notna(v) else "" for v in row.values)
+                + " |"
+            )
+            data_rows.append(row_str)
+
+        return "\n".join([header_row, separator_row] + data_rows)
 
     def to_word(self, filename: str, output_dir: str = ".") -> str:
         """Generate Word document report."""
