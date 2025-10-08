@@ -781,7 +781,7 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         - Clinical implications for study outcomes
         - Comparison to relevant population norms where appropriate
         - Risk factor assessment and clinical significance
-        """
+         """
 
         return self._generate_ai_text(prompt)
 
@@ -1093,7 +1093,6 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             table1_section += self._dataframe_to_markdown_table(table1_df)
             table1_section += "\n\n"
             if "table1_commentary" in self.report_sections:
-                table1_section += "## Clinical Commentary\n\n"
                 table1_section += self.report_sections["table1_commentary"]
             pdf.add_section(Section(table1_section, toc=True), user_css=css)
             section_number += 1
@@ -1108,7 +1107,6 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             table2_section += self._dataframe_to_markdown_table(table2_df)
             table2_section += "\n\n"
             if "table2_commentary" in self.report_sections:
-                table2_section += "## Clinical Commentary\n\n"
                 table2_section += self.report_sections["table2_commentary"]
             pdf.add_section(Section(table2_section, toc=True), user_css=css)
             section_number += 1
