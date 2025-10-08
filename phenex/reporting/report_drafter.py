@@ -1393,6 +1393,63 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         }
         """
 
+    def _add_markdown_content_to_doc(self, doc, content: str):
+        """
+        Parse markdown content and add it to Word document with proper formatting.
+        Handles bold text (**text**), headings (## Heading), and bullet points.
+        """
+        if not content:
+            return
+            
+        lines = content.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Handle headings
+            if line.startswith('## '):
+                heading_text = line[3:].strip()
+                doc.add_heading(heading_text, level=2)
+            elif line.startswith('### '):
+                heading_text = line[4:].strip()
+                doc.add_heading(heading_text, level=3)
+            elif line.startswith('#### '):
+                heading_text = line[5:].strip()
+                doc.add_heading(heading_text, level=4)
+            elif line.startswith('# '):
+                heading_text = line[2:].strip()
+                doc.add_heading(heading_text, level=1)
+            elif line.startswith('* ') or line.startswith('- '):
+                # Handle bullet points
+                bullet_text = line[2:].strip()
+                paragraph = doc.add_paragraph(style='List Bullet')
+                self._add_formatted_text(paragraph, bullet_text)
+            else:
+                # Handle regular paragraphs with bold formatting
+                paragraph = doc.add_paragraph()
+                self._add_formatted_text(paragraph, line)
+    
+    def _add_formatted_text(self, paragraph, text: str):
+        """
+        Add text to a paragraph with proper formatting for bold text (**text**).
+        """
+        import re
+        
+        # Split text by bold markers (**text**)
+        parts = re.split(r'(\*\*.*?\*\*)', text)
+        
+        for part in parts:
+            if part.startswith('**') and part.endswith('**'):
+                # Bold text
+                bold_text = part[2:-2]  # Remove ** markers
+                run = paragraph.add_run(bold_text)
+                run.bold = True
+            else:
+                # Regular text
+                paragraph.add_run(part)
+
     def to_word(self, filename: str, output_dir: str = ".") -> str:
         """Generate Word document report."""
         if not DOCX_AVAILABLE:
@@ -1425,9 +1482,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         # Executive Summary - Use AI-generated content if available
         doc.add_heading("Executive Summary", level=1)
         if "executive_summary" in self.report_sections:
-            # Add AI-generated executive summary
+            # Add AI-generated executive summary with markdown formatting
             exec_summary = self.report_sections["executive_summary"]
-            doc.add_paragraph(exec_summary)
+            self._add_markdown_content_to_doc(doc, exec_summary)
         else:
             # Fallback to basic summary if AI summary not available
             stats = self.report_sections.get("summary_stats", {})
@@ -1441,21 +1498,21 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         cohort_def = self.report_sections.get(
             "cohort_definition", "No description available."
         )
-        doc.add_paragraph(cohort_def)
+        self._add_markdown_content_to_doc(doc, cohort_def)
 
         # Data Analysis
         doc.add_heading("2. Data Analysis", level=1)
         data_analysis = self.report_sections.get(
             "data_analysis", "No description available."
         )
-        doc.add_paragraph(data_analysis)
+        self._add_markdown_content_to_doc(doc, data_analysis)
 
         # Study Variables
         doc.add_heading("3. Study Variables", level=1)
         study_vars = self.report_sections.get(
             "study_variables", "No description available."
         )
-        doc.add_paragraph(study_vars)
+        self._add_markdown_content_to_doc(doc, study_vars)
 
         # Waterfall Table
         waterfall_df = self.report_sections.get("waterfall_table")
@@ -1495,7 +1552,7 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "waterfall_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                doc.add_paragraph(self.report_sections["waterfall_commentary"])
+                self._add_markdown_content_to_doc(doc, self.report_sections["waterfall_commentary"])
 
         # Table 1
         table1_df = self.report_sections.get("table1")
@@ -1520,7 +1577,7 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "table1_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                doc.add_paragraph(self.report_sections["table1_commentary"])
+                self._add_markdown_content_to_doc(doc, self.report_sections["table1_commentary"])
 
         # Table 2 (Outcomes)
         table2_df = self.report_sections.get("table2")
@@ -1545,7 +1602,7 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "table2_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                doc.add_paragraph(self.report_sections["table2_commentary"])
+                self._add_markdown_content_to_doc(doc, self.report_sections["table2_commentary"])
 
         # Save document
         doc.save(str(output_path))
