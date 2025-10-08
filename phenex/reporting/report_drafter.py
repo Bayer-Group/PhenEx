@@ -1164,17 +1164,101 @@ STUDY DESIGN: This is a comprehensive medical research study analyzing patient o
             pdf.meta["subject"] = f"Medical Research Report - {self.institution}"
         pdf.meta["keywords"] = "medical research, cohort study, phenex"
 
-        # Build complete report in single section to avoid page breaks
-        complete_report = self._build_complete_report()
-
-        # Combine all CSS styles for tables
+        # Get global CSS for all sections
         css = self._get_global_css()
-        pdf.add_section(Section(complete_report, toc=False), user_css=css)
+
+        # Add title section (not in TOC)
+        title_section = self._build_title_section()
+        pdf.add_section(Section(title_section, toc=False), user_css=css)
+
+        # Add each major section separately for proper TOC
+        section_number = 1
+
+        # 1. Cohort Definition
+        if "cohort_definition" in self.report_sections:
+            cohort_section = f"# {section_number}. Cohort Definition\n\n"
+            cohort_section += self.report_sections["cohort_definition"]
+            pdf.add_section(Section(cohort_section, toc=True), user_css=css)
+            section_number += 1
+
+        # 2. Data Analysis
+        if "data_analysis" in self.report_sections:
+            analysis_section = f"# {section_number}. Data Analysis\n\n"
+            analysis_section += self.report_sections["data_analysis"]
+            pdf.add_section(Section(analysis_section, toc=True), user_css=css)
+            section_number += 1
+
+        # 3. Study Variables
+        if "study_variables" in self.report_sections:
+            variables_section = f"# {section_number}. Study Variables\n\n"
+            variables_section += self.report_sections["study_variables"]
+            pdf.add_section(Section(variables_section, toc=True), user_css=css)
+            section_number += 1
+
+        # 4. Patient Attrition (Waterfall Table)
+        if (
+            "waterfall_table" in self.report_sections
+            and not self.report_sections["waterfall_table"].empty
+        ):
+            waterfall_section = f"# {section_number}. Patient Attrition\n\n"
+            waterfall_df = self.report_sections["waterfall_table"]
+            waterfall_section += self._dataframe_to_markdown_table(waterfall_df)
+            waterfall_section += "\n\n"
+            if "waterfall_commentary" in self.report_sections:
+                waterfall_section += "## Clinical Commentary\n\n"
+                waterfall_section += self.report_sections["waterfall_commentary"]
+            pdf.add_section(Section(waterfall_section, toc=True), user_css=css)
+            section_number += 1
+
+        # 5. Baseline Characteristics (Table 1)
+        if (
+            "table1" in self.report_sections
+            and not self.report_sections["table1"].empty
+        ):
+            table1_section = f"# {section_number}. Baseline Characteristics\n\n"
+            table1_df = self.report_sections["table1"]
+            table1_section += self._dataframe_to_markdown_table(table1_df)
+            table1_section += "\n\n"
+            if "table1_commentary" in self.report_sections:
+                table1_section += "## Clinical Commentary\n\n"
+                table1_section += self.report_sections["table1_commentary"]
+            pdf.add_section(Section(table1_section, toc=True), user_css=css)
+            section_number += 1
+
+        # 6. Outcomes Summary (Table 2)
+        if (
+            "table2" in self.report_sections
+            and not self.report_sections["table2"].empty
+        ):
+            table2_section = f"# {section_number}. Outcomes Summary\n\n"
+            table2_df = self.report_sections["table2"]
+            table2_section += self._dataframe_to_markdown_table(table2_df)
+            table2_section += "\n\n"
+            if "table2_commentary" in self.report_sections:
+                table2_section += "## Clinical Commentary\n\n"
+                table2_section += self.report_sections["table2_commentary"]
+            pdf.add_section(Section(table2_section, toc=True), user_css=css)
+            section_number += 1
 
         # Save the PDF
         pdf.save(str(output_path))
         logger.info(f"PDF report generated: {output_path}")
         return str(output_path)
+
+    def _build_title_section(self) -> str:
+        """Build the title section for the PDF report."""
+        title_section = ""
+        if self.title:
+            title_section += f"# {self.title}\n\n"
+        if self.author:
+            title_section += f"**Author:** {self.author}\n\n"
+        if self.institution:
+            title_section += f"**Institution:** {self.institution}\n\n"
+        if self.date:
+            title_section += f"**Date:** {self.date}\n\n"
+        if title_section:
+            title_section += "---\n\n"  # Horizontal rule separator
+        return title_section
 
     def _build_complete_report(self) -> str:
         """Build the complete report with numbered sections in a single document."""
@@ -1392,7 +1476,6 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             margin-bottom: 10px;
         }
         
-        /* Table styling - comprehensive for all tables */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -1400,15 +1483,13 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             font-family: 'Times New Roman', serif;
             font-size: 11pt;
             background: none;
-            border: 2px solid #333;
         }
         
         th {
-            background-color: #e3f2fd;
             font-weight: bold;
             padding: 10px 8px;
             text-align: left;
-            border: 2px solid #333;
+            border: 1px solid #333;
             color: #333;
         }
         
@@ -1416,10 +1497,17 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             padding: 8px;
             border: 1px solid #333;
             text-align: left;
-            background-color: #f8f9fa;
             color: #333;
         }
         
+        table tbody tr {
+            border: none;
+        }
+        
+        table thead tr {
+            border: none;
+        }
+            
         /* Center-aligned tables (for waterfall and outcomes) */
         table.center-align td,
         table.center-align th {
