@@ -107,6 +107,10 @@ class ReportDrafter(Reporter):
         self.title = title
         self.author = author
         self.institution = institution
+
+        logger.info(
+            f"ReportDrafter initialized with include_plots={self.include_plots}"
+        )
         self.date_range_start = date_range_start
         self.date_range_end = date_range_end
 
@@ -861,6 +865,9 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         if not self.title:
             self.title = f"Study Report: {cohort.name}"
 
+        # Store cohort name for directory creation
+        self.cohort_name = cohort.name
+
         # STEP 1: Generate data tables first
         logger.info("=== PHASE 1: Generating Data Tables ===")
 
@@ -990,7 +997,11 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         # Generate plots if requested (with AI captions that now have full context)
         if self.include_plots and not waterfall_df.empty:
             logger.info("Generating waterfall plot...")
+            logger.info(
+                f"include_plots={self.include_plots}, waterfall_df.empty={waterfall_df.empty}"
+            )
             fig, img_b64 = self._create_waterfall_plot(waterfall_df)
+            logger.info(f"Waterfall plot created, figure type: {type(fig)}")
             self.figures["waterfall"] = {
                 "figure": fig,
                 "base64": img_b64,
@@ -999,6 +1010,11 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
                     "Patient attrition waterfall chart showing how inclusion and exclusion criteria affected the final cohort size",
                 ),
             }
+            logger.info(f"Stored waterfall figure, total figures: {len(self.figures)}")
+        else:
+            logger.warning(
+                f"Not generating waterfall plot: include_plots={self.include_plots}, waterfall_df.empty={waterfall_df.empty if 'waterfall_df' in locals() else 'waterfall_df not defined'}"
+            )
 
         logger.info("Report generation completed successfully")
         return self.report_sections
@@ -1022,7 +1038,16 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         if not self.report_sections:
             raise ValueError("No report data available. Call execute() first.")
 
-        output_path = Path(output_dir) / filename
+        # Create a cohort-specific directory
+        cohort_name = getattr(self, "cohort_name", "report")
+        cohort_name = (
+            cohort_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+        )  # Clean filename
+        cohort_dir = Path(output_dir) / cohort_name
+        cohort_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created cohort directory: {cohort_dir}")
+
+        output_path = cohort_dir / filename
         if not output_path.suffix:
             output_path = output_path.with_suffix(".pdf")
 
@@ -1074,7 +1099,43 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             "waterfall_table" in self.report_sections
             and not self.report_sections["waterfall_table"].empty
         ):
+            logger.info("adding waterfall!!!")
+            logger.info(f"Available figures: {list(self.figures.keys())}")
             waterfall_section = f"# {section_number}. Patient Attrition\n\n"
+
+            # Add the waterfall figure if available
+            if "waterfall" in self.figures:
+                logger.info("Waterfall figure found, adding to PDF section")
+                # Save figure to the cohort directory
+                fig_filename = "figure_1_waterfall_plot.png"
+                fig_path = cohort_dir / fig_filename
+                logger.info(f"Saving waterfall figure to: {fig_path}")
+                self.figures["waterfall"]["figure"].savefig(
+                    fig_path, format="png", dpi=300, bbox_inches="tight"
+                )
+                logger.info(f"Figure saved, file exists: {fig_path.exists()}")
+
+                # Use base64 embedded image (confirmed working with markdown-pdf)
+                import base64
+
+                with open(fig_path, "rb") as img_file:
+                    img_base64 = base64.b64encode(img_file.read()).decode()
+                waterfall_section += (
+                    f"![Waterfall Plot](data:image/png;base64,{img_base64})\n\n"
+                )
+
+                if "caption" in self.figures["waterfall"]:
+                    logger.info(
+                        f"Adding figure caption: {self.figures['waterfall']['caption'][:100]}..."
+                    )
+                    waterfall_section += f"*Figure {section_number}.1: {self.figures['waterfall']['caption']}*\n\n"
+
+                logger.info(
+                    f"Waterfall section content preview: {waterfall_section[:200]}..."
+                )
+            else:
+                logger.warning("No waterfall figure found in self.figures")
+
             waterfall_df = self.report_sections["waterfall_table"]
             waterfall_section += self._dataframe_to_markdown_table(waterfall_df)
             waterfall_section += "\n\n"
@@ -1400,48 +1461,48 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         """
         if not content:
             return
-            
-        lines = content.split('\n')
-        
+
+        lines = content.split("\n")
+
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-                
+
             # Handle headings
-            if line.startswith('## '):
+            if line.startswith("## "):
                 heading_text = line[3:].strip()
                 doc.add_heading(heading_text, level=2)
-            elif line.startswith('### '):
+            elif line.startswith("### "):
                 heading_text = line[4:].strip()
                 doc.add_heading(heading_text, level=3)
-            elif line.startswith('#### '):
+            elif line.startswith("#### "):
                 heading_text = line[5:].strip()
                 doc.add_heading(heading_text, level=4)
-            elif line.startswith('# '):
+            elif line.startswith("# "):
                 heading_text = line[2:].strip()
                 doc.add_heading(heading_text, level=1)
-            elif line.startswith('* ') or line.startswith('- '):
+            elif line.startswith("* ") or line.startswith("- "):
                 # Handle bullet points
                 bullet_text = line[2:].strip()
-                paragraph = doc.add_paragraph(style='List Bullet')
+                paragraph = doc.add_paragraph(style="List Bullet")
                 self._add_formatted_text(paragraph, bullet_text)
             else:
                 # Handle regular paragraphs with bold formatting
                 paragraph = doc.add_paragraph()
                 self._add_formatted_text(paragraph, line)
-    
+
     def _add_formatted_text(self, paragraph, text: str):
         """
         Add text to a paragraph with proper formatting for bold text (**text**).
         """
         import re
-        
+
         # Split text by bold markers (**text**)
-        parts = re.split(r'(\*\*.*?\*\*)', text)
-        
+        parts = re.split(r"(\*\*.*?\*\*)", text)
+
         for part in parts:
-            if part.startswith('**') and part.endswith('**'):
+            if part.startswith("**") and part.endswith("**"):
                 # Bold text
                 bold_text = part[2:-2]  # Remove ** markers
                 run = paragraph.add_run(bold_text)
@@ -1552,7 +1613,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "waterfall_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                self._add_markdown_content_to_doc(doc, self.report_sections["waterfall_commentary"])
+                self._add_markdown_content_to_doc(
+                    doc, self.report_sections["waterfall_commentary"]
+                )
 
         # Table 1
         table1_df = self.report_sections.get("table1")
@@ -1577,7 +1640,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "table1_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                self._add_markdown_content_to_doc(doc, self.report_sections["table1_commentary"])
+                self._add_markdown_content_to_doc(
+                    doc, self.report_sections["table1_commentary"]
+                )
 
         # Table 2 (Outcomes)
         table2_df = self.report_sections.get("table2")
@@ -1602,7 +1667,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             # Add AI commentary if available
             if "table2_commentary" in self.report_sections:
                 doc.add_heading("Clinical Commentary", level=2)
-                self._add_markdown_content_to_doc(doc, self.report_sections["table2_commentary"])
+                self._add_markdown_content_to_doc(
+                    doc, self.report_sections["table2_commentary"]
+                )
 
         # Save document
         doc.save(str(output_path))
