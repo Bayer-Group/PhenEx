@@ -122,7 +122,7 @@ class Cohort:
             Node uniqueness is validated across all stages to prevent naming conflicts.
         """
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
-        domains = tables.keys()
+        domains = list(tables.keys()) + [x.name for x in self.derived_tables]
         required_domains = self._get_domains()
         for d in required_domains:
             if d not in domains:
