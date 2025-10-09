@@ -60,8 +60,13 @@ class Table2(Reporter):
         """
         Execute Table2 analysis for the provided cohort.
 
+        Expected input columns:
+        - cohort.table: PERSON_ID, EVENT_DATE (index date)
+        - cohort.outcomes[].table: PERSON_ID, EVENT_DATE (outcome event date)
+        - right_censor_phenotypes[].table: PERSON_ID, EVENT_DATE, BOOLEAN (if censoring used)
+
         Args:
-            cohort: The cohort containing outcomes
+            cohort: The cohort containing outcomes and index table
 
         Returns:
             DataFrame with columns:
@@ -69,7 +74,6 @@ class Table2(Reporter):
             - Time_Point: Days from index date
             - N_Events: Number of events in cohort
             - N_Censored: Number of censored patients
-            - N_Total: Total patients in cohort
             - Time_Under_Risk: Follow-up time in 100 patient-years
             - Incidence_Rate: Incidence rate per 100 patient-years
         """
@@ -110,7 +114,29 @@ class Table2(Reporter):
         return self.df
 
     def _analyze_outcome_at_timepoint(self, outcome, time_point: int) -> Optional[dict]:
-        """Analyze a single outcome at a specific time point using pure Ibis."""
+        """
+        Analyze a single outcome at a specific time point using pure Ibis.
+
+        Expected input columns:
+        - cohort.table: PERSON_ID, EVENT_DATE (index date)
+        - outcome.table: PERSON_ID, EVENT_DATE (outcome event date)
+
+        Columns added during processing:
+        - INDEX_DATE: Renamed from EVENT_DATE for clarity
+        - DAYS_TO_EVENT: Days from index to outcome event (null if no event)
+        - CENSOR_TIME: Time point when follow-up is censored
+        - HAS_EVENT_IN_WINDOW: 1 if valid event within time window, 0 otherwise
+        - ACTUAL_EVENT_TIME: Actual event time (min of event time and censor time)
+        - FOLLOWUP_TIME: Actual follow-up time accounting for censoring
+        - IS_CENSORED: 1 if patient was censored before time_point, 0 otherwise
+
+        Args:
+            outcome: Phenotype outcome to analyze
+            time_point: Number of days from index to analyze
+
+        Returns:
+            Dictionary with analysis results or None if no data
+        """
         # Get cohort index table
         index_table = self.cohort.table
 
@@ -228,7 +254,30 @@ class Table2(Reporter):
         }
 
     def _apply_censoring(self, index_table, time_point: int):
-        """Apply censoring from right-censoring phenotypes using Ibis operations."""
+        """
+        Apply censoring from right-censoring phenotypes using Ibis operations.
+
+        Expected input columns:
+        - index_table: PERSON_ID, INDEX_DATE, EVENT_DATE (outcome), DAYS_TO_EVENT
+        - censor_phenotype.table: PERSON_ID, EVENT_DATE, BOOLEAN
+
+        Columns added during processing:
+        - CENSOR_TIME: Time point when follow-up is censored (initially set to time_point)
+        - CENSOR_PERSON_ID: Temporary column for joining censoring events
+        - CENSOR_EVENT_DATE: Temporary column for censoring event dates
+        - DAYS_TO_CENSOR: Days from index to censoring event
+        - DAYS_TO_END_STUDY: Days from index to end of study (if applicable)
+
+        Final added columns:
+        - CENSOR_TIME: Final censoring time accounting for all censoring sources
+
+        Args:
+            index_table: Ibis table with patient index dates and outcome events
+            time_point: Maximum follow-up time in days
+
+        Returns:
+            Ibis table with CENSOR_TIME column added
+        """
         # Start with no censoring (full follow-up time)
         index_table = index_table.mutate(CENSOR_TIME=time_point)
 
@@ -309,7 +358,24 @@ class Table2(Reporter):
         return index_table
 
     def _create_pretty_display(self):
-        """Create formatted display version of results."""
+        """
+        Create formatted display version of results.
+
+        Expected input columns (from self.df):
+        - Outcome: Name of outcome variable
+        - Time_Point: Days from index date
+        - N_Events: Number of events in cohort
+        - N_Censored: Number of censored patients
+        - Time_Under_Risk: Follow-up time in 100 patient-years
+        - Incidence_Rate: Incidence rate per 100 patient-years
+
+        Columns modified:
+        - Incidence_Rate: Rounded to specified decimal places
+        - Time_Under_Risk: Rounded to specified decimal places
+
+        Final column order:
+        - Outcome, Time_Point, N_Events, N_Censored, N_Total, Time_Under_Risk, Incidence_Rate
+        """
         if self.df.empty:
             return
 
