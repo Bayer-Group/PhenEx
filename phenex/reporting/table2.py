@@ -2,6 +2,7 @@ import pandas as pd
 import ibis
 from ibis import _
 from typing import List, Optional
+from datetime import datetime
 
 from phenex.phenotypes import Phenotype
 from phenex.reporting.reporter import Reporter
@@ -29,6 +30,8 @@ class Table2(Reporter):
 
     Example:
         ```python
+        from datetime import datetime
+
         # Simple analysis without censoring
         table2 = Table2(
             time_points=[90, 365, 730],  # 3 months, 1 year, 2 years
@@ -38,7 +41,7 @@ class Table2(Reporter):
         table2_censored = Table2(
             time_points=[90, 365, 730],
             right_censor_phenotypes=[death_phenotype],
-            end_of_study_period="2023-12-31"
+            end_of_study_period=datetime(2023, 12, 31)
         )
         results = table2_censored.execute(cohort)  # Uses cohort.outcomes
         ```
@@ -50,7 +53,7 @@ class Table2(Reporter):
         decimal_places: int = 3,
         pretty_display: bool = True,
         right_censor_phenotypes: Optional[List[Phenotype]] = None,
-        end_of_study_period: Optional[str] = None,
+        end_of_study_period: Optional["datetime"] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
         self.time_points = sorted(time_points)  # Sort time points
@@ -343,7 +346,12 @@ class Table2(Reporter):
         # Apply end of study period censoring if specified
         if self.end_of_study_period is not None:
             # Calculate days from index to end of study
-            end_date = ibis.literal(pd.to_datetime(self.end_of_study_period).date())
+            # Convert datetime to date if needed
+            if hasattr(self.end_of_study_period, "date"):
+                end_date = ibis.literal(self.end_of_study_period.date())
+            else:
+                # Fallback for string dates
+                end_date = ibis.literal(pd.to_datetime(self.end_of_study_period).date())
             index_table = index_table.mutate(
                 DAYS_TO_END_STUDY=(end_date - index_table.INDEX_DATE.cast("date")).cast(
                     "int"
