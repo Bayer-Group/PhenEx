@@ -97,7 +97,9 @@ class Table2(Reporter):
         results_list = []
         for outcome in self.outcomes:
             for time_point in self.time_points:
-                result = self._analyze_outcome_at_timepoint(outcome, time_point)
+                result = self._calculate_time_under_risk_for_outcome_at_timepoint(
+                    outcome, time_point
+                )
                 if result is not None:
                     results_list.append(result)
 
@@ -113,7 +115,9 @@ class Table2(Reporter):
         logger.info("Completed Table2 analysis")
         return self.df
 
-    def _analyze_outcome_at_timepoint(self, outcome, time_point: int) -> Optional[dict]:
+    def _calculate_time_under_risk_for_outcome_at_timepoint(
+        self, outcome, time_point: int
+    ) -> Optional[dict]:
         """
         Analyze a single outcome at a specific time point using pure Ibis.
 
