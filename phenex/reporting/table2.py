@@ -89,7 +89,7 @@ class Table2(Reporter):
         for phenotype in self.right_censor_phenotypes:
             phenotype.execute(cohort.subset_tables_index)
 
-        # Analyze each outcome at each time point using pure Ibis
+        # Analyze each outcome at each time point
         results_list = []
         for outcome in self.outcomes:
             for time_point in self.time_points:
@@ -240,89 +240,77 @@ class Table2(Reporter):
 
         # Apply each right-censoring phenotype
         for censor_phenotype in self.right_censor_phenotypes:
-            try:
-                # Get censoring events
-                censor_events = (
-                    censor_phenotype.table.filter(
-                        censor_phenotype.table.BOOLEAN == True
-                    )
-                    .select(["PERSON_ID", "EVENT_DATE"])
-                    .distinct()
-                )
+            # Get censoring events
+            censor_events = (
+                censor_phenotype.table.filter(censor_phenotype.table.BOOLEAN == True)
+                .select(["PERSON_ID", "EVENT_DATE"])
+                .distinct()
+            )
 
-                # Rename columns to avoid conflicts
-                censor_events_renamed = censor_events.select(
-                    [
-                        censor_events.PERSON_ID.name("CENSOR_PERSON_ID"),
-                        censor_events.EVENT_DATE.name("CENSOR_EVENT_DATE"),
-                    ]
-                )
+            # Rename columns to avoid conflicts
+            censor_events_renamed = censor_events.select(
+                [
+                    censor_events.PERSON_ID.name("CENSOR_PERSON_ID"),
+                    censor_events.EVENT_DATE.name("CENSOR_EVENT_DATE"),
+                ]
+            )
 
-                # Left join with analysis table to get censoring dates
-                analysis_table = analysis_table.left_join(
-                    censor_events_renamed,
-                    analysis_table.PERSON_ID == censor_events_renamed.CENSOR_PERSON_ID,
-                )
+            # Left join with analysis table to get censoring dates
+            analysis_table = analysis_table.left_join(
+                censor_events_renamed,
+                analysis_table.PERSON_ID == censor_events_renamed.CENSOR_PERSON_ID,
+            )
 
-                # Calculate days to censoring event
-                analysis_table = analysis_table.mutate(
-                    DAYS_TO_CENSOR=ibis.case()
-                    .when(analysis_table.CENSOR_EVENT_DATE.isnull(), ibis.null())
-                    .else_(
-                        (
-                            analysis_table.CENSOR_EVENT_DATE.cast("date")
-                            - analysis_table.INDEX_DATE.cast("date")
-                        ).cast("int")
-                    )
-                    .end()
+            # Calculate days to censoring event
+            analysis_table = analysis_table.mutate(
+                DAYS_TO_CENSOR=ibis.case()
+                .when(analysis_table.CENSOR_EVENT_DATE.isnull(), ibis.null())
+                .else_(
+                    (
+                        analysis_table.CENSOR_EVENT_DATE.cast("date")
+                        - analysis_table.INDEX_DATE.cast("date")
+                    ).cast("int")
                 )
+                .end()
+            )
 
-                # Update censoring time to be minimum of current censor time and this censoring event
-                analysis_table = analysis_table.mutate(
-                    CENSOR_TIME=ibis.case()
-                    .when(
-                        (analysis_table.DAYS_TO_CENSOR.notnull())
-                        & (analysis_table.DAYS_TO_CENSOR >= 0)
-                        & (analysis_table.DAYS_TO_CENSOR < analysis_table.CENSOR_TIME),
-                        analysis_table.DAYS_TO_CENSOR,
-                    )
-                    .else_(analysis_table.CENSOR_TIME)
-                    .end()
+            # Update censoring time to be minimum of current censor time and this censoring event
+            analysis_table = analysis_table.mutate(
+                CENSOR_TIME=ibis.case()
+                .when(
+                    (analysis_table.DAYS_TO_CENSOR.notnull())
+                    & (analysis_table.DAYS_TO_CENSOR >= 0)
+                    & (analysis_table.DAYS_TO_CENSOR < analysis_table.CENSOR_TIME),
+                    analysis_table.DAYS_TO_CENSOR,
                 )
+                .else_(analysis_table.CENSOR_TIME)
+                .end()
+            )
 
-                # Clean up temporary columns
-                analysis_table = analysis_table.drop(
-                    ["CENSOR_PERSON_ID", "CENSOR_EVENT_DATE", "DAYS_TO_CENSOR"]
-                )
-
-            except Exception as e:
-                logger.warning(
-                    f"Could not apply censoring from {censor_phenotype.name}: {e}"
-                )
+            # Clean up temporary columns
+            analysis_table = analysis_table.drop(
+                ["CENSOR_PERSON_ID", "CENSOR_EVENT_DATE", "DAYS_TO_CENSOR"]
+            )
 
         # Apply end of study period censoring if specified
         if self.end_of_study_period is not None:
-            try:
-                # Calculate days from index to end of study
-                end_date = ibis.literal(pd.to_datetime(self.end_of_study_period).date())
-                analysis_table = analysis_table.mutate(
-                    DAYS_TO_END_STUDY=(
-                        end_date - analysis_table.INDEX_DATE.cast("date")
-                    ).cast("int")
+            # Calculate days from index to end of study
+            end_date = ibis.literal(pd.to_datetime(self.end_of_study_period).date())
+            analysis_table = analysis_table.mutate(
+                DAYS_TO_END_STUDY=(
+                    end_date - analysis_table.INDEX_DATE.cast("date")
+                ).cast("int")
+            )
+
+            # Update censoring time
+            analysis_table = analysis_table.mutate(
+                CENSOR_TIME=ibis.least(
+                    analysis_table.CENSOR_TIME, analysis_table.DAYS_TO_END_STUDY
                 )
+            )
 
-                # Update censoring time
-                analysis_table = analysis_table.mutate(
-                    CENSOR_TIME=ibis.least(
-                        analysis_table.CENSOR_TIME, analysis_table.DAYS_TO_END_STUDY
-                    )
-                )
-
-                # Clean up
-                analysis_table = analysis_table.drop(["DAYS_TO_END_STUDY"])
-
-            except Exception as e:
-                logger.warning(f"Could not apply end of study period censoring: {e}")
+            # Clean up
+            analysis_table = analysis_table.drop(["DAYS_TO_END_STUDY"])
 
         return analysis_table
 
