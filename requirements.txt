@@ -12,4 +12,3 @@ openpyxl
 deepdiff
 lifelines==0.30.0
 matplotlib==3.10.1
-scipy>=1.9.0
