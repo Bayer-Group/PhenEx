@@ -3,6 +3,7 @@ import ibis
 from ibis import _
 from typing import List, Optional
 
+from phenex.phenotypes import Phenotype
 from phenex.reporting.reporter import Reporter
 from phenex.util import create_logger
 
@@ -48,7 +49,7 @@ class Table2(Reporter):
         time_points: List[int] = [365],  # Default to 1 year
         decimal_places: int = 3,
         pretty_display: bool = True,
-        right_censor_phenotypes: Optional[List] = None,
+        right_censor_phenotypes: Optional[List[Phenotype]] = None,
         end_of_study_period: Optional[str] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
@@ -116,7 +117,7 @@ class Table2(Reporter):
         return self.df
 
     def _calculate_time_under_risk_for_outcome_at_timepoint(
-        self, outcome, time_point: int
+        self, outcome: Phenotype, time_point: int
     ) -> Optional[dict]:
         """
         Analyze a single outcome at a specific time point using pure Ibis.
@@ -170,7 +171,7 @@ class Table2(Reporter):
         )
 
         # Caclulate censoring time
-        index_table = self._apply_censoring(index_table, time_point)
+        index_table = self._caclulate_censoring_time(index_table, time_point)
 
         # Filter to valid events within time window (after censoring)
         # FIXME need to be careful about ties!
@@ -257,7 +258,7 @@ class Table2(Reporter):
             "Incidence_Rate": round(incidence_rate, 2),
         }
 
-    def _apply_censoring(self, index_table, time_point: int):
+    def _caclulate_censoring_time(self, index_table, time_point: int):
         """
         Apply censoring from right-censoring phenotypes using Ibis operations.
 

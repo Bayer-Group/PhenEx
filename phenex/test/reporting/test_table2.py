@@ -76,6 +76,11 @@ class MockCohort:
         self.outcomes = outcomes
         self.subset_tables_index = None
 
+    @property
+    def table(self):
+        """Return the index table as the cohort table."""
+        return self.index_table
+
 
 class TestTable2:
     """Test cases for Table2 reporter."""
