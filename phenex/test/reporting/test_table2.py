@@ -5,29 +5,52 @@ Unit tests for Table2 reporter.
 import pytest
 import pandas as pd
 import numpy as np
+import ibis
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 from phenex.reporting.table2 import Table2
 
 
-class MockTable:
-    """Mock table for testing."""
+class MockIbisTable:
+    """Mock Ibis table for testing."""
 
     def __init__(self, data):
-        self.data = data
+        if isinstance(data, pd.DataFrame):
+            self._ibis_table = ibis.memtable(data)
+        else:
+            self._ibis_table = data
 
     def filter(self, condition):
-        return self
+        return MockIbisTable(self._ibis_table.filter(condition))
 
     def select(self, columns):
-        return MockTable(self.data[columns])
+        return MockIbisTable(self._ibis_table.select(columns))
 
     def distinct(self):
-        return MockTable(self.data.drop_duplicates())
+        return MockIbisTable(self._ibis_table.distinct())
 
-    def to_pandas(self):
-        return self.data
+    def left_join(self, other, *args, **kwargs):
+        if isinstance(other, MockIbisTable):
+            other_table = other._ibis_table
+        else:
+            other_table = other
+        return MockIbisTable(self._ibis_table.left_join(other_table, *args, **kwargs))
+
+    def mutate(self, **kwargs):
+        return MockIbisTable(self._ibis_table.mutate(**kwargs))
+
+    def aggregate(self, *args, **kwargs):
+        return MockIbisTable(self._ibis_table.aggregate(*args, **kwargs))
+
+    def drop(self, columns):
+        return MockIbisTable(self._ibis_table.drop(columns))
+
+    def execute(self):
+        return self._ibis_table.execute()
+
+    def __getattr__(self, name):
+        return getattr(self._ibis_table, name)
 
 
 class MockPhenotype:
@@ -35,7 +58,7 @@ class MockPhenotype:
 
     def __init__(self, name, data):
         self.name = name
-        self._table = MockTable(data)
+        self._table = MockIbisTable(data)
 
     def execute(self, subset_tables_index):
         pass
@@ -49,8 +72,7 @@ class MockCohort:
     """Mock cohort for testing."""
 
     def __init__(self, cohort_data, outcomes):
-        self.index_table = MockTable(cohort_data)
-        self.index_table.BOOLEAN = True
+        self.index_table = MockIbisTable(cohort_data)
         self.outcomes = outcomes
         self.subset_tables_index = None
 
@@ -262,13 +284,13 @@ class TestTable2:
 
         # Add death events that occur before some outcomes
         death_events = []
+        base_date = pd.to_datetime("2020-01-01").date()
         for person_id in range(1, 201):  # All patients in cohort
             if person_id % 10 == 0:  # Every 10th person dies at day 200
                 death_events.append(
                     {
                         "PERSON_ID": person_id,
-                        "EVENT_DATE": pd.to_datetime("2020-01-01")
-                        + timedelta(days=200),
+                        "EVENT_DATE": base_date + timedelta(days=200),
                         "BOOLEAN": True,
                     }
                 )
@@ -292,6 +314,161 @@ class TestTable2:
         expected_max_person_years = 200 * 1.0  # 200 people * 1 year
         assert result["Time_Under_Risk"] < expected_max_person_years
 
+    def test_manual_calculation_validation(self):
+        """Test with simple known data to verify calculations manually."""
+        # Create simple test case:
+        # - 10 patients
+        # - 3 have events at specific days
+        # - Follow-up: 365 days
+
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Cohort: 10 patients, all start on Jan 1, 2020
+        cohort_data = []
+        for i in range(1, 11):
+            cohort_data.append(
+                {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            )
+
+        # Outcomes: Patient 1 has event at day 100, Patient 2 at day 200, Patient 3 at day 300
+        outcome_data = []
+        for i in range(1, 11):
+            if i == 1:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=100),
+                        "BOOLEAN": True,
+                    }
+                )
+            elif i == 2:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=200),
+                        "BOOLEAN": True,
+                    }
+                )
+            elif i == 3:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=300),
+                        "BOOLEAN": True,
+                    }
+                )
+            else:
+                outcome_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
+
+        outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
+        cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
+
+        # Run Table2
+        table2 = Table2(time_points=[365])
+        results = table2.execute(cohort)
+
+        # Manual calculation:
+        # Patient 1: 100 days follow-up (event at day 100)
+        # Patient 2: 200 days follow-up (event at day 200)
+        # Patient 3: 300 days follow-up (event at day 300)
+        # Patients 4-10: 365 days each (no events)
+
+        expected_total_days = 100 + 200 + 300 + (7 * 365)
+        expected_person_years = expected_total_days / 365.25
+        expected_events = 3
+        expected_rate = (expected_events / expected_person_years) * 100
+
+        # Check results
+        result = results.iloc[0]
+
+        # Validate
+        assert result["N_Events"] == expected_events
+        assert result["N_Total"] == 10
+        assert abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
+        assert abs(result["Incidence_Rate"] - expected_rate) < 1.0
+
+    def test_precise_censoring_calculation(self):
+        """Test censoring logic with precise manual calculation."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Cohort: 5 patients
+        cohort_data = []
+        for i in range(1, 6):
+            cohort_data.append(
+                {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            )
+
+        # Outcomes: Patient 1 has event at day 300, others have no events
+        outcome_data = []
+        for i in range(1, 6):
+            if i == 1:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=300),
+                        "BOOLEAN": True,
+                    }
+                )
+            else:
+                outcome_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
+
+        # Censoring: Patient 2 dies at day 100, Patient 3 at day 200
+        censor_data = []
+        for i in range(1, 6):
+            if i == 2:
+                censor_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=100),
+                        "BOOLEAN": True,
+                    }
+                )
+            elif i == 3:
+                censor_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=200),
+                        "BOOLEAN": True,
+                    }
+                )
+            else:
+                censor_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
+
+        outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
+        death = MockPhenotype("death", pd.DataFrame(censor_data))
+        cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
+
+        # Run Table2 with censoring
+        table2 = Table2(time_points=[365], right_censor_phenotypes=[death])
+        results = table2.execute(cohort)
+
+        # Manual calculation with censoring:
+        # Patient 1: 300 days (event at day 300)
+        # Patient 2: 100 days (dies at day 100, censored)
+        # Patient 3: 200 days (dies at day 200, censored)
+        # Patient 4: 365 days (no event, no censoring)
+        # Patient 5: 365 days (no event, no censoring)
+
+        expected_total_days = 300 + 100 + 200 + 365 + 365
+        expected_person_years = expected_total_days / 365.25
+        expected_events = 1  # Only patient 1 has event
+        expected_rate = (expected_events / expected_person_years) * 100
+
+        # Check results
+        result = results.iloc[0]
+
+        # Validate
+        assert result["N_Events"] == expected_events
+        assert result["N_Total"] == 5
+        assert abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
+        assert abs(result["Incidence_Rate"] - expected_rate) < 1.0
+
     def _create_fixed_time_test_data(
         self,
         n_cohort,
@@ -300,7 +477,7 @@ class TestTable2:
         follow_up_days,
     ):
         """Create test data with fixed event times."""
-        base_date = pd.to_datetime("2020-01-01")
+        base_date = pd.to_datetime("2020-01-01").date()
 
         # Create outcome data
         outcome_rows = []
@@ -324,7 +501,7 @@ class TestTable2:
 
     def _create_poisson_test_data(self, n_cohort, cohort_events, follow_up_days):
         """Create test data with Poisson-distributed event times."""
-        base_date = pd.to_datetime("2020-01-01")
+        base_date = pd.to_datetime("2020-01-01").date()
         outcome_rows = []
 
         # Cohort patients with random event times
@@ -350,7 +527,7 @@ class TestTable2:
 
     def _create_fixed_events_test_data(self, n_cohort, cohort_events, follow_up_days):
         """Create test data with fixed number of events."""
-        base_date = pd.to_datetime("2020-01-01")
+        base_date = pd.to_datetime("2020-01-01").date()
         outcome_rows = []
 
         # Cohort patients - first N have events, rest don't
@@ -378,7 +555,7 @@ class TestTable2:
 
     def _create_mock_cohort(self, total_patients, outcomes):
         """Create mock cohort."""
-        base_date = pd.to_datetime("2020-01-01")
+        base_date = pd.to_datetime("2020-01-01").date()
         cohort_rows = []
 
         for person_id in range(1, total_patients + 1):
