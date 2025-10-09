@@ -15,6 +15,7 @@ class Table2(Reporter):
 
     For each outcome, reports:
     - N events in the cohort
+    - N censored patients (patients whose follow-up was cut short)
     - Time under risk in 100 patient-years (accounting for censoring)
     - Incidence rate per 100 patient-years
 
@@ -47,7 +48,7 @@ class Table2(Reporter):
         time_points: List[int] = [365],  # Default to 1 year
         decimal_places: int = 3,
         pretty_display: bool = True,
-        right_censor_phenotypes: Optional[List["Phenotype"]] = None,
+        right_censor_phenotypes: Optional[List] = None,
         end_of_study_period: Optional[str] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
@@ -65,10 +66,11 @@ class Table2(Reporter):
         Returns:
             DataFrame with columns:
             - Outcome: Name of outcome variable
-            - Time_Point_Days: Days from index date
+            - Time_Point: Days from index date
             - N_Events: Number of events in cohort
+            - N_Censored: Number of censored patients
             - N_Total: Total patients in cohort
-            - Time_Under_Risk: Follow-up time in patient-years
+            - Time_Under_Risk: Follow-up time in 100 patient-years
             - Incidence_Rate: Incidence rate per 100 patient-years
         """
         self.cohort = cohort
@@ -175,13 +177,23 @@ class Table2(Reporter):
                     analysis_table.CENSOR_TIME,
                     time_point,
                 ),
+                # Mark patients as censored if their follow-up was cut short by censoring
+                # (i.e., censor time is less than time_point and they didn't have an event)
+                IS_CENSORED=ibis.case()
+                .when(
+                    (analysis_table.HAS_EVENT_IN_WINDOW == 0)
+                    & (analysis_table.CENSOR_TIME < time_point),
+                    1,
+                )
+                .else_(0)
+                .end(),
             )
 
             # Aggregate to get summary statistics
             summary = analysis_table.aggregate(
                 [
                     _.HAS_EVENT_IN_WINDOW.sum().name("N_Events"),
-                    _.PERSON_ID.count().name("N_Total"),
+                    _.IS_CENSORED.sum().name("N_Censored"),
                     _.FOLLOWUP_TIME.sum().name("Total_Followup_Days"),
                 ]
             )
@@ -195,7 +207,7 @@ class Table2(Reporter):
 
             row = summary_df.iloc[0]
             n_events = int(row["N_Events"])
-            n_total = int(row["N_Total"])
+            n_censored = int(row["N_Censored"])
             total_followup_days = float(row["Total_Followup_Days"])
 
             # Convert to patient-years and calculate incidence rate
@@ -203,15 +215,14 @@ class Table2(Reporter):
             incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
 
             logger.debug(
-                f"Outcome {outcome.name} at {time_point} days: {n_events} events, "
-                f"{n_total} patients, {time_years:.2f} patient-years"
+                f"Outcome {outcome.name} at {time_point} days: {n_events} events, {n_censored} censored. "
             )
 
             return {
                 "Outcome": outcome.name,
-                "Time_Point_Days": time_point,
+                "Time_Point": time_point,
                 "N_Events": n_events,
-                "N_Total": n_total,
+                "N_Censored": n_censored,
                 "Time_Under_Risk": round(time_years, 1),
                 "Incidence_Rate": round(incidence_rate, 2),
             }
@@ -332,8 +343,9 @@ class Table2(Reporter):
         # Reorder columns for display
         display_columns = [
             "Outcome",
-            "Time_Point_Days",
+            "Time_Point",
             "N_Events",
+            "N_Censored",
             "N_Total",
             "Time_Under_Risk",
             "Incidence_Rate",

@@ -125,7 +125,6 @@ class TestTable2:
 
         # Check event counts
         assert result["N_Events"] == cohort_events
-        assert result["N_Total"] == n_cohort
 
     def test_poisson_generated_events(self):
         """Test Table2 with Poisson-distributed events to validate incidence rate calculations."""
@@ -180,7 +179,6 @@ class TestTable2:
 
         # Check event counts match exactly
         assert result["N_Events"] == actual_events
-        assert result["N_Total"] == n_cohort
 
     def test_basic_cohort_analysis(self):
         """Test basic cohort analysis with known event rate."""
@@ -201,8 +199,7 @@ class TestTable2:
 
         # Check basic counts
         assert result["N_Events"] == cohort_events
-        assert result["N_Total"] == n_cohort
-        assert result["Time_Point_Days"] == 365
+        assert result["Time_Point"] == 365
 
         # Check that incidence rate is reasonable
         expected_person_years = n_cohort * 1.0  # Approximately 1 year each
@@ -223,9 +220,9 @@ class TestTable2:
         # Check expected columns are present
         expected_columns = [
             "Outcome",
-            "Time_Point_Days",
+            "Time_Point",
             "N_Events",
-            "N_Total",
+            "N_Censored",
             "Time_Under_Risk",
             "Incidence_Rate",
         ]
@@ -257,7 +254,7 @@ class TestTable2:
 
         # Should have one row per time point
         assert len(results) == len(time_points)
-        assert set(results["Time_Point_Days"]) == set(time_points)
+        assert set(results["Time_Point"]) == set(time_points)
 
     def test_no_outcomes_cohort(self):
         """Test Table2 with cohort that has no outcomes."""
@@ -385,7 +382,6 @@ class TestTable2:
 
         # Validate
         assert result["N_Events"] == expected_events
-        assert result["N_Total"] == 10
         assert abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
         assert abs(result["Incidence_Rate"] - expected_rate) < 1.0
 
@@ -465,7 +461,6 @@ class TestTable2:
 
         # Validate
         assert result["N_Events"] == expected_events
-        assert result["N_Total"] == 5
         assert abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
         assert abs(result["Incidence_Rate"] - expected_rate) < 1.0
 
