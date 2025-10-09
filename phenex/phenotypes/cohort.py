@@ -48,46 +48,112 @@ class Cohort:
     ):
         self.name = name
         self.description = description
-        self.table = None  # Will be set during execution
+        self.table = None  # Will be set during execution to index table
+        self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
-        self.inclusions = inclusions if inclusions is not None else []
-        self.exclusions = exclusions if exclusions is not None else []
-        self.characteristics = characteristics if characteristics is not None else []
-        self.derived_tables = derived_tables if derived_tables is not None else []
-        self.outcomes = outcomes if outcomes is not None else []
+        self.inclusions = inclusions or []
+        self.exclusions = exclusions or []
+        self.characteristics = characteristics or []
+        self.derived_tables = derived_tables or []
+        self.outcomes = outcomes or []
 
-        #
-        # Entry stage
-        #
-        self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
-            stage="subset_entry", index_phenotype=entry_criterion
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
         )
-        self.entry_stage = NodeGroup(name="entry", nodes=self.subset_tables_entry_nodes)
+        self._validate_node_uniqueness()
+
+        # stages: set at execute() time
+        self.derived_tables_stage = None
+        self.entry_stage = None
+        self.index_stage = None
+        self.reporting_stage = None
+
+        # special Nodes that Cohort builds (later, in build_stages())
+        # need to be able to refer to later to get outputs
+        self.inclusions_table_node = None
+        self.exclusions_table_node = None
+        self.characteristics_table_node = None
+        self.outcomes_table_node = None
+        self.index_table_node = None
+        self.subset_tables_entry_nodes = None
+        self.subset_tables_index_nodes = None
+        self._table1 = None
+
+        logger.info(
+            f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
+        )
+
+    def build_stages(self, tables: Dict[str, PhenexTable]):
+        """
+        Build the computational stages for cohort execution.
+
+        This method constructs the directed acyclic graph (DAG) of computational stages required to execute the cohort. The stages are built in dependency order and include:
+
+        1. **Derived Tables Stage** (optional): Executes any derived table computations
+        2. **Entry Stage**: Computes entry phenotype and subsets tables filtered by the entry criterion phenotype
+        3. **Index Stage**: Applies inclusion/exclusion criteria and creates the final index table
+        4. **Reporting Stage** (optional): Computes characteristics and outcomes tables
+
+        Parameters:
+            tables: Dictionary mapping domain names to PhenexTable objects containing the source data tables required for phenotype computation.
+
+        Raises:
+            ValueError: If required domains are missing from the input tables.
+
+        Side Effects:
+            Sets the following instance attributes:
+            - self.entry_stage: NodeGroup for entry criterion processing
+            - self.derived_tables_stage: NodeGroup for derived tables (if any)
+            - self.index_stage: NodeGroup for inclusion/exclusion processing
+            - self.reporting_stage: NodeGroup for characteristics/outcomes (if any)
+            - Various table nodes for accessing intermediate results
+
+        Note:
+            This method must be called before execute() to initialize the computation graph.
+            Node uniqueness is validated across all stages to prevent naming conflicts.
+        """
+        # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
+        domains = tables.keys()
+        required_domains = self._get_domains()
+        for d in required_domains:
+            if d not in domains:
+                raise ValueError(f"Required domain {d} not present in input tables!")
 
         #
-        # Derived tables stage
+        # Derived tables stage: OPTIONAL
         #
-        self.derived_tables_stage = None
-        if derived_tables:
+        if self.derived_tables:
             self.derived_tables_stage = NodeGroup(
-                name="entry", nodes=self.derived_tables
+                name="derived_tables_stage", nodes=self.derived_tables
             )
 
         #
-        # Index stage
+        # Entry stage: REQUIRED
         #
-        self.inclusions_table_node = None
-        self.exclusions_table_node = None
+        self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
+            stage="subset_entry", domains=domains, index_phenotype=self.entry_criterion
+        )
+        self.entry_stage = NodeGroup(
+            name="entry_stage", nodes=self.subset_tables_entry_nodes
+        )
+
+        #
+        # Index stage: REQUIRED
+        #
         index_nodes = []
-        if inclusions:
+        if self.inclusions:
             self.inclusions_table_node = InclusionsTableNode(
                 name=f"{self.name}__inclusions".upper(),
                 index_phenotype=self.entry_criterion,
                 phenotypes=self.inclusions,
             )
             index_nodes.append(self.inclusions_table_node)
-        if exclusions:
+        if self.exclusions:
             self.exclusions_table_node = ExclusionsTableNode(
                 name=f"{self.name}__exclusions".upper(),
                 index_phenotype=self.entry_criterion,
@@ -103,19 +169,16 @@ class Cohort:
         )
         index_nodes.append(self.index_table_node)
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
-            stage="subset_index", index_phenotype=self.index_table_node
+            stage="subset_index", domains=domains, index_phenotype=self.index_table_node
         )
         self.index_stage = NodeGroup(
-            name="index",
+            name="index_stage",
             nodes=self.subset_tables_index_nodes + index_nodes,
         )
 
         #
-        # Post-index / reporting stage
+        # Post-index / reporting stage: OPTIONAL
         #
-        # Create HStackNodes for characteristics and outcomes
-        self.characteristics_table_node = None
-        self.outcomes_table_node = None
         reporting_nodes = []
         if self.characteristics:
             self.characteristics_table_node = HStackNode(
@@ -128,17 +191,12 @@ class Cohort:
                 name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
             )
             reporting_nodes.append(self.outcomes_table_node)
-
-        self.reporting_stage = NodeGroup(name="reporting", nodes=reporting_nodes)
+        if reporting_nodes:
+            self.reporting_stage = NodeGroup(
+                name="reporting_stage", nodes=reporting_nodes
+            )
 
         self._table1 = None
-
-        # Validate that all nodes are unique across all stages
-        self._validate_node_uniqueness()
-
-        logger.info(
-            f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
-        )
 
     def _get_domains(self):
         """
@@ -169,11 +227,16 @@ class Cohort:
         domains = list(set(domains))
         return domains
 
-    def _get_subset_tables_nodes(self, stage: str, index_phenotype: Phenotype):
+    def _get_subset_tables_nodes(
+        self, stage: str, domains: List[str], index_phenotype: Phenotype
+    ):
         """
         Get the nodes for subsetting tables for all domains in this cohort subsetting by the given index_phenotype.
+
+        stage: A string for naming the nodes.
+        domains: List of domains to subset.
+        index_phenotype: The phenotype to use for subsetting patients.
         """
-        domains = self._get_domains()
         return [
             SubsetTable(
                 name=f"{self.name}__{stage}_{domain}".upper(),
@@ -227,7 +290,7 @@ class Cohort:
 
     def execute(
         self,
-        tables,
+        tables: Dict[str, PhenexTable],
         con: Optional["SnowflakeConnector"] = None,
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
@@ -246,6 +309,8 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        self.build_stages(tables)
+
         if self.derived_tables_stage:
             logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
             self.derived_tables_stage.execute(
@@ -268,13 +333,13 @@ class Cohort:
             n_threads=n_threads,
             lazy_execution=lazy_execution,
         )
-        tables = self.get_subset_tables_entry(tables)
+        self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         self.index_stage.execute(
-            tables=tables,
+            tables=self.subset_tables_entry,
             con=con,
             overwrite=overwrite,
             n_threads=n_threads,
@@ -285,14 +350,15 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
-        self.subset_tables_index = tables = self.get_subset_tables_index(tables)
-        self.reporting_stage.execute(
-            tables=self.subset_tables_index,
-            con=con,
-            overwrite=overwrite,
-            n_threads=n_threads,
-            lazy_execution=lazy_execution,
-        )
+        self.subset_tables_index = self.get_subset_tables_index(tables)
+        if self.reporting_stage:
+            self.reporting_stage.execute(
+                tables=self.subset_tables_index,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
 
         return self.index_table
 
@@ -313,48 +379,8 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
-        """
-        Validate that all nodes and dependencies are unique according to the rule:
-        node1.name == node2.name implies hash(node1) == hash(node2)
-
-        This ensures that nodes with the same name have identical parameters (same hash).
-        """
-        name_to_hash = {}
-
-        # Collect all nodes from all stages
-        all_nodes = []
-
-        # Add nodes from entry stage
-        if hasattr(self, "entry_stage") and self.entry_stage:
-            all_nodes += list(self.entry_stage.dependencies)
-
-        # Add nodes from derived tables stage
-        if hasattr(self, "derived_tables_stage") and self.derived_tables_stage:
-            all_nodes += list(self.derived_tables_stage.dependencies)
-
-        # Add nodes from index stage
-        if hasattr(self, "index_stage") and self.index_stage:
-            all_nodes += list(self.index_stage.dependencies)
-
-        # Add nodes from reporting stage
-        if hasattr(self, "reporting_stage") and self.reporting_stage:
-            all_nodes += list(self.reporting_stage.dependencies)
-
-        for node in all_nodes:
-            node_name = node.name
-            node_hash = hash(node)
-
-            # Check if we've seen this name before
-            if node_name in name_to_hash:
-                existing_hash = name_to_hash[node_name]
-                if existing_hash != node_hash:
-                    raise ValueError(
-                        f"Duplicate node name found: '{node_name}'."
-                        f"Nodes with the same name must have identical parameters."
-                    )
-            else:
-                existing_hash = None
-                name_to_hash[node_name] = node_hash
+        # Use Node's capability to check for node uniqueness rather than reimplementing it here
+        Node().add_children(self.phenotypes)
 
     def append_counts(self):
         def append_count_to_phenotype(phenotype):
@@ -434,6 +460,31 @@ class HStackNode(Node):
 
 
 class SubsetTable(Node):
+    """
+    A compute node that creates a subset of a domain table by joining it with an index phenotype.
+
+    This node takes a table from a specific domain and filters it to include only records for patients who have entries in the index phenotype table. The resulting table contains all original columns from the domain table plus an INDEX_DATE column from the index phenotype.
+
+    Parameters:
+        name: Name identifier for this subset table node.
+        domain: The domain name (e.g., 'PERSON', 'CONDITION_OCCURRENCE') of the table to subset.
+        index_phenotype: The phenotype used to filter the domain table. Only patients present in this phenotype's table will be included in the subset.
+
+    Attributes:
+        index_phenotype: The phenotype used for subsetting.
+        domain: The domain of the table being subset.
+
+    Example:
+        ```python
+        # Create a subset of the CONDITION_OCCURRENCE table based on diabetes patients
+        diabetes_subset = SubsetTable(
+            name="DIABETES_CONDITIONS",
+            domain="CONDITION_OCCURRENCE",
+            index_phenotype=diabetes_phenotype
+        )
+        ```
+    """
+
     def __init__(self, name: str, domain: str, index_phenotype: Phenotype):
         super(SubsetTable, self).__init__(name=name)
         self.add_children(index_phenotype)
@@ -442,8 +493,18 @@ class SubsetTable(Node):
 
     def _execute(self, tables: Dict[str, Table]):
         table = tables[self.domain]
-        index_table = self.index_phenotype.table.rename({"INDEX_DATE": "EVENT_DATE"})
-        columns = list(set(["INDEX_DATE"] + table.columns))
+        index_table = self.index_phenotype.table
+
+        # Check if EVENT_DATE exists in the index table
+        if "EVENT_DATE" in index_table.columns:
+            index_table = index_table.rename({"INDEX_DATE": "EVENT_DATE"})
+            columns = list(set(["INDEX_DATE"] + table.columns))
+        else:
+            logger.warning(
+                f"EVENT_DATE column not found in index_phenotype table for SubsetTable '{self.name}'. INDEX_DATE will not be set."
+            )
+            columns = table.columns
+
         subset_table = table.inner_join(index_table, "PERSON_ID")
         subset_table = subset_table.select(columns)
         return subset_table

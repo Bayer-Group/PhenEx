@@ -8,7 +8,7 @@
 
 ## What is PhenEx?
 
-PhenEx -- pronouned "Phoenix" -- is a cutting-edge cohort builder designed to simplify the extraction of analysis-ready datasets from raw real-world data as part of observational study execution. Using a meta-language closely aligned to plain English, PhenEx allows you to define and calculate index dates, inclusion and exclusion criteria, baseline characteristics, and outcome event tables based on arbitrarily complex criteria.
+PhenEx -- pronouned "Phoenix" -- is a cutting-edge framework designed to simplify the extraction and analysis of patient cohorts starting from raw real-world medical data as part of observational study execution. Using a meta-language closely aligned to plain English, PhenEx allows you to define and calculate index dates, inclusion and exclusion criteria, baseline characteristics, and outcome event tables based on arbitrarily complex criteria.
 
 Questions you can answer using PhenEx include, but are not limited to:
 
@@ -16,9 +16,8 @@ Questions you can answer using PhenEx include, but are not limited to:
 - How many patients with a history of stroke have also had a diagnosis of atrial fibrillation and prescribed anticoagulants?
 - What are the common comorbidities observed in patients with hypertension?
 - How do medication adherence rates compare between different patient demographics?
-  0 What proportion of patients who have been diagnosed with breast cancer receive genetic testing for BRCA1 and BRCA2 mutations?
+- What proportion of patients who have been diagnosed with breast cancer receive genetic testing for BRCA1 and BRCA2 mutations?
 - Among patients treated for acute myocardial infarction (AMI), how many have been re-admitted to the hospital within six months for heart-related issues?
-  What is the incidence of diabetes among patients aged 50-70?
 - How many patients with a diagnosis of rheumatoid arthritis have been prescribed at least three different disease-modifying antirheumatic drugs (DMARDs) over their treatment history?
 
 ## Who is PhenEx for?
@@ -41,15 +40,32 @@ PhenEx is for anyone seeking to analyze real-world patient data, such as claims,
 
 5. PhenEx is **scalable**. Whether you have a simple feasibility analysis or a full-blown research protocol with 20 inclusion criteria and 100 baseline characteristics, PhenEx can build your cohort.
 
+6. PhenEx includes a **web application** for non-Python users. Build and visualize cohorts through an intuitive web interface with AI-powered assistance.
+
+7. PhenEx offers **AI integration** to help with cohort building and phenotype definition, making complex studies more accessible.
+
 ## What is PhenEx _not_?
 
-- PhenEx does not clean your data. Garbage-in-garbage-out, so please invest time in cleaning your data before attempting to perform observational research using it.
+- PhenEx does not currently work with unstructured medical data. We make minimal assumptions on the structure of the data, but do require the data to first be in tabular form.
 
-- PhenEx does not perform outcome analysis, e.g., Kaplan-Meier estimation or Cox regressions. PhenEx only prepares the analysis dataset for downstream analysis. For outcome analysis in Python, the [lifelines](https://lifelines.readthedocs.io/en/latest/) package is a good place to start; in R, the [surv](https://cran.r-project.org/web/packages/survival/index.html) package is fairly popular.
+## Getting Started
 
-## I'm convinced! How can I get started?
+PhenEx can be used in two ways:
 
-Head on over to the [Official PhenEx Documentation](https://bayer-group.github.io/PhenEx). If you have any questions, please feel free to reach out to any of the developers and we'll be happy to get you on your way.
+### Python Library
+
+Head on over to the [Official PhenEx Documentation](https://bayer-group.github.io/PhenEx) for comprehensive tutorials and API documentation. If you have any questions, please feel free to reach out to any of the developers and we'll be happy to get you on your way.
+
+### Web Application
+
+PhenEx also includes a user-friendly web application for a visual approach to real-world data analysis. The web app provides:
+
+- Intuitive interface for building cohorts
+- AI-powered assistance for phenotype definition
+- Visualization of cohort results
+- Interactive cohort editing capabilities
+
+To get started with the web app, refer to the deployment instructions in the `app/` directory of the `ui` branch. **The web app is currently in alpha.** Expect bumps in the road as an early user, but also expect priority support as we are eager to get feedback.
 
 ## API Stability
 
