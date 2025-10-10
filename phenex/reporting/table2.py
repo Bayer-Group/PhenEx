@@ -18,7 +18,7 @@ class Table2(Reporter):
     For each outcome, reports:
     - N events in the cohort
     - N censored patients (patients whose follow-up was cut short)
-    - Time under risk in 100 patient-years (accounting for censoring)
+    - Time under risk in patient-years (accounting for censoring)
     - Incidence rate per 100 patient-years
 
     Time under risk accounts for censoring from competing events (e.g., death) and administrative censoring at end of study period.
