@@ -951,3 +951,91 @@ class TestTable2:
             assert pd.isna(patient["DAYS_TO_EVENT"])
 
         print("✅ _calculate_time_to_first_post_index_event no phenotypes test passed!")
+
+    def test_calculate_per_patient_time_under_risk_method(self):
+        """Test that users can access per-patient followup data for debugging."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Create simple test case: 3 patients, 1 with outcome at day 100
+        cohort_data = []
+        for i in range(1, 4):
+            cohort_data.append(
+                {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            )
+
+        outcome_data = []
+        for i in range(1, 4):
+            if i == 1:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=100),
+                        "BOOLEAN": True,
+                    }
+                )
+            else:
+                outcome_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
+
+        outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
+        cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
+
+        # Create Table2 instance
+        table2 = Table2(time_points=[365])
+        table2.cohort = cohort
+
+        # Execute right censoring phenotypes (none in this case)
+        for phenotype in table2.right_censor_phenotypes:
+            phenotype.execute(cohort.subset_tables_index)
+
+        # Test the per-patient method directly
+        followup_table = table2._calculate_per_patient_time_under_risk(outcome, 365)
+        followup_df = followup_table.execute()
+
+        # Verify we get one row per patient
+        assert len(followup_df) == 3, f"Expected 3 patients, got {len(followup_df)}"
+
+        # Verify expected columns are present
+        expected_columns = [
+            "PERSON_ID",
+            "INDEX_DATE",
+            "OUTCOME_DATE",
+            "DAYS_TO_EVENT",
+            "CENSOR_DATE",
+            "DAYS_TO_CENSOR",
+            "HAS_EVENT",
+            "FOLLOWUP_TIME",
+            "IS_CENSORED",
+        ]
+        for col in expected_columns:
+            assert col in followup_df.columns, f"Expected column {col} not found"
+
+        # Verify patient 1 has event at day 100
+        patient_1 = followup_df[followup_df["PERSON_ID"] == 1].iloc[0]
+        assert patient_1["HAS_EVENT"] == 1, "Patient 1 should have event"
+        assert (
+            patient_1["DAYS_TO_EVENT"] == 100
+        ), "Patient 1 should have event at day 100"
+        assert (
+            patient_1["FOLLOWUP_TIME"] == 100
+        ), "Patient 1 should have 100 days followup"
+        assert patient_1["IS_CENSORED"] == 0, "Patient 1 should not be censored"
+
+        # Verify patients 2 and 3 have no events
+        for patient_id in [2, 3]:
+            patient = followup_df[followup_df["PERSON_ID"] == patient_id].iloc[0]
+            assert (
+                patient["HAS_EVENT"] == 0
+            ), f"Patient {patient_id} should have no event"
+            assert pd.isna(
+                patient["DAYS_TO_EVENT"]
+            ), f"Patient {patient_id} should have null DAYS_TO_EVENT"
+            assert (
+                patient["FOLLOWUP_TIME"] == 365
+            ), f"Patient {patient_id} should have 365 days followup"
+            assert (
+                patient["IS_CENSORED"] == 0
+            ), f"Patient {patient_id} should not be censored"
+
+        print("✅ _calculate_per_patient_time_under_risk method test passed!")

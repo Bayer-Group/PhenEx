@@ -56,7 +56,6 @@ class Table2(Reporter):
         end_of_study_period: Optional["datetime"] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
-        self.followup_table = None  # for debugging, will save the pre-aggregated data after calling execute()
         self.time_points = sorted(time_points)  # Sort time points
         self.right_censor_phenotypes = right_censor_phenotypes or []
         self.end_of_study_period = end_of_study_period
@@ -102,9 +101,7 @@ class Table2(Reporter):
         results_list = []
         for outcome in self.outcomes:
             for time_point in self.time_points:
-                result = self._calculate_time_under_risk_for_outcome_at_timepoint(
-                    outcome, time_point
-                )
+                result = self._calculate_aggregate_time_under_risk(outcome, time_point)
                 if result is not None:
                     results_list.append(result)
 
@@ -120,7 +117,7 @@ class Table2(Reporter):
         logger.info("Completed Table2 analysis")
         return self.df
 
-    def _calculate_time_under_risk_for_outcome_at_timepoint(
+    def _calculate_aggregate_time_under_risk(
         self, outcome: Phenotype, time_point: int
     ) -> Optional[dict]:
         """
@@ -130,20 +127,90 @@ class Table2(Reporter):
         - cohort.table: PERSON_ID, EVENT_DATE (index date)
         - outcome.table: PERSON_ID, EVENT_DATE (outcome event date)
 
-        Columns added during processing:
-        - INDEX_DATE: Renamed from EVENT_DATE for clarity
-        - DAYS_TO_EVENT: Days from index to outcome event (null if no event)
-        - CENSOR_TIME: Time point when follow-up is censored
-        - HAS_EVENT: 1 if valid event within time window, 0 otherwise
-        - FOLLOWUP_TIME: Actual follow-up time accounting for censoring
-        - IS_CENSORED: 1 if patient was censored before time_point, 0 otherwise
+        Args:
+            outcome: Phenotype outcome to analyze
+            time_point: Number of days from index to analyze
+
+        Returns:
+            Dictionary with aggregated analysis results, or None if no data available:
+            - "Outcome": str - Name of the outcome phenotype
+            - "Time_Point": int - Days from index date analyzed
+            - "N_Events": int - Number of events observed in the cohort
+            - "N_Censored": int - Number of patients censored before time_point
+            - "Time_Under_Risk": float - Total follow-up time in patient-years (rounded to decimal_places)
+            - "Incidence_Rate": float - Events per 100 patient-years (rounded to decimal_places)
+        """
+        # Get per-patient followup data
+        followup_table = self._calculate_per_patient_time_under_risk(
+            outcome, time_point
+        )
+
+        # Aggregate to get summary statistics
+        summary = followup_table.aggregate(
+            [
+                _.HAS_EVENT.sum().name("N_Events"),
+                _.IS_CENSORED.sum().name("N_Censored"),
+                _.FOLLOWUP_TIME.sum().name("Total_Followup_Days"),
+            ]
+        )
+
+        # Convert to pandas only at the very end for final calculations
+        summary_df = summary.execute()
+
+        if len(summary_df) == 0:
+            logger.warning(f"No data for {outcome.name} at {time_point} days")
+            return None
+
+        row = summary_df.iloc[0]
+        n_events = int(row["N_Events"])
+        n_censored = int(row["N_Censored"])
+        total_followup_days = float(row["Total_Followup_Days"])
+
+        # Convert to patient-years and calculate incidence rate
+        time_years = total_followup_days / 365.25
+        incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
+
+        logger.debug(
+            f"Outcome {outcome.name} at {time_point} days: {n_events} events, {n_censored} censored. "
+        )
+
+        return {
+            "Outcome": outcome.name,
+            "Time_Point": time_point,
+            "N_Events": n_events,
+            "N_Censored": n_censored,
+            "Time_Under_Risk": round(time_years, self.decimal_places),
+            "Incidence_Rate": round(incidence_rate, self.decimal_places),
+        }
+
+    def _calculate_per_patient_time_under_risk(
+        self, outcome: Phenotype, time_point: int
+    ):
+        """
+        Calculate per-patient time under risk data for a single outcome at a specific time point.
+
+        Expected input columns:
+        - cohort.table: PERSON_ID, EVENT_DATE (index date)
+        - outcome.table: PERSON_ID, EVENT_DATE (outcome event date)
+
+        Returns:
+            Ibis table with columns:
+            - PERSON_ID: Patient identifier
+            - INDEX_DATE: Index date for this patient
+            - OUTCOME_DATE: Date of outcome event (null if no event)
+            - DAYS_TO_EVENT: Days from index to outcome event (null if no event)
+            - CENSOR_DATE: Date of censoring event (null if no censoring)
+            - DAYS_TO_CENSOR: Days from index date to censoring event
+            - HAS_EVENT: 1 if valid event within time window, 0 otherwise
+            - FOLLOWUP_TIME: Actual follow-up time accounting for censoring
+            - IS_CENSORED: 1 if patient was censored before time_point, 0 otherwise
 
         Args:
             outcome: Phenotype outcome to analyze
             time_point: Number of days from index to analyze
 
         Returns:
-            Dictionary with analysis results or None if no data
+            Ibis table with per-patient followup data
         """
         # Get cohort index table
         index_table = self.cohort.table
@@ -177,24 +244,26 @@ class Table2(Reporter):
                 )
             )
 
-            # Final censoring time is minimum of phenotype censoring and end of study
+            # Update DAYS_TO_CENSOR and CENSOR_DATE if end_of_study_period is earlier
             index_table = index_table.mutate(
-                CENSOR_TIME=ibis.case()
+                DAYS_TO_CENSOR=ibis.case()
                 .when(
                     index_table.DAYS_TO_CENSOR.isnull(), index_table.DAYS_TO_END_STUDY
                 )
-                .else_(
-                    ibis.least(
-                        index_table.DAYS_TO_CENSOR, index_table.DAYS_TO_END_STUDY
-                    )
+                .when(
+                    index_table.DAYS_TO_END_STUDY < index_table.DAYS_TO_CENSOR,
+                    index_table.DAYS_TO_END_STUDY,
                 )
-                .end()
+                .else_(index_table.DAYS_TO_CENSOR)
+                .end(),
+                CENSOR_DATE=ibis.case()
+                .when(index_table.DAYS_TO_CENSOR.isnull(), end_date)
+                .when(
+                    index_table.DAYS_TO_END_STUDY < index_table.DAYS_TO_CENSOR, end_date
+                )
+                .else_(index_table.CENSOR_DATE)
+                .end(),
             ).drop("DAYS_TO_END_STUDY")
-        else:
-            # No end of study period, use phenotype censoring
-            index_table = index_table.mutate(
-                CENSOR_TIME=ibis.coalesce(index_table.DAYS_TO_CENSOR, time_point)
-            )
 
         # Filter to valid events within time window (after censoring)
         # FIXME need to be careful about ties!
@@ -204,7 +273,10 @@ class Table2(Reporter):
                 (index_table.DAYS_TO_EVENT.notnull())
                 & (index_table.DAYS_TO_EVENT >= 0)
                 & (index_table.DAYS_TO_EVENT <= time_point)
-                & (index_table.DAYS_TO_EVENT <= index_table.CENSOR_TIME),
+                & (
+                    (index_table.DAYS_TO_CENSOR.isnull())
+                    | (index_table.DAYS_TO_EVENT <= index_table.DAYS_TO_CENSOR)
+                ),
                 1,
             )
             .else_(0)
@@ -221,60 +293,23 @@ class Table2(Reporter):
                 )
                 .else_(time_point)
                 .end(),
-                index_table.CENSOR_TIME,
+                index_table.DAYS_TO_CENSOR.fill_null(time_point),
                 time_point,
             ),
             # Mark patients as censored if their follow-up was cut short by censoring
             # (i.e., censor time is less than time_point and they didn't have an event)
             IS_CENSORED=ibis.case()
             .when(
-                (index_table.HAS_EVENT == 0) & (index_table.CENSOR_TIME < time_point),
+                (index_table.HAS_EVENT == 0)
+                & (index_table.DAYS_TO_CENSOR.notnull())
+                & (index_table.DAYS_TO_CENSOR < time_point),
                 1,
             )
             .else_(0)
             .end(),
         )
 
-        # for debugging, save the pre-aggregated data
-        self.followup_table = index_table
-
-        # Aggregate to get summary statistics
-        summary = index_table.aggregate(
-            [
-                _.HAS_EVENT.sum().name("N_Events"),
-                _.IS_CENSORED.sum().name("N_Censored"),
-                _.FOLLOWUP_TIME.sum().name("Total_Followup_Days"),
-            ]
-        )
-
-        # Convert to pandas only at the very end for final calculations
-        summary_df = summary.execute()
-
-        if len(summary_df) == 0:
-            logger.warning(f"No data for {outcome.name} at {time_point} days")
-            return None
-
-        row = summary_df.iloc[0]
-        n_events = int(row["N_Events"])
-        n_censored = int(row["N_Censored"])
-        total_followup_days = float(row["Total_Followup_Days"])
-
-        # Convert to patient-years and calculate incidence rate
-        time_years = total_followup_days / 365.25
-        incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
-
-        logger.debug(
-            f"Outcome {outcome.name} at {time_point} days: {n_events} events, {n_censored} censored. "
-        )
-
-        return {
-            "Outcome": outcome.name,
-            "Time_Point": time_point,
-            "N_Events": n_events,
-            "N_Censored": n_censored,
-            "Time_Under_Risk": round(time_years, 1),
-            "Incidence_Rate": round(incidence_rate, 2),
-        }
+        return index_table
 
     def _calculate_time_to_first_post_index_event(
         self, index_table, phenotypes, date_column_name: str, days_column_name: str
