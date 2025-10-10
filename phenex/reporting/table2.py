@@ -56,6 +56,7 @@ class Table2(Reporter):
         end_of_study_period: Optional["datetime"] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        self.followup_table = None  # for debugging, will save the pre-aggregated data after calling execute()
         self.time_points = sorted(time_points)  # Sort time points
         self.right_censor_phenotypes = right_censor_phenotypes or []
         self.end_of_study_period = end_of_study_period
@@ -78,7 +79,7 @@ class Table2(Reporter):
             - Time_Point: Days from index date
             - N_Events: Number of events in cohort
             - N_Censored: Number of censored patients
-            - Time_Under_Risk: Follow-up time in 100 patient-years
+            - Time_Under_Risk: Follow-up time in patient-years
             - Incidence_Rate: Incidence rate per 100 patient-years
         """
         self.cohort = cohort
@@ -133,7 +134,7 @@ class Table2(Reporter):
         - INDEX_DATE: Renamed from EVENT_DATE for clarity
         - DAYS_TO_EVENT: Days from index to outcome event (null if no event)
         - CENSOR_TIME: Time point when follow-up is censored
-        - HAS_EVENT_IN_WINDOW: 1 if valid event within time window, 0 otherwise
+        - HAS_EVENT: 1 if valid event within time window, 0 otherwise
         - FOLLOWUP_TIME: Actual follow-up time accounting for censoring
         - IS_CENSORED: 1 if patient was censored before time_point, 0 otherwise
 
@@ -198,7 +199,7 @@ class Table2(Reporter):
         # Filter to valid events within time window (after censoring)
         # FIXME need to be careful about ties!
         index_table = index_table.mutate(
-            HAS_EVENT_IN_WINDOW=ibis.case()
+            HAS_EVENT=ibis.case()
             .when(
                 (index_table.DAYS_TO_EVENT.notnull())
                 & (index_table.DAYS_TO_EVENT >= 0)
@@ -227,18 +228,20 @@ class Table2(Reporter):
             # (i.e., censor time is less than time_point and they didn't have an event)
             IS_CENSORED=ibis.case()
             .when(
-                (index_table.HAS_EVENT_IN_WINDOW == 0)
-                & (index_table.CENSOR_TIME < time_point),
+                (index_table.HAS_EVENT == 0) & (index_table.CENSOR_TIME < time_point),
                 1,
             )
             .else_(0)
             .end(),
         )
 
+        # for debugging, save the pre-aggregated data
+        self.followup_table = index_table
+
         # Aggregate to get summary statistics
         summary = index_table.aggregate(
             [
-                _.HAS_EVENT_IN_WINDOW.sum().name("N_Events"),
+                _.HAS_EVENT.sum().name("N_Events"),
                 _.IS_CENSORED.sum().name("N_Censored"),
                 _.FOLLOWUP_TIME.sum().name("Total_Followup_Days"),
             ]
