@@ -46,6 +46,29 @@ class MockIbisTable:
     def drop(self, columns):
         return MockIbisTable(self._ibis_table.drop(columns))
 
+    def rename(self, mapping):
+        return MockIbisTable(self._ibis_table.rename(mapping))
+
+    def join(self, other, *args, **kwargs):
+        if isinstance(other, MockIbisTable):
+            other_table = other._ibis_table
+        else:
+            other_table = other
+        return MockIbisTable(self._ibis_table.join(other_table, *args, **kwargs))
+
+    def group_by(self, *args, **kwargs):
+        return MockIbisTable(self._ibis_table.group_by(*args, **kwargs))
+
+    def union(self, other, *args, **kwargs):
+        if isinstance(other, MockIbisTable):
+            other_table = other._ibis_table
+        else:
+            other_table = other
+        return MockIbisTable(self._ibis_table.union(other_table, *args, **kwargs))
+
+    def count(self):
+        return self._ibis_table.count()
+
     def execute(self):
         return self._ibis_table.execute()
 
@@ -59,6 +82,7 @@ class MockPhenotype:
     def __init__(self, name, data):
         self.name = name
         self._table = MockIbisTable(data)
+        self.date_col = "EVENT_DATE"  # Standard date column name for phenotypes
 
     def execute(self, subset_tables_index):
         pass
@@ -469,6 +493,220 @@ class TestTable2:
         assert abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
         assert abs(result["Incidence_Rate"] - expected_rate) < 1.0
 
+    def test_multiple_events_per_patient_first_event_only(self):
+        """Test that only the first event per patient is counted when patients have multiple events."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Cohort: 3 patients, all start on Jan 1, 2020
+        cohort_data = []
+        for i in range(1, 4):
+            cohort_data.append(
+                {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            )
+
+        # Outcomes:
+        # Patient 1: has events at day 50, 100, and 200 (should only count day 50)
+        # Patient 2: has events at day 150 and 300 (should only count day 150)
+        # Patient 3: has no events
+        outcome_data = []
+
+        # Patient 1 - multiple events
+        outcome_data.extend(
+            [
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=50),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=100),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=200),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 2 - multiple events
+        outcome_data.extend(
+            [
+                {
+                    "PERSON_ID": 2,
+                    "EVENT_DATE": base_date + timedelta(days=150),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 2,
+                    "EVENT_DATE": base_date + timedelta(days=300),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 3 - no events
+        outcome_data.append({"PERSON_ID": 3, "EVENT_DATE": None, "BOOLEAN": False})
+
+        outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
+        cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
+
+        # Run Table2
+        table2 = Table2(time_points=[365])
+        results = table2.execute(cohort)
+
+        # Check results
+        result = results.iloc[0]
+
+        # Should only count 2 events (first event for patient 1 and patient 2)
+        assert result["N_Events"] == 2, f"Expected 2 events, got {result['N_Events']}"
+
+        # Manual calculation:
+        # Patient 1: 50 days follow-up (first event at day 50)
+        # Patient 2: 150 days follow-up (first event at day 150)
+        # Patient 3: 365 days follow-up (no events)
+        expected_total_days = 50 + 150 + 365
+        expected_person_years = expected_total_days / 365.25
+        expected_events = 2
+        expected_rate = (expected_events / expected_person_years) * 100
+
+        # Validate calculations are based on first events only
+        assert (
+            abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
+        ), f"Expected {expected_person_years:.3f} person-years, got {result['Time_Under_Risk']}"
+        assert (
+            abs(result["Incidence_Rate"] - expected_rate) < 1.0
+        ), f"Expected rate {expected_rate:.2f}, got {result['Incidence_Rate']}"
+
+    def test_multiple_censoring_events_per_patient_first_event_only(self):
+        """Test that only the first censoring event per patient is used when patients have multiple censoring events."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Cohort: 3 patients, all start on Jan 1, 2020
+        cohort_data = []
+        for i in range(1, 4):
+            cohort_data.append(
+                {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            )
+
+        # Simple outcome: Patient 1 has outcome at day 200, others have no outcomes
+        outcome_data = []
+        for i in range(1, 4):
+            if i == 1:
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=200),
+                        "BOOLEAN": True,
+                    }
+                )
+            else:
+                outcome_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
+
+        # Multiple censoring events per patient:
+        # Patient 1: censoring events at days 150, 250, 300 (should only use day 150, which comes before outcome at day 200)
+        # Patient 2: censoring events at days 100, 200 (should only use day 100)
+        # Patient 3: censoring events at days 50, 150, 250 (should only use day 50)
+        censor_data = []
+
+        # Patient 1 - multiple censoring events (first at day 150 should censor the outcome at day 200)
+        censor_data.extend(
+            [
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=150),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=250),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 1,
+                    "EVENT_DATE": base_date + timedelta(days=300),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 2 - multiple censoring events
+        censor_data.extend(
+            [
+                {
+                    "PERSON_ID": 2,
+                    "EVENT_DATE": base_date + timedelta(days=100),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 2,
+                    "EVENT_DATE": base_date + timedelta(days=200),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 3 - multiple censoring events
+        censor_data.extend(
+            [
+                {
+                    "PERSON_ID": 3,
+                    "EVENT_DATE": base_date + timedelta(days=50),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 3,
+                    "EVENT_DATE": base_date + timedelta(days=150),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 3,
+                    "EVENT_DATE": base_date + timedelta(days=250),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
+        death = MockPhenotype("death", pd.DataFrame(censor_data))
+        cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
+
+        # Run Table2 with censoring
+        table2 = Table2(time_points=[365], right_censor_phenotypes=[death])
+        results = table2.execute(cohort)
+
+        # Check results
+        result = results.iloc[0]
+
+        # Should count 0 events because Patient 1's outcome at day 200 is censored by death at day 150
+        assert result["N_Events"] == 0, f"Expected 0 events, got {result['N_Events']}"
+
+        # Manual calculation with first censoring events only:
+        # Patient 1: 150 days (censored by first death at day 150, outcome at day 200 doesn't count)
+        # Patient 2: 100 days (censored by first death at day 100)
+        # Patient 3: 50 days (censored by first death at day 50)
+        expected_total_days = 150 + 100 + 50
+        expected_person_years = expected_total_days / 365.25
+        expected_events = 0
+        expected_rate = 0  # No events
+
+        # Validate calculations are based on first censoring events only
+        assert (
+            abs(result["Time_Under_Risk"] - expected_person_years) < 0.1
+        ), f"Expected {expected_person_years:.3f} person-years, got {result['Time_Under_Risk']}"
+        assert (
+            result["Incidence_Rate"] == expected_rate
+        ), f"Expected rate {expected_rate}, got {result['Incidence_Rate']}"
+
+        # All patients should be censored
+        assert (
+            result["N_Censored"] == 3
+        ), f"Expected 3 censored patients, got {result['N_Censored']}"
+
     def _create_fixed_time_test_data(
         self,
         n_cohort,
@@ -564,3 +802,152 @@ class TestTable2:
             )
 
         return MockCohort(pd.DataFrame(cohort_rows), outcomes)
+
+    def test_calculate_time_to_first_post_index_event_method(self):
+        """Test the _calculate_time_to_first_post_index_event method directly with various scenarios."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Create index table with 5 patients, all starting on Jan 1, 2020
+        index_data = []
+        for i in range(1, 6):
+            index_data.append({"PERSON_ID": i, "INDEX_DATE": base_date})
+        index_table = MockIbisTable(pd.DataFrame(index_data))
+
+        # Create phenotype with various event scenarios:
+        # Patient 1: No events (should return None for both date and days)
+        # Patient 2: One event at day 100 post-index (should return day 100)
+        # Patient 3: Two events at day 50 and day 150 post-index (should return day 50 - first event)
+        # Patient 4: One event at day -30 pre-index, one at day 200 post-index (should return day 200 - first POST-index)
+        # Patient 5: Two events pre-index at day -50 and day -20 (should return None - no post-index events)
+
+        phenotype_data = []
+
+        # Patient 1: No events
+        phenotype_data.append({"PERSON_ID": 1, "EVENT_DATE": None, "BOOLEAN": False})
+
+        # Patient 2: One event at day 100 post-index
+        phenotype_data.append(
+            {
+                "PERSON_ID": 2,
+                "EVENT_DATE": base_date + timedelta(days=100),
+                "BOOLEAN": True,
+            }
+        )
+
+        # Patient 3: Two events at day 50 and day 150 post-index (should select day 50)
+        phenotype_data.extend(
+            [
+                {
+                    "PERSON_ID": 3,
+                    "EVENT_DATE": base_date + timedelta(days=50),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 3,
+                    "EVENT_DATE": base_date + timedelta(days=150),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 4: One pre-index event (day -30) and one post-index event (day 200)
+        # Should select day 200 as first POST-index event
+        phenotype_data.extend(
+            [
+                {
+                    "PERSON_ID": 4,
+                    "EVENT_DATE": base_date + timedelta(days=-30),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 4,
+                    "EVENT_DATE": base_date + timedelta(days=200),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        # Patient 5: Two events pre-index at day -50 and day -20 (should return None)
+        phenotype_data.extend(
+            [
+                {
+                    "PERSON_ID": 5,
+                    "EVENT_DATE": base_date + timedelta(days=-50),
+                    "BOOLEAN": True,
+                },
+                {
+                    "PERSON_ID": 5,
+                    "EVENT_DATE": base_date + timedelta(days=-20),
+                    "BOOLEAN": True,
+                },
+            ]
+        )
+
+        phenotype = MockPhenotype("test_phenotype", pd.DataFrame(phenotype_data))
+
+        # Create Table2 instance and call the method directly
+        table2 = Table2()
+        result_table = table2._calculate_time_to_first_post_index_event(
+            index_table, [phenotype], "EVENT_DATE", "DAYS_TO_EVENT"
+        )
+
+        # Convert to pandas for assertions
+        result_df = result_table.execute().sort_values("PERSON_ID")
+
+        # Verify we have 5 patients
+        assert len(result_df) == 5
+
+        # Patient 1: No events - should have None for both date and days
+        patient1 = result_df[result_df["PERSON_ID"] == 1].iloc[0]
+        assert pd.isna(patient1["EVENT_DATE"])
+        assert pd.isna(patient1["DAYS_TO_EVENT"])
+
+        # Patient 2: One event at day 100 - should return day 100
+        patient2 = result_df[result_df["PERSON_ID"] == 2].iloc[0]
+        assert patient2["EVENT_DATE"] == base_date + timedelta(days=100)
+        assert patient2["DAYS_TO_EVENT"] == 100
+
+        # Patient 3: Two post-index events - should return first one (day 50)
+        patient3 = result_df[result_df["PERSON_ID"] == 3].iloc[0]
+        assert patient3["EVENT_DATE"] == base_date + timedelta(days=50)
+        assert patient3["DAYS_TO_EVENT"] == 50
+
+        # Patient 4: Pre-index and post-index events - should return first POST-index (day 200)
+        patient4 = result_df[result_df["PERSON_ID"] == 4].iloc[0]
+        assert patient4["EVENT_DATE"] == base_date + timedelta(days=200)
+        assert patient4["DAYS_TO_EVENT"] == 200
+
+        # Patient 5: Only pre-index events - should return None
+        patient5 = result_df[result_df["PERSON_ID"] == 5].iloc[0]
+        assert pd.isna(patient5["EVENT_DATE"])
+        assert pd.isna(patient5["DAYS_TO_EVENT"])
+
+        print("✅ _calculate_time_to_first_post_index_event method test passed!")
+
+    def test_calculate_time_to_first_post_index_event_no_phenotypes(self):
+        """Test the method with no phenotypes - should return None for all patients."""
+        base_date = pd.to_datetime("2020-01-01").date()
+
+        # Create index table with 3 patients
+        index_data = []
+        for i in range(1, 4):
+            index_data.append({"PERSON_ID": i, "INDEX_DATE": base_date})
+        index_table = MockIbisTable(pd.DataFrame(index_data))
+
+        # Test with empty phenotypes list
+        table2 = Table2()
+        result_table = table2._calculate_time_to_first_post_index_event(
+            index_table, [], "EVENT_DATE", "DAYS_TO_EVENT"
+        )
+
+        # Convert to pandas for assertions
+        result_df = result_table.execute().sort_values("PERSON_ID")
+
+        # Verify we have 3 patients, all with None values
+        assert len(result_df) == 3
+        for i in range(3):
+            patient = result_df.iloc[i]
+            assert pd.isna(patient["EVENT_DATE"])
+            assert pd.isna(patient["DAYS_TO_EVENT"])
+
+        print("✅ _calculate_time_to_first_post_index_event no phenotypes test passed!")
