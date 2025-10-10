@@ -17,7 +17,7 @@ Usage:
 
 import numpy as np
 import pandas as pd
-from typing import Optional, Dict, List, Any
+from typing import Dict, List, Any
 import logging
 
 from bokeh.plotting import figure, show, save, output_file, output_notebook
@@ -27,12 +27,10 @@ from bokeh.models import (
     ColumnDataSource,
     Div,
     HoverTool,
-    FixedTicker,
-    Button,
 )
-from bokeh.layouts import column, row, gridplot, layout
+from bokeh.layouts import column, row, gridplot
 from bokeh.transform import linear_cmap
-from bokeh.palettes import RdBu11, Viridis256
+from bokeh.palettes import RdBu11
 
 from phenex.reporting.reporter import Reporter
 
@@ -63,7 +61,7 @@ class CohortExplorer(Reporter):
 
     def __init__(
         self,
-        title: str = "Interactive Cohort Explorer",
+        title: str = "Cohort Explorer",
         width: int = 900,
         height: int = 500,
         decimal_places: int = 2,
@@ -75,7 +73,7 @@ class CohortExplorer(Reporter):
         show_counts: bool = True,
     ):
         """
-        Initialize Interactive Cohort Explorer.
+        Initialize Cohort Explorer.
 
         Parameters:
             title: Dashboard title
