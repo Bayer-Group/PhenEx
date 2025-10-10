@@ -47,6 +47,7 @@ nav:
       - Reporting:
           - Report: api/reporting/reporter.md
           - Table1: api/reporting/table1.md
+          - Table2: api/reporting/table2.md
           - Waterfall: api/reporting/waterfall.md
           - InExCounts: api/reporting/counts.md
           - TimeToEvent: api/reporting/time_to_event.md
