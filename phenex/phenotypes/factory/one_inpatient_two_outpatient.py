@@ -2,8 +2,18 @@
 # 2. then create a EventCountPhenotype for ‘two outpatient’
 # 3. create a logic phenotype that is one_inpatient OR two_outpatient
 
+
 from phenex.phenotypes import CodelistPhenotype,LogicPhenotype,EventCountPhenotype
- 
+# from phenex.filters import ValueFilter, GreaterThanOrEqualTo
+# from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+# from phenex.filters.value import GreaterThanOrEqualTo
+from phenex.filters import *
+from phenex.filters.filter import Filter
+from phenex.filters.value_filter import ValueFilter
+from phenex.tables import EventTable, is_phenex_phenotype_table
+from phenex.filters.value import *
+
+
 def OneInpatientTwoOutpatientPhenotype(
     name,
     domain,
@@ -13,7 +23,9 @@ def OneInpatientTwoOutpatientPhenotype(
 	categorical_filter_outpatient,
     return_date
 ) -> LogicPhenotype:
-    
+    """
+    This captures patients who have either one inpatient event OR at least two outpatient events.
+    """ 
     pt_inpatient = CodelistPhenotype(
         name = name + "_inpatient",
         codelist = codelist,
@@ -32,17 +44,19 @@ def OneInpatientTwoOutpatientPhenotype(
         return_date='all'
     )
 
+
     pt_outpatient_two_occurrences = EventCountPhenotype(
         phenotype=pt_outpatient,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
         relative_time_range=RelativeTimeRangeFilter(),
-        return_date= return_date,
+        return_date= "all",
         component_date_select='second'
     )
         
     pt_final = LogicPhenotype(
         name = name,
-        expression = pt_inpatient | pt_outpatient
+        expression = pt_inpatient | pt_outpatient_two_occurrences
     )
 
     return pt_final
+
