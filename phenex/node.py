@@ -66,6 +66,9 @@ class Node:
         self._name = name or type(self).__name__
         self._children = []
         self.table = None  # populated upon call to execute()
+        self._last_execution_start_time = None
+        self._last_execution_end_time = None
+        self._last_execution_duration = None
 
     def add_children(self, children):
         if not isinstance(children, list):
@@ -210,8 +213,7 @@ class Node:
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, and LAST_EXECUTED
-                          for this node, or None if the node has never been executed.
+            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, LAST_EXECUTION_START_TIME, LAST_EXECUTION_END_TIME, and LAST_EXECUTION_DURATION for this node, or None if the node has never been executed.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -252,7 +254,9 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
-                    "LAST_EXECUTED": [datetime.now()],
+                    "LAST_EXECUTION_START_TIME": [self._last_execution_start_time],
+                    "LAST_EXECUTION_END_TIME": [self._last_execution_end_time],
+                    "LAST_EXECUTION_DURATION": [self._last_execution_duration],
                 }
             )
 
@@ -319,8 +323,11 @@ class Node:
                     f"Node '{self.name}': failed to drop materialized table: {e}"
                 )
 
-        # Reset the table attribute
+        # Reset the table attribute and timing info
         self.table = None
+        self._last_execution_start_time = None
+        self._last_execution_end_time = None
+        self._last_execution_duration = None
 
         # Recursively clear children if requested
         if recursive:
@@ -417,12 +424,21 @@ class Node:
 
                         if node._get_current_hash() != node._get_last_hash():
                             logger.info(f"Node '{node_name}': computing...")
+                            # Time the execution
+                            node._last_execution_start_time = datetime.now()
                             table = node._execute(tables)
+
                             if (
                                 table is not None
                             ):  # Only create table if _execute returns something
                                 con.create_table(table, node_name, overwrite=overwrite)
                                 table = con.get_dest_table(node_name)
+
+                            node._last_execution_end_time = datetime.now()
+                            node._last_execution_duration = (
+                                node._last_execution_end_time
+                                - node._last_execution_start_time
+                            ).total_seconds()
                             node._update_current_hash()
                         else:
                             logger.info(
@@ -430,12 +446,21 @@ class Node:
                             )
                             table = con.get_dest_table(node_name)
                     else:
+                        # Time the execution
+                        node._last_execution_start_time = datetime.now()
                         table = node._execute(tables)
+
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
                             table = con.get_dest_table(node_name)
+
+                        node._last_execution_end_time = datetime.now()
+                        node._last_execution_duration = (
+                            node._last_execution_end_time
+                            - node._last_execution_start_time
+                        ).total_seconds()
 
                     node.table = table
 
@@ -454,9 +479,16 @@ class Node:
                                 if deps_completed:
                                     ready_queue.put(dependent)
 
-                    logger.info(
-                        f"Thread {threading.current_thread().name}: completed node '{node_name}'"
-                    )
+                    # Log completion with timing info
+                    if node._last_execution_duration is not None:
+                        logger.info(
+                            f"Thread {threading.current_thread().name}: completed node '{node_name}' "
+                            f"in {node._last_execution_duration:.3f} seconds"
+                        )
+                    else:
+                        logger.info(
+                            f"Thread {threading.current_thread().name}: completed node '{node_name}' (cached)"
+                        )
 
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")
