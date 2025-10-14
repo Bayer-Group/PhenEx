@@ -213,7 +213,7 @@ class Node:
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, LAST_EXECUTION_START_TIME, LAST_EXECUTION_END_TIME, and LAST_EXECUTION_DURATION for this node, or None if the node has never been executed.
+            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, EXECUTION_PARAMS, LAST_EXECUTION_START_TIME, LAST_EXECUTION_END_TIME, and LAST_EXECUTION_DURATION for this node, or None if the node has never been executed.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -239,12 +239,103 @@ class Node:
         dhash.update(encoded)
         return int(dhash.hexdigest()[:8], 16)
 
+    def _get_execution_params(self, con):
+        """
+        Extract execution parameters from the connector for tracking database changes.
+
+        Parameters:
+            con: Database connector object
+
+        Returns:
+            dict: Dictionary containing source and destination database information
+        """
+        if con is None:
+            return None
+
+        execution_params = {}
+
+        # Handle SnowflakeConnector
+        if hasattr(con, "SNOWFLAKE_SOURCE_DATABASE"):
+            execution_params["connector_type"] = "SnowflakeConnector"
+            execution_params["source_database"] = getattr(
+                con, "SNOWFLAKE_SOURCE_DATABASE", None
+            )
+            execution_params["dest_database"] = getattr(
+                con, "SNOWFLAKE_DEST_DATABASE", None
+            )
+        # Handle DuckDBConnector
+        elif hasattr(con, "DUCKDB_SOURCE_DATABASE"):
+            execution_params["connector_type"] = "DuckDBConnector"
+            execution_params["source_database"] = getattr(
+                con, "DUCKDB_SOURCE_DATABASE", None
+            )
+            execution_params["dest_database"] = getattr(
+                con, "DUCKDB_DEST_DATABASE", None
+            )
+        else:
+            # Unknown connector type
+            execution_params["connector_type"] = type(con).__name__
+            execution_params["source_database"] = None
+            execution_params["dest_database"] = None
+
+        return execution_params
+
+    def _should_rerun(self, con):
+        """
+        Determine if the node should be rerun based on changes to node definition or execution parameters.
+        Logs the decision and reasons.
+
+        Parameters:
+            con: Database connector object
+
+        Returns:
+            bool: True if the node should be rerun, False otherwise
+        """
+        reasons = []
+
+        # Check if node definition has changed
+        current_hash = self._get_current_hash()
+        last_hash = self._get_last_hash()
+        node_changed = current_hash != last_hash
+
+        if node_changed:
+            reasons.append("node definition changed")
+
+        # Check if execution parameters have changed
+        current_execution_params = self._get_execution_params(con)
+
+        # Get last execution parameters from metadata
+        metadata = self.execution_metadata
+        last_execution_params = None
+        if (
+            metadata is not None
+            and "EXECUTION_PARAMS" in metadata
+            and pd.notna(metadata["EXECUTION_PARAMS"])
+        ):
+            last_execution_params = json.loads(metadata["EXECUTION_PARAMS"])
+
+        execution_params_changed = current_execution_params != last_execution_params
+
+        if execution_params_changed:
+            reasons.append("execution parameters changed")
+
+        should_rerun = node_changed or execution_params_changed
+
+        # Log the decision
+        if should_rerun:
+            reason_str = ", ".join(reasons)
+            logger.info(f"Node '{self.name}': {reason_str}, computing...")
+        else:
+            logger.info(f"Node '{self.name}': unchanged, using cached result")
+
+        return should_rerun
+
     def __hash__(self):
         # For python built-in function hash().
         # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
-    def _update_current_hash(self):
+    def _update_current_hash(self, execution_params=None):
         # Use class-level lock to ensure thread-safe updates to the node states table
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -254,6 +345,7 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
+                    "EXECUTION_PARAMS": [json.dumps(execution_params)],
                     "LAST_EXECUTION_START_TIME": [self._last_execution_start_time],
                     "LAST_EXECUTION_END_TIME": [self._last_execution_end_time],
                     "LAST_EXECUTION_DURATION": [self._last_execution_duration],
@@ -422,8 +514,7 @@ class Node:
                                 "A DatabaseConnector is required for lazy execution."
                             )
 
-                        if node._get_current_hash() != node._get_last_hash():
-                            logger.info(f"Node '{node_name}': computing...")
+                        if node._should_rerun(con):
                             # Time the execution
                             node._last_execution_start_time = datetime.now()
                             table = node._execute(tables)
@@ -439,11 +530,12 @@ class Node:
                                 node._last_execution_end_time
                                 - node._last_execution_start_time
                             ).total_seconds()
-                            node._update_current_hash()
-                        else:
-                            logger.info(
-                                f"Node '{node_name}': unchanged, using cached result"
+
+                            current_execution_params = node._get_execution_params(con)
+                            node._update_current_hash(
+                                execution_params=current_execution_params
                             )
+                        else:
                             table = con.get_dest_table(node_name)
                     else:
                         # Time the execution
