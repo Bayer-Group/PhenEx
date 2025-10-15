@@ -345,7 +345,13 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
-                    "EXECUTION_PARAMS": [json.dumps(execution_params)],
+                    "EXECUTION_PARAMS": [
+                        (
+                            json.dumps(execution_params)
+                            if execution_params is not None
+                            else None
+                        )
+                    ],
                     "LAST_EXECUTION_START_TIME": [self._last_execution_start_time],
                     "LAST_EXECUTION_END_TIME": [self._last_execution_end_time],
                     "LAST_EXECUTION_DURATION": [self._last_execution_duration],
@@ -353,9 +359,14 @@ class Node:
             )
 
             if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
-                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-                table = table[table.NODE_NAME != self.name]
-                df = pd.concat([table, df])
+                existing_table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                existing_table = existing_table[existing_table.NODE_NAME != self.name]
+
+                # Handle backward compatibility - add EXECUTION_PARAMS column if it doesn't exist
+                if "EXECUTION_PARAMS" not in existing_table.columns:
+                    existing_table["EXECUTION_PARAMS"] = None
+
+                df = pd.concat([existing_table, df])
 
             table = ibis.memtable(df)
             con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
