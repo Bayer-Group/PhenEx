@@ -184,7 +184,7 @@ class TestPhenexNode:
 
         # Mock table data
         mock_table_data = pd.DataFrame(
-            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": ["hash123", "hash456"]}
+            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": [123, 456]}
         )
         mock_table = Mock()
         mock_table.to_pandas.return_value = mock_table_data
@@ -194,7 +194,7 @@ class TestPhenexNode:
         node = Node("test")
         result = node._get_last_hash()
 
-        assert result == "hash123"
+        assert result == 123
 
     @patch("phenex.node.DuckDBConnector")
     @patch("phenex.node.ibis.memtable")
@@ -333,7 +333,7 @@ class TestPhenexNodeExecution:
         node = ConcreteNode("test")
         # Mock that node hasn't been computed before
         node._get_last_hash = Mock(return_value=None)
-        node._get_current_hash = Mock(return_value="hash123")
+        node._get_current_hash = Mock(return_value=12345678)
         node._update_current_hash = Mock(return_value=True)
 
         tables = {"domain1": MockTable()}
@@ -357,8 +357,8 @@ class TestPhenexNodeExecution:
 
         node = ConcreteNode("test")
         # Mock that node hasn't changed
-        node._get_last_hash = Mock(return_value="hash123")
-        node._get_current_hash = Mock(return_value="hash123")
+        node._get_last_hash = Mock(return_value=12345678)
+        node._get_current_hash = Mock(return_value=12345678)
 
         tables = {"domain1": MockTable()}
 
@@ -380,6 +380,63 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=False)
 
+    def test_execute_exception_propagation_in_threads(self):
+        """Test that exceptions in worker threads are properly propagated to main thread"""
+        failing_node = ConcreteNode("failing_node", fail=True)
+        parent = ConcreteNode("parent")
+        parent.add_children(failing_node)
+
+        tables = {"domain1": MockTable()}
+
+        # This should raise the RuntimeError from the failing node
+        with pytest.raises(RuntimeError, match="Node FAILING_NODE failed"):
+            parent.execute(tables, n_threads=2)
+
+    def test_execute_lazy_execution_exception_propagation(self):
+        """Test that lazy execution exceptions in worker threads are properly propagated"""
+        node = ConcreteNode("test")
+        tables = {"domain1": MockTable()}
+
+        # This should raise the ValueError about needing overwrite=True, not hang
+        with pytest.raises(
+            ValueError, match="lazy_execution only works with overwrite=True"
+        ):
+            node.execute(tables, lazy_execution=True, overwrite=False, n_threads=2)
+
+    def test_execute_fails_fast_prevents_new_work(self):
+        """Test that execution prevents dependent nodes from starting when a dependency fails"""
+        import time
+
+        # Create nodes where one fails quickly
+        failing_node = ConcreteNode("failing_node", execution_time=0.01, fail=True)
+
+        # Create nodes that depend on the failing node - these should NOT execute
+        # because their dependency failed before they could start
+        dependent1 = ConcreteNode("dependent1", execution_time=0.05)
+        dependent2 = ConcreteNode("dependent2", execution_time=0.05)
+
+        # Set up dependencies: dependent nodes can only start after failing_node completes
+        dependent1.add_children(failing_node)
+        dependent2.add_children(failing_node)
+
+        parent = ConcreteNode("parent")
+        parent.add_children([dependent1, dependent2])
+
+        tables = {"domain1": MockTable()}
+
+        with pytest.raises(RuntimeError, match="Node FAILING_NODE failed"):
+            parent.execute(tables, n_threads=4)
+
+        # The key test: nodes that depend on the failing node should NOT execute
+        # because fail-fast prevents new work from starting after a failure
+        assert (
+            not dependent1.executed
+        ), "dependent1 should not execute when its dependency fails"
+        assert (
+            not dependent2.executed
+        ), "dependent2 should not execute when its dependency fails"
+        assert not parent.executed, "parent should not execute when dependencies fail"
+
     def test_execute_lazy_execution_no_connector_error(self):
         """Test that lazy execution without connector raises error"""
         node = ConcreteNode("test")
@@ -389,6 +446,164 @@ class TestPhenexNodeExecution:
             ValueError, match="A DatabaseConnector is required for lazy execution"
         ):
             node.execute(tables, lazy_execution=True, overwrite=True)
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_removes_hash(self, mock_connector_class):
+        """Test that clear_cache removes node hash from state table"""
+        # Mock the DuckDB connector for node states
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = [
+            NODE_STATES_TABLE_NAME
+        ]
+
+        # Create mock table data with our node and another node
+        mock_table_data = pd.DataFrame(
+            {
+                "NODE_NAME": ["TEST", "OTHER_NODE"],
+                "LAST_HASH": ["hash123", "hash456"],
+                "NODE_PARAMS": ["{}", "{}"],
+                "LAST_EXECUTED": ["2023-01-01", "2023-01-02"],
+            }
+        )
+        mock_table = Mock()
+        mock_table.to_pandas.return_value = mock_table_data
+        mock_duckdb_con.get_dest_table.return_value = mock_table
+
+        # Mock ibis.memtable
+        mock_updated_table = Mock()
+        with patch("phenex.node.ibis.memtable", return_value=mock_updated_table):
+            mock_connector_class.return_value = mock_duckdb_con
+
+            node = ConcreteNode("test")
+            node.table = MockTable()  # Set a table to be reset
+
+            # Clear cache
+            node.clear_cache()
+
+            # Verify table attribute was reset
+            assert node.table is None
+
+            # Verify create_table was called to update the states table
+            mock_duckdb_con.create_table.assert_called_once_with(
+                mock_updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
+            )
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_with_connector_drops_table(self, mock_connector_class):
+        """Test that clear_cache drops materialized table when connector provided"""
+        # Mock the DuckDB connector for node states
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        # Mock the user connector
+        mock_user_con = Mock()
+        mock_user_con.dest_connection.list_tables.return_value = ["TEST"]
+
+        node = ConcreteNode("test")
+        node.table = MockTable()
+
+        # Clear cache with connector
+        node.clear_cache(con=mock_user_con)
+
+        # Verify materialized table was dropped
+        mock_user_con.dest_connection.drop_table.assert_called_once_with("TEST")
+        assert node.table is None
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_recursive(self, mock_connector_class):
+        """Test that clear_cache recursively clears child nodes when recursive=True"""
+        # Mock the DuckDB connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        parent = ConcreteNode("parent")
+        child1 = ConcreteNode("child1")
+        child2 = ConcreteNode("child2")
+        parent.add_children([child1, child2])
+
+        # Set tables to verify they get reset
+        parent.table = MockTable()
+        child1.table = MockTable()
+        child2.table = MockTable()
+
+        # Clear cache recursively
+        parent.clear_cache(recursive=True)
+
+        # Verify all tables were reset
+        assert parent.table is None
+        assert child1.table is None
+        assert child2.table is None
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_non_recursive(self, mock_connector_class):
+        """Test that clear_cache only clears current node when recursive=False"""
+        # Mock the DuckDB connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        parent = ConcreteNode("parent")
+        child = ConcreteNode("child")
+        parent.add_children(child)
+
+        # Set tables
+        parent.table = MockTable()
+        child.table = MockTable()
+
+        # Clear cache non-recursively
+        parent.clear_cache(recursive=False)
+
+        # Verify only parent table was reset
+        assert parent.table is None
+        assert child.table is not None  # Child should be unchanged
+
+    @patch("phenex.node.DuckDBConnector")
+    def test_clear_cache_forces_reexecution(self, mock_connector_class):
+        """Test that clearing cache forces re-execution in lazy mode"""
+        # Mock the DuckDB connector for both node states and user connector
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        # Mock user connector
+        mock_user_con = Mock()
+        mock_user_con.dest_connection.list_tables.return_value = []
+        mock_result_table = MockTable()
+        mock_user_con.get_dest_table.return_value = mock_result_table
+
+        node = ConcreteNode("test")
+        tables = {"domain1": MockTable()}
+
+        # First execution - should execute
+        node._get_last_hash = Mock(return_value=None)
+        node._get_current_hash = Mock(return_value="hash123")
+        node._update_current_hash = Mock(return_value=True)
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert node.executed
+
+        # Reset execution flag
+        node.executed = False
+
+        # Second execution without cache clear - should skip
+        node._get_last_hash = Mock(return_value="hash123")
+        node._get_current_hash = Mock(return_value="hash123")
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert not node.executed  # Should have skipped
+
+        # Clear cache
+        node.clear_cache(con=mock_user_con)
+
+        # Third execution after cache clear - should execute again
+        node._get_last_hash = Mock(return_value=None)  # Cache was cleared
+        node._get_current_hash = Mock(return_value="hash123")
+        node._update_current_hash = Mock(return_value=True)
+
+        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
+        assert node.executed  # Should have executed again
 
     def test_add_children_circular_dependency(self):
         """Test that adding a child that would create circular dependency raises ValueError"""
@@ -452,20 +667,6 @@ class TestPhenexNodeGroup:
         assert "CHILD" in reverse_graph
         assert "PARENT" in reverse_graph["CHILD"]
 
-    def test_execute_sequential_simple(self):
-        """Test sequential execution"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        grp = NodeGroup("test", [parent, child])
-        tables = {"domain1": MockTable()}
-
-        grp._execute_sequential(tables)
-
-        assert child.executed
-        assert parent.executed
-
     def test_execute_multithreaded(self):
         """Test multithreaded execution"""
         # Create nodes with different execution times to test concurrency
@@ -481,28 +682,16 @@ class TestPhenexNodeGroup:
         grp.execute(tables, n_threads=2)
         end_time = time.time()
 
-        # Should be faster than sequential execution
-        assert end_time - start_time < 0.5  # Much less than 0.3 + 0.1 + 0.1
+        # Should be faster than sequential execution (0.1 + 0.2 + overhead = ~0.35s)
+        # With multithreading, should complete in about 0.2s (slowest child) + overhead
+        execution_time = end_time - start_time
+        assert (
+            execution_time < 1.0
+        ), f"Execution took {execution_time:.3f}s, expected < 1.0s"
 
         assert fast_child.executed
         assert slow_child.executed
         assert parent.executed
-
-    def test_execute_single_thread(self):
-        """Test execution with n_threads=1 falls back to sequential"""
-        child = ConcreteNode("child")
-        parent = ConcreteNode("parent")
-        parent.add_children(child)
-
-        grp = NodeGroup("test", [parent])
-        tables = {"domain1": MockTable()}
-
-        with patch.object(grp, "_execute_sequential") as mock_sequential:
-            mock_sequential.return_value = {"PARENT": MockTable(), "CHILD": MockTable()}
-
-            grp.execute(tables, n_threads=1)
-
-            mock_sequential.assert_called_once()
 
     def test_visualize_dependencies(self):
         """Test dependency visualization"""

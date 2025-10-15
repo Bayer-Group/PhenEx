@@ -7,6 +7,8 @@ from phenex.phenotypes.cohort import Cohort
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 
+MOCK_TABLES = {"PERSON": None, "DRUG_EXPOSURE": None}
+
 
 class TestCohortNodeUniqueness:
     """Test class for cohort node uniqueness validation"""
@@ -35,7 +37,7 @@ class TestCohortNodeUniqueness:
                 name="test_cohort",
                 entry_criterion=entry1,
                 inclusions=[entry2],  # Same name as entry, but different params
-            )
+            ).build_stages(MOCK_TABLES)
 
     def test_cohort_node_uniqueness_success(self):
         """Test that cohort allows nodes with same name and same parameters"""
@@ -61,6 +63,7 @@ class TestCohortNodeUniqueness:
             entry_criterion=entry1,
             inclusions=[entry2],  # Same name and params as entry
         )
+        cohort.build_stages(MOCK_TABLES)
 
         assert cohort.name == "test_cohort"
         assert cohort.entry_criterion == entry1
@@ -90,6 +93,7 @@ class TestCohortNodeUniqueness:
             entry_criterion=entry,
             inclusions=[inclusion],
         )
+        cohort.build_stages(MOCK_TABLES)
 
         assert cohort.name == "test_cohort"
         assert cohort.entry_criterion == entry
@@ -130,4 +134,4 @@ class TestCohortNodeUniqueness:
                 characteristics=[
                     characteristic
                 ],  # Same name as entry, different params
-            )
+            ).build_stages(MOCK_TABLES)
