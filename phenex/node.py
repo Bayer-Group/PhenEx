@@ -437,17 +437,41 @@ class Node:
         n_threads: int = 1,
     ) -> Table:
         """
-        Executes the Node computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing Node's that have already executed.
+        Executes the Node computation for the current node and its dependencies.
+
+        Lazy Execution:
+            When lazy_execution=True, nodes are only recomputed if changes are detected. The system tracks:
+            1. Node definition changes: Detected by hashing the node's parameters (from to_dict()) and class name
+            2. Execution environment changes: Detected by tracking source/destination database configurations
+
+            A node will be rerun if either:
+            - The node's defining parameters have changed (different hash than last execution)
+            - The database connector's source or destination databases have changed
+            - The node has never been executed before
+
+            If no changes are detected, the node uses its cached result from the database instead of recomputing.
+
+            Requirements for lazy execution:
+            - A database connector (con) must be provided to store and retrieve cached results
+            - overwrite=True must be set to allow updating existing cached tables
+
+            State tracking is maintained in a local DuckDB database (__PHENEX_META__NODE_STATES table) that stores:
+            - Node hashes, parameters, and execution metadata
+            - Database connector configuration used during execution
+            - Execution timing information
 
         Parameters:
             tables: A dictionary mapping domains to Table objects.
-            con: Connection to database for materializing outputs. If provided, outputs from the node and all children nodes will be materialized (written) to the database using the connector.
-            overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed.
-            lazy_execution: If True, only re-executes if the node's definition has changed. Defaults to False. You should pass overwrite=True with lazy_execution as lazy_execution is intended precisely for iterative updates to a node definition. You must pass a connector (to cache results) for lazy_execution to work.
+            con: Connection to database for materializing outputs. If provided, outputs from the node and all children nodes will be materialized (written) to the database using the connector. Required for lazy_execution.
+            overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed. Must be True when using lazy_execution.
+            lazy_execution: If True, only re-executes nodes when changes are detected in either the node definition or execution environment. Defaults to False. Requires con to be provided.
             n_threads: Max number of Node's to execute simultaneously when this node has multiple children.
 
         Returns:
             Table: The resulting table for this node. Also accessible through self.table after calling self.execute().
+
+        Raises:
+            ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
         # Handle None tables
         if tables is None:
