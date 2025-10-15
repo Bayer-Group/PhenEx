@@ -66,6 +66,9 @@ class Node:
         self._name = name or type(self).__name__
         self._children = []
         self.table = None  # populated upon call to execute()
+        self._last_execution_start_time = None
+        self._last_execution_end_time = None
+        self._last_execution_duration = None
 
     def add_children(self, children):
         if not isinstance(children, list):
@@ -210,8 +213,7 @@ class Node:
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, and LAST_EXECUTED
-                          for this node, or None if the node has never been executed.
+            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, EXECUTION_PARAMS, LAST_EXECUTION_START_TIME, LAST_EXECUTION_END_TIME, and LAST_EXECUTION_DURATION for this node, or None if the node has never been executed.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -237,12 +239,103 @@ class Node:
         dhash.update(encoded)
         return int(dhash.hexdigest()[:8], 16)
 
+    def _get_execution_params(self, con):
+        """
+        Extract execution parameters from the connector for tracking database changes.
+
+        Parameters:
+            con: Database connector object
+
+        Returns:
+            dict: Dictionary containing source and destination database information
+        """
+        if con is None:
+            return None
+
+        execution_params = {}
+
+        # Handle SnowflakeConnector
+        if hasattr(con, "SNOWFLAKE_SOURCE_DATABASE"):
+            execution_params["connector_type"] = "SnowflakeConnector"
+            execution_params["source_database"] = getattr(
+                con, "SNOWFLAKE_SOURCE_DATABASE", None
+            )
+            execution_params["dest_database"] = getattr(
+                con, "SNOWFLAKE_DEST_DATABASE", None
+            )
+        # Handle DuckDBConnector
+        elif hasattr(con, "DUCKDB_SOURCE_DATABASE"):
+            execution_params["connector_type"] = "DuckDBConnector"
+            execution_params["source_database"] = getattr(
+                con, "DUCKDB_SOURCE_DATABASE", None
+            )
+            execution_params["dest_database"] = getattr(
+                con, "DUCKDB_DEST_DATABASE", None
+            )
+        else:
+            # Unknown connector type
+            execution_params["connector_type"] = type(con).__name__
+            execution_params["source_database"] = None
+            execution_params["dest_database"] = None
+
+        return execution_params
+
+    def _should_rerun(self, con):
+        """
+        Determine if the node should be rerun based on changes to node definition or execution parameters.
+        Logs the decision and reasons.
+
+        Parameters:
+            con: Database connector object
+
+        Returns:
+            bool: True if the node should be rerun, False otherwise
+        """
+        reasons = []
+
+        # Check if node definition has changed
+        current_hash = self._get_current_hash()
+        last_hash = self._get_last_hash()
+        node_changed = current_hash != last_hash
+
+        if node_changed:
+            reasons.append("node definition changed")
+
+        # Check if execution parameters have changed
+        current_execution_params = self._get_execution_params(con)
+
+        # Get last execution parameters from metadata
+        metadata = self.execution_metadata
+        last_execution_params = None
+        if (
+            metadata is not None
+            and "EXECUTION_PARAMS" in metadata
+            and pd.notna(metadata["EXECUTION_PARAMS"])
+        ):
+            last_execution_params = json.loads(metadata["EXECUTION_PARAMS"])
+
+        execution_params_changed = current_execution_params != last_execution_params
+
+        if execution_params_changed:
+            reasons.append("execution parameters changed")
+
+        should_rerun = node_changed or execution_params_changed
+
+        # Log the decision
+        if should_rerun:
+            reason_str = ", ".join(reasons)
+            logger.info(f"Node '{self.name}': {reason_str}, computing...")
+        else:
+            logger.info(f"Node '{self.name}': unchanged, using cached result")
+
+        return should_rerun
+
     def __hash__(self):
         # For python built-in function hash().
         # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
-    def _update_current_hash(self):
+    def _update_current_hash(self, execution_params=None):
         # Use class-level lock to ensure thread-safe updates to the node states table
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -252,14 +345,28 @@ class Node:
                     "NODE_NAME": [self.name],
                     "LAST_HASH": [self._get_current_hash()],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
-                    "LAST_EXECUTED": [datetime.now()],
+                    "EXECUTION_PARAMS": [
+                        (
+                            json.dumps(execution_params)
+                            if execution_params is not None
+                            else None
+                        )
+                    ],
+                    "LAST_EXECUTION_START_TIME": [self._last_execution_start_time],
+                    "LAST_EXECUTION_END_TIME": [self._last_execution_end_time],
+                    "LAST_EXECUTION_DURATION": [self._last_execution_duration],
                 }
             )
 
             if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
-                table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-                table = table[table.NODE_NAME != self.name]
-                df = pd.concat([table, df])
+                existing_table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                existing_table = existing_table[existing_table.NODE_NAME != self.name]
+
+                # Handle backward compatibility - add EXECUTION_PARAMS column if it doesn't exist
+                if "EXECUTION_PARAMS" not in existing_table.columns:
+                    existing_table["EXECUTION_PARAMS"] = None
+
+                df = pd.concat([existing_table, df])
 
             table = ibis.memtable(df)
             con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
@@ -319,8 +426,11 @@ class Node:
                     f"Node '{self.name}': failed to drop materialized table: {e}"
                 )
 
-        # Reset the table attribute
+        # Reset the table attribute and timing info
         self.table = None
+        self._last_execution_start_time = None
+        self._last_execution_end_time = None
+        self._last_execution_duration = None
 
         # Recursively clear children if requested
         if recursive:
@@ -338,17 +448,41 @@ class Node:
         n_threads: int = 1,
     ) -> Table:
         """
-        Executes the Node computation for the current node and its dependencies. Supports lazy execution using hash-based change detection to avoid recomputing Node's that have already executed.
+        Executes the Node computation for the current node and its dependencies.
+
+        Lazy Execution:
+            When lazy_execution=True, nodes are only recomputed if changes are detected. The system tracks:
+            1. Node definition changes: Detected by hashing the node's parameters (from to_dict()) and class name
+            2. Execution environment changes: Detected by tracking source/destination database configurations
+
+            A node will be rerun if either:
+            - The node's defining parameters have changed (different hash than last execution)
+            - The database connector's source or destination databases have changed
+            - The node has never been executed before
+
+            If no changes are detected, the node uses its cached result from the database instead of recomputing.
+
+            Requirements for lazy execution:
+            - A database connector (con) must be provided to store and retrieve cached results
+            - overwrite=True must be set to allow updating existing cached tables
+
+            State tracking is maintained in a local DuckDB database (__PHENEX_META__NODE_STATES table) that stores:
+            - Node hashes, parameters, and execution metadata
+            - Database connector configuration used during execution
+            - Execution timing information
 
         Parameters:
             tables: A dictionary mapping domains to Table objects.
-            con: Connection to database for materializing outputs. If provided, outputs from the node and all children nodes will be materialized (written) to the database using the connector.
-            overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed.
-            lazy_execution: If True, only re-executes if the node's definition has changed. Defaults to False. You should pass overwrite=True with lazy_execution as lazy_execution is intended precisely for iterative updates to a node definition. You must pass a connector (to cache results) for lazy_execution to work.
+            con: Connection to database for materializing outputs. If provided, outputs from the node and all children nodes will be materialized (written) to the database using the connector. Required for lazy_execution.
+            overwrite: If True, will overwrite any existing tables found in the database while writing. If False, will throw an error when an existing table is found. Has no effect if con is not passed. Must be True when using lazy_execution.
+            lazy_execution: If True, only re-executes nodes when changes are detected in either the node definition or execution environment. Defaults to False. Requires con to be provided.
             n_threads: Max number of Node's to execute simultaneously when this node has multiple children.
 
         Returns:
             Table: The resulting table for this node. Also accessible through self.table after calling self.execute().
+
+        Raises:
+            ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
         # Handle None tables
         if tables is None:
@@ -415,27 +549,45 @@ class Node:
                                 "A DatabaseConnector is required for lazy execution."
                             )
 
-                        if node._get_current_hash() != node._get_last_hash():
-                            logger.info(f"Node '{node_name}': computing...")
+                        if node._should_rerun(con):
+                            # Time the execution
+                            node._last_execution_start_time = datetime.now()
                             table = node._execute(tables)
+
                             if (
                                 table is not None
                             ):  # Only create table if _execute returns something
                                 con.create_table(table, node_name, overwrite=overwrite)
                                 table = con.get_dest_table(node_name)
-                            node._update_current_hash()
-                        else:
-                            logger.info(
-                                f"Node '{node_name}': unchanged, using cached result"
+
+                            node._last_execution_end_time = datetime.now()
+                            node._last_execution_duration = (
+                                node._last_execution_end_time
+                                - node._last_execution_start_time
+                            ).total_seconds()
+
+                            current_execution_params = node._get_execution_params(con)
+                            node._update_current_hash(
+                                execution_params=current_execution_params
                             )
+                        else:
                             table = con.get_dest_table(node_name)
                     else:
+                        # Time the execution
+                        node._last_execution_start_time = datetime.now()
                         table = node._execute(tables)
+
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
                             con.create_table(table, node_name, overwrite=overwrite)
                             table = con.get_dest_table(node_name)
+
+                        node._last_execution_end_time = datetime.now()
+                        node._last_execution_duration = (
+                            node._last_execution_end_time
+                            - node._last_execution_start_time
+                        ).total_seconds()
 
                     node.table = table
 
@@ -454,9 +606,16 @@ class Node:
                                 if deps_completed:
                                     ready_queue.put(dependent)
 
-                    logger.info(
-                        f"Thread {threading.current_thread().name}: completed node '{node_name}'"
-                    )
+                    # Log completion with timing info
+                    if node._last_execution_duration is not None:
+                        logger.info(
+                            f"Thread {threading.current_thread().name}: completed node '{node_name}' "
+                            f"in {node._last_execution_duration:.3f} seconds"
+                        )
+                    else:
+                        logger.info(
+                            f"Thread {threading.current_thread().name}: completed node '{node_name}' (cached)"
+                        )
 
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")

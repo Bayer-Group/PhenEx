@@ -1,6 +1,6 @@
 import pytest
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, PropertyMock
 import pandas as pd
 
 
@@ -330,11 +330,19 @@ class TestPhenexNodeExecution:
         mock_connector = Mock()
         mock_connector_class.return_value = mock_connector
 
+        # Configure mock to have only DuckDB attributes
+        mock_connector.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
+
         node = ConcreteNode("test")
         # Mock that node hasn't been computed before
         node._get_last_hash = Mock(return_value=None)
         node._get_current_hash = Mock(return_value=12345678)
         node._update_current_hash = Mock(return_value=True)
+
+        # Mock execution_metadata property to return None (no previous execution)
+        type(node).execution_metadata = PropertyMock(return_value=None)
 
         tables = {"domain1": MockTable()}
 
@@ -355,10 +363,30 @@ class TestPhenexNodeExecution:
         mock_connector.get_dest_table.return_value = mock_table
         mock_connector_class.return_value = mock_connector
 
+        # Configure mock to have only DuckDB attributes, not Snowflake
+        mock_connector.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
+        # Remove any Snowflake attributes that might exist
+        if hasattr(mock_connector, "SNOWFLAKE_SOURCE_DATABASE"):
+            del mock_connector.SNOWFLAKE_SOURCE_DATABASE
+        if hasattr(mock_connector, "SNOWFLAKE_DEST_DATABASE"):
+            del mock_connector.SNOWFLAKE_DEST_DATABASE
+
         node = ConcreteNode("test")
         # Mock that node hasn't changed
         node._get_last_hash = Mock(return_value=12345678)
         node._get_current_hash = Mock(return_value=12345678)
+
+        # Mock execution metadata to indicate no changes in execution params
+        mock_metadata = pd.Series(
+            {
+                "NODE_NAME": "TEST",
+                "LAST_HASH": 12345678,
+                "EXECUTION_PARAMS": '{"connector_type": "DuckDBConnector", "source_database": "source.db", "dest_database": "dest.db"}',
+            }
+        )
+        type(node).execution_metadata = PropertyMock(return_value=mock_metadata)
 
         tables = {"domain1": MockTable()}
 
@@ -572,6 +600,10 @@ class TestPhenexNodeExecution:
         mock_user_con.dest_connection.list_tables.return_value = []
         mock_result_table = MockTable()
         mock_user_con.get_dest_table.return_value = mock_result_table
+        # Configure mock to have only DuckDB attributes
+        mock_user_con.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
 
         node = ConcreteNode("test")
         tables = {"domain1": MockTable()}
@@ -580,6 +612,9 @@ class TestPhenexNodeExecution:
         node._get_last_hash = Mock(return_value=None)
         node._get_current_hash = Mock(return_value="hash123")
         node._update_current_hash = Mock(return_value=True)
+        type(node).execution_metadata = PropertyMock(
+            return_value=None
+        )  # No previous execution
 
         node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
         assert node.executed
@@ -591,6 +626,18 @@ class TestPhenexNodeExecution:
         node._get_last_hash = Mock(return_value="hash123")
         node._get_current_hash = Mock(return_value="hash123")
 
+        # Mock execution metadata to indicate no changes
+        mock_metadata = pd.Series(
+            {
+                "NODE_NAME": "TEST",
+                "LAST_HASH": "hash123",
+                "EXECUTION_PARAMS": '{"connector_type": "DuckDBConnector", "source_database": "source.db", "dest_database": "dest.db"}',
+            }
+        )
+
+        # Mock the _should_rerun method directly to return False (no rerun needed)
+        node._should_rerun = Mock(return_value=False)
+
         node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
         assert not node.executed  # Should have skipped
 
@@ -601,6 +648,12 @@ class TestPhenexNodeExecution:
         node._get_last_hash = Mock(return_value=None)  # Cache was cleared
         node._get_current_hash = Mock(return_value="hash123")
         node._update_current_hash = Mock(return_value=True)
+        type(node).execution_metadata = PropertyMock(
+            return_value=None
+        )  # Cache was cleared
+
+        # Reset the _should_rerun mock to return True (should rerun after cache clear)
+        node._should_rerun = Mock(return_value=True)
 
         node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
         assert node.executed  # Should have executed again
@@ -716,6 +769,11 @@ class TestPhenexNodeGroup:
         # Configure the mock connector to handle list_tables() calls
         mock_connector.dest_connection.list_tables.return_value = []
 
+        # Configure mock to have only DuckDB attributes
+        mock_connector.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
+
         child = ConcreteNode("child")
         parent = ConcreteNode("parent")
         parent.add_children(child)
@@ -724,12 +782,19 @@ class TestPhenexNodeGroup:
         child._get_last_hash = Mock(return_value=None)
         child._get_current_hash = Mock(return_value=2345)
         child._update_current_hash = Mock(return_value=True)
+        type(child).execution_metadata = PropertyMock(return_value=None)
 
         parent._get_last_hash = Mock(return_value=None)
         parent._get_current_hash = Mock(return_value=1234)
         parent._update_current_hash = Mock(return_value=True)
+        type(parent).execution_metadata = PropertyMock(return_value=None)
 
         grp = NodeGroup("test", [parent])
+        grp._get_last_hash = Mock(return_value=None)
+        grp._get_current_hash = Mock(return_value=5678)
+        grp._update_current_hash = Mock(return_value=True)
+        type(grp).execution_metadata = PropertyMock(return_value=None)
+
         tables = {"domain1": MockTable()}
 
         grp.execute(tables, con=mock_connector, overwrite=True, lazy_execution=True)
