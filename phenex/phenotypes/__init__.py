@@ -18,8 +18,3 @@ from .computation_graph_phenotypes import (
 )
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
 from .cohort import Cohort, Subcohort
-
-# from .age_phenotype import AgePhenotype
-# from .event_count_phenotype import EventCountPhenotype
-
-# # from .arithmetic_phenotype import ArithmeticPhenotype
