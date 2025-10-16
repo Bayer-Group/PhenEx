@@ -53,6 +53,8 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
       reader.onload = e => {
         try {
           const content = e.target?.result as string;
+          console.log("TRYING TO ADD FILE", content)
+
           dataService.codelists_service.addFile({ filename: file.name, contents: content });
           setGridData(dataService.codelists_service.prepareAllCodelistsData());
         } catch (error) {

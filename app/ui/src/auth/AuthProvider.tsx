@@ -12,6 +12,65 @@ import { get } from 'lodash';
 import { api, registerTokenProvider } from '@/api/httpClient';
 import { registerUserProvider, notifyUserChange } from '@/auth/userProviderBridge';
 
+// Local storage utilities for user persistence
+const USER_STORAGE_KEY = 'phenex_user_data';
+const LOGIN_TYPE_STORAGE_KEY = 'phenex_login_type';
+const TOKEN_STORAGE_KEY = 'phenex_auth_token';
+
+const saveUserToStorage = (user: UserData, loginType: LoginType, token?: string) => {
+  try {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    localStorage.setItem(LOGIN_TYPE_STORAGE_KEY, loginType);
+    if (token) {
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    }
+  } catch (error) {
+    console.warn('Failed to save user to local storage:', error);
+  }
+};
+
+const loadUserFromStorage = (): { user: UserData; loginType: LoginType; token?: string } | null => {
+  try {
+    const userJson = localStorage.getItem(USER_STORAGE_KEY);
+    const storedLoginType = localStorage.getItem(LOGIN_TYPE_STORAGE_KEY) as LoginType;
+    const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    
+    if (userJson && storedLoginType) {
+      const user = JSON.parse(userJson) as UserData;
+      return { 
+        user, 
+        loginType: storedLoginType,
+        token: storedToken || undefined
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to load user from local storage:', error);
+  }
+  return null;
+};
+
+// Helper function to check if a JWT token is expired
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const decoded = jwt_decode<any>(token);
+    const currentTime = Date.now() / 1000;
+    return decoded.exp < currentTime;
+  } catch (error) {
+    console.warn('Failed to decode token:', error);
+    return true; // Treat invalid tokens as expired
+  }
+};
+
+const clearUserFromStorage = () => {
+  try {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(LOGIN_TYPE_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear user from local storage:', error);
+  }
+};
+
 // Auth result shape returned by auth action helpers
 export type AuthResult = { success: boolean; error?: string };
 
@@ -53,10 +112,36 @@ export type AuthProviderProps = PropsWithChildren<{}>;
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const config = getConfig();
 
+  // Initialize state from local storage if available
+  const initializeUserState = () => {
+    const stored = loadUserFromStorage();
+    if (stored && !stored.user.isAnonymous) {
+      // Check if we have a valid token
+      if (stored.token && !isTokenExpired(stored.token)) {
+        return {
+          user: stored.user,
+          loginType: stored.loginType,
+          token: stored.token
+        };
+      } else {
+        // Token is expired or missing, clear storage and fall back to anonymous
+        console.warn('Stored token is expired or missing, falling back to anonymous user');
+        clearUserFromStorage();
+      }
+    }
+    return {
+      user: _anonymousUser,
+      loginType: 'anonymous' as LoginType,
+      token: config.anon_token
+    };
+  };
+
+  const initialState = initializeUserState();
+
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
-  const [token, setToken] = useState(config.anon_token);
-  const [user, setUser] = useState<UserData>(_anonymousUser);
-  const [loginType, setLoginType] = useState<LoginType>('anonymous');
+  const [token, setToken] = useState(initialState.token);
+  const [user, setUser] = useState<UserData>(initialState.user);
+  const [loginType, setLoginType] = useState<LoginType>(initialState.loginType);
 
   const msalRefreshTimer = useRef<number | null>(null);
 
@@ -81,13 +166,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const processToken = async (token: string, type: LoginType) => {
     const info = jwt_decode<any>(token);
-    setToken(token);
-    setLoginType(type);
-    setUser({
+    const userData: UserData = {
       username: info.name || 'User',
       email: info.email || 'no-email',
       isAnonymous: false,
-    });
+    };
+    
+    setToken(token);
+    setLoginType(type);
+    setUser(userData);
+    
+    // Save user data and token to local storage
+    saveUserToStorage(userData, type, token);
 
     clearMsalRefreshTimer();
 
@@ -178,6 +268,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } finally {
       clearMsalRefreshTimer();
+      clearUserFromStorage();
       setToken(config.anon_token);
       setLoginType('anonymous');
       setUser(_anonymousUser);

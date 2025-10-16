@@ -16,11 +16,15 @@ services:
       dockerfile: Dockerfile
       platforms:
       - "linux/arm64/v8"
+    command: fastapi run main.py --reload
+    # Use this command line to enable hot reload
     ports:
       - "8001:8000"
     volumes:
       - ${HOME}/.phenex/data/phenex/cohorts:/app/data/cohorts
       - ${HOME}/.phenex/data/phenex/users:/app/data/users
+      - ./backend:/app  # Mount your local backend code directory
+      - ../phenex:/app/phenex  # If you have a separate phenex library
     env_file: ./backend/.env
 
   frontend:
