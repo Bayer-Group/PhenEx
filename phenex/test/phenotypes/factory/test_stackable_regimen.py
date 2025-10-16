@@ -21,15 +21,17 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
 
     def define_input_tables(self):
         df_condition_occurrence = sdf_and_tt_dummycodes_nvariables(n=3)[0]
-        df_condition_occurrence['INDEX_DATE'] = datetime.date(2022, 1, 1) 
-        df_condition_occurrence.columns = [x.upper() for x in df_condition_occurrence.columns]
+        df_condition_occurrence["INDEX_DATE"] = datetime.date(2022, 1, 1)
+        df_condition_occurrence.columns = [
+            x.upper() for x in df_condition_occurrence.columns
+        ]
         input_info_co = {
             "name": "CONDITION_OCCURRENCE",
             "df": df_condition_occurrence,
         }
 
         df_person = pd.DataFrame()
-        df_person['PERSON_ID'] = df_condition_occurrence['PERSON_ID'].unique()
+        df_person["PERSON_ID"] = df_condition_occurrence["PERSON_ID"].unique()
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -37,81 +39,54 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
         return [input_info_co, input_info_person]
 
     def define_phenotype_tests(self):
-        cls = ['c1', 'c2','c3']
+        cls = ["c1", "c2", "c3"]
 
         pts = []
         for cl in cls:
             pt = CodelistPhenotype(
-                name=cl,
-                domain='CONDITION_OCCURRENCE',
-                codelist = Codelist([cl])
+                name=cl, domain="CONDITION_OCCURRENCE", codelist=Codelist([cl])
             )
-            pts.append(pt)   
+            pts.append(pt)
 
-        stackable_regimen = StackableRegimen(phenotypes=pts, regimen_keys=['one','two','three'])
+        stackable_regimen = StackableRegimen(
+            phenotypes=pts, regimen_keys=["one", "two", "three"]
+        )
         test_infos = []
 
-        sr_dict  = stackable_regimen.phenotypes_by_stack
+        sr_dict = stackable_regimen.phenotypes_by_stack
 
         # single regime
         test_infos.append(
-            {
-                "name":"s1",
-                "persons":['P4'],
-                "phenotype":sr_dict["stack1"][0]
-            }
+            {"name": "s1", "persons": ["P4"], "phenotype": sr_dict["stack1"][0]}
         )
 
         test_infos.append(
-            {
-                "name":"s2",
-                "persons":['P6'],
-                "phenotype":sr_dict["stack1"][1]
-            }
+            {"name": "s2", "persons": ["P6"], "phenotype": sr_dict["stack1"][1]}
         )
 
         test_infos.append(
-            {
-                "name":"s3",
-                "persons":['P7'],
-                "phenotype":sr_dict["stack1"][2]
-            }
+            {"name": "s3", "persons": ["P7"], "phenotype": sr_dict["stack1"][2]}
         )
 
         # dual regime
         test_infos.append(
-            {
-                "name":"s12",
-                "persons":['P2'],
-                "phenotype":sr_dict["stack2"][0]
-            }
+            {"name": "s12", "persons": ["P2"], "phenotype": sr_dict["stack2"][0]}
         )
 
         test_infos.append(
-            {
-                "name":"s13",
-                "persons":['P3'],
-                "phenotype":sr_dict["stack2"][1]
-            }
+            {"name": "s13", "persons": ["P3"], "phenotype": sr_dict["stack2"][1]}
         )
 
         test_infos.append(
-            {
-                "name":"s23",
-                "persons":['P5'],
-                "phenotype":sr_dict["stack2"][2]
-            }
+            {"name": "s23", "persons": ["P5"], "phenotype": sr_dict["stack2"][2]}
         )
 
         # triple regime
         test_infos.append(
-            {
-                "name":"s123",
-                "persons":['P1'],
-                "phenotype":sr_dict["stack3"][0]
-            }
+            {"name": "s123", "persons": ["P1"], "phenotype": sr_dict["stack3"][0]}
         )
         return test_infos
+
 
 class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
     name_space = "stackablereg_4"
@@ -136,14 +111,16 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
         0   0   0   1    P15
         """
         df_condition_occurrence, df_truth_table = sdf_and_tt_dummycodes_nvariables(n=4)
-        df_condition_occurrence['INDEX_DATE'] = datetime.date(2022, 1, 1) 
-        df_condition_occurrence.columns = [x.upper() for x in df_condition_occurrence.columns]
+        df_condition_occurrence["INDEX_DATE"] = datetime.date(2022, 1, 1)
+        df_condition_occurrence.columns = [
+            x.upper() for x in df_condition_occurrence.columns
+        ]
         input_info_co = {
             "name": "CONDITION_OCCURRENCE",
             "df": df_condition_occurrence,
         }
         df_person = pd.DataFrame()
-        df_person['PERSON_ID'] = df_condition_occurrence['PERSON_ID'].unique()
+        df_person["PERSON_ID"] = df_condition_occurrence["PERSON_ID"].unique()
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -151,157 +128,98 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
         return [input_info_co, input_info_person]
 
     def define_phenotype_tests(self):
-        cls = ['c1', 'c2','c3', 'c4']
+        cls = ["c1", "c2", "c3", "c4"]
 
         pts = []
         for cl in cls:
             pt = CodelistPhenotype(
-                name=cl,
-                domain='CONDITION_OCCURRENCE',
-                codelist = Codelist([cl])
+                name=cl, domain="CONDITION_OCCURRENCE", codelist=Codelist([cl])
             )
-            pts.append(pt)   
+            pts.append(pt)
 
-        stackable_regimen = StackableRegimen(phenotypes=pts, regimen_keys=['one','two','three','four'])#,'five'])
+        stackable_regimen = StackableRegimen(
+            phenotypes=pts, regimen_keys=["one", "two", "three", "four"]
+        )  # ,'five'])
         test_infos = []
 
-        sr_dict  = stackable_regimen.phenotypes_by_stack
+        sr_dict = stackable_regimen.phenotypes_by_stack
 
         # single regime
         test_infos.append(
-            {
-                "name":"s_4_1",
-                "persons":['P8'],
-                "phenotype":sr_dict["stack1"][0]
-            }
+            {"name": "s_4_1", "persons": ["P8"], "phenotype": sr_dict["stack1"][0]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_2",
-                "persons":['P12'],
-                "phenotype":sr_dict["stack1"][1]
-            }
+            {"name": "s_4_2", "persons": ["P12"], "phenotype": sr_dict["stack1"][1]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_3",
-                "persons":['P14'],
-                "phenotype":sr_dict["stack1"][2]
-            }
+            {"name": "s_4_3", "persons": ["P14"], "phenotype": sr_dict["stack1"][2]}
         )
 
-
         test_infos.append(
-            {
-                "name":"s_4_4",
-                "persons":['P15'],
-                "phenotype":sr_dict["stack1"][3]
-            }
+            {"name": "s_4_4", "persons": ["P15"], "phenotype": sr_dict["stack1"][3]}
         )
 
         # dual regime
         test_infos.append(
-            {
-                "name":"s_4_12",
-                "persons":['P4'],
-                "phenotype":sr_dict["stack2"][0]
-            }
+            {"name": "s_4_12", "persons": ["P4"], "phenotype": sr_dict["stack2"][0]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_13",
-                "persons":['P6'],
-                "phenotype":sr_dict["stack2"][1]
-            }
+            {"name": "s_4_13", "persons": ["P6"], "phenotype": sr_dict["stack2"][1]}
         )
         test_infos.append(
-            {
-                "name":"s_4_14",
-                "persons":['P7'],
-                "phenotype":sr_dict["stack2"][2]
-            }
+            {"name": "s_4_14", "persons": ["P7"], "phenotype": sr_dict["stack2"][2]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_23",
-                "persons":['P10'],
-                "phenotype":sr_dict["stack2"][3]
-            }
+            {"name": "s_4_23", "persons": ["P10"], "phenotype": sr_dict["stack2"][3]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_24",
-                "persons":['P11'],
-                "phenotype":sr_dict["stack2"][4]
-            }
+            {"name": "s_4_24", "persons": ["P11"], "phenotype": sr_dict["stack2"][4]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_34",
-                "persons":['P13'],
-                "phenotype":sr_dict["stack2"][5]
-            }
+            {"name": "s_4_34", "persons": ["P13"], "phenotype": sr_dict["stack2"][5]}
         )
-
 
         # triple regime
         test_infos.append(
-            {
-                "name":"s_4_123",
-                "persons":['P2'],
-                "phenotype":sr_dict["stack3"][0]
-            }
+            {"name": "s_4_123", "persons": ["P2"], "phenotype": sr_dict["stack3"][0]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_124",
-                "persons":['P3'],
-                "phenotype":sr_dict["stack3"][1]
-            }
+            {"name": "s_4_124", "persons": ["P3"], "phenotype": sr_dict["stack3"][1]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_134",
-                "persons":['P5'],
-                "phenotype":sr_dict["stack3"][2]
-            }
+            {"name": "s_4_134", "persons": ["P5"], "phenotype": sr_dict["stack3"][2]}
         )
 
         test_infos.append(
-            {
-                "name":"s_4_234",
-                "persons":['P9'],
-                "phenotype":sr_dict["stack3"][3]
-            }
+            {"name": "s_4_234", "persons": ["P9"], "phenotype": sr_dict["stack3"][3]}
         )
 
         # regime 4
         test_infos.append(
-            {
-                "name":"s_4_1234",
-                "persons":['P1'],
-                "phenotype":sr_dict["stack4"][0]
-            }
+            {"name": "s_4_1234", "persons": ["P1"], "phenotype": sr_dict["stack4"][0]}
         )
         self.test_infos = test_infos
 
         return test_infos
 
+
 def test_stack_3():
     g = StackableRegimenTestGenerator_3()
     g.run_tests()
 
+
 def test_stack_4():
     g = StackableRegimenTestGenerator_4()
     g.run_tests()
+
 
 if __name__ == "__main__":
     test_stack_3()

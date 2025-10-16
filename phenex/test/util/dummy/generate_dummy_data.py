@@ -26,21 +26,20 @@ def generate_input_simplephenotype():
 
 def sdf_and_tt_dummycodes_nvariables(
     verbose=False,
-    n = 3,
+    n=3,
     code_columnname="code",
     patientid_columnname="person_id",
     code_type_columnname="code_type",
     event_date_columnname="event_date",
 ):
-    """
-    
-    """
+    """ """
     df, tt = create_dummy_medical_codes_data(
         n, patientid_columnname=patientid_columnname, code_columnname=code_columnname
     )
     df[code_type_columnname] = "ICD10CM"
     df[event_date_columnname] = datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")
     return df, tt
+
 
 def sdf_and_tt_dummycodes_3variables(
     verbose=False,
@@ -94,7 +93,7 @@ def sdf_and_tt_dummycodes_3variables(
         code_columnname=code_columnname,
         patientid_columnname=patientid_columnname,
         code_type_columnname=code_type_columnname,
-        event_date_columnname=event_date_columnname
+        event_date_columnname=event_date_columnname,
     )
 
 
