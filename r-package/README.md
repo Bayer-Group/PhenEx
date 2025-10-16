@@ -279,6 +279,79 @@ https://github.com/Bayer-Group/PhenEx
 
 The R bindings provide the same functionality with R-native syntax and idioms.
 
+## Development & Documentation Generation
+
+### For Package Developers
+
+If you're contributing to the PhenEx R package, you'll need to regenerate documentation after making changes to the R source files.
+
+#### Prerequisites for Development
+
+```r
+# Install development dependencies
+install.packages(c("roxygen2", "devtools", "pkgdown"))
+```
+
+#### Generating Function Documentation
+
+The `man/` directory contains auto-generated documentation files (`.Rd` files) created from roxygen2 comments in the R source code. **These files should not be edited manually** and are excluded from version control.
+
+```r
+# Regenerate all documentation from roxygen2 comments
+roxygen2::roxygenise("r-package")
+
+# Or using devtools (equivalent)
+devtools::document("r-package")
+```
+
+#### Building Package Website (Optional)
+
+To generate a complete package website with all documentation:
+
+```r
+# Generate pkgdown website
+pkgdown::build_site("r-package")
+```
+
+This creates a `docs/` directory with a complete website including:
+
+- Function reference pages
+- Vignettes and tutorials
+- Package overview
+
+#### Development Workflow
+
+1. **Edit R source files** in `r-package/R/`
+2. **Update roxygen2 comments** (`#'`) above functions/classes
+3. **Regenerate documentation**: `roxygen2::roxygenise("r-package")`
+4. **Test package**: `devtools::check("r-package")`
+5. **Install locally**: `devtools::install("r-package")`
+
+#### Documentation Standards
+
+- Use `#'` comments above all exported functions and R6 classes
+- Include `@param` for all function parameters
+- Include `@return` to describe return values
+- Add `@examples` for usage examples
+- Use `@export` to make functions available to users
+
+Example roxygen2 documentation:
+
+```r
+#' Create a Medical Codelist
+#'
+#' @description
+#' Creates a new codelist for identifying patients with specific medical conditions
+#'
+#' @param codes Character vector of medical codes (ICD-10, CPT, etc.)
+#' @param name Name for the codelist
+#' @param code_type Type of codes ("ICD10CM", "CPT", etc.)
+#' @return A Codelist object
+#' @export
+#' @examples
+#' diabetes_codes <- create_codelist(c("E11", "E11.9"), "diabetes", "ICD10CM")
+```
+
 ## Troubleshooting
 
 ### Architecture Issues (Apple Silicon)
