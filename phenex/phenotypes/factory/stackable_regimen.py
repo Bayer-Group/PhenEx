@@ -22,28 +22,22 @@ class StackableRegimen:
         name: str = "sr",
     ) -> List[LogicPhenotype]:
         """
-        Operational definition for a stackable regimen.
+        Often we want to see how drugs are utilized; are people taking a single drug, a combination, and if so, which ones? StackableRegimens can be used to answer this question. Given a list of input phenotypes, it generates a list of phenotypes computing all possible combinations of those inputs.
 
         Generates all possible combinations of regimens from size 1 up to max_combination_size of 10.
-        For each combination:
-        - All regimens in the combination must be active
-        - All regimens NOT in the combination must be inactive
 
-        For example, with three phenotypes named ['c1', 'c2', 'c3'] stackable regiments will create all combinations :
-        # stack 1 phenotypes i.e. "single" regimen
-        c1 & ~(c2 | c3)
-        c2 & ~(c1 | c3)
-        c3 & ~(c1 | c2)
+        For example, with three phenotypes named ['c1', 'c2', 'c3'] stackable regimens will create all combinations :
 
-        # stack 2 phenotypes i.e. "dual" regimen
-        (c1 & c2) & ~c3
-        (c1 & c3) & ~c2
-        (c2 & c3) & ~c1
-
-        # stack 3 phenotypes i.e. "triple" regimen
-        c1 & c2 & c3
-
-
+        | Regimen Type | Logic Expression |
+        | ------------ | --------------- |
+        | stack 1 phenotypes i.e. "single" regimen | c1 & ~(c2 \| c3) |
+        |  | c2 & ~(c1 \| c3) |
+        |  | c3 & ~(c1 \| c2) |
+        | stack 2 phenotypes i.e. "dual" regimen | (c1 & c2) & ~c3 |
+        |  | (c1 & c3) & ~c2 |
+        |  | (c2 & c3) & ~c1 |
+        | stack 3 phenotypes i.e. "triple" regimen | c1 & c2 & c3 |
+        
         To use, create a StackableRegimen class, passing it the input phenotypes. The stackable regimes are then accessible as properties of the StackableRegimen object as either a list or dictionary in output_phenotypes and output_phenotypes_dict, respectively.
 
         Parameters:
@@ -67,7 +61,7 @@ class StackableRegimen:
 
         # create a StackableRegimen class, passing it the input phenotypes
         stackable_regimen = StackableRegimen(
-            phenotypes=pts, 
+            phenotypes=pts,
             regimen_keys=["betablockers", "calciumchannelblockers", "arbs", "aceinhibitors"]
         )
 
