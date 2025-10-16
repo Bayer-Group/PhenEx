@@ -1,0 +1,307 @@
+---
+title: "Introduction to PhenEx R"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to PhenEx R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to TRUE when package is fully installed
+)
+```
+
+## Introduction
+
+PhenEx R provides R bindings for the PhenEx Python library, enabling medical phenotyping and analysis of real-world healthcare data directly from R. This vignette demonstrates the core functionality and typical workflows.
+
+## Installation and Setup
+
+```{r setup}
+library(phenexr)
+
+# Initialize PhenEx (connects to Python environment)
+phenex_initialize()
+
+# Check installation
+phenex_info()
+```
+
+## Creating Codelists
+
+Codelists are the foundation of medical phenotyping in PhenEx. They represent medical concepts using standardized codes.
+
+```{r codelists}
+# Create a simple codelist for Type 2 Diabetes
+diabetes_codelist <- Codelist$new(
+  codelist = list(
+    "ICD10CM" = c("E11", "E11.9", "E11.65"),
+    "SNOMED" = c("44054006", "313436004")
+  ),
+  name = "type2_diabetes"
+)
+
+# Examine the codelist
+print(diabetes_codelist)
+diabetes_codelist$to_data_frame()
+
+# Convenience function for ICD codes
+af_codelist <- icd_codelist(
+  icd_codes = c("I48", "I48.0", "I48.1", "I48.2"),
+  name = "atrial_fibrillation"
+)
+```
+
+## Creating Phenotypes
+
+Phenotypes define "what" we want to extract from the data, separating the definition from the execution.
+
+```{r phenotypes}
+# Basic demographic phenotypes
+age_phenotype <- AgePhenotype$new(name = "patient_age")
+sex_phenotype <- SexPhenotype$new(name = "patient_sex")
+
+# Condition-based phenotypes
+diabetes_phenotype <- CodelistPhenotype$new(
+  domain = "CONDITION_OCCURRENCE",
+  codelist = diabetes_codelist,
+  name = "diabetes_diagnosis",
+  return_date = "first"
+)
+
+af_phenotype <- CodelistPhenotype$new(
+  domain = "CONDITION_OCCURRENCE", 
+  codelist = af_codelist,
+  name = "af_diagnosis",
+  return_date = "first"
+)
+
+# Measurement phenotypes
+hba1c_codelist <- Codelist$new(
+  codelist = list("LOINC" = c("4548-4", "17856-6")),
+  name = "hba1c"
+)
+
+hba1c_phenotype <- MeasurementPhenotype$new(
+  domain = "MEASUREMENT",
+  codelist = hba1c_codelist,
+  aggregator = "mean",
+  name = "average_hba1c"
+)
+```
+
+## Working with Data
+
+### Using Example Data
+
+For testing and learning, you can use simulated OMOP data:
+
+```{r example_data}
+# Create example OMOP data
+example_data <- create_example_omop_data(n_patients = 100)
+
+# Convert to PhenEx table format
+tables <- list(
+  PERSON = df_to_phenex_table(example_data$PERSON, "PERSON"),
+  CONDITION_OCCURRENCE = df_to_phenex_table(example_data$CONDITION_OCCURRENCE, "CONDITION_OCCURRENCE"),
+  MEASUREMENT = df_to_phenex_table(example_data$MEASUREMENT, "MEASUREMENT")
+)
+
+# Examine the data
+tables$PERSON$head()
+```
+
+### Connecting to Real Data
+
+For production use, connect to your database:
+
+```{r real_data, eval=FALSE}
+# Snowflake connection
+conn <- SnowflakeConnector$new(
+  account = "your_account",
+  user = "your_user",
+  password = "your_password",
+  warehouse = "your_warehouse",
+  database = "your_database",
+  schema = "omop_schema"
+)
+
+# Get OMOP-mapped tables
+omop_mapper <- omop_domains()
+tables <- omop_mapper$get_mapped_tables(conn)
+```
+
+## Executing Phenotypes
+
+Once you have phenotypes and data, execute them to get results:
+
+```{r execution}
+# Execute individual phenotypes
+diabetes_patients <- diabetes_phenotype$execute(tables)
+age_results <- age_phenotype$execute(tables)
+
+# Examine results
+print(diabetes_patients)            # Summary
+diabetes_patients$head()            # First few rows
+diabetes_patients$count()           # Total count
+
+# Get summary statistics
+phenotype_summary(diabetes_patients)
+```
+
+## Building Cohorts
+
+Cohorts combine multiple phenotypes with inclusion/exclusion logic:
+
+```{r cohorts}
+# Create a cardiovascular disease cohort
+cardiovascular_cohort <- Cohort$new(
+  name = "cvd_study_cohort",
+  inclusions = list(
+    diabetes_phenotype,  # Must have diabetes OR
+    af_phenotype         # atrial fibrillation
+  ),
+  exclusions = list(
+    # Add exclusion criteria here if needed
+  ),
+  description = "Patients with diabetes or AF for cardiovascular outcomes study"
+)
+
+# Execute the cohort
+cohort_result <- cardiovascular_cohort$execute(tables)
+
+# Examine cohort results
+print(cohort_result)
+cohort_result$head()
+
+# Get inclusions/exclusions breakdown
+cohort_result$get_exclusions_table()
+```
+
+## Advanced Phenotype Operations
+
+### Combining Phenotypes
+
+```{r combinations}
+# Logical operations
+diabetes_or_af <- diabetes_phenotype %OR% af_phenotype
+diabetes_and_elderly <- diabetes_phenotype %AND% age_over_65
+
+# Negation
+no_diabetes <- NOT(diabetes_phenotype)
+
+# Arithmetic operations (for measurement phenotypes)
+combined_score <- hba1c_phenotype$add(other_measurement)
+```
+
+### Creating Derived Phenotypes
+
+```{r derived}
+# Age groups
+age_groups <- BinPhenotype$new(
+  phenotype = age_phenotype,
+  bins = c(0, 30, 50, 70, 100),
+  name = "age_categories"
+)
+
+# Event counting
+diabetes_event_count <- EventCountPhenotype$new(
+  phenotype = diabetes_phenotype,
+  name = "diabetes_event_count"
+)
+
+# Execute derived phenotypes
+age_group_results <- age_groups$execute(tables)
+age_group_results$head()
+```
+
+## Filtering and Time Ranges
+
+Add temporal and categorical constraints to phenotypes:
+
+```{r filters}
+# Date range filter
+date_filter <- DateFilter$new(
+  min_date = "2020-01-01",
+  max_date = "2023-12-31"
+)
+
+# Relative time range (e.g., one year before AF diagnosis)
+one_year_before_af <- RelativeTimeRangeFilter$new(
+  min_days = gt(0),      # Exclude index date
+  max_days = lte(365),   # Within one year
+  anchor_phenotype = af_phenotype
+)
+
+# Apply filters to phenotypes
+recent_diabetes <- CodelistPhenotype$new(
+  domain = "CONDITION_OCCURRENCE",
+  codelist = diabetes_codelist,
+  date_range = date_filter,
+  name = "recent_diabetes"
+)
+
+# Categorical filter (e.g., inpatient only)
+inpatient_filter <- CategoricalFilter$new(
+  column_name = "VISIT_DETAIL_CONCEPT_ID",
+  allowed_values = c(9201),  # Inpatient concept ID
+  domain = "VISIT_DETAIL"
+)
+
+inpatient_diabetes <- CodelistPhenotype$new(
+  domain = "CONDITION_OCCURRENCE",
+  codelist = diabetes_codelist,
+  categorical_filter = inpatient_filter,
+  name = "inpatient_diabetes"
+)
+```
+
+## Exporting Results
+
+Save your results for further analysis:
+
+```{r export}
+# Export cohort to CSV
+export_result(cohort_result, "cardiovascular_cohort.csv")
+
+# Export codelist
+export_codelist(diabetes_codelist, "diabetes_codes.csv")
+
+# Convert to R data.frame for analysis
+df <- diabetes_patients$to_data_frame()
+
+# Use with other R packages
+library(dplyr)
+summary_stats <- df %>%
+  group_by(PERSON_ID) %>%
+  summarize(
+    first_event = min(EVENT_DATE),
+    event_count = n()
+  )
+```
+
+## Complete Example Workflow
+
+Run a complete example with simulated data:
+
+```{r complete}
+# Run the built-in example workflow
+results <- phenex_example_workflow(use_example_data = TRUE)
+
+# Or run a specific study example
+diabetes_study <- example_diabetes_study()
+```
+
+## Next Steps
+
+- Explore the individual class documentation for more advanced features
+- Connect to your own OMOP or other healthcare databases
+- Build complex phenotype hierarchies for your research questions
+- Integrate with other R analysis and visualization packages
+
+For more information, see the main PhenEx documentation at:
+https://github.com/Bayer-Group/PhenEx
