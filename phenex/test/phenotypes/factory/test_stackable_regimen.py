@@ -53,7 +53,7 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
         )
         test_infos = []
 
-        sr_dict = stackable_regimen.phenotypes_by_stack
+        sr_dict = stackable_regimen.output_phenotypes_dict
 
         # single regime
         test_infos.append(
@@ -142,7 +142,7 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
         )  # ,'five'])
         test_infos = []
 
-        sr_dict = stackable_regimen.phenotypes_by_stack
+        sr_dict = stackable_regimen.output_phenotypes_dict
 
         # single regime
         test_infos.append(
