@@ -37,7 +37,7 @@ class StackableRegimen:
         |  | (c1 & c3) & ~c2 |
         |  | (c2 & c3) & ~c1 |
         | stack 3 phenotypes i.e. "triple" regimen | c1 & c2 & c3 |
-        
+
         To use, create a StackableRegimen class, passing it the input phenotypes. The stackable regimes are then accessible as properties of the StackableRegimen object as either a list or dictionary in output_phenotypes and output_phenotypes_dict, respectively.
 
         Parameters:
