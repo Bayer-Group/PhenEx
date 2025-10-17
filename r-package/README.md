@@ -441,6 +441,53 @@ This configuration has been tested and works:
 - **PhenEx**: Latest version via pip
 - **reticulate**: Configured with `use_virtualenv()` before initialization
 
+## Migration and Testing Tools
+
+The `r-package/tools/` directory contains utilities for migrating Python PhenEx workflows to R and ensuring compatibility.
+
+### 🔄 Python to R Migration
+
+**Automatically convert Python PhenEx code to R:**
+
+```bash
+# Convert a Python file to R
+python r-package/tools/migrate_python_to_r.py my_analysis.py my_analysis.R
+
+# Interactive mode with detailed explanations
+python r-package/tools/migrate_python_to_r.py --interactive my_analysis.py
+
+# Preview conversion without writing file
+python r-package/tools/migrate_python_to_r.py --preview my_analysis.py
+```
+
+You can also convert jupyter notebooks:
+
+```bash
+# python r-package/tools/migrate_python_to_r.ipynb my_analysis.py my_analysis.qmd
+```
+
+**Features:**
+
+- ✅ Automatic syntax conversion (imports, method calls, data types)
+- ✅ Manual review flagging for complex patterns
+- ✅ Comprehensive warnings and suggestions
+- ✅ Support for all major PhenEx patterns
+
+### 🧪 Compatibility Testing
+
+**Ensure R bindings produce identical results to Python:**
+
+```bash
+# Run all compatibility tests
+Rscript r-package/tools/test_r_python_compatibility.R
+
+# Test specific functionality
+Rscript r-package/tools/test_r_python_compatibility.R --test codelist
+
+# Verbose output for debugging
+Rscript r-package/tools/test_r_python_compatibility.R --verbose
+```
+
 ## License
 
 BSD 3-Clause License
