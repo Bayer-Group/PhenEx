@@ -44,35 +44,66 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
     let isMonitoring = false;
 
     const updatePosition = () => {
-      if (triggerRef.current) {
+      if (triggerRef.current && contentRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
+        const contentRect = contentRef.current.getBoundingClientRect();
 
-        // Calculate X position based on alignment
-        let baseX = rect.left + window.scrollX;
-        if (alignment === 'center') {
-          baseX = rect.left + window.scrollX + rect.width / 2;
-        } else if (alignment === 'right') {
-          baseX = rect.right + window.scrollX;
-        }
+        let x = 0;
+        let y = 0;
 
-        let x = baseX + offsetX;
-        let y = rect.bottom + window.scrollY + offsetY;
-
+        // First determine the primary position (which side of the trigger)
         switch (position) {
           case 'above':
-            y = rect.top + window.scrollY - offsetY;
+            // Place above the trigger
+            y = rect.top + window.scrollY - contentRect.height - offsetY;
             break;
           case 'below':
+            // Place below the trigger
             y = rect.bottom + window.scrollY + offsetY;
             break;
           case 'right':
+            // Place to the right of the trigger
             x = rect.right + window.scrollX + offsetX;
-            y = rect.top + window.scrollY + offsetY;
             break;
           case 'left':
-            x = rect.left + window.scrollX - offsetX;
-            y = rect.top + window.scrollY + offsetY;
+            // Place to the left of the trigger
+            x = rect.left + window.scrollX - contentRect.width - offsetX;
             break;
+        }
+
+        // Now apply alignment for the other axis
+        if (position === 'above' || position === 'below') {
+          // For above/below positions, alignment affects horizontal positioning
+          switch (alignment) {
+            case 'left':
+              // Align left edges
+              x = rect.left + window.scrollX + offsetX;
+              break;
+            case 'center':
+              // Center horizontally
+              x = rect.left + window.scrollX + (rect.width / 2) - (contentRect.width / 2);
+              break;
+            case 'right':
+              // Align right edges
+              x = rect.right + window.scrollX - contentRect.width - offsetX;
+              break;
+          }
+        } else if (position === 'left' || position === 'right') {
+          // For left/right positions, alignment affects vertical positioning
+          switch (alignment) {
+            case 'left': // In this context, 'left' means 'top' alignment
+              // Align top edges
+              y = rect.top + window.scrollY + offsetY;
+              break;
+            case 'center':
+              // Center vertically
+              y = rect.top + window.scrollY + (rect.height / 2) - (contentRect.height / 2);
+              break;
+            case 'right': // In this context, 'right' means 'bottom' alignment
+              // Align bottom edges
+              y = rect.bottom + window.scrollY - contentRect.height - offsetY;
+              break;
+          }
         }
 
         // Update debug info (only if debug is enabled)
@@ -87,6 +118,10 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
               top: Math.round(rect.top),
               bottom: Math.round(rect.bottom),
             },
+            contentRect: {
+              width: Math.round(contentRect.width),
+              height: Math.round(contentRect.height),
+            },
             scroll: {
               x: Math.round(window.scrollX),
               y: Math.round(window.scrollY),
@@ -95,7 +130,6 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
               x: Math.round(x),
               y: Math.round(y),
             },
-            baseX: Math.round(baseX),
             offsetX,
             offsetY,
           };
@@ -134,7 +168,10 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
       }
     };
 
-    updatePosition();
+    // Initial position update with a slight delay to ensure content is rendered
+    requestAnimationFrame(() => {
+      updatePosition();
+    });
 
     // Standard event listeners
     const handleUpdate = () => {
@@ -149,13 +186,22 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
     window.addEventListener('scroll', handleUpdate, true);
     window.addEventListener('resize', handleUpdate);
 
-    // Enhanced ResizeObserver
+    // Enhanced ResizeObserver for both trigger and content
     let resizeObserver: ResizeObserver | null = null;
     if (triggerRef.current && 'ResizeObserver' in window) {
       resizeObserver = new ResizeObserver(() => {
         updatePosition();
       });
       resizeObserver.observe(triggerRef.current);
+    }
+
+    // Observe content size changes
+    let contentResizeObserver: ResizeObserver | null = null;
+    if (contentRef.current && 'ResizeObserver' in window) {
+      contentResizeObserver = new ResizeObserver(() => {
+        updatePosition();
+      });
+      contentResizeObserver.observe(contentRef.current);
     }
 
     return () => {
@@ -167,6 +213,9 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
       window.removeEventListener('resize', handleUpdate);
       if (resizeObserver) {
         resizeObserver.disconnect();
+      }
+      if (contentResizeObserver) {
+        contentResizeObserver.disconnect();
       }
     };
   }, [triggerRef, offsetX, offsetY, position, alignment, debug, container]);
@@ -228,12 +277,11 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
           <div>
             <strong>InfoPortal Debug:</strong>
           </div>
-          <div>Width: {debugInfo.triggerRect.width}px</div>
-          <div>Left: {debugInfo.triggerRect.left}px</div>
-          <div>Right: {debugInfo.triggerRect.right}px</div>
-          <div>Portal X: {debugInfo.calculatedPosition.x}px</div>
+          <div>Position: {debugInfo.position}</div>
           <div>Alignment: {debugInfo.alignment}</div>
-          <div>Base X: {debugInfo.baseX}px</div>
+          <div>Trigger: {debugInfo.triggerRect.width}x{debugInfo.triggerRect.height}px</div>
+          <div>Content: {debugInfo.contentRect.width}x{debugInfo.contentRect.height}px</div>
+          <div>Portal pos: {debugInfo.calculatedPosition.x},{debugInfo.calculatedPosition.y}px</div>
         </div>
       )}
     </div>

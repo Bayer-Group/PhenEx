@@ -84,11 +84,12 @@ const getFullParameterDescription = (parameter: string): string => {
       {showInfoPortal && (
         <InfoPortal
           triggerRef={infoButtonRef}
-          position="right"
-          offsetX={10}
-          offsetY={0}
+          position="below"
+          offsetX={-30}
+          offsetY={-30}
           alignment="right"
           onHideRequest={handleInfoPortalHide}
+          debug={true}
         >
           <div
             style={{
@@ -100,6 +101,7 @@ const getFullParameterDescription = (parameter: string): string => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
               fontSize: '14px',
               lineHeight: '1.5',
+              cursor: 'pointer'
             }}
           >
             <ReactMarkdown>{fullDescription}</ReactMarkdown>
