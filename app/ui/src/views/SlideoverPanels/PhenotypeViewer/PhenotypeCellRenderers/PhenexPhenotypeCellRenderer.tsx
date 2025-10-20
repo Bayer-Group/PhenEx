@@ -83,7 +83,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
               p: ({children}) => <p style={{margin: '0px', padding: '0px'}}>{children}</p>
             }}
           >
-            {description}
+            {/* {description} */}
           </ReactMarkdown>
         </div>
       </div>
