@@ -1,0 +1,12 @@
+Package: phenexr
+Type: Package
+Title: R Interface to PhenEx Medical Phenotyping Library
+Version: 0.7.3
+Author: Bayer AG
+Maintainer: Bayer AG <alexander.hartenstein@bayer.com>
+Description: Provides R bindings for the PhenEx Python library.
+License: BSD_3_clause + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.0.0)
+Imports: reticulate, R6, jsonlite
+RoxygenNote: 7.3.3
