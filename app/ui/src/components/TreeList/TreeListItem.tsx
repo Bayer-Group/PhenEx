@@ -111,7 +111,6 @@ export class TreeListItem extends React.Component<TreeListItemProps> {
         </div>
       ) : null;
     };
-      console.log("THE HIDE BUTRTON IS", this.props)
 
     // If using a custom renderer, let it handle the entire layout including caret
     if (Renderer) {

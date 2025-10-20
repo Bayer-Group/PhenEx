@@ -63,8 +63,8 @@ export const VisibilityTable: React.FC = () => {
             return current_max_height;
           }
 
-          const descriptionCol = params.api.getColumnDef('description');
-          if (!descriptionCol || !params.data?.description) return 48;
+          const descriptionCol = params.api.getColumnDef('column');
+          if (!descriptionCol || !params.data?.description) return 100;
           const descWidth = descriptionCol.width || 200;
           const charPerLine = Math.floor(descWidth / 8);
           const lines = Math.ceil(params.data?.description.length / charPerLine);

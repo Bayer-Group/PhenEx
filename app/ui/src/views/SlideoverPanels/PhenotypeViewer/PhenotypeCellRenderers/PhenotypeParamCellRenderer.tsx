@@ -87,10 +87,11 @@ const getFullParameterDescription = (parameter: string): string => {
   return paramInfo?.description || 'No description available for this parameter.';
 };
 
+
   const description = getParameterDescription(props.data.parameter);
   const fullDescription = getFullParameterDescription(props.data.parameter);
 
-  console.log("PARM CELL", props)
+  console.log("PARM CELL", props.data.parameter, props)
   return (
     <div className={styles.container}>
       <span className={styles.label}>{formatValue()}</span>

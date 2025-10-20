@@ -4,6 +4,7 @@ import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColum
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { VisibilityCellRenderer } from './VisibilityCellRenderer';
 import VisibilityDescriptionCellRenderer from './VisibilityDescriptionCellRenderer';
+import { VisibilityPhenotypeParamCellRenderer } from './VisibilityPhenotypeParamCellRenderer';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
 let parametersInfo = JSON.parse(parametersInfoRaw);
 
@@ -29,6 +30,7 @@ const visibilityColumns: ColumnDefinition[] = [
     flex: 0,
     pinned: 'left',
     editable: false,
+    cellRenderer: VisibilityPhenotypeParamCellRenderer,
   },
   {
     field: 'visible',
@@ -44,14 +46,6 @@ const visibilityColumns: ColumnDefinition[] = [
     headerName: 'Used by',
     editable: false,
     width: 180,
-    cellRenderer: VisibilityDescriptionCellRenderer,
-  },
-  {
-    field: 'description',
-    headerName: 'Description',
-    editable: false,
-    width: 200,
-    flex: 1,
     cellRenderer: VisibilityDescriptionCellRenderer,
   },
 ];
@@ -85,7 +79,7 @@ export class VisibilityDataService {
     const filteredColumns = defaultColumns.filter(
       column => column.field !== 'rowDrag' && column.field !== 'type' && column.field !== 'name'
     );
-
+    console.log("PARM INFO", parametersInfo)
     // Helper function to get description from parameters_info.json
     const getDescriptionForField = (fieldName: string): string => {
       const paramInfo = parametersInfo[fieldName as keyof typeof parametersInfo];
@@ -103,13 +97,15 @@ export class VisibilityDataService {
       return Array.isArray(phenotypes) ? phenotypes.join(', ') : '';
     };
 
+    console.log(filteredColumns, "THIS IS FILTERED COLS")
     const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
-      column: column.headerName || column.field,
+      column: column.field || column.headerName,
       visible: true,
       usedBy: getUsedByForField(column.field),
-      description: getDescriptionForField(column.field),
+      description: getDescriptionForField(column.headerName),
       index: index,
+      test:"HEREIT IS",
     }));
 
     this.updateIndices(rows);
