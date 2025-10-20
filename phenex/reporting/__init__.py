@@ -4,3 +4,5 @@ from .table2 import Table2
 from .counts import InExCounts
 from .waterfall import Waterfall
 from .time_to_event import TimeToEvent
+from .cohort_explorer import CohortExplorer
+from .report_drafter import ReportDrafter
