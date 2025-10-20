@@ -160,8 +160,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         <div className={styles.noRowsOverlay}>
           <div className={styles.noRowsOverlayComponents}>
             <span className={styles.noRowsTopLine}>
-              <span className={styles.buttonAppearance}>Click Add Component right above
-              above to add <span className={styles.noRows_section}>component phenotypes</span>.</span>
+              <span className={styles.buttonAppearance}> <span className={styles.noRows_section}></span>.</span>
             </span>
               
           </div>
