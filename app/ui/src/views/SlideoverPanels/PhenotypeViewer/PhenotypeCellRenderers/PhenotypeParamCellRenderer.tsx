@@ -139,7 +139,7 @@ const getFullParameterDescription = (parameter: string): string => {
               lineHeight: '1.5',
               cursor: 'pointer',
               opacity: portalOpacity,
-              transition: 'opacity 200ms ease-in-out',
+              // transition: 'opacity 20ms ease-in-out',
             }}
           >
             <ReactMarkdown>{fullDescription}</ReactMarkdown>
