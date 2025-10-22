@@ -1,0 +1,399 @@
+---
+title: "PhenEx Study Tutorial"
+format: html
+editor: visual
+---
+
+# PhenEx Study Tutorial
+
+In this page we will show you how to use PhenEx to:
+
+1.  Connect to a Snowflake Database
+2.  Work with OMOP data
+3.  Create a simple cohort
+4.  View cohort summary statistics
+
+First make sure that your PhenEx version is up to date
+
+```{r}
+# For updating PhenEx to latest released version
+# install.packages("devtools")
+# devtools::install_github("Bayer-Group/PhenEx/r-package")
+```
+
+```{r}
+# Load required libraries
+library(reticulate)
+library(phenexr)
+
+# Initialize PhenEx
+phenex_result <- phenex_initialize()
+cat("✅ PhenEx initialization result:", phenex_result, "\n")
+```
+
+## Connect to the database
+
+We will now establish a connection to Snowflake using a SnowflakeConnector; these connectors will use your environment variables (set above) for login credentials.
+
+At this point we must define two databases in Snowflake:
+
+1.  Source: the snowflake location where input data to phenex should come from
+2.  Destination (dest): the snowflake location where output data from phenex should be written. The destination will be created if it does not exist.
+
+Run this cell to connect to these databases; this cell will open up two browser tabs (if you're using browser authentication). After those pages load (wait for them to say completed!), close them and return to this document.
+
+```{r}
+# Import PhenEx connector
+ibis_connect <- import("phenex.ibis_connect")
+
+con <- ibis_connect$SnowflakeConnector(
+  SNOWFLAKE_ACCOUNT = 'ACCOUNT',
+  SNOWFLAKE_WAREHOUSE = 'WAREHOUSE',
+  SNOWFLAKE_ROLE = 'ROLE',
+  SNOWFLAKE_USER = 'USER'
+  SNOWFLAKE_SOURCE_DATABASE = 'XYZ123',
+  SNOWFLAKE_DEST_DATABASE = 'ABCXYZ'
+)
+```
+
+
+## Define input data structure
+
+PhenEx needs to know a little bit about the structure of the input data in order to help us make phenotypes and cohorts.
+
+What this means is that PhenEx knows in what table and column to find information such as patient id, year of birth, diagnosis events, etc. This information is generally present in all RWD sources, but for each data source, is (1) organized in a different way and (2) can have different column names.
+
+When using a new data source, we need to onboard that database for usage with PhenEx (tell it about table structure and column names). Go to the tutorial on onboarding a new database to learn how to onboard a database.
+
+For the purposes of this tutorial, we will be using OMOP data, which is already onboarded and available in the PhenEx library. All we have to do is import the OMOPDomains and then get the mapped tables.
+
+```{r}
+mappers <- import("phenex.mappers")
+mapped_tables <- mappers$OMOPDomains$get_mapped_tables(con)
+names(mapped_tables)
+```
+
+### Looking at input data
+
+PhenEx bundles all input data into a dictionary, in this case in the variable called mapped_tables. The keys in this dictionary are known as 'domains'; we can access the input data by these domain keys. The values for each key are the actual tables
+
+## Integrating medical codelists
+
+Medical codelists are an integral part of any observational study. PhenEx has functionality to help you use medical codelist files (CSVs or Excels). Go to the Codelist Tutorial to find out more about codelists. For the purpose of this tutorial, we will create a LocalCSVCodelistFactory that opens a codelist file, and returns medical codelists ready for use with PhenEx.
+
+```{r}
+codelists_module <- import("phenex.codelists")
+
+# create the codelist factory. We have to map column names; see the Codelist Tutorial for more info
+codelist_factory <- codelists_module$LocalCSVCodelistFactory(
+  path = './codelists_for_tutorial.csv',
+  name_code_column = 'CONCEPT_ID',
+  name_codelist_column = 'CODELIST',
+  name_code_type_column = 'VOCABULARY_ID'
+)
+
+# let's see what codelists are available
+codelist_factory$get_codelists()
+```
+
+## Study Definition
+
+Now we're ready to use PhenEx to specify our observational study! For the purposes of this tutorial, we will use the following dummy study definition:
+
+**AIM**: to characterize patients with atrial fibrillation
+
+**Entry Criterion**
+
+incident atrial fibrillation, as defined by the first occurrence of a diagnosis code for atrial fibrillation
+
+**Inclusion criteria**
+
+1.  At least one year lookback period
+2.  greater than or equal to 18 years old
+
+**Exclusion criteria**
+
+1.  No myocardial hospitalization in the year prior to index
+
+**Baseline characteristics**
+
+1.  age at index
+2.  sex
+3.  number of deaths within 30 days of index
+
+**Time to event analysis** for death post index
+
+To use PhenEx, we'll translate this written text to a PhenEx executable study definition. We do that by creating a phenotype for each one of these study elements, and then we will put them all together in the 'Cohort' section
+
+### Entry criterion
+
+The entry criterion defines study entry i.e. it defines the index date. At this point, it is only a potential index date; only after we evaluate the in/exclusion criteria at this possible index date does it become the true index date.
+
+```{r}
+# Import required phenotype classes
+phenotypes <- import("phenex.phenotypes.codelist_phenotype")
+codelists_classes <- import("phenex.codelists.codelists")
+
+# create a codelist for atrial fibrillation
+cl_af <- codelist_factory$get_codelist('ATRIAL_FIBRILLATION')$copy(use_code_type = FALSE)
+
+# create a phenotype that uses this codelist.
+pt_entry <- phenotypes$CodelistPhenotype(
+  name = 'first_atrial_fibrillation_diagnosis',
+  domain = 'CONDITION_OCCURRENCE',
+  codelist = cl_af,
+  return_date = 'first' # return the first occurrence
+)
+```
+
+```{r}
+# we can execute the phenotype and look at the results. this is not required!
+pt_entry$execute(mapped_tables)
+pt_entry$table
+```
+
+### Inclusions
+
+We now create a list of inclusion phenotypes; these phenotypes must evaluate to 'true' to enter the cohort i.e patients must fulfill the criteria defined by the inclusion phenotypes. We go one by one, implementing each criterium.
+
+#### Inclusion 1: One year continuous coverage
+
+```{r}
+# Import required classes
+phenotypes_module <- import("phenex.phenotypes")
+filters_module <- import("phenex.filters")
+
+pt_inclusion1 <- phenotypes_module$TimeRangePhenotype(
+  name = 'one_year_coverage',
+  relative_time_range = filters_module$RelativeTimeRangeFilter(
+    when = 'before',
+    min_days = filters_module$GreaterThanOrEqualTo(365L),
+    anchor_phenotype = pt_entry # this is only necessary if we want to execute pt_inclusion1 outside of a cohort.
+  )
+)
+
+# we can again execute immediately (outside of the Cohort) if we want to observe the results
+# pt_inclusion1$execute(mapped_tables)
+```
+
+#### Inclusion 2: Age greater than 18
+
+```{r}
+pt_inclusion2 <- phenotypes_module$AgePhenotype(
+  name = 'age_g18',
+  value_filter = filters_module$ValueFilter(
+    min_value = filters_module$GreaterThan(18L)
+  ),
+  anchor_phenotype = pt_entry # this is only necessary if we want to execute pt_inclusion1 outside of a cohort.
+)
+
+# we can again execute immediately (outside of the Cohort) if we want to observe the results
+# pt_inclusion2$execute(mapped_tables)
+```
+
+```{r}
+# Create the final list of inclusions. These criteria will be executed sequentially when creating the attrition table, so adjust the order as desired for the attrition table.
+inclusions <- list(pt_inclusion1, pt_inclusion2)
+```
+
+### Exclusions
+
+We now create a list of exclusion phenotypes; these phenotypes must evaluate to 'false' to enter the cohort i.e patients may NOT fulfill the criteria defined by the exclusion phenotypes. We go one by one, implementing each criterium.
+
+#### Exclusion 1: Inpatient myocardial infarction diagnosis
+
+```{r}
+f_inpatient <- filters_module$CategoricalFilter(
+  allowed_values = list(
+    9203L,   # Emergency Room Visit
+    262L,    # Emergency Room and Inpatient Visit
+    9201L    # Inpatient Visit
+  ),
+  column_name = 'VISIT_CONCEPT_ID',
+  domain = 'VISIT_OCCURRENCE'
+)
+
+f_one_year_pre_index <- filters_module$RelativeTimeRangeFilter(
+  when = 'before',
+  anchor_phenotype = pt_entry, # this is only necessary if we want to execute pt_inclusion1 outside of a cohort.
+  min_days = filters_module$GreaterThanOrEqualTo(0L),
+  max_days = filters_module$LessThan(365L)
+)
+
+cl_mi <- codelist_factory$get_codelist('MYOCARDIAL_INFARCTION')$copy(use_code_type = FALSE)
+
+pt_exclusion1 <- phenotypes$CodelistPhenotype(
+  name = 'myocardial_infarction_hospitalization',
+  domain = 'CONDITION_OCCURRENCE',
+  codelist = cl_mi,
+  categorical_filter = f_inpatient,
+  relative_time_range = f_one_year_pre_index
+)
+
+# we can again execute immediately (outside of the Cohort) if we want to observe the results; patients in this table will be EXCLUDED from the final cohort
+# pt_exclusion1$execute(mapped_tables)
+```
+
+```{r}
+exclusions <- list(pt_exclusion1)
+```
+
+### Characteristics
+
+We now create a list of baseline characteristic phenotypes; these phenotypes are run on the final cohort only. We can observe the results in Table1. We go one by one, implementing each criterium.
+
+```{r}
+pt_characteristic1 <- phenotypes_module$AgePhenotype()
+pt_characteristic2 <- phenotypes_module$BinPhenotype(
+  name = 'binned_age',
+  phenotype = pt_characteristic1
+)
+
+pt_characteristic3 <- phenotypes_module$CategoricalPhenotype(
+  name = 'sex',
+  categorical_filter = filters_module$CategoricalFilter(column_name = "GENDER_SOURCE_VALUE"),
+  domain = "PERSON"
+)
+
+pt_characteristic4 <- phenotypes_module$DeathPhenotype(
+  name = 'death_30days',
+  domain = 'DEATH',
+  relative_time_range = filters_module$RelativeTimeRangeFilter(
+    when = 'after',
+    min_days = filters_module$GreaterThan(0L),
+    max_days = filters_module$LessThan(30L)
+  )
+)
+
+characteristics <- list(pt_characteristic1, pt_characteristic2, pt_characteristic3, pt_characteristic4)
+```
+
+### Outcomes
+
+We now create a list of outcome phenotypes; these phenotypes are run on the final cohort only. We can observe the results in a time to event analysis. We go one by one, implementing each criterium.
+
+```{r}
+f_postindex <- filters_module$RelativeTimeRangeFilter(
+  when = 'after',
+  min_days = filters_module$GreaterThan(0L)
+)
+
+pt_outcome1 <- phenotypes$CodelistPhenotype(
+  name = 'myocardial_infarction_after_index',
+  domain = 'CONDITION_OCCURRENCE',
+  codelist = cl_mi,
+  categorical_filter = f_inpatient,
+  relative_time_range = f_postindex
+)
+```
+
+```{r}
+outcomes <- list(pt_outcome1)
+```
+
+### Cohort
+
+We now put everything together in a PhenEx cohort. This takes the entry phenotype, and all the lists of phenotypes we created above. We can then execute the cohort.
+
+```{r}
+cohort_module <- import("phenex.phenotypes.cohort")
+
+cohort <- cohort_module$Cohort(
+  name = 'study_tutorial_cohort',
+  entry_criterion = pt_entry,
+  inclusions = inclusions,
+  exclusions = exclusions,
+  characteristics = characteristics,
+  outcomes = outcomes
+)
+```
+
+```{r}
+cohort$execute(mapped_tables, con = con, n_threads = 6L, overwrite = TRUE, lazy_execution = TRUE)
+```
+
+## Reporting
+
+Once you're done executing the cohort, PhenEx provides basic reporting of attrition, baseline characteristics, and time to event.
+
+### Attrition
+
+The attrition table shows the flow of patients to result in your final cohort. The first row is the entry criterion.
+
+-   The N column shows how many patients in the entire dataset fulfill the entry criterium. The N column in the following rows shows how many patients that fulfill the entry criterium fulfill the criterium on that row.
+-   The Remaining column shows how many patients remain after applying the criterium on that row.
+-   The % column shows how many remaining, as a percentage of the entry criterium
+-   The delta column shows how many patients are lost after applying the criterium on each row
+
+```{r}
+reporting <- import("phenex.reporting")
+
+reporter <- reporting$Waterfall()
+reporter$execute(cohort)
+```
+
+### Table 1
+
+We can look at summary statistics of our baseline characteristics using PhenEx. The order of the phenotypes in the list of characteristics determines the order in Table1.
+
+-   The N column shows how many patients that fulfill the entry criterium fulfill the criterium on that row
+-   The % column shows the percentage of patients that fulfill the entry criterium have the criterium on that row
+-   For categorically valued phenotypes (e.g Categorical Phenotype, BinPhenotype), we see a row for each category found
+-   For numerically valued phenotypes (e.g. MeasurementPhenotype, AgePhenotype), we see summary statistics
+
+```{r}
+cohort$table1
+```
+
+### Time to event analysis
+
+PhenEx allows you do to basic time to event analyses. KaplanMeier curves are currently supported. You simply define your right censoring phenotypes, and then create a time to event reporter. The survival curve is then generated for you.
+
+```{r}
+# Import required modules
+tte_module <- import("phenex.reporting")
+datetime <- import("datetime")
+
+end_of_followup <- phenotypes_module$TimeRangePhenotype(
+  name = 'end_of_followup',
+  relative_time_range = filters_module$RelativeTimeRangeFilter(when = 'after')
+)
+
+death_right_censor <- phenotypes_module$DeathPhenotype(
+  name = 'death_censoring',
+  domain = 'DEATH',
+  relative_time_range = f_postindex
+)
+
+right_censor_phenotypes <- list(end_of_followup, death_right_censor)
+
+tte <- tte_module$TimeToEvent(
+  right_censor_phenotypes = right_censor_phenotypes,
+  end_of_study_period = datetime$date(2025L, 12L, 12L)
+)
+
+tte$execute(cohort)
+
+tte$plot_single_kaplan_meier(xlim = list(0L, 90L), outcome_index = 0L)
+```
+
+## Summary
+
+This tutorial has demonstrated the complete PhenEx R workflow:
+
+1.  **Database Connection**: Connected to Snowflake using environment variables
+2.  **Data Mapping**: Used OMOP domains to structure input data
+3.  **Codelist Integration**: Loaded medical codelists from CSV files
+4.  **Phenotype Definition**: Created entry, inclusion, exclusion, and characteristic phenotypes
+5.  **Cohort Construction**: Built and executed a complete cohort definition
+6.  **Reporting**: Generated attrition tables, baseline characteristics, and survival analyses
+
+The R interface provides access to all PhenEx functionality while maintaining R-native syntax and data structures. This allows R users to leverage PhenEx's powerful phenotyping capabilities within their existing R workflows.
+
+### Next Steps
+
+-   Explore more complex phenotype definitions
+-   Integrate with R's statistical and visualization packages
+-   Create custom codelists and validation workflows
+-   Scale analyses to larger datasets
+-   Export results for further analysis in R
