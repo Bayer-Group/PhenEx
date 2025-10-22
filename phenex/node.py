@@ -7,7 +7,7 @@ from ibis.expr.types.relations import Table
 from datetime import datetime
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
-from phenex.ibis_connect import DuckDBConnector
+from phenex.ibis_connect import DuckDBConnector, SnowflakeConnector
 import threading
 import queue
 from deepdiff import DeepDiff
@@ -255,8 +255,8 @@ class Node:
         execution_params = {}
 
         # Handle SnowflakeConnector
-        if hasattr(con, "SNOWFLAKE_SOURCE_DATABASE"):
-            execution_params["connector_type"] = "SnowflakeConnector"
+        if isinstance(con, SnowflakeConnector):
+            execution_params["connector_type"] = con.__class__.__name__
             execution_params["source_database"] = getattr(
                 con, "SNOWFLAKE_SOURCE_DATABASE", None
             )
@@ -264,8 +264,8 @@ class Node:
                 con, "SNOWFLAKE_DEST_DATABASE", None
             )
         # Handle DuckDBConnector
-        elif hasattr(con, "DUCKDB_SOURCE_DATABASE"):
-            execution_params["connector_type"] = "DuckDBConnector"
+        elif isinstance(con, DuckDBConnector):
+            execution_params["connector_type"] = con.__class__.__name__
             execution_params["source_database"] = getattr(
                 con, "DUCKDB_SOURCE_DATABASE", None
             )
@@ -273,10 +273,9 @@ class Node:
                 con, "DUCKDB_DEST_DATABASE", None
             )
         else:
-            # Unknown connector type
-            execution_params["connector_type"] = type(con).__name__
-            execution_params["source_database"] = None
-            execution_params["dest_database"] = None
+            raise NotImplementedError(
+                f"Unsupported connector: {con.__class__.__name__}"
+            )
 
         return execution_params
 
