@@ -10,9 +10,8 @@
 
 .controlsContainer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap:5px;
   margin-left: 10px;
   margin-right: 30px;
 }

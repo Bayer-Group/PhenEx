@@ -3,7 +3,8 @@ import {
   PhenexCellRenderer,
   PhenexCellRendererProps,
 } from '../../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
-import parametersInfo from '../../../../assets/parameters_info.json';
+import parametersInfoRaw from '/assets/parameters_info.json?raw';
+let parametersInfo = JSON.parse(parametersInfoRaw);
 import ReactMarkdown from 'react-markdown';
 
 export interface PhenexPhenotypeCellRendererProps extends PhenexCellRendererProps {}
@@ -82,7 +83,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
               p: ({children}) => <p style={{margin: '0px', padding: '0px'}}>{children}</p>
             }}
           >
-            {description}
+            {/* {description} */}
           </ReactMarkdown>
         </div>
       </div>

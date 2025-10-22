@@ -57,6 +57,8 @@ export const VisibilityCellRenderer: React.FC<VisibilityCellRendererProps> = pro
         height: '100%',
         cursor: 'pointer',
         width: '100%',
+        // paddingTop: '10px',
+
       }}
       onClick={handleClick}
       title={isVisible ? 'Click to hide column' : 'Click to show column'}

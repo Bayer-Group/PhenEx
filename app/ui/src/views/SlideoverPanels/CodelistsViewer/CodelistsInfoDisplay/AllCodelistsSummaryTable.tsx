@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, act } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { CohortDataService } from '../../../CohortViewer/CohortDataService/CohortDataService';
 import styles from './AllCodelistsSummaryTable.module.css';
@@ -7,6 +7,12 @@ export const AllCodelistsSummaryTable: React.FC = () => {
   const dataService = useRef(CohortDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const [activeFile, setActiveFile] = useState(dataService.codelists_service.activeFile);
+
+  const getRowData = () => {
+    return dataService.codelists_service.summarizeAllCodelistFiles();
+  };
+
+  const [rowData, setRowData] = useState(getRowData());
 
   const refreshGrid = () => {
     setActiveFile(dataService.codelists_service.activeFile);
@@ -22,42 +28,36 @@ export const AllCodelistsSummaryTable: React.FC = () => {
   }, [dataService]);
 
   useEffect(() => {
-    if (gridRef.current?.api) {
-      gridRef.current.api.setRowData(getRowData());
-    }
+    setRowData(getRowData());
   }, [activeFile]);
 
   const getColumnDefs = () => {
     return [
       {
         headerName: 'Codelist Name',
-        field: 'codelist_name',
+        field: 'codelist_name' as const,
         resizable: true,
         minWidth: 150,
       },
       {
         headerName: 'Number of Codes',
-        field: 'n_codes',
+        field: 'n_codes' as const,
         resizable: true,
         minWidth: 120,
       },
       {
         headerName: 'Source file',
-        field: 'filename',
+        field: 'filename' as const,
         resizable: true,
         minWidth: 120,
       },
     ];
   };
 
-  const getRowData = () => {
-    return dataService.codelists_service.summarizeAllCodelistFiles();
-  };
-
   return (
     <div className={styles.gridContainer}>
       <AgGridReact
-        rowData={getRowData()}
+        rowData={rowData}
         columnDefs={getColumnDefs()}
         ref={gridRef}
         theme={dataService.codelists_service.getTheme()}

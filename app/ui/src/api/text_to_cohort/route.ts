@@ -174,3 +174,97 @@ export const suggestChanges = async (
     throw error;
   }
 };
+
+// ========== STUDY API CALLS ==========
+
+export const getUserStudies = async () => {
+  try {
+    const response = await api.get('/studies');
+    return response.data;
+  } catch (error) {
+    console.error('Error in getUserStudies:', error);
+    throw error;
+  }
+};
+
+export const getPublicStudies = async () => {
+  try {
+    const response = await api.get('/studies/public');
+    return response.data;
+  } catch (error) {
+    console.error('Error in getPublicStudies:', error);
+    throw error;
+  }
+};
+
+export const getStudy = async (study_id: string) => {
+  try {
+    const response = await api.get('/study', {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in getStudy:', error);
+    throw error;
+  }
+};
+
+export const getPublicStudy = async (study_id: string) => {
+  try {
+    const response = await api.get('/study/public', {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in getPublicStudy:', error);
+    throw error;
+  }
+};
+
+export const updateStudy = async (study_id: string, study_data: any) => {
+  try {
+    console.log('Updating study:', study_data);
+    const response = await api.post('/study', study_data, {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateStudy:', error);
+    throw error;
+  }
+};
+
+export const deleteStudy = async (study_id: string) => {
+  try {
+    const response = await api.delete('/study', {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in deleteStudy:', error);
+    throw error;
+  }
+};
+
+export const getCohortsForStudy = async (study_id: string) => {
+  try {
+    const response = await api.get('/study/cohorts', {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in getCohortsForStudy:', error);
+    throw error;
+  }
+};
+
+export const createNewStudy = async (study_data: any) => {
+  try {
+    console.log('Creating new study:', study_data);
+    const response = await api.post('/study/new', study_data);
+    return response.data;
+  } catch (error) {
+    console.error('Error in createNewStudy:', error);
+    throw error;
+  }
+};

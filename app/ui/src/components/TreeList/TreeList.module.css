@@ -100,14 +100,23 @@
   height: 16px;
   border: none;
   /* font-size:10px; */
-  color: rgb(230, 230, 230);
+  color: var(--color-accent-bright);
   background: transparent;
   cursor: pointer;
   padding: 0;
   transition: transform 0.2s ease;
-  margin-left: -8px;
+  margin-left: -5px;
   bottom: 8px;
   position: absolute;
+    transition: transform 0.2s ease;
+  display: block;
+  font-family: 'SNPro-regular';
+  font-size: 20px;
+  transition: color 0.2s ease;
+}
+
+.toggleButton:hover{
+  color: var(--color_accent_orange);
 }
 
 .toggleButton:focus {
@@ -118,15 +127,8 @@
   outline: none;
 }
 
-.toggleButton span {
-  transition: transform 0.2s ease;
-  color: black;
-  display: block;
-  font-family: 'SNPro-black';
-  font-size: 20px;
-}
 
-.toggleButton.open span {
+.toggleButton.open {
   transform: rotate(90deg);
 }
 
@@ -163,6 +165,24 @@
 .button {
   position: absolute;
   right: 20px;
-  bottom: 5px;
+  bottom: 10px;
   padding: 2px 4px !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--background_color_translucent);
+}
+
+.buttonHidden {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.treeItem:hover > .container > .itemContent > .buttonHidden {
+  opacity: 1;
+}
+
+/* Styling for last child items - can be used to adjust height or remove vertical lines */
+.verticalLine.lastChild {
+  /* Default: no special styling, but available for customization */
+  height: 60%;
 }

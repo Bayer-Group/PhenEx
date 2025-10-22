@@ -1,0 +1,55 @@
+# Usage
+#   1. Build:               docker compose -f docker-compose.bundle.yml build --no-cache --progress=plain
+#   2. Initialize the DB:   2.1. docker compose -f docker-compose.bundle.yml up db # wait till inital DB setup is complete and restart it ^C
+#                           2.2. docker compose -f docker-compose.bundle.yml up db -d
+#                           2.3. ./backend/scripts/reset-databases-local.sh
+#   3. Run bundled          docker compose -f docker-compose.bundle.yml up be-bundle fe-bundle
+#   4. Stop                 docker compose -f docker-compose.bundle.yml down
+
+name: phenex
+
+services:
+  be-bundle:
+    container_name: phenex-be-bundle
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile.model-bundle
+      platforms:
+      - "linux/amd64"
+    ports:
+      - 9001:8000
+    env_file: ./backend/.env
+
+  fe-bundle:
+    container_name: phenex-fe-bundle
+    build:
+      context: ./ui
+      dockerfile: ./Dockerfile.bundle
+      platforms:
+      - "linux/amd64"
+    ports:
+      - "9111:80"
+
+  # Comment out everything below this point if you are using an external Postgres database
+  db:
+    image: postgres:15.8
+    container_name: phenex-db
+    restart: unless-stopped
+    volumes:
+      - ${HOME}/.phenex/volumes/db/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_PASSWORD: password-phenex
+    ports:
+      - 9444:5432
+
+  adminer:
+    container_name: phenex-adminer
+    image: ghcr.io/shyim/adminerevo:latest
+    restart: unless-stopped
+    ports:
+      - 9091:8080

@@ -56,24 +56,28 @@ export const VisibilityTable: React.FC = () => {
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
         rowDragManaged={true}
+        suppressMovableColumns={true}
         getRowHeight={params => {
-          let current_max_height = 48;
+          let current_max_height = 60; // Use 100px like in PhenotypeViewer instead of 48px
 
           if (!params.data?.description) {
             return current_max_height;
           }
 
-          const descriptionCol = params.api.getColumnDef('description');
-          if (!descriptionCol || !params.data?.description) return 48;
+          const descriptionCol = params.api.getColumnDef('column');
+          if (!descriptionCol || !params.data?.description) return current_max_height;
           const descWidth = descriptionCol.width || 200;
           const charPerLine = Math.floor(descWidth / 8);
           const lines = Math.ceil(params.data?.description.length / charPerLine);
-          return Math.max(current_max_height, lines * 10 + 20);
+          return Math.max(current_max_height, lines * 14 + 20); // Increase line height multiplier from 10 to 14
         }}
         defaultColDef={{
           flex: 1,
           minWidth: 20,
-          resizable: true,
+          resizable: false,
+          suppressMovable: true, // Prevent individual columns from being moved
+          filter: true,
+
         }}
       />
     </div>

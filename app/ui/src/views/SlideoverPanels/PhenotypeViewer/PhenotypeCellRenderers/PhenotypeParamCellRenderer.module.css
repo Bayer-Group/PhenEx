@@ -1,7 +1,7 @@
 .label {
   text-wrap: wrap;
   /* line-height: 1 !important; */
-  font-size: 14px;
+  font-size: 18px;
   font-family: "IBMPlexSans-bold";
   /* padding: 4px 0; */
   /* padding:0px;
@@ -12,7 +12,7 @@
 .container {
   padding: 0px;
   margin: 0px;
-  line-height: 1;
+  line-height:12px;
   padding-top: 10px;
 }
 
@@ -20,6 +20,8 @@
   background: white;
   border: none;
   padding: 0px 7px 0px 7px;
+  height: 27px;
+  width: 27px;
   cursor: pointer;
   opacity: 0;
   margin-top: 0px;
@@ -32,6 +34,8 @@
   position: absolute;
   right: 5px;
   border-radius: 50%;
+  font-family: "IBMPlexSans-regular";
+  font-size: 18px;
   top: 2px;
 }
 
@@ -53,4 +57,20 @@
 
 :global(.ag-row:hover) .infoButton {
   opacity: 1;
+}
+
+.infotext{
+  font-size: 12px;
+}
+
+.infoPortalContainer {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+  padding: 12px;
+  max-width: 300px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
 }

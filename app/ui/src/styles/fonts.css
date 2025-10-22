@@ -48,6 +48,13 @@
 }
 
 @font-face {
+  font-family: 'SNPro-regular';
+  src: url('../assets/fonts/SNPro-Regular.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
   font-family: 'NotoSansMono';
   src: url('../assets/fonts/NotoSansMono-Regular.ttf') format('truetype');
   font-weight: normal;

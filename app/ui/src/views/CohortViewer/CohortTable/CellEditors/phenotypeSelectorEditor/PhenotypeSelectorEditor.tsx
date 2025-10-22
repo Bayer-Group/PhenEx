@@ -43,6 +43,18 @@ const phenotypes = [
     name: 'ArithmeticPhenotype',
     info: 'For the calculation of numerical values using other numerical values. For example, use this to calculate BMI using height and weight values found in the data.',
   },
+  {
+    name: 'EventCountPhenotype',
+    info: 'Counts number of distinct days a phenotype occurs; filter patients based on number of days an event occurs, and the number of days between any two events',
+  },
+  {
+    name: 'BinPhenotype',
+    info: 'For converting a numerically valued phenotype to categorical bins. Specify which bins you want to use.',
+  },
+  {
+    name: 'MeasurementChange',
+    info: 'For identifying changes in a numerical value e.g. drop of Hb of 2 g/dL over 2 days',
+  },
 ];
 
 export const PhenotypeSelectorEditor: React.FC<PhenotypeSelectorEditorProps> = props => {

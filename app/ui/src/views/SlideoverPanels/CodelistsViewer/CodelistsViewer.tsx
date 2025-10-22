@@ -6,7 +6,7 @@ import { AgGridReact } from '@ag-grid-community/react';
 import { FileDropZone } from './FileDropZone/FileDropZone';
 import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummarytable';
+import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummaryTable';
 interface CodelistsViewerProps {
   showTitle?: boolean;
 }
@@ -53,6 +53,8 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
       reader.onload = e => {
         try {
           const content = e.target?.result as string;
+          console.log("TRYING TO ADD FILE", content)
+
           dataService.codelists_service.addFile({ filename: file.name, contents: content });
           setGridData(dataService.codelists_service.prepareAllCodelistsData());
         } catch (error) {

@@ -32,7 +32,7 @@
 /* Hidden state - slide out to the right, moving outside the container's bounds */
 .rightPanelHistory.slideOut {
     transform: translateX(135px); 
-    opacity: .8;
+    opacity: .95;
     /* Slides most of it out of the container */
 }
 

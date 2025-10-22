@@ -4,54 +4,57 @@ import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColum
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { VisibilityCellRenderer } from './VisibilityCellRenderer';
 import VisibilityDescriptionCellRenderer from './VisibilityDescriptionCellRenderer';
-import parametersInfo from '../../../assets/parameters_info.json';
+import { VisibilityPhenotypeParamCellRenderer } from './VisibilityPhenotypeParamCellRenderer';
+import parametersInfoRaw from '/assets/parameters_info.json?raw';
+let parametersInfo = JSON.parse(parametersInfoRaw);
 
 const visibilityColumns: ColumnDefinition[] = [
   {
     field: 'dragHandle',
     headerName: '',
-    maxWidth: 40,
-    minWidth: 40,
-    width: 40,
+    maxWidth: 60,
+    minWidth: 60,
+    width: 60,
     flex: 0,
-    pinned: 'left',
     rowDrag: true,
     suppressMenu: true,
     suppressSorting: true,
     suppressFilter: true,
     cellClass: 'row-drag-handle',
+    suppressMovable: true,
+    cellStyle: { display: 'flex', justifyContent: 'flex-end'},
+  },
+  {
+    field: 'visible',
+    headerName: '',
+    resizable: false,
+    maxWidth: 40,
+    minWidth: 40,
+    width: 40,
+    flex: 0,
+    editable: false, // Changed to false since the renderer handles the interaction
+    cellRenderer: VisibilityCellRenderer,
+    suppressMovable: true,
   },
   {
     field: 'column',
     headerName: 'Column',
-    width: 150,
-    flex: 0,
-    pinned: 'left',
+    minWidth: 100,
+    flex: 1,
     editable: false,
-  },
-  {
-    field: 'visible',
-    headerName: 'Visible',
-    width: 70,
-    flex: 0,
-    pinned: 'left',
-    editable: false, // Changed to false since the renderer handles the interaction
-    cellRenderer: VisibilityCellRenderer,
+    cellRenderer: VisibilityPhenotypeParamCellRenderer,
+    resizable: false,
+    suppressMovable: true,
   },
   {
     field: 'usedBy',
     headerName: 'Used by',
     editable: false,
-    width: 180,
+    width: 100,
+    resizable: false,
+    maxWidth: 100,
     cellRenderer: VisibilityDescriptionCellRenderer,
-  },
-  {
-    field: 'description',
-    headerName: 'Description',
-    editable: false,
-    width: 200,
-    flex: 1,
-    cellRenderer: VisibilityDescriptionCellRenderer,
+    suppressMovable: true,
   },
 ];
 
@@ -84,7 +87,7 @@ export class VisibilityDataService {
     const filteredColumns = defaultColumns.filter(
       column => column.field !== 'rowDrag' && column.field !== 'type' && column.field !== 'name'
     );
-
+    console.log("PARM INFO", parametersInfo)
     // Helper function to get description from parameters_info.json
     const getDescriptionForField = (fieldName: string): string => {
       const paramInfo = parametersInfo[fieldName as keyof typeof parametersInfo];
@@ -102,12 +105,13 @@ export class VisibilityDataService {
       return Array.isArray(phenotypes) ? phenotypes.join(', ') : '';
     };
 
+    console.log(filteredColumns, "THIS IS FILTERED COLS")
     const rows: VisibilityRow[] = filteredColumns.map((column, index) => ({
       dragHandle: '', // Empty value for drag handle column
-      column: column.headerName || column.field,
+      column: column.field || column.headerName,
       visible: true,
       usedBy: getUsedByForField(column.field),
-      description: getDescriptionForField(column.field),
+      description: getDescriptionForField(column.headerName),
       index: index,
     }));
 
@@ -140,7 +144,7 @@ export class VisibilityDataService {
       // rowBorder: true,
       spacing: 8,
       wrapperBorder: false,
-      backgroundColor: 'var(--color-background)',
+      backgroundColor: 'var(--background-color)',
     });
   }
 

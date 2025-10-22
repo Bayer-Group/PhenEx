@@ -1,76 +1,57 @@
 # Usage
-#   Start:              docker compose up
-#   With helpers:       docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml up
-#   Stop:               docker compose down
-#   Destroy:            docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml down -v --remove-orphans
-#   Reset everything:  ./reset.sh
+#   1. Build:               docker compose build --no-cache --progress=plain
+#   2. Initialize the DB:   2.1. docker compose up db # wait till inital DB setup is complete and restart it ^C
+#                           2.2. docker compose up db -d
+#                           2.3. ./backend/scripts/reset-databases-local.sh
+#   3. Run                  docker compose up backend frontend
+#   4. Stop                 docker compose down
 
 name: phenex
 
 services:
   backend:
     container_name: phenex-backend
-    # in dev mode, mount local files and restart service while files change
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: phenex-backend:latest
-    # mount your local disk to save cohorts
+      platforms:
+      - "linux/arm64/v8"
     command: fastapi run main.py --reload
-    env_file: ./.env
-    depends_on:
-      db:
-        condition: service_healthy
+    # Use this command line to enable hot reload
     ports:
       - "8001:8000"
     volumes:
-      - ${HOME}/data/phenex/cohorts:/data/cohorts
-      - ${HOME}/data/phenex/users:/data/users
-      - ./backend:/app
-      - ../phenex:/app/phenex
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import requests; requests.get('http://localhost:8000/health')",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      - ${HOME}/.phenex/data/phenex/cohorts:/app/data/cohorts
+      - ${HOME}/.phenex/data/phenex/users:/app/data/users
+      - ./backend:/app  # Mount your local backend code directory
+      - ../phenex:/app/phenex  # If you have a separate phenex library
+    env_file: ./backend/.env
 
   frontend:
     container_name: phenex-frontend
-    env_file: ./.env
     build:
       context: ./ui
       dockerfile: Dockerfile
-    image: phenex-frontend:latest
-    command: bash -c "npm i && ./node_modules/.bin/vite --host 0.0.0.0"
-    volumes:
-      - ./ui:/app
     ports:
       - "5173:5173"
-    depends_on:
-      backend:
-        condition: service_healthy
+    env_file: ./ui/.env
 
   # Comment out everything below this point if you are using an external Postgres database
   db:
-    container_name: phenex-db
     image: postgres:15.8
+    container_name: phenex-db
     restart: unless-stopped
     volumes:
-      - ./volumes/db/data:/var/lib/postgresql/data
+      - ${HOME}/.phenex/volumes/db/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
-    env_file:
-      - ./.env
+    environment:
+      POSTGRES_PASSWORD: password-phenex
+    ports:
+      - 9444:5432
 
   adminer:
     container_name: phenex-adminer
@@ -78,6 +59,3 @@ services:
     restart: unless-stopped
     ports:
       - 9091:8080
-
-volumes:
-  db-config:

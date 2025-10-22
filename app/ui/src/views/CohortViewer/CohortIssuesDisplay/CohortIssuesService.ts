@@ -37,7 +37,7 @@ export class CohortIssuesService {
       return;
     }
     try {
-      const response = await fetch('/src/assets/class_definitions.json');
+      const response = await fetch('/assets/class_definitions.json');
       this.classDefinitions = await response.json();
     } catch (error) {
       console.error('Failed to load class definitions:', error);
