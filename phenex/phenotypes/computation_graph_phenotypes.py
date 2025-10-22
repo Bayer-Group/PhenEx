@@ -120,7 +120,7 @@ class ComputationGraphPhenotype(Phenotype):
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
-        return joined_table
+        return joined_table.drop_duplicates()
 
     def _return_all_dates(self, table, date_columns):
         """
