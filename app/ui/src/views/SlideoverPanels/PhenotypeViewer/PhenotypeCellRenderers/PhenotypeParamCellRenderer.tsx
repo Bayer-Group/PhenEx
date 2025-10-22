@@ -93,15 +93,22 @@ const getFullParameterDescription = (parameter: string): string => {
 
   console.log("PARM CELL", props.data.parameter, props)
   return (
-    <div className={styles.container}>
-      <span className={styles.label}>{formatValue()}</span>
+    <div className={styles.container} style={{ width: '100%', overflow: 'hidden' }}>
+      <span className={styles.label} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{formatValue()}</span>
       <br></br>
-      <span className={styles.infotext}>
+      <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
         
         
          <ReactMarkdown 
             components={{
-              p: ({children}) => <p style={{marginTop: '5px', padding: '0px'}}>{children}</p>
+              p: ({children}) => <p style={{
+                marginTop: '5px', 
+                padding: '0px', 
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                maxWidth: '100%'
+              }}>{children}</p>
             }}
           >
             {description}
@@ -123,26 +130,20 @@ const getFullParameterDescription = (parameter: string): string => {
         <InfoPortal
           triggerRef={infoButtonRef}
           position="below"
-          offsetX={-30}
-          offsetY={-30}
+          offsetX={-10}
+          offsetY={-15}
           alignment="right"
           onHideRequest={handleInfoPortalHide}
         >
           <div
+            className={styles.infoPortalContainer}
             style={{
-              background: 'white',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              padding: '12px',
-              maxWidth: '300px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              fontSize: '14px',
-              lineHeight: '1.5',
-              cursor: 'pointer',
               opacity: portalOpacity,
               // transition: 'opacity 20ms ease-in-out',
             }}
           >
+            <span className={styles.label} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{formatValue()}</span>
+            <br></br>
             <ReactMarkdown>{fullDescription}</ReactMarkdown>
           </div>
         </InfoPortal>
