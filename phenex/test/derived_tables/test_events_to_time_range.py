@@ -4,13 +4,16 @@ from phenex.derived_tables import EventsToTimeRange
 from phenex.codelists import Codelist
 from phenex.filters.value import LessThan, LessThanOrEqualTo
 
-from phenex.test.derived_tables.derived_tables_test_generator import DerivedTablesTestGenerator
+from phenex.test.derived_tables.derived_tables_test_generator import (
+    DerivedTablesTestGenerator,
+)
 
 
 class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
     """
     A test generator for the EventsToTimeRange derived table.
     """
+
     name_space = "ettr_lessthan"
 
     def define_input_tables(self):
@@ -33,7 +36,7 @@ class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
             columns=["PERSON_ID", "CODE", "EVENT_DATE"],
         )
         df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
-        
+
         return [
             {
                 "name": "DRUG_EXPOSURE",
@@ -56,16 +59,16 @@ class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
         )
         df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
         df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
-        
+
         # Create the derived table
         cl = Codelist(["c1"])
         ettr = EventsToTimeRange(
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThan(5)
+            max_days=LessThan(5),
         )
-        
+
         # Return test information
         return [
             {
@@ -76,10 +79,14 @@ class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
             }
         ]
 
-class EventsToTimeRangeLessThanOrEqualToTestGenerator(EventsToTimeRangeLessThanTestGenerator):
+
+class EventsToTimeRangeLessThanOrEqualToTestGenerator(
+    EventsToTimeRangeLessThanTestGenerator
+):
     """
     A test generator for the EventsToTimeRange derived table.
     """
+
     name_space = "ettr_lessthanorequalto"
 
     def define_derived_table_tests(self):
@@ -95,16 +102,16 @@ class EventsToTimeRangeLessThanOrEqualToTestGenerator(EventsToTimeRangeLessThanT
         )
         df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
         df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
-        
+
         # Create the derived table
         cl = Codelist(["c1"])
         ettr = EventsToTimeRange(
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThanOrEqualTo(5)
+            max_days=LessThanOrEqualTo(5),
         )
-        
+
         # Return test information
         return [
             {
@@ -120,9 +127,11 @@ def test_events_to_time_range_less_than():
     test_generator = EventsToTimeRangeLessThanTestGenerator()
     test_generator.run_tests(verbose=True)
 
+
 def test_events_to_time_range_less_than_or_equal_to():
     test_generator = EventsToTimeRangeLessThanOrEqualToTestGenerator()
     test_generator.run_tests(verbose=True)
+
 
 if __name__ == "__main__":
     test_events_to_time_range_less_than()

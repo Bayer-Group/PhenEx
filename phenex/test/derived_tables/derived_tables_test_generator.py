@@ -5,7 +5,10 @@ import pandas as pd
 import ibis
 from phenex.tables import PhenexTable, CodeTable
 
-from phenex.test.util.check_equality import check_equality, check_start_end_date_equality
+from phenex.test.util.check_equality import (
+    check_equality,
+    check_start_end_date_equality,
+)
 
 
 class DerivedTablesTestGenerator:
@@ -79,13 +82,14 @@ class DerivedTablesTestGenerator:
             table = self.con.create_table(
                 input_info["name"], input_info["df"], schema=schema
             )
-            
+
             if "type" in input_info.keys():
                 table_type = input_info["type"]
             else:
                 table_type = PhenexTable
                 if input_info["name"].lower() in [
-                    "condition_occurrence", "drug_exposure"
+                    "condition_occurrence",
+                    "drug_exposure",
                 ]:
                     table_type = CodeTable
 
@@ -111,7 +115,7 @@ class DerivedTablesTestGenerator:
                 print(
                     f"Running test: {test_info['name']}\nExpected output:\n{expected_df}\nActualOutput:\n{result_table}\n\n"
                 )
-            
+
             path = os.path.join(self.dirpaths["result"], filename)
             result_table.to_pandas().to_csv(
                 path, index=False, date_format=self.date_format
@@ -134,12 +138,17 @@ class DerivedTablesTestGenerator:
             )
 
             # Check equality based on the type of derived table
-            if "START_DATE" in expected_df.columns and "END_DATE" in expected_df.columns:
+            if (
+                "START_DATE" in expected_df.columns
+                and "END_DATE" in expected_df.columns
+            ):
                 check_start_end_date_equality(
                     result_table,
                     expected_output_table,
                     test_name=test_info["name"],
-                    join_on=test_info.get("join_on", ["PERSON_ID", "START_DATE", "END_DATE"])
+                    join_on=test_info.get(
+                        "join_on", ["PERSON_ID", "START_DATE", "END_DATE"]
+                    ),
                 )
             else:
                 join_on = test_info.get("join_on", ["PERSON_ID"])
@@ -147,12 +156,12 @@ class DerivedTablesTestGenerator:
                     join_on.append("VALUE")
                 if self.test_date:
                     join_on.append("EVENT_DATE")
-                
+
                 check_equality(
                     result_table,
                     expected_output_table,
                     test_name=test_info["name"],
                     test_values=self.test_values,
                     test_date=self.test_date,
-                    join_on=join_on
+                    join_on=join_on,
                 )

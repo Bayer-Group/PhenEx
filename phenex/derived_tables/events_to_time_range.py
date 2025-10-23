@@ -16,13 +16,7 @@ class EventsToTimeRange(Node):
     EventsToTimeRange ...
     """
 
-    def __init__(
-        self,
-        domain: str,
-        codelist: "Codelist",
-        max_days: "Value",
-        **kwargs
-    ):
+    def __init__(self, domain: str, codelist: "Codelist", max_days: "Value", **kwargs):
         self.domain = domain
         self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
@@ -50,7 +44,7 @@ class EventsToTimeRange(Node):
 
         Returns:
             Source DataFrame with all original columns:
-       """
+        """
         assert is_phenex_code_table(table)
         table = self.codelist_filter.filter(table)
         return table
@@ -64,17 +58,21 @@ class EventsToTimeRange(Node):
             PERSON_ID
             START_DATE : the codelist EVENT_DATE
             END_DATE : START_DATE + max_days
-       """
+        """
         table = table.select("PERSON_ID", "EVENT_DATE")
-        table = table.mutate(START_DATE = table.EVENT_DATE)
-        if self.max_days.operator == '<':
+        table = table.mutate(START_DATE=table.EVENT_DATE)
+        if self.max_days.operator == "<":
             days_to_add = self.max_days.value - 1
-            table = table.mutate(END_DATE = table.START_DATE + ibis.interval(days=days_to_add))
+            table = table.mutate(
+                END_DATE=table.START_DATE + ibis.interval(days=days_to_add)
+            )
         else:
             days_to_add = self.max_days.value
-            table = table.mutate(END_DATE = table.START_DATE + ibis.interval(days=days_to_add))
+            table = table.mutate(
+                END_DATE=table.START_DATE + ibis.interval(days=days_to_add)
+            )
         return table
-    
+
     def _combine_overlapping_periods(self, table):
         """
         Combine all overlapping and consecutive periods
@@ -84,9 +82,7 @@ class EventsToTimeRange(Node):
             PERSON_ID
             START_DATE : the codelist EVENT_DATE
             END_DATE : START_DATE + max_days
-       """
-        cop = CombineOverlappingPeriods(domain = '_')
-        table = cop.execute(
-            tables = {'_':table}
-        )
+        """
+        cop = CombineOverlappingPeriods(domain="_")
+        table = cop.execute(tables={"_": table})
         return table
