@@ -5,8 +5,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.authentication import AuthenticationMiddleware
 import sys
-# TODO sys.path = ['/app'] + sys.path following is required for phenex import for development.
-# is currently being set with PYTHONPATH=/app in the /backend/.env file
+# Add /app to the Python path for phenex import during development
+# This replaces the PYTHONPATH=/app setting in the /backend/.env file
+sys.path = ['/app'] + sys.path
 import phenex 
 print("RIGHT NOW2", phenex.__file__)
 from phenex.ibis_connect import SnowflakeConnector
