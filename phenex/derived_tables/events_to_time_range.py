@@ -68,9 +68,11 @@ class EventsToTimeRange(Node):
         table = table.select("PERSON_ID", "EVENT_DATE")
         table = table.mutate(START_DATE = table.EVENT_DATE)
         if self.max_days.operator == '<':
-            table = table.mutate(END_DATE = table.START_DATE + (self.max_days.value-1))
+            days_to_add = self.max_days.value - 1
+            table = table.mutate(END_DATE = table.START_DATE + ibis.interval(days=days_to_add))
         else:
-            table = table.mutate(END_DATE = table.START_DATE + self.max_days.value)
+            days_to_add = self.max_days.value
+            table = table.mutate(END_DATE = table.START_DATE + ibis.interval(days=days_to_add))
         return table
     
     def _combine_overlapping_periods(self, table):

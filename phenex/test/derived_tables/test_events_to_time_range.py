@@ -3,8 +3,9 @@ import pandas as pd
 import ibis
 from phenex.derived_tables import EventsToTimeRange
 from phenex.codelists import Codelist
-from phenex.filters.value import LessThanOrEqualTo
+from phenex.filters.value import LessThanOrEqualTo, LessThan
 from phenex.test.util.check_equality import check_start_end_date_equality
+ibis.options.interactive = True
 
 
 def create_input_data(con):
@@ -65,10 +66,12 @@ def test_events_to_time_range():
         name="COMBINED_EVENTS",
         domain="DRUG_EXPOSURE",
         codelist=cl,
-        max_days=LessThanOrEqualTo(5)
+        max_days=LessThan(5)
     )
 
     result = ettr.execute(tables={"DRUG_EXPOSURE": drug_exposure_table})
+
+    print(result)
 
     check_start_end_date_equality(result, expected_table)
 
