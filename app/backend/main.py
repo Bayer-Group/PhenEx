@@ -1007,7 +1007,7 @@ async def execute_study(
                     json.dump(processed_cohort, f, indent=4)
 
                 print("Creating phenex cohort object...")
-                logger.info("Creating phenex cohort object from processed data...")
+                logger.info("Creating phenex cohort object from processed data... AND MODIFIED", sys.path)
                 px_cohort = from_dict(processed_cohort)
 
                 logger.info("Saving cohort object to cohort.json")
