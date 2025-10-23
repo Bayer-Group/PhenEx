@@ -5,6 +5,8 @@ from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, Phenoty
 from phenex.filters.codelist_filter import CodelistFilter
 from phenex.node import Node
 from phenex.util import create_logger
+from phenex.codelists import Codelist
+from phenex.filters.value import Value
 
 from .combine_overlapping_periods import CombineOverlappingPeriods
 
@@ -13,7 +15,61 @@ logger = create_logger(__name__)
 
 class EventsToTimeRange(Node):
     """
-    EventsToTimeRange ...
+    EventsToTimeRange converts individual code events into time ranges with start and end dates.
+    
+    This derived table takes a codelist (e.g. medication prescriptions) and creates a 
+    time range for each event. The start date is the event date, and the end date is calculated 
+    by adding a specified number of days to the start date. Adjacent or overlapping periods are 
+    combined into single continuous periods.
+    
+    This is particularly useful for identifying medication discontinuation when only prescription 
+    dates (not durations) are available. For example, discontinuation may be defined as a gap of 
+    ≥180 days between prescriptions.
+    
+    Parameters:
+        domain: The source domain containing event data.
+        codelist: The codelist used to filter events.
+        max_days: A Value filter (like LessThan or LessThanOrEqualTo) specifying the number of days 
+                  to add to each event date to create the end date.
+        name: Optional name for the derived table.
+        
+    Attributes:
+        domain: The domain of events to process.
+        codelist: The codelist used for filtering events.
+        max_days: The number of days to add to each event date.
+        
+    Examples:
+    
+    Example: Identifying medication discontinuation
+        ```python
+        from phenex.derived_tables import EventsToTimeRange
+        from phenex.phenotypes import TimeRangePhenotype
+        from phenex.codelists import Codelist
+        from phenex.filters.value import LessThanOrEqualTo
+        from phenex.filters import RelativeTimeRangeFilter
+        
+        # Create a derived table for medication coverage periods
+        et_codelist = Codelist(["RX12345", "RX12346"])
+        derived_table = EventsToTimeRange(
+            name = 'ET_USAGE',
+            domain = 'DRUG_EXPOSURE',
+            codelist = et_codelist,
+            max_days = LessThanOrEqualTo(180)
+        )
+        
+        # Return the persons that discontinue post index
+        # EVENT_DATE column will be the date of discontinuation
+        # VALUE will be the number of days from index to discontinuation date
+        pt_et_discontinuation = TimeRangePhenotype(
+            domain = 'ET_USAGE',
+            relative_time_range = RelativeTimeRangeFilter(
+                when = 'after',
+            )
+        )
+        
+        # Execute the derived table with your data
+        et_periods = derived_table.execute(tables)
+        ```
     """
 
     def __init__(self, domain: str, codelist: "Codelist", max_days: "Value", **kwargs):
