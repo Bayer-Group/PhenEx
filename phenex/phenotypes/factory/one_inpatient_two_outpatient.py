@@ -99,6 +99,7 @@ def OneInpatientTwoOutpatientPhenotype(
         return_date="all",
     )
     """EventCountPhenotype only filters when given a value_filter or relative_time_range. If both are None, it just counts events without filtering. We specify RelativeTimeRangeFilter() here to ensure filtering happens enforcing that patients must have ≥2 outpatient events.
+       Expose the EventCountPhenotype's value_filter and relative_time_range keyword arguments to the user of OneInpatientTwoOutpatientPhenotype as two well named keyword arguments.
     """
     pt_outpatient_two_occurrences = EventCountPhenotype(
         phenotype=pt_outpatient,
