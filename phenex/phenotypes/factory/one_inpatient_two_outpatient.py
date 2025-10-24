@@ -18,55 +18,34 @@ from typing import Dict, List, Union, Optional
 
 
 def OneInpatientTwoOutpatientPhenotype(
-    name : str,
-    domain : str,
-    codelist : Codelist,
-    relative_time_range : Union[
-            RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
-        ],
-    categorical_filter_inpatient : CategoricalFilter,
-    categorical_filter_outpatient : CategoricalFilter,
-    return_date = "all",
+    name: str,
+    domain: str,
+    codelist: Codelist,
+    relative_time_range: Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]],
+    categorical_filter_inpatient: CategoricalFilter,
+    categorical_filter_outpatient: CategoricalFilter,
+    return_date="all",
 ) -> LogicPhenotype:
     """
-    OneInpatientTwoOutpatientPhenotype identifies patients who meet a combined rule:
-    **at least one inpatient event OR at least two outpatient events** within a specified
-    time range and domain.
+    OneInpatientTwoOutpatientPhenotype identifies patients who meet a combined rule: **at least one inpatient event OR at least two outpatient events** within a specified time range and domain.
 
-    This function builds a composite phenotype by creating separate inpatient and outpatient
-    subphenotypes from a shared codelist and combining them logically.
+    This function builds a composite phenotype by creating separate inpatient and outpatient subphenotypes from a shared codelist and combining them logically.
 
     Parameters:
-        name (str): 
-            Base name of the phenotype.
-
-        domain (str): 
-            The OMOP domain or table name to search for matching events (e.g., 
-            `'CONDITION_OCCURRENCE'`, `'PROCEDURE_OCCURRENCE'`).
-
-        codelist (Codelist): 
-            The list of standard concept IDs or codes used to identify the condition or event.
-
-        relative_time_range (RelativeTimeRangeFilter | None): 
-            Optional filter specifying the temporal window in which events should be considered.
-
-        categorical_filter_inpatient (CategoricalFilter | None): 
-            A filter applied to inpatient events.
-
-        categorical_filter_outpatient (CategoricalFilter | None): 
-            A filter applied to outpatient events.
-
-        return_date (str): 
-            Specifies which date to return for the resulting phenotype. Common options include:
+        name (str): Base name of the phenotype.
+        domain (str): The OMOP domain or table name to search for matching events (e.g., `'CONDITION_OCCURRENCE'`, `'PROCEDURE_OCCURRENCE'`).
+        codelist (Codelist): The list of standard concept IDs or codes used to identify the condition or event.
+        relative_time_range (RelativeTimeRangeFilter | None): Optional filter specifying the temporal window in which events should be considered.
+        categorical_filter_inpatient (CategoricalFilter | None): A filter applied to inpatient events.
+        categorical_filter_outpatient (CategoricalFilter | None): A filter applied to outpatient events.
+        return_date (str): Specifies which date to return for the resulting phenotype. Common options include:
                 - `"first"`: Return the earliest qualifying date.
                 - `"last"`: Return the most recent qualifying date.
                 - `"all"`: Return all qualifying dates.
                 - `None`: Do not return a date (boolean-only phenotype).
 
     Returns:
-        LogicPhenotype: 
-            A phenotype object representing patients who have **one inpatient event** 
-            OR **two or more outpatient events**.
+        LogicPhenotype: A phenotype object representing patients who have **one inpatient event** R **two or more outpatient events**.
 
     Logic:
         1. Creates an inpatient `CodelistPhenotype` from the provided codelist.
@@ -103,11 +82,6 @@ def OneInpatientTwoOutpatientPhenotype(
         - Both event streams are filtered and combined before returning the final phenotype.
     """
 
-
-    # EventCountPhenotype only filters when given a value_filter or relative_time_range.
-    # If both are None, it just counts events without filtering.
-    # We specify RelativeTimeRangeFilter() here to ensure filtering happens—
-    # enforcing that patients must have ≥2 outpatient events.
     pt_inpatient = CodelistPhenotype(
         name=name + "_inpatient",
         codelist=codelist,
@@ -124,7 +98,8 @@ def OneInpatientTwoOutpatientPhenotype(
         relative_time_range=relative_time_range,
         return_date="all",
     )
-
+    """EventCountPhenotype only filters when given a value_filter or relative_time_range. If both are None, it just counts events without filtering. We specify RelativeTimeRangeFilter() here to ensure filtering happens enforcing that patients must have ≥2 outpatient events.
+    """
     pt_outpatient_two_occurrences = EventCountPhenotype(
         phenotype=pt_outpatient,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
@@ -134,8 +109,9 @@ def OneInpatientTwoOutpatientPhenotype(
     )
 
     pt_final = LogicPhenotype(
-        name=name, expression=pt_inpatient | pt_outpatient_two_occurrences,
-        return_date =  return_date
+        name=name,
+        expression=pt_inpatient | pt_outpatient_two_occurrences,
+        return_date=return_date,
     )
 
     return pt_final

@@ -30,7 +30,7 @@ from phenex.filters import (
 
 def build_fake_condition_data():
     fake_data = [
-        #p1:pass, one inpatiemt and two outpatient 
+        # p1:pass, one inpatiemt and two outpatient
         {
             "PERSON_ID": "P1",
             "EVENT_DATE": datetime.date(2021, 10, 10),
@@ -52,9 +52,7 @@ def build_fake_condition_data():
             "CODE_TYPE": "ICD10",
             "ENCOUNTER_TYPE": "outpatient",
         },
-
-         #p2: pass, two outpatient 
-
+        # p2: pass, two outpatient
         {
             "PERSON_ID": "P2",
             "EVENT_DATE": datetime.date(2021, 9, 5),
@@ -69,9 +67,7 @@ def build_fake_condition_data():
             "CODE_TYPE": "ICD10",
             "ENCOUNTER_TYPE": "outpatient",
         },
-
-        #p3: pass, one inpatient, one outpatient
-
+        # p3: pass, one inpatient, one outpatient
         {
             "PERSON_ID": "P3",
             "EVENT_DATE": datetime.date(2021, 8, 2),
@@ -86,9 +82,7 @@ def build_fake_condition_data():
             "CODE_TYPE": "ICD10",
             "ENCOUNTER_TYPE": "outpatient",
         },
-        
-        #p4: pass, one inpatient
-
+        # p4: pass, one inpatient
         {
             "PERSON_ID": "P4",
             "EVENT_DATE": datetime.date(2021, 7, 10),
@@ -96,7 +90,7 @@ def build_fake_condition_data():
             "CODE_TYPE": "ICD10",
             "ENCOUNTER_TYPE": "inpatient",
         },
-        #p5, not pass, only one outpatient
+        # p5, not pass, only one outpatient
         {
             "PERSON_ID": "P5",
             "EVENT_DATE": datetime.date(2021, 6, 10),
@@ -104,8 +98,7 @@ def build_fake_condition_data():
             "CODE_TYPE": "ICD10",
             "ENCOUNTER_TYPE": "outpatient",
         },
-
-        #p6, not pass, inpatient after index
+        # p6, not pass, inpatient after index
         {
             "PERSON_ID": "P6",
             "EVENT_DATE": datetime.date(2024, 6, 10),
