@@ -1,5 +1,6 @@
 import pytest
 import time
+from datetime import datetime
 from unittest.mock import Mock, patch, PropertyMock
 import pandas as pd
 
@@ -184,7 +185,11 @@ class TestPhenexNode:
 
         # Mock table data
         mock_table_data = pd.DataFrame(
-            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": [123, 456]}
+            {
+                "NODE_NAME": ["TEST", "OTHER"],
+                "NODE_HASH": [123, 456],
+                "EXECUTION_PARAMS": [None, None],
+            }
         )
         mock_table = Mock()
         mock_table.to_pandas.return_value = mock_table_data
@@ -198,15 +203,22 @@ class TestPhenexNode:
 
     @patch("phenex.node.DuckDBConnector")
     @patch("phenex.node.ibis.memtable")
-    def test_update_current_hash(self, mock_memtable, mock_connector_class):
-        """Test _update_current_hash"""
+    def test_update_run_params(self, mock_memtable, mock_connector_class):
+        """Test _update_run_params"""
         mock_connector = Mock()
         mock_connector.dest_connection.list_tables.return_value = []
         mock_connector_class.return_value = mock_connector
         mock_memtable.return_value = Mock()
 
         node = Node("test")
-        result = node._update_current_hash()
+        # Set execution timing for the test
+        node._last_execution_start_time = datetime.now()
+        node._last_execution_end_time = datetime.now()
+        node._last_execution_duration = 1.5
+
+        # Mock _get_last_hash to avoid the additional database call
+        with patch.object(node, "_get_last_hash", return_value=None):
+            result = node._update_run_params()
 
         assert result is True
         mock_connector.create_table.assert_called_once()
@@ -339,7 +351,7 @@ class TestPhenexNodeExecution:
         # Mock that node hasn't been computed before
         node._get_last_hash = Mock(return_value=None)
         node._get_current_hash = Mock(return_value=12345678)
-        node._update_current_hash = Mock(return_value=True)
+        node._update_run_params = Mock(return_value=True)
 
         # Mock execution_metadata property to return None (no previous execution)
         type(node).execution_metadata = PropertyMock(return_value=None)
@@ -350,7 +362,7 @@ class TestPhenexNodeExecution:
 
         assert node.executed
         mock_connector.create_table.assert_called_once()
-        node._update_current_hash.assert_called_once()
+        node._update_run_params.assert_called_once()
 
     @patch("phenex.node.DuckDBConnector")
     def test_execute_lazy_execution_unchanged(self, mock_connector_class):
@@ -611,7 +623,7 @@ class TestPhenexNodeExecution:
         # First execution - should execute
         node._get_last_hash = Mock(return_value=None)
         node._get_current_hash = Mock(return_value="hash123")
-        node._update_current_hash = Mock(return_value=True)
+        node._update_run_params = Mock(return_value=True)
         type(node).execution_metadata = PropertyMock(
             return_value=None
         )  # No previous execution
@@ -647,7 +659,7 @@ class TestPhenexNodeExecution:
         # Third execution after cache clear - should execute again
         node._get_last_hash = Mock(return_value=None)  # Cache was cleared
         node._get_current_hash = Mock(return_value="hash123")
-        node._update_current_hash = Mock(return_value=True)
+        node._update_run_params = Mock(return_value=True)
         type(node).execution_metadata = PropertyMock(
             return_value=None
         )  # Cache was cleared
@@ -781,18 +793,18 @@ class TestPhenexNodeGroup:
         # Mock that nodes haven't been computed before
         child._get_last_hash = Mock(return_value=None)
         child._get_current_hash = Mock(return_value=2345)
-        child._update_current_hash = Mock(return_value=True)
+        child._update_run_params = Mock(return_value=True)
         type(child).execution_metadata = PropertyMock(return_value=None)
 
         parent._get_last_hash = Mock(return_value=None)
         parent._get_current_hash = Mock(return_value=1234)
-        parent._update_current_hash = Mock(return_value=True)
+        parent._update_run_params = Mock(return_value=True)
         type(parent).execution_metadata = PropertyMock(return_value=None)
 
         grp = NodeGroup("test", [parent])
         grp._get_last_hash = Mock(return_value=None)
         grp._get_current_hash = Mock(return_value=5678)
-        grp._update_current_hash = Mock(return_value=True)
+        grp._update_run_params = Mock(return_value=True)
         type(grp).execution_metadata = PropertyMock(return_value=None)
 
         tables = {"domain1": MockTable()}

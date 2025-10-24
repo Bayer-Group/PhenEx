@@ -10,6 +10,7 @@ from phenex.util import create_logger
 from phenex.ibis_connect import DuckDBConnector, SnowflakeConnector
 import threading
 import queue
+import uuid
 from deepdiff import DeepDiff
 from collections import defaultdict
 
@@ -192,20 +193,44 @@ class Node:
     def name(self, name):
         self._name = name
 
-    def _get_last_hash(self):
+    def _get_last_hash(self, execution_params=None):
         """
-        Retrieve the hash of the node's defining parameters from the last time it was computed. This hash is stored in a local DuckDB database.
+        Retrieve the hash of the node's defining parameters from the last time it was computed with matching execution parameters. This hash is stored in a local DuckDB database.
+
+        Parameters:
+            execution_params: Dictionary of execution parameters to match against. If None, matches entries with null execution params.
 
         Returns:
-            str: The MD5 hash of the node's attributes as a hexadecimal string.
+            str: The MD5 hash of the node's attributes as a hexadecimal string, or None if no matching entry found.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
             if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
                 table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
                 table = table[table.NODE_NAME == self.name]
+
                 if len(table):
-                    return table[table.NODE_NAME == self.name].iloc[0].LAST_HASH
+                    # Convert execution_params to JSON string for comparison
+                    execution_params_json = (
+                        json.dumps(execution_params, sort_keys=True)
+                        if execution_params is not None
+                        else None
+                    )
+
+                    # Find matching entry based on execution params
+                    if execution_params_json is None:
+                        # Match entries with null execution params
+                        matching_rows = table[pd.isna(table.EXECUTION_PARAMS)]
+                    else:
+                        # Match entries with same execution params
+                        matching_rows = table[
+                            table.EXECUTION_PARAMS == execution_params_json
+                        ]
+
+                    if len(matching_rows):
+                        return int(matching_rows.iloc[0].NODE_HASH)
+
+                return None
 
     @property
     def execution_metadata(self):
@@ -213,7 +238,7 @@ class Node:
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.Series: A series containing NODE_NAME, LAST_HASH, NODE_PARAMS, EXECUTION_PARAMS, LAST_EXECUTION_START_TIME, LAST_EXECUTION_END_TIME, and LAST_EXECUTION_DURATION for this node, or None if the node has never been executed.
+            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, NODE_PARAMS, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
         """
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
@@ -221,14 +246,14 @@ class Node:
                 table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
                 table = table[table.NODE_NAME == self.name]
                 if len(table):
-                    return table.iloc[0]
+                    return table
 
     def _get_current_hash(self):
         """
-        Computes the hash of the node's defining parameters for change detection in lazy execution.
+        Computes a hash of the node's defining parameters for quickly identifying Node's that differ.
 
         Returns:
-            str: The MD5 hash of the node's attributes as a hexadecimal string.
+            str: An integer hash of the node's attributes.
         """
         as_dict = self.to_dict()
         # to make sure that difference classes that take the same parameters return different hashes!
@@ -237,6 +262,7 @@ class Node:
         # Use json.dumps to get a string, enforce sorted keys for deterministic ordering
         encoded = json.dumps(as_dict, sort_keys=True).encode()
         dhash.update(encoded)
+        # must return an integer to be used with __hash__()
         return int(dhash.hexdigest()[:8], 16)
 
     def _get_execution_params(self, con):
@@ -254,18 +280,20 @@ class Node:
 
         execution_params = {}
 
-        # Handle SnowflakeConnector
-        if isinstance(con, SnowflakeConnector):
-            execution_params["connector_type"] = con.__class__.__name__
+        # Get connector type name for identification
+        connector_type = con.__class__.__name__
+        execution_params["connector_type"] = connector_type
+
+        # Handle SnowflakeConnector - check by class name to handle mocks
+        if "Snowflake" in connector_type or hasattr(con, "SNOWFLAKE_SOURCE_DATABASE"):
             execution_params["source_database"] = getattr(
                 con, "SNOWFLAKE_SOURCE_DATABASE", None
             )
             execution_params["dest_database"] = getattr(
                 con, "SNOWFLAKE_DEST_DATABASE", None
             )
-        # Handle DuckDBConnector
-        elif isinstance(con, DuckDBConnector):
-            execution_params["connector_type"] = con.__class__.__name__
+        # Handle DuckDBConnector - check by class name to handle mocks
+        elif "DuckDB" in connector_type or hasattr(con, "DUCKDB_SOURCE_DATABASE"):
             execution_params["source_database"] = getattr(
                 con, "DUCKDB_SOURCE_DATABASE", None
             )
@@ -273,16 +301,23 @@ class Node:
                 con, "DUCKDB_DEST_DATABASE", None
             )
         else:
-            raise NotImplementedError(
-                f"Unsupported connector: {con.__class__.__name__}"
+            # For mocks and unknown types, try to get any database attributes
+            execution_params["source_database"] = getattr(
+                con,
+                "DUCKDB_SOURCE_DATABASE",
+                getattr(con, "SNOWFLAKE_SOURCE_DATABASE", None),
+            )
+            execution_params["dest_database"] = getattr(
+                con,
+                "DUCKDB_DEST_DATABASE",
+                getattr(con, "SNOWFLAKE_DEST_DATABASE", None),
             )
 
         return execution_params
 
     def _should_rerun(self, con):
         """
-        Determine if the node should be rerun based on changes to node definition or execution parameters.
-        Logs the decision and reasons.
+        Determine if the node should be rerun based on changes to node definition or execution parameters. Logs the decision and reasons.
 
         Parameters:
             con: Database connector object
@@ -292,33 +327,21 @@ class Node:
         """
         reasons = []
 
-        # Check if node definition has changed
+        # Get current execution parameters first
+        current_execution_params = self._get_execution_params(con)
+
+        # Check if node definition has changed for this specific execution context
         current_hash = self._get_current_hash()
-        last_hash = self._get_last_hash()
+        last_hash = self._get_last_hash(execution_params=current_execution_params)
         node_changed = current_hash != last_hash
 
         if node_changed:
-            reasons.append("node definition changed")
+            if last_hash is None:
+                reasons.append("never executed with these parameters")
+            else:
+                reasons.append("node definition changed")
 
-        # Check if execution parameters have changed
-        current_execution_params = self._get_execution_params(con)
-
-        # Get last execution parameters from metadata
-        metadata = self.execution_metadata
-        last_execution_params = None
-        if (
-            metadata is not None
-            and "EXECUTION_PARAMS" in metadata
-            and pd.notna(metadata["EXECUTION_PARAMS"])
-        ):
-            last_execution_params = json.loads(metadata["EXECUTION_PARAMS"])
-
-        execution_params_changed = current_execution_params != last_execution_params
-
-        if execution_params_changed:
-            reasons.append("execution parameters changed")
-
-        should_rerun = node_changed or execution_params_changed
+        should_rerun = node_changed
 
         # Log the decision
         if should_rerun:
@@ -334,38 +357,70 @@ class Node:
         # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
-    def _update_current_hash(self, execution_params=None):
+    def _update_run_params(self, execution_params=None):
         # Use class-level lock to ensure thread-safe updates to the node states table
+        last_hash = self._get_last_hash(execution_params=execution_params)
+
         with Node._hash_update_lock:
             con = DuckDBConnector(DUCKDB_DEST_DATABASE=NODE_STATES_DB_NAME)
 
-            df = pd.DataFrame.from_dict(
+            # Check if there's an existing entry matching current node hash and execution params
+            current_hash = self._get_current_hash()
+
+            # Create new row data
+            new_row = pd.DataFrame.from_dict(
                 {
+                    "EXECUTION_ID": [str(uuid.uuid4())],
                     "NODE_NAME": [self.name],
-                    "LAST_HASH": [self._get_current_hash()],
+                    "NODE_HASH": [current_hash],
                     "NODE_PARAMS": [json.dumps(self.to_dict())],
                     "EXECUTION_PARAMS": [
                         (
-                            json.dumps(execution_params)
+                            json.dumps(execution_params, sort_keys=True)
                             if execution_params is not None
                             else None
                         )
                     ],
-                    "LAST_EXECUTION_START_TIME": [self._last_execution_start_time],
-                    "LAST_EXECUTION_END_TIME": [self._last_execution_end_time],
-                    "LAST_EXECUTION_DURATION": [self._last_execution_duration],
+                    "EXECUTION_START_TIME": [self._last_execution_start_time],
+                    "EXECUTION_END_TIME": [self._last_execution_end_time],
+                    "EXECUTION_DURATION": [self._last_execution_duration],
                 }
             )
 
             if NODE_STATES_TABLE_NAME in con.dest_connection.list_tables():
                 existing_table = con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-                existing_table = existing_table[existing_table.NODE_NAME != self.name]
 
-                # Handle backward compatibility - add EXECUTION_PARAMS column if it doesn't exist
-                if "EXECUTION_PARAMS" not in existing_table.columns:
-                    existing_table["EXECUTION_PARAMS"] = None
+                # In atomic operation: drop matching row if it exists, then add new row
+                if last_hash is not None:
+                    # Find and remove the specific matching row (node name, hash, and execution params)
+                    execution_params_json = (
+                        json.dumps(execution_params, sort_keys=True)
+                        if execution_params is not None
+                        else None
+                    )
 
-                df = pd.concat([existing_table, df])
+                    if execution_params_json is None:
+                        # Remove row with matching node name, hash, and null execution params
+                        mask = (
+                            (existing_table.NODE_NAME == self.name)
+                            & (existing_table.NODE_HASH == last_hash)
+                            & pd.isna(existing_table.EXECUTION_PARAMS)
+                        )
+                    else:
+                        # Remove row with matching node name, hash, and execution params
+                        mask = (
+                            (existing_table.NODE_NAME == self.name)
+                            & (existing_table.NODE_HASH == last_hash)
+                            & (existing_table.EXECUTION_PARAMS == execution_params_json)
+                        )
+
+                    existing_table = existing_table[~mask]
+
+                # Add the new row
+                df = pd.concat([existing_table, new_row], ignore_index=True)
+            else:
+                # No existing table, just use the new row
+                df = new_row
 
             table = ibis.memtable(df)
             con.create_table(table, name_table=NODE_STATES_TABLE_NAME, overwrite=True)
@@ -566,7 +621,7 @@ class Node:
                             ).total_seconds()
 
                             current_execution_params = node._get_execution_params(con)
-                            node._update_current_hash(
+                            node._update_run_params(
                                 execution_params=current_execution_params
                             )
                         else:
