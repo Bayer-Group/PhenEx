@@ -271,9 +271,8 @@ class NodeManager:
         # Drop materialized table if connector is provided
         if con is not None:
             try:
-                if node.name in con.dest_connection.list_tables():
-                    logger.info(f"Node '{node.name}': dropping materialized table...")
-                    con.dest_connection.drop_table(node.name)
+                logger.info(f"Node '{node.name}': dropping materialized table...")
+                con.drop_table(node.name)
             except Exception as e:
                 logger.warning(
                     f"Node '{node.name}': failed to drop materialized table: {e}"
