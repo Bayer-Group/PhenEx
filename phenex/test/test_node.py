@@ -667,18 +667,18 @@ class TestPhenexNodeGroup:
         parent.add_children(child)
 
         # Mock that nodes haven't been computed before
-        child._get_last_hash = Mock(return_value=None)
+        child._getlasthash = Mock(return_value=None)
         child._get_current_hash = Mock(return_value=2345)
         child._update_run_params = Mock(return_value=True)
         type(child).execution_metadata = PropertyMock(return_value=None)
 
-        parent._get_last_hash = Mock(return_value=None)
+        parent._getlasthash = Mock(return_value=None)
         parent._get_current_hash = Mock(return_value=1234)
         parent._update_run_params = Mock(return_value=True)
         type(parent).execution_metadata = PropertyMock(return_value=None)
 
         grp = NodeGroup("test", [parent])
-        grp._get_last_hash = Mock(return_value=None)
+        grp._getlasthash = Mock(return_value=None)
         grp._get_current_hash = Mock(return_value=5678)
         grp._update_run_params = Mock(return_value=True)
         type(grp).execution_metadata = PropertyMock(return_value=None)

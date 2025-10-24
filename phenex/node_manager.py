@@ -61,7 +61,7 @@ class NodeManager:
         current_hash = self._get_node_hash(node)
 
         # Look up previous run with same name and execution context
-        last_hash = self._get_last_hash(
+        last_hash = self._getlasthash(
             node.name, execution_params=current_execution_params
         )
 
@@ -99,7 +99,7 @@ class NodeManager:
             bool: True if successful
         """
         execution_params = self._get_execution_params(con)
-        last_hash = self._get_last_hash(node.name, execution_params=execution_params)
+        last_hash = self._getlasthash(node.name, execution_params=execution_params)
 
         with self._lock:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
@@ -121,9 +121,9 @@ class NodeManager:
                             else None
                         )
                     ],
-                    "EXECUTION_START_TIME": [node._last_execution_start_time],
-                    "EXECUTION_END_TIME": [node._last_execution_end_time],
-                    "EXECUTION_DURATION": [node._last_execution_duration],
+                    "EXECUTION_START_TIME": [node.lastexecution_start_time],
+                    "EXECUTION_END_TIME": [node.lastexecution_end_time],
+                    "EXECUTION_DURATION": [node.lastexecution_duration],
                 }
             )
 
@@ -211,23 +211,22 @@ class NodeManager:
 
         Parameters:
             node: The Node object to clear cache for
-            con: Optional database connector. If provided, clears only runs with matching execution context
-                 and drops the materialized table. If None, clears all runs for the node.
+            con: Optional database connector. If provided, clears only runs with matching execution context and drops the materialized table. If None, clears all runs for the node.
             recursive: If True, also clear the cache for all child nodes recursively. Defaults to False.
 
         Returns:
             bool: True if successful
         """
-        from phenex.util import create_logger
-
-        logger = create_logger(__name__)
-
         if con is not None:
             logger.info(
                 f"Node '{node.name}': clearing cached state for execution context..."
             )
         else:
             logger.info(f"Node '{node.name}': clearing all cached state...")
+
+        if con is not None:
+            # Need to run this before acquiring lock since this method also needs to acquire a lock
+            execution_params = self._get_execution_params(con)
 
         with self._lock:
             # Clear from node states table
@@ -237,7 +236,6 @@ class NodeManager:
 
                 if con is not None:
                     # Remove only entries with matching execution context
-                    execution_params = self._get_execution_params(con)
                     execution_params_json = (
                         json.dumps(execution_params, sort_keys=True)
                         if execution_params is not None
@@ -283,9 +281,9 @@ class NodeManager:
 
         # Reset the node's table attribute and timing info
         node.table = None
-        node._last_execution_start_time = None
-        node._last_execution_end_time = None
-        node._last_execution_duration = None
+        node.lastexecution_start_time = None
+        node.lastexecution_end_time = None
+        node.lastexecution_duration = None
 
         # Recursively clear children if requested
         if recursive:
@@ -295,7 +293,7 @@ class NodeManager:
         logger.info(f"Node '{node.name}': cache cleared successfully.")
         return True
 
-    def _get_last_hash(self, node_name: str, execution_params=None) -> Optional[int]:
+    def _getlasthash(self, node_name: str, execution_params=None) -> Optional[int]:
         """
         Retrieve the hash of a node's defining parameters from the last time it was computed
         with matching execution parameters.

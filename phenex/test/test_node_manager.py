@@ -58,9 +58,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con.DUCKDB_DEST_DATABASE = "dest.db"
 
         # Set up timing info for the node
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # First execution - should run
         result1 = self.node_manager.should_rerun(node, mock_con)
@@ -82,9 +82,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con.DUCKDB_DEST_DATABASE = "dest.db"
 
         # Set up timing info
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # First execution
         result1 = self.node_manager.should_rerun(node, mock_con)
@@ -115,9 +115,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con2.DUCKDB_DEST_DATABASE = "dest1.db"
 
         # Set up timing info
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # First execution with context 1
         result1 = self.node_manager.should_rerun(node, mock_con1)
@@ -149,9 +149,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con.DUCKDB_DEST_DATABASE = "dest.db"
 
         # Set up timing info
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # Execute and update params
         self.node_manager.update_run_params(node, mock_con)
@@ -171,9 +171,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con.DUCKDB_DEST_DATABASE = "dest.db"
 
         # Set up timing info
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # Execute and update params
         self.node_manager.update_run_params(node, mock_con)
@@ -205,9 +205,9 @@ class TestNodeManager(unittest.TestCase):
         mock_con2.DUCKDB_DEST_DATABASE = "dest.db"
 
         # Set up timing info
-        node._last_execution_start_time = datetime.now()
-        node._last_execution_end_time = datetime.now()
-        node._last_execution_duration = 1.0
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 1.0
 
         # Execute with both contexts
         self.node_manager.update_run_params(node, mock_con1)

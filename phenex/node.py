@@ -66,9 +66,9 @@ class Node:
         self._name = name or type(self).__name__
         self._children = []
         self.table = None  # populated upon call to execute()
-        self._last_execution_start_time = None
-        self._last_execution_end_time = None
-        self._last_execution_duration = None
+        self.lastexecution_start_time = None
+        self.lastexecution_end_time = None
+        self.lastexecution_duration = None
 
     def add_children(self, children):
         if not isinstance(children, list):
@@ -361,7 +361,7 @@ class Node:
 
                         if Node._node_manager.should_rerun(node, con):
                             # Time the execution
-                            node._last_execution_start_time = datetime.now()
+                            node.lastexecution_start_time = datetime.now()
                             table = node._execute(tables)
 
                             if (
@@ -370,10 +370,10 @@ class Node:
                                 con.create_table(table, node_name, overwrite=overwrite)
                                 table = con.get_dest_table(node_name)
 
-                            node._last_execution_end_time = datetime.now()
-                            node._last_execution_duration = (
-                                node._last_execution_end_time
-                                - node._last_execution_start_time
+                            node.lastexecution_end_time = datetime.now()
+                            node.lastexecution_duration = (
+                                node.lastexecution_end_time
+                                - node.lastexecution_start_time
                             ).total_seconds()
 
                             Node._node_manager.update_run_params(node, con)
@@ -381,7 +381,7 @@ class Node:
                             table = con.get_dest_table(node_name)
                     else:
                         # Time the execution
-                        node._last_execution_start_time = datetime.now()
+                        node.lastexecution_start_time = datetime.now()
                         table = node._execute(tables)
 
                         if (
@@ -390,10 +390,9 @@ class Node:
                             con.create_table(table, node_name, overwrite=overwrite)
                             table = con.get_dest_table(node_name)
 
-                        node._last_execution_end_time = datetime.now()
-                        node._last_execution_duration = (
-                            node._last_execution_end_time
-                            - node._last_execution_start_time
+                        node.lastexecution_end_time = datetime.now()
+                        node.lastexecution_duration = (
+                            node.lastexecution_end_time - node.lastexecution_start_time
                         ).total_seconds()
 
                     node.table = table
@@ -414,10 +413,10 @@ class Node:
                                     ready_queue.put(dependent)
 
                     # Log completion with timing info
-                    if node._last_execution_duration is not None:
+                    if node.lastexecution_duration is not None:
                         logger.info(
                             f"Thread {threading.current_thread().name}: completed node '{node_name}' "
-                            f"in {node._last_execution_duration:.3f} seconds"
+                            f"in {node.lastexecution_duration:.3f} seconds"
                         )
                     else:
                         logger.info(
