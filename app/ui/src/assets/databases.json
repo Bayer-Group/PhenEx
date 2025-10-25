@@ -1,0 +1,63 @@
+[
+    {
+        "database": "OPTUM_EHR_CKD",
+        "mapper": "Optum EHR",
+        "schemas": [
+            "DATA_202406",
+            "DATA_202409",
+            "DATA_202412",
+            "DATA_202503"
+        ]
+    },
+    {
+        "database": "OPTUM_EHR_HF",
+        "mapper": "Optum EHR",
+        "schemas": [
+            "DATA_202406",
+            "DATA_202409",
+            "DATA_202412",
+            "DATA_202503"
+        ]
+    },
+    {
+        "database": "OPTUM_EHR_5PCT_OMOP",
+        "mapper": "OMOP",
+        "schemas": [
+            "CDM_2022Q3",
+            "CDM_202406"
+        ]
+    },
+    {
+        "database": "OPTUM_CLAIMS_OMOP",
+        "mapper": "OMOP",
+        "schemas": [
+            "CDM_2022Q4",
+            "CDM_202403"
+        ]
+    },
+    {
+        "database": "OPTUM_EHR_CKD_OMOP",
+        "mapper": "OMOP",
+        "schemas": [
+            "CDM_2022Q3",
+            "CDM_202403"
+        ]
+    },
+    {
+        "database": "OPTUM_EHR_HF_OMOP",
+        "mapper": "OMOP",
+        "schemas": [
+            "CDM_2023Q2",
+            "CDM_202406"
+        ]
+    },
+    {
+        "database": "MKTSCAN_CLAIMS_OMOP",
+        "mapper": "OMOP",
+        "schemas": [
+            "CDM_2022Q3",
+            "CDM_202309",
+            "CDM_202409"
+        ]
+    }
+]

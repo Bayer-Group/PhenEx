@@ -3,7 +3,7 @@
   /* flex-wrap: wrap; */
   gap: 4px 6px;
   border-radius: 8px;
-  border: var(--border);
+  border: 1px solid transparent;
   padding: 4px;
   background-color: var(--background_color_translucent);
   backdrop-filter: blur(10px);

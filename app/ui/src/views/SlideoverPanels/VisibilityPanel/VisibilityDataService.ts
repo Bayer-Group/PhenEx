@@ -46,16 +46,16 @@ const visibilityColumns: ColumnDefinition[] = [
     resizable: false,
     suppressMovable: true,
   },
-  {
-    field: 'usedBy',
-    headerName: 'Used by',
-    editable: false,
-    width: 100,
-    resizable: false,
-    maxWidth: 100,
-    cellRenderer: VisibilityDescriptionCellRenderer,
-    suppressMovable: true,
-  },
+  // {
+  //   field: 'usedBy',
+  //   headerName: 'Used by',
+  //   editable: false,
+  //   width: 100,
+  //   resizable: false,
+  //   maxWidth: 100,
+  //   cellRenderer: VisibilityDescriptionCellRenderer,
+  //   suppressMovable: true,
+  // },
 ];
 
 interface VisibilityRow {
