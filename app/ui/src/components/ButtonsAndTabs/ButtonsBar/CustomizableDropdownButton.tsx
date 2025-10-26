@@ -9,6 +9,7 @@ interface CustomizableDropdownButtonProps {
   content: React.ReactNode;
   outline?: boolean;
   menuClassName?: string;
+  buttonClassName?: string;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
 }
 
@@ -17,7 +18,7 @@ export const CustomizableDropdownButton = forwardRef<
   CustomizableDropdownButtonProps
 >(
   (
-    { label, content, menuClassName = 'dropdownMenu', outline = false },
+    { label, content, menuClassName = 'dropdownMenu', outline = false, buttonClassName = '' },
     customizableDropdownButtonRef
   ) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +46,7 @@ export const CustomizableDropdownButton = forwardRef<
     return (
       <div className={styles.dropdownContainer} ref={dropdownRef}>
         <button
-          className={`${buttonStyles.button} ${outline ? buttonStyles.outline : ''}`}
+          className={`${buttonStyles.button} ${outline ? buttonStyles.outline : ''} ${buttonClassName}`}
           onClick={() => setIsOpen(!isOpen)}
         >
           {label}

@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef } from 'react';
-import styles from './AppNavigationTabBar.module.css';
+import styles from './RighPanelNavigationTabBar.module.css';
 import { TabsWithDropdown } from '../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 
@@ -7,7 +7,7 @@ import { CohortDataService } from './CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { ConstantsTable } from '../SlideoverPanels/ConstantsPanel/ConstantsTable';
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
-interface AppNavigationTabBarProps {
+interface RighPanelNavigationTabBarProps {
   title: string;
   infoContent?: string;
   onSectionTabChange?: (index: number) => void;
@@ -23,10 +23,9 @@ enum InfoTabType {
   Visibility = 'Visibility',
   Execute = 'Execute',
   Report = 'Report',
-  NewPhenotype = 'Add Phenotype',
 }
 
-export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
+export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
   title,
   infoContent,
   onSectionTabChange,
@@ -34,7 +33,6 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
-  const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
 
   useEffect(() => {
     const updateAccordionState = () => {
@@ -135,49 +133,15 @@ export const AppNavigationTabBar: FC<AppNavigationTabBarProps> = ({
   const executeCohort = async () => {
     await dataService.executeCohort();
   };
-  const clickedOnHeader = () => {
-    customizableDropdownButtonRef.current?.closeDropdown();
-  };
 
-  const handleAddNewPhenotypeDropdownSelection = (type: string) => {
-    dataService.addPhenotype(type);
-    // Switch to the appropriate section tab based on phenotype type
-    if (onSectionTabChange) {
-      if (type === 'baseline') {
-        onSectionTabChange(1); // Baseline characteristics tab
-      } else if (type === 'outcome') {
-        onSectionTabChange(2); // Outcomes tab
-      } else if (['entry', 'inclusion', 'exclusion'].includes(type)) {
-        onSectionTabChange(0); // Cohort definition tab
-      }
-    }
-
-    setIsOpen(false);
-  };
-
-  const renderAddNewPhenotypeDropdown = () => {
-    return (
-      <div className={styles.addNewPhenotypeDropdown}>
-        <PopoverHeader
-          onClick={clickedOnHeader}
-          title={'Add a new phenotype'}
-          className={styles.popoverheader}
-        />
-        <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
-      </div>
-    );
-  };
   return (
     <div className={`${styles.tabsContainer} ${styles.closed}`}>
       <TabsWithDropdown
         width={'100%'}
         height={'100%'}
         tabs={tabs}
-        dropdown_items={{ 7: renderAddNewPhenotypeDropdown() }}
         onTabChange={onTabChange}
         active_tab_index={isOpen ? Object.values(InfoTabType).indexOf(currentTab) : -1}
-        customizableDropdownButtonRef={customizableDropdownButtonRef}
-        outline_tab_index={7}
       />
     </div>
   );

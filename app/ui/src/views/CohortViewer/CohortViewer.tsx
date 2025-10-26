@@ -4,9 +4,12 @@ import { CohortDataService } from './CohortDataService/CohortDataService';
 
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
-import { AppNavigationTabBar } from './AppNavigationTabBar';
+import { RighPanelNavigationTabBar } from './RighPanelNavigationTabBar';
+import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
+import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
+import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -41,6 +44,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     CohortDefinitionViewType.Cohort
   );
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
+  const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -230,6 +234,53 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     );
   };
 
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const renderAddNewPhenotypeDropdown = () => {
+    return (
+      <div className={styles.addNewPhenotypeDropdown}>
+        <PopoverHeader
+          onClick={clickedOnHeader}
+          title={'Add a new phenotype'}
+          className={styles.popoverheader}
+        />
+        <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
+      </div>
+    );
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const handleAddNewPhenotypeDropdownSelection = (type: string) => {
+    dataService.addPhenotype(type);
+    // Switch to the appropriate section tab based on phenotype type
+      if (type === 'baseline') {
+      onTabChange(1); // Baseline characteristics tab
+    } else if (type === 'outcome') {
+      onTabChange(2); // Outcomes tab
+    } else if (['entry', 'inclusion', 'exclusion'].includes(type)) {
+      onTabChange(0); // Cohort definition tab
+    }
+    // setIsOpen(false);
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const clickedOnHeader = () => {
+    customizableDropdownButtonRef.current?.closeDropdown();
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const renderAddNewPhenotypeButton = () => {
+    return (
+        <CustomizableDropdownButton
+          key={"new phenotype"}
+          label={"Add a new phenotype"}
+          content={renderAddNewPhenotypeDropdown()}
+          ref={customizableDropdownButtonRef}
+          buttonClassName={styles.addPhenotypeButtonLabel}
+          outline={true}
+        />
+    );
+  };
+
   const renderSectionTabs = () => {
     return (
       <div className={styles.sectionTabsContainer}>
@@ -239,7 +290,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           tabs={tabs}
           onTabChange={onTabChange}
           active_tab_index={determineTabIndex()}
+          classNameTabsContainer={styles.classNameTabsContainer}
         />
+        <div className={styles.addPhenotypeButton}>
+          {renderAddNewPhenotypeButton()}
+        </div>
       </div>
     );
   };
@@ -261,7 +316,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
         {renderTitle()}
-        <AppNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
+        <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         <IssuesDisplayControl 
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
