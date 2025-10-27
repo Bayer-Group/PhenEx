@@ -29,3 +29,12 @@
   overflow: hidden;
   padding: 0.5rem;
 }
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}

@@ -1400,7 +1400,6 @@ class DatabaseManager:
             import json
             cohorts = []
             for row in rows:
-                print(row, "IS THE ROW")
                 cohorts.append({
                     "id": row["cohort_id"],
                     "name": row["name"] or f"Cohort {row['cohort_id']}",

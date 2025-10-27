@@ -24,34 +24,26 @@ export class StudyViewerCohortDefinitionsDataService {
    * @returns TableData object with rows containing entry, inclusion, and exclusion phenotypes
    */
   private prepareCohortTableData(cohort: Record<string, any>): TableData {
-    const rows = [];
+    console.log('Preparing cohort table data for:', cohort.name);
+    console.log('Cohort phenotypes:', cohort.phenotypes);
+    console.log("COHORT DATA", cohort)
+    // Filter phenotypes by type (entry, inclusion, exclusion) - similar to tableDataForComponentPhenotype
+    let filteredPhenotypes = cohort.cohort_data.phenotypes || [];
     
-    // Add entry criterion if it exists
-    if (cohort.entry_criterion) {
-      rows.push({
-        ...cohort.entry_criterion,
-        type: 'entry',
-      });
-    }
+    console.log('All phenotypes before filter:', filteredPhenotypes);
+    console.log('Phenotype types found:', filteredPhenotypes.map(p => p.type));
+    
+    filteredPhenotypes = filteredPhenotypes.filter(
+      (phenotype: any) =>
+        phenotype.type === 'entry' ||
+        phenotype.type === 'inclusion' ||
+        phenotype.type === 'exclusion'
+    );
 
-    // Add inclusion criteria
-    if (Array.isArray(cohort.inclusions)) {
-      rows.push(...cohort.inclusions.map(phenotype => ({
-        ...phenotype,
-        type: 'inclusion',
-      })));
-    }
+    console.log('Filtered phenotypes:', filteredPhenotypes);
 
-    // Add exclusion criteria
-    if (Array.isArray(cohort.exclusions)) {
-      rows.push(...cohort.exclusions.map(phenotype => ({
-        ...phenotype,
-        type: 'exclusion',
-      })));
-    }
-    console.log("PREPARING COHROT", cohort)
     return {
-      rows:rows,
+      rows: filteredPhenotypes,
       columns: cohortDefinitionColumns,
     };
   }
