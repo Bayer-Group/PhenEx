@@ -107,7 +107,7 @@ export class HierarchicalLeftPanelDataService {
       id: study.id,
       displayName: study.name,
       level: level,
-      viewInfo: { viewType: ViewType.CohortDefinition, data: study },
+      viewInfo: { viewType: ViewType.StudyViewer, data: study },
       children: children,
       height: 35,
       fontSize: 16,

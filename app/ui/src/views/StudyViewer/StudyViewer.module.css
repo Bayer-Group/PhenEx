@@ -1,0 +1,120 @@
+.cohortTableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background-color: var(--background-color);
+}
+
+.topSection {
+  height: calc(var(--top_app_navigation_tab_bar) + 100px);
+}
+
+.bottomSection {
+  height: calc(100% - 0px);
+  padding-top:0px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.cohortDescription {
+  flex: 1;
+  padding: 12px;
+}
+
+.cohortDescription .ql-container {
+  height: calc(100% - 42px);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cohortDescription .ql-toolbar {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cohortDescription .ql-editor {
+  height: 100px;
+}
+
+.cohortDescription .ql-editor.ql-blank::before {
+  color: #999;
+}
+
+.cohortDescription .ql-tooltip {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.rag-green-outer {
+  background-color: #b7e1cd;
+  color: #000;
+}
+
+.studyNameContainer {
+  width: 100%;
+  margin-bottom: 20px;
+  height: 40px;
+}
+
+.studyNameInput {
+  border: none;
+  padding: 0px;
+  font-size: 40px !important;
+  outline: none;
+  width: 60%;
+  font-family: 'IBMPlexSans-bold' !important;
+  margin-left: 60px;
+  margin-top: 0px;
+  color:var(--text-color-normal) !important;
+}
+
+.studyNameInput::placeholder {
+  color: var(--text-color-secondary);
+}
+
+.sectionTabsContainer {
+  flex-direction: row;
+  display: flex;
+  margin-left: 10px;
+  position: absolute;
+  top: calc(var(--top_app_navigation_tab_bar) + 35px);
+  background-color: transparent;
+}
+
+.classNameTabsContainer{
+  color:red !important;
+  background-color: transparent !important;
+  border-color:transparent;
+  backdrop-filter: none !important;
+  /* border: 1px solid var(--line-color); */
+  -webkit-backdrop-filter: none !important;
+
+}
+
+.addPhenotypeButton{
+  margin-left:30px;
+  margin-top:5px;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+.addPhenotypeButtonLabel{
+  /* height: 32px !important; */
+  padding-left: 8px!important;
+  padding-right: 8px !important;
+}

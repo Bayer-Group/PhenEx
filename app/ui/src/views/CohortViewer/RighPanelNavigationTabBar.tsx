@@ -38,7 +38,6 @@ export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
     const updateAccordionState = () => {
       if (dataService.isNewCohortCreation()) {
         setCurrentTab(InfoTabType.Info);
-
         setIsOpen(true);
       }
     };

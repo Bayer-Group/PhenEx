@@ -9,6 +9,7 @@ import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPa
 import { NewCohortWizard } from '../CohortViewer/NewCohortWizard';
 
 import styles from './MainView.module.css';
+import { StudyViewer } from '../StudyViewer/StudyViewer';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -16,6 +17,7 @@ export enum ViewType {
   Empty = 'empty',
   Phenotypes = 'phenotypes',
   Databases = 'databases',
+  StudyViewer = 'studyViewer',
   CohortDefinition = 'sdef',
   PublicCohortDefinition = 'psdef',
   CohortReport = 'sreport',
@@ -80,6 +82,8 @@ export const MainView = () => {
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
+      case ViewType.StudyViewer:
+        return <StudyViewer data={currentView.data} />;
       case ViewType.CohortDefinition:
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
