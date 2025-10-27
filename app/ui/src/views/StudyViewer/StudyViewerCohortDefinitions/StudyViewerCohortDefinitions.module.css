@@ -9,8 +9,23 @@
 .cohortBox {
   width: 350px;
   min-width: 350px;
-  background-color: #ff0000;
-  padding: 1rem;
+  background-color: var(--background-color);
+  border: 1px solid var(--line-color);
   border-radius: 8px;
-  color: white;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cohortHeader {
+  padding: 1rem;
+  background-color: var(--header-background);
+  border-bottom: 1px solid var(--line-color);
+  font-weight: bold;
+}
+
+.tableContainer {
+  flex: 1;
+  overflow: hidden;
+  padding: 0.5rem;
 }

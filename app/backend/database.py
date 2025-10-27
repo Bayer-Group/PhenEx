@@ -1385,7 +1385,7 @@ class DatabaseManager:
                 prioritized_cohorts AS (
                     SELECT DISTINCT ON (c.cohort_id) 
                            c.cohort_id, c.cohort_data->>'name' as name, c.version, 
-                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at
+                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at, c.cohort_data
                     FROM {self.full_table_name} c
                     INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
                     WHERE c.study_id = $1
@@ -1397,8 +1397,10 @@ class DatabaseManager:
 
             rows = await conn.fetch(query, study_id)
 
+            import json
             cohorts = []
             for row in rows:
+                print(row, "IS THE ROW")
                 cohorts.append({
                     "id": row["cohort_id"],
                     "name": row["name"] or f"Cohort {row['cohort_id']}",
@@ -1407,6 +1409,7 @@ class DatabaseManager:
                     "parent_cohort_id": row["parent_cohort_id"],
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                    "cohort_data": json.loads(row["cohort_data"]) if row["cohort_data"] else None
                 })
 
             logger.info(f"Retrieved {len(cohorts)} cohorts for study {study_id}")
