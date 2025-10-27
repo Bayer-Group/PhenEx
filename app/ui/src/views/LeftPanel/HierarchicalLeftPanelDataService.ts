@@ -97,6 +97,7 @@ export class HierarchicalLeftPanelDataService {
     
     // Always load cohorts since they're already cached from workspace loading
     const cohorts = await this.dataService.getCohortsForStudy(study.id);
+    study['cohorts'] = cohorts
     console.log(`� Study "${study.name}" has ${cohorts.length} cohorts:`, cohorts.map(c => c.name));
     
     const children = cohorts.map(cohort => 

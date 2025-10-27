@@ -4,7 +4,7 @@ import { EditableTextField } from '../../components/EditableTextField/EditableTe
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { StudyDataService } from './StudyDataService';
-
+import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
@@ -33,7 +33,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
     // Update cohort data when a new cohort is selected
     const loadData = async () => {
       if (data !== undefined) {
-        await studyDataService.loadStudyData(data);
+        studyDataService.loadStudyData(data);
       } else {
         studyDataService.createNewStudy();
       }
@@ -140,10 +140,13 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
     );
   };
 
-  const renderTable = () => {
-    return (
-      <div />
-    );
+  const renderContent = () => {
+    switch (currentView) {
+      case StudyDefinitionViewType.Cohort:
+        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
+      default:
+        return <div />;
+    }
   };
 
   return (
@@ -152,7 +155,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
         {renderTitle()}
         {renderSectionTabs()}
       </div>
-      <div className={styles.bottomSection}>{renderTable()}</div>
+      <div className={styles.bottomSection}>{renderContent()}</div>
     </div>
   );
 };

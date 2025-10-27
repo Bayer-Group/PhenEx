@@ -122,7 +122,7 @@ export class CohortsDataService {
       
       await Promise.all(cohortPromises);
       console.log('🏗️ User workspace loading complete!');
-      
+      console.log(this._studyCohortsCache);
     } catch (error) {
       console.warn('🚨 Failed to load user workspace:', error);
       // Set fallback empty values

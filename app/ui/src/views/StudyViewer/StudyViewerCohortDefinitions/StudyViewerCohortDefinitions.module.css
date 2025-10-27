@@ -1,0 +1,16 @@
+.cohortsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.cohortBox {
+  width: 350px;
+  min-width: 350px;
+  background-color: #ff0000;
+  padding: 1rem;
+  border-radius: 8px;
+  color: white;
+}

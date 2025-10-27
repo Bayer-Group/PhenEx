@@ -12,6 +12,7 @@ import {
   updateStudy
 } from '../../api/text_to_cohort/route';
 import { createID } from '../../types/createID';
+import { StudyViewerCohortDefinitionsDataService } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsDataService';
 
 // export abstract class StudyDataService {
 export class StudyDataService {
@@ -19,6 +20,16 @@ export class StudyDataService {
   public _study_name: string = '';
   private _study_data: Record<string, any> = {};
   private _cohortDataService: CohortDataService | null = null;
+  private _cohort_definitions_service: StudyViewerCohortDefinitionsDataService;
+  
+  private constructor() {
+    this._cohort_definitions_service = new StudyViewerCohortDefinitionsDataService();
+    this._cohort_definitions_service.setStudyDataService(this);
+  }
+
+  public get cohort_definitions_service(): StudyViewerCohortDefinitionsDataService {
+    return this._cohort_definitions_service;
+  }
   
   private get cohortDataService(): CohortDataService {
     if (!this._cohortDataService) {
@@ -51,16 +62,9 @@ export class StudyDataService {
   }
 
 
-  public async loadStudyData(studyIdentifiers: string): Promise<void> {
+  public loadStudyData(studyData: any) {
     try {
-      let studyResponse = undefined;
-      try {
-        studyResponse = await getStudy(studyIdentifiers.id);
-      } catch {
-        console.log("Error loading study")
-      }
-
-      this._study_data = studyResponse;
+      this._study_data = studyData;
       this._study_name = this._study_data.name || 'Unnamed Study';
       if (!this._study_data.id) {
         this._study_data.id = createID();
@@ -70,6 +74,9 @@ export class StudyDataService {
         this._study_data.cohorts = [];
       }
 
+      // Update the cohort definitions service with the new study data
+      this._cohort_definitions_service.setStudyData(this._study_data);
+      
       this.notifyStudyDataServiceListener(); // Notify listeners after loading data
     } catch (error) {
       console.error('Error loading study data:', error);
