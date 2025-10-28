@@ -1,6 +1,5 @@
 from typing import Union, List, Optional, Dict
 from datetime import date
-from build.lib.phenex import tables
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
