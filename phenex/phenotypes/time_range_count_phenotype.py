@@ -1,5 +1,6 @@
 from typing import Union, List, Optional, Dict
 from datetime import date
+from build.lib.phenex import tables
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters import (
     ValueFilter,
@@ -128,8 +129,15 @@ class TimeRangeCountPhenotype(Phenotype):
         
         # Select only the required phenotype columns
         result_table = select_phenotype_columns(result_table)
+
+        # if persons table exist, join to get the persons with 0 time ranges
+        if 'PERSON' in tables.keys():
+            table_persons = tables['PERSON'].select('PERSON_ID').distinct()
+            result_table = table_persons.join(result_table, table_persons.PERSON_ID == result_table.PERSON_ID, how = 'left').drop("PERSON_ID_right")
+            # fill null VALUES with 0 for persons with no time ranges
+            result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
         return self._perform_final_processing(result_table)
-    
+
     def _perform_time_filtering(self, table: Table) -> Table:
         """
         Apply relative time range filtering to the table. This filters time ranges based on their relationship to anchor dates.

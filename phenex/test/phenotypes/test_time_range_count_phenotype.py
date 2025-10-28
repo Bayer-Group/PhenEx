@@ -84,56 +84,64 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             "df": df_visit_occurrence,
         }
 
-        return [input_info_visit_occurrence]
+        df_person = pd.DataFrame()
+        df_person['PERSON_ID'] = df_visit_occurrence["PERSON_ID"].unique()
+
+        input_info_person = {
+            "name": "PERSON",
+            "df": df_person,
+        }
+
+        return [input_info_visit_occurrence, input_info_person]
 
     def define_phenotype_tests(self):
         # Test 1: Count all visits (no time filtering)
         t1 = {
             "name": "count_all_visits",
-            "persons": ["P1", "P2", "P3", "P4", "P6"],  # P5 has no visits
-            "values": [3, 2, 4, 1, 5],  # Expected visit counts
+            "persons": ["P1", "P2", "P3", "P4", "P6", "P5"],  # P5 has no visits
+            "values": [3, 2, 4, 1, 5, 0],  # Expected visit counts
         }
         
         # Test 2: Count visits after index (should exclude overlapping periods)
         t2 = {
             "name": "count_visits_after_index",
-            "persons": ["P1", "P2", "P3", "P6"],  # P4's visit overlaps index, P5 has none
-            "values": [2, 2, 2, 5],  # Expected after-index visit counts
+            "persons": ["P1", "P2", "P3", "P6", "P4", "P5"],  # P4's visit overlaps index, P5 has none
+            "values": [2, 2, 2, 5, 0, 0],  # Expected after-index visit counts
         }
         
         # Test 3: Count visits before index (should exclude overlapping periods)
         t3 = {
             "name": "count_visits_before_index", 
-            "persons": ["P1", "P3"],  # Only P1 and P3 have visits before index
-            "values": [1, 2],  # Expected before-index visit counts
+            "persons": ["P1", "P3", "P2", "P4", "P5", "P6"],  # Only P1 and P3 have visits before index
+            "values": [1, 2, 0, 0, 0, 0],  # Expected before-index visit counts
         }
         
         # Test 4: Count visits after index with max days set
         t4 = {
             "name": "max_days_set",
-            "persons": ["P1", "P2", "P3", "P6"],
-            "values": [1, 1, 1, 5],
+            "persons": ["P1", "P2", "P3", "P6", "P4", "P5"],
+            "values": [1, 1, 1, 5, 0, 0],
         }
 
         # Test 5: Count visits after index with min value filter (at least 2 visits)
         t5 = {
             "name": "min_days_set",
-            "persons": ["P1", "P2", "P3", "P6"],  # All have at least 2 visits after index
-            "values": [2, 1, 2, 5],  # Expected after-index visit counts
+            "persons": ["P1", "P2", "P3", "P6", "P4", "P5"],  # All have at least 2 visits after index
+            "values": [2, 1, 2, 5, 0, 0],  # Expected after-index visit counts
         }
 
         # Test 6: min days with value filter
         t6 = {
             "name": "min_days_set_with_value_filter",
-            "persons": ["P1", "P3"],  # All have at least 2 visits after index
-            "values": [2, 2],
+            "persons": ["P1", "P3", "P2", "P4", "P5", "P6"],  # All have at least 2 visits after index
+            "values": [2, 2, 0, 0, 0, 0],
         }
 
         # Test 7: Count all visits (no time filtering)
         t7 = {
             "name": "value_filter",
-            "persons": ["P1", "P3", "P6"],  # P5 has no visits
-            "values": [3, 4, 5],  # Expected visit counts
+            "persons": ["P1", "P3", "P6", "P2", "P4", "P5"],  # P5 has no visits
+            "values": [3, 4, 5, 0, 0, 0],  # Expected visit counts
         }
 
 
