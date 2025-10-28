@@ -2,13 +2,12 @@ from typing import Union, List, Optional, Dict
 from datetime import date
 from build.lib.phenex import tables
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters import (
-    ValueFilter,
-    DateFilter,
-    RelativeTimeRangeFilter
-)
+from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
-from phenex.phenotypes.functions import select_phenotype_columns, attach_anchor_and_get_reference_date
+from phenex.phenotypes.functions import (
+    select_phenotype_columns,
+    attach_anchor_and_get_reference_date,
+)
 from ibis.expr.types.relations import Table
 from ibis import _
 import ibis
@@ -44,14 +43,14 @@ class TimeRangeCountPhenotype(Phenotype):
         from phenex.phenotypes import CodelistPhenotype, TimeRangeCountPhenotype
         from phenex.filters import RelativeTimeRangeFilter
         from phenex.filters.value import GreaterThanOrEqualTo, LessThanOrEqualTo
-        
+
         # Define entry phenotype (index date)
         entry_phenotype = CodelistPhenotype(
             domain='CONDITION_OCCURRENCE',
             codelist=atrial_fibrillation_codes,
             return_date='first',
         )
-        
+
         # Count hospitalizations in the 365 days after index
         post_index_hospitalizations = TimeRangeCountPhenotype(
             domain='VISIT_OCCURRENCE',  # or admission-discharge table
@@ -63,7 +62,7 @@ class TimeRangeCountPhenotype(Phenotype):
             ),
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(1))  # At least 1 hospitalization
         )
-        
+
         result = post_index_hospitalizations.execute(tables)
         ```
     """
@@ -99,41 +98,42 @@ class TimeRangeCountPhenotype(Phenotype):
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         table = tables[self.domain]
-        
+
         # Filter out null values in START_DATE and END_DATE based on allow_null_end_date setting
         # Always remove rows with null START_DATE
         table = table.filter(table.START_DATE.notnull())
-        
+
         # Remove rows with null END_DATE only if allow_null_end_date is False
         if not self.allow_null_end_date:
             table = table.filter(table.END_DATE.notnull())
-        
+
         # Apply time filtering first if we have relative time ranges
         if self.relative_time_range is not None:
             table = self._perform_time_filtering(table)
-        
+
         # Count distinct time ranges per person
         # Each row represents a distinct time range (START_DATE, END_DATE combination)
         count_table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
         count_table = count_table.group_by("PERSON_ID").aggregate(VALUE=_.count())
-        
+
         # Apply value filtering if specified
         if self.value_filter is not None:
             count_table = self.value_filter.filter(count_table)
-        
+
         # Create the final phenotype table with DATE as null (as specified in docstring)
-        result_table = count_table.mutate(
-            EVENT_DATE=ibis.null(date),
-            BOOLEAN=True
-        )
-        
+        result_table = count_table.mutate(EVENT_DATE=ibis.null(date), BOOLEAN=True)
+
         # Select only the required phenotype columns
         result_table = select_phenotype_columns(result_table)
 
         # if persons table exist, join to get the persons with 0 time ranges
-        if 'PERSON' in tables.keys():
-            table_persons = tables['PERSON'].select('PERSON_ID').distinct()
-            result_table = table_persons.join(result_table, table_persons.PERSON_ID == result_table.PERSON_ID, how = 'left').drop("PERSON_ID_right")
+        if "PERSON" in tables.keys():
+            table_persons = tables["PERSON"].select("PERSON_ID").distinct()
+            result_table = table_persons.join(
+                result_table,
+                table_persons.PERSON_ID == result_table.PERSON_ID,
+                how="left",
+            ).drop("PERSON_ID_right")
             # fill null VALUES with 0 for persons with no time ranges
             result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
         return self._perform_final_processing(result_table)
@@ -147,7 +147,7 @@ class TimeRangeCountPhenotype(Phenotype):
             table, reference_column = attach_anchor_and_get_reference_date(
                 table, rtr.anchor_phenotype
             )
-            
+
             # Filter time ranges based on their relationship to the anchor date
             if rtr.when == "before":
                 # For "before", we want time ranges that END before or on the anchor date
@@ -166,9 +166,9 @@ class TimeRangeCountPhenotype(Phenotype):
                     days_diff = reference_column.delta(table.END_DATE, "day")
                 elif rtr.when == "after":
                     days_diff = table.START_DATE.delta(reference_column, "day")
-                
+
                 table = table.mutate(DAYS_FROM_ANCHOR_MIN=days_diff)
-                
+
                 # Apply value filter for days
                 value_filter = ValueFilter(
                     min_value=rtr.min_days,
@@ -184,9 +184,9 @@ class TimeRangeCountPhenotype(Phenotype):
                     days_diff = reference_column.delta(table.START_DATE, "day")
                 elif rtr.when == "after":
                     days_diff = table.END_DATE.delta(reference_column, "day")
-                
+
                 table = table.mutate(DAYS_FROM_ANCHOR_MAX=days_diff)
-                
+
                 # Apply value filter for days
                 value_filter = ValueFilter(
                     min_value=None,
