@@ -125,7 +125,7 @@ class OneInpatientTwoOutpatientPhenotypeTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-
+        # Global time constraint applied to both inpatient and outpatient events
         f_relative_time_range = RelativeTimeRangeFilter(
             when="before",
         )

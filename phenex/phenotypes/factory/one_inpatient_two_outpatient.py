@@ -21,10 +21,16 @@ def OneInpatientTwoOutpatientPhenotype(
     name: str,
     domain: str,
     codelist: Codelist,
-    relative_time_range: Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]],
     categorical_filter_inpatient: CategoricalFilter,
     categorical_filter_outpatient: CategoricalFilter,
-    return_date="all",
+    *,
+    relative_time_range: Optional[
+        Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]]
+    ] = None,
+    outpatient_relative_time_range: Optional[
+        Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]]
+    ] = None,
+    return_date: str = "all",
 ) -> LogicPhenotype:
     """
     OneInpatientTwoOutpatientPhenotype identifies patients who meet a combined rule: **at least one inpatient event OR at least two outpatient events** within a specified time range and domain.
@@ -36,6 +42,7 @@ def OneInpatientTwoOutpatientPhenotype(
         domain (str): The OMOP domain or table name to search for matching events (e.g., `'CONDITION_OCCURRENCE'`, `'PROCEDURE_OCCURRENCE'`).
         codelist (Codelist): The list of standard concept IDs or codes used to identify the condition or event.
         relative_time_range (RelativeTimeRangeFilter | None): Optional filter specifying the temporal window in which events should be considered.
+        outpatient_relative_time_range (outpatient_relative_time_range | None): Optional relative time constraints applied specifically within the EventCountPhenotype that enforces ≥2 outpatient events. When None, defaults to RelativeTimeRangeFilter() so counting is constrained rather than unbounded. Provide a custom filter to control the allowable window and/or minimum separation between outpatient occurrences.
         categorical_filter_inpatient (CategoricalFilter | None): A filter applied to inpatient events.
         categorical_filter_outpatient (CategoricalFilter | None): A filter applied to outpatient events.
         return_date (str): Specifies which date to return for the resulting phenotype. Common options include:
@@ -46,21 +53,20 @@ def OneInpatientTwoOutpatientPhenotype(
 
     Returns:
         LogicPhenotype: A phenotype object representing patients who have **one inpatient event** R **two or more outpatient events**.
-
-    Logic:
-        1. Creates an inpatient `CodelistPhenotype` from the provided codelist.
-        2. Creates an outpatient `CodelistPhenotype` (returning all event dates).
-        3. Wraps the outpatient phenotype in an `EventCountPhenotype` requiring ≥2 occurrences.
-        4. Combines the inpatient and outpatient logic using a logical OR (`|`).
-        5. Returns a `LogicPhenotype` representing the combined rule.
+    Logic overview:
+        1. Defines an inpatient `CodelistPhenotype` (≥1 occurrence required).
+        2. Defines an outpatient `CodelistPhenotype` (collecting all dates).
+        3. Wraps the outpatient phenotype in an `EventCountPhenotype` enforcing ≥2 distinct events within the outpatient time range.
+        4. Combines both components with a logical OR (`|`).
+        5. Returns the combined phenotype, respecting the specified `return_date` behavior.
 
     Example:
         ```python
         from phenex.phenotypes import OneInpatientTwoOutpatientPhenotype
         from phenex.codelists import Codelist
-        from phenex.filters import ValueFilter, RelativeTimeRangeFilter
+        from phenex.filters import RelativeTimeRangeFilter
 
-        # Example: Identify patients with diabetes (ICD-10 E11 codes)
+        # Example: Identify patients with diabetes (ICD-10 E11)
         diabetes_codes = Codelist(["E11"])
         diabetes_phenotype = OneInpatientTwoOutpatientPhenotype(
             name="diabetes",
@@ -72,18 +78,17 @@ def OneInpatientTwoOutpatientPhenotype(
             return_date="all"
         )
 
-        result_table = diabetes_phenotype.execute(tables)
-        display(result_table)
+        result = diabetes_phenotype.execute(tables)
+        display(result)
         ```
 
     Notes:
-        - The inpatient phenotype triggers the condition immediately with ≥1 qualifying event.
-        - The outpatient phenotype requires ≥2 separate qualifying occurrences to count.
-        - Both event streams are filtered and combined before returning the final phenotype.
+        - The inpatient component triggers on a single qualifying event.
+        - The outpatient component requires two or more qualifying occurrences.
+        - When no `outpatient_relative_time_range` is provided, a default bounded range is applied to prevent unbounded event counting.
     """
-
     pt_inpatient = CodelistPhenotype(
-        name=name + "_inpatient",
+        name=f"{name}_inpatient",
         codelist=codelist,
         categorical_filter=categorical_filter_inpatient,
         domain=domain,
@@ -91,20 +96,30 @@ def OneInpatientTwoOutpatientPhenotype(
     )
 
     pt_outpatient = CodelistPhenotype(
-        name=name + "_outpatient",
+        name=f"{name}_outpatient",
         domain=domain,
         codelist=codelist,
         categorical_filter=categorical_filter_outpatient,
         relative_time_range=relative_time_range,
         return_date="all",
     )
+    """
+    Ensure EventCountPhenotype uses a time constraint for outpatient events.
+    If the caller provides a custom outpatient_relative_time_range, use it; otherwise fall back to a default.
+    """
+    event_count_rtr = (
+        outpatient_relative_time_range
+        if outpatient_relative_time_range is not None
+        else RelativeTimeRangeFilter()
+    )
+
     """EventCountPhenotype only filters when given a value_filter or relative_time_range. If both are None, it just counts events without filtering. We specify RelativeTimeRangeFilter() here to ensure filtering happens enforcing that patients must have ≥2 outpatient events.
        Expose the EventCountPhenotype's value_filter and relative_time_range keyword arguments to the user of OneInpatientTwoOutpatientPhenotype as two well named keyword arguments.
     """
     pt_outpatient_two_occurrences = EventCountPhenotype(
         phenotype=pt_outpatient,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
-        relative_time_range=RelativeTimeRangeFilter(),
+        relative_time_range=event_count_rtr,
         return_date="all",
         component_date_select="second",
     )
