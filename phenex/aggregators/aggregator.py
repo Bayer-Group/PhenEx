@@ -11,11 +11,13 @@ class VerticalDateAggregator:
         aggregation_function="sum",
         event_date_column="EVENT_DATE",
         reduce=False,
+        preserve_nulls=False,
     ):
         self.aggregation_index = aggregation_index
         self.aggregation_function = aggregation_function
         self.event_date_column = event_date_column
         self.reduce = reduce
+        self.preserve_nulls = preserve_nulls
 
     def aggregate(self, input_table: Table):
         # Define the window specification
@@ -37,14 +39,23 @@ class VerticalDateAggregator:
             raise ValueError(
                 f"Unsupported aggregation function: {self.aggregation_function}"
             )
+            
+        # Handle case where all dates in a partition are null
+        # In this case, max/min will return null, which is the correct behavior
 
         # Add the aggregated date as a new column
         input_table = input_table.mutate(aggregated_date=aggregated_date)
 
         # Filter rows where the original date matches the aggregated date
-        input_table = input_table.filter(
-            input_table[self.event_date_column] == input_table.aggregated_date
-        )
+        date_match = input_table[self.event_date_column] == input_table.aggregated_date
+        
+        if self.preserve_nulls:
+            # Handle null dates explicitly to avoid dropping them
+            both_null = input_table[self.event_date_column].isnull() & input_table.aggregated_date.isnull()
+            input_table = input_table.filter(date_match | both_null)
+        else:
+            # Original behavior - nulls will be dropped
+            input_table = input_table.filter(date_match)
 
         # Select the necessary columns
 
