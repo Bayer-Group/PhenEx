@@ -6,6 +6,7 @@ from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
 from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.aggregators import First, Last
 
 
 class ComputationGraphPhenotype(Phenotype):
@@ -109,6 +110,9 @@ class ComputationGraphPhenotype(Phenotype):
         else:
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
+        # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+        joined_table = self._perform_date_selection(joined_table)
+
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
@@ -120,7 +124,7 @@ class ComputationGraphPhenotype(Phenotype):
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
-        return joined_table
+        return joined_table.distinct()
 
     def _return_all_dates(self, table, date_columns):
         """
@@ -174,6 +178,31 @@ class ComputationGraphPhenotype(Phenotype):
             coalesce_expressions.append(coalesce_expr)
 
         return coalesce_expressions
+
+    def _perform_date_selection(self, code_table):
+        """
+        Perform date selection based on return_date and return_value parameters.
+
+        Logic:
+        - If return_date='all', return all rows (no date aggregation)
+        - If return_date='first'/'last'/'nearest' and return_value=None, aggregate to one row per person (reduce=True)
+        - If return_date='first'/'last'/'nearest' and return_value='all', keep all rows on the selected date (reduce=False)
+        """
+        if self.return_date is None or self.return_date == "all":
+            return code_table
+
+        if self.return_date == "first":
+            aggregator = First(reduce=False, preserve_nulls=True)
+        elif self.return_date == "last":
+            aggregator = Last(reduce=False, preserve_nulls=True)
+        elif self.return_date == "nearest":
+            # Note: Nearest is not currently implemented in the aggregators
+            # This would need to be added to the aggregator module
+            raise NotImplementedError("Nearest aggregation not yet implemented")
+        else:
+            raise ValueError(f"Unknown return_date: {self.return_date}")
+
+        return aggregator.aggregate(code_table)
 
 
 class ScorePhenotype(ComputationGraphPhenotype):
@@ -350,6 +379,9 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 selected_date = ibis.null(date)
                 joined_table = joined_table.mutate(EVENT_DATE=selected_date)
 
+            # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+            joined_table = self._perform_date_selection(joined_table)
+
             # Populate the VALUE column with the value from the phenotype whose date matches the selected date
             value_cases = []
             for child in self.children:
@@ -375,7 +407,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Select only the required phenotype columns
-        return select_phenotype_columns(joined_table)
+        return select_phenotype_columns(joined_table).distinct()
 
     def _return_all_dates_with_value(self, table, date_columns):
         """
