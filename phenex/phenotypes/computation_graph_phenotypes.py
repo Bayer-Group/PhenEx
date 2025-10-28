@@ -179,8 +179,6 @@ class ComputationGraphPhenotype(Phenotype):
 
         return coalesce_expressions
 
-
-
     def _perform_date_selection(self, code_table):
         """
         Perform date selection based on return_date and return_value parameters.

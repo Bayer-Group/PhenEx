@@ -717,7 +717,7 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
             event_date_columnname="EVENT_DATE",
         )
         df_firstrow = df.iloc[0:1].copy()
-        df = pd.concat([df, df_firstrow], ignore_index=True)  # duplicate row 1 P1
+        df = pd.concat([df, df_firstrow], ignore_index=True)  # duplicate row 1 P1 to test that first last date selection is working
         self.event_dates = [
             datetime.datetime.strptime(x, "%m-%d-%Y")
             for x in [
