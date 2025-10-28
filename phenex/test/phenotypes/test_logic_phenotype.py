@@ -716,7 +716,8 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
             code_type_columnname="CODE_TYPE",
             event_date_columnname="EVENT_DATE",
         )
-
+        df_firstrow = df.iloc[0:1].copy()
+        df = pd.concat([df, df_firstrow], ignore_index=True)  # duplicate row 1 P1
         self.event_dates = [
             datetime.datetime.strptime(x, "%m-%d-%Y")
             for x in [
@@ -732,6 +733,7 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
                 "01-03-2022",  # P5 c3 9
                 "01-01-2022",  # P6 c2 10
                 "01-01-2022",  # P7 c3 11
+                "01-01-2022",  # P1 c1 0 # duplicate row 1 P1
             ]
         ]
         df["EVENT_DATE"] = self.event_dates
