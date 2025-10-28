@@ -39,7 +39,7 @@ class VerticalDateAggregator:
             raise ValueError(
                 f"Unsupported aggregation function: {self.aggregation_function}"
             )
-            
+
         # Handle case where all dates in a partition are null
         # In this case, max/min will return null, which is the correct behavior
 
@@ -48,10 +48,13 @@ class VerticalDateAggregator:
 
         # Filter rows where the original date matches the aggregated date
         date_match = input_table[self.event_date_column] == input_table.aggregated_date
-        
+
         if self.preserve_nulls:
             # Handle null dates explicitly to avoid dropping them
-            both_null = input_table[self.event_date_column].isnull() & input_table.aggregated_date.isnull()
+            both_null = (
+                input_table[self.event_date_column].isnull()
+                & input_table.aggregated_date.isnull()
+            )
             input_table = input_table.filter(date_match | both_null)
         else:
             # Original behavior - nulls will be dropped

@@ -111,7 +111,7 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
         # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
-        joined_table =self._perform_date_selection(joined_table)
+        joined_table = self._perform_date_selection(joined_table)
 
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
@@ -192,9 +192,9 @@ class ComputationGraphPhenotype(Phenotype):
             return code_table
 
         if self.return_date == "first":
-            aggregator = First(reduce=False, preserve_nulls = True)
+            aggregator = First(reduce=False, preserve_nulls=True)
         elif self.return_date == "last":
-            aggregator = Last(reduce=False, preserve_nulls = True)
+            aggregator = Last(reduce=False, preserve_nulls=True)
         elif self.return_date == "nearest":
             # Note: Nearest is not currently implemented in the aggregators
             # This would need to be added to the aggregator module
@@ -380,7 +380,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 joined_table = joined_table.mutate(EVENT_DATE=selected_date)
 
             # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
-            joined_table =self._perform_date_selection(joined_table)
+            joined_table = self._perform_date_selection(joined_table)
 
             # Populate the VALUE column with the value from the phenotype whose date matches the selected date
             value_cases = []
