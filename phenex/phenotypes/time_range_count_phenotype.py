@@ -134,14 +134,15 @@ class TimeRangeCountPhenotype(Phenotype):
         # Select only the required phenotype columns
         result_table = select_phenotype_columns(result_table)
 
-        # if persons table exist, join to get the persons with 0 time ranges
-        if "PERSON" in tables.keys():
-            table_persons = tables["PERSON"].select("PERSON_ID").distinct()
-            result_table = table_persons.join(
-                result_table,
-                table_persons.PERSON_ID == result_table.PERSON_ID,
-                how="left",
-            ).drop("PERSON_ID_right")
-            # fill null VALUES with 0 for persons with no time ranges
-            result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
+        if self.value_filter is None: # only join on PERSON table if value filter is None
+            # if persons table exist, join to get the persons with 0 time ranges
+            if "PERSON" in tables.keys():
+                table_persons = tables["PERSON"].select("PERSON_ID").distinct()
+                result_table = table_persons.join(
+                    result_table,
+                    table_persons.PERSON_ID == result_table.PERSON_ID,
+                    how="left",
+                ).drop("PERSON_ID_right")
+                # fill null VALUES with 0 for persons with no time ranges
+                result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
         return self._perform_final_processing(result_table)

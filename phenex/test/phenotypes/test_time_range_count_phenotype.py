@@ -15,131 +15,74 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
     test_values = True
 
     def define_input_tables(self):
-        oneday = datetime.timedelta(days=1)
-        index_date = datetime.date(2022, 1, 1)
-
-        # Create test data with multiple time ranges per person
-        # Some people will have overlapping periods, some will have gaps
-        df_visit_occurrence = pd.DataFrame()
-
-        # Person P1: 3 visits, 1 before index, 2 after index
-        p1_data = [
+        """
+        Create test data using the same time ranges as TimeRangeFilter tests.
+        Each period is 30 days long.
+        
+        Time ranges relative to INDEX (2020-05-15):
+        p1: 2020-01-01 to 2020-01-30 (30 days) - 104 to 135 days BEFORE index
+        p2: 2020-03-01 to 2020-03-30 (30 days) - 45 to 76 days BEFORE index  
+        p3: 2020-05-01 to 2020-05-30 (30 days) - 14 days BEFORE to 15 days AFTER index (overlaps)
+        p4: 2020-07-01 to 2020-07-30 (30 days) - 47 to 76 days AFTER index
+        p5: 2020-09-01 to 2020-09-30 (30 days) - 109 to 138 days AFTER index
+        """
+        # Use the same time constants as day count test
+        INDEX = datetime.date(2020, 5, 15)
+        p1_START = datetime.date(2020, 1, 1)
+        p2_START = datetime.date(2020, 3, 1) 
+        p3_START = datetime.date(2020, 5, 1)
+        p4_START = datetime.date(2020, 7, 1)
+        p5_START = datetime.date(2020, 9, 1)
+        
+        p1_END = datetime.date(2020, 1, 30)
+        p2_END = datetime.date(2020, 3, 30)
+        p3_END = datetime.date(2020, 5, 30)
+        p4_END = datetime.date(2020, 7, 30)
+        p5_END = datetime.date(2020, 9, 30)
+        
+        # Create visit occurrence data - P1 with 5 time ranges, P2 with 1 time range before index
+        visit_data = [
             {
                 "PERSON_ID": "P1",
-                "START_DATE": index_date - 30 * oneday,
-                "END_DATE": index_date - 25 * oneday,
+                "START_DATE": p1_START,
+                "END_DATE": p1_END,
+            },
+            {
+                "PERSON_ID": "P1", 
+                "START_DATE": p2_START,
+                "END_DATE": p2_END,
             },
             {
                 "PERSON_ID": "P1",
-                "START_DATE": index_date + 10 * oneday,
-                "END_DATE": index_date + 15 * oneday,
+                "START_DATE": p3_START,
+                "END_DATE": p3_END,
             },
             {
                 "PERSON_ID": "P1",
-                "START_DATE": index_date + 60 * oneday,
-                "END_DATE": index_date + 65 * oneday,
+                "START_DATE": p4_START,
+                "END_DATE": p4_END,
             },
-        ]
-
-        # Person P2: 2 visits, both after index
-        p2_data = [
+            {
+                "PERSON_ID": "P1",
+                "START_DATE": p5_START,
+                "END_DATE": p5_END,
+            },
             {
                 "PERSON_ID": "P2",
-                "START_DATE": index_date + 5 * oneday,
-                "END_DATE": index_date + 10 * oneday,
-            },
-            {
-                "PERSON_ID": "P2",
-                "START_DATE": index_date + 50 * oneday,
-                "END_DATE": index_date + 55 * oneday,
+                "START_DATE": p1_START,
+                "END_DATE": p1_END,
             },
         ]
+        
+        df_visit_occurrence = pd.DataFrame(visit_data)
 
-        # Person P3: 4 visits, 2 before index, 2 after index
-        p3_data = [
-            {
-                "PERSON_ID": "P3",
-                "START_DATE": index_date - 60 * oneday,
-                "END_DATE": index_date - 55 * oneday,
-            },
-            {
-                "PERSON_ID": "P3",
-                "START_DATE": index_date - 30 * oneday,
-                "END_DATE": index_date - 25 * oneday,
-            },
-            {
-                "PERSON_ID": "P3",
-                "START_DATE": index_date + 15 * oneday,
-                "END_DATE": index_date + 20 * oneday,
-            },
-            {
-                "PERSON_ID": "P3",
-                "START_DATE": index_date + 90 * oneday,
-                "END_DATE": index_date + 95 * oneday,
-            },
-        ]
-
-        # Person P4: 1 visit, overlapping index date (should be excluded from before/after counts)
-        p4_data = [
-            {
-                "PERSON_ID": "P4",
-                "START_DATE": index_date - 5 * oneday,
-                "END_DATE": index_date + 5 * oneday,
-            },
-        ]
-
-        # Person P5: No visits
-        p5_data = []
-
-        # Person P6: 5 visits, all after index within 100 days
-        p6_data = [
-            {
-                "PERSON_ID": "P6",
-                "START_DATE": index_date + 10 * oneday,
-                "END_DATE": index_date + 12 * oneday,
-            },
-            {
-                "PERSON_ID": "P6",
-                "START_DATE": index_date + 20 * oneday,
-                "END_DATE": index_date + 22 * oneday,
-            },
-            {
-                "PERSON_ID": "P6",
-                "START_DATE": index_date + 30 * oneday,
-                "END_DATE": index_date + 32 * oneday,
-            },
-            {
-                "PERSON_ID": "P6",
-                "START_DATE": index_date + 40 * oneday,
-                "END_DATE": index_date + 42 * oneday,
-            },
-            {
-                "PERSON_ID": "P6",
-                "START_DATE": index_date + 50 * oneday,
-                "END_DATE": index_date + 52 * oneday,
-            },
-        ]
-
-        all_data = p1_data + p2_data + p3_data + p4_data + p5_data + p6_data
-        df_visit_occurrence = pd.DataFrame(all_data)
-
-        # Add INDEX_DATE column for all persons (needed for tests without anchor)
-        all_persons = ["P1", "P2", "P3", "P4", "P5", "P6"]
+        # Add INDEX_DATE column for all persons
+        all_persons = ["P1", "P2"]
         df_index = pd.DataFrame(
-            {"PERSON_ID": all_persons, "INDEX_DATE": [index_date] * len(all_persons)}
+            {"PERSON_ID": all_persons, "INDEX_DATE": [INDEX] * len(all_persons)}
         )
 
-        # If we have visit data, merge with index dates, otherwise just use index data
-        if not df_visit_occurrence.empty:
-            df_visit_occurrence = df_visit_occurrence.merge(
-                df_index, on="PERSON_ID", how="right"
-            )
-        else:
-            df_visit_occurrence = df_index
-            df_visit_occurrence["START_DATE"] = None
-            df_visit_occurrence["END_DATE"] = None
-
-        self.df_input = df_visit_occurrence
+        df_visit_occurrence = df_visit_occurrence.merge(df_index, on="PERSON_ID", how="right")
         input_info_visit_occurrence = {
             "name": "VISIT_OCCURRENCE",
             "df": df_visit_occurrence,
@@ -156,81 +99,66 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         return [input_info_visit_occurrence, input_info_person]
 
     def define_phenotype_tests(self):
-        # Test 1: Count all visits (no time filtering)
+        # Test 1: Count all time ranges (no time filtering) 
+        # P1 has 5 ranges, P2 has 1 range
         t1 = {
             "name": "count_all_visits",
-            "persons": ["P1", "P2", "P3", "P4", "P6", "P5"],  # P5 has no visits
-            "values": [3, 2, 4, 1, 5, 0],  # Expected visit counts
+            "persons": ["P1", "P2"],
+            "values": [5, 1],  # Expected time range counts
         }
 
-        # Test 2: Count visits after index (should exclude overlapping periods)
+        # Test 2: Count time ranges after index (should exclude overlapping periods)
+        # P1: p4 and p5 are entirely after index = 2 ranges
+        # P2: no ranges after index = 0 ranges
         t2 = {
             "name": "count_visits_after_index",
-            "persons": [
-                "P1",
-                "P2",
-                "P3",
-                "P6",
-                "P4",
-                "P5",
-            ],  # P4's visit overlaps index, P5 has none
-            "values": [2, 2, 2, 5, 0, 0],  # Expected after-index visit counts
+            "persons": ["P1", "P2"],
+            "values": [2, 0],  # Expected after-index time range counts
         }
 
-        # Test 3: Count visits before index (should exclude overlapping periods)
+        # Test 3: Count time ranges before index (should exclude overlapping periods)  
+        # P1: p1 and p2 are entirely before index = 2 ranges
+        # P2: p1 is entirely before index = 1 range
         t3 = {
             "name": "count_visits_before_index",
-            "persons": [
-                "P1",
-                "P3",
-                "P2",
-                "P4",
-                "P5",
-                "P6",
-            ],  # Only P1 and P3 have visits before index
-            "values": [1, 2, 0, 0, 0, 0],  # Expected before-index visit counts
+            "persons": ["P1", "P2"],
+            "values": [2, 1],  # Expected before-index time range counts
         }
 
-        # Test 4: Count visits after index with max days set
+        # Test 4: Count time ranges after index with max 90 days constraint
+        # P1: p4 (starts day 47) is within 90 days, p5 (starts day 109) is beyond = 1 range
+        # P2: no ranges after index = 0 ranges
         t4 = {
             "name": "max_days_set",
-            "persons": ["P1", "P2", "P3", "P6", "P4", "P5"],
-            "values": [1, 1, 1, 5, 0, 0],
+            "persons": ["P1", "P2"],
+            "values": [1, 0],
         }
 
-        # Test 5: Count visits after index with min value filter (at least 2 visits)
+        # Test 5: Count time ranges after index with min 30 days constraint
+        # P1: p4 (starts day 47) and p5 (starts day 109) both >= 30 days after = 2 ranges
+        # P2: no ranges after index = 0 ranges
         t5 = {
             "name": "min_days_set",
-            "persons": [
-                "P1",
-                "P2",
-                "P3",
-                "P6",
-                "P4",
-                "P5",
-            ],  # All have at least 2 visits after index
-            "values": [2, 1, 2, 5, 0, 0],  # Expected after-index visit counts
+            "persons": ["P1", "P2"],
+            "values": [2, 0],  # Expected after-index time range counts with min constraint
         }
 
-        # Test 6: min days with value filter
+        # Test 6: min days with value filter (exactly 2 ranges)
+        # P1: has 2 ranges after min constraint, fits filter = 2 ranges
+        # P2: has 0 ranges, doesn't meet min filter = 0 ranges
         t6 = {
             "name": "min_days_set_with_value_filter",
-            "persons": [
-                "P1",
-                "P3",
-                "P2",
-                "P4",
-                "P5",
-                "P6",
-            ],  # All have at least 2 visits after index
-            "values": [2, 2, 0, 0, 0, 0],
+            "persons": ["P1"],
+            "values": [2],
         }
 
-        # Test 7: Count all visits (no time filtering)
+        # Test 7: Value filter (more than 2 total ranges)
+        # P1: has 5 ranges total, meets filter = 5 ranges  
+        # P2: has 1 range total, doesn't meet filter = 0 ranges
         t7 = {
             "name": "value_filter",
-            "persons": ["P1", "P3", "P6", "P2", "P4", "P5"],  # P5 has no visits
-            "values": [3, 4, 5, 0, 0, 0],  # Expected visit counts
+            "persons": ["P1"],
+            "values": [5],  # Expected visit counts
         }
 
         test_infos = [t1, t2, t3, t4, t5, t6, t7]
@@ -257,9 +185,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                max_days=LessThanOrEqualTo(
-                    52
-                ),  # lies directly after P6 end date and in the middle of P2 end date i.e. check that P6 remains while P2 events removed. additionally fully excludes P3 start date.
+                max_days=LessThanOrEqualTo(90)  # Up to 90 days after index (excludes p5)
             ),
         )
 
@@ -268,9 +194,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThanOrEqualTo(
-                    9
-                ),  # lies directly before P1 start. excludes P2  start date,
+                min_days=GreaterThanOrEqualTo(30)  # At least 30 days after index (includes p4, p5)
             ),
         )
 
@@ -279,12 +203,10 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThanOrEqualTo(
-                    9
-                ),  # lies directly before P1 start. excludes P2  start date,
+                min_days=GreaterThanOrEqualTo(30)  # At least 30 days after index
             ),
             value_filter=ValueFilter(
-                min_value=GreaterThan(1), max_value=LessThanOrEqualTo(2)
+                min_value=GreaterThanOrEqualTo(2), max_value=LessThanOrEqualTo(4)  # Exactly 2 ranges
             ),
         )
 
@@ -292,7 +214,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             name=t7["name"],
             domain="VISIT_OCCURRENCE",
             value_filter=ValueFilter(
-                min_value=GreaterThan(2),
+                min_value=GreaterThan(2),  # More than 2 total ranges
             ),
         )
 

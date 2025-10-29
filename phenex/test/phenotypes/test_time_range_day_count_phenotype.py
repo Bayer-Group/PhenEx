@@ -153,8 +153,8 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         # Total is 150 days, which is >= 100, so should return the result
         t7 = {
             "name": "count_days_min100",
-            "persons": ["P1", "P2"],
-            "values": [150, 0],
+            "persons": ["P1"],
+            "values": [150],
         }
 
         # Test 8: Count days before index with min constraint (at least 30 days before)
