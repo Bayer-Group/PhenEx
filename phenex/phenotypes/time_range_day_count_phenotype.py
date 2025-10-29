@@ -143,7 +143,9 @@ class TimeRangeDayCountPhenotype(Phenotype):
         # Select only the required phenotype columns
         result_table = select_phenotype_columns(result_table)
 
-        if self.value_filter is None: # only join on PERSON table if value filter is None
+        if (
+            self.value_filter is None
+        ):  # only join on PERSON table if value filter is None
             # if persons table exist, join to get the persons with 0 days
             if "PERSON" in tables.keys():
                 table_persons = tables["PERSON"].select("PERSON_ID").distinct()

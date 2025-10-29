@@ -12,7 +12,7 @@ from phenex.filters.value import *
 # Use the same time ranges as TimeRangeFilter tests for consistency
 INDEX = datetime.date(2020, 5, 15)
 p1_START = datetime.date(2020, 1, 1)
-p2_START = datetime.date(2020, 3, 1) 
+p2_START = datetime.date(2020, 3, 1)
 p3_START = datetime.date(2020, 5, 1)
 p4_START = datetime.date(2020, 7, 1)
 p5_START = datetime.date(2020, 9, 1)
@@ -32,15 +32,15 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         """
         Create test data using the same time ranges as TimeRangeFilter tests.
         Each period is 30 days long.
-        
+
         Time ranges relative to INDEX (2020-05-15):
         p1: 2020-01-01 to 2020-01-30 (30 days) - 104 to 135 days BEFORE index
-        p2: 2020-03-01 to 2020-03-30 (30 days) - 45 to 76 days BEFORE index  
+        p2: 2020-03-01 to 2020-03-30 (30 days) - 45 to 76 days BEFORE index
         p3: 2020-05-01 to 2020-05-30 (30 days) - 14 days BEFORE to 15 days AFTER index (overlaps)
         p4: 2020-07-01 to 2020-07-30 (30 days) - 47 to 76 days AFTER index
         p5: 2020-09-01 to 2020-09-30 (30 days) - 109 to 138 days AFTER index
         """
-        
+
         # Create visit occurrence data - single person with 5 time ranges
         visit_data = [
             {
@@ -49,7 +49,7 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
                 "END_DATE": p1_END,
             },
             {
-                "PERSON_ID": "P1", 
+                "PERSON_ID": "P1",
                 "START_DATE": p2_START,
                 "END_DATE": p2_END,
             },
@@ -74,17 +74,19 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
                 "END_DATE": p1_END,
             },
         ]
-        
+
         df_visit_occurrence = pd.DataFrame(visit_data)
-        
+
         # Add INDEX_DATE column
         all_persons = ["P1", "P2"]
         df_index = pd.DataFrame(
             {"PERSON_ID": all_persons, "INDEX_DATE": [INDEX] * len(all_persons)}
         )
-        
-        df_visit_occurrence = df_visit_occurrence.merge(df_index, on="PERSON_ID", how="right")
-        
+
+        df_visit_occurrence = df_visit_occurrence.merge(
+            df_index, on="PERSON_ID", how="right"
+        )
+
         input_info_visit_occurrence = {
             "name": "VISIT_OCCURRENCE",
             "df": df_visit_occurrence,
@@ -109,7 +111,7 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             "values": [150, 30],
         }
 
-        # Test 2: Count days before index 
+        # Test 2: Count days before index
         # Should count p1 (30 days) + p2 (30 days) + part of p3 (14 days before index) = 74 days
         t2 = {
             "name": "count_days_before_index",
@@ -189,7 +191,7 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThanOrEqualTo(30)  # At least 30 days after index
+                min_days=GreaterThanOrEqualTo(30),  # At least 30 days after index
             ),
         )
 
@@ -197,8 +199,8 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             name=t5["name"],
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
-                when="after", 
-                max_days=LessThanOrEqualTo(90)  # Up to 90 days after index
+                when="after",
+                max_days=LessThanOrEqualTo(90),  # Up to 90 days after index
             ),
         )
 
@@ -208,7 +210,7 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
                 min_days=GreaterThanOrEqualTo(30),  # At least 30 days after
-                max_days=LessThanOrEqualTo(90)      # Up to 90 days after
+                max_days=LessThanOrEqualTo(90),  # Up to 90 days after
             ),
         )
 
@@ -225,7 +227,7 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="before",
-                min_days=GreaterThanOrEqualTo(30)  # At least 30 days before index
+                min_days=GreaterThanOrEqualTo(30),  # At least 30 days before index
             ),
         )
 
@@ -242,5 +244,3 @@ if __name__ == "__main__":
     test_time_range_day_count_phenotypes()
     name_space = "trdcpt"
     test_values = True
-
-

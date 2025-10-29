@@ -18,10 +18,10 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         """
         Create test data using the same time ranges as TimeRangeFilter tests.
         Each period is 30 days long.
-        
+
         Time ranges relative to INDEX (2020-05-15):
         p1: 2020-01-01 to 2020-01-30 (30 days) - 104 to 135 days BEFORE index
-        p2: 2020-03-01 to 2020-03-30 (30 days) - 45 to 76 days BEFORE index  
+        p2: 2020-03-01 to 2020-03-30 (30 days) - 45 to 76 days BEFORE index
         p3: 2020-05-01 to 2020-05-30 (30 days) - 14 days BEFORE to 15 days AFTER index (overlaps)
         p4: 2020-07-01 to 2020-07-30 (30 days) - 47 to 76 days AFTER index
         p5: 2020-09-01 to 2020-09-30 (30 days) - 109 to 138 days AFTER index
@@ -29,17 +29,17 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         # Use the same time constants as day count test
         INDEX = datetime.date(2020, 5, 15)
         p1_START = datetime.date(2020, 1, 1)
-        p2_START = datetime.date(2020, 3, 1) 
+        p2_START = datetime.date(2020, 3, 1)
         p3_START = datetime.date(2020, 5, 1)
         p4_START = datetime.date(2020, 7, 1)
         p5_START = datetime.date(2020, 9, 1)
-        
+
         p1_END = datetime.date(2020, 1, 30)
         p2_END = datetime.date(2020, 3, 30)
         p3_END = datetime.date(2020, 5, 30)
         p4_END = datetime.date(2020, 7, 30)
         p5_END = datetime.date(2020, 9, 30)
-        
+
         # Create visit occurrence data - P1 with 5 time ranges, P2 with 1 time range before index
         visit_data = [
             {
@@ -48,7 +48,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
                 "END_DATE": p1_END,
             },
             {
-                "PERSON_ID": "P1", 
+                "PERSON_ID": "P1",
                 "START_DATE": p2_START,
                 "END_DATE": p2_END,
             },
@@ -73,7 +73,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
                 "END_DATE": p1_END,
             },
         ]
-        
+
         df_visit_occurrence = pd.DataFrame(visit_data)
 
         # Add INDEX_DATE column for all persons
@@ -82,7 +82,9 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             {"PERSON_ID": all_persons, "INDEX_DATE": [INDEX] * len(all_persons)}
         )
 
-        df_visit_occurrence = df_visit_occurrence.merge(df_index, on="PERSON_ID", how="right")
+        df_visit_occurrence = df_visit_occurrence.merge(
+            df_index, on="PERSON_ID", how="right"
+        )
         input_info_visit_occurrence = {
             "name": "VISIT_OCCURRENCE",
             "df": df_visit_occurrence,
@@ -99,7 +101,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         return [input_info_visit_occurrence, input_info_person]
 
     def define_phenotype_tests(self):
-        # Test 1: Count all time ranges (no time filtering) 
+        # Test 1: Count all time ranges (no time filtering)
         # P1 has 5 ranges, P2 has 1 range
         t1 = {
             "name": "count_all_visits",
@@ -116,7 +118,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             "values": [2, 0],  # Expected after-index time range counts
         }
 
-        # Test 3: Count time ranges before index (should exclude overlapping periods)  
+        # Test 3: Count time ranges before index (should exclude overlapping periods)
         # P1: p1 and p2 are entirely before index = 2 ranges
         # P2: p1 is entirely before index = 1 range
         t3 = {
@@ -140,7 +142,10 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         t5 = {
             "name": "min_days_set",
             "persons": ["P1", "P2"],
-            "values": [2, 0],  # Expected after-index time range counts with min constraint
+            "values": [
+                2,
+                0,
+            ],  # Expected after-index time range counts with min constraint
         }
 
         # Test 6: min days with value filter (exactly 2 ranges)
@@ -153,7 +158,7 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         }
 
         # Test 7: Value filter (more than 2 total ranges)
-        # P1: has 5 ranges total, meets filter = 5 ranges  
+        # P1: has 5 ranges total, meets filter = 5 ranges
         # P2: has 1 range total, doesn't meet filter = 0 ranges
         t7 = {
             "name": "value_filter",
@@ -185,7 +190,9 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                max_days=LessThanOrEqualTo(90)  # Up to 90 days after index (excludes p5)
+                max_days=LessThanOrEqualTo(
+                    90
+                ),  # Up to 90 days after index (excludes p5)
             ),
         )
 
@@ -194,7 +201,9 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThanOrEqualTo(30)  # At least 30 days after index (includes p4, p5)
+                min_days=GreaterThanOrEqualTo(
+                    30
+                ),  # At least 30 days after index (includes p4, p5)
             ),
         )
 
@@ -203,10 +212,11 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=RelativeTimeRangeFilter(
                 when="after",
-                min_days=GreaterThanOrEqualTo(30)  # At least 30 days after index
+                min_days=GreaterThanOrEqualTo(30),  # At least 30 days after index
             ),
             value_filter=ValueFilter(
-                min_value=GreaterThanOrEqualTo(2), max_value=LessThanOrEqualTo(4)  # Exactly 2 ranges
+                min_value=GreaterThanOrEqualTo(2),
+                max_value=LessThanOrEqualTo(4),  # Exactly 2 ranges
             ),
         )
 
