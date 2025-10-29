@@ -28,6 +28,7 @@
 
 .tableContainer {
   width: 100%;
+  min-height: 100px;
   height: fit-content;
   max-height: 400px; /* Maximum height before scrolling */
   overflow-y: auto; /* Allow vertical scrolling when content exceeds max-height */

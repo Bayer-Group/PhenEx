@@ -42,10 +42,11 @@ interface CohortTableProps {
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
   hideScrollbars?: boolean;
+  domLayout?: 'normal' | 'autoHeight' | 'print';
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, domLayout = 'normal' }, ref) => {
     const myTheme = themeQuartz.withParams({
       accentColor: '#DDDDDD',
       borderColor: 'var(--line-color-grid)',
@@ -359,6 +360,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             theme={myTheme}
             onGridReady={onGridReady}
             columnDefs={data.columns.length > 0 ? data.columns : []}
+            domLayout={domLayout}
             defaultColDef={{
               sortable: true,
               filter: true,

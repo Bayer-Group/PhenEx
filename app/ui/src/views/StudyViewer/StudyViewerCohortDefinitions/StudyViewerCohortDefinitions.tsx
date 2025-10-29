@@ -63,6 +63,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
                   data={cohortDef.table_data}
                   onCellValueChanged={() => {}}
                   currentlyViewing="cohort-definitions"
+                  domLayout="autoHeight"
                 />
               ) : (
                 <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
