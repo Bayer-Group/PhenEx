@@ -32,7 +32,6 @@ nav:
               - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
               - StackableRegimen: api/phenotypes/factory/stackable_regimen.md
               - one_inpatient_two_outpatient: api/phenotypes/factory/one_inpatient_two_outpatient.md
-
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
