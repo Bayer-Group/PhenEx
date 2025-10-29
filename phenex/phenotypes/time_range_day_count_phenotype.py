@@ -1,11 +1,15 @@
 from typing import Union, List, Optional, Dict
 from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
+from phenex.filters import (
+    ValueFilter,
+    DateFilter,
+    RelativeTimeRangeFilter,
+    TimeRangeFilter,
+)
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import (
     select_phenotype_columns,
-    attach_anchor_and_get_reference_date,
 )
 from ibis.expr.types.relations import Table
 from ibis import _
@@ -14,9 +18,7 @@ import ibis
 
 class TimeRangeDayCountPhenotype(Phenotype):
     """
-    TimeRangeDayCountPhenotype works with time range tables i.e. the input table must have a START_DATE and END_DATE column (in addition to PERSON_ID). It counts the total number of days within all time ranges for each person, either total or within a specified date range (relative or absolute). If no relative_time_range defined, it returns the total number of days across all time periods per person. If relative_time_range is defined, it counts the number of days before or after (depending on when keyword argument of relative_time_range), INCLUDING the time period that contains the anchor date.
-
-    If min_days or max_days of the relative_time_range are defined, the entire time period must be included in the relative time range i.e. if before, the start date of all time periods must be contained within the time range.
+    TimeRangeDayCountPhenotype works with time range tables i.e. the input table must have a START_DATE and END_DATE column (in addition to PERSON_ID). It counts the **total number of days** within time ranges for each person, either total or within a specified date range (relative or absolute (TODO)). If no relative_time_range is defined, it returns the total number of days across all time periods per person. If relative_time_range is defined, it counts the number of days before or after (depending on when keyword argument of relative_time_range), INCLUDING the time period that contains the anchor date.
 
     This can be used :
     - given an admission discharge table, to count the total number of days hospitalized e.g. in the post index period
@@ -108,16 +110,28 @@ class TimeRangeDayCountPhenotype(Phenotype):
 
         # Apply time filtering first if we have relative time ranges
         if self.relative_time_range is not None:
-            table = self._perform_time_filtering(table)
+            time_filter = TimeRangeFilter(
+                relative_time_range=self.relative_time_range,
+                include_clipped_periods=True,
+                clip_periods=True,
+            )
+            table = time_filter.filter(table)
 
         # Calculate days for each time range and sum by person
         # Each row represents a distinct time range (START_DATE, END_DATE combination)
         # Calculate the number of days in each time range (END_DATE - START_DATE + 1)
-        day_count_table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
+        day_count_table = table.select(
+            ["PERSON_ID", "START_DATE", "END_DATE"]
+        ).distinct()
         day_count_table = day_count_table.mutate(
-            DAYS_IN_RANGE=day_count_table.END_DATE.delta(day_count_table.START_DATE, "day") + 1
+            DAYS_IN_RANGE=day_count_table.END_DATE.delta(
+                day_count_table.START_DATE, "day"
+            )
+            + 1
         )
-        day_count_table = day_count_table.group_by("PERSON_ID").aggregate(VALUE=_.DAYS_IN_RANGE.sum())
+        day_count_table = day_count_table.group_by("PERSON_ID").aggregate(
+            VALUE=_.DAYS_IN_RANGE.sum()
+        )
 
         # Apply value filtering if specified
         if self.value_filter is not None:
@@ -140,64 +154,3 @@ class TimeRangeDayCountPhenotype(Phenotype):
             # fill null VALUES with 0 for persons with no time ranges
             result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
         return self._perform_final_processing(result_table)
-
-    def _perform_time_filtering(self, table: Table) -> Table:
-        """
-        Apply relative time range filtering to the table. This filters time ranges based on their relationship to anchor dates.
-        Unlike TimeRangeCountPhenotype, this INCLUDES time periods that contain the anchor date.
-        """
-        for rtr in self.relative_time_range:
-            # Attach anchor phenotype data to get reference dates
-            table, reference_column = attach_anchor_and_get_reference_date(
-                table, rtr.anchor_phenotype
-            )
-
-            # Filter time ranges based on their relationship to the anchor date
-            # INCLUDING time periods that contain the anchor date (unlike TimeRangeCountPhenotype)
-            if rtr.when == "before":
-                # For "before", we want time ranges that END before or on the anchor date
-                # INCLUDING the time period that contains the anchor date
-                table = table.filter(table.END_DATE <= reference_column)
-            elif rtr.when == "after":
-                # For "after", we want time ranges that START on or after the anchor date
-                # INCLUDING the time period that contains the anchor date
-                table = table.filter(table.START_DATE >= reference_column)
-
-            # Apply additional day-based filtering if specified
-            if rtr.min_days is not None:
-                # Calculate days between anchor and time range
-                # The entire time period must be included in the relative time range
-                if rtr.when == "before":
-                    days_diff = reference_column.delta(table.END_DATE, "day")
-                elif rtr.when == "after":
-                    days_diff = table.START_DATE.delta(reference_column, "day")
-
-                table = table.mutate(DAYS_FROM_ANCHOR_MIN=days_diff)
-
-                # Apply value filter for days
-                value_filter = ValueFilter(
-                    min_value=rtr.min_days,
-                    max_value=None,
-                    column_name="DAYS_FROM_ANCHOR_MIN",
-                )
-                table = value_filter.filter(table)
-
-            # Apply additional day-based filtering if specified
-            if rtr.max_days is not None:
-                # Calculate days between anchor and time range
-                # The entire time period must be included in the relative time range
-                if rtr.when == "before":
-                    days_diff = reference_column.delta(table.START_DATE, "day")
-                elif rtr.when == "after":
-                    days_diff = table.END_DATE.delta(reference_column, "day")
-
-                table = table.mutate(DAYS_FROM_ANCHOR_MAX=days_diff)
-
-                # Apply value filter for days
-                value_filter = ValueFilter(
-                    min_value=None,
-                    max_value=rtr.max_days,
-                    column_name="DAYS_FROM_ANCHOR_MAX",
-                )
-                table = value_filter.filter(table)
-        return table

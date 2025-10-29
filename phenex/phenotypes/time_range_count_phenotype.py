@@ -1,11 +1,15 @@
 from typing import Union, List, Optional, Dict
 from datetime import date
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.filters import ValueFilter, DateFilter, RelativeTimeRangeFilter
+from phenex.filters import (
+    ValueFilter,
+    DateFilter,
+    RelativeTimeRangeFilter,
+    TimeRangeFilter,
+)
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import (
     select_phenotype_columns,
-    attach_anchor_and_get_reference_date,
 )
 from ibis.expr.types.relations import Table
 from ibis import _
@@ -108,7 +112,12 @@ class TimeRangeCountPhenotype(Phenotype):
 
         # Apply time filtering first if we have relative time ranges
         if self.relative_time_range is not None:
-            table = self._perform_time_filtering(table)
+            time_filter = TimeRangeFilter(
+                relative_time_range=self.relative_time_range,
+                include_clipped_periods=False,  # Exclude periods that cross boundaries
+                clip_periods=False,
+            )
+            table = time_filter.filter(table)
 
         # Count distinct time ranges per person
         # Each row represents a distinct time range (START_DATE, END_DATE combination)
@@ -136,61 +145,3 @@ class TimeRangeCountPhenotype(Phenotype):
             # fill null VALUES with 0 for persons with no time ranges
             result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
         return self._perform_final_processing(result_table)
-
-    def _perform_time_filtering(self, table: Table) -> Table:
-        """
-        Apply relative time range filtering to the table. This filters time ranges based on their relationship to anchor dates.
-        """
-        for rtr in self.relative_time_range:
-            # Attach anchor phenotype data to get reference dates
-            table, reference_column = attach_anchor_and_get_reference_date(
-                table, rtr.anchor_phenotype
-            )
-
-            # Filter time ranges based on their relationship to the anchor date
-            if rtr.when == "before":
-                # For "before", we want time ranges that END before or on the anchor date
-                # NOT including the time period that contains the anchor date
-                table = table.filter(table.END_DATE < reference_column)
-            elif rtr.when == "after":
-                # For "after", we want time ranges that START after the anchor date
-                # NOT including the time period that contains the anchor date
-                table = table.filter(table.START_DATE > reference_column)
-
-            # Apply additional day-based filtering if specified
-            if rtr.min_days is not None:
-                # Calculate days between anchor and time range
-                # The entire time period must be included in the relative time range!! if wanted to allow time ranges to continue within period, then would have to remove this.
-                if rtr.when == "before":
-                    days_diff = reference_column.delta(table.END_DATE, "day")
-                elif rtr.when == "after":
-                    days_diff = table.START_DATE.delta(reference_column, "day")
-
-                table = table.mutate(DAYS_FROM_ANCHOR_MIN=days_diff)
-
-                # Apply value filter for days
-                value_filter = ValueFilter(
-                    min_value=rtr.min_days,
-                    max_value=None,
-                    column_name="DAYS_FROM_ANCHOR_MIN",
-                )
-                table = value_filter.filter(table)
-            # Apply additional day-based filtering if specified
-            if rtr.max_days is not None:
-                # Calculate days between anchor and time range
-                # The entire time period must be included in the relative time range!! if wanted to allow time ranges to continue within period, then would have to remove this.
-                if rtr.when == "before":
-                    days_diff = reference_column.delta(table.START_DATE, "day")
-                elif rtr.when == "after":
-                    days_diff = table.END_DATE.delta(reference_column, "day")
-
-                table = table.mutate(DAYS_FROM_ANCHOR_MAX=days_diff)
-
-                # Apply value filter for days
-                value_filter = ValueFilter(
-                    min_value=None,
-                    max_value=rtr.max_days,
-                    column_name="DAYS_FROM_ANCHOR_MAX",
-                )
-                table = value_filter.filter(table)
-        return table
