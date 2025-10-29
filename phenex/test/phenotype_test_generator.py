@@ -133,7 +133,9 @@ class PhenotypeTestGenerator:
             # data may have to be in a different format. It's best to keep your
             # seed data dates in pandas datetime format and let the
             # TestGenerator format them into strings.
-            df.sort_values(by='PERSON_ID').to_csv(path, index=False, date_format=self.date_format)
+            df.sort_values(by="PERSON_ID").to_csv(
+                path, index=False, date_format=self.date_format
+            )
 
             result_table = test_info["phenotype"].execute(self.domains)
 
@@ -145,7 +147,7 @@ class PhenotypeTestGenerator:
                     f"Running test: {test_info['name']}\nExpected output:\n{df}\nActualOutput:\n{result_table}\n\n"
                 )
             path = os.path.join(self.dirpaths["result"], filename)
-            result_table.to_pandas().sort_values(by='PERSON_ID').to_csv(
+            result_table.to_pandas().sort_values(by="PERSON_ID").to_csv(
                 path, index=False, date_format=self.date_format
             )
 
