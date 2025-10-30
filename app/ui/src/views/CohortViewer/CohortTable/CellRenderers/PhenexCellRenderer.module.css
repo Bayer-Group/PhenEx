@@ -6,7 +6,7 @@
 }
 
 :global(.ag-cell:hover) {
-  background-color: var(--color-accent-hover);
+  /* background-color: var(--color-accent-hover); */
 }
 
 :global(.ag-header-cell:hover) {
@@ -14,7 +14,7 @@
 }
 
 :global(.ag-header-cell) {
-  border-bottom: var(--border);
+  /* border-bottom: var(--border); */
 }
 
 :global(.ag-cell-focus),

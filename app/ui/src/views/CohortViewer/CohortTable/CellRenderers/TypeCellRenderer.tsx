@@ -37,7 +37,7 @@ const TypeCellRenderer = (props: any) => {
 
   const renderCount = () => {
     return (
-      props.data.count && (
+      typeof props.data.count !== 'undefined' && (
         <div className={`${styles.countdiv} ${colorClassText}`}>{props.data.count}</div>
       )
     );

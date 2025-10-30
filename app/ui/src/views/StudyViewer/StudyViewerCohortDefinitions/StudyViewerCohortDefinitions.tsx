@@ -64,6 +64,32 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
                   onCellValueChanged={() => {}}
                   currentlyViewing="cohort-definitions"
                   domLayout="autoHeight"
+                  headerHeight={0}
+                  tableTheme={{
+                    accentColor: 'transparent',
+                    borderColor: 'transparent',
+                    rowHoverColor: 'transparent',
+                    wrapperBorder: false,
+                    headerRowBorder: false,
+
+                    // browserColorScheme: 'light',
+                    columnBorder: false,
+                    headerFontSize: 14,
+                    headerFontWeight: 'bold',
+                    // headerRowBorder: true,
+                    cellHorizontalPadding: 10,
+                    headerBackgroundColor: 'transparent',
+                    rowBorder: false,
+                    spacing: 8,
+                    backgroundColor: 'transparent',
+                  }}
+                  tableGridOptions={{
+                      // turns OFF row hover, it's on by default
+                      suppressRowHoverHighlight: true,
+                      // turns ON column hover, it's off by default
+                      columnHoverHighlight: false,
+                      // other grid options ...
+                  }}
                 />
               ) : (
                 <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>

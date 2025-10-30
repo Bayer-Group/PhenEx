@@ -43,12 +43,16 @@ interface CohortTableProps {
   onRowDragEnd?: (newRowData: any[]) => void;
   hideScrollbars?: boolean;
   domLayout?: 'normal' | 'autoHeight' | 'print';
+  headerHeight?: number;
+  tableTheme?: any;
+  tableGridOptions?: any;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, domLayout = 'normal' }, ref) => {
-    const myTheme = themeQuartz.withParams({
-      accentColor: '#DDDDDD',
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
+
+    const default_theme = {
+      accentColor: 'var(--color_accent_orange)',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: true,
@@ -61,7 +65,19 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       spacing: 8,
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
-    });
+    };
+    const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);
+    
+    const default_options = {
+          // turns OFF row hover, it's on by default
+          suppressRowHoverHighlight: false,
+          // turns ON column hover, it's off by default
+          columnHoverHighlight: true,
+
+          // other grid options ...
+      }
+    const gridOptions = tableGridOptions ? tableGridOptions : default_options;
+
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedNodesBeforeEdit = useRef<any[]>([]);
 
@@ -359,8 +375,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             rowData={data.rows}
             theme={myTheme}
             onGridReady={onGridReady}
+            headerHeight={headerHeight}
             columnDefs={data.columns.length > 0 ? data.columns : []}
             domLayout={domLayout}
+            gridOptions = {gridOptions}
             defaultColDef={{
               sortable: true,
               filter: true,

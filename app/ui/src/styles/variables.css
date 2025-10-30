@@ -59,8 +59,8 @@
   --color-accent: var(--color-accent-bright); /*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
-  --box_shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --box_shadow_hover: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --box_shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --box_shadow_hover: 0 4px 8px rgba(0, 0, 0, 0.05);
 
   /* --color-accent:  var(--phenex-red); */
 

@@ -12,17 +12,24 @@
   min-width: 350px;
   background-color: var(--background-color);
   border: 1px solid var(--line-color);
-  border-radius: 8px;
+  border-radius: 15px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: fit-content; /* Allow height to be based on content */
+  box-shadow: var(--box_shadow);
+  transition: all .3s ease;
+}
+
+.cohortBox:hover{
+  background-color: white;
+  box-shadow: var(--box_shadow_hover);
+
 }
 
 .cohortHeader {
   padding: 1rem;
   background-color: var(--header-background);
-  border-bottom: 1px solid var(--line-color);
   font-weight: bold;
 }
 
