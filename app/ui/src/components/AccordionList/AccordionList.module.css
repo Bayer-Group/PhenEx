@@ -1,0 +1,186 @@
+:root {
+  --accordion-header-height: 40px;
+  --accordion-indent: 20px;
+  --accordion-border-radius: 6px;
+  --accordion-transition: all 0.3s ease-in-out;
+  --accordion-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.accordionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.accordionItem {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: var(--accordion-border-radius);
+  background-color: var(--background-color, #ffffff);
+  box-shadow: var(--accordion-shadow);
+  overflow: hidden;
+  transition: var(--accordion-transition);
+}
+
+.accordionItem:hover {
+  border-color: var(--color-accent-bright, #007acc);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  min-height: var(--accordion-header-height);
+  background-color: var(--header-background, #f8f9fa);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--accordion-transition);
+  position: relative;
+}
+
+.accordionHeader:hover {
+  background-color: var(--header-hover-background, #e9ecef);
+}
+
+.accordionHeader.selected {
+  background-color: var(--color-accent-bright, #007acc);
+  color: white;
+}
+
+.accordionHeader.selected:hover {
+  background-color: var(--color-accent-dark, #005a9e);
+}
+
+.accordionContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background-color: var(--content-background, #ffffff);
+  transition: var(--accordion-transition);
+  overflow: hidden;
+}
+
+.accordionContent.collapsed {
+  max-height: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.accordionContent.expanded {
+  max-height: 1000px; /* Large enough for content */
+  opacity: 1;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+}
+
+.headerText {
+  font-size: 16px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expandIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--color-accent-bright, #007acc);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.expandIcon.expanded {
+  transform: rotate(90deg);
+}
+
+.childrenContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background-color: var(--children-background, #f8f9fa);
+}
+
+.childItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-left: var(--accordion-indent);
+  border-radius: 4px;
+  background-color: var(--child-background, #ffffff);
+  border: 1px solid var(--child-border, #e9ecef);
+  cursor: pointer;
+  transition: var(--accordion-transition);
+  font-size: 14px;
+}
+
+.childItem:hover {
+  background-color: var(--child-hover-background, #e9ecef);
+  border-color: var(--color-accent-bright, #007acc);
+}
+
+.childItem.selected {
+  background-color: var(--color-accent-bright, #007acc);
+  color: white;
+  border-color: var(--color-accent-dark, #005a9e);
+}
+
+.actionButton {
+  padding: 4px 8px;
+  font-size: 12px;
+  background-color: var(--color-accent-bright, #007acc);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--accordion-transition);
+  opacity: 0.7;
+}
+
+.actionButton:hover {
+  background-color: var(--color-accent-dark, #005a9e);
+  opacity: 1;
+}
+
+.accordionItem:hover .actionButton {
+  opacity: 1;
+}
+
+/* Nested accordion styles */
+.nestedAccordion {
+  margin: 0;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+}
+
+.nestedAccordion .accordionHeader {
+  background-color: var(--nested-header-background, #f1f3f4);
+  padding-left: calc(var(--accordion-indent) + 16px);
+}
+
+.nestedAccordion .accordionHeader:hover {
+  background-color: var(--nested-header-hover, #e8eaed);
+}

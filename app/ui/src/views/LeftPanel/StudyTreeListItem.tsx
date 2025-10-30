@@ -33,8 +33,14 @@ export const StudyTreeRenderer: React.FC<TreeItemRendererProps> = ({
 
     // Then handle navigation if there's a viewInfo
     if (studyNode.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(studyNode.viewInfo);
+      if (node.children.length > 1) {
+        const mainViewService = MainViewService.getInstance();
+        mainViewService.navigateTo(studyNode.viewInfo);
+      } else {
+        const mainViewService = MainViewService.getInstance();
+        mainViewService.navigateTo(studyNode.viewInfo);
+
+      }
     }
   };
 
