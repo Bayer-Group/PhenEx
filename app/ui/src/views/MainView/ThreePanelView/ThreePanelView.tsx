@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styles from './ThreePanelView.module.css';
+import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -26,6 +27,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   const [wasDragging, setWasDragging] = useState(false);
 
   const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (divider: 'left' | 'right') => (e: React.MouseEvent) => {
     // Check if the click target is a collapse button
@@ -180,11 +182,26 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       }
     >
       <div
+        ref={leftPanelRef}
         className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}
       >
         {children[0]}
         {renderLeftDivider()}
       </div>
+      
+      {/* Width-adjusted portal that overlays the left panel and casts shadow */}
+      <WidthAdjustedPortal
+        leftPanelRef={leftPanelRef}
+        width={leftWidth}
+        isCollapsed={isLeftCollapsed}
+        allowResize={!isLeftCollapsed}
+        onWidthChange={setLeftWidth}
+        minWidth={minSizeLeft}
+        debug={true}
+      >
+        {/* The portal content is invisible but casts the shadow */}
+        <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
+      </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
         {renderLeftCollapseButton()}
