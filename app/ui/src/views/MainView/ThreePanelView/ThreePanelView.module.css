@@ -252,3 +252,14 @@
 [data-dragging='true'] .rightPanel {
   transition: none !important;
 }
+
+/* Hover trigger area for animated portal */
+.hoverTrigger {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: transparent;
+  z-index: 50;
+  cursor: pointer;
+}

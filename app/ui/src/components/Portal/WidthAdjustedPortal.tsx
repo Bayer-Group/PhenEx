@@ -10,6 +10,9 @@ interface WidthAdjustedPortalProps {
   allowResize: boolean; // Whether dragging is enabled
   onWidthChange: (newWidth: number) => void; // Callback to update the left panel width
   minWidth?: number;
+  isHoverAnimating?: boolean; // Whether to show portal during hover animation
+  onHoverEnter?: () => void; // Callback when portal is hovered
+  onHoverLeave?: () => void; // Callback when portal hover ends
   debug?: boolean;
 }
 
@@ -21,6 +24,9 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
   allowResize,
   onWidthChange,
   minWidth = 200,
+  isHoverAnimating = false,
+  onHoverEnter,
+  onHoverLeave,
   debug = false,
 }) => {
   const [container] = useState(() => document.createElement('div'));
@@ -51,7 +57,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
     let isMonitoring = false;
 
     const updatePosition = () => {
-      if (leftPanelRef.current && !isCollapsed) {
+      if (leftPanelRef.current && (!isCollapsed || isHoverAnimating)) {
         const rect = leftPanelRef.current.getBoundingClientRect();
         
         // Position the portal exactly over the left panel
@@ -60,6 +66,12 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
         container.style.width = `${width}px`;
         container.style.height = `${rect.height}px`;
         container.style.display = 'block';
+        
+        // Add animation classes based on state
+        const baseClass = styles.portalContainer;
+        const animationClass = isHoverAnimating ? ` ${styles.hoverAnimating}` : '';
+        const collapsedClass = isCollapsed && !isHoverAnimating ? ` ${styles.collapsed}` : '';
+        container.className = `${baseClass}${animationClass}${collapsedClass}`;
 
         if (debug) {
           const debugData = {
@@ -70,6 +82,9 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
               height: Math.round(rect.height),
             },
             portalWidth: width,
+            isCollapsed,
+            isHoverAnimating,
+            className: container.className,
             scroll: {
               x: Math.round(window.scrollX),
               y: Math.round(window.scrollY),
@@ -82,11 +97,11 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
           setDebugInfo(debugData);
           console.log('WidthAdjustedPortal:', debugData);
         }
-      } else if (isCollapsed) {
-        // Hide the portal when left panel is collapsed
+      } else if (isCollapsed && !isHoverAnimating) {
+        // Hide the portal when left panel is collapsed and not hover animating
         container.style.display = 'none';
         if (debug) {
-          setDebugInfo({ collapsed: true });
+          setDebugInfo({ collapsed: true, isHoverAnimating: false });
         }
       }
     };
@@ -193,7 +208,11 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
   }, [width, container]);
 
   const portalContent = (
-    <div className={`${styles.portalContent} ${isDragging ? styles.dragging : ''}`}>
+    <div 
+      className={`${styles.portalContent} ${isDragging ? styles.dragging : ''}`}
+      onMouseEnter={onHoverEnter}
+      onMouseLeave={onHoverLeave}
+    >
       {children}
       
       {/* Resize handle on the right edge */}

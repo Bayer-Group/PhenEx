@@ -28,6 +28,29 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
+  
+  // Hover animation state
+  const [isHoverAnimating, setIsHoverAnimating] = useState(false);
+  const HOVER_TRIGGER_WIDTH = 20; // pixels
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const handleHoverTriggerEnter = () => {
+    if (isLeftCollapsed && !isDragging) {
+      // Clear any pending leave timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setIsHoverAnimating(true);
+    }
+  };
+  
+  const handleHoverTriggerLeave = () => {
+    // Add a small delay to prevent flickering
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHoverAnimating(false);
+    }, 100);
+  };
 
   const handleMouseDown = (divider: 'left' | 'right') => (e: React.MouseEvent) => {
     // Check if the click target is a collapse button
@@ -194,9 +217,12 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         leftPanelRef={leftPanelRef}
         width={leftWidth}
         isCollapsed={isLeftCollapsed}
-        allowResize={!isLeftCollapsed}
+        allowResize={!isLeftCollapsed || isHoverAnimating}
         onWidthChange={setLeftWidth}
         minWidth={minSizeLeft}
+        isHoverAnimating={isHoverAnimating}
+        onHoverEnter={handleHoverTriggerEnter}
+        onHoverLeave={handleHoverTriggerLeave}
         debug={true}
       >
         {/* The actual left panel content now lives inside the portal */}
@@ -204,8 +230,17 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
+        {/* Hover trigger area for animating portal when collapsed */}
+        {isLeftCollapsed && (
+          <div 
+            className={styles.hoverTrigger}
+            style={{ width: `${HOVER_TRIGGER_WIDTH}px` }}
+            onMouseEnter={handleHoverTriggerEnter}
+            onMouseLeave={handleHoverTriggerLeave}
+          />
+        )}
+        
         {renderLeftCollapseButton()}
-
         {children[1]}
       </div>
 
