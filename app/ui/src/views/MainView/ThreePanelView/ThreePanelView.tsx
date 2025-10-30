@@ -223,7 +223,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         isHoverAnimating={isHoverAnimating}
         onHoverEnter={handleHoverTriggerEnter}
         onHoverLeave={handleHoverTriggerLeave}
-        debug={true}
+        debug={false}
       >
         {/* The actual left panel content now lives inside the portal */}
         {children[0]}

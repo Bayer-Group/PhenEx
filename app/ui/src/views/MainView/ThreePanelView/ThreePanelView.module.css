@@ -219,7 +219,7 @@
 
 .leftPanel {
   width: 100%;
-  background-color: red;/*var(--background-color);*/
+  background-color: var(--background-color);
 
   max-width: var(--initial-left-width);
   z-index: 10000;

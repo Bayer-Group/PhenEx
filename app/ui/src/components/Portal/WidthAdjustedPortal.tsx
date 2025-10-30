@@ -57,21 +57,21 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
     let isMonitoring = false;
 
     const updatePosition = () => {
-      if (leftPanelRef.current && (!isCollapsed || isHoverAnimating)) {
+      if (leftPanelRef.current) {
         const rect = leftPanelRef.current.getBoundingClientRect();
         
-        // Position the portal exactly over the left panel
+        // Always position and size the portal container
         container.style.left = `${rect.left + window.scrollX}px`;
         container.style.top = `${rect.top + window.scrollY}px`;
         container.style.width = `${width}px`;
         container.style.height = `${rect.height}px`;
         container.style.display = 'block';
         
-        // Add animation classes based on state
-        const baseClass = styles.portalContainer;
-        const animationClass = isHoverAnimating ? ` ${styles.hoverAnimating}` : '';
-        const collapsedClass = isCollapsed && !isHoverAnimating ? ` ${styles.collapsed}` : '';
-        container.className = `${baseClass}${animationClass}${collapsedClass}`;
+        // Set CSS classes for animation states
+        const classes = [styles.portalContainer];
+        if (isHoverAnimating) classes.push(styles.hoverAnimating);
+        if (isCollapsed) classes.push(styles.collapsed);
+        container.className = classes.join(' ');
 
         if (debug) {
           const debugData = {
@@ -97,11 +97,11 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
           setDebugInfo(debugData);
           console.log('WidthAdjustedPortal:', debugData);
         }
-      } else if (isCollapsed && !isHoverAnimating) {
-        // Hide the portal when left panel is collapsed and not hover animating
+      } else {
+        // No left panel ref available
         container.style.display = 'none';
         if (debug) {
-          setDebugInfo({ collapsed: true, isHoverAnimating: false });
+          setDebugInfo({ error: 'No left panel ref' });
         }
       }
     };
@@ -114,12 +114,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
       }
     };
 
-    const startMonitoring = () => {
-      if (!isMonitoring) {
-        isMonitoring = true;
-        continuousUpdate();
-      }
-    };
+
 
     const stopMonitoring = () => {
       isMonitoring = false;
