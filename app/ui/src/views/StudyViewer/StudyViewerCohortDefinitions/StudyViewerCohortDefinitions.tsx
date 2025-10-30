@@ -3,6 +3,7 @@ import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
+import { MainViewService, ViewType } from '@/views/MainView/MainView';
 
 interface StudyViewerCohortDefinitionsProps {
   studyDataService: StudyDataService;
@@ -41,6 +42,11 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       </div>
     );
   }
+  const clickedOnCohort = (cohortDef: CohortWithTableData) => {
+    console.log('Clicked on cohort:', cohortDef);
+        const mainViewService = MainViewService.getInstance();
+        mainViewService.navigateTo({viewType: ViewType.CohortDefinition, data: cohortDef.cohort});
+  };
 
   return (
     <div className={styles.cohortsContainer}>
@@ -50,7 +56,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         console.log(`Cohort ${index} columns:`, cohortDef.table_data.columns);
         
         return (
-          <div key={cohortDef.cohort.id || index} className={styles.cohortBox}>
+          <div key={cohortDef.cohort.id || index} className={styles.cohortBox} onClick={() => clickedOnCohort(cohortDef)}>
             <div className={styles.cohortHeader}>
               {cohortDef.cohort.name || 'Unnamed Cohort'}
               <div style={{ fontSize: '12px', color: '#666' }}>
