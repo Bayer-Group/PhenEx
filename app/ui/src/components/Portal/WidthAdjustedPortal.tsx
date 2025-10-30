@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import styles from './WidthAdjustedPortal.module.css';
 
 interface WidthAdjustedPortalProps {
   children: React.ReactNode;
@@ -30,18 +31,11 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
 
   useEffect(() => {
     // Set up the portal container to overlay the left panel
-    container.style.position = 'absolute';
-    container.style.zIndex = '10001'; // Just above the left panel (which has z-index: 10000)
-    container.style.pointerEvents = 'none'; // Allow clicks to pass through to the left panel
+    container.className = styles.portalContainer;
     container.style.width = `${width}px`;
     container.style.height = '100%';
     container.style.top = '0';
     container.style.left = '0';
-    container.style.overflow = 'hidden';
-    
-    // Add shadow casting
-    container.style.boxShadow = '10px 0 20px 0 red';
-    container.style.backgroundColor = 'transparent';
     
     document.body.appendChild(container);
 
@@ -134,7 +128,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
         setIsDragging(true);
         setDragStartX(e.clientX);
         setDragStartWidth(width);
-        container.style.cursor = 'col-resize';
+        container.className = `${styles.portalContainer} ${styles.dragging}`;
         e.preventDefault();
       }
     };
@@ -159,7 +153,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      container.style.cursor = 'default';
+      container.className = styles.portalContainer;
       stopMonitoring();
     };
 
@@ -199,58 +193,29 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
   }, [width, container]);
 
   const portalContent = (
-    <div 
-      style={{ 
-        pointerEvents: 'auto',
-        width: '100%',
-        height: '100%',
-        position: 'relative'
-      }}
-    >
+    <div className={`${styles.portalContent} ${isDragging ? styles.dragging : ''}`}>
       {children}
       
       {/* Resize handle on the right edge */}
       {allowResize && !isCollapsed && (
         <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: -5,
-            width: '10px',
-            height: '100%',
-            cursor: 'col-resize',
-            backgroundColor: isDragging ? 'rgba(0,123,255,0.3)' : 'transparent',
-            borderRight: isDragging ? '2px solid #007bff' : 'none',
-            zIndex: 10002,
-          }}
+          className={`${styles.resizeHandle} ${isDragging ? styles.dragging : ''}`}
         />
       )}
       
       {/* Debug display */}
       {debug && debugInfo && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50px',
-            right: '10px',
-            background: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '10px',
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            borderRadius: '4px',
-            zIndex: 10000,
-            maxWidth: '300px',
-          }}
-        >
-          <div><strong>WidthAdjustedPortal Debug:</strong></div>
+        <div className={styles.debugPanel}>
+          <div className={styles.debugTitle}>WidthAdjustedPortal Debug:</div>
           {debugInfo.collapsed ? (
-            <div>Status: COLLAPSED</div>
+            <div className={`${styles.debugItem} ${styles.debugCollapsed}`}>
+              Status: COLLAPSED
+            </div>
           ) : (
             <>
-              <div>Portal Width: {debugInfo.portalWidth}px</div>
-              <div>Left Panel: {debugInfo.leftPanelRect.width}x{debugInfo.leftPanelRect.height}</div>
-              <div>Position: {debugInfo.portalPosition.left}, {debugInfo.portalPosition.top}</div>
+              <div className={styles.debugItem}>Portal Width: {debugInfo.portalWidth}px</div>
+              <div className={styles.debugItem}>Left Panel: {debugInfo.leftPanelRect.width}x{debugInfo.leftPanelRect.height}</div>
+              <div className={styles.debugItem}>Position: {debugInfo.portalPosition.left}, {debugInfo.portalPosition.top}</div>
             </>
           )}
         </div>

@@ -193,7 +193,7 @@
   position: absolute;
   margin-left: 10px;
   transition: all 0.2s ease;
-  border-left: 1px solid var(--line-color);
+  /* border-left: 1px solid var(--line-color); */
   /* background-color: red; */
 }
 
@@ -219,7 +219,8 @@
 
 .leftPanel {
   width: 100%;
-  background-color: blue !important;
+  background-color: red;/*var(--background-color);*/
+
   max-width: var(--initial-left-width);
   z-index: 10000;
   /* padding-right:10px; */

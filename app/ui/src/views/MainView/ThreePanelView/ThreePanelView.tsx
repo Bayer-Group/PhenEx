@@ -185,11 +185,11 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         ref={leftPanelRef}
         className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}
       >
-        {children[0]}
+        {/* Left panel is now just a placeholder - content moved to portal */}
         {renderLeftDivider()}
       </div>
       
-      {/* Width-adjusted portal that overlays the left panel and casts shadow */}
+      {/* Width-adjusted portal that contains the actual left panel content */}
       <WidthAdjustedPortal
         leftPanelRef={leftPanelRef}
         width={leftWidth}
@@ -199,8 +199,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         minWidth={minSizeLeft}
         debug={true}
       >
-        {/* The portal content is invisible but casts the shadow */}
-        <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
+        {/* The actual left panel content now lives inside the portal */}
+        {children[0]}
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
