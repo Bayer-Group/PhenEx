@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './AccordionList.module.css';
 import { TreeNode } from '../TreeList/TreeListItem';
+import { HierarchicalLeftPanelDataService } from '../../views/LeftPanel/HierarchicalLeftPanelDataService';
 
 export interface AccordionItemRendererProps {
   node: AccordionNode;
@@ -37,11 +38,10 @@ export class AccordionListItem extends React.Component<AccordionListItemProps> {
 
   handleSelect = () => {
     // Use the data service for selection if available
-    const HierarchicalLeftPanelDataService = require('../../views/LeftPanel/HierarchicalLeftPanelDataService').HierarchicalLeftPanelDataService;
-    const dataService = HierarchicalLeftPanelDataService.getInstance();
-    dataService.selectNode(this.props.node.id);
+    // const dataService = HierarchicalLeftPanelDataService.getInstance();
+    // dataService.selectNode(this.props.node.id);
     
-    this.props.onSelect?.(this.props.node.id);
+    // this.props.onSelect?.(this.props.node.id);
   };
 
   handleHeaderClick = (e: React.MouseEvent) => {
@@ -90,7 +90,7 @@ export class AccordionListItem extends React.Component<AccordionListItemProps> {
                 ›
               </div>
             )}
-            <div className={styles.headerText}>{node.displayName}</div>
+            <div className={`${styles.headerText} ${styles.level0}`}>{node.displayName}</div>
           </div>
           
           <div className={styles.headerActions}>

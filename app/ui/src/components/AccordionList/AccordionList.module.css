@@ -1,69 +1,94 @@
 :root {
   --accordion-header-height: 40px;
   --accordion-indent: 20px;
-  --accordion-border-radius: 6px;
-  --accordion-transition: all 0.3s ease-in-out;
+  --accordion-border-radius: 15px;
+  --accordion-transition: all 0.2s ease-in-out;
   --accordion-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .accordionList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   width: 100%;
   padding: 8px;
   box-sizing: border-box;
+  gap:0px;
 }
 
 .accordionItem {
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 1px solid var(--border-color, #e0e0e0);
+  /* border: 1px solid var(--border-color, #e0e0e0); */
   border-radius: var(--accordion-border-radius);
-  background-color: var(--background-color, #ffffff);
-  box-shadow: var(--accordion-shadow);
+  background-color: transparent;
+  /* box-shadow: var(--accordion-shadow); */
   overflow: hidden;
   transition: var(--accordion-transition);
 }
 
-.accordionItem:hover {
-  border-color: var(--color-accent-bright, #007acc);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.accordionItemToDisplay {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--accordion-border-radius);
+  background-color: transparent;
+  overflow: hidden;
+  transition: var(--accordion-transition);
+  margin-bottom: 0px;
+
+}
+
+.accordionItemToDisplay:selected {
+  border-color: var(--color-accent);
+  margin-bottom: 0px;
+
+}
+
+.accordionItemToDisplay:hover {
+  border-color: var(--color-accent);
+  margin-bottom: 0px;
+
+}
+
+.accordionItemToDisplay.expanded{
+  box-shadow: var(--accordion-shadow);
+  border: 1px solid var(--border-color, #e0e0e0);
+  margin-bottom: 20px;
+
 }
 
 .accordionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 0px 16px;
   min-height: var(--accordion-header-height);
-  background-color: var(--header-background, #f8f9fa);
-  border-bottom: 1px solid transparent;
+  background-color: transparent;
   cursor: pointer;
   user-select: none;
   transition: var(--accordion-transition);
   position: relative;
 }
 
-.accordionHeader:hover {
-  background-color: var(--header-hover-background, #e9ecef);
-}
-
-.accordionHeader.selected {
-  background-color: var(--color-accent-bright, #007acc);
-  color: white;
-}
-
-.accordionHeader.selected:hover {
-  background-color: var(--color-accent-dark, #005a9e);
+.accordionHeader.expanded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0px 16px;
+  min-height: var(--accordion-header-height);
+  background-color: transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--accordion-transition);
+  position: relative;
 }
 
 .accordionContent {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background-color: var(--content-background, #ffffff);
   transition: var(--accordion-transition);
   overflow: hidden;
 }
@@ -77,7 +102,7 @@
 .accordionContent.expanded {
   max-height: 1000px; /* Large enough for content */
   opacity: 1;
-  border-top: 1px solid var(--border-color, #e0e0e0);
+
 }
 
 .headerContent {
@@ -92,6 +117,7 @@
   font-weight: 500;
   flex: 1;
 }
+
 
 .headerActions {
   display: flex;
@@ -120,19 +146,22 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  background-color: var(--children-background, #f8f9fa);
+}
+
+.childrenContainer.toDisplay{
+    margin: 0px 10px 10px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line-color);
+    background-color: white;
 }
 
 .childItem {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  margin-left: var(--accordion-indent);
+  /* margin-left: var(--accordion-indent); */
   border-radius: 4px;
-  background-color: var(--child-background, #ffffff);
-  border: 1px solid var(--child-border, #e9ecef);
   cursor: pointer;
-  transition: var(--accordion-transition);
   font-size: 14px;
 }
 
@@ -150,7 +179,6 @@
 .actionButton {
   padding: 4px 8px;
   font-size: 12px;
-  background-color: var(--color-accent-bright, #007acc);
   color: white;
   border: none;
   border-radius: 4px;
@@ -160,7 +188,6 @@
 }
 
 .actionButton:hover {
-  background-color: var(--color-accent-dark, #005a9e);
   opacity: 1;
 }
 
@@ -183,4 +210,14 @@
 
 .nestedAccordion .accordionHeader:hover {
   background-color: var(--nested-header-hover, #e8eaed);
+}
+
+.level0{
+    font-family: "IBMPlexSans-bold";
+    font-size: 22px;
+}
+
+.level1{
+    font-family: "IBMPlexSans-bold";
+    font-size: 16px;
 }

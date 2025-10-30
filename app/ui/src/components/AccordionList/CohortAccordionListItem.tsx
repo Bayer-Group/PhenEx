@@ -10,8 +10,7 @@ export interface CohortAccordionNode extends AccordionNode {
 }
 
 export const CohortAccordionListItem: React.FC<AccordionItemRendererProps> = ({ 
-  node, 
-  onSelect
+  node
 }) => {
   const cohortNode = node as CohortAccordionNode;
 
@@ -21,10 +20,9 @@ export const CohortAccordionListItem: React.FC<AccordionItemRendererProps> = ({
 
     console.log('🔄 CohortAccordionListItem: Click on cohort:', cohortNode.displayName);
 
-    // Handle selection
+    // Handle selection through the data service
     const dataService = HierarchicalLeftPanelDataService.getInstance();
     dataService.selectNode(cohortNode.id);
-    onSelect(cohortNode.id);
 
     // Handle navigation if there's a viewInfo
     if (cohortNode.viewInfo) {

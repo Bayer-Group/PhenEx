@@ -13,8 +13,7 @@ export interface StudyAccordionNode extends AccordionNode {
 export const StudyAccordionListItem: React.FC<AccordionItemRendererProps> = ({ 
   node, 
   isExpanded,
-  onToggle, 
-  onSelect,
+  onToggle,
   additionalProps
 }) => {
   const studyNode = node as StudyAccordionNode;
@@ -25,10 +24,9 @@ export const StudyAccordionListItem: React.FC<AccordionItemRendererProps> = ({
     
     console.log('🔄 StudyAccordionListItem: Click on study:', studyNode.displayName, 'has children:', node.children.length > 0);
 
-    // Handle selection
+    // Handle selection through the data service
     const dataService = HierarchicalLeftPanelDataService.getInstance();
     dataService.selectNode(studyNode.id);
-    onSelect(studyNode.id);
 
     // Handle toggle
     if (node.children.length > 0) {
@@ -53,13 +51,15 @@ export const StudyAccordionListItem: React.FC<AccordionItemRendererProps> = ({
   const hasChildren = node.children.length > 0;
 
   return (
-    <div className={styles.accordionItem}>
+    <div className={`${styles.accordionItemToDisplay} ${isExpanded ? styles.expanded : ''}`}>
       <div 
-        className={`${styles.accordionHeader} ${node.selected ? styles.selected : ''}`}
+        className={`${styles.accordionHeader} ${node.selected ? styles.selected : ''} ${isExpanded ? styles.expanded : ''} ${styles.level1}`}
         onClick={handleClick}
       >
         <div className={styles.headerContent}>
-          {hasChildren && (
+          
+          <div className={styles.headerText}>{node.displayName}</div>
+            {hasChildren && (
             <div 
               className={`${styles.expandIcon} ${isExpanded ? styles.expanded : ''}`}
               onClick={(e) => {
@@ -70,10 +70,24 @@ export const StudyAccordionListItem: React.FC<AccordionItemRendererProps> = ({
               ›
             </div>
           )}
-          <div className={styles.headerText}>{node.displayName}</div>
         </div>
         
-        <div className={styles.headerActions}>
+      </div>
+
+      {hasChildren && (
+        <div className={`${styles.accordionContent} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+          <div className={`${styles.childrenContainer} ${styles.toDisplay}`}>
+            {node.children.map((child, index) => (
+              <CohortAccordionListItem
+                key={`${child.displayName}-${index}`}
+                node={child as AccordionNode}
+                isExpanded={false}
+                onToggle={() => {}}
+                onSelect={() => {}}
+                additionalProps={additionalProps}
+              />
+            ))}
+             <div className={styles.headerActions}>
           {node.hasButton && (
             <button
               className={styles.actionButton}
@@ -84,21 +98,6 @@ export const StudyAccordionListItem: React.FC<AccordionItemRendererProps> = ({
             </button>
           )}
         </div>
-      </div>
-
-      {hasChildren && (
-        <div className={`${styles.accordionContent} ${isExpanded ? styles.expanded : styles.collapsed}`}>
-          <div className={styles.childrenContainer}>
-            {node.children.map((child, index) => (
-              <CohortAccordionListItem
-                key={`${child.displayName}-${index}`}
-                node={child as AccordionNode}
-                isExpanded={false}
-                onToggle={() => {}}
-                onSelect={onSelect}
-                additionalProps={additionalProps}
-              />
-            ))}
           </div>
         </div>
       )}
