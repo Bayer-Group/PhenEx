@@ -268,3 +268,27 @@ export const createNewStudy = async (study_data: any) => {
     throw error;
   }
 };
+
+export const updateStudyDisplayOrder = async (study_id: string, display_order: number) => {
+  try {
+    const response = await api.patch('/study/display_order', null, {
+      params: { study_id, display_order },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateStudyDisplayOrder:', error);
+    throw error;
+  }
+};
+
+export const updateCohortDisplayOrder = async (cohort_id: string, display_order: number) => {
+  try {
+    const response = await api.patch('/cohort/display_order', null, {
+      params: { cohort_id, display_order },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateCohortDisplayOrder:', error);
+    throw error;
+  }
+};

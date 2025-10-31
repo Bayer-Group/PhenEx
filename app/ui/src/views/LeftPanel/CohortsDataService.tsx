@@ -7,7 +7,9 @@ import {
   getPublicStudies,
   getCohortsForStudy,
   createNewStudy,
-  updateStudy
+  updateStudy,
+  updateStudyDisplayOrder,
+  updateCohortDisplayOrder
 } from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
@@ -18,6 +20,7 @@ export interface StudyData {
   is_public: boolean;
   creator_id: string;
   visible_by: string[];
+  display_order?: number;
 }
 
 export interface CohortData {
@@ -25,6 +28,7 @@ export interface CohortData {
   name: string;
   study_id: string;
   parent_cohort_id?: string;
+  display_order?: number;
 }
 
 export class CohortsDataService {
@@ -62,7 +66,9 @@ export class CohortsDataService {
   public async getUserStudies(): Promise<StudyData[]> {
     if (this._userStudies === null) {
       try {
-        this._userStudies = await getUserStudies();
+        const studies = await getUserStudies();
+        // Assign display_order if missing and sort
+        this._userStudies = this.ensureDisplayOrder(studies);
       } catch (error) {
         console.warn('🚨 Failed to fetch user studies, likely auth not ready:', error);
         this._userStudies = [];
@@ -74,7 +80,9 @@ export class CohortsDataService {
   public async getPublicStudies(): Promise<StudyData[]> {
     if (this._publicStudies === null) {
       try {
-        this._publicStudies = await getPublicStudies();
+        const studies = await getPublicStudies();
+        // Assign display_order if missing and sort
+        this._publicStudies = this.ensureDisplayOrder(studies);
       } catch (error) {
         console.warn('🚨 Failed to fetch public studies, likely auth not ready:', error);
         this._publicStudies = [];
@@ -87,13 +95,31 @@ export class CohortsDataService {
     if (!this._studyCohortsCache.has(study_id)) {
       try {
         const cohorts = await getCohortsForStudy(study_id);
-        this._studyCohortsCache.set(study_id, cohorts);
+        // Assign display_order if missing and sort
+        const sortedCohorts = this.ensureDisplayOrder<CohortData>(cohorts);
+        this._studyCohortsCache.set(study_id, sortedCohorts);
       } catch (error) {
         console.warn('🚨 Failed to fetch cohorts for study:', study_id, error);
         this._studyCohortsCache.set(study_id, []);
       }
     }
     return this._studyCohortsCache.get(study_id) || [];
+  }
+
+  /**
+   * Ensure all items have a display_order and sort by it
+   * If display_order is missing, assign sequential values
+   */
+  private ensureDisplayOrder<T extends { id: string; display_order?: number }>(items: T[]): T[] {
+    // Assign display_order to items that don't have it
+    items.forEach((item, index) => {
+      if (item.display_order === undefined || item.display_order === null) {
+        item.display_order = index;
+      }
+    });
+
+    // Sort by display_order
+    return items.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
   }
 
   public async loadUserWorkspace(): Promise<void> {
@@ -207,6 +233,84 @@ export class CohortsDataService {
     this._userStudies = null;
     this._publicStudies = null;
     this.notifyListeners();
+  }
+
+  /**
+   * Update display order for multiple studies
+   * @param studyOrders Array of {study_id, display_order} tuples
+   */
+  public async updateStudiesDisplayOrder(studyOrders: Array<{ study_id: string; display_order: number }>) {
+    try {
+      // Update backend in parallel
+      await Promise.all(
+        studyOrders.map(({ study_id, display_order }) => 
+          updateStudyDisplayOrder(study_id, display_order)
+        )
+      );
+
+      // Update local cache
+      studyOrders.forEach(({ study_id, display_order }) => {
+        // Update in user studies if exists
+        const userStudy = this._userStudies?.find(s => s.id === study_id);
+        if (userStudy) {
+          userStudy.display_order = display_order;
+        }
+
+        // Update in public studies if exists
+        const publicStudy = this._publicStudies?.find(s => s.id === study_id);
+        if (publicStudy) {
+          publicStudy.display_order = display_order;
+        }
+      });
+
+      // Re-sort the arrays
+      if (this._userStudies) {
+        this._userStudies.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      }
+      if (this._publicStudies) {
+        this._publicStudies.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      }
+
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Failed to update study display order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update display order for multiple cohorts in a study
+   * @param study_id The study containing the cohorts
+   * @param cohortOrders Array of {cohort_id, display_order} tuples
+   */
+  public async updateCohortsDisplayOrder(study_id: string, cohortOrders: Array<{ cohort_id: string; display_order: number }>) {
+    try {
+      // Update backend in parallel
+      await Promise.all(
+        cohortOrders.map(({ cohort_id, display_order }) => 
+          updateCohortDisplayOrder(cohort_id, display_order)
+        )
+      );
+
+      // Update local cache
+      const cohorts = this._studyCohortsCache.get(study_id);
+      if (cohorts) {
+        cohortOrders.forEach(({ cohort_id, display_order }) => {
+          const cohort = cohorts.find(c => c.id === cohort_id);
+          if (cohort) {
+            cohort.display_order = display_order;
+          }
+        });
+
+        // Re-sort the array
+        cohorts.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      }
+
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Failed to update cohort display order:', error);
+      throw error;
+    }
   }
 
   public invalidateCache() {

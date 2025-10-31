@@ -1079,10 +1079,10 @@ class DatabaseManager:
             # Query to get studies where user is creator or in visible_by list
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by
+                       user_id as creator_id, visible_by, display_order
                 FROM study 
                 WHERE user_id = $1 OR $1 = ANY(visible_by)
-                ORDER BY updated_at DESC
+                ORDER BY display_order ASC, updated_at DESC
             """
 
             rows = await conn.fetch(query, user_id)
@@ -1096,6 +1096,7 @@ class DatabaseManager:
                     "is_public": row["is_public"],
                     "creator_id": row["creator_id"],
                     "visible_by": row["visible_by"],
+                    "display_order": row["display_order"],
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                 })
@@ -1124,10 +1125,10 @@ class DatabaseManager:
             # Query to get only studies that are marked as public
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by
+                       user_id as creator_id, visible_by, display_order
                 FROM study 
                 WHERE is_public = TRUE
-                ORDER BY updated_at DESC
+                ORDER BY display_order ASC, updated_at DESC
             """
 
             rows = await conn.fetch(query)
@@ -1141,6 +1142,7 @@ class DatabaseManager:
                     "is_public": row["is_public"],
                     "creator_id": row["creator_id"],
                     "visible_by": row["visible_by"],
+                    "display_order": row["display_order"],
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                 })
@@ -1303,6 +1305,106 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def update_study_display_order(
+        self, user_id: str, study_id: str, display_order: int
+    ) -> bool:
+        """
+        Update the display order of a study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to update.
+            display_order (int): The new display order value.
+
+        Returns:
+            bool: True if successful, False if study not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            update_query = """
+                UPDATE study 
+                SET display_order = $3, updated_at = NOW()
+                WHERE study_id = $1 AND user_id = $2
+            """
+
+            result = await conn.execute(update_query, study_id, user_id, display_order)
+
+            if result == "UPDATE 0":
+                logger.error(
+                    f"User {user_id} is not authorized to update study {study_id} or study not found"
+                )
+                return False
+
+            logger.info(
+                f"Successfully updated display_order={display_order} for study {study_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to update display order for study {study_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_cohort_display_order(
+        self, user_id: str, cohort_id: str, display_order: int
+    ) -> bool:
+        """
+        Update the display order of a cohort.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the cohort.
+            cohort_id (str): The ID of the cohort to update.
+            display_order (int): The new display order value.
+
+        Returns:
+            bool: True if successful, False if cohort not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Check if the cohort belongs to a study owned by the user
+            check_query = f"""
+                SELECT c.cohort_id FROM {self.full_table_name} c
+                INNER JOIN study s ON c.study_id = s.study_id
+                WHERE c.cohort_id = $1 AND s.user_id = $2
+            """
+            existing = await conn.fetchrow(check_query, cohort_id, user_id)
+
+            if not existing:
+                logger.error(
+                    f"User {user_id} is not authorized to update cohort {cohort_id} or cohort not found"
+                )
+                return False
+
+            update_query = f"""
+                UPDATE {self.full_table_name}
+                SET display_order = $2, updated_at = NOW()
+                WHERE cohort_id = $1
+            """
+
+            await conn.execute(update_query, cohort_id, display_order)
+
+            logger.info(
+                f"Successfully updated display_order={display_order} for cohort {cohort_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to update display order for cohort {cohort_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
     async def delete_study_for_user(self, user_id: str, study_id: str) -> bool:
         """
         Delete a study and all associated cohorts for a user from the database.
@@ -1385,14 +1487,15 @@ class DatabaseManager:
                 prioritized_cohorts AS (
                     SELECT DISTINCT ON (c.cohort_id) 
                            c.cohort_id, c.cohort_data->>'name' as name, c.version, 
-                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at, c.cohort_data
+                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at, 
+                           c.cohort_data, c.display_order
                     FROM {self.full_table_name} c
                     INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
                     WHERE c.study_id = $1
                     ORDER BY c.cohort_id, c.is_provisional DESC  -- Prioritize provisional versions
                 )
                 SELECT * FROM prioritized_cohorts
-                ORDER BY updated_at DESC
+                ORDER BY display_order ASC, updated_at DESC
             """
 
             rows = await conn.fetch(query, study_id)
@@ -1406,6 +1509,8 @@ class DatabaseManager:
                     "version": row["version"],
                     "is_provisional": row["is_provisional"],
                     "parent_cohort_id": row["parent_cohort_id"],
+                    "display_order": row["display_order"],
+                    "study_id": study_id,
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                     "cohort_data": json.loads(row["cohort_data"]) if row["cohort_data"] else None

@@ -113,3 +113,14 @@
   cursor: pointer;
   background-color: purple; /* DEBUG */
 }
+
+/* Action item styling (e.g., "New Study") */
+.treeContainer :global([data-rct-item-id="new-study-action"]) :global(.rct-tree-item-title-container) {
+  color: #0078d4;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.treeContainer :global([data-rct-item-id="new-study-action"]) :global(.rct-tree-item-title-container:hover) {
+  background-color: rgba(0, 120, 212, 0.1);
+}

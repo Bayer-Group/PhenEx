@@ -153,6 +153,13 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 const item = items[itemId];
                 if (item?.data) {
                   const node = item.data;
+                  
+                  // Handle special action items
+                  if (node.id === 'new-study-action') {
+                    dataService.current.addNewStudy();
+                    return;
+                  }
+                  
                   dataService.current.selectNode(node.id);
                   if (node.viewInfo) {
                     const mainViewService = MainViewService.getInstance();
@@ -162,8 +169,45 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               }
             }}
             onFocusItem={(item) => setFocusedItem(item.index)}
+            onDrop={(draggedItems, target) => {
+              console.log('🎯 onDrop called');
+              console.log('🎯 Dragged items:', draggedItems);
+              console.log('🎯 Target:', target);
+              
+              // Get the dragged item IDs
+              const draggedIds = draggedItems.map(item => item.index as string);
+              console.log('🎯 Dragged IDs:', draggedIds);
+              
+              // Only handle single item drag for now
+              if (draggedIds.length !== 1) {
+                console.warn('⚠️ Multiple item drag not supported yet');
+                return;
+              }
+
+              const draggedId = draggedIds[0];
+              const targetParentId = target.targetType === 'between-items' 
+                ? target.parentItem 
+                : target.targetType === 'item'
+                ? target.targetItem
+                : null;
+                
+              console.log('🎯 Target parent ID:', targetParentId);
+              console.log('🎯 Target type:', target.targetType);
+              
+              // Handle reordering within the same parent
+              if (target.targetType === 'between-items' && 
+                  (targetParentId === 'mystudies' || targetParentId === 'publicstudies')) {
+                const childIndex = target.childIndex ?? 0;
+                console.log('🎯 Child index:', childIndex);
+                
+                // Call the data service to reorder
+                dataService.current.reorderStudy(targetParentId as string, draggedId, childIndex);
+              } else {
+                console.warn('⚠️ Drop target not supported:', target.targetType, targetParentId);
+              }
+            }}
             canDragAndDrop={true}
-            canDropOnFolder={false}
+            canDropOnFolder={true}
             canReorderItems={true}
           >
             <Tree treeId="hierarchical-tree" rootItem="root" treeLabel="Navigation Tree" />

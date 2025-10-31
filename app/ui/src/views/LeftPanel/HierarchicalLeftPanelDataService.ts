@@ -172,6 +172,22 @@ export class HierarchicalLeftPanelDataService {
 
     const createUserStudies = async () => {
       const studyNodes: HierarchicalTreeNode[] = [];
+      
+      // Add "New Study" action item at the top
+      studyNodes.push({
+        id: 'new-study-action',
+        displayName: '+ New Study',
+        level: 1,
+        viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+        children: [],
+        height: 35,
+        fontSize: 16,
+        renderer: StudyTreeRenderer,
+        collapsed: true,
+        selected: false,
+        onClick: () => this.addNewStudy(),
+      });
+      
       for (const study of this.cachedUserStudies) {
         const studyNode = await this.createStudyNode(study, 1, study.id === currentlySelectedNodeId);
         studyNodes.push(studyNode);
@@ -350,5 +366,50 @@ export class HierarchicalLeftPanelDataService {
   public async addNewCohort() {
     // For now, create a new study when this is called
     return this.addNewStudy();
+  }
+
+  /**
+   * Reorder studies within a category (user or public)
+   * @param parentId 'mystudies' or 'publicstudies'
+   * @param studyId The ID of the study being moved
+   * @param newIndex The target index position
+   */
+  public async reorderStudy(parentId: string, studyId: string, newIndex: number) {
+    console.log(`🔄 reorderStudy: Moving ${studyId} to index ${newIndex} in ${parentId}`);
+    
+    // Determine which study array to reorder
+    const studyArray = parentId === 'mystudies' ? this.cachedUserStudies : this.cachedPublicStudies;
+    
+    // Find current index
+    const currentIndex = studyArray.findIndex(s => s.id === studyId);
+    if (currentIndex === -1) {
+      console.error(`❌ Study ${studyId} not found in ${parentId}`);
+      return;
+    }
+    
+    // Remove from current position
+    const [movedStudy] = studyArray.splice(currentIndex, 1);
+    
+    // Insert at new position
+    studyArray.splice(newIndex, 0, movedStudy);
+    
+    console.log(`✅ Reordered studies in ${parentId}:`, studyArray.map(s => s.name));
+    
+    // Update display_order for all affected studies
+    const studyOrders = studyArray.map((study, index) => ({
+      study_id: study.id,
+      display_order: index
+    }));
+    
+    // Persist to backend
+    try {
+      await this.dataService.updateStudiesDisplayOrder(studyOrders);
+      console.log('✅ Display order persisted to backend');
+    } catch (error) {
+      console.error('❌ Failed to persist display order:', error);
+    }
+    
+    // Update tree data and notify listeners
+    await this.updateTreeData();
   }
 }

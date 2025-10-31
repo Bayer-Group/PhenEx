@@ -20,19 +20,36 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const [currentStep, setCurrentStep] = useState(0);
   const [cohortName, setCohortName] = useState('');
   const [dataService] = useState(() => CohortDataService.getInstance());
+  const [localCohortData, setLocalCohortData] = useState<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists', 'Constants', 'Finish'];
 
   useEffect(() => {
+    // Reset wizard state when it closes
+    if (!isVisible) {
+      setCurrentStep(0);
+      setCohortName('');
+      setIsInitialized(false);
+      setLocalCohortData(null);
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
     // Initialize the data service with the new cohort data when wizard becomes visible
     const initializeData = async () => {
-      if (isVisible && _data) {
+      if (isVisible && _data && !isInitialized) {
+        // Store a local copy of the cohort data
+        setLocalCohortData({ ..._data });
+        
+        // Load into data service WITHOUT saving to backend
         await dataService.loadCohortData(_data);
         setCohortName(dataService.cohort_name);
+        setIsInitialized(true);
       }
     };
     initializeData();
-  }, [isVisible, _data, dataService]);
+  }, [isVisible, _data, dataService, isInitialized]);
 
   useEffect(() => {
     // Focus the appropriate input when step changes
@@ -70,6 +87,36 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     }
   };
 
+  const handleFinish = async () => {
+    // Save all changes to backend when finishing the wizard
+    console.log('💾 NewCohortWizard: Saving cohort to backend on finish');
+    try {
+      // Update the cohort name in the data service
+      dataService.cohort_name = cohortName;
+      
+      // Save to backend
+      await dataService.saveChangesToCohort();
+      console.log('✅ NewCohortWizard: Cohort saved successfully');
+    } catch (error) {
+      console.error('❌ NewCohortWizard: Failed to save cohort:', error);
+    }
+    
+    // Close the wizard
+    onClose();
+  };
+
+  const handleCancel = () => {
+    // Discard changes and close without saving
+    console.log('🚫 NewCohortWizard: Cancelled, discarding changes');
+    
+    // Reset local data to original state if needed
+    if (localCohortData) {
+      dataService.loadCohortData(localCohortData);
+    }
+    
+    onClose();
+  };
+
   const renderNameStep = () => {
     return (
       <div onKeyDown={handleKeyDown}>
@@ -80,11 +127,13 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
             placeholder="Name your cohort..."
             className={styles.cohortNameInput}
             onChange={newValue => {
+              // Update local state only, don't save to backend yet
               setCohortName(newValue);
               dataService.cohort_name = newValue;
             }}
             onSaveChanges={async () => {
-              await dataService.saveChangesToCohort();
+              // Don't save to backend during wizard, just update local state
+              console.log('💡 NewCohortWizard: Name changed, not saving to backend yet');
             }}
           />
         </div>
@@ -135,7 +184,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   return (
     <Modal
       isVisible={isVisible}
-      onClose={onClose}
+      onClose={handleCancel}
       contentClassName={styles.wizardContent}
       maxWidth="800px"
     >
@@ -159,6 +208,13 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
       <div className={styles.navigationButtons}>
         <button
           className={styles.button}
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+
+        <button
+          className={styles.button}
           onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
           disabled={currentStep === 0}
         >
@@ -169,10 +225,10 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
           className={styles.button}
           onClick={() => {
             if (currentStep === stepTitles.length - 1) {
-              // On finish, close the wizard
-              onClose();
+              // On finish, save to backend and close the wizard
+              handleFinish();
             } else {
-              // On next, advance to next step
+              // On next, advance to next step (don't save)
               setCurrentStep(Math.min(stepTitles.length - 1, currentStep + 1));
             }
           }}

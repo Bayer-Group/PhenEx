@@ -2,9 +2,11 @@ import { FC, useState, useRef, useEffect } from 'react';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
-import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
+import { Button } from '@/components/ButtonsAndTabs/Button/Button';
 import { StudyDataService } from './StudyDataService';
 import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
+import { MainViewService, ViewType } from '../MainView/MainView';
+import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
@@ -108,16 +110,37 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   };
 
 
+  const clickedOnAddNewCohort = async () => {
+    // Get the study ID from the data prop
+    const studyId = studyDataService.study_data?.id;
+    
+    if (!studyId) {
+      console.error('No study ID found');
+      return;
+    }
+
+    // Create a new cohort for this study
+    const cohortsDataService = CohortsDataService.getInstance();
+    const newCohortData = await cohortsDataService.createNewCohort(studyId);
+    
+    if (newCohortData) {
+      // Navigate to the NewCohort view which will show the wizard
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({ 
+        viewType: ViewType.NewCohort, 
+        data: {} 
+      });
+    }
+  };
+
 
   // FOR ADD NEW PHENOTYPE DROPDOWN
   const renderAddNewPhenotypeButton = () => {
     return (
-        <CustomizableDropdownButton
+        <Button
           key={"new cohort"}
-          label={"Add a new cohort"}
-          content={''}
-          buttonClassName={styles.addPhenotypeButtonLabel}
-          outline={true}
+          title="+ New Cohort"
+          onClick={clickedOnAddNewCohort}
         />
     );
   };

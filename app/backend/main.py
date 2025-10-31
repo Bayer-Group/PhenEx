@@ -242,6 +242,41 @@ async def delete_cohort_for_user(request: Request, cohort_id: str):
         )
 
 
+@app.patch("/cohort/display_order", tags=["cohort"])
+async def update_cohort_display_order(
+    request: Request,
+    cohort_id: str,
+    display_order: int
+):
+    """
+    Update the display order of a cohort for the authenticated user.
+
+    Args:
+        cohort_id (str): The ID of the cohort to update.
+        display_order (int): The new display order value.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_cohort_display_order(
+            user_id=user_id,
+            cohort_id=cohort_id,
+            display_order=display_order
+        )
+        
+        if success:
+            return {"status": "success", "message": "Cohort display order updated successfully."}
+        else:
+            raise HTTPException(status_code=404, detail="Cohort not found or access denied.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update cohort display order.")
+
+
 @app.get("/cohorts/public", tags=["cohort"])
 async def get_all_public_cohorts():
     """
@@ -513,6 +548,41 @@ async def delete_study_for_user(request: Request, study_id: str):
             status_code=500,
             detail=f"Failed to delete study {study_id} for user {user_id}",
         )
+
+
+@app.patch("/study/display_order", tags=["study"])
+async def update_study_display_order(
+    request: Request,
+    study_id: str,
+    display_order: int
+):
+    """
+    Update the display order of a study for the authenticated user.
+
+    Args:
+        study_id (str): The ID of the study to update.
+        display_order (int): The new display order value.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_study_display_order(
+            user_id=user_id,
+            study_id=study_id,
+            display_order=display_order
+        )
+        
+        if success:
+            return {"status": "success", "message": "Study display order updated successfully."}
+        else:
+            raise HTTPException(status_code=404, detail="Study not found or access denied.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update display order for study {study_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update study display order.")
 
 
 @app.get("/study/cohorts", tags=["study"])
