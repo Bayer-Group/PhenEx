@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
+import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -161,8 +162,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
       >
-        <span className={styles.arrow}>{'<<'}</span>
-        {/* {isLeftCollapsed ? '>' : '<'} */}
+        <img src={LeftPanelIcon} alt="Toggle left panel" className={styles.arrow} />
       </div>
     );
   };
@@ -225,8 +225,12 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onHoverLeave={handleHoverTriggerLeave}
         debug={false}
       >
-        {/* The actual left panel content now lives inside the portal */}
+        <div>
         {children[0]}
+
+        {renderLeftCollapseButton()}
+
+        </div>
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
@@ -240,7 +244,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
           />
         )}
         
-        {renderLeftCollapseButton()}
         {children[1]}
       </div>
 

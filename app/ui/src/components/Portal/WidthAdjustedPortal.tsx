@@ -95,7 +95,6 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
             },
           };
           setDebugInfo(debugData);
-          console.log('WidthAdjustedPortal:', debugData);
         }
       } else {
         // No left panel ref available
@@ -162,9 +161,12 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-      container.className = styles.portalContainer;
-      stopMonitoring();
+      if (!isCollapsed){
+        setIsDragging(false);
+        container.className = styles.portalContainer;
+        stopMonitoring();
+      }
+
     };
 
     // Listen for drag events
