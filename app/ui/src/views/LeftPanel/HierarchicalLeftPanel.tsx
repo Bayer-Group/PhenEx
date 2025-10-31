@@ -174,6 +174,28 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               console.log('🎨 getItemTitle called for:', item.index, '→', title);
               return title;
             }}
+            renderItemTitle={({ title, item }) => {
+              const node = item.data;
+              const hasButton = node?.hasButton && node?.buttonTitle && node?.buttonOnClick;
+              
+              return (
+                <div className={styles.itemTitle}>
+                  <span>{title}</span>
+                  {hasButton && (
+                    <button
+                      className={styles.nodeButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        node.buttonOnClick?.();
+                      }}
+                      title={node.buttonTitle}
+                    >
+                      {node.buttonTitle}
+                    </button>
+                  )}
+                </div>
+              );
+            }}
             viewState={{
               'hierarchical-tree': {
                 expandedItems,
