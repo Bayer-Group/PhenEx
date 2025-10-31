@@ -3,25 +3,21 @@
   width: 100%;
   overflow: auto;
   padding: 8px;
-  background-color: pink; /* DEBUG */
 }
 
 /* Ensure tree is visible */
 .treeContainer :global(.rct-tree-root) {
   height: 100%;
   width: 100%;
-  background-color: lightblue; /* DEBUG */
 }
 
 .treeContainer :global(.rct-tree) {
   height: auto !important;
   min-height: 100%;
-  background-color: lightgreen; /* DEBUG */
 }
 
 .treeContainer :global(.rct-tree-items-container) {
   height: auto !important;
-  background-color: lightyellow; /* DEBUG */
 }
 
 /* Custom item title styling */
@@ -31,7 +27,6 @@
   justify-content: space-between;
   width: 100%;
   padding: 2px 4px;
-  background-color: lightcoral; /* DEBUG */
 }
 
 /* ViewType-specific styling */
@@ -83,7 +78,19 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  background-color: orange; /* DEBUG */
+}
+
+/* Ensure proper indentation for nested items */
+.treeContainer :global(.rct-tree-item-li) {
+  padding-left: 0;
+}
+
+.treeContainer :global(.rct-tree-item-li .rct-tree-item-li) {
+  padding-left: 20px; /* Level 1 indent */
+}
+
+.treeContainer :global(.rct-tree-item-li .rct-tree-item-li .rct-tree-item-li) {
+  padding-left: 40px; /* Level 2 indent */
 }
 
 .treeContainer :global(.rct-tree-item-title-container) {
@@ -91,8 +98,6 @@
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.15s;
-  background-color: cyan; /* DEBUG */
-  border: 2px solid red; /* DEBUG */
 }
 
 .treeContainer :global(.rct-tree-item-title-container:hover) {
