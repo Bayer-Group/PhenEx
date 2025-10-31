@@ -79,7 +79,9 @@ export class AccordionListItem extends React.Component<AccordionListItemProps> {
           onClick={this.handleHeaderClick}
         >
           <div className={styles.headerContent}>
-            {hasChildren && (
+            
+            <div className={`${styles.headerText} ${styles.level0}`}>{node.displayName}</div>
+{hasChildren && (
               <div 
                 className={`${styles.expandIcon} ${isExpanded ? styles.expanded : ''}`}
                 onClick={(e) => {
@@ -90,7 +92,6 @@ export class AccordionListItem extends React.Component<AccordionListItemProps> {
                 ›
               </div>
             )}
-            <div className={`${styles.headerText} ${styles.level0}`}>{node.displayName}</div>
           </div>
           
           <div className={styles.headerActions}>
