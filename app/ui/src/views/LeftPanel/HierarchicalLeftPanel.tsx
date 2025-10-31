@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef, useMemo } from 'react';
-import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, StaticTreeDataProvider } from 'react-complex-tree';
+import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem } from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
@@ -74,24 +74,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     return converted;
   }, [treeData]);
 
-  const dataProvider = useMemo(
-    () => {
-      try {
-        return new StaticTreeDataProvider<HierarchicalTreeNode>(
-          items, 
-          (item, newName) => {
-            if (!item.data) return item;
-            return { ...item, data: { ...item.data, displayName: newName } };
-          }
-        );
-      } catch (error) {
-        console.error('🚨 Error creating data provider:', error);
-        return new StaticTreeDataProvider<HierarchicalTreeNode>({}, (item) => item);
-      }
-    },
-    [items]
-  );
-
   const handleSelectItems = (itemIds: TreeItemIndex[]) => {
     if (itemIds.length === 0 || itemIds[0] === 'root') return;
 
@@ -129,7 +111,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
         <div style={{ padding: '10px', background: 'yellow', marginBottom: '10px', zIndex: 1000 }}>
           Tree has {Object.keys(items).length} items. Root has {items.root?.children?.length || 0} children.
         </div>
-        <div style={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
+                <div style={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
           <ControlledTreeEnvironment<HierarchicalTreeNode>
             items={items}
             getItemTitle={(item) => {
@@ -143,6 +125,62 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 selectedItems,
                 focusedItem,
               },
+            }}
+            onRenameItem={(item, newName) => {
+              console.log('✏️ onRenameItem called for:', item.index, 'new name:', newName);
+              
+              if (!item.data) {
+                console.warn('⚠️ No data for item:', item.index);
+                return;
+              }
+
+              const node = item.data;
+              
+              // Prevent renaming special action items
+              if (node.id === 'new-study-action') {
+                console.warn('⚠️ Cannot rename action items');
+                return;
+              }
+
+              // Determine if this is a study or cohort and update accordingly
+              const parentItem = Object.values(items).find(i => i.children?.includes(item.index as string));
+              const isStudy = parentItem && (parentItem.index === 'mystudies' || parentItem.index === 'publicstudies');
+              const isCohort = !isStudy && parentItem && parentItem.index !== 'root';
+
+              // Handle async updates
+              (async () => {
+                if (isStudy) {
+                  // It's a study - check if it's public
+                  const isPublic = parentItem.index === 'publicstudies';
+                  
+                  if (isPublic) {
+                    console.log('⚠️ Cannot rename public study');
+                    return;
+                  }
+
+                  console.log('📚 Renaming study:', node.id, 'to:', newName);
+                  
+                  // Update study name via data service
+                  try {
+                    await dataService.current.updateStudyName(node.id, newName);
+                    console.log('✅ Study renamed successfully');
+                  } catch (error) {
+                    console.error('❌ Failed to rename study:', error);
+                  }
+                } else if (isCohort) {
+                  console.log('📋 Renaming cohort:', node.id, 'to:', newName);
+                  
+                  // Update cohort name via data service
+                  try {
+                    await dataService.current.updateCohortName(node.id, newName);
+                    console.log('✅ Cohort renamed successfully');
+                  } catch (error) {
+                    console.error('❌ Failed to rename cohort:', error);
+                  }
+                } else {
+                  console.warn('⚠️ Cannot determine item type for rename');
+                }
+              })();
             }}
             onExpandItem={(item) => setExpandedItems([...expandedItems, item.index])}
             onCollapseItem={(item) => setExpandedItems(expandedItems.filter(id => id !== item.index))}

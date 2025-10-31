@@ -472,4 +472,79 @@ export class HierarchicalLeftPanelDataService {
       console.error('❌ Failed to reorder cohort:', error);
     }
   }
+
+  /**
+   * Update study name
+   * @param studyId The ID of the study to rename
+   * @param newName The new name for the study
+   */
+  public async updateStudyName(studyId: string, newName: string) {
+    console.log(`✏️ updateStudyName: Renaming study ${studyId} to "${newName}"`);
+    
+    try {
+      // Update the study name via the data service
+      await this.dataService.updateStudyData(studyId, { name: newName });
+      console.log('✅ Study name updated successfully');
+      
+      // Update cached studies
+      const userStudy = this.cachedUserStudies.find(s => s.id === studyId);
+      if (userStudy) {
+        userStudy.name = newName;
+      }
+      
+      const publicStudy = this.cachedPublicStudies.find(s => s.id === studyId);
+      if (publicStudy) {
+        publicStudy.name = newName;
+      }
+      
+      // Update tree data and notify listeners
+      await this.updateTreeData();
+    } catch (error) {
+      console.error('❌ Failed to update study name:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update cohort name
+   * @param cohortId The ID of the cohort to rename
+   * @param newName The new name for the cohort
+   */
+  public async updateCohortName(cohortId: string, newName: string) {
+    console.log(`✏️ updateCohortName: Renaming cohort ${cohortId} to "${newName}"`);
+    
+    try {
+      // Load the cohort data using CohortDataService
+      const cohortDataService = this.dataService['cohortDataService'];
+      
+      // Find which study this cohort belongs to
+      let studyId: string | undefined;
+      for (const study of [...this.cachedUserStudies, ...this.cachedPublicStudies]) {
+        const cohorts = await this.dataService.getCohortsForStudy(study.id);
+        if (cohorts.some(c => c.id === cohortId)) {
+          studyId = study.id;
+          break;
+        }
+      }
+      
+      if (!studyId) {
+        console.error('❌ Could not find study for cohort');
+        return;
+      }
+      
+      // Load the cohort, update the name, and save
+      await cohortDataService.loadCohortData(cohortId);
+      cohortDataService.cohort_name = newName;
+      await cohortDataService.saveChangesToCohort();
+      
+      console.log('✅ Cohort name updated successfully');
+      
+      // Clear cache and update tree data
+      this.dataService.clearStudyCohortsCache(studyId);
+      await this.updateTreeData();
+    } catch (error) {
+      console.error('❌ Failed to update cohort name:', error);
+      throw error;
+    }
+  }
 }
