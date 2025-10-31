@@ -15,12 +15,15 @@
  * tree data structure across the application.
  */
 
-import { ViewType } from '../MainView/MainView';
-import { CohortTreeRenderer, HierarchicalTreeNode } from './CohortTreeListItem';
-import { StudyTreeRenderer } from './StudyTreeListItem';
+import { ViewInfo, ViewType } from '../MainView/MainView';
 import { CohortsDataService, StudyData, CohortData as ServiceCohortData } from './CohortsDataService';
 import { MainViewService } from '../MainView/MainView';
 import { getCurrentUser, onUserChange } from '@/auth/userProviderBridge';
+
+interface HierarchicalTreeNode {
+  id: string;
+  viewInfo?: ViewInfo;
+}
 
 interface CohortData {
   id: string;
@@ -81,7 +84,6 @@ export class HierarchicalLeftPanelDataService {
       children: [],
       height: 30,
       fontSize: 16,
-      renderer: CohortTreeRenderer,
       collapsed: true,
       selected: isSelected,
     };
@@ -112,7 +114,7 @@ export class HierarchicalLeftPanelDataService {
       children: children,
       height: 35,
       fontSize: 16,
-      renderer: StudyTreeRenderer,
+      // renderer: StudyTreeRenderer,
       collapsed: true, // Start collapsed - TreeListItem will manage its own state
       selected: isSelected,
       hasButton: !isPublic,
