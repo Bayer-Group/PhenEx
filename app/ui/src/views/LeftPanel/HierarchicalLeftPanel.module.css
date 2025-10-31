@@ -1,38 +1,59 @@
 .treeContainer {
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow: auto;
+  padding: 8px;
+  background-color: pink; /* DEBUG */
 }
 
-.node {
+/* Ensure tree is visible */
+.treeContainer :global(.rct-tree-root) {
+  height: 100%;
+  width: 100%;
+  background-color: lightblue; /* DEBUG */
+}
+
+.treeContainer :global(.rct-tree) {
+  height: auto !important;
+  min-height: 100%;
+  background-color: lightgreen; /* DEBUG */
+}
+
+.treeContainer :global(.rct-tree-items-container) {
+  height: auto !important;
+  background-color: lightyellow; /* DEBUG */
+}
+
+/* Custom item title styling */
+.itemTitle {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  padding: 6px 12px;
-  user-select: none;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 4px;
+  background-color: lightcoral; /* DEBUG */
 }
 
-.node:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+/* ViewType-specific styling */
+.sdef {
+  /* CohortDefinition - User cohorts */
+  font-size: 14px;
+  font-weight: 400;
+  color: #333;
 }
 
-.node.selected {
-  background-color: rgba(0, 120, 212, 0.15);
+.psdef {
+  /* PublicCohortDefinition - Public cohorts */
+  font-size: 14px;
+  font-weight: 400;
+  color: #555;
 }
 
-.arrow {
-  display: inline-block;
-  width: 16px;
-  margin-right: 8px;
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.nodeName {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.studyViewer {
+  /* StudyViewer - Study nodes */
+  font-size: 15px;
+  font-weight: 500;
+  color: #000;
 }
 
 .nodeButton {
@@ -45,13 +66,45 @@
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 
-.node:hover .nodeButton {
+.itemTitle:hover .nodeButton {
   opacity: 1;
 }
 
 .nodeButton:hover {
   background: rgba(0, 120, 212, 0.1);
   border-color: #0078d4;
+}
+
+/* Override react-complex-tree default styles */
+.treeContainer :global(.rct-tree-item-li) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background-color: orange; /* DEBUG */
+}
+
+.treeContainer :global(.rct-tree-item-title-container) {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+  background-color: cyan; /* DEBUG */
+  border: 2px solid red; /* DEBUG */
+}
+
+.treeContainer :global(.rct-tree-item-title-container:hover) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.treeContainer :global(.rct-tree-item-title-container-selected) {
+  background-color: rgba(0, 120, 212, 0.15) !important;
+}
+
+.treeContainer :global(.rct-tree-item-arrow) {
+  padding: 4px;
+  cursor: pointer;
+  background-color: purple; /* DEBUG */
 }
