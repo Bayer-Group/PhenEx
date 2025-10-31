@@ -180,8 +180,36 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               const node = item.data;
               const hasButton = node?.hasButton && node?.buttonTitle && node?.buttonOnClick;
               
+              // Determine the level of this item
+              let level = 0;
+              if (item.index === 'mystudies' || item.index === 'publicstudies') {
+                level = 0; // Root items
+              } else {
+                // Find parent to determine level
+                const parentItem = Object.values(items).find(i => i.children?.includes(item.index as string));
+                if (parentItem) {
+                  if (parentItem.index === 'mystudies' || parentItem.index === 'publicstudies') {
+                    level = 1; // Studies
+                  } else if (parentItem.index === 'root') {
+                    level = 0;
+                  } else {
+                    // Check if parent is a study (level 1)
+                    const grandParentItem = Object.values(items).find(i => i.children?.includes(parentItem.index as string));
+                    if (grandParentItem && (grandParentItem.index === 'mystudies' || grandParentItem.index === 'publicstudies')) {
+                      level = 2; // Cohorts
+                    } else {
+                      level = 3; // Deeper nesting
+                    }
+                  }
+                }
+              }
+              
+              const levelClass = `level${level}`;
+              
               return (
-                <div className={styles.itemTitle}>
+                <div 
+                  className={`${styles.itemTitle} ${styles[levelClass]}`}
+                >
                   <span>{title}</span>
                   {hasButton && (
                     <button

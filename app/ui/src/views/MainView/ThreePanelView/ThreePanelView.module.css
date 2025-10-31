@@ -77,34 +77,6 @@
   cursor: pointer;
 }
 
-.collapseButton {
-  /* position: absolute;
-  padding: 4px;
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  z-index: 1;
-  position: absolute;
-  width: 20px;
-  height: 10px;
-  border-radius: var(--border-radius);
-  padding-left: -10px !important;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  left: 13px;
-  font-size: 22px;
-  font-family: 'IBMPlexSans-bold';
-  color: hsl(0, 0%, 60%);
-  justify-content: center;
-  cursor: pointer;
-  z-index: 1000;
-  border: transparent 1px solid;
-  background-color: transparent;
-  color: black;
-  user-select: none; */
-}
-
 .arrow {
   width: 80%;
   height: 80%;

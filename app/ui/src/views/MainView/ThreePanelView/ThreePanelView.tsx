@@ -225,7 +225,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onHoverLeave={handleHoverTriggerLeave}
         debug={false}
       >
-        <div>
+        <div className={styles.leftPanelWidthAdjustablePortal}>
         {children[0]}
 
         {renderLeftCollapseButton()}

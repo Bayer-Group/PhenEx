@@ -26,7 +26,49 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 2px 4px;
+  padding: 0px 4px;
+  overflow: hidden;
+  /* background-color: var(--background-color) !important; */
+}
+
+.itemTitle span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Level-based styling */
+.level0 {
+  /* Root level: mystudies, publicstudies */
+  font-size: 24px;
+  font-weight: 600;
+  font-family: "IBMPlexSans-bold";
+}
+
+.level1 {
+  /* Study level */
+  font-weight: 500;
+  font-family: "IBMPlexSans-bold";
+  font-size:16px;
+
+}
+
+.level2 {
+  /* Cohort level */
+  font-size: 16px;
+  font-weight: 400;
+  font-family: "IBMPlexSans-regular";
+  min-height: 28px;
+}
+
+.level3 {
+  /* Deeper nesting if needed */
+  font-size: 13px;
+  font-weight: 400;
+  font-family: "IBMPlexSans-regular";
+  min-height: 28px;
 }
 
 /* ViewType-specific styling */
@@ -94,34 +136,26 @@
 
 /* Base title container styling */
 .treeContainer :global(.rct-tree-item-title-container) {
-  /* padding: 6px 8px; */
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.15s;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
 }
 
-/* Level 0 (root level) - Studies */
-.treeContainer :global(.rct-tree-item-li) > :global(.rct-tree-item-title-container) {
-  font-size: 16px;
+/* Level 0 (root level) - Studies and Public */
+/* Target the list item by data-rct-item-id, then select its title container child */
+.treeContainer :global(.rct-tree-item-li[data-rct-item-id="mystudies"] > .rct-tree-item-title-container),
+.treeContainer :global(.rct-tree-item-li[data-rct-item-id="publicstudies"] > .rct-tree-item-title-container) {
+  font-size: 22px;
   font-weight: 600;
-  /* padding: 2px 10px; */
+  min-height: 30px;
   font-family: "IBMPlexSans-regular";
 }
 
-/* Level 1 - Cohort definitions */
-.treeContainer :global(.rct-tree-item-li .rct-tree-item-li) > :global(.rct-tree-item-title-container) {
-  font-size: 14px;
-  font-weight: 500;
-  /* padding: 7px 9px; */
-  font-family: "IBMPlexSans-bold";
-}
-
-/* Level 2 - Nested items */
-.treeContainer :global(.rct-tree-item-li .rct-tree-item-li .rct-tree-item-li) > :global(.rct-tree-item-title-container) {
-  font-size: 13px;
-  font-weight: 400;
-  /* padding: 6px 8px; */
-}
+/* Level 1 and below inherit the base styling or can be customized */
+/* If you need specific styling for level 1, you can add selectors here */
 
 /* Fix focus border to match background size */
 .treeContainer :global(.rct-tree-item-button) {
@@ -138,7 +172,7 @@
 }
 
 .treeContainer :global(.rct-tree-item-title-container:hover) {
-  background-color: rgba(0, 0, 0, 0.05);
+  /* background-color: rgba(0, 0, 0, 0.05); */
 }
 
 .treeContainer :global(.rct-tree-item-title-container-selected) {
@@ -161,4 +195,7 @@
 
 .treeContainer :global([data-rct-item-id="new-study-action"]) :global(.rct-tree-item-title-container:hover) {
   background-color: rgba(0, 120, 212, 0.1);
+}
+
+.treeContainer :global(.rct-tree-item-title-container) {
 }
