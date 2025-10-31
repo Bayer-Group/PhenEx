@@ -1,0 +1,137 @@
+/* WidthAdjustedPortal CSS Module */
+
+.portalContainer {
+  position: absolute;
+  z-index: 500; /* Just above the left panel (which has z-index: 10000) */
+  pointer-events: none; /* Allow clicks to pass through to the left panel */
+  overflow: hidden;
+  
+  /* Add shadow casting */
+  box-shadow: var(--box_shadow);
+  background-color: transparent;
+  border-right: var(--border);
+}
+
+.portalContent {
+  pointer-events: auto;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: transparent;
+  border-right: none;
+  z-index: 10002;
+  transition: all 0.2s ease;
+}
+
+.resizeHandle:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.resizeHandle.dragging {
+  background-color: rgba(0, 123, 255, 0.3);
+  border-right: 2px solid #007bff;
+}
+
+.debugPanel {
+  position: fixed;
+  top: 50px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  font-size: 12px;
+  font-family: monospace;
+  border-radius: 4px;
+  z-index: 10000;
+  max-width: 300px;
+  backdrop-filter: blur(5px);
+}
+
+.debugTitle {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #00ff88;
+}
+
+.debugItem {
+  margin: 2px 0;
+  color: #ffffff;
+}
+
+.debugCollapsed {
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .resizeHandle {
+    width: 15px;
+    right: -7px;
+  }
+  
+  .debugPanel {
+    top: 10px;
+    right: 10px;
+    font-size: 11px;
+    padding: 8px;
+    max-width: 200px;
+  }
+}
+
+/* High DPI displays */
+@media (min-resolution: 2dppx) {
+  .portalContainer {
+    box-shadow: var(--box_shadow_hover);
+  }
+}
+
+/* Animation for smooth transitions - width changes only when not animating state */
+.portalContainer:not(.hoverAnimating):not(.collapsed) {
+  transition: width 0.2s ease-out;
+}
+
+/* Focus states for accessibility */
+.resizeHandle:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Disable transitions during drag for performance */
+.portalContainer.dragging {
+  transition: none;
+}
+
+.portalContainer.dragging * {
+  transition: none;
+  pointer-events: none;
+}
+
+/* Base portal container */
+.portalContainer {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
+}
+
+/* When collapsed - hide completely off-screen */
+.portalContainer.collapsed {
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+/* When hover animating - override collapsed state and slide in */
+.portalContainer.hoverAnimating {
+  transform: translateX(0) !important;
+  pointer-events: auto !important;
+}
