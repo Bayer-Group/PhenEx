@@ -108,9 +108,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   return (
     <LeftPanel isVisible={isVisible} width={280}>
       <div className={styles.treeContainer}>
-        <div style={{ padding: '10px', background: 'yellow', marginBottom: '10px', zIndex: 1000 }}>
-          Tree has {Object.keys(items).length} items. Root has {items.root?.children?.length || 0} children.
-        </div>
                 <div style={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
           <ControlledTreeEnvironment<HierarchicalTreeNode>
             items={items}
@@ -208,13 +205,9 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             }}
             onFocusItem={(item) => setFocusedItem(item.index)}
             onDrop={(draggedItems, target) => {
-              console.log('🎯 onDrop called');
-              console.log('🎯 Dragged items:', draggedItems);
-              console.log('🎯 Target:', target);
               
               // Get the dragged item IDs
               const draggedIds = draggedItems.map(item => item.index as string);
-              console.log('🎯 Dragged IDs:', draggedIds);
               
               // Only handle single item drag for now
               if (draggedIds.length !== 1) {
@@ -229,13 +222,10 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 ? target.targetItem
                 : null;
                 
-              console.log('🎯 Target parent ID:', targetParentId);
-              console.log('🎯 Target type:', target.targetType);
               
               // Handle reordering within the same parent
               if (target.targetType === 'between-items') {
                 let childIndex = target.childIndex ?? 0;
-                console.log('🎯 Raw child index from library:', childIndex);
                 
                 // Get the current index of the dragged item to determine if moving up or down
                 const parentItem = items[targetParentId as string];
