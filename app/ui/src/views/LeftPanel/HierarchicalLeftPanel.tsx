@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef, useMemo } from 'react';
-import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem } from 'react-complex-tree';
+import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, TreeEnvironmentRef, InteractionMode } from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
@@ -54,6 +54,10 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const [selectedItems, setSelectedItems] = useState<TreeItemIndex[]>([]);
   const [focusedItem, setFocusedItem] = useState<TreeItemIndex>();
   const dataService = useRef(HierarchicalLeftPanelDataService.getInstance());
+  const treeEnvironmentRef = useRef<TreeEnvironmentRef<HierarchicalTreeNode>>(null);
+  const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
+
+  const DOUBLE_CLICK_THRESHOLD = 300; // ms
 
   useEffect(() => {
     const updateTreeData = () => {
@@ -73,6 +77,59 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     console.log('🌲 HierarchicalLeftPanel: Converted items:', converted);
     return converted;
   }, [treeData]);
+
+  const handleItemClick = (itemId: TreeItemIndex, item: TreeItem<HierarchicalTreeNode>) => {
+    const now = Date.now();
+    const lastClick = lastClickTime.current;
+
+    // Check for double-click
+    if (lastClick && lastClick.itemId === itemId && now - lastClick.time < DOUBLE_CLICK_THRESHOLD) {
+      // Double-click detected - trigger rename
+      console.log('✏️ Double-click detected on:', itemId);
+      
+      // Focus the item first
+      if (treeEnvironmentRef.current) {
+        treeEnvironmentRef.current.focusItem(itemId, 'hierarchical-tree');
+      }
+      
+      // Simulate F2 key press to trigger rename
+      setTimeout(() => {
+        const event = new KeyboardEvent('keydown', { key: 'F2' });
+        document.dispatchEvent(event);
+      }, 50);
+      
+      lastClickTime.current = null; // Reset
+      return;
+    }
+
+    // Update last click time
+    lastClickTime.current = { itemId, time: now };
+
+    // Single click - handle selection and navigation
+    if (!item.data) return;
+    const node = item.data;
+
+    // Handle special action items
+    if (node.id === 'new-study-action') {
+      dataService.current.addNewStudy();
+      return;
+    }
+
+    // DON'T toggle if item is a folder and is already expanded
+    // The arrow click will handle toggling
+    const isExpanded = expandedItems.includes(itemId);
+    if (item.isFolder && isExpanded) {
+      console.log('📁 Item already expanded, not toggling on label click');
+      // Just handle selection/navigation, don't toggle
+    }
+
+    // Handle selection
+    dataService.current.selectNode(node.id);
+    if (node.viewInfo) {
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo(node.viewInfo);
+    }
+  };
 
   const handleSelectItems = (itemIds: TreeItemIndex[]) => {
     if (itemIds.length === 0 || itemIds[0] === 'root') return;
@@ -110,6 +167,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
       <div className={styles.treeContainer}>
                 <div style={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
           <ControlledTreeEnvironment<HierarchicalTreeNode>
+            ref={treeEnvironmentRef}
             items={items}
             getItemTitle={(item) => {
               const title = item.data?.displayName || `Item ${item.index}`;
@@ -123,6 +181,9 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 focusedItem,
               },
             }}
+            defaultInteractionMode={InteractionMode.ClickArrowToExpand}
+            canRename={true}
+            canInvokePrimaryActionOnItemContainer={false}
             onRenameItem={(item, newName) => {
               console.log('✏️ onRenameItem called for:', item.index, 'new name:', newName);
               
