@@ -50,12 +50,14 @@ const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemInd
 
 export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisible }) => {
   const [treeData, setTreeData] = useState<HierarchicalTreeNode[]>([]);
-  const [expandedItems, setExpandedItems] = useState<TreeItemIndex[]>(['root', 'mystudies', 'publicstudies']);
+  const [expandedItems, setExpandedItems] = useState<TreeItemIndex[]>(['root', 'mystudies']);
   const [selectedItems, setSelectedItems] = useState<TreeItemIndex[]>([]);
   const [focusedItem, setFocusedItem] = useState<TreeItemIndex>();
   const dataService = useRef(HierarchicalLeftPanelDataService.getInstance());
   const treeEnvironmentRef = useRef<TreeEnvironmentRef<HierarchicalTreeNode>>(null);
   const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
+  const isExpandCollapseAction = useRef(false);
+  const isDragging = useRef(false);
 
   const DOUBLE_CLICK_THRESHOLD = 300; // ms
 
@@ -262,9 +264,30 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 }
               })();
             }}
-            onExpandItem={(item) => setExpandedItems([...expandedItems, item.index])}
-            onCollapseItem={(item) => setExpandedItems(expandedItems.filter(id => id !== item.index))}
+            onExpandItem={(item) => {
+              isExpandCollapseAction.current = true;
+              setExpandedItems([...expandedItems, item.index]);
+              // Reset flag after a short delay
+              setTimeout(() => {
+                isExpandCollapseAction.current = false;
+              }, 50);
+            }}
+            onCollapseItem={(item) => {
+              isExpandCollapseAction.current = true;
+              setExpandedItems(expandedItems.filter(id => id !== item.index));
+              // Reset flag after a short delay
+              setTimeout(() => {
+                isExpandCollapseAction.current = false;
+              }, 50);
+            }}
             onSelectItems={(itemIds) => {
+              // Don't handle selection if it's from expand/collapse or drag action
+              if (isExpandCollapseAction.current || isDragging.current) {
+                console.log('⚠️ Ignoring selection from expand/collapse or drag action');
+                setSelectedItems(itemIds); // Still update selected items visually
+                return;
+              }
+              
               setSelectedItems(itemIds);
               if (itemIds.length > 0 && itemIds[0] !== 'root') {
                 const itemId = itemIds[0];
@@ -288,6 +311,8 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             }}
             onFocusItem={(item) => setFocusedItem(item.index)}
             onDrop={(draggedItems, target) => {
+              // Mark that we're in a drag operation to prevent selection
+              isDragging.current = true;
               
               // Get the dragged item IDs
               const draggedIds = draggedItems.map(item => item.index as string);
@@ -347,6 +372,11 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               } else {
                 console.warn('⚠️ Drop target type not supported:', target.targetType);
               }
+              
+              // Reset dragging flag after drop is complete
+              setTimeout(() => {
+                isDragging.current = false;
+              }, 100);
             }}
             canDragAndDrop={true}
             canDropOnFolder={true}
