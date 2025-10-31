@@ -195,15 +195,46 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               console.log('🎯 Target type:', target.targetType);
               
               // Handle reordering within the same parent
-              if (target.targetType === 'between-items' && 
-                  (targetParentId === 'mystudies' || targetParentId === 'publicstudies')) {
-                const childIndex = target.childIndex ?? 0;
-                console.log('🎯 Child index:', childIndex);
+              if (target.targetType === 'between-items') {
+                let childIndex = target.childIndex ?? 0;
+                console.log('🎯 Raw child index from library:', childIndex);
                 
-                // Call the data service to reorder
-                dataService.current.reorderStudy(targetParentId as string, draggedId, childIndex);
+                // Get the current index of the dragged item to determine if moving up or down
+                const parentItem = items[targetParentId as string];
+                if (parentItem?.children) {
+                  const currentIndex = parentItem.children.indexOf(draggedId);
+                  console.log('🎯 Current index of dragged item:', currentIndex);
+                  console.log('🎯 Target index:', childIndex);
+                  
+                  // If moving upward (to a lower index), the childIndex is already correct
+                  // because the library calculates it as the "insert before" position
+                  // If moving downward (to a higher index), we need to adjust by -1
+                  // because we'll remove the item first, shifting indices down
+                  if (currentIndex < childIndex) {
+                    // Moving down: adjust index to account for removal
+                    childIndex = childIndex - 1;
+                    console.log('🎯 Adjusted index for downward move:', childIndex);
+                  }
+                }
+                
+                console.log('🎯 Final child index:', childIndex);
+                
+                // Check if reordering studies
+                if (targetParentId === 'mystudies' || targetParentId === 'publicstudies') {
+                  // Reorder studies
+                  dataService.current.reorderStudy(targetParentId as string, draggedId, childIndex);
+                } else {
+                  // Check if reordering cohorts within a study
+                  // The targetParentId should be a study ID
+                  if (parentItem?.data) {
+                    console.log('🎯 Reordering cohort within study:', targetParentId);
+                    dataService.current.reorderCohort(targetParentId as string, draggedId, childIndex);
+                  } else {
+                    console.warn('⚠️ Drop target not supported:', target.targetType, targetParentId);
+                  }
+                }
               } else {
-                console.warn('⚠️ Drop target not supported:', target.targetType, targetParentId);
+                console.warn('⚠️ Drop target type not supported:', target.targetType);
               }
             }}
             canDragAndDrop={true}

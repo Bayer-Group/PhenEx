@@ -174,19 +174,19 @@ export class HierarchicalLeftPanelDataService {
       const studyNodes: HierarchicalTreeNode[] = [];
       
       // Add "New Study" action item at the top
-      studyNodes.push({
-        id: 'new-study-action',
-        displayName: '+ New Study',
-        level: 1,
-        viewInfo: { viewType: ViewType.CohortDefinition, data: null },
-        children: [],
-        height: 35,
-        fontSize: 16,
-        renderer: StudyTreeRenderer,
-        collapsed: true,
-        selected: false,
-        onClick: () => this.addNewStudy(),
-      });
+      // studyNodes.push({
+      //   id: 'new-study-action',
+      //   displayName: '+ New Study',
+      //   level: 1,
+      //   viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+      //   children: [],
+      //   height: 35,
+      //   fontSize: 16,
+      //   renderer: StudyTreeRenderer,
+      //   collapsed: true,
+      //   selected: false,
+      //   onClick: () => this.addNewStudy(),
+      // });
       
       for (const study of this.cachedUserStudies) {
         const studyNode = await this.createStudyNode(study, 1, study.id === currentlySelectedNodeId);
@@ -411,5 +411,65 @@ export class HierarchicalLeftPanelDataService {
     
     // Update tree data and notify listeners
     await this.updateTreeData();
+  }
+
+  /**
+   * Reorder cohorts within a study
+   * @param studyId The ID of the study containing the cohorts
+   * @param cohortId The ID of the cohort being moved
+   * @param newIndex The target index position
+   */
+  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {
+    console.log(`🔄 reorderCohort: Moving cohort ${cohortId} to index ${newIndex} in study ${studyId}`);
+    
+    try {
+      // Clear and reload cohorts to ensure we have fresh data
+      this.dataService.clearStudyCohortsCache(studyId);
+      const cohorts = await this.dataService.getCohortsForStudy(studyId);
+      
+      if (!cohorts || cohorts.length === 0) {
+        console.error(`❌ No cohorts found for study ${studyId}`);
+        return;
+      }
+      
+      console.log(`📋 Current cohorts order:`, cohorts.map((c, i) => `${i}: ${c.name}`));
+      
+      // Find current index
+      const currentIndex = cohorts.findIndex(c => c.id === cohortId);
+      if (currentIndex === -1) {
+        console.error(`❌ Cohort ${cohortId} not found in study ${studyId}`);
+        return;
+      }
+      
+      console.log(`📍 Moving cohort from index ${currentIndex} to ${newIndex}`);
+      
+      // Remove from current position
+      const [movedCohort] = cohorts.splice(currentIndex, 1);
+      
+      // Insert at new position
+      cohorts.splice(newIndex, 0, movedCohort);
+      
+      console.log(`✅ New cohorts order:`, cohorts.map((c, i) => `${i}: ${c.name}`));
+      
+      // Update display_order for all affected cohorts
+      const cohortOrders = cohorts.map((cohort, index) => ({
+        cohort_id: cohort.id,
+        display_order: index
+      }));
+      
+      console.log(`💾 Persisting cohort orders:`, cohortOrders);
+      
+      // Persist to backend
+      await this.dataService.updateCohortsDisplayOrder(studyId, cohortOrders);
+      console.log('✅ Cohort display order persisted to backend');
+      
+      // Clear cache again to force fresh load
+      this.dataService.clearStudyCohortsCache(studyId);
+      
+      // Update tree data and notify listeners
+      await this.updateTreeData();
+    } catch (error) {
+      console.error('❌ Failed to reorder cohort:', error);
+    }
   }
 }

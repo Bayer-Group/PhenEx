@@ -111,7 +111,6 @@
 .treeContainer :global(.rct-tree-item-arrow) {
   padding: 4px;
   cursor: pointer;
-  background-color: purple; /* DEBUG */
 }
 
 /* Action item styling (e.g., "New Study") */
