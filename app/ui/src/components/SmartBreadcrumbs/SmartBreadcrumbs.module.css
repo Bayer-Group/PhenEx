@@ -1,0 +1,47 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.itemWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item {
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  user-select: none;
+}
+
+.regularItem {
+  color: #666;
+  background-color: transparent;
+}
+
+.regularItem:hover {
+  color: #333;
+  background-color: #f0f0f0;
+}
+
+.lastItem {
+  color: #1a73e8;
+  font-weight: 500;
+  background-color: #e8f0fe;
+}
+
+.lastItem:hover {
+  background-color: #d2e3fc;
+}
+
+.separator {
+  color: #999;
+  font-size: 14px;
+  user-select: none;
+}

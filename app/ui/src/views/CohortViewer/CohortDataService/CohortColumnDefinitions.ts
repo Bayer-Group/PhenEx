@@ -35,12 +35,13 @@ export const defaultColumns = [
   {
     field: 'rowDrag',
     headerName: '',
-    width: 40,
+    width: 60,
     pinned: 'left',
     rowDrag: true,
     filter: false,
     suppressHeaderMenuButton: true,
     cellClass: 'row-drag-handle',
+    cellStyle: { textAlign: 'right', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' },
   },
   {
     field: 'type',

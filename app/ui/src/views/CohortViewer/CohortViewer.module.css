@@ -79,7 +79,7 @@
   outline: none;
   width: 60%;
   font-family: 'IBMPlexSans-bold' !important;
-  margin-left: 60px;
+  margin-left: var(--centerPanelLeftMargin);
   margin-top: 0px;
   color:var(--text-color-normal) !important;
 }
@@ -91,7 +91,7 @@
 .sectionTabsContainer {
   flex-direction: row;
   display: flex;
-  margin-left: 10px;
+  margin-left: var(--centerPanelLeftMargin);
   position: absolute;
   top: calc(var(--top_app_navigation_tab_bar) + 35px);
   background-color: transparent;

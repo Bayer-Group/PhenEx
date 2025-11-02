@@ -10,6 +10,7 @@ import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
+import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -37,7 +38,7 @@ export enum CohortViewType {
 }
 
 export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
-  const [cohortName, setCohortName] = useState(data ?? '');
+  const [cohortName, setCohortName] = useState('');
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
@@ -312,10 +313,28 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     );
   };
 
+  const renderBreadcrumbs = () => {
+    const breadcrumbItems = [
+      {
+        displayName: cohortName || 'Unnamed Cohort',
+        onClick: () => {},
+      },
+    ];
+
+    const handleEditLastItem = async (newValue: string) => {
+      setCohortName(newValue);
+      dataService.cohort_name = newValue;
+      await dataService.saveChangesToCohort();
+    };
+
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} />;
+  };  
+  
   return (
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
-        {renderTitle()}
+        {/* {renderTitle()} */}
+        {renderBreadcrumbs()}
         <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         <IssuesDisplayControl 
           showPopover={showIssuesPopover} 
