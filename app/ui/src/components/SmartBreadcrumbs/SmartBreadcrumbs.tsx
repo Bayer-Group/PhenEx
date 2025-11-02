@@ -10,9 +10,11 @@ interface BreadcrumbItem {
 interface SmartBreadcrumbsProps {
   items: BreadcrumbItem[];
   onEditLastItem?: (newValue: string) => void;
+  classNameSmartBreadcrumbsContainer?: string;
+  classNameBreadcrumbItem?: string;
 }
 
-export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem }) => {
+export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem, classNameSmartBreadcrumbsContainer, classNameBreadcrumbItem }) => {
   const lastItemRef = useRef<HTMLDivElement>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editorPosition, setEditorPosition] = useState({ x: 0, y: 0 });
@@ -49,7 +51,7 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
 
   return (
     <>
-      <div className={styles.container}>
+      <div className={`${styles.container} ${classNameSmartBreadcrumbsContainer}`}>
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
 
@@ -57,7 +59,7 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
             <div key={index} className={styles.itemWrapper}>
               <div
                 ref={isLast ? lastItemRef : null}
-                className={`${styles.item} ${isLast ? styles.lastItem : styles.regularItem}`}
+                className={`${styles.item} ${isLast ? styles.lastItem : styles.regularItem} ${classNameBreadcrumbItem}`}
                 onClick={isLast ? handleLastItemClick : item.onClick}
               >
                 {item.displayName}

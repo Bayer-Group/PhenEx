@@ -332,6 +332,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                   dataService.current.selectNode(node.id);
                   if (node.viewInfo) {
                     const mainViewService = MainViewService.getInstance();
+                    console.log("NAVIGATING TO:", node.viewInfo);
                     mainViewService.navigateTo(node.viewInfo);
                   }
                 }

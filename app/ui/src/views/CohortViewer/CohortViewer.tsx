@@ -39,6 +39,7 @@ export enum CohortViewType {
 
 export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
   const [cohortName, setCohortName] = useState('');
+  const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
@@ -49,30 +50,34 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
-    const loadData = async () => {
+    const loadData = () => {
+      console.log("loading cohort data")
       if (data !== undefined) {
-        await dataService.loadCohortData(data);
+        dataService.loadCohortData(data);
+        console.log("finished loading cohort data", dataService.cohort_data)
       } else {
         dataService.createNewCohort();
       }
       setCohortName(dataService.cohort_name);
+      setStudyName(dataService.getStudyNameForCohort());
     };
     loadData();
   }, [data]);
 
   useEffect(() => {
-    // Update cohort name when data service changes
-    const updateCohortName = () => {
+    // Update cohort name and study name when data service changes
+    const updateCohortData = () => {
       if (dataService.cohort_data?.name) {
         setCohortName(dataService._cohort_name);
+        setStudyName(dataService.getStudyNameForCohort());
       }
     };
 
-    updateCohortName();
-    dataService.addListener(updateCohortName);
+    updateCohortData();
+    dataService.addListener(updateCohortData);
 
     return () => {
-      dataService.removeListener(updateCohortName);
+      dataService.removeListener(updateCohortData);
     };
   }, [dataService]);
 
@@ -316,6 +321,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
       {
+        displayName: studyName || 'Study',
+        onClick: () => {},
+      },
+      {
         displayName: cohortName || 'Unnamed Cohort',
         onClick: () => {},
       },
@@ -327,7 +336,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       await dataService.saveChangesToCohort();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} />;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} />;
   };  
   
   return (

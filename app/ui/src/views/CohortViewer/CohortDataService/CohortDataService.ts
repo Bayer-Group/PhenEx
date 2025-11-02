@@ -18,6 +18,8 @@ export class CohortDataService {
   private static instance: CohortDataService;
   public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
+  private _study_data: Record<string, any> = {};
+
   public issues_service: CohortIssuesService;
   public constants_service: ConstantsDataService;
   public codelists_service: CodelistDataService;
@@ -64,6 +66,11 @@ export class CohortDataService {
     this._cohort_data = value;
   }
 
+  public getStudyNameForCohort(): string {
+    console.log("GETTING STUYD NAME", this._cohort_data)
+    return this._study_data?.name || 'Unknown Study';
+  }
+
   public get table_data(): TableData {
     return this._table_data;
   }
@@ -89,23 +96,33 @@ export class CohortDataService {
     };
   }
 
-  public async loadCohortData(cohortIdentifiers: string): Promise<void> {
-    try {
+  public loadCohortData(cohortData: any): void {
+    // try {
       let cohortResponse = undefined;
-      try {
-        cohortResponse = await getUserCohort(cohortIdentifiers.id);
-      } catch {
-        cohortResponse = await getPublicCohort(cohortIdentifiers.id);
-      }
+      // if (cohortData == undefined){
+      //   try {
+      //     cohortResponse = await getUserCohort(cohortData.id);
+      //   } catch {
+      //     cohortResponse = await getPublicCohort(cohortData.id);
+      //   }
+      // } 
+      cohortResponse = cohortData.cohort_data;
+      this._study_data = cohortData.study
+
+     console.log("THIS WAS THE DATA", cohortResponse);
+      console.log("ORIGINAL", cohortData)
+      console.log("JUST GOT DATA")
 
       this._cohort_data = cohortResponse;
       this.issues_service.validateCohort();
       this.ensureEffectiveTypes(); // Ensure all phenotypes have effective_type
       this.sortPhenotypes();
+      console.log("AFTE RSORT", this._cohort_data)
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
         this._cohort_data.id = createID();
       }
+      
       // Ensure phenotypes array exists
       if (!this._cohort_data.phenotypes) {
         this._cohort_data.phenotypes = [];
@@ -113,10 +130,11 @@ export class CohortDataService {
 
       this._table_data = this.tableDataFromCohortData();
       this.constants_service.refreshConstants();
+      console.log(this._table_data)
       this.notifyListeners(); // Notify listeners after loading data
-    } catch (error) {
-      console.error('Error loading cohort data:', error);
-    }
+    // } catch (error) {
+    //   console.error('Error loading cohort data:', error);
+    // }
   }
 
   public setDatabaseSettings(databaseConfig) {
@@ -219,7 +237,11 @@ export class CohortDataService {
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
-    await updateCohort(this._cohort_data.id, this._cohort_data);
+    
+    // Create a copy of cohort data without the study reference to avoid circular JSON
+    const { study, ...cohortDataToSave } = this._cohort_data;
+    await updateCohort(this._cohort_data.id, cohortDataToSave);
+    
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     if (refreshGrid) {

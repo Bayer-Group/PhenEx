@@ -71,7 +71,14 @@
   margin-bottom: 20px;
   height: 40px;
 }
-
+.breadcrumbsContainer{
+  position: absolute;
+  margin-left:var(--centerPanelLeftMargin);
+  font-size:40px !important;
+}
+.breadcrumbItem{
+  font-size: 40px !important;
+}
 .cohortNameInput {
   border: none;
   padding: 0px;

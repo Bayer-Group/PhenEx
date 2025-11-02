@@ -29,6 +29,7 @@ export interface CohortData {
   study_id: string;
   parent_cohort_id?: string;
   display_order?: number;
+  study?: StudyData;
 }
 
 export class CohortsDataService {
@@ -92,17 +93,35 @@ export class CohortsDataService {
   }
 
   public async getCohortsForStudy(study_id: string): Promise<CohortData[]> {
+    console.log("GETTING COHORTS FOR STUDY", study_id)
     if (!this._studyCohortsCache.has(study_id)) {
       try {
         const cohorts = await getCohortsForStudy(study_id);
+
+        console.log("GOT COHORTS FOR STUDY LOADING FROM BACKEND", study_id, cohorts)
+
+        // Find the study data from cache
+        const study = 
+          this._userStudies?.find(s => s.id === study_id) || 
+          this._publicStudies?.find(s => s.id === study_id);
+
+        // Attach study reference to each cohort
+        const cohortsWithStudy = cohorts.map((cohort: any) => ({
+          ...cohort,
+          study: study
+        }));
+
         // Assign display_order if missing and sort
-        const sortedCohorts = this.ensureDisplayOrder<CohortData>(cohorts);
+        const sortedCohorts = this.ensureDisplayOrder<CohortData>(cohortsWithStudy);
         this._studyCohortsCache.set(study_id, sortedCohorts);
       } catch (error) {
         console.warn('🚨 Failed to fetch cohorts for study:', study_id, error);
         this._studyCohortsCache.set(study_id, []);
       }
+    }else{
+      console.log("USING CACHED COHORTS FOR STUDY")
     }
+    console.log("RETURNING COHORTS FOR STUDY", study_id, this._studyCohortsCache.get(study_id))
     return this._studyCohortsCache.get(study_id) || [];
   }
 
@@ -141,9 +160,16 @@ export class CohortsDataService {
       const allStudies = [...userStudies, ...publicStudies];
       const cohortPromises = allStudies.map(async (study) => {
         const cohorts = await getCohortsForStudy(study.id);
-        this._studyCohortsCache.set(study.id, cohorts);
+        
+        // Attach study reference to each cohort
+        const cohortsWithStudy = cohorts.map((cohort: any) => ({
+          ...cohort,
+          study: study
+        }));
+        
+        this._studyCohortsCache.set(study.id, cohortsWithStudy);
         console.log(`🏗️ Loaded ${cohorts.length} cohorts for study "${study.name}"`);
-        return { study, cohorts };
+        return { study, cohorts: cohortsWithStudy };
       });
       
       await Promise.all(cohortPromises);
