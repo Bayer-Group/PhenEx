@@ -23,7 +23,6 @@ def OneInpatientTwoOutpatientPhenotype(
     codelist: Codelist,
     categorical_filter_inpatient: CategoricalFilter,
     categorical_filter_outpatient: CategoricalFilter,
-    *,
     relative_time_range: Optional[
         Union[RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]]
     ] = None,
