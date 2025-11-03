@@ -84,7 +84,6 @@ class ComputationGraphPhenotype(Phenotype):
                 joined_table = joined_table.mutate(**{column_name: mutated_column})
 
         if self.populate == "value":
-            print("I AM POPULATING THE VALUE")
             _expression = self.expression.get_value_expression(
                 joined_table, operate_on=self.operate_on
             )
