@@ -66,12 +66,7 @@ class AgePhenotype(Phenotype):
         **kwargs,
     ):
         super(AgePhenotype, self).__init__(name=name)
-
-        self.min_age = self.max_age = None
-        if value_filter:
-            self.min_age = value_filter.min_value
-            self.max_age = value_filter.max_value
-
+        self.value_filter = value_filter
         self.domain = domain
         self.anchor_phenotype = anchor_phenotype
 
@@ -127,28 +122,11 @@ class AgePhenotype(Phenotype):
         YEARS_FROM_ANCHOR = (
             reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
         ).floor()
-        table = table.mutate(YEARS_FROM_ANCHOR=YEARS_FROM_ANCHOR)
-
-        conditions = []
-        # Fix this, this logic needs to be abstracted to a ValueFilter
-        if self.min_age is not None:
-            if self.min_age.operator == ">":
-                conditions.append(table.YEARS_FROM_ANCHOR > self.min_age.value)
-            elif self.min_age.operator == ">=":
-                conditions.append(table.YEARS_FROM_ANCHOR >= self.min_age.value)
-            else:
-                raise ValueError("Operator for min days be > or >=")
-        if self.max_age is not None:
-            if self.max_age.operator == "<":
-                conditions.append(table.YEARS_FROM_ANCHOR < self.max_age.value)
-            elif self.max_age.operator == "<=":
-                conditions.append(table.YEARS_FROM_ANCHOR <= self.max_age.value)
-            else:
-                raise ValueError("Operator for max days be < or <=")
-        if conditions:
-            table = table.filter(conditions)
-        person_table = table
-
-        person_table = person_table.mutate(VALUE=person_table.YEARS_FROM_ANCHOR)
-
-        return self._perform_final_processing(person_table)
+        table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
+        table = self._perform_value_filtering(table)
+        return self._perform_final_processing(table)
+    
+    def _perform_value_filtering(self, table: Table) -> Table:
+        if self.value_filter is not None:
+            table = self.value_filter.filter(table)
+        return table
