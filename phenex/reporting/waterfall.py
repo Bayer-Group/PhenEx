@@ -21,6 +21,11 @@ class Waterfall(Reporter):
 
     """
 
+    def _append_components_recursively(self, phenotype, table):
+        if self.include_component_phenotypes:
+            for child in phenotype.children:
+                self._append_components_recursively(child, table)
+
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
         logger.debug(f"Beginning execution of waterfall. Calculating N patents")
@@ -51,10 +56,16 @@ class Waterfall(Reporter):
 
         for inclusion in cohort.inclusions:
             table = self.append_phenotype_to_waterfall(table, inclusion, "inclusion")
+            if self.include_component_phenotypes:
+                self._append_components_recursively(inclusion, table)
+
+                
 
         for exclusion in cohort.exclusions:
             table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion")
-
+            if self.include_component_phenotypes:
+                self._append_components_recursively(inclusion, table)
+                
         self.ds.append(
             {
                 "Type": "final_cohort",
@@ -87,6 +98,8 @@ class Waterfall(Reporter):
             )
         elif type == "exclusion":
             table = table.filter(~table["PERSON_ID"].isin(phenotype.table["PERSON_ID"]))
+        elif type == 'component':
+            table = table
         else:
             raise ValueError("type must be either inclusion or exclusion")
         logger.debug(f"Starting {type} criteria {phenotype.name}")
@@ -97,7 +110,7 @@ class Waterfall(Reporter):
                     phenotype.display_name if self.pretty_display else phenotype.name
                 ),
                 "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
-                "Remaining": table.select("PERSON_ID").distinct().count().execute(),
+                "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else None,
             }
         )
         logger.debug(
