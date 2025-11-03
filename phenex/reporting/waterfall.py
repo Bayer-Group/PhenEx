@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from .reporter import Reporter
 from phenex.util import create_logger
@@ -24,6 +25,7 @@ class Waterfall(Reporter):
     def _append_components_recursively(self, phenotype, table):
         if self.include_component_phenotypes:
             for child in phenotype.children:
+                self.append_phenotype_to_waterfall(table, child, "component")
                 self._append_components_recursively(child, table)
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
@@ -70,7 +72,7 @@ class Waterfall(Reporter):
             {
                 "Type": "final_cohort",
                 "Name": "",
-                "N": None,
+                "N": np.nan,
                 "Remaining": N,
             }
         )
@@ -110,7 +112,7 @@ class Waterfall(Reporter):
                     phenotype.display_name if self.pretty_display else phenotype.name
                 ),
                 "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
-                "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else None,
+                "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else np.nan,
             }
         )
         logger.debug(
@@ -119,11 +121,17 @@ class Waterfall(Reporter):
         return table.select("PERSON_ID")
 
     def append_delta(self, ds):
-        ds[0]["Delta"] = None
+        ds[0]["Delta"] = np.nan
+        previous_remaining = ds[0]["Remaining"]
         for i in range(1, len(ds) - 1):
             d_current = ds[i]
             d_previous = ds[i - 1]
-            d_current["Delta"] = d_current["Remaining"] - d_previous["Remaining"]
+            if pd.isna(d_current["Remaining"]):
+                d_current["Delta"] = np.nan
+                continue
+            print(f"Current: {d_current['Remaining']}, Previous: {previous_remaining}")
+            d_current["Delta"] = d_current["Remaining"] - previous_remaining
+            previous_remaining = d_current["Remaining"]
         return ds
 
     def create_pretty_display(self):
