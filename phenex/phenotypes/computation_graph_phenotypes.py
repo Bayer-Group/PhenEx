@@ -254,8 +254,10 @@ class ScorePhenotype(ComputationGraphPhenotype):
         **kwargs,
     ):
         # Remove keys that we set explicitly to avoid duplicate keyword arguments
-        kwargs = {k: v for k, v in kwargs.items() if k not in ('operate_on', 'populate')}
-        
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ScorePhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -302,8 +304,10 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         **kwargs,
     ):
         # Remove keys that we set explicitly to avoid duplicate keyword arguments
-        kwargs = {k: v for k, v in kwargs.items() if k not in ('operate_on', 'populate')}
-        
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -338,8 +342,12 @@ class LogicPhenotype(ComputationGraphPhenotype):
         **kwargs,
     ):
         # Remove keys that we set explicitly to avoid duplicate keyword arguments
-        kwargs = {k: v for k, v in kwargs.items() if k not in ('operate_on', 'populate', 'reduce')}
-        
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("operate_on", "populate", "reduce")
+        }
+
         super(LogicPhenotype, self).__init__(
             name=name,
             expression=expression,
