@@ -131,6 +131,131 @@ class Waterfall(Reporter):
         styled_df = styled_df.hide(subset=['_color'], axis='columns')
         
         return styled_df
+    
+    def to_excel(self, filepath, sheet_name='Waterfall'):
+        """
+        Export waterfall report to Excel with color styling.
+        All cells are formatted as text to prevent Excel auto-formatting.
+        
+        Args:
+            filepath: Path to save the Excel file
+            sheet_name: Name of the Excel sheet (default: 'Waterfall')
+        """
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import PatternFill, Font, Alignment
+            from openpyxl.utils.dataframe import dataframe_to_rows
+        except ImportError:
+            raise ImportError("openpyxl is required for Excel export. Install with: pip install openpyxl")
+        
+        # Get dataframe without _color column for export
+        if '_color' in self.df.columns:
+            export_df = self.df.drop(columns=['_color'])
+            colors = self.df['_color'].tolist()
+        else:
+            export_df = self.df
+            colors = [None] * len(self.df)
+        
+        # Create workbook and worksheet
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sheet_name
+        
+        # Write headers
+        headers = list(export_df.columns)
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+            # Style header
+            cell.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+            cell.font = Font(bold=True, color='FFFFFF')
+            cell.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Write data rows and apply styling
+        for row_idx, (df_idx, row_data) in enumerate(export_df.iterrows(), start=2):
+            color = colors[df_idx] if df_idx < len(colors) else None
+            
+            # Get fill pattern for this row
+            fill = None
+            if color and pd.notna(color):
+                hex_color = self._hsl_to_hex(color)
+                if hex_color:
+                    fill = PatternFill(start_color=hex_color, end_color=hex_color, fill_type='solid')
+            
+            # Write each cell as text
+            for col_idx, value in enumerate(row_data, start=1):
+                # Convert value to string and write
+                cell_value = str(value) if pd.notna(value) else ''
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+                
+                # Force cell to be text format (prevents Excel auto-formatting)
+                cell.number_format = '@'  # '@' is the Excel format code for text
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+                
+                # Apply background color
+                if fill:
+                    cell.fill = fill
+        
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Save workbook
+        wb.save(filepath)
+        logger.info(f"Waterfall report exported to {filepath}")
+    
+    def _hsl_to_hex(self, hsl_string):
+        """Convert HSL color string to hex for Excel"""
+        import re
+        
+        # Parse HSL string like 'hsl(284, 16%, 24%)'
+        match = re.match(r'hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)', hsl_string)
+        if not match:
+            return None
+        
+        h, s, l = int(match.group(1)), int(match.group(2)), int(match.group(3))
+        
+        # Convert HSL to RGB
+        h = h / 360.0
+        s = s / 100.0
+        l = l / 100.0
+        
+        def hue_to_rgb(p, q, t):
+            if t < 0:
+                t += 1
+            if t > 1:
+                t -= 1
+            if t < 1/6:
+                return p + (q - p) * 6 * t
+            if t < 1/2:
+                return q
+            if t < 2/3:
+                return p + (q - p) * (2/3 - t) * 6
+            return p
+        
+        if s == 0:
+            r = g = b = l
+        else:
+            q = l * (1 + s) if l < 0.5 else l + s - l * s
+            p = 2 * l - q
+            r = hue_to_rgb(p, q, h + 1/3)
+            g = hue_to_rgb(p, q, h)
+            b = hue_to_rgb(p, q, h - 1/3)
+        
+        # Convert to hex
+        r_hex = format(int(r * 255), '02x')
+        g_hex = format(int(g * 255), '02x')
+        b_hex = format(int(b * 255), '02x')
+        
+        return f'{r_hex}{g_hex}{b_hex}'.upper()
 
     def append_phenotype_to_waterfall(self, table, phenotype, type, level, index= None, full_name = None):
         if type == "inclusion":
