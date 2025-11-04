@@ -21,15 +21,6 @@ class Waterfall(Reporter):
     | Delta | The change in number of patients that occurs by applying the phenotype on that row. |
 
     """
-    
-
-    def _append_components_recursively(self, current_phenotype, table, level=1, parent_index=""):
-        if level <= self.include_component_phenotypes_level:
-            for i, child in enumerate(current_phenotype.children):
-                current_index = f"{parent_index}.{i+1}"
-                current_name = child.display_name if self.pretty_display else child.name
-                self.append_phenotype_to_waterfall(table, child, "component", full_name=current_name, index=current_index, level=level)
-                self._append_components_recursively(child, table, level + 1, parent_index=current_index)
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
@@ -42,8 +33,8 @@ class Waterfall(Reporter):
             .execute()
         )
         logger.debug(f"Cohort has {N} patients")
+        # create info dictionaries for each phenotype containing counts
         self.ds = []
-
         table = cohort.entry_criterion.table
         N_entry = table.count().execute()
         index = 1
@@ -75,35 +66,62 @@ class Waterfall(Reporter):
             table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion", level = 0, index=index)
             if self.include_component_phenotypes_level is not None:
                 self._append_components_recursively(exclusion, table, parent_index = str(index))
-                
-        self.ds.append(
-            {
-                "Type": "final_cohort",
-                "Name": "",
-                "Level": 0,
-                "Component of":"",
-                "N": np.nan,
-                "Remaining": N,
-            }
-        )
+        
+        # Calculate deltas before adding first/last rows
         self.ds = self.append_delta(self.ds)
 
-        # create dataframe with phenotype counts
+        # create dataframe with phenotype counts (without first/last rows)
         self.df = pd.DataFrame(self.ds)
 
         # calculate percentage of entry criterion
         self.df["% Remaining"] = self.df["Remaining"] / N_entry * 100
         self.df["% N"] = self.df["N"] / N_entry * 100
+        
+        # Calculate % Source Database column before rounding
+        # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
+        entry_pct = N_entry / cohort.n_persons_in_source_database * 100
+        
+        # Round all numeric columns including % Source Database
         self.df = self.df.round(self.decimal_places)
+
+
+        #first row data
+        first_row_data = {
+            "Type": "info",
+            "Name": "N persons in database",
+            "N": cohort.n_persons_in_source_database,
+            "Level":0,
+            "Index":"",
+        }
+
+        
+        # last rows via concatenation (they won't have percentages calculated)
+        last_row_data = {
+            "Type": "info",
+            "Name": "Final Cohort Size",
+            "Remaining": N,
+            "Level":0,
+            "Index":"",
+        }
+        
+        # Concatenate: first row + main dataframe + last row
+        first_row_df = pd.DataFrame([first_row_data])
+        last_row_df = pd.DataFrame([last_row_data])
+        self.df = pd.concat([first_row_df, self.df, last_row_df], ignore_index=True)
+
+        entry_pct = round(N_entry / cohort.n_persons_in_source_database * 100, self.decimal_places)
+        final_pct = round(N / cohort.n_persons_in_source_database * 100, self.decimal_places)
+
+        self.df['% Source Database'] = [np.nan, entry_pct] + \
+                [np.nan]*(self.df.shape[0]-3) + \
+                [final_pct]
 
         if self.pretty_display:
             self.create_pretty_display()
 
         # Do final column selection (keep _color if it exists for styling)
-        columns_to_select = ["Type", "Name", "N", "% N", "Remaining", "% Remaining", "%", "Delta"]
-        if self.include_component_phenotypes_level is not None:
-            columns_to_select = ["Type", "Index", "Name", "N", "% N", "Remaining", "% Remaining", "Delta", "Level"]
-        
+        columns_to_select = ["Type", "Index", "Name", "N", "% N", "Remaining", "% Remaining", "Delta", '% Source Database']
+
         # Add _color column if it exists
         if '_color' in self.df.columns:
             columns_to_select.append('_color')
@@ -115,7 +133,91 @@ class Waterfall(Reporter):
             return self._apply_styling()
         
         return self.df
-    
+
+    def _append_components_recursively(self, current_phenotype, table, level=1, parent_index=""):
+        if level <= self.include_component_phenotypes_level:
+            for i, child in enumerate(current_phenotype.children):
+                current_index = f"{parent_index}.{i+1}"
+                current_name = child.display_name if self.pretty_display else child.name
+                self.append_phenotype_to_waterfall(table, child, "component", full_name=current_name, index=current_index, level=level)
+                self._append_components_recursively(child, table, level + 1, parent_index=current_index)
+
+    def append_phenotype_to_waterfall(self, table, phenotype, type, level, index= None, full_name = None):
+        if type == "inclusion":
+            table = table.inner_join(
+                phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
+            )
+        elif type == "exclusion":
+            table = table.filter(~table["PERSON_ID"].isin(phenotype.table["PERSON_ID"]))
+        elif type == 'component':
+            table = table
+        else:
+            raise ValueError("type must be either inclusion or exclusion")
+        logger.debug(f"Starting {type} criteria {phenotype.name}")
+
+        if full_name is None:
+            full_name = phenotype.display_name if self.pretty_display else phenotype.name
+            
+        self.ds.append(
+            {
+                "Type": type,
+                "Name": full_name,
+                "Level": level,
+                "Index": index if index is not None else str(level),
+                "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
+                "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else np.nan,
+            }
+        )
+        logger.debug(
+            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['Remaining']}"
+        )
+        return table.select("PERSON_ID")
+
+    def create_pretty_display(self):
+        """Format dataframe for display and apply color styling"""
+        # Add colors before any transformations
+        self._add_row_colors()
+        
+        # Format numeric columns as strings
+        self._format_numeric_columns()
+        
+        # Replace NAs and None values with empty strings
+        self.df = self.df.replace("<NA>", "")
+        
+        # Create sparse type column (show type only once per section)
+        self._create_sparse_type_column()
+
+    def _add_row_colors(self):
+        """Add HSL colors to each row based on type and level"""
+        color_map = self._get_color_map()
+        
+        self.df['_color'] = None
+        last_parent_color = None
+        
+        for idx, row in self.df.iterrows():
+            row_type = self._get_effective_type(row)
+            level = row.get('Level', 0)
+            
+            # Determine base color
+            if row_type == 'component':
+                base_color = last_parent_color
+            else:
+                base_color = color_map.get(row_type, (0, 0, 100))
+                last_parent_color = base_color
+            
+            # Apply brightness adjustment and convert to CSS string
+            adjusted_color = self._adjust_brightness(base_color, level)
+            self.df.at[idx, '_color'] = self._hsl_to_string(adjusted_color)
+
+    def _format_numeric_columns(self):
+        """Convert numeric columns to formatted strings"""
+        self.df["N"] = self.df["N"].astype("Int64").astype(str)
+        self.df["Delta"] = self.df["Delta"].astype("Int64").astype(str)
+        self.df["Remaining"] = self.df["Remaining"].astype("Int64").astype(str)
+        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
+        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
+        self.df["% Source Database"] = self.df["% Source Database"].astype("Float64").astype(str)
+
     def _apply_styling(self):
         """Apply background colors to dataframe rows"""
         def apply_row_color(row):
@@ -257,37 +359,6 @@ class Waterfall(Reporter):
         
         return f'{r_hex}{g_hex}{b_hex}'.upper()
 
-    def append_phenotype_to_waterfall(self, table, phenotype, type, level, index= None, full_name = None):
-        if type == "inclusion":
-            table = table.inner_join(
-                phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
-            )
-        elif type == "exclusion":
-            table = table.filter(~table["PERSON_ID"].isin(phenotype.table["PERSON_ID"]))
-        elif type == 'component':
-            table = table
-        else:
-            raise ValueError("type must be either inclusion or exclusion")
-        logger.debug(f"Starting {type} criteria {phenotype.name}")
-
-        if full_name is None:
-            full_name = phenotype.display_name if self.pretty_display else phenotype.name
-            
-        self.ds.append(
-            {
-                "Type": type,
-                "Name": full_name,
-                "Level": level,
-                "Index": index if index is not None else str(level),
-                "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
-                "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else np.nan,
-            }
-        )
-        logger.debug(
-            f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['Remaining']}"
-        )
-        return table.select("PERSON_ID")
-
     def append_delta(self, ds):
         ds[0]["Delta"] = np.nan
         previous_remaining = ds[0]["Remaining"]
@@ -301,42 +372,6 @@ class Waterfall(Reporter):
             d_current["Delta"] = d_current["Remaining"] - previous_remaining
             previous_remaining = d_current["Remaining"]
         return ds
-
-    def create_pretty_display(self):
-        """Format dataframe for display and apply color styling"""
-        # Add colors before any transformations
-        self._add_row_colors()
-        
-        # Format numeric columns as strings
-        self._format_numeric_columns()
-        
-        # Replace NAs and None values with empty strings
-        self.df = self.df.replace("<NA>", "")
-        
-        # Create sparse type column (show type only once per section)
-        self._create_sparse_type_column()
-    
-    def _add_row_colors(self):
-        """Add HSL colors to each row based on type and level"""
-        color_map = self._get_color_map()
-        
-        self.df['_color'] = None
-        last_parent_color = None
-        
-        for idx, row in self.df.iterrows():
-            row_type = self._get_effective_type(row)
-            level = row.get('Level', 0)
-            
-            # Determine base color
-            if row_type == 'component':
-                base_color = last_parent_color
-            else:
-                base_color = color_map.get(row_type, (0, 0, 50))
-                last_parent_color = base_color
-            
-            # Apply brightness adjustment and convert to CSS string
-            adjusted_color = self._adjust_brightness(base_color, level)
-            self.df.at[idx, '_color'] = self._hsl_to_string(adjusted_color)
     
     def _get_color_map(self):
         """Return HSL color definitions for each row type"""
@@ -345,7 +380,7 @@ class Waterfall(Reporter):
             'inclusion': (88, 51, 66),   # Green
             'exclusion': (347, 62, 77),  # Rasperry
             'component': None,           # Inherits from parent
-            'final_cohort': (0, 0, 80)   # Light gray
+            'final_cohort': (0, 0, 100)   # Light gray
         }
     
     def _get_effective_type(self, row):
@@ -367,14 +402,6 @@ class Waterfall(Reporter):
             return None
         h, s, l = hsl_tuple
         return f'hsl({h}, {s}%, {l}%)'
-    
-    def _format_numeric_columns(self):
-        """Convert numeric columns to formatted strings"""
-        self.df["N"] = self.df["N"].astype("Int64").astype(str)
-        self.df["Delta"] = self.df["Delta"].astype("Int64").astype(str)
-        self.df["Remaining"] = self.df["Remaining"].astype("Int64").astype(str)
-        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
-        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
 
     def _create_sparse_type_column(self):
         """Show type label only once per section (not repeated on each row)"""
