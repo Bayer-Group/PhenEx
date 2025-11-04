@@ -23,7 +23,7 @@ class Waterfall(Reporter):
     """
     
 
-    def _append_components_recursively(self, current_phenotype, table, level=0, parent_index=""):
+    def _append_components_recursively(self, current_phenotype, table, level=1, parent_index=""):
         if level <= self.include_component_phenotypes_level:
             for i, child in enumerate(current_phenotype.children):
                 current_index = f"{parent_index}.{i+1}"
@@ -50,6 +50,7 @@ class Waterfall(Reporter):
         self.ds.append(
             {
                 "Type": "entry",
+                "Level": 0,
                 "Index":str(index),
                 "Name": (
                     cohort.entry_criterion.display_name
@@ -63,7 +64,7 @@ class Waterfall(Reporter):
 
         for inclusion in cohort.inclusions:
             index += 1
-            table = self.append_phenotype_to_waterfall(table, inclusion, "inclusion", level = index)
+            table = self.append_phenotype_to_waterfall(table, inclusion, "inclusion", level = 0, index = index)
             if self.include_component_phenotypes_level is not None:
                 self._append_components_recursively(inclusion, table, parent_index = str(index))
 
@@ -71,7 +72,7 @@ class Waterfall(Reporter):
 
         for exclusion in cohort.exclusions:
             index += 1
-            table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion", level = index)
+            table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion", level = 0, index=index)
             if self.include_component_phenotypes_level is not None:
                 self._append_components_recursively(exclusion, table, parent_index = str(index))
                 
@@ -79,6 +80,7 @@ class Waterfall(Reporter):
             {
                 "Type": "final_cohort",
                 "Name": "",
+                "Level": 0,
                 "Component of":"",
                 "N": np.nan,
                 "Remaining": N,
@@ -90,18 +92,45 @@ class Waterfall(Reporter):
         self.df = pd.DataFrame(self.ds)
 
         # calculate percentage of entry criterion
-        self.df["%"] = self.df["Remaining"] / N_entry * 100
+        self.df["% Remaining"] = self.df["Remaining"] / N_entry * 100
+        self.df["% N"] = self.df["N"] / N_entry * 100
         self.df = self.df.round(self.decimal_places)
 
         if self.pretty_display:
             self.create_pretty_display()
 
-        # Do final column selection
-        if self.include_component_phenotypes_level is None:
-            self.df = self.df[["Type", "Name", "N", "Remaining", "%", "Delta"]]
-        else:
-            self.df = self.df[["Type", "Name","Index", "N", "Remaining", "%", "Delta"]]
+        # Do final column selection (keep _color if it exists for styling)
+        columns_to_select = ["Type", "Name", "N", "% N", "Remaining", "% Remaining", "%", "Delta"]
+        if self.include_component_phenotypes_level is not None:
+            columns_to_select = ["Type", "Index", "Name", "N", "% N", "Remaining", "% Remaining", "Delta", "Level"]
+        
+        # Add _color column if it exists
+        if '_color' in self.df.columns:
+            columns_to_select.append('_color')
+        
+        self.df = self.df[columns_to_select]
+        
+        # Return styled dataframe if pretty display is enabled
+        if self.pretty_display and '_color' in self.df.columns:
+            return self._apply_styling()
+        
         return self.df
+    
+    def _apply_styling(self):
+        """Apply background colors to dataframe rows"""
+        def apply_row_color(row):
+            color = row.get('_color')
+            if color and pd.notna(color):
+                return [f'background-color: {color}' for _ in row]
+            return ['' for _ in row]
+        
+        # Create styled dataframe (keeping _color column for now)
+        styled_df = self.df.style.apply(apply_row_color, axis=1)
+        
+        # Hide the _color column in display
+        styled_df = styled_df.hide(subset=['_color'], axis='columns')
+        
+        return styled_df
 
     def append_phenotype_to_waterfall(self, table, phenotype, type, level, index= None, full_name = None):
         if type == "inclusion":
@@ -149,16 +178,81 @@ class Waterfall(Reporter):
         return ds
 
     def create_pretty_display(self):
-        # cast counts to integer and to str, so that we can display without 'NaNs'
+        """Format dataframe for display and apply color styling"""
+        # Add colors before any transformations
+        self._add_row_colors()
+        
+        # Format numeric columns as strings
+        self._format_numeric_columns()
+        
+        # Replace NAs and None values with empty strings
+        self.df = self.df.replace("<NA>", "")
+        
+        # Create sparse type column (show type only once per section)
+        self._create_sparse_type_column()
+    
+    def _add_row_colors(self):
+        """Add HSL colors to each row based on type and level"""
+        color_map = self._get_color_map()
+        
+        self.df['_color'] = None
+        last_parent_color = None
+        
+        for idx, row in self.df.iterrows():
+            row_type = self._get_effective_type(row)
+            level = row.get('Level', 0)
+            
+            # Determine base color
+            if row_type == 'component':
+                base_color = last_parent_color
+            else:
+                base_color = color_map.get(row_type, (0, 0, 50))
+                last_parent_color = base_color
+            
+            # Apply brightness adjustment and convert to CSS string
+            adjusted_color = self._adjust_brightness(base_color, level)
+            self.df.at[idx, '_color'] = self._hsl_to_string(adjusted_color)
+    
+    def _get_color_map(self):
+        """Return HSL color definitions for each row type"""
+        return {
+            'entry': (208, 67, 75),      # Blue
+            'inclusion': (88, 51, 66),   # Green
+            'exclusion': (347, 62, 77),  # Rasperry
+            'component': None,           # Inherits from parent
+            'final_cohort': (0, 0, 80)   # Light gray
+        }
+    
+    def _get_effective_type(self, row):
+        """Get the effective type of a row (component if Type is empty)"""
+        return row['Type'] if row['Type'] != '' else 'component'
+    
+    def _adjust_brightness(self, hsl_tuple, level):
+        """Increase lightness based on component nesting level"""
+        if hsl_tuple is None:
+            return None
+        h, s, l = hsl_tuple
+        brightness_increase = min(level * 10, 30)  # +10% per level, max +30%
+        adjusted_l = min(l + brightness_increase, 95)  # Cap at 95%
+        return (h, s, adjusted_l)
+    
+    def _hsl_to_string(self, hsl_tuple):
+        """Convert HSL tuple to CSS color string"""
+        if hsl_tuple is None:
+            return None
+        h, s, l = hsl_tuple
+        return f'hsl({h}, {s}%, {l}%)'
+    
+    def _format_numeric_columns(self):
+        """Convert numeric columns to formatted strings"""
         self.df["N"] = self.df["N"].astype("Int64").astype(str)
         self.df["Delta"] = self.df["Delta"].astype("Int64").astype(str)
         self.df["Remaining"] = self.df["Remaining"].astype("Int64").astype(str)
-        self.df["%"] = self.df["%"].astype("Float64").astype(str)
+        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
+        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
 
-        # Replace NAs and None values with empty strings for display
-        self.df = self.df.replace("<NA>", "")
-
-        # create a sparse 'type' column name where inclusion/exclusion only appear once (instead of repeated on each row)
+    def _create_sparse_type_column(self):
+        """Show type label only once per section (not repeated on each row)"""
         previous_type = None
         sparse_types = []
         for _type in self.df["Type"].values:
