@@ -125,7 +125,7 @@ class AgePhenotype(Phenotype):
         table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
         table = self._perform_value_filtering(table)
         return self._perform_final_processing(table)
-    
+
     def _perform_value_filtering(self, table: Table) -> Table:
         if self.value_filter is not None:
             table = self.value_filter.filter(table)

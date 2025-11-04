@@ -11,7 +11,12 @@ class Reporter:
         decimal_places: Number of decimal places to round to. By default set to 1.
     """
 
-    def __init__(self, decimal_places: int = 1, pretty_display: bool = True, include_component_phenotypes_level=None):
+    def __init__(
+        self,
+        decimal_places: int = 1,
+        pretty_display: bool = True,
+        include_component_phenotypes_level=None,
+    ):
         self.decimal_places = decimal_places
         self.pretty_display = pretty_display
         self.include_component_phenotypes_level = include_component_phenotypes_level

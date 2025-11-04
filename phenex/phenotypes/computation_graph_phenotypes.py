@@ -214,7 +214,6 @@ class ComputationGraphPhenotype(Phenotype):
         return table
 
 
-
 class ScorePhenotype(ComputationGraphPhenotype):
     """
     ScorePhenotype is a CompositePhenotype that performs arithmetic operations using the **boolean** column of its component phenotypes and populations the **value** column. It should be used for calculating medical scores such as CHADSVASC, HASBLED, etc.
@@ -261,7 +260,7 @@ class ScorePhenotype(ComputationGraphPhenotype):
             operate_on="boolean",
             populate="value",
             value_filter=value_filter,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -305,7 +304,7 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
             return_date=return_date,
             operate_on="value",
             populate="value",
-            value_filter=value_filter
+            value_filter=value_filter,
         )
 
 

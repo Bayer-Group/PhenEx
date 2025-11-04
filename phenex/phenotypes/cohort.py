@@ -331,7 +331,9 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
-        self.n_persons_in_source_database = tables["PERSON"].distinct().count().execute()
+        self.n_persons_in_source_database = (
+            tables["PERSON"].distinct().count().execute()
+        )
 
         self.build_stages(tables)
 
