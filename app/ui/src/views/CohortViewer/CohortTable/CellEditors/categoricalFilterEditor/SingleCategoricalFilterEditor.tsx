@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './SingleCategoricalFilterEditor.module.css';
-import deleteIcon from '../../../../../assets/icons/delete.svg';
+import { useDomains } from '../../../../../hooks/useDomains';
 
 interface SingleCategoricalFilterEditorProps {
   onValueChange?: (value: {
@@ -36,10 +36,17 @@ interface SingleCategoricalFilterEditorProps {
   ) => void;
 }
 
-// Mock domain options for demonstration
-const MOCK_DOMAINS = ['Clinical', 'Demographics', 'Laboratory', 'Medications', 'Procedures'];
+// Constant options for demonstration
 const CONSTANT_OPTIONS = ['one', 'two', 'three'];
 
+/**
+ * Component for editing a single categorical filter.
+ * Allows users to either:
+ * 1. Specify a column name, domain, and allowed values, OR
+ * 2. Use a constant value
+ * 
+ * Domains are loaded dynamically based on the current database mapper configuration.
+ */
 export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEditorProps> = ({
   onValueChange,
   value,
@@ -47,6 +54,9 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
   onIsEditing,
   createLogicalFilter,
 }) => {
+  // Load domains from the current mapper configuration
+  const { domains } = useDomains();
+  
   const [isEditing, setIsEditing] = useState(false);
   const [useConstant, setUseConstant] = useState(
     () => value?.constant !== null && value?.constant !== undefined
@@ -59,7 +69,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
       column_name: '',
       domain: '',
       allowed_values: [] as string[],
-      class_name: 'CategoricalFilter',
+      class_name: 'CategoricalFilter' as const,
       status: 'empty',
       id: Math.random().toString(36),
       constant: null,
@@ -67,14 +77,14 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
   });
   let newValues = { ...values };
 
-  const handleValueChange = (event, field: string, value: string) => {
+  /**
+   * Handles changes to filter field values
+   */
+  const handleValueChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, field: string, value: string) => {
     event.stopPropagation();
-    console.log('STOPPED PROPAGATION');
+    
     if (field === 'allowed_values') {
       newValues.allowed_values = [value];
-      // .split(',')
-      // .map(v => v.trim())
-      // .filter(v => v.length > 0);
     } else if (field === 'constant') {
       newValues.constant = value;
       newValues.allowed_values = [];
@@ -82,6 +92,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
       newValues = { ...newValues, [field]: value };
     }
 
+    // Update status based on whether using constant or regular fields
     if (useConstant) {
       newValues.status = newValues.constant ? 'complete' : 'incomplete';
     } else {
@@ -99,6 +110,9 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     setValues(newValues);
   };
 
+  /**
+   * Toggles between constant mode and regular field mode
+   */
   const handleConstantToggle = (checked: boolean) => {
     setUseConstant(checked);
     const newValues = {
@@ -109,30 +123,39 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     setValues(newValues);
   };
 
+  /**
+   * Finalizes editing and passes the updated values to parent
+   */
   const handleDone = () => {
-    if (!useConstant) {
+    if (!useConstant && newValues.allowed_values.length > 0) {
       values.allowed_values = newValues.allowed_values[0]
         .split(',')
         .map(v => v.trim())
         .filter(v => v.length > 0);
     }
 
-    onValueChange?.(values);
+    onValueChange?.(values as any);
     setIsEditing(false);
-    onIsEditing?.(false);
+    onIsEditing?.(false as any);
   };
 
+  /**
+   * Handles filter deletion
+   */
   const handleDelete = () => {
-    onDelete(values);
+    onDelete?.();
   };
 
+  /**
+   * Renders the constant value selector
+   */
   const renderConstantEditor = () => {
     return (
       <div className={styles.field}>
         <label>Constant Value:</label>
         <select
           value={values.constant || ''}
-          onChange={e => handleValueChange('constant', e.target.value)}
+          onChange={e => handleValueChange(e, 'constant', e.target.value)}
         >
           {CONSTANT_OPTIONS.map(option => (
             <option key={option} value={option}>
@@ -144,12 +167,18 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     );
   };
 
+  /**
+   * Activates editing mode
+   */
   const startEditing = () => {
     setIsEditing(true);
-    onIsEditing?.(true);
+    onIsEditing?.(true as any);
   };
 
-  const renderSingleFilterBox = content => {
+  /**
+   * Wrapper for rendering a single filter box with delete and logical operator buttons
+   */
+  const renderSingleFilterBox = (content: React.ReactNode) => {
     return (
       <div className={styles.fullCategoricalFilter}>
         <div className={styles.categoricalFilterContainer} onClick={() => startEditing()}>
@@ -160,7 +189,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
               handleDelete();
             }}
           >
-            ×{/* <img src={deleteIcon} alt="Delete filter" width="16" height="16" /> */}
+            ×
           </button>
           <div className={styles.singleFilterBoxContent}>{content}</div>
         </div>
@@ -169,7 +198,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
             <button
               onClick={e => {
                 e.stopPropagation();
-                createLogicalFilter('AndFilter', values);
+                createLogicalFilter?.('AndFilter', values as any);
               }}
             >
               AND
@@ -177,7 +206,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
             <button
               onClick={e => {
                 e.stopPropagation();
-                createLogicalFilter('OrFilter', values);
+                createLogicalFilter?.('OrFilter', values as any);
               }}
             >
               OR
@@ -188,12 +217,17 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     );
   };
 
+  /**
+   * Renders an empty filter placeholder
+   */
   const renderEmptyFilter = () => {
     return renderSingleFilterBox(<span>Click to add a categorical filter</span>);
   };
 
+  /**
+   * Renders a populated categorical filter in read-only mode
+   */
   const renderCategoricalFilter = () => {
-    // this is rendered within a categoricalFilterContainer
     const content = (
       <span>
         {useConstant ? (
@@ -203,10 +237,10 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
             <div className={styles.body}>
               <span className={styles.columnName}>{values.column_name}</span>{' '}
               <span className={styles.filler}>is</span>{' '}
-              <span className={styles.allowedValues}>{values.allowed_values}</span>
+              <span className={styles.allowedValues}>{values.allowed_values.join(', ')}</span>
             </div>
             <div className={styles.footer}>
-              Domain :<span className={styles.domain}>{values.domain}</span>
+              Domain: <span className={styles.domain}>{values.domain}</span>
             </div>
           </>
         )}
@@ -215,16 +249,21 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     return renderSingleFilterBox(content);
   };
 
+  /**
+   * Renders the component in non-editing (read-only) state
+   */
   const renderNotEditingState = () => {
     if (values.status === 'empty') return renderEmptyFilter();
     return renderCategoricalFilter();
   };
 
+  /**
+   * Renders the component in editing state
+   */
   const renderEditingState = () => {
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Tab') {
         e.preventDefault();
-        e.stopImmediatePropagation();
       }
     };
 
@@ -250,6 +289,9 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     );
   };
 
+  /**
+   * Renders the categorical filter editor form
+   */
   const renderCategoricalFilterEditor = () => {
     return (
       <div className={styles.fieldsBox}>
@@ -277,9 +319,9 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
             onChange={e => handleValueChange(e, 'domain', e.target.value)}
           >
             <option value="">Select Domain</option>
-            {MOCK_DOMAINS.map(domain => (
-              <option key={domain} value={domain}>
-                {domain}
+            {domains.map(domain => (
+              <option key={domain.name} value={domain.name}>
+                {domain.name}
               </option>
             ))}
           </select>
