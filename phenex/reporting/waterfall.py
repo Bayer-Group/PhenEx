@@ -21,12 +21,15 @@ class Waterfall(Reporter):
     | Delta | The change in number of patients that occurs by applying the phenotype on that row. |
 
     """
+    
 
-    def _append_components_recursively(self, phenotype, table):
-        if self.include_component_phenotypes:
-            for child in phenotype.children:
-                self.append_phenotype_to_waterfall(table, child, "component")
-                self._append_components_recursively(child, table)
+    def _append_components_recursively(self, current_phenotype, table, level=0, parent_index=""):
+        if level <= self.include_component_phenotypes_level:
+            for i, child in enumerate(current_phenotype.children):
+                current_index = f"{parent_index}.{i+1}"
+                current_name = child.display_name if self.pretty_display else child.name
+                self.append_phenotype_to_waterfall(table, child, "component", full_name=current_name, index=current_index, level=level)
+                self._append_components_recursively(child, table, level + 1, parent_index=current_index)
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
@@ -43,9 +46,11 @@ class Waterfall(Reporter):
 
         table = cohort.entry_criterion.table
         N_entry = table.count().execute()
+        index = 1
         self.ds.append(
             {
                 "Type": "entry",
+                "Index":str(index),
                 "Name": (
                     cohort.entry_criterion.display_name
                     if self.pretty_display
@@ -57,21 +62,24 @@ class Waterfall(Reporter):
         )
 
         for inclusion in cohort.inclusions:
-            table = self.append_phenotype_to_waterfall(table, inclusion, "inclusion")
-            if self.include_component_phenotypes:
-                self._append_components_recursively(inclusion, table)
+            index += 1
+            table = self.append_phenotype_to_waterfall(table, inclusion, "inclusion", level = index)
+            if self.include_component_phenotypes_level is not None:
+                self._append_components_recursively(inclusion, table, parent_index = str(index))
 
                 
 
         for exclusion in cohort.exclusions:
-            table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion")
-            if self.include_component_phenotypes:
-                self._append_components_recursively(inclusion, table)
+            index += 1
+            table = self.append_phenotype_to_waterfall(table, exclusion, "exclusion", level = index)
+            if self.include_component_phenotypes_level is not None:
+                self._append_components_recursively(exclusion, table, parent_index = str(index))
                 
         self.ds.append(
             {
                 "Type": "final_cohort",
                 "Name": "",
+                "Component of":"",
                 "N": np.nan,
                 "Remaining": N,
             }
@@ -89,11 +97,13 @@ class Waterfall(Reporter):
             self.create_pretty_display()
 
         # Do final column selection
-        self.df = self.df[["Type", "Name", "N", "Remaining", "%", "Delta"]]
-
+        if self.include_component_phenotypes_level is None:
+            self.df = self.df[["Type", "Name", "N", "Remaining", "%", "Delta"]]
+        else:
+            self.df = self.df[["Type", "Name","Index", "N", "Remaining", "%", "Delta"]]
         return self.df
 
-    def append_phenotype_to_waterfall(self, table, phenotype, type):
+    def append_phenotype_to_waterfall(self, table, phenotype, type, level, index= None, full_name = None):
         if type == "inclusion":
             table = table.inner_join(
                 phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
@@ -105,12 +115,16 @@ class Waterfall(Reporter):
         else:
             raise ValueError("type must be either inclusion or exclusion")
         logger.debug(f"Starting {type} criteria {phenotype.name}")
+
+        if full_name is None:
+            full_name = phenotype.display_name if self.pretty_display else phenotype.name
+            
         self.ds.append(
             {
                 "Type": type,
-                "Name": (
-                    phenotype.display_name if self.pretty_display else phenotype.name
-                ),
+                "Name": full_name,
+                "Level": level,
+                "Index": index if index is not None else str(level),
                 "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
                 "Remaining": table.select("PERSON_ID").distinct().count().execute() if type != 'component' else np.nan,
             }
@@ -138,6 +152,8 @@ class Waterfall(Reporter):
         # cast counts to integer and to str, so that we can display without 'NaNs'
         self.df["N"] = self.df["N"].astype("Int64").astype(str)
         self.df["Delta"] = self.df["Delta"].astype("Int64").astype(str)
+        self.df["Remaining"] = self.df["Remaining"].astype("Int64").astype(str)
+        self.df["%"] = self.df["%"].astype("Float64").astype(str)
 
         # Replace NAs and None values with empty strings for display
         self.df = self.df.replace("<NA>", "")
@@ -146,9 +162,10 @@ class Waterfall(Reporter):
         previous_type = None
         sparse_types = []
         for _type in self.df["Type"].values:
-            if _type != previous_type:
+            if _type != previous_type and _type != 'component':
                 sparse_types.append(_type)
                 previous_type = _type
             else:
                 sparse_types.append("")
         self.df["Type"] = sparse_types
+
