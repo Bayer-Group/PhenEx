@@ -249,10 +249,16 @@ class Waterfall(Reporter):
     def _format_numeric_columns(self):
         """Convert numeric columns to formatted strings with thousand separators"""
         # Format integer columns with commas
-        self.df["N"] = self.df["N"].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "")
-        self.df["Delta"] = self.df["Delta"].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "")
-        self.df["Remaining"] = self.df["Remaining"].apply(lambda x: f"{int(x):,}" if pd.notna(x) else "")
-        
+        self.df["N"] = self.df["N"].apply(
+            lambda x: f"{int(x):,}" if pd.notna(x) else ""
+        )
+        self.df["Delta"] = self.df["Delta"].apply(
+            lambda x: f"{int(x):,}" if pd.notna(x) else ""
+        )
+        self.df["Remaining"] = self.df["Remaining"].apply(
+            lambda x: f"{int(x):,}" if pd.notna(x) else ""
+        )
+
         # Format percentage columns without commas (they won't need them)
         self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
         self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
