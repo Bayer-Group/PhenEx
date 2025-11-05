@@ -63,6 +63,7 @@ class VerticalDateAggregator:
         first_events = first.aggregate(events_table)
         ```
     """
+
     def __init__(
         self,
         aggregation_index=["PERSON_ID"],
@@ -135,10 +136,11 @@ class VerticalDateAggregator:
 class Nearest(VerticalDateAggregator):
     """
     Aggregator that selects the nearest (most recent) event date within each group.
-    
+
     This is an alias for Last, using max aggregation function to find the latest date.
     Commonly used to find the most recent event before or at a reference date.
     """
+
     def __init__(self, **kwargs):
         super().__init__(aggregation_function="max", **kwargs)
 
@@ -146,10 +148,11 @@ class Nearest(VerticalDateAggregator):
 class First(VerticalDateAggregator):
     """
     Aggregator that selects the first (earliest) event date within each group.
-    
+
     Uses min aggregation function to find the earliest date. Commonly used to find
     the first occurrence of an event per patient.
     """
+
     def __init__(self, **kwargs):
         super().__init__(aggregation_function="min", **kwargs)
 
@@ -157,10 +160,11 @@ class First(VerticalDateAggregator):
 class Last(VerticalDateAggregator):
     """
     Aggregator that selects the last (most recent) event date within each group.
-    
+
     Uses max aggregation function to find the latest date. Commonly used to find
     the most recent occurrence of an event per patient.
     """
+
     def __init__(self, **kwargs):
         super().__init__(aggregation_function="max", **kwargs)
 
@@ -175,10 +179,10 @@ class ValueAggregator:
 
     Attributes:
         aggregation_column (Optional[str]): The column name to aggregate. If None, uses "VALUE" column. Default is None.
-        aggregation_function (str): The aggregation function to apply. Options are "min", "max", "mean", "median", 
+        aggregation_function (str): The aggregation function to apply. Options are "min", "max", "mean", "median",
             "daily_min", "daily_max", "daily_mean", "daily_median". Default is "min".
         aggregation_index (List[str]): Column names to group by. Default is ["PERSON_ID"].
-        reduce (bool): If True, returns distinct aggregated values. For mean/median, sets EVENT_DATE to NULL. 
+        reduce (bool): If True, returns distinct aggregated values. For mean/median, sets EVENT_DATE to NULL.
             For min/max, returns all dates where min/max occurs. Default is True.
 
     Methods:
@@ -232,6 +236,7 @@ class ValueAggregator:
         daily_means = daily_mean.aggregate(measurements_table)
         ```
     """
+
     def __init__(
         self,
         aggregation_column=None,
@@ -325,10 +330,11 @@ class ValueAggregator:
 class Mean(ValueAggregator):
     """
     Aggregator that computes the mean (average) value within each group.
-    
+
     Returns one row per group with the mean value. EVENT_DATE is set to NULL since
     the mean doesn't correspond to a specific date.
     """
+
     def __init__(self, **kwargs):
         super(Mean, self).__init__(aggregation_function="mean", **kwargs)
 
@@ -336,10 +342,11 @@ class Mean(ValueAggregator):
 class Median(ValueAggregator):
     """
     Aggregator that computes the median value within each group.
-    
+
     Returns one row per group with the median value. EVENT_DATE is set to NULL since
     the median doesn't correspond to a specific date.
     """
+
     def __init__(self, **kwargs):
         super(Median, self).__init__(aggregation_function="median", **kwargs)
 
@@ -347,10 +354,11 @@ class Median(ValueAggregator):
 class Max(ValueAggregator):
     """
     Aggregator that finds the maximum value within each group.
-    
+
     When reduce=True, returns all dates where the maximum value occurs (may be multiple dates).
     When reduce=False, adds the max value to all rows in the group.
     """
+
     def __init__(self, **kwargs):
         super(Max, self).__init__(aggregation_function="max", **kwargs)
 
@@ -358,10 +366,11 @@ class Max(ValueAggregator):
 class Min(ValueAggregator):
     """
     Aggregator that finds the minimum value within each group.
-    
+
     When reduce=True, returns all dates where the minimum value occurs (may be multiple dates).
     When reduce=False, adds the min value to all rows in the group.
     """
+
     def __init__(self, **kwargs):
         super(Min, self).__init__(aggregation_function="min", **kwargs)
 
@@ -369,11 +378,12 @@ class Min(ValueAggregator):
 class DailyValueAggregator(ValueAggregator):
     """
     Base class for aggregating values on a daily basis (per patient per date).
-    
+
     Extends ValueAggregator with aggregation_index set to ["PERSON_ID", "EVENT_DATE"],
     allowing aggregation of multiple values within the same day for each patient.
     Useful for handling multiple measurements per day.
     """
+
     def __init__(self, aggregation_index=["PERSON_ID", "EVENT_DATE"], **kwargs):
         super(DailyValueAggregator, self).__init__(
             aggregation_index=aggregation_index, **kwargs
@@ -383,10 +393,11 @@ class DailyValueAggregator(ValueAggregator):
 class DailyMean(DailyValueAggregator):
     """
     Aggregator that computes the daily mean value per patient.
-    
+
     Groups by PERSON_ID and EVENT_DATE to compute the average of all values on each day.
     Useful when a patient has multiple measurements on the same day and you want the daily average.
     """
+
     def __init__(self, **kwargs):
         super(DailyMean, self).__init__(aggregation_function="daily_mean", **kwargs)
 
@@ -394,10 +405,11 @@ class DailyMean(DailyValueAggregator):
 class DailyMedian(DailyValueAggregator):
     """
     Aggregator that computes the daily median value per patient.
-    
+
     Groups by PERSON_ID and EVENT_DATE to compute the median of all values on each day.
     Useful when a patient has multiple measurements on the same day and you want the daily median.
     """
+
     def __init__(self, **kwargs):
         super(DailyMedian, self).__init__(aggregation_function="daily_median", **kwargs)
 
@@ -405,10 +417,11 @@ class DailyMedian(DailyValueAggregator):
 class DailyMax(DailyValueAggregator):
     """
     Aggregator that finds the daily maximum value per patient.
-    
+
     Groups by PERSON_ID and EVENT_DATE to find the highest value on each day.
     Useful when a patient has multiple measurements on the same day and you want the daily maximum.
     """
+
     def __init__(self, **kwargs):
         super(DailyMax, self).__init__(aggregation_function="daily_max", **kwargs)
 
@@ -416,9 +429,10 @@ class DailyMax(DailyValueAggregator):
 class DailyMin(DailyValueAggregator):
     """
     Aggregator that finds the daily minimum value per patient.
-    
+
     Groups by PERSON_ID and EVENT_DATE to find the lowest value on each day.
     Useful when a patient has multiple measurements on the same day and you want the daily minimum.
     """
+
     def __init__(self, **kwargs):
         super(DailyMin, self).__init__(aggregation_function="daily_min", **kwargs)
