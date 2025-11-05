@@ -216,7 +216,7 @@ class CHADSVASCMinimumScoreTestGenerator(CHADSVASCTestGenerator):
             relative_time_range=RelativeTimeRangeFilter(
                 when="before", min_days=GreaterThanOrEqualTo(0)
             ),
-            value_filter=ValueFilter(min_value=2),
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
         )
 
         return [
@@ -243,4 +243,4 @@ def test_chadsvasc_high_risk():
 
 if __name__ == "__main__":
     test_chadsvasc_all_combinations()
-    # test_chadsvasc_high_risk()
+    test_chadsvasc_high_risk()
