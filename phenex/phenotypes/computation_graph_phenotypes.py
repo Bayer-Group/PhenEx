@@ -45,6 +45,7 @@ class ComputationGraphPhenotype(Phenotype):
         operate_on: str = "boolean",
         populate: str = "value",
         reduce: bool = False,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
         if name is None:
@@ -56,6 +57,7 @@ class ComputationGraphPhenotype(Phenotype):
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
+        self.value_filter = value_filter
         self.add_children(self.expression.get_leaf_phenotypes())
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -88,6 +90,8 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(VALUE=_expression)
             # Arithmetic operations imply a boolean 'and' of children i.e. child1 + child two implies child1 and child2. if there are any null values in value calculations this is because one of the children is null, so we filter them out as the implied boolean condition is not met.
             joined_table = joined_table.filter(joined_table["VALUE"].notnull())
+            joined_table = self._perform_value_filtering(joined_table)
+            joined_table = joined_table.mutate(BOOLEAN=True)
 
         elif self.populate == "boolean":
             _expression = self.expression.get_boolean_expression(
@@ -204,6 +208,11 @@ class ComputationGraphPhenotype(Phenotype):
 
         return aggregator.aggregate(code_table)
 
+    def _perform_value_filtering(self, table: Table) -> Table:
+        if self.value_filter is not None:
+            table = self.value_filter.filter(table)
+        return table
+
 
 class ScorePhenotype(ComputationGraphPhenotype):
     """
@@ -241,14 +250,22 @@ class ScorePhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ScorePhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="boolean",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -283,14 +300,22 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="value",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -316,6 +341,13 @@ class LogicPhenotype(ComputationGraphPhenotype):
         name: str = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("operate_on", "populate", "reduce")
+        }
+
         super(LogicPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -323,6 +355,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
             operate_on="boolean",
             populate="boolean",
             reduce=True,
+            **kwargs,
         )
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -338,7 +371,6 @@ class LogicPhenotype(ComputationGraphPhenotype):
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
         joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
-
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
