@@ -253,6 +253,11 @@ class ScorePhenotype(ComputationGraphPhenotype):
         value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ScorePhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -298,6 +303,11 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -305,6 +315,7 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
             operate_on="value",
             populate="value",
             value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -330,6 +341,13 @@ class LogicPhenotype(ComputationGraphPhenotype):
         name: str = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("operate_on", "populate", "reduce")
+        }
+
         super(LogicPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -337,6 +355,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
             operate_on="boolean",
             populate="boolean",
             reduce=True,
+            **kwargs,
         )
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
