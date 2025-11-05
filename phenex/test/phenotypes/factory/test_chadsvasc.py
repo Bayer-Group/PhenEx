@@ -31,14 +31,14 @@ from phenex.filters import (
     RelativeTimeRangeFilter,
     CategoricalFilter,
     ValueFilter,
-    GreaterThanOrEqualTo
+    GreaterThanOrEqualTo,
 )
 
 
 def get_chadsvasc_components():
     """
     Define database-specific components for CHA2DS2-VASc calculation.
-    
+
     Uses dummy codes for testing purposes. In production, these would be
     replaced with actual ICD-10/SNOMED codes.
     """
@@ -61,7 +61,7 @@ def get_chadsvasc_components():
 class CHADSVASCTestGenerator(PhenotypeTestGenerator):
     """
     Test generator for CHA2DS2-VASc score with manually defined patients.
-    
+
     Each patient has a specific combination of risk factors to test scoring logic.
     """
 
@@ -75,7 +75,7 @@ class CHADSVASCTestGenerator(PhenotypeTestGenerator):
         """
         INDEX_DATE = datetime.date(2020, 1, 1)
         EVENT_DATE = datetime.date(2019, 6, 1)
-        
+
         # PERSON table - demographics and age
         person_data = [
             # Person 1: Young male, no age points, no sex points = 0 base
@@ -97,67 +97,65 @@ class CHADSVASCTestGenerator(PhenotypeTestGenerator):
             # Person 9: Age 70 female = 1 age + 1 sex = 2 points base
             {"PERSON_ID": "P9", "DATE_OF_BIRTH": datetime.date(1950, 1, 1), "SEX": "F"},
             # Person 10: Age 80 female = 2 age + 1 sex = 3 points base
-            {"PERSON_ID": "P10", "DATE_OF_BIRTH": datetime.date(1940, 1, 1), "SEX": "F"},
+            {
+                "PERSON_ID": "P10",
+                "DATE_OF_BIRTH": datetime.date(1940, 1, 1),
+                "SEX": "F",
+            },
             # Person 11: No conditions baseline
-            {"PERSON_ID": "P11", "DATE_OF_BIRTH": datetime.date(1985, 1, 1), "SEX": "M"},
+            {
+                "PERSON_ID": "P11",
+                "DATE_OF_BIRTH": datetime.date(1985, 1, 1),
+                "SEX": "M",
+            },
         ]
-        
+
         df_person = pd.DataFrame(person_data)
         df_person["INDEX_DATE"] = INDEX_DATE
-        
+
         # CONDITION_OCCURRENCE table - diagnoses
         condition_data = [
             # Person 1: Heart failure only (C=1) → Score: 1
             {"PERSON_ID": "P1", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
-            
             # Person 2: Heart failure + Hypertension (C=1, H=1) → Score: 2
             {"PERSON_ID": "P2", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P2", "CODE": "htn", "EVENT_DATE": EVENT_DATE},
-            
             # Person 3: Stroke only (S2=2) → Score: 2
             {"PERSON_ID": "P3", "CODE": "stroke", "EVENT_DATE": EVENT_DATE},
-            
             # Person 4: Diabetes + Vascular disease (D=1, V=1) → Score: 2
             {"PERSON_ID": "P4", "CODE": "dm", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P4", "CODE": "vasc", "EVENT_DATE": EVENT_DATE},
-            
             # Person 5: All 5 diagnoses (C=1, H=1, D=1, S2=2, V=1) → Score: 6
             {"PERSON_ID": "P5", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P5", "CODE": "htn", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P5", "CODE": "dm", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P5", "CODE": "stroke", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P5", "CODE": "vasc", "EVENT_DATE": EVENT_DATE},
-            
             # Person 6: Heart failure + age 70 (C=1, A=1) → Score: 2
             {"PERSON_ID": "P6", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
-            
             # Person 7: Heart failure + age 80 (C=1, A2=2) → Score: 3
             {"PERSON_ID": "P7", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
-            
             # Person 8: Heart failure + female (C=1, Sc=1) → Score: 2
             {"PERSON_ID": "P8", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
-            
             # Person 9: All diagnoses + age 70 + female (6 + 1 + 1) → Score: 8
             {"PERSON_ID": "P9", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P9", "CODE": "htn", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P9", "CODE": "dm", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P9", "CODE": "stroke", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P9", "CODE": "vasc", "EVENT_DATE": EVENT_DATE},
-            
             # Person 10: All diagnoses + age 80 + female (6 + 2 + 1) → Score: 9 (maximum)
             {"PERSON_ID": "P10", "CODE": "chf", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P10", "CODE": "htn", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P10", "CODE": "dm", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P10", "CODE": "stroke", "EVENT_DATE": EVENT_DATE},
             {"PERSON_ID": "P10", "CODE": "vasc", "EVENT_DATE": EVENT_DATE},
-            
             # Person 11: No conditions (baseline) → Score: 0
         ]
-        
+
         df_conditions = pd.DataFrame(condition_data)
         df_conditions["CODE_TYPE"] = "ICD10CM"
         df_conditions["INDEX_DATE"] = INDEX_DATE
-        
+
         return [
             {"name": "PERSON", "df": df_person},
             {"name": "CONDITION_OCCURRENCE", "df": df_conditions},
@@ -165,7 +163,7 @@ class CHADSVASCTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         """Define expected scores for each manually defined patient."""
-        
+
         # Expected scores based on manual definitions above
         persons = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11"]
         scores = [
@@ -181,7 +179,7 @@ class CHADSVASCTestGenerator(PhenotypeTestGenerator):
             9,  # P10: All diagnoses + age ≥75 + female (maximum)
             0,  # P11: No conditions
         ]
-        
+
         chadsvasc = CHADSVASCPhenotype(
             name="chadsvasc",
             components=get_chadsvasc_components(),
@@ -189,8 +187,15 @@ class CHADSVASCTestGenerator(PhenotypeTestGenerator):
                 when="before", min_days=GreaterThanOrEqualTo(0)
             ),
         )
-        
-        return [{"name": "chadsvasc", "persons": persons, "values": scores, "phenotype": chadsvasc}]
+
+        return [
+            {
+                "name": "chadsvasc",
+                "persons": persons,
+                "values": scores,
+                "phenotype": chadsvasc,
+            }
+        ]
 
 
 class CHADSVASCMinimumScoreTestGenerator(CHADSVASCTestGenerator):
@@ -200,11 +205,11 @@ class CHADSVASCMinimumScoreTestGenerator(CHADSVASCTestGenerator):
 
     def define_phenotype_tests(self):
         """Only include patients with CHA2DS2-VASc ≥2 (P1 excluded, P11 excluded)."""
-        
+
         # Only patients with score ≥2 (P1 has score 1, P11 has score 0)
         persons = ["P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]
         scores = [2, 2, 2, 6, 2, 3, 2, 8, 9]
-        
+
         chadsvasc_filtered = CHADSVASCPhenotype(
             name="chadsvasc_filtered",
             components=get_chadsvasc_components(),
@@ -213,8 +218,15 @@ class CHADSVASCMinimumScoreTestGenerator(CHADSVASCTestGenerator):
             ),
             value_filter=ValueFilter(min_value=2),
         )
-        
-        return [{"name": "chadsvasc_filtered", "persons": persons, "values": scores, "phenotype": chadsvasc_filtered}]
+
+        return [
+            {
+                "name": "chadsvasc_filtered",
+                "persons": persons,
+                "values": scores,
+                "phenotype": chadsvasc_filtered,
+            }
+        ]
 
 
 def test_chadsvasc_all_combinations():
