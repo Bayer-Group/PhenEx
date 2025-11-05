@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import styles from './SingleCategoricalFilterEditor.module.css';
 import { useDomains } from '../../../../../hooks/useDomains';
 
+// Operator type matching Python CategoricalFilter
+type FilterOperator = 'isin' | 'notin' | 'isnull' | 'notnull';
+
 interface SingleCategoricalFilterEditorProps {
   onValueChange?: (value: {
     column_name: string;
@@ -10,6 +13,7 @@ interface SingleCategoricalFilterEditorProps {
     class_name: 'CategoricalFilter';
     status: 'empty';
     constant: string | null;
+    operator: FilterOperator;
   }) => void;
   value?: {
     column_name: string;
@@ -19,6 +23,7 @@ interface SingleCategoricalFilterEditorProps {
     status: string;
     id: string;
     constant: string | null;
+    operator?: FilterOperator;
   };
   onDelete?: () => void;
   onIsEditing?: (isEditing: false) => void;
@@ -32,12 +37,21 @@ interface SingleCategoricalFilterEditorProps {
       status: string;
       id: string;
       constant: string | null;
+      operator: FilterOperator;
     }
   ) => void;
 }
 
 // Constant options for demonstration
 const CONSTANT_OPTIONS = ['one', 'two', 'three'];
+
+// Operator options matching Python CategoricalFilter
+const OPERATOR_OPTIONS: { value: FilterOperator; label: string; description: string }[] = [
+  { value: 'isin', label: 'Is In', description: 'Value matches one of the allowed values' },
+  { value: 'notin', label: 'Not In', description: 'Value does not match any allowed values (excludes nulls)' },
+  { value: 'isnull', label: 'Is Null', description: 'Value is null/empty' },
+  { value: 'notnull', label: 'Not Null', description: 'Value is not null/empty' },
+];
 
 /**
  * Component for editing a single categorical filter.
@@ -63,7 +77,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
   );
   const [values, setValues] = useState(() => {
     if (value) {
-      return value;
+      return { ...value, operator: value.operator || 'isin' };
     }
     return {
       column_name: '',
@@ -73,6 +87,7 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
       status: 'empty',
       id: Math.random().toString(36),
       constant: null,
+      operator: 'isin' as FilterOperator,
     };
   });
   let newValues = { ...values };
@@ -88,6 +103,12 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     } else if (field === 'constant') {
       newValues.constant = value;
       newValues.allowed_values = [];
+    } else if (field === 'operator') {
+      newValues = { ...newValues, operator: value as FilterOperator };
+      // Clear allowed_values if switching to null-checking operators
+      if (value === 'isnull' || value === 'notnull') {
+        newValues.allowed_values = [];
+      }
     } else {
       newValues = { ...newValues, [field]: value };
     }
@@ -96,9 +117,13 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
     if (useConstant) {
       newValues.status = newValues.constant ? 'complete' : 'incomplete';
     } else {
+      // Null-checking operators don't need allowed_values
+      const needsAllowedValues = newValues.operator === 'isin' || newValues.operator === 'notin';
+      const hasRequiredValues = needsAllowedValues ? newValues.allowed_values.length > 0 : true;
+      
       if (
         newValues.column_name.length > 0 &&
-        newValues.allowed_values.length > 0 &&
+        hasRequiredValues &&
         newValues.domain.length > 0
       ) {
         newValues.status = 'complete';
@@ -228,6 +253,21 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
    * Renders a populated categorical filter in read-only mode
    */
   const renderCategoricalFilter = () => {
+    /**
+     * Get display text for the operator
+     */
+    const getOperatorText = () => {
+      const operatorMap = {
+        'isin': 'is',
+        'notin': 'is not',
+        'isnull': 'is null',
+        'notnull': 'is not null',
+      };
+      return operatorMap[values.operator] || 'is';
+    };
+    
+    const isNullOperator = values.operator === 'isnull' || values.operator === 'notnull';
+    
     const content = (
       <span>
         {useConstant ? (
@@ -236,8 +276,10 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
           <>
             <div className={styles.body}>
               <span className={styles.columnName}>{values.column_name}</span>{' '}
-              <span className={styles.filler}>is</span>{' '}
-              <span className={styles.allowedValues}>{values.allowed_values.join(', ')}</span>
+              <span className={styles.filler}>{getOperatorText()}</span>{' '}
+              {!isNullOperator && (
+                <span className={styles.allowedValues}>{values.allowed_values.join(', ')}</span>
+              )}
             </div>
             <div className={styles.footer}>
               Domain: <span className={styles.domain}>{values.domain}</span>
@@ -293,6 +335,8 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
    * Renders the categorical filter editor form
    */
   const renderCategoricalFilterEditor = () => {
+    const isNullOperator = values.operator === 'isnull' || values.operator === 'notnull';
+    
     return (
       <div className={styles.fieldsBox}>
         <div className={`${styles.field} ${styles.fieldColumnName}`}>
@@ -304,14 +348,33 @@ export const SingleCategoricalFilterEditor: React.FC<SingleCategoricalFilterEdit
             placeholder="Enter column name"
           />
         </div>
+        
         <div className={styles.field}>
-          <label>Allowed Values:</label>
-          <textarea
-            value={values.allowed_values.join(', ')}
-            onChange={e => handleValueChange(e, 'allowed_values', e.target.value)}
-            placeholder="Enter comma-separated values"
-          />
+          <label>Operator:</label>
+          <select
+            value={values.operator}
+            onChange={e => handleValueChange(e, 'operator', e.target.value)}
+            title={OPERATOR_OPTIONS.find(op => op.value === values.operator)?.description}
+          >
+            {OPERATOR_OPTIONS.map(option => (
+              <option key={option.value} value={option.value} title={option.description}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
+        
+        {!isNullOperator && (
+          <div className={styles.field}>
+            <label>Allowed Values:</label>
+            <textarea
+              value={values.allowed_values.join(', ')}
+              onChange={e => handleValueChange(e, 'allowed_values', e.target.value)}
+              placeholder="Enter comma-separated values"
+            />
+          </div>
+        )}
+        
         <div className={styles.field}>
           <label>Domain:</label>
           <select
