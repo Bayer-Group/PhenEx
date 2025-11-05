@@ -16,7 +16,7 @@ logger = create_logger(__name__)
 
 class TimeShiftPhenotype(Phenotype):
     """
-    TimeShiftPhenotype shifts the EVENT_DATE of an input phenotype by the defined number of days.
+    TimeShiftPhenotype shifts the EVENT_DATE of an input phenotype by the defined number of days, inclusive.
 
     DATE: The event date selected from the input phenotype plus the defined number of days
     VALUE: NULL
