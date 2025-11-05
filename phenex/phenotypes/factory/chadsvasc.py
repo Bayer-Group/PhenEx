@@ -26,15 +26,42 @@ logger = create_logger(__name__)
 @dataclass
 class CHADSVASCComponents:
     """
-    Database specific components of CHADS-VASc. These include :
-
-
-    | Type                | Number                     |
-    |---------------------|----------------------------|
-    | codelists           | 5                          |
-    | categorical filters | 1                          |
-    | domains             | 3                          |
-
+    Database specific components of CHA2DS2-VASc score calculation.
+    
+    This dataclass encapsulates all the database-specific definitions needed to 
+    calculate the CHA2DS2-VASc score, including codelists for diagnoses, filters 
+    for demographic characteristics, and domain names for data tables.
+    
+    Attributes:
+        codelist_heart_failure: Codelist containing codes for congestive heart failure 
+            diagnosis (C component, 1 point).
+        codelist_hypertension: Codelist containing codes for hypertension diagnosis 
+            (H component, 1 point).
+        codelist_diabetes: Codelist containing codes for diabetes mellitus diagnosis 
+            (D component, 1 point).
+        codelist_stroke_tia: Codelist containing codes for prior stroke or transient 
+            ischemic attack (S2 component, 2 points).
+        codelist_vascular_disease: Codelist containing codes for vascular disease 
+            (V component, 1 point). This includes prior myocardial infarction, 
+            peripheral artery disease, or aortic plaque.
+        filter_sex_female: CategoricalFilter to identify female patients 
+            (Sc component, 1 point). Should filter for the appropriate sex value 
+            (e.g., "F", "Female", or database-specific code).
+        domain_diagnosis: Name of the domain/table containing diagnosis codes. 
+            Defaults to "CONDITION_OCCURRENCE_SOURCE" (OMOP CDM convention).
+        domain_sex: Name of the domain/table containing patient demographics 
+            including sex. Defaults to "PERSON" (OMOP CDM convention).
+    
+    Note:
+        Age-based components (A and A2) are calculated automatically from the 
+        patient's birth date and do not require codelist configuration.
+    
+    Component Summary:
+        | Type                | Number |
+        |---------------------|--------|
+        | Codelists           | 5      |
+        | Categorical Filters | 1      |
+        | Domains             | 2      |
     """
 
     codelist_heart_failure: Codelist
