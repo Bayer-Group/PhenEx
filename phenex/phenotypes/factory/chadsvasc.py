@@ -111,7 +111,7 @@ def CHADSVASCPhenotype(
     )
     pt_female = CategoricalPhenotype(
         name = f"{name}_sex_female",
-        categorical_filter= components.sex_female_categorical_filter,
+        categorical_filter= components.filter_sex_female,
         domain = components.domain_sex,
     )
 
