@@ -23,3 +23,6 @@ class Reporter:
 
     def execute(self, cohort):
         raise NotImplementedError
+
+    def to_excel(self):
+        raise NotImplementedError
