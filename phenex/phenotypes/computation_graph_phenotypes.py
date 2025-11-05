@@ -6,6 +6,7 @@ from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
 from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.aggregators import First, Last
 
 
 class ComputationGraphPhenotype(Phenotype):
@@ -44,6 +45,7 @@ class ComputationGraphPhenotype(Phenotype):
         operate_on: str = "boolean",
         populate: str = "value",
         reduce: bool = False,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
         if name is None:
@@ -55,6 +57,7 @@ class ComputationGraphPhenotype(Phenotype):
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
+        self.value_filter = value_filter
         self.add_children(self.expression.get_leaf_phenotypes())
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -87,6 +90,8 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(VALUE=_expression)
             # Arithmetic operations imply a boolean 'and' of children i.e. child1 + child two implies child1 and child2. if there are any null values in value calculations this is because one of the children is null, so we filter them out as the implied boolean condition is not met.
             joined_table = joined_table.filter(joined_table["VALUE"].notnull())
+            joined_table = self._perform_value_filtering(joined_table)
+            joined_table = joined_table.mutate(BOOLEAN=True)
 
         elif self.populate == "boolean":
             _expression = self.expression.get_boolean_expression(
@@ -109,6 +114,9 @@ class ComputationGraphPhenotype(Phenotype):
         else:
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
+        # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+        joined_table = self._perform_date_selection(joined_table)
+
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
@@ -120,7 +128,7 @@ class ComputationGraphPhenotype(Phenotype):
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
-        return joined_table
+        return joined_table.distinct()
 
     def _return_all_dates(self, table, date_columns):
         """
@@ -175,6 +183,36 @@ class ComputationGraphPhenotype(Phenotype):
 
         return coalesce_expressions
 
+    def _perform_date_selection(self, code_table):
+        """
+        Perform date selection based on return_date and return_value parameters.
+
+        Logic:
+        - If return_date='all', return all rows (no date aggregation)
+        - If return_date='first'/'last'/'nearest' and return_value=None, aggregate to one row per person (reduce=True)
+        - If return_date='first'/'last'/'nearest' and return_value='all', keep all rows on the selected date (reduce=False)
+        """
+        if self.return_date is None or self.return_date == "all":
+            return code_table
+
+        if self.return_date == "first":
+            aggregator = First(reduce=False, preserve_nulls=True)
+        elif self.return_date == "last":
+            aggregator = Last(reduce=False, preserve_nulls=True)
+        elif self.return_date == "nearest":
+            # Note: Nearest is not currently implemented in the aggregators
+            # This would need to be added to the aggregator module
+            raise NotImplementedError("Nearest aggregation not yet implemented")
+        else:
+            raise ValueError(f"Unknown return_date: {self.return_date}")
+
+        return aggregator.aggregate(code_table)
+
+    def _perform_value_filtering(self, table: Table) -> Table:
+        if self.value_filter is not None:
+            table = self.value_filter.filter(table)
+        return table
+
 
 class ScorePhenotype(ComputationGraphPhenotype):
     """
@@ -212,14 +250,22 @@ class ScorePhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ScorePhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="boolean",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -254,14 +300,22 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="value",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -287,6 +341,13 @@ class LogicPhenotype(ComputationGraphPhenotype):
         name: str = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("operate_on", "populate", "reduce")
+        }
+
         super(LogicPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -294,6 +355,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
             operate_on="boolean",
             populate="boolean",
             reduce=True,
+            **kwargs,
         )
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -309,7 +371,6 @@ class LogicPhenotype(ComputationGraphPhenotype):
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
         joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
-
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
@@ -350,6 +411,9 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 selected_date = ibis.null(date)
                 joined_table = joined_table.mutate(EVENT_DATE=selected_date)
 
+            # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+            joined_table = self._perform_date_selection(joined_table)
+
             # Populate the VALUE column with the value from the phenotype whose date matches the selected date
             value_cases = []
             for child in self.children:
@@ -375,7 +439,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Select only the required phenotype columns
-        return select_phenotype_columns(joined_table)
+        return select_phenotype_columns(joined_table).distinct()
 
     def _return_all_dates_with_value(self, table, date_columns):
         """

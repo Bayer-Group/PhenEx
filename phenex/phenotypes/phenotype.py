@@ -280,8 +280,18 @@ class ComputationGraph:
                 return node.get_boolean_expression(table, operate_on)
             elif isinstance(node, Phenotype):
                 if operate_on == "boolean":
-                    return table[f"{node.name}_BOOLEAN"]
-                return table[f"{node.name}_VALUE"]
+                    col = table[f"{node.name}_BOOLEAN"]
+                    # Handle case where BOOLEAN column might be float64 (from ScorePhenotype/ArithmeticPhenotype)
+                    if col.type().is_floating():
+                        # Convert float to boolean: non-zero is True
+                        return col != 0.0
+                    return col
+                else:
+                    col = table[f"{node.name}_VALUE"]
+                    # For value-based operations, convert to boolean: non-null is True
+                    if col.type().is_floating() or col.type().is_integer():
+                        return col.notnull()
+                    return col
             return node
 
         left = manage_node(self.left)
