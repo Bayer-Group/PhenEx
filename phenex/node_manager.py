@@ -271,8 +271,9 @@ class NodeManager:
         # Drop materialized table if connector is provided
         if con is not None:
             try:
-                logger.info(f"Node '{node.name}': dropping materialized table...")
-                con.drop_table(node.name)
+                if node.name in con.dest_connection.list_tables():
+                    logger.info(f"Node '{node.name}': dropping materialized table...")
+                    con.dest_connection.drop_table(node.name)
             except Exception as e:
                 logger.warning(
                     f"Node '{node.name}': failed to drop materialized table: {e}"
@@ -280,9 +281,9 @@ class NodeManager:
 
         # Reset the node's table attribute and timing info
         node.table = None
-        node.lastexecution_start_time = None
-        node.lastexecution_end_time = None
-        node.lastexecution_duration = None
+        node._last_execution_start_time = None
+        node._last_execution_end_time = None
+        node._last_execution_duration = None
 
         # Recursively clear children if requested
         if recursive:
