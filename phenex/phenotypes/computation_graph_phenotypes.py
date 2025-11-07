@@ -361,10 +361,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
     def _get_value_column_types(self, table):
         """
         Inspect the VALUE columns of child phenotypes and categorize their types.
-        
+
         Args:
             table: The Ibis table containing child phenotype columns
-            
+
         Returns:
             set: A set of type categories ('numeric', 'string', 'other')
         """
@@ -376,11 +376,11 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 col_type = schema[child_value_col]
                 # Categorize as numeric, string, or other
                 if col_type.is_numeric():
-                    value_col_types.add('numeric')
+                    value_col_types.add("numeric")
                 elif col_type.is_string():
-                    value_col_types.add('string')
+                    value_col_types.add("string")
                 else:
-                    value_col_types.add('other')
+                    value_col_types.add("other")
         return value_col_types
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -441,7 +441,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
 
             # Check data types of VALUE columns to determine how to handle them
             value_col_types = self._get_value_column_types(joined_table)
-            
+
             # If mixed types (e.g., string and numeric), set VALUE to NULL to avoid type conflicts
             # Otherwise, use the appropriate type
             if len(value_col_types) > 1:
@@ -456,28 +456,35 @@ class LogicPhenotype(ComputationGraphPhenotype):
 
                     # Check if this child's date matches the selected date
                     condition = getattr(joined_table, child_date_col) == selected_date
-                    value_cases.append((condition, getattr(joined_table, child_value_col)))
+                    value_cases.append(
+                        (condition, getattr(joined_table, child_value_col))
+                    )
 
                 # Build the CASE expression: when date matches, use that phenotype's value
                 if value_cases:
                     selected_value = ibis.case()
                     for condition, value in value_cases:
                         selected_value = selected_value.when(condition, value)
-                    
+
                     # Use appropriate null type based on the homogeneous type
-                    if 'numeric' in value_col_types:
-                        selected_value = selected_value.else_(ibis.null().cast("int32")).end()
-                    elif 'string' in value_col_types:
-                        selected_value = selected_value.else_(ibis.null().cast("string")).end()
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
                     else:
                         # Fallback to int32 for unknown types
-                        selected_value = selected_value.else_(ibis.null().cast("int32")).end()
-                    
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
                     joined_table = joined_table.mutate(VALUE=selected_value)
                 else:
                     # No value cases - use int32 as default
                     joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
-
 
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
@@ -500,7 +507,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
         """
         # Check if component phenotypes are of mixed VALUE types (i.e. one has a string value, the other a numeric) to determine how to handle them
         value_col_types = self._get_value_column_types(table)
-        
+
         # get all the non-null dates for each date column and populate VALUE correctly
         non_null_dates_by_date_col = []
         for date_col in date_columns:
@@ -531,21 +538,28 @@ class LogicPhenotype(ComputationGraphPhenotype):
                     selected_value = ibis.case()
                     for condition, value in value_cases:
                         selected_value = selected_value.when(condition, value)
-                    
+
                     # Use appropriate null type based on the homogeneous type
-                    if 'numeric' in value_col_types:
-                        selected_value = selected_value.else_(ibis.null().cast("int32")).end()
-                    elif 'string' in value_col_types:
-                        selected_value = selected_value.else_(ibis.null().cast("string")).end()
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
                     else:
                         # Fallback to int32 for unknown types
-                        selected_value = selected_value.else_(ibis.null().cast("int32")).end()
-                    
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
                     non_null_dates = non_null_dates.mutate(VALUE=selected_value)
                 else:
                     # No value cases - use int32 as default
-                    non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("int32"))
-
+                    non_null_dates = non_null_dates.mutate(
+                        VALUE=ibis.null().cast("int32")
+                    )
 
             non_null_dates_by_date_col.append(non_null_dates)
 

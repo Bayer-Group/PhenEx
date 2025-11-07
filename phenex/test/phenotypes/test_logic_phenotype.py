@@ -1,13 +1,23 @@
 import datetime, os
 import pandas as pd
 
-from phenex.phenotypes import CodelistPhenotype, LogicPhenotype, MeasurementPhenotype, AgePhenotype
+from phenex.phenotypes import (
+    CodelistPhenotype,
+    LogicPhenotype,
+    MeasurementPhenotype,
+    AgePhenotype,
+)
 from phenex.phenotypes.factory.chadsvasc import CHADSVASCPhenotype, CHADSVASCComponents
 
 from phenex.codelists import LocalCSVCodelistFactory, Codelist
 from phenex.filters.date_filter import DateFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters import CategoricalFilter, ValueFilter, GreaterThanOrEqualTo, LessThan
+from phenex.filters import (
+    CategoricalFilter,
+    ValueFilter,
+    GreaterThanOrEqualTo,
+    LessThan,
+)
 from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_3variables,
 )
@@ -1019,11 +1029,11 @@ class LogicPhenotypeValueTestGenerator(PhenotypeTestGenerator):
 class LogicPhenotypeMixedComponentValueTypesTestGenerator(PhenotypeTestGenerator):
     """
     Test generator for LogicPhenotype with mixed component VALUE types.
-    
+
     Tests the scenario where LogicPhenotype combines:
     - AgePhenotype (numeric VALUE - age in years)
     - CHADSVASCPhenotype (numeric VALUE - score 0-9)
-    
+
     This tests that LogicPhenotype correctly handles mixed numeric types and
     sets VALUE to NULL when appropriate (since it can't meaningfully combine
     an age value with a CHADSVASC score).
@@ -1043,67 +1053,79 @@ class LogicPhenotypeMixedComponentValueTypesTestGenerator(PhenotypeTestGenerator
         - P5: Age 60, CHADSVASC=7 (All 5 conditions+Female) → should NOT match (doesn't meet age criteria)
         """
         INDEX_DATE = datetime.date(2020, 1, 1)
-        
+
         # PERSON table with birth dates for age calculation
-        df_person = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2", "P3", "P4", "P5"],
-            "DATE_OF_BIRTH": [
-                datetime.date(1940, 1, 1),  # P1: Age 80
-                datetime.date(1950, 1, 1),  # P2: Age 70
-                datetime.date(1940, 1, 1),  # P3: Age 80
-                datetime.date(1950, 1, 1),  # P4: Age 70
-                datetime.date(1960, 1, 1),  # P5: Age 60
-            ],
-            "SEX": ["F", "M", "M", "F", "F"],
-            "INDEX_DATE": INDEX_DATE,
-        })
-        
+        df_person = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2", "P3", "P4", "P5"],
+                "DATE_OF_BIRTH": [
+                    datetime.date(1940, 1, 1),  # P1: Age 80
+                    datetime.date(1950, 1, 1),  # P2: Age 70
+                    datetime.date(1940, 1, 1),  # P3: Age 80
+                    datetime.date(1950, 1, 1),  # P4: Age 70
+                    datetime.date(1960, 1, 1),  # P5: Age 60
+                ],
+                "SEX": ["F", "M", "M", "F", "F"],
+                "INDEX_DATE": INDEX_DATE,
+            }
+        )
+
         # CONDITION_OCCURRENCE table with diagnoses for CHADSVASC calculation
         condition_data = []
         event_date = datetime.date(2019, 6, 1)  # Before index date
-        
+
         # P1: CHF(1) + HTN(1) + DM(1) + Vasc(1) + Age≥75(2) + Female(1) = 7
-        condition_data.extend([
-            {"PERSON_ID": "P1", "CODE": "chf", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P1", "CODE": "htn", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P1", "CODE": "dm", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P1", "CODE": "vasc", "EVENT_DATE": event_date},
-        ])
-        
+        condition_data.extend(
+            [
+                {"PERSON_ID": "P1", "CODE": "chf", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P1", "CODE": "htn", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P1", "CODE": "dm", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P1", "CODE": "vasc", "EVENT_DATE": event_date},
+            ]
+        )
+
         # P2: CHF(1) + HTN(1) + Stroke(2) + Vasc(1) + DM(1) + Age65-74(1) = 7 total, but since we want ≥4 for testing: CHF + HTN + Stroke + Vasc + DM = 1+1+2+1+1 = 6
-        condition_data.extend([
-            {"PERSON_ID": "P2", "CODE": "chf", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P2", "CODE": "htn", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P2", "CODE": "stroke", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P2", "CODE": "vasc", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P2", "CODE": "dm", "EVENT_DATE": event_date},
-        ])
-        
+        condition_data.extend(
+            [
+                {"PERSON_ID": "P2", "CODE": "chf", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P2", "CODE": "htn", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P2", "CODE": "stroke", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P2", "CODE": "vasc", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P2", "CODE": "dm", "EVENT_DATE": event_date},
+            ]
+        )
+
         # P3: HTN(1) + Age≥75(2) = 3 total → SHOULD MATCH (≥75 AND score≥3)
-        condition_data.extend([
-            {"PERSON_ID": "P3", "CODE": "htn", "EVENT_DATE": event_date},
-        ])
-        
+        condition_data.extend(
+            [
+                {"PERSON_ID": "P3", "CODE": "htn", "EVENT_DATE": event_date},
+            ]
+        )
+
         # P4: CHF(1) + HTN(1) + DM(1) + Age65-74(1) + Female(1) = 5 total → SHOULD MATCH (65-75 AND score≥4)
-        condition_data.extend([
-            {"PERSON_ID": "P4", "CODE": "chf", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P4", "CODE": "htn", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P4", "CODE": "dm", "EVENT_DATE": event_date},
-        ])
-        
+        condition_data.extend(
+            [
+                {"PERSON_ID": "P4", "CODE": "chf", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P4", "CODE": "htn", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P4", "CODE": "dm", "EVENT_DATE": event_date},
+            ]
+        )
+
         # P5: All 5 conditions + Female = CHF(1) + HTN(1) + DM(1) + Stroke(2) + Vasc(1) + Female(1) = 7 (age <65, so no age points) → should NOT match (doesn't meet age criteria)
-        condition_data.extend([
-            {"PERSON_ID": "P5", "CODE": "chf", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P5", "CODE": "htn", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P5", "CODE": "dm", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P5", "CODE": "stroke", "EVENT_DATE": event_date},
-            {"PERSON_ID": "P5", "CODE": "vasc", "EVENT_DATE": event_date},
-        ])
-        
+        condition_data.extend(
+            [
+                {"PERSON_ID": "P5", "CODE": "chf", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P5", "CODE": "htn", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P5", "CODE": "dm", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P5", "CODE": "stroke", "EVENT_DATE": event_date},
+                {"PERSON_ID": "P5", "CODE": "vasc", "EVENT_DATE": event_date},
+            ]
+        )
+
         df_conditions = pd.DataFrame(condition_data)
         df_conditions["CODE_TYPE"] = "ICD10CM"
         df_conditions["INDEX_DATE"] = INDEX_DATE
-        
+
         return [
             {"name": "PERSON", "df": df_person},
             {"name": "CONDITION_OCCURRENCE", "df": df_conditions},
@@ -1119,7 +1141,7 @@ class LogicPhenotypeMixedComponentValueTypesTestGenerator(PhenotypeTestGenerator
             min_days=GreaterThanOrEqualTo(0),
             max_days=LessThan(365),
         )
-        
+
         components_chadsvasc = CHADSVASCComponents(
             codelist_heart_failure=Codelist(["chf"], name="heart_failure"),
             codelist_hypertension=Codelist(["htn"], name="hypertension"),
@@ -1134,70 +1156,69 @@ class LogicPhenotypeMixedComponentValueTypesTestGenerator(PhenotypeTestGenerator
             domain_diagnosis="CONDITION_OCCURRENCE",
             domain_sex="PERSON",
         )
-        
+
         pt_chadsvasc_ge3 = CHADSVASCPhenotype(
             name="chadsvasc_ge3",
             components=components_chadsvasc,
             relative_time_range=f_one_year_pre_index,
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(3)),
         )
-        
+
         pt_chadsvasc_ge4 = CHADSVASCPhenotype(
             name="chadsvasc_ge4",
             components=components_chadsvasc,
             relative_time_range=f_one_year_pre_index,
             value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(4)),
         )
-        
+
         pt_age_ge_75 = AgePhenotype(
             name="age_ge75",
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(75))
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(75)),
         )
-        
+
         pt_age_ge65_l75 = AgePhenotype(
             name="age_ge65_l75",
             value_filter=ValueFilter(
-                min_value=GreaterThanOrEqualTo(65),
-                max_value=LessThan(75)
+                min_value=GreaterThanOrEqualTo(65), max_value=LessThan(75)
             ),
         )
-        
+
         # (≥75 years AND CHA₂DS₂-VASc ≥3)
         pt_age_ge75_and_vasc3 = LogicPhenotype(
             expression=(pt_age_ge_75 & pt_chadsvasc_ge3),
-            name="AGE_GE75_AND_CHADSVASC_GE3"
+            name="AGE_GE75_AND_CHADSVASC_GE3",
         )
-        
+
         # (65-75 years AND CHA₂DS₂-VASc ≥4)
         pt_age_65_75_and_vasc4 = LogicPhenotype(
             expression=(pt_age_ge65_l75 & pt_chadsvasc_ge4),
-            name="AGE_65TO75_AND_CHADSVASC_GE4"
+            name="AGE_65TO75_AND_CHADSVASC_GE4",
         )
-        
+
         # Combined stroke risk enrichment
         pt_stroke_risk_enrichment = LogicPhenotype(
             expression=(pt_age_ge75_and_vasc3 | pt_age_65_75_and_vasc4),
-            name="STROKE_RISK_ENRICHMENT"
+            name="STROKE_RISK_ENRICHMENT",
         )
-        
+
         test_infos = [
             {
                 "name": "age_ge75_and_chadsvasc_ge3",
-                "persons": ["P1", "P3"],  
+                "persons": ["P1", "P3"],
                 "phenotype": pt_age_ge75_and_vasc3,
             },
             {
                 "name": "age_65to75_and_chadsvasc_ge4",
-                "persons": ["P2", "P4"], 
+                "persons": ["P2", "P4"],
                 "phenotype": pt_age_65_75_and_vasc4,
             },
             {
                 "name": "stroke_risk_enrichment",
-                "persons": ["P1", "P2", "P3", "P4"], 
+                "persons": ["P1", "P2", "P3", "P4"],
                 "phenotype": pt_stroke_risk_enrichment,
             },
         ]
-        
+
         return test_infos
 
 

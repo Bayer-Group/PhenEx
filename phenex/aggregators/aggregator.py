@@ -319,6 +319,7 @@ class ValueAggregator:
             # fill event date with nulls if not forcing return date, as dates are nonsensical
             if self.aggregation_function in ["mean", "median"]:
                 from datetime import date
+
                 input_table = input_table.mutate(EVENT_DATE=ibis.null(date))
             return input_table
         else:
