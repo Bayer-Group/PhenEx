@@ -20,6 +20,7 @@ nav:
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - TimeRangePhenotype: api/phenotypes/time_range_phenotype.md
+          - TimeRangeCountPhenotype: api/phenotypes/time_range_count_phenotype.md
           - TimeShiftPhenotype: api/phenotypes/time_shift_phenotype.md
           - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
