@@ -364,6 +364,31 @@ class LogicPhenotype(ComputationGraphPhenotype):
             **kwargs,
         )
 
+    def _get_value_column_types(self, table):
+        """
+        Inspect the VALUE columns of child phenotypes and categorize their types.
+
+        Args:
+            table: The Ibis table containing child phenotype columns
+
+        Returns:
+            set: A set of type categories ('numeric', 'string', 'other')
+        """
+        schema = table.schema()
+        value_col_types = set()
+        for child in self.children:
+            child_value_col = f"{child.name}_VALUE"
+            if child_value_col in schema:
+                col_type = schema[child_value_col]
+                # Categorize as numeric, string, or other
+                if col_type.is_numeric():
+                    value_col_types.add("numeric")
+                elif col_type.is_string():
+                    value_col_types.add("string")
+                else:
+                    value_col_types.add("other")
+        return value_col_types
+
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
         Executes the logic phenotype processing logic.
@@ -424,25 +449,52 @@ class LogicPhenotype(ComputationGraphPhenotype):
             # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
             joined_table = self._perform_date_selection(joined_table)
 
-            # Populate the VALUE column with the value from the phenotype whose date matches the selected date
-            value_cases = []
-            for child in self.children:
-                child_date_col = f"{child.name}_EVENT_DATE"
-                child_value_col = f"{child.name}_VALUE"
+            # Check data types of VALUE columns to determine how to handle them
+            value_col_types = self._get_value_column_types(joined_table)
 
-                # Check if this child's date matches the selected date
-                condition = getattr(joined_table, child_date_col) == selected_date
-                value_cases.append((condition, getattr(joined_table, child_value_col)))
-
-            # Build the CASE expression: when date matches, use that phenotype's value
-            if value_cases:
-                selected_value = ibis.case()
-                for condition, value in value_cases:
-                    selected_value = selected_value.when(condition, value)
-                selected_value = selected_value.else_(ibis.null()).end()
-                joined_table = joined_table.mutate(VALUE=selected_value)
+            # If mixed types (e.g., string and numeric), set VALUE to NULL to avoid type conflicts
+            # Otherwise, use the appropriate type
+            if len(value_col_types) > 1:
+                # Mixed types - use string NULL as a common denominator
+                joined_table = joined_table.mutate(VALUE=ibis.null().cast("string"))
             else:
-                joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
+                # Homogeneous types - populate VALUE with the phenotype whose date matches
+                value_cases = []
+                for child in self.children:
+                    child_date_col = f"{child.name}_EVENT_DATE"
+                    child_value_col = f"{child.name}_VALUE"
+
+                    # Check if this child's date matches the selected date
+                    condition = getattr(joined_table, child_date_col) == selected_date
+                    value_cases.append(
+                        (condition, getattr(joined_table, child_value_col))
+                    )
+
+                # Build the CASE expression: when date matches, use that phenotype's value
+                if value_cases:
+                    selected_value = ibis.case()
+                    for condition, value in value_cases:
+                        selected_value = selected_value.when(condition, value)
+
+                    # Use appropriate null type based on the homogeneous type
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
+                    else:
+                        # Fallback to int32 for unknown types
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
+                    joined_table = joined_table.mutate(VALUE=selected_value)
+                else:
+                    # No value cases - use int32 as default
+                    joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
 
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
@@ -463,6 +515,9 @@ class LogicPhenotype(ComputationGraphPhenotype):
         Returns:
             Ibis expression representing the UNION of all non null dates with proper VALUE columns.
         """
+        # Check if component phenotypes are of mixed VALUE types (i.e. one has a string value, the other a numeric) to determine how to handle them
+        value_col_types = self._get_value_column_types(table)
+
         # get all the non-null dates for each date column and populate VALUE correctly
         non_null_dates_by_date_col = []
         for date_col in date_columns:
@@ -471,27 +526,50 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 EVENT_DATE=date_col
             )
 
-            # For this specific date, find which phenotype's value to use
-            value_cases = []
-            for child in self.children:
-                child_date_col = f"{child.name}_EVENT_DATE"
-                child_value_col = f"{child.name}_VALUE"
-
-                # Check if this child's date matches the current date
-                condition = getattr(non_null_dates, child_date_col) == date_col
-                value_cases.append(
-                    (condition, getattr(non_null_dates, child_value_col))
-                )
-
-            # Build the CASE expression for this date
-            if value_cases:
-                selected_value = ibis.case()
-                for condition, value in value_cases:
-                    selected_value = selected_value.when(condition, value)
-                selected_value = selected_value.else_(ibis.null()).end()
-                non_null_dates = non_null_dates.mutate(VALUE=selected_value)
+            # If component phenotypes are of mixed VALUE types (i.e. one has a string value, the other a numeric), set VALUE to NULL; otherwise populate appropriately
+            if len(value_col_types) > 1:
+                # Mixed types - use string NULL as a common denominator
+                non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("string"))
             else:
-                non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("int32"))
+                # For this specific date, find which phenotype's value to use
+                value_cases = []
+                for child in self.children:
+                    child_date_col = f"{child.name}_EVENT_DATE"
+                    child_value_col = f"{child.name}_VALUE"
+
+                    # Check if this child's date matches the current date
+                    condition = getattr(non_null_dates, child_date_col) == date_col
+                    value_cases.append(
+                        (condition, getattr(non_null_dates, child_value_col))
+                    )
+
+                # Build the CASE expression for this date
+                if value_cases:
+                    selected_value = ibis.case()
+                    for condition, value in value_cases:
+                        selected_value = selected_value.when(condition, value)
+
+                    # Use appropriate null type based on the homogeneous type
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
+                    else:
+                        # Fallback to int32 for unknown types
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
+                    non_null_dates = non_null_dates.mutate(VALUE=selected_value)
+                else:
+                    # No value cases - use int32 as default
+                    non_null_dates = non_null_dates.mutate(
+                        VALUE=ibis.null().cast("int32")
+                    )
 
             non_null_dates_by_date_col.append(non_null_dates)
 
