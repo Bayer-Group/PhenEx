@@ -53,6 +53,11 @@ class Waterfall(Reporter):
             }
         )
 
+        if self.include_component_phenotypes_level is not None:
+            self._append_components_recursively(
+                cohort.entry_criterion, table, parent_index=str(index)
+            )
+
         for inclusion in cohort.inclusions:
             index += 1
             table = self.append_phenotype_to_waterfall(
@@ -104,6 +109,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "Final Cohort Size",
             "Remaining": N,
+            "% Remaining": round(100 * N / N_entry, self.decimal_places),
             "Level": 0,
             "Index": "",
         }
