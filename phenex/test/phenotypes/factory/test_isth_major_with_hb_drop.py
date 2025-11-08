@@ -122,14 +122,14 @@ class ISTHTestGeneratorWithHb(ISTHTestGenerator):
         df_hb1.columns = [
             "PERSON_ID",
             "MEASUREMENT_DATE",
-            "MEASUREMENT_TYPE_CONCEPT_ID",
+            "MEASUREMENT_CONCEPT_ID",
             "VALUE_AS_NUMBER",
         ]
         df_hb2 = pd.DataFrame(df_allvalues[["PATID", "hb2_date", "hb", "hb2"]])
         df_hb2.columns = [
             "PERSON_ID",
             "MEASUREMENT_DATE",
-            "MEASUREMENT_TYPE_CONCEPT_ID",
+            "MEASUREMENT_CONCEPT_ID",
             "VALUE_AS_NUMBER",
         ]
         df_measurement = pd.concat([df_hb1, df_hb2], axis=0)
@@ -137,7 +137,7 @@ class ISTHTestGeneratorWithHb(ISTHTestGenerator):
         schema_measurement = {
             "PERSON_ID": str,
             "MEASUREMENT_DATE": datetime.date,
-            "MEASUREMENT_TYPE_CONCEPT_ID": str,
+            "MEASUREMENT_CONCEPT_ID": str,
             "VALUE_AS_NUMBER": int,
         }
         measurement_table = OMOPMeasurementTable(
