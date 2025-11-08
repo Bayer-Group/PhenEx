@@ -116,7 +116,7 @@ def OneInpatientTwoOutpatientPhenotype(
        Expose the EventCountPhenotype's value_filter and relative_time_range keyword arguments to the user of OneInpatientTwoOutpatientPhenotype as two well named keyword arguments.
     """
     pt_outpatient_two_occurrences = EventCountPhenotype(
-        name = f"{name}_outpatient_two_occurrences",
+        name=f"{name}_outpatient_two_occurrences",
         phenotype=pt_outpatient,
         value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(2)),
         relative_time_range=event_count_rtr,
