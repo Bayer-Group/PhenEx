@@ -20,6 +20,8 @@ nav:
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - TimeRangePhenotype: api/phenotypes/time_range_phenotype.md
+          - TimeRangeCountPhenotype: api/phenotypes/time_range_count_phenotype.md
+          - TimeShiftPhenotype: api/phenotypes/time_shift_phenotype.md
           - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
           - UserDefinedPhenotype: api/phenotypes/user_defined_phenotype.md
@@ -29,8 +31,10 @@ nav:
           - ScorePhenotype: api/phenotypes/score_phenotype.md
           - Cohort: api/phenotypes/cohort.md
           - Factory:
+              - CHADSVASCPhenotype: api/phenotypes/factory/chadsvasc.md
               - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
               - StackableRegimen: api/phenotypes/factory/stackable_regimen.md
+              - one_inpatient_two_outpatient: api/phenotypes/factory/one_inpatient_two_outpatient.md
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md

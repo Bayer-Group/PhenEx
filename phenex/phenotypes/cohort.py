@@ -61,6 +61,7 @@ class Cohort:
         self.derived_tables = derived_tables or []
         self.outcomes = outcomes or []
         self.data_period = data_period
+        self.n_persons_in_source_database = None
 
         self.phenotypes = (
             [self.entry_criterion]
@@ -330,6 +331,10 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        self.n_persons_in_source_database = (
+            tables["PERSON"].distinct().count().execute()
+        )
+
         self.build_stages(tables)
 
         # Apply data period filter first if specified
@@ -586,7 +591,6 @@ class DataPeriodFilterNode(Node):
             )
 
     def _execute(self, tables: Dict[str, Table]) -> Table:
-
         table = tables[self.domain]
         columns = table.columns
 
