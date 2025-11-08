@@ -380,10 +380,16 @@ class LogicPhenotypeComplexEntryTestGenerator(PhenotypeTestGenerator):
         )
         
         # Step 4: Combine into entry phenotype
-        pt_entry = LogicPhenotype(
-            name="first_af_diagnosis_with_one_year_coverage",
+        pt_entry_1 = LogicPhenotype(
+            name="complex_entry_return_af_date",
             expression=pt_af_diagnosis & pt_coverage,
             return_date=pt_af_diagnosis,
+        )
+
+        pt_entry_2 = LogicPhenotype(
+            name="complex_entry_return_coverage_date",
+            expression=pt_af_diagnosis & pt_coverage,
+            return_date=pt_coverage,
         )
         
         # Expected patients who should pass all criteria:
@@ -394,8 +400,8 @@ class LogicPhenotypeComplexEntryTestGenerator(PhenotypeTestGenerator):
         # P10: 2 outpatient, 400 days coverage
         # P12: 1 inpatient, exactly 365 days (boundary case)
         
-        entry_test = {
-            "name": "af_entry_with_coverage",
+        entry_test_return_date_af = {
+            "name": "af_entry_with_coverage_return_af",
             "persons": ["P1", "P2", "P3", "P7", "P10", "P12"],
             "dates": [
                 datetime.date(2021, 10, 15),  # P1
@@ -405,10 +411,28 @@ class LogicPhenotypeComplexEntryTestGenerator(PhenotypeTestGenerator):
                 datetime.date(2021, 1, 15),   # P10 - first outpatient
                 datetime.date(2020, 11, 1),   # P12 - inpatient
             ],
-            "phenotype": pt_entry,
+            "phenotype": pt_entry_1,
+        }
+
+
+        entry_test_return_coverage = {
+            "name": "af_entry_with_coverage_return_coverage",
+            "persons": ["P1", "P2", "P3", "P7", "P10", "P12"],
+            "dates": [
+                datetime.date(2020, 1, 15),  # P1
+                datetime.date(2020, 3, 1),    # P2 - first outpatient
+                datetime.date(2020, 9, 20),   # P3 - first AF (inpatient)
+                datetime.date(2020, 3, 1),    # P7 - first AF
+                datetime.date(2019, 12, 1),   # P10 - first outpatient
+                datetime.date(2019, 11, 1),   # P12 - inpatient
+            ],
+            "phenotype": pt_entry_2,
         }
         
-        test_infos = [entry_test]
+        test_infos = [
+            entry_test_return_date_af, 
+            entry_test_return_coverage
+        ]
         
         return test_infos
 
