@@ -114,10 +114,16 @@ export class CohortDataService {
       console.log("JUST GOT DATA")
 
       this._cohort_data = cohortResponse;
+      
+      // IMPORTANT: Ensure study_id is in _cohort_data for backend saves
+      if (!this._cohort_data.study_id && cohortData.study_id) {
+        this._cohort_data.study_id = cohortData.study_id;
+      }
+      
       this.issues_service.validateCohort();
       this.ensureEffectiveTypes(); // Ensure all phenotypes have effective_type
       this.sortPhenotypes();
-      console.log("AFTE RSORT", this._cohort_data)
+      console.log("AFTER SORT", this._cohort_data)
       this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
       if (!this._cohort_data.id) {
         this._cohort_data.id = createID();
@@ -237,6 +243,8 @@ export class CohortDataService {
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
+    console.log("💾 SAVE CHANGES TO COHORT:", this._cohort_data);
+    console.log("💾 study_id present?", this._cohort_data.study_id);
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();

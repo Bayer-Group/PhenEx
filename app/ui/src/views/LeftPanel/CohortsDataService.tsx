@@ -278,6 +278,7 @@ export class CohortsDataService {
       id: createID(),
       name: 'New Cohort',
       class_name: 'Cohort',
+      study_id: studyId,           // IMPORTANT: Include study_id in cohort_data!
       phenotypes: [],
       database_config: {},
       constants: [],
