@@ -203,16 +203,25 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                 >
                   <span>{title}</span>
                   {hasButton && (
-                    <button
+                    <span
                       className={styles.nodeButton}
                       onClick={(e) => {
                         e.stopPropagation();
                         node.buttonOnClick?.();
                       }}
                       title={node.buttonTitle}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          node.buttonOnClick?.();
+                        }
+                      }}
                     >
                       {node.buttonTitle}
-                    </button>
+                    </span>
                   )}
                 </div>
               );
