@@ -331,7 +331,7 @@ export class HierarchicalLeftPanelDataService {
     
     if (newStudyData) {
       console.log('CREATING NEW STUDY:', newStudyData);
-      this.addNewCohortToStudy(newStudyData.id);
+      this.addNewCohortToStudy(newStudyData);
     }
 
     // Handle errors in background
@@ -343,9 +343,9 @@ export class HierarchicalLeftPanelDataService {
     return ViewType.CohortDefinition;
   }
 
-  public async addNewCohortToStudy(studyId: string) {
+  public async addNewCohortToStudy(study_data: any) {
     // Don't await - let it happen in background
-    const newCohortPromise = this.dataService.createNewCohort(studyId);
+    const newCohortPromise = this.dataService.createNewCohort(study_data);
     
     // Get the cohort data immediately (it's created synchronously)
     const newCohortData = await newCohortPromise;
@@ -354,7 +354,7 @@ export class HierarchicalLeftPanelDataService {
     // when dataService.notifyListeners() is called from createNewCohort
     
     if (newCohortData) {
-      console.log('CREATING NEW COHORT FOR STUDY:', studyId, newCohortData);
+      console.log('CREATING NEW COHORT FOR STUDY:', study_data.id, newCohortData);
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
     }
