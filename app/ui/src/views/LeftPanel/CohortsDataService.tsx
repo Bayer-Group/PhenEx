@@ -12,6 +12,7 @@ import {
   updateCohortDisplayOrder
 } from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { StudyDataService } from '../StudyViewer/StudyDataService';
 
 export interface StudyData {
   id: string;
@@ -41,6 +42,7 @@ export class CohortsDataService {
   private _studyCohortsCache: Map<string, CohortData[]> = new Map();
 
   private cohortDataService: CohortDataService;
+  private studyDataService: StudyDataService;
 
   public async publicCohortNamesAndIds() {
     if (this._publicCohortNamesAndIds === null) {
@@ -186,7 +188,13 @@ export class CohortsDataService {
     this.cohortDataService.addNameChangeListener(() => {
       // When cohort data changes, refresh all cached data
       this.invalidateCache();
+      this.notifyListeners();
+    });
 
+    this.studyDataService = StudyDataService.getInstance();
+    this.studyDataService.addNameChangeListener(() => {
+      // When study name changes, refresh all cached data
+      this.invalidateCache();
       this.notifyListeners();
     });
   }
