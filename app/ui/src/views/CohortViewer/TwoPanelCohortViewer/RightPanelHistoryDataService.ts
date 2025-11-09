@@ -17,19 +17,16 @@ export class RightPanelHistoryDataService {
 
   public static getInstance(): RightPanelHistoryDataService {
     if (!RightPanelHistoryDataService.instance) {
-      console.log(`[RightPanelHistory] Creating new instance`);
       RightPanelHistoryDataService.instance = new RightPanelHistoryDataService();
     }
     return RightPanelHistoryDataService.instance;
   }
 
   public addToHistory(viewType: any, extraData?: any) {
-    console.log(`[RightPanelHistory] Adding to history - viewType: ${viewType}`, extraData);
     
     // Don't add duplicate consecutive entries
     const lastItem = this.getLastItem();
     if (lastItem && lastItem.viewType === viewType && this.areExtraDataEqual(lastItem.extraData, extraData)) {
-      console.log(`[RightPanelHistory] Skipping duplicate entry for viewType: ${viewType}`);
       return;
     }
 
@@ -42,19 +39,16 @@ export class RightPanelHistoryDataService {
     };
 
     this.history.push(historyItem);
-    console.log(`[RightPanelHistory] Added item: ${displayName}, total history items: ${this.history.length}`);
 
     // Keep history size manageable
     if (this.history.length > this.maxHistorySize) {
       this.history = this.history.slice(-this.maxHistorySize);
-      console.log(`[RightPanelHistory] Trimmed history to ${this.maxHistorySize} items`);
     }
 
     this.notifyListeners();
   }
 
   public forceAddToHistory(viewType: any, extraData?: any) {
-    console.log(`[RightPanelHistory] Force adding to history - viewType: ${viewType}`, extraData);
     
     const displayName = this.getDisplayName(viewType, extraData);
     const historyItem: RightPanelHistoryItem = {
@@ -65,12 +59,10 @@ export class RightPanelHistoryDataService {
     };
 
     this.history.push(historyItem);
-    console.log(`[RightPanelHistory] Force added item: ${displayName}, total history items: ${this.history.length}`);
 
     // Keep history size manageable
     if (this.history.length > this.maxHistorySize) {
       this.history = this.history.slice(-this.maxHistorySize);
-      console.log(`[RightPanelHistory] Trimmed history to ${this.maxHistorySize} items`);
     }
 
     this.notifyListeners();
@@ -101,16 +93,13 @@ export class RightPanelHistoryDataService {
       // Pop the current item off the stack
       const removedItem = this.history.pop();
       const previousItem = this.getCurrentItem();
-      console.log(`[RightPanelHistory] Popped item: ${removedItem?.displayName}, now at: ${previousItem?.displayName}`);
       this.notifyListeners();
       return previousItem;
     }
-    console.log(`[RightPanelHistory] Cannot go back - no previous items`);
     return null;
   }
 
   public clearHistory() {
-    console.log(`[RightPanelHistory] Clearing history - had ${this.history.length} items`);
     this.history = [];
     this.notifyListeners();
   }
@@ -118,10 +107,8 @@ export class RightPanelHistoryDataService {
   public removeLastItem() {
     if (this.history.length > 0) {
       const removedItem = this.history.pop();
-      console.log(`[RightPanelHistory] Removed last item: ${removedItem?.displayName}, remaining: ${this.history.length}`);
       this.notifyListeners();
     } else {
-      console.log(`[RightPanelHistory] Cannot remove last item - history is empty`);
     }
   }
 
@@ -165,18 +152,15 @@ export class RightPanelHistoryDataService {
   }
 
   private notifyListeners() {
-    console.log(`[RightPanelHistory] Notifying ${this.listeners.length} listeners`);
     this.listeners.forEach(listener => listener());
   }
 
   public addListener(listener: () => void) {
     this.listeners.push(listener);
-    console.log(`[RightPanelHistory] Added listener, total: ${this.listeners.length}`);
   }
 
   public removeListener(listener: () => void) {
     const originalLength = this.listeners.length;
     this.listeners = this.listeners.filter(l => l !== listener);
-    console.log(`[RightPanelHistory] Removed listener, was: ${originalLength}, now: ${this.listeners.length}`);
   }
 }

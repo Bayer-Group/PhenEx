@@ -99,13 +99,13 @@ export class CohortDataService {
   public loadCohortData(cohortData: any): void {
     // try {
       let cohortResponse = undefined;
-      // if (cohortData == undefined){
-      //   try {
-      //     cohortResponse = await getUserCohort(cohortData.id);
-      //   } catch {
-      //     cohortResponse = await getPublicCohort(cohortData.id);
-      //   }
-      // } 
+      if (cohortData.cohort_data == undefined){
+        try {
+          cohortResponse = await getUserCohort(cohortData.id);
+        } catch {
+          cohortResponse = await getPublicCohort(cohortData.id);
+        }
+      } 
       cohortResponse = cohortData.cohort_data;
       this._study_data = cohortData.study
 

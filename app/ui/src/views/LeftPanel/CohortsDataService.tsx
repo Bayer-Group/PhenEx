@@ -93,12 +93,9 @@ export class CohortsDataService {
   }
 
   public async getCohortsForStudy(study_id: string): Promise<CohortData[]> {
-    console.log("GETTING COHORTS FOR STUDY", study_id)
     if (!this._studyCohortsCache.has(study_id)) {
       try {
         const cohorts = await getCohortsForStudy(study_id);
-
-        console.log("GOT COHORTS FOR STUDY LOADING FROM BACKEND", study_id, cohorts)
 
         // Find the study data from cache
         const study = 
@@ -119,9 +116,7 @@ export class CohortsDataService {
         this._studyCohortsCache.set(study_id, []);
       }
     }else{
-      console.log("USING CACHED COHORTS FOR STUDY")
     }
-    console.log("RETURNING COHORTS FOR STUDY", study_id, this._studyCohortsCache.get(study_id))
     return this._studyCohortsCache.get(study_id) || [];
   }
 
@@ -142,7 +137,6 @@ export class CohortsDataService {
   }
 
   public async loadUserWorkspace(): Promise<void> {
-    console.log('🏗️ Loading complete user workspace...');
     
     try {
       // Load all studies first
@@ -154,7 +148,6 @@ export class CohortsDataService {
       this._userStudies = userStudies;
       this._publicStudies = publicStudies;
       
-      console.log(`🏗️ Loaded ${userStudies.length} user studies and ${publicStudies.length} public studies`);
       
       // Load cohorts for all studies in parallel
       const allStudies = [...userStudies, ...publicStudies];
@@ -168,13 +161,10 @@ export class CohortsDataService {
         }));
         
         this._studyCohortsCache.set(study.id, cohortsWithStudy);
-        console.log(`🏗️ Loaded ${cohorts.length} cohorts for study "${study.name}"`);
         return { study, cohorts: cohortsWithStudy };
       });
       
       await Promise.all(cohortPromises);
-      console.log('🏗️ User workspace loading complete!');
-      console.log(this._studyCohortsCache);
     } catch (error) {
       console.warn('🚨 Failed to load user workspace:', error);
       // Set fallback empty values
@@ -210,45 +200,90 @@ export class CohortsDataService {
 
   public async createNewStudy() {
     /*
-    Creates an in-memory study data structure. This is saved immediately.
+    Creates an in-memory study data structure with optimistic UI updates.
+    The UI updates immediately while the database save happens in the background.
     */
-    const newStudyData = {
+    const newStudyData: StudyData = {
       id: createID(),
       name: 'New Study',
       description: 'A new study',
-      baseline_characteristics: {},
-      outcomes: {},
-      analysis: {},
-      visible_by: [],
       is_public: false,
+      creator_id: '', // Will be set by backend
+      visible_by: [],
+      display_order: this._userStudies?.length ?? 0,
     };
 
-    await createNewStudy(newStudyData);
+    // Optimistically add to cache for immediate UI update
+    if (this._userStudies === null) {
+      // Cache not loaded yet, load it first
+      await this.getUserStudies();
+    }
     
-    // Clear cached data to force refresh
-    this._userStudies = null;
-    this.notifyListeners();
+    if (this._userStudies) {
+      this._userStudies.push(newStudyData);
+      this.notifyListeners(); // UI updates immediately
+    }
+
+    // Save to database in background
+    try {
+      await createNewStudy(newStudyData);
+    } catch (error) {
+      console.error('Failed to create study in database:', error);
+      // Revert optimistic update on failure
+      if (this._userStudies) {
+        this._userStudies = this._userStudies.filter(s => s.id !== newStudyData.id);
+        this.notifyListeners();
+      }
+      throw error;
+    }
+    
     return newStudyData;
   }
 
   public async createNewCohort(study_id: string) {
     /*
-    Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
+    Creates a new cohort with optimistic UI updates.
+    The UI updates immediately while the database save happens in the background.
     */
-    const newCohortData = {
+    const existingCohorts = await this.getCohortsForStudy(study_id);
+    
+    const newCohortData: CohortData = {
       id: createID(),
       name: 'New Cohort',
-      class_name: 'Cohort',
       study_id: study_id,
+      display_order: existingCohorts.length,
       phenotypes: [],
       database_config: {},
     };
 
-    await updateCohort(newCohortData.id, newCohortData);
+    // Optimistically add to cache for immediate UI update
+    const cachedCohorts = this._studyCohortsCache.get(study_id);
+    if (cachedCohorts) {
+      cachedCohorts.push(newCohortData);
+      this.notifyListeners(); // UI updates immediately
+    }
 
-    // Clear cached cohorts for this study
-    this.clearStudyCohortsCache(study_id);
-    this.notifyListeners(); // Notify listeners after initialization
+    // Save to database in background
+    try {
+      await updateCohort(newCohortData.id, {
+        ...newCohortData,
+        class_name: 'Cohort',
+        phenotypes: [],
+        database_config: {},
+      });
+    } catch (error) {
+      console.error('Failed to create cohort in database:', error);
+      // Revert optimistic update on failure
+      if (cachedCohorts) {
+        const index = cachedCohorts.findIndex(c => c.id === newCohortData.id);
+        if (index > -1) {
+          cachedCohorts.splice(index, 1);
+          this.notifyListeners();
+        }
+      }
+      throw error;
+    }
+    
     return newCohortData;
   }
 

@@ -95,12 +95,10 @@ export class HierarchicalLeftPanelDataService {
     isSelected: boolean = false,
     isPublic: boolean = false
   ): Promise<HierarchicalTreeNode> => {
-    console.log(`📁 Creating study node: "${study.name}" (${study.id})`);
     
     // Always load cohorts since they're already cached from workspace loading
     const cohorts = await this.dataService.getCohortsForStudy(study.id);
     study['cohorts'] = cohorts
-    console.log(`� Study "${study.name}" has ${cohorts.length} cohorts:`, cohorts.map(c => c.name));
     
     const children = cohorts.map(cohort => 
       this.createCohortNode(cohort, level + 1, cohort.id === this.getCurrentlySelectedNodeId())
@@ -123,16 +121,13 @@ export class HierarchicalLeftPanelDataService {
       hideButton: true, // Hide button by default, show on hover
     };
     
-    console.log(`📁 Study node created: "${study.name}", children: ${children.length}`);
     return studyNode;
   };
 
   public async updateTreeData() {
-    console.log('🔄 updateTreeData called - preserving selection states');
 
     // Capture currently selected node ID before rebuilding
     const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
-    console.log('🔄 Currently selected node ID:', currentlySelectedNodeId);
 
     // Load complete workspace with error handling
     try {
@@ -228,7 +223,6 @@ export class HierarchicalLeftPanelDataService {
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
 
-    console.log('🔄 Tree rebuilt with preserved selection for:', currentlySelectedNodeId);
     this.notifyListeners();
   }
 
@@ -297,7 +291,6 @@ export class HierarchicalLeftPanelDataService {
 
   // Set selected state for a specific node
   public selectNode(nodeId: string) {
-    console.log('🎯 selectNode called with nodeId:', nodeId);
 
     // First deselect all nodes
     this.deselectAllNodes(this.treeData);
@@ -306,7 +299,6 @@ export class HierarchicalLeftPanelDataService {
     const findAndSelectNode = (nodes: HierarchicalTreeNode[]): boolean => {
       for (const node of nodes) {
         if (node.id === nodeId) {
-          console.log('🎯 Found and selecting node:', node.displayName, 'with id:', node.id);
           node.selected = true;
           return true;
         }
@@ -318,46 +310,60 @@ export class HierarchicalLeftPanelDataService {
     };
 
     const found = findAndSelectNode(this.treeData);
-    console.log('🎯 Node selection result:', found ? 'SUCCESS' : 'FAILED');
 
     this.notifyListeners();
 
     // Add a small delay to check if selection state persists
     setTimeout(() => {
       const selectedNode = this.findNodeById(nodeId);
-      console.log(
-        '🎯 Selection state after 100ms:',
-        selectedNode ? selectedNode.selected : 'NODE NOT FOUND'
-      );
     }, 100);
   }
 
   public async addNewStudy() {
-    const newStudyData = await this.dataService.createNewStudy();
+    // Don't await - let it happen in background
+    const newStudyPromise = this.dataService.createNewStudy();
     
-    await this.updateTreeData();
-    this.notifyListeners();
-
+    // Get the study data immediately (it's created synchronously)
+    const newStudyData = await newStudyPromise;
+    
+    // Note: updateTreeData will be triggered by the listener we set up in constructor
+    // when dataService.notifyListeners() is called from createNewStudy
+    
     if (newStudyData) {
       console.log('CREATING NEW STUDY:', newStudyData);
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newStudyData });
+      this.addNewCohortToStudy(newStudyData.id);
     }
+
+    // Handle errors in background
+    newStudyPromise.catch(error => {
+      console.error('❌ Failed to save new study to backend:', error);
+      // Tree will be updated by the revert in createNewStudy()
+    });
 
     return ViewType.CohortDefinition;
   }
 
   public async addNewCohortToStudy(studyId: string) {
-    const newCohortData = await this.dataService.createNewCohort(studyId);
+    // Don't await - let it happen in background
+    const newCohortPromise = this.dataService.createNewCohort(studyId);
     
-    await this.updateTreeData();
-    this.notifyListeners();
-
+    // Get the cohort data immediately (it's created synchronously)
+    const newCohortData = await newCohortPromise;
+    
+    // Note: updateTreeData will be triggered by the listener we set up in constructor
+    // when dataService.notifyListeners() is called from createNewCohort
+    
     if (newCohortData) {
       console.log('CREATING NEW COHORT FOR STUDY:', studyId, newCohortData);
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
     }
+
+    // Handle errors in background
+    newCohortPromise.catch(error => {
+      console.error('❌ Failed to save new cohort to backend:', error);
+      // Tree will be updated by the revert in createNewCohort()
+    });
 
     return ViewType.CohortDefinition;
   }
@@ -377,7 +383,6 @@ export class HierarchicalLeftPanelDataService {
    * @param newIndex The target index position
    */
   public async reorderStudy(parentId: string, studyId: string, newIndex: number) {
-    console.log(`🔄 reorderStudy: Moving ${studyId} to index ${newIndex} in ${parentId}`);
     
     // Determine which study array to reorder
     const studyArray = parentId === 'mystudies' ? this.cachedUserStudies : this.cachedPublicStudies;
@@ -395,7 +400,6 @@ export class HierarchicalLeftPanelDataService {
     // Insert at new position
     studyArray.splice(newIndex, 0, movedStudy);
     
-    console.log(`✅ Reordered studies in ${parentId}:`, studyArray.map(s => s.name));
     
     // Update display_order for all affected studies
     const studyOrders = studyArray.map((study, index) => ({
@@ -406,7 +410,6 @@ export class HierarchicalLeftPanelDataService {
     // Persist to backend
     try {
       await this.dataService.updateStudiesDisplayOrder(studyOrders);
-      console.log('✅ Display order persisted to backend');
     } catch (error) {
       console.error('❌ Failed to persist display order:', error);
     }
@@ -434,7 +437,6 @@ export class HierarchicalLeftPanelDataService {
         return;
       }
       
-      console.log(`📋 Current cohorts order:`, cohorts.map((c, i) => `${i}: ${c.name}`));
       
       // Find current index
       const currentIndex = cohorts.findIndex(c => c.id === cohortId);
@@ -443,7 +445,6 @@ export class HierarchicalLeftPanelDataService {
         return;
       }
       
-      console.log(`📍 Moving cohort from index ${currentIndex} to ${newIndex}`);
       
       // Remove from current position
       const [movedCohort] = cohorts.splice(currentIndex, 1);
@@ -451,7 +452,6 @@ export class HierarchicalLeftPanelDataService {
       // Insert at new position
       cohorts.splice(newIndex, 0, movedCohort);
       
-      console.log(`✅ New cohorts order:`, cohorts.map((c, i) => `${i}: ${c.name}`));
       
       // Update display_order for all affected cohorts
       const cohortOrders = cohorts.map((cohort, index) => ({
@@ -459,11 +459,9 @@ export class HierarchicalLeftPanelDataService {
         display_order: index
       }));
       
-      console.log(`💾 Persisting cohort orders:`, cohortOrders);
       
       // Persist to backend
       await this.dataService.updateCohortsDisplayOrder(studyId, cohortOrders);
-      console.log('✅ Cohort display order persisted to backend');
       
       // Clear cache again to force fresh load
       this.dataService.clearStudyCohortsCache(studyId);

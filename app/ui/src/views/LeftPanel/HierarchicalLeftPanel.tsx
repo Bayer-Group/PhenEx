@@ -13,7 +13,6 @@ interface HierarchicalLeftPanelProps {
 
 // Convert HierarchicalTreeNode to react-complex-tree format
 const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemIndex, TreeItem<HierarchicalTreeNode>> => {
-  console.log('🔧 convertToComplexTree: Input nodes:', nodes);
   
   const items: Record<TreeItemIndex, TreeItem<HierarchicalTreeNode>> = {
     root: {
@@ -24,7 +23,6 @@ const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemInd
     },
   };
 
-  console.log('🔧 convertToComplexTree: Root children IDs:', nodes.map(n => n.id));
 
   const processNode = (node: HierarchicalTreeNode) => {
     const hasChildren = node.children && node.children.length > 0;
@@ -35,7 +33,6 @@ const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemInd
       data: node,
     };
     
-    console.log(`🔧 processNode: ${node.displayName} (${node.id}), isFolder: ${hasChildren}, children:`, hasChildren ? (node.children as HierarchicalTreeNode[]).map(c => c.id) : 'none');
 
     if (hasChildren) {
       (node.children as HierarchicalTreeNode[]).forEach(processNode);
@@ -44,7 +41,6 @@ const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemInd
 
   nodes.forEach(processNode);
   
-  console.log('🔧 convertToComplexTree: Final items:', items);
   return items;
 };
 
@@ -64,7 +60,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   useEffect(() => {
     const updateTreeData = () => {
       const rawTreeData = dataService.current.getTreeData();
-      console.log('🌲 HierarchicalLeftPanel: Received tree data:', rawTreeData);
       setTreeData(rawTreeData);
     };
 
@@ -76,7 +71,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
   const items = useMemo(() => {
     const converted = convertToComplexTree(treeData);
-    console.log('🌲 HierarchicalLeftPanel: Converted items:', converted);
     return converted;
   }, [treeData]);
 
@@ -152,8 +146,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     }
   };
 
-  console.log('🌲 Rendering tree with', Object.keys(items).length, 'items');
-
   if (Object.keys(items).length <= 1) { // Only root or less
     return (
       <LeftPanel isVisible={isVisible} width={280}>
@@ -173,7 +165,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             items={items}
             getItemTitle={(item) => {
               const title = item.data?.displayName || `Item ${item.index}`;
-              console.log('🎨 getItemTitle called for:', item.index, '→', title);
               return title;
             }}
             renderItemTitle={({ title, item }) => {
@@ -237,7 +228,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             canRename={true}
             canInvokePrimaryActionOnItemContainer={false}
             onRenameItem={(item, newName) => {
-              console.log('✏️ onRenameItem called for:', item.index, 'new name:', newName);
               
               if (!item.data) {
                 console.warn('⚠️ No data for item:', item.index);
@@ -311,7 +301,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             onSelectItems={(itemIds) => {
               // Don't handle selection if it's from expand/collapse or drag action
               if (isExpandCollapseAction.current || isDragging.current) {
-                console.log('⚠️ Ignoring selection from expand/collapse or drag action');
                 setSelectedItems(itemIds); // Still update selected items visually
                 return;
               }

@@ -23,6 +23,7 @@ export enum ViewType {
   CohortReport = 'sreport',
   ModalPhenotype = 'modalPhenotype',
   NewCohort = 'newCohort',
+  NewStudy = 'newStudy',
 }
 
 export interface ViewInfo {
@@ -78,17 +79,19 @@ export const MainView = () => {
   }, []);
 
   const renderView = () => {
-    console.log('RENDERING VIEW', currentView.viewType);
+    console.log("RENDERING MAIN VIEW", currentView)
     switch (currentView.viewType) {
       case ViewType.Empty:
         return <SplashPage />;
       case ViewType.StudyViewer:
         return <StudyViewer data={currentView.data} />;
       case ViewType.CohortDefinition:
+        console.log("DISPLAYING COHORT IN MAINVIEW", currentView)
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
           return <TwoPanelCohortViewer data={currentView.data} />;
-        case ViewType.NewCohort:
+      case ViewType.NewCohort:
+        console.log("DISPLAYING NEW COHORT IN MAINVIEW", currentView)
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />
@@ -99,6 +102,18 @@ export const MainView = () => {
             />
           </>
         );
+      case ViewType.NewStudy:
+        return (
+          <>
+            <StudyViewer data={currentView.data} />
+            <NewCohortWizard
+              isVisible={true}
+              onClose={closeNewCohortWizard}
+              data={currentView.data}
+            />
+          </>
+        );
+  
       default:
         return <SplashPage />;
     }
