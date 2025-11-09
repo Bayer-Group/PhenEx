@@ -149,7 +149,12 @@ export class StudyDataService {
     if (changesToStudy) {
     }
     this._study_data.name = this._study_name;
-    await updateStudy(this._study_data.id, this._study_data);
+    
+    // Strip out cohorts to avoid circular reference (cohorts contain study reference)
+    const { cohorts, ...studyDataForBackend } = this._study_data;
+    console.log('💾 Saving study to backend (without cohorts):', studyDataForBackend);
+    
+    await updateStudy(this._study_data.id, studyDataForBackend);
     this.notifyNameChangeListeners();
     if (refreshGrid) {
       this.notifyStudyDataServiceListener();
