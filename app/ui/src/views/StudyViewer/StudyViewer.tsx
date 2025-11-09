@@ -121,7 +121,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
 
     // Create a new cohort for this study
     const cohortsDataService = CohortsDataService.getInstance();
-    const newCohortData = await cohortsDataService.createNewCohort(studyId);
+    const newCohortData = await cohortsDataService.createNewCohort(studyDataService.study_data);
     
     if (newCohortData) {
       // Navigate to the NewCohort view which will show the wizard
