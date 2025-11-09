@@ -240,37 +240,86 @@ export class CohortsDataService {
     return newStudyData;
   }
 
-  public async createNewCohort(study_id: string) {
+  public async createNewCohort(study_data: any) {
     /*
     Creates a new cohort with optimistic UI updates.
     The UI updates immediately while the database save happens in the background.
+    Returns a cohort in the same format as getCohortsForStudy() returns.
     */
-    const existingCohorts = await this.getCohortsForStudy(study_id);
+    console.log("🔍 createNewCohort called with study_data:", study_data);
+    console.log("🔍 study_data type:", typeof study_data);
+    console.log("🔍 study_data.id:", study_data?.id);
     
-    const newCohortData: CohortData = {
+    // Handle if study_data is just an ID string
+    let studyId: string;
+    let studyObject: any;
+    
+    if (typeof study_data === 'string') {
+      // study_data is actually a study ID
+      studyId = study_data;
+      studyObject = this._userStudies?.find(s => s.id === studyId) || 
+                    this._publicStudies?.find(s => s.id === studyId);
+      console.log("🔍 Converted string ID to study object:", studyObject);
+    } else {
+      // study_data is an object
+      studyId = study_data.id;
+      studyObject = study_data;
+    }
+    
+    if (!studyId) {
+      console.error("❌ No study ID found!");
+      throw new Error("Cannot create cohort without study ID");
+    }
+    
+    const existingCohorts = studyObject?.cohorts || [];
+    
+    // Create the actual cohort JSON representation (what CohortDataService expects)
+    const cohortJson = {
       id: createID(),
       name: 'New Cohort',
-      study_id: study_id,
-      display_order: existingCohorts.length,
+      class_name: 'Cohort',
       phenotypes: [],
       database_config: {},
+      constants: [],
     };
+    
+    // Create the full cohort structure matching what getCohortsForStudy returns
+    // This is what gets stored in cache and passed to CohortDataService
+    const newCohortData: any = {
+      id: cohortJson.id,
+      name: cohortJson.name,
+      study_id: studyId,
+      display_order: existingCohorts.length,
+      study: studyObject,          // For CohortDataService: cohortData.study
+      cohort_data: cohortJson,     // For CohortDataService: cohortData.cohort_data
+    };
+    
+    console.log("✅ Created newCohortData:", newCohortData);
 
     // Optimistically add to cache for immediate UI update
-    const cachedCohorts = this._studyCohortsCache.get(study_id);
+    const cachedCohorts = this._studyCohortsCache.get(studyId);
     if (cachedCohorts) {
       cachedCohorts.push(newCohortData);
       this.notifyListeners(); // UI updates immediately
     }
 
-    // Save to database in background
+    // Prepare backend payload
+    const backendPayload = {
+      id: cohortJson.id,
+      name: cohortJson.name,
+      class_name: cohortJson.class_name,
+      study_id: studyId,
+      phenotypes: cohortJson.phenotypes,
+      database_config: cohortJson.database_config,
+      constants: cohortJson.constants,
+      display_order: newCohortData.display_order,
+    };
+    
+    console.log("💾 Sending to backend:", backendPayload);
+
+    // Save to database in background - only send backend-compatible fields
     try {
-      await updateCohort(newCohortData.id, {
-        ...newCohortData,
-        class_name: 'Cohort',
-        phenotypes: [],
-        database_config: {},
-      });
+      await updateCohort(cohortJson.id, backendPayload);
     } catch (error) {
       console.error('Failed to create cohort in database:', error);
       // Revert optimistic update on failure

@@ -99,13 +99,13 @@ export class CohortDataService {
   public loadCohortData(cohortData: any): void {
     // try {
       let cohortResponse = undefined;
-      if (cohortData.cohort_data == undefined){
-        try {
-          cohortResponse = await getUserCohort(cohortData.id);
-        } catch {
-          cohortResponse = await getPublicCohort(cohortData.id);
-        }
-      } 
+      // if (cohortData == undefined){
+      //   try {
+      //     cohortResponse = await getUserCohort(cohortData.id);
+      //   } catch {
+      //     cohortResponse = await getPublicCohort(cohortData.id);
+      //   }
+      // } 
       cohortResponse = cohortData.cohort_data;
       this._study_data = cohortData.study
 
@@ -237,11 +237,7 @@ export class CohortDataService {
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
-    
-    // Create a copy of cohort data without the study reference to avoid circular JSON
-    const { study, ...cohortDataToSave } = this._cohort_data;
-    await updateCohort(this._cohort_data.id, cohortDataToSave);
-    
+    await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     if (refreshGrid) {
