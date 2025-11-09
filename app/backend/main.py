@@ -1297,6 +1297,7 @@ async def delete_codelist_file(cohort_id: str, file_id: str):
 async def update_codelist_file_column_mapping(request: Request, file_id: str, column_mapping: dict):
     """
     Update only the column mapping for a codelist file.
+    Also updates the codelists array cache based on the codelist_column.
 
     Args:
         request (Request): The request object for authentication.
@@ -1317,20 +1318,46 @@ async def update_codelist_file_column_mapping(request: Request, file_id: str, co
         )
     
     try:
-        success = await db_manager.update_codelist(
-            user_id, file_id, column_mapping=column_mapping
-        )
-        
-        if not success:
+        # First get the codelist data to extract unique codelist names
+        codelist = await db_manager.get_codelist(user_id, file_id)
+        if not codelist:
             raise HTTPException(
                 status_code=404,
                 detail=f"Codelist file {file_id} not found for user {user_id}"
             )
         
-        logger.info(f"Updated column mapping for codelist {file_id} for user {user_id}")
+        # Parse codelist_data if needed
+        codelist_data = codelist.get("codelist_data", {})
+        if isinstance(codelist_data, str):
+            import json
+            codelist_data = json.loads(codelist_data)
+        
+        # Extract unique codelist names from the specified column
+        codelist_column = column_mapping["codelist_column"]
+        contents = codelist_data.get("contents", {})
+        data = contents.get("data", {})
+        
+        codelists_array = []
+        if codelist_column in data:
+            # Get unique codelist names
+            codelists_array = list(set(data[codelist_column]))
+        
+        # Update both column mapping and codelists array
+        success = await db_manager.update_codelist(
+            user_id, file_id, column_mapping=column_mapping, codelists=codelists_array
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Failed to update codelist file {file_id}"
+            )
+        
+        logger.info(f"Updated column mapping and codelists array for codelist {file_id} for user {user_id}")
         return {
             "status": "success",
             "message": f"Column mapping updated for codelist file {file_id}",
+            "codelists": codelists_array
         }
         
     except HTTPException:
@@ -1347,17 +1374,25 @@ async def update_codelist_file_column_mapping(request: Request, file_id: str, co
 async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
     """
     Get a list of codelist filenames for a given cohort ID using database.
+    Includes cached codelists array and column mapping to avoid loading full data.
     
     Args:
         db_manager: DatabaseManager instance for database interactions
         cohort_id (str): The ID of the cohort.
         
     Returns:
-        list: A list of codelist filenames.
+        list: A list of codelist metadata including id, filename, codelists array, and column mapping.
     """
     try:
         codelists = await db_manager.get_codelists_for_cohort(cohort_id)
-        return [{"id": cl["id"], "filename": cl["filename"]} for cl in codelists]
+        return [{
+            "id": cl["id"], 
+            "filename": cl["filename"],
+            "codelists": cl.get("codelists", []),
+            "code_column": cl.get("code_column"),
+            "code_type_column": cl.get("code_type_column"),
+            "codelist_column": cl.get("codelist_column")
+        } for cl in codelists]
     except Exception as e:
         logger.error(f"Failed to retrieve codelist filenames for cohort {cohort_id}: {e}")
         return []
@@ -1417,6 +1452,7 @@ async def get_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str,
 async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str, codelist_file: dict, user_id: str) -> bool:
     """
     Save a codelist file for a given cohort ID and file ID to database.
+    Also calculates and stores the codelists array based on codelist_column.
     
     Args:
         db_manager: DatabaseManager instance for database interactions
@@ -1432,12 +1468,23 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
     try:
         # Extract needed data
         column_mapping = codelist_file.get("column_mapping", {})
-        codelists = codelist_file.get("codelists", [])
         codelist_data = codelist_file.get("codelist_data", codelist_file)
-        logger.info("save_codelist_file_for_cohort : sending codelist data")
+        
+        # Calculate codelists array from the data
+        codelists_array = []
+        codelist_column = column_mapping.get("codelist_column")
+        if codelist_column:
+            contents = codelist_data.get("contents", {})
+            data = contents.get("data", {})
+            if codelist_column in data:
+                # Get unique codelist names
+                codelists_array = list(set(data[codelist_column]))
+        
+        logger.info(f"save_codelist_file_for_cohort: calculated {len(codelists_array)} unique codelists")
+        
         # Save codelist to database
         return await db_manager.save_codelist(
-            user_id, file_id, codelist_data, column_mapping, codelists, cohort_id
+            user_id, file_id, codelist_data, column_mapping, codelists_array, cohort_id
         )
     except Exception as e:
         logger.error(f"Failed to save codelist file {file_id} for cohort {cohort_id}: {e}")

@@ -801,6 +801,7 @@ class DatabaseManager:
     async def get_codelists_for_cohort(self, cohort_id: str) -> List[Dict]:
         """
         Retrieve all codelists associated with a specific cohort.
+        Includes cached codelists array and column mapping for optimization.
 
         Args:
             cohort_id (str): The ID of the cohort.
@@ -813,7 +814,13 @@ class DatabaseManager:
             conn = await self.get_connection()
 
             query = """
-                SELECT codelist_id, codelist_data->'filename' as filename, codelists, created_at, updated_at 
+                SELECT 
+                    codelist_id, 
+                    codelist_data->'filename' as filename, 
+                    codelists, 
+                    column_mapping,
+                    created_at, 
+                    updated_at 
                 FROM codelistfile 
                 WHERE cohort_id = $1
                 ORDER BY updated_at DESC
@@ -823,10 +830,18 @@ class DatabaseManager:
 
             codelists = []
             for row in rows:
+                # Parse column_mapping if it's a string
+                column_mapping = row["column_mapping"]
+                if isinstance(column_mapping, str):
+                    column_mapping = json.loads(column_mapping)
+                
                 codelists.append({
                     "id": row["codelist_id"],
                     "filename": row["filename"],
                     "codelists": row["codelists"],
+                    "code_column": column_mapping.get("code_column") if column_mapping else None,
+                    "code_type_column": column_mapping.get("code_type_column") if column_mapping else None,
+                    "codelist_column": column_mapping.get("codelist_column") if column_mapping else None,
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                 })

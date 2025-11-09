@@ -27,12 +27,22 @@ interface UsedCodelist {
   };
 }
 
+interface FileMetadata {
+  id: string;
+  filename: string;
+  codelists: string[];
+  code_column?: string;
+  code_type_column?: string;
+  codelist_column?: string;
+}
+
 export class CodelistDataService {
   public activeFile: CodelistFile | null = null;
   private cohortDataService: CohortDataService;
   public _filenames: string[] = null;
   private listeners: (() => void)[] = [];
   public files: CodelistFile[] = [];
+  private filesMetadata: FileMetadata[] = [];
 
   private usedCodelists: UsedCodelist[] = [
     {
@@ -65,15 +75,21 @@ export class CodelistDataService {
     const filenames = await getCodelistFilenamesForCohort(this.cohortDataService.cohort_data.id);
     console.log('setFilenamesForCohort: raw filenames from API:', filenames);
     
+    // Store the metadata (including cached codelists array) separately
+    // This allows us to avoid loading full file contents when we just need codelist names
+    this.filesMetadata = filenames.map(fileinfo => ({
+      id: fileinfo.id,
+      filename: fileinfo.filename.startsWith('"') && fileinfo.filename.endsWith('"') 
+        ? fileinfo.filename.slice(1, -1) 
+        : fileinfo.filename,
+      codelists: fileinfo.codelists || [],
+      code_column: fileinfo.code_column,
+      code_type_column: fileinfo.code_type_column,
+      codelist_column: fileinfo.codelist_column
+    }));
+    
     // Remove any surrounding quotes from filenames
-    this._filenames = filenames.map(fileinfo => {
-      let filename = fileinfo.filename;
-      // Remove surrounding quotes if they exist
-      if (filename.startsWith('"') && filename.endsWith('"')) {
-        filename = filename.slice(1, -1);
-      }
-      return filename;
-    });
+    this._filenames = this.filesMetadata.map(meta => meta.filename);
     console.log('setFilenamesForCohort: processed _filenames:', this._filenames);
     
     const filePromises = await Promise.all(
@@ -357,13 +373,28 @@ export class CodelistDataService {
 
   public getCodelistsForFileInColumn(filename: string, column: string) {
     console.log('getCodelistsForFileInColumn:', filename, column);
-    console.log('Available files:', this.files.map(f => f.filename));
     
     // Remove quotes if they exist in the search filename
     let searchFilename = filename;
     if (searchFilename.startsWith('"') && searchFilename.endsWith('"')) {
       searchFilename = searchFilename.slice(1, -1);
     }
+    
+    // First check if we can use cached metadata (avoids loading large codelist_data)
+    const metadata = this.filesMetadata.find(meta => meta.filename === searchFilename);
+    if (metadata) {
+      console.log('Found file metadata:', metadata.filename);
+      
+      // If the column matches the stored codelist_column, use cached codelists array
+      if (metadata.codelist_column === column && metadata.codelists && metadata.codelists.length > 0) {
+        console.log('✅ Using cached codelists array (avoiding full data load):', metadata.codelists);
+        return metadata.codelists;
+      }
+    }
+    
+    // Fall back to loading full file data if column doesn't match or cache is empty
+    console.log('📂 Loading full file data to extract codelists from column:', column);
+    console.log('Available files:', this.files.map(f => f.filename));
     
     const file = this.files.find(file => file.filename === searchFilename);
     if (!file) {
