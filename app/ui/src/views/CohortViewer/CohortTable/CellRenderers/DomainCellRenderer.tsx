@@ -27,9 +27,16 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   if (noDomainPhenotypes.includes(props.data.class_name)) {
     return <div></div>;
   }
+  console.log('Rendering domain cell with value:', props.value);
+  if (props.value === undefined || props.value === null || props.value === 'missing') {
+    return (
+      <PhenexCellRenderer {...props}><></>
+      </PhenexCellRenderer>
+    );
+  }
   return (
     <PhenexCellRenderer {...props}>
-      {props.value === 'missing' ? '' : renderDomain(props.value)}
+      {renderDomain(props.value)}
     </PhenexCellRenderer>
   );
 };
