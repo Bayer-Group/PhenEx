@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, useRef } from 'react';
 import { DraggablePortal } from '../Portal/DraggablePortal';
 import { EditableTextField } from '../EditableTextField/EditableTextField';
 import styles from './PopupEditableTextField.module.css';
@@ -29,10 +29,25 @@ export const PopupEditableTextField: FC<PopupEditableTextFieldProps> = ({
   classNameInput,
 }) => {
   const [localValue, setLocalValue] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
+
+  // Auto-focus the input when the popup mounts
+  useEffect(() => {
+    // Wait for the portal to render and find the input
+    const timer = setTimeout(() => {
+      const input = containerRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
+        input.select(); // Also select all text for easy editing
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleChange = (newValue: string) => {
     setLocalValue(newValue);
@@ -56,7 +71,7 @@ export const PopupEditableTextField: FC<PopupEditableTextFieldProps> = ({
       dragHandleSelector={dragHandleSelector}
       enableDragging={true}
     >
-      <div className={`${styles.container} ${className || ''}`}>
+      <div ref={containerRef} className={`${styles.container} ${className || ''}`}>
         <div className={`${styles.dragHandle} popup-drag-handle`}>
           <div className={styles.dragIcon}>⋮⋮</div>
           <div className={styles.title}>Edit</div>
