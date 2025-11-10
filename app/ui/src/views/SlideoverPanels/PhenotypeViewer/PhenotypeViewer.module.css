@@ -118,7 +118,7 @@
   border: 1px solid var(--line-color);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  background-color: var(--background_color_translucent);
+  background-color: var(--color_translucent);
 }
 
 .addButton:hover {

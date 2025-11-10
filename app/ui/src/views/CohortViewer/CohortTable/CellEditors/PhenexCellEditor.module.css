@@ -88,7 +88,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  background-color: var(--background_color_translucent);
+  background-color: var(--color_translucent);
   overflow: hidden;
 }
 

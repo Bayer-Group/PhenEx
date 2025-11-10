@@ -1,7 +1,7 @@
 .dropdownMenu {
   position: fixed;
   z-index: 9999;
-  background-color: var(--background_color_translucent);
+  background-color: var(--color_translucent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: 10px;

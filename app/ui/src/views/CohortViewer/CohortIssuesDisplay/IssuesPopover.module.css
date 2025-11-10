@@ -40,7 +40,7 @@
   position: absolute;
   right: var(--issue_popover_margin);
   bottom: 0px;
-  background-color: var(--background_color_translucent);
+  background-color: var(--color_translucent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: var(--border);

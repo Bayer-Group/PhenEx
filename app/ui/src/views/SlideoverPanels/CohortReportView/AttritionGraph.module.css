@@ -188,7 +188,7 @@
     width:100%;
     height:200px;
     /* width: calc(100% - 20px); */
-      background-color: var(--background_color_translucent);
+      background-color: var(--color_translucent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: var(--border);

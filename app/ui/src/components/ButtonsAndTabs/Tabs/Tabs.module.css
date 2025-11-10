@@ -5,7 +5,7 @@
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 4px;
-  background-color: var(--background_color_translucent);
+  background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
   /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: blur(10px);
