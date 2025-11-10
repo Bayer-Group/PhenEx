@@ -8,7 +8,7 @@
 }
 
 .topSection {
-  height: calc(var(--top_app_navigation_tab_bar) + 100px);
+  height: calc(var(--top_app_navigation_tab_bar) + 120px);
 }
 
 .bottomSection {
@@ -73,6 +73,7 @@
 }
 .breadcrumbsContainer{
   position: absolute;
+  margin-top:20px;
   margin-left:var(--centerPanelLeftMargin);
   font-size:40px !important;
 }
