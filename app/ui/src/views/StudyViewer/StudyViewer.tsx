@@ -128,7 +128,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ 
         viewType: ViewType.NewCohort, 
-        data: {} 
+        data: newCohortData 
       });
     }
   };

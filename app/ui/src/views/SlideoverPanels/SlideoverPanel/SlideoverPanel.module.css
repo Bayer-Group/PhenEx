@@ -10,7 +10,7 @@
   margin: 0;
   box-sizing: border-box;
   /* background-color: red; */
-  border-left: var(--border);
+  /* border-left: var(--border); */
   border-right: 1px solid transparent;
   
 }
