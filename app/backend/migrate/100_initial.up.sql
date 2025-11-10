@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "cohort" (
     "is_public" boolean DEFAULT FALSE,
     "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY ("cohort_id"),
+    PRIMARY KEY ("cohort_id", "user_id", "version", "is_provisional"),
     FOREIGN KEY("user_id") REFERENCES "user" ("id")
 );
 

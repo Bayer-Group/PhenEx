@@ -3,20 +3,46 @@ import styles from './ButtonsBar.module.css';
 
 interface ButtonsBarProps {
   width: string | number;
+  height?: string | number;
   buttons: string[];
   actions: (() => void)[];
 }
 
-export const ButtonsBar: FC<ButtonsBarProps> = ({ width, buttons, actions }) => {
+export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, actions }) => {
   return (
     <div
       className={styles.buttonsContainer}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
+        height: height ? (typeof height === 'number' ? `${height}px` : height) : undefined,
       }}
     >
       {buttons.map((button, index) => (
-        <button key={index} className={styles.button} onClick={() => actions[index]()}>
+        <button 
+          key={index} 
+          className={styles.button} 
+          style={{
+            backgroundColor: button === 'accept' ? 'var(--color_inclusion)' : 
+                           button === 'reject' ? 'var(--color_exclusion)' : 
+                           button === 'Retry' ? 'var(--color_inclusion)' : 'transparent',
+            color: button === 'accept' || button === 'reject' || button === 'Retry' ? 'white' : 'var(--text-color-inactive)',
+            border: button === 'accept' ? '1px solid var(--color_inclusion)' : 
+                    button === 'reject' ? '1px solid var(--color_exclusion)' : 
+                    button === 'Retry' ? '1px solid var(--color_inclusion)' : '1px solid var(--line-color)',
+            zIndex: 100
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof actions[index] === 'function') {
+              try {
+                actions[index]();
+              } catch (error) {
+                console.error(`ButtonsBar: Error executing action ${index}:`, error);
+              }
+            }
+          }}
+        >
           {button}
         </button>
       ))}

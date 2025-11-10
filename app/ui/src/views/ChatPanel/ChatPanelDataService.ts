@@ -178,11 +178,18 @@ class ChatPanelDataService {
 
       console.log('Finalizing assistant response');
       if (this.cohortDataService.cohort_data?.id) {
-        const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-        console.log('Response from suggestChanges:', response);
-        this.cohortDataService.updateCohortFromChat(response);
+        try {
+          const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+          console.log('Response from suggestChanges:', response);
+          this.cohortDataService.updateCohortFromChat(response);
+        } catch (error) {
+          console.error('Error fetching updated cohort:', error);
+          this.notifyAICompletionListeners(false);
+          return;
+        }
       }
       this.notifyListeners();
+      console.log('About to call notifyAICompletionListeners(true)');
       this.notifyAICompletionListeners(true);
       console.log('AI request completed successfully');
     } catch (error) {
@@ -221,7 +228,20 @@ class ChatPanelDataService {
     }
   }
 
-  public retryAIRequest(): void {}
+  public retryAIRequest(): void {
+    // Get the last user message
+    const userMessages = this.messages.filter(message => message.isUser);
+    if (userMessages.length === 0) {
+      console.warn('No user messages found to retry');
+      return;
+    }
+    
+    const lastUserMessage = userMessages[userMessages.length - 1];
+    console.log('Retrying AI request with last user message:', lastUserMessage.text);
+    
+    // Resend the AI request with the last user message text
+    this.sendAIRequest(lastUserMessage.text);
+  }
 }
 
 export const chatPanelDataService = ChatPanelDataService.getInstance();

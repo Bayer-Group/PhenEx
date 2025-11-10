@@ -32,7 +32,7 @@ from .init.main import init_db
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-# from .rag import router as rag_router, query_faiss_index
+from .rag import router as rag_router, query_faiss_index
 
 load_dotenv()
 
@@ -94,11 +94,45 @@ app.add_middleware(DBSessionMiddleware, sessionmaker=sessionmaker)
 async def health_check():
     """
     Health check endpoint for Docker health checks and service readiness.
+    Includes database connectivity test to ensure full system readiness.
 
     Returns:
-        dict: Simple health status
+        dict: Health status with database connectivity check
     """
-    return {"status": "healthy", "service": "phenex-backend"}
+    try:
+        # Test database connectivity by checking if we can connect and query
+        db_status = await db_manager.health_check()
+        
+        # Check if database health check passed and all required tables exist
+        if db_status.get("status") != "connected" or not db_status.get("all_tables_exist", False):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unhealthy",
+                    "service": "phenex-backend",
+                    "database": db_status,
+                    "error": "Database not ready or missing required tables",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            )
+        
+        return {
+            "status": "healthy", 
+            "service": "phenex-backend",
+            "database": db_status,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=503, 
+            detail={
+                "status": "unhealthy",
+                "service": "phenex-backend", 
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        )
 
 
 def _get_authenticated_user(request: Request) -> User:
@@ -163,23 +197,72 @@ async def get_cohort_for_user(request: Request, cohort_id: str):
         )
 
 
-# Modify the update_cohort endpoint to require user_id
 @app.post("/cohort", tags=["cohort"])
-async def update_cohort_for_user(
+async def create_cohort_for_user(
     request: Request,
     cohort_id: str,
     cohort: Dict = Body(...),
     study_id: str = None,
     provisional: bool = False,
+):
+    """
+    Create a new cohort for a specific user.
+
+    Args:
+        cohort_id (str): The ID of the cohort to create for the authenticated user.
+        cohort (Dict): The complete JSON specification of the cohort.
+        study_id (str): The ID of the study this cohort belongs to (required).
+        provisional (bool): Whether to save the cohort as provisional.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    
+    # Check if cohort already exists
+    existing_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if existing_cohort:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cohort {cohort_id} already exists. Use PATCH to update existing cohorts."
+        )
+    
+    # Get study_id from parameter or cohort data
+    if not study_id:
+        study_id = cohort.get("study_id")
+    
+    if not study_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="study_id is required for cohort creation"
+        )
+    
+    logger.info(f"Creating new cohort {cohort_id} with study_id {study_id}")
+    
+    try:
+        await db_manager.update_cohort_for_user(
+            user_id, cohort_id, cohort, study_id, provisional, new_version=False
+        )
+        return {"status": "success", "message": "Cohort created successfully."}
+    except Exception as e:
+        logger.error(f"Failed to create cohort for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create cohort.")
+
+
+@app.patch("/cohort", tags=["cohort"])
+async def update_cohort_for_user(
+    request: Request,
+    cohort_id: str,
+    cohort: Dict = Body(...),
+    provisional: bool = False,
     new_version: bool = False,
 ):
     """
-    Update or create a cohort for a specific user.
+    Update an existing cohort for a specific user.
 
     Args:
         cohort_id (str): The ID of the cohort to update for the authenticated user.
         cohort (Dict): The complete JSON specification of the cohort.
-        study_id (str): The ID of the study this cohort belongs to.
         provisional (bool): Whether to save the cohort as provisional.
         new_version (bool): If True, increment version. If False, replace existing version.
 
@@ -188,15 +271,23 @@ async def update_cohort_for_user(
     """
     user_id = _get_authenticated_user_id(request)
     
-    # Get study_id from cohort data if not provided as parameter
-    if not study_id:
-        study_id = cohort.get("study_id")
+    # Check if cohort exists
+    existing_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not existing_cohort:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cohort {cohort_id} not found. Use POST to create new cohorts."
+        )
     
+    # Use study_id from existing record
+    study_id = existing_cohort.get("study_id")
     if not study_id:
         raise HTTPException(
-            status_code=400, 
-            detail="study_id is required for cohort creation/update"
+            status_code=500,
+            detail=f"Existing cohort {cohort_id} has no study_id in database"
         )
+    
+    logger.info(f"Updating existing cohort {cohort_id} with study_id {study_id}")
     
     try:
         await db_manager.update_cohort_for_user(
@@ -240,38 +331,6 @@ async def delete_cohort_for_user(request: Request, cohort_id: str):
             status_code=500,
             detail=f"Failed to delete cohort {cohort_id} for user {user_id}",
         )
-
-
-@app.patch("/cohort/display_order", tags=["cohort"])
-async def update_cohort_display_order(
-    request: Request,
-    cohort_id: str,
-    display_order: int
-):
-    """
-    Update the display order of a cohort for the authenticated user.
-
-    Args:
-        cohort_id (str): The ID of the cohort to update.
-        display_order (int): The new display order value.
-
-    Returns:
-        dict: Status and message of the operation.
-    """
-    user_id = _get_authenticated_user_id(request)
-    try:
-        success = await db_manager.update_cohort_display_order(
-            user_id=user_id,
-            cohort_id=cohort_id,
-            display_order=display_order
-        )
-        
-        if success:
-            return {"status": "success", "message": "Cohort display order updated successfully."}
-        else:
-            raise HTTPException(status_code=404, detail="Cohort not found or access denied.")
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to update cohort display order.")
@@ -643,12 +702,19 @@ async def suggest_changes(
     )
 
     user_id = _get_authenticated_user_id(request)
-    current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
-    if not current_cohort:
+    current_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not current_cohort_record:
         raise HTTPException(
             status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
         )
-    current_cohort = json.loads(current_cohort["cohort_data"])
+    current_cohort = current_cohort_record["cohort_data"]
+    study_id = current_cohort_record["study_id"]
+
+    if not study_id:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"study_id is required for cohort updates but not found in cohort data: {current_cohort}"
+        )
     try:
         # these are duplicated i think, there is a phenotype key with everything
         del current_cohort["entry_criterion"]
@@ -798,6 +864,7 @@ async def suggest_changes(
                         user_id,
                         cohort_id,
                         new_cohort,
+                        study_id,
                         provisional=True,
                         new_version=False,
                     )

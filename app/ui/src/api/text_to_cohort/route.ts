@@ -58,13 +58,26 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
   }
 };
 
+export const createCohort = async (cohort_id: string, cohort_data: any, study_id: string) => {
+  try {
+    console.log('I AM CREATING THE COHORT', cohort_data);
+    const response = await api.post('/cohort', cohort_data, {
+      params: { cohort_id, study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in createCohort:', error);
+    throw error;
+  }
+};
+
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
     console.log('I AM UPDATING THE COHORT', cohort_data);
-    const response = await api.post('/cohort', cohort_data, {
+    const response = await api.patch('/cohort', cohort_data, {
       params: { cohort_id },
     });
-    return response.data.cohort_data;
+    return response.data;
   } catch (error) {
     console.error('Error in updateCohort:', error);
     throw error;
@@ -128,49 +141,50 @@ export const suggestChanges = async (
   return_updated_cohort: boolean = false
 ) => {
   try {
-    // Ensure cohort_id is a string and properly encoded
-    const cohortIdString = String(cohort_id);
-    const url = buildUrl('/cohort/suggest_changes', {
-      cohort_id: cohortIdString,
+    console.log('suggestChanges: Starting request with params:', {
+      cohort_id: String(cohort_id),
+      model,
+      return_updated_cohort: String(return_updated_cohort),
+      user_request_length: user_request.length
+    });
+
+    // Use authFetch for streaming responses with proper authentication
+    const relativeUrl = buildUrl('/cohort/suggest_changes', {
+      cohort_id: String(cohort_id),
       model,
       return_updated_cohort: String(return_updated_cohort),
     });
+    const absoluteUrl = new URL(relativeUrl, api.defaults.baseURL).toString();
 
-    const response = await authFetch(url, {
+    const response = await authFetch(absoluteUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'text/plain',
+      },
       body: user_request,
     });
 
-    if (!response.body) {
-      throw new Error('ReadableStream not supported in this environment.');
+    console.log('suggestChanges: Received response, status:', response.status);
+
+    if (!response.ok) {
+      console.error('suggestChanges: Request failed with status:', response.status);
+      throw new Error(`Request failed with status code ${response.status}`);
     }
 
-    const stream = new ReadableStream({
-      start(controller) {
-        const reader = response.body!.getReader();
+    if (!response.body) {
+      console.error('suggestChanges: No response body received');
+      throw new Error('No response body received.');
+    }
 
-        const read = async () => {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              controller.close();
-              break;
-            }
-            controller.enqueue(value);
-          }
-        };
-
-        read().catch(error => {
-          console.error('Error during streaming:', error);
-          controller.error(error);
-        });
-      },
+    console.log('suggestChanges: Returning ReadableStream from response');
+    return response.body;
+  } catch (error: any) {
+    console.error('suggestChanges: Error occurred:', {
+      message: error?.message || 'Unknown error',
+      status: error?.status,
+      statusText: error?.statusText,
+      error: error
     });
-
-    return stream;
-  } catch (error) {
-    console.error('Error in planUpdateCohort:', error);
     throw error;
   }
 };
@@ -277,18 +291,6 @@ export const updateStudyDisplayOrder = async (study_id: string, display_order: n
     return response.data;
   } catch (error) {
     console.error('Error in updateStudyDisplayOrder:', error);
-    throw error;
-  }
-};
-
-export const updateCohortDisplayOrder = async (cohort_id: string, display_order: number) => {
-  try {
-    const response = await api.patch('/cohort/display_order', null, {
-      params: { cohort_id, display_order },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error in updateCohortDisplayOrder:', error);
     throw error;
   }
 };

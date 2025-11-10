@@ -1,12 +1,10 @@
 import TypeCellRenderer from '../CohortTable/CellRenderers/TypeCellRenderer';
 import NameCellRenderer from '../CohortTable/CellRenderers/NameCellRenderer';
-import DescriptionCellRenderer from '../CohortTable/CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from '../CohortTable/CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer';
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
-
-import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
+import type { ICellEditorParams } from 'ag-grid-community';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
 import ValueFilterCellRenderer from '../CohortTable/CellRenderers/ValueFilterCellRenderer';
@@ -48,7 +46,7 @@ export const defaultColumns = [
     headerName: 'Type',
     width: 100,
     pinned: 'left',
-    editable: params => {
+    editable: (params: any) => {
       return params.data.type != 'component';
     },
 
@@ -133,10 +131,10 @@ export const defaultColumns = [
     field: 'codelist',
     headerName: 'Codelists',
     width: 200,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       // this is required for codelist cell editor return value type
       // as data types returned are variable (i.e. if codelist present vs not)
       // TODO add value validation here
@@ -157,13 +155,13 @@ export const defaultColumns = [
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
     width: 200,
-    editable: params => {
+    editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
         columnNameToApplicablePhenotypeMapping.relative_time_range.includes(params.data.class_name)
       );
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }
@@ -181,11 +179,11 @@ export const defaultColumns = [
     field: 'value_filter',
     headerName: 'Value filters',
     width: 150,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name);
     },
     cellEditorPopup: true,
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }
@@ -198,12 +196,12 @@ export const defaultColumns = [
     field: 'categorical_filter',
     headerName: 'Categorical filters',
     width: 400,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(
         params.data.class_name
       );
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }

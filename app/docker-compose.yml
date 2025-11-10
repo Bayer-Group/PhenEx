@@ -1,10 +1,9 @@
 # Usage
-#   1. Build:               docker compose build --no-cache --progress=plain
-#   2. Initialize the DB:   2.1. docker compose up db # wait till inital DB setup is complete and restart it ^C
-#                           2.2. docker compose up db -d
-#                           2.3. ./backend/scripts/reset-databases-local.sh
-#   3. Run                  docker compose up backend frontend
-#   4. Stop                 docker compose down
+#   1. Build:               docker compose build
+#   2. Run:                 docker compose up
+#   3. Stop:                docker compose down
+# 
+# The database will automatically initialize and run migrations on first startup.
 
 name: phenex
 
@@ -16,16 +15,21 @@ services:
       dockerfile: Dockerfile
       platforms:
       - "linux/arm64/v8"
-    command: fastapi run main.py --reload
+    command: fastapi run main.py --reload --host 0.0.0.0
     # Use this command line to enable hot reload
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
-      - ${HOME}/.phenex/data/phenex/cohorts:/app/data/cohorts
-      - ${HOME}/.phenex/data/phenex/users:/app/data/users
+      - ${HOME}/.phenex/data/phenex/cohorts:/data/cohorts
+      - ${HOME}/.phenex/data/phenex/users:/data/users
       - ./backend:/app  # Mount your local backend code directory
       - ../phenex:/app/phenex  # If you have a separate phenex library
-    env_file: ./backend/.env
+    env_file: ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
 
   frontend:
     container_name: phenex-frontend
@@ -34,28 +38,59 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    env_file: ./ui/.env
-
-  # Comment out everything below this point if you are using an external Postgres database
+    volumes:
+      - ./ui:/app  # Mount your local frontend code directory for hot reload
+      - /app/node_modules  # Prevent node_modules from being overwritten
+    env_file: ./.env
+    depends_on:
+      - backend
+      
   db:
     image: postgres:15.8
     container_name: phenex-db
     restart: unless-stopped
     volumes:
       - ${HOME}/.phenex/volumes/db/data:/var/lib/postgresql/data
+      - ./backend/init/01-init-database.sh:/docker-entrypoint-initdb.d/01-init-database.sh:ro
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-postgres}", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
-    environment:
-      POSTGRES_PASSWORD: password-phenex
+    env_file: ./.env
     ports:
-      - 9444:5432
+      - "5432:5432"
+
+  # Database migration runner (runs once then exits)
+  migrations:
+    image: migrate/migrate:4
+    container_name: phenex-migrations
+    volumes:
+      - ./backend/migrate:/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: ./.env
+    entrypoint: []
+    command: 
+      - sh
+      - -c
+      - |
+        echo '🔄 Running database migrations...'
+        echo "Database URL: postgres://$$POSTGRES_USER:****@db:5432/$$POSTGRES_DB"
+        if migrate -path /migrations -database "postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@db:5432/$$POSTGRES_DB?sslmode=disable" up; then
+          echo '✅ Migrations completed successfully'
+        else
+          echo '❌ Migrations failed!'
+          exit 1
+        fi
+    restart: "no"
 
   adminer:
     container_name: phenex-adminer
     image: ghcr.io/shyim/adminerevo:latest
     restart: unless-stopped
+    depends_on:
+      - migrations
     ports:
-      - 9091:8080
+      - 8080:8080

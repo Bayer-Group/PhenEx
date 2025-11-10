@@ -1,8 +1,7 @@
 import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
 import { executeStudy } from '../../../api/execute_cohort/route';
 import {
-  getUserCohort,
-  getPublicCohort,
+  createCohort,
   updateCohort,
   deleteCohort,
 } from '../../../api/text_to_cohort/route';
@@ -30,7 +29,7 @@ export class CohortDataService {
     columns: [],
   };
 
-  private columns: ColumnDefinition[] = defaultColumns;
+  private columns: ColumnDefinition[] = defaultColumns as ColumnDefinition[];
 
   private proto_constants = {
     f_baseline_period: {
@@ -185,7 +184,7 @@ export class CohortDataService {
     // }
   }
 
-  public setDatabaseSettings(databaseConfig) {
+  public setDatabaseSettings(databaseConfig: any) {
     this._cohort_data.database_config = databaseConfig;
 
     // Update domain values based on mapper type
@@ -273,7 +272,7 @@ export class CohortDataService {
 
   }
 
-  public setConstants(constants) {
+  public setConstants(constants: any) {
     this._cohort_data.constants = constants;
     this.saveChangesToCohort(false, false);
   }
@@ -463,7 +462,7 @@ export class CohortDataService {
     this.saveChangesToCohort(true, true);
   }
 
-  public _setNewPhenotypeDefaultValues(newPhenotype){
+  public _setNewPhenotypeDefaultValues(newPhenotype: any) {
     if (newPhenotype.type == 'inclusion' || newPhenotype.type == 'exclusion' || newPhenotype.type == 'baseline'){
       newPhenotype.return_date = "last";
       newPhenotype.relative_time_range = [this.proto_constants.f_baseline_period]
@@ -946,14 +945,17 @@ export class CohortDataService {
     return this.isNewCohort;
   }
 
-  public async createNewCohort() {
+  public async createNewCohort(studyId?: string) {
     /*
-    Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made
+    Creates a new cohort and immediately saves it to the database.
+    All subsequent saves will use updateCohort since the cohort already exists.
     */
+    const cohortId = createID();
     this._cohort_data = {
-      id: createID(),
+      id: cohortId,
       name: 'Name your cohort...',
       class_name: 'Cohort',
+      study_id: studyId,
       phenotypes: [],
       database_config: {},
       constants: [],
@@ -962,6 +964,18 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
     this.constants_service.refreshConstants();
     this.isNewCohort = true;
+    
+    // Immediately save to database if we have a study_id
+    if (studyId) {
+      try {
+        await createCohort(cohortId, this._cohort_data, studyId);
+        console.log(`✅ Created new cohort ${cohortId} in database`);
+      } catch (error) {
+        console.error('Failed to create cohort in database:', error);
+        throw error;
+      }
+    }
+    
     this.notifyListeners(); // Notify listeners after initialization
     this.isNewCohort = false;
   }
@@ -1027,7 +1041,7 @@ export class CohortDataService {
     this.nameChangeListeners.forEach(listener => listener());
   }
 
-  public updateCohortFromChat(newCohort) {
+  public updateCohortFromChat(newCohort: any) {
     this._cohort_data = newCohort;
     this.sortPhenotypes();
     this.splitPhenotypesByType();
@@ -1106,7 +1120,7 @@ export class CohortDataService {
     this.notifyListeners();
   }
 
-  public tableDataForComponentPhenotype(parentPhenotype): TableData {
+  public tableDataForComponentPhenotype(parentPhenotype: any): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
     if (this._currentFilter.length > 0) {
       filteredPhenotypes = filteredPhenotypes.filter(
