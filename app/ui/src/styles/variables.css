@@ -89,10 +89,10 @@
   --button-font-family-hover: 'IBMPlexSans-regular';
 
   --color_inclusion: #79b239;
-  --color_exclusion: #3d90d9;
+  --color_exclusion: #eb4765;
   --color_baseline: #27607c;
-  --color_outcome: #eb4765;
-  --color_entry: var(--color-accent-bright);
+  --color_outcome: var(--color-accent-bright);
+  --color_entry: #3d90d9;
   --color_component: gray;
 }
 

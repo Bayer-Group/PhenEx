@@ -19,6 +19,7 @@
   height: fit-content; /* Allow height to be based on content */
   box-shadow: var(--box_shadow);
   transition: all .3s ease;
+  cursor: pointer;
 }
 
 .cohortBox:hover{
@@ -37,9 +38,10 @@
   width: 100%;
   min-height: 100px;
   height: fit-content;
-  max-height: 400px; /* Maximum height before scrolling */
+  max-height: calc(100vh - 300px); /* Maximum height before scrolling */
   overflow-y: auto; /* Allow vertical scrolling when content exceeds max-height */
   overflow-x: hidden; /* Prevent horizontal scrolling */
+  pointer-events: none;
 }
 
 .emptyState {
