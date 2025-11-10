@@ -148,6 +148,21 @@ export class CodelistDataService {
 
   public async setFilenamesForCohort() {
     const cohortId = this.cohortDataService.cohort_data.id;
+    
+    console.log('🚀 setFilenamesForCohort: Starting...');
+    
+    // If we already have filenames loaded for this cohort, skip the backend call
+    if (this._filenames && this._filenames.length > 0) {
+      console.log('✅ Already have', this._filenames.length, 'filenames loaded - skipping backend fetch');
+      return;
+    }
+    
+    // Check localStorage cache first to see if we have recent data
+    const cache = this.getCodelistCache(cohortId);
+    console.log('📦 Found', cache.length, 'cached files in localStorage');
+    
+    // Fetch metadata from backend (lightweight call)
+    console.log('⏳ Fetching file metadata from backend...');
     const filenames = await getCodelistFilenamesForCohort(cohortId);
     console.log('setFilenamesForCohort: raw filenames from API:', filenames);
     
@@ -184,15 +199,32 @@ export class CodelistDataService {
     this._filenames = this.filesMetadata.map(meta => meta.filename);
     console.log('setFilenamesForCohort: processed _filenames:', this._filenames);
     
-    const filePromises = await Promise.all(
-      filenames.map(fileinfo =>
-        getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
-      )
-    );
-    console.log('setFilenamesForCohort: raw file promises:', filePromises);
+    // OPTIMIZATION: Only load full file contents if we don't have them in cache
+    // This is the SLOW part that we want to avoid
+    const filesToLoad = filenames.filter(fileinfo => {
+      const filename = fileinfo.filename.startsWith('"') && fileinfo.filename.endsWith('"') 
+        ? fileinfo.filename.slice(1, -1) 
+        : fileinfo.filename;
+      const existingFile = this.files.find(f => f.filename === filename);
+      return !existingFile; // Only load if we don't have it already
+    });
     
-    // Filter out any undefined/null results
-    this.files = filePromises.filter(file => file && file.contents && file.contents.data);
+    if (filesToLoad.length > 0) {
+      console.log('⏳ Loading', filesToLoad.length, 'full file contents from backend (slow)...');
+      const filePromises = await Promise.all(
+        filesToLoad.map(fileinfo =>
+          getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
+        )
+      );
+      console.log('setFilenamesForCohort: raw file promises:', filePromises);
+      
+      // Filter out any undefined/null results and add to existing files
+      const newFiles = filePromises.filter(file => file && file.contents && file.contents.data);
+      this.files = [...this.files, ...newFiles];
+    } else {
+      console.log('✅ All files already loaded in memory - skipping backend fetch');
+    }
+    
     console.log('setFilenamesForCohort: filtered files:', this.files);
     console.log('setFilenamesForCohort: file filenames:', this.files.map(f => f.filename));
     this.notifyListeners();

@@ -156,6 +156,41 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
+  public createEmptyCohortDefaultPhenotypes = () => {
+    if (this._cohort_data.phenotypes.length == 0){
+      this._cohort_data.phenotypes = [
+        {
+          id: createID(),
+          name: 'Entry Criterion',
+          description: '',
+          type: 'entry',
+          effective_type: 'entry',
+          children: [],
+          class_name:'CodelistPhenotype'
+        },
+        {
+          id: createID(),
+          name: 'Adult',
+          description: 'Age greater than 18 years old',
+          type: 'inclusion',
+          effective_type: 'inclusion',
+          children: [],
+          class_name:'AgePhenotype'
+        },
+        {
+          id: createID(),
+          name: 'Exclusion Criterion',
+          description: '',
+          type: 'exclusion',
+          effective_type: 'exclusion',
+          children: [],
+          class_name:'CodelistPhenotype'
+        }
+      ];
+    }
+
+  }
+
   public setConstants(constants) {
     this._cohort_data.constants = constants;
     this.saveChangesToCohort(false, false);
