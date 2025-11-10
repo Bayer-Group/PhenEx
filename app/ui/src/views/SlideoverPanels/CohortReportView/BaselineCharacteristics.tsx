@@ -129,16 +129,11 @@ export const BaselineCharacteristics: FC<BaselineCharacteristicsProps> = ({ data
     setAttritionItems(items);
   };
 
-  // Helper to get color class from type
-  const getColorClass = (type: PhenotypeType) => {
-    return `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
-  };
-
   // Render type label
   const renderTypeLabel = (item: AttritionItem) => {
     const type = item.phenotype.type as PhenotypeType;
     return (
-      <div className={`${styles.phenotypeType}`}/*${getColorClass(type)}`}*/>
+      <div className={`${styles.phenotypeType}`}>
         {type}
         {renderIndex(item.phenotype)}
       </div>

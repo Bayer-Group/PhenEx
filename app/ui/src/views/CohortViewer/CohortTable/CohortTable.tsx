@@ -52,7 +52,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
 
     const default_theme = {
-      accentColor: 'var(--color_accent_orange)',
+      accentColor: '#BBB',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: true,
@@ -449,12 +449,12 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 return current_max_height;
               }
 
-              const descriptionCol = params.api.getColumnDef('description');
-              if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
-              const descWidth = descriptionCol.width || 250;
-              const charPerLine = Math.floor(descWidth / 8);
-              const lines = Math.ceil(params.data?.description.length / charPerLine);
-              return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
+              const nameCol = params.api.getColumnDef('name');
+              if (!nameCol || !params.data?.name) return 48; // Increased minimum height
+              const nameWidth = nameCol.width || 250;
+              const nameCharPerLine = Math.floor(nameWidth / 8);
+              const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
+              return Math.max(current_max_height, nameLines * 14 + 60); // Increased minimum height
             }}
             rowClassRules={
               {

@@ -62,7 +62,7 @@ export const defaultColumns = [
   {
     field: 'name',
     headerName: 'Name',
-    width: 200,
+    width: 250,
     pinned: 'left',
     editable: true,
     cellRenderer: NameCellRenderer,
@@ -79,15 +79,15 @@ export const defaultColumns = [
       };
     },
   },
-  {
-    field: 'description',
-    headerName: 'Description',
-    width: 250,
-    editable: true,
-    cellEditor: DescriptionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: DescriptionCellRenderer,
-  },
+  // {
+  //   field: 'description',
+  //   headerName: 'Description',
+  //   width: 250,
+  //   editable: true,
+  //   cellEditor: DescriptionCellEditor,
+  //   cellEditorPopup: true,
+  //   cellRenderer: DescriptionCellRenderer,
+  // },
   {
     field: 'class_name',
     headerName: 'Phenotype',

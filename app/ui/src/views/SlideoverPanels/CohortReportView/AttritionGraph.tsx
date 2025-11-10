@@ -132,11 +132,6 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
     setAttritionItems(items);
   };
 
-  // Helper to get color class from type
-  const getColorClass = (type: PhenotypeType) => {
-    return `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
-  };
-
   // Render type label
   const renderTypeLabel = (item: AttritionItem) => {
     console.log("FOR TYEP LABEL", item.realPhenotype)

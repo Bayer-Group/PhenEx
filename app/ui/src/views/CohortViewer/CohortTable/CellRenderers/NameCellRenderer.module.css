@@ -60,7 +60,8 @@
 .label {
   text-wrap: wrap;
   line-height: 1 !important;
-  font-size: 14px;
+  font-size: 18px;
+  font-family: "IBMPlexSans-bold";
   /* padding: 4px 0; */
   /* font-weight: bold; */
   /* padding:0px;
@@ -96,4 +97,9 @@
 
 .selected {
   font-family: "IBMPlexSans-bold";
+}
+
+.infotext{
+  font-size: 12px;
+  font-family:"IBMPlexSans-regular";
 }

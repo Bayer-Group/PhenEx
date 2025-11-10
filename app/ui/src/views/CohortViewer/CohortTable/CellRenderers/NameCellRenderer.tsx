@@ -9,6 +9,7 @@ import { CohortViewType } from '../../TwoPanelCohortViewer/types';
 import { SettingsCellEditor } from '../CellEditors/SettingsCellEditor';
 
 import typeStyles from '../../../../styles/study_types.module.css'
+import ReactMarkdown from 'react-markdown';
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const dataService = CohortDataService.getInstance();
   const onClickEdit = () => {
@@ -75,9 +76,54 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     );
   }
 
+  const renderNameAndDescription = () => {
+
+    const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
+    const isSelected = props.node.isSelected();
+    
+    
+    // Calculate indentation for component phenotypes based on their level
+    const getIndentationStyle = () => {
+      if (props.data?.type === 'component' && props.data.level > 0) {
+        return {
+          marginLeft: `calc(var(--type-label-indent) * ${props.data.level})`
+        };
+      }
+      return {};
+    };
+
+    return (
+      <div className={`${styles.label} ${isSelected ? styles.selected : ''}`} style={getIndentationStyle()}>
+        {props.value}
+
+        <br></br>
+        <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+          
+          
+          <ReactMarkdown 
+              components={{
+                p: ({children}) => <p style={{
+                  marginTop: '5px', 
+                  padding: '0px', 
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  maxWidth: '100%'
+                }}>{children}</p>
+              }}
+            >
+              {props.data.description}
+            </ReactMarkdown>
+          
+          
+          </span>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      {renderName()}
+      {renderNameAndDescription()}
 
       <div>
         <button className={styles.editButton} onClick={onClickEdit}>
