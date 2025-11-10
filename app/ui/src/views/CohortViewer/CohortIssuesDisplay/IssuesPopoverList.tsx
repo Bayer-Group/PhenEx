@@ -58,7 +58,7 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
 
   // Helper to get color class from type
   const colorClass = (type: PhenotypeType) => {
-    return `rag-${type === 'entry' ? 'dark' : type === 'inclusion' ? 'blue' : type === 'exclusion' ? 'green' : type === 'baseline' ? 'coral' : type === 'outcome' ? 'red' : ''}-outer`;
+    return typeStyles[`${type}_color_block`] || '';
   };
 
   // Render type label

@@ -46,7 +46,7 @@
   font-family: 'IBMPlexSans-bolditalic';
   border-radius: 4px;
   background-color: #eee;
-  color: var(--text-color-secondary);
+  color: white;
 }
 
 .index {

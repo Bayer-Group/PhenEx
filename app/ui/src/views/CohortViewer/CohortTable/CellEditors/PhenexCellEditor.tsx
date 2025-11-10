@@ -228,8 +228,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   // const renderXButton = () => {
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   // };
-  const colorClass = `rag-${props.data.effective_type == 'entry' ? 'dark' : props.data.effective_type == 'inclusion' ? 'blue' : props.data.effective_type == 'exclusion' ? 'green' : props.data.effective_type == 'baseline' ? 'coral' : props.data.effective_type == 'outcome' ? 'red' : ''}-outer`;
-  const colorBorder = `rag-${props.data.effective_type == 'entry' ? 'dark' : props.data.effective_type == 'inclusion' ? 'blue' : props.data.effective_type == 'exclusion' ? 'green' : props.data.effective_type == 'baseline' ? 'coral' : props.data.effective_type == 'outcome' ? 'red' : ''}-border`;
+
+  const colorClass = typeStyles[`${props.data.effective_type || ''}_color_block`] || ''
+  const colorBorder = typeStyles[`${props.data.effective_type || ''}_border_color`] || ''
+
 
 
   const renderPopoverHeader = () => {
