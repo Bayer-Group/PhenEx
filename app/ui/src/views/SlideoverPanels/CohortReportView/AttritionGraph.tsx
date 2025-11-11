@@ -232,8 +232,9 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   // Render phenotype item
   const renderAttritionItem = (item: AttritionItem, index: number) => {
-    console.log("RENDERING ITEM", item)
     if (!item.realPhenotype) {
+      console.log("ERROR RENDERING ATTRITION ITEM", item)
+
       return null;
     }
     const phenotypeType = item.realPhenotype.type as PhenotypeType;

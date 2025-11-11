@@ -88,8 +88,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const handleRowDragEnd = () => {
-      console.log("Row drag ended")
+      console.log("=== CohortTable handleRowDragEnd START ===");
+      
       if (!onRowDragEnd) {
+        console.log("❌ No onRowDragEnd callback provided");
         return;
       }
 
@@ -100,15 +102,21 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           newRowData.push(node.data);
         });
       }
+      
+      console.log("📊 Collected newRowData:", newRowData.length, "rows");
+      console.log("First 3 rows:", newRowData.slice(0, 3).map(r => ({ id: r.id, type: r.type, name: r.name })));
 
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
+        console.log("❌ Validation failed: newRowData is empty");
         return;
       }
 
       // Validate that all rows have required properties
       const invalidRows = newRowData.filter(row => !row.id || !row.type);
       if (invalidRows.length > 0) {
+        console.log("❌ Validation failed: Found", invalidRows.length, "invalid rows without id or type");
+        console.log("Invalid rows:", invalidRows);
         return;
       }
 
@@ -129,8 +137,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       });
 
+      console.log("✅ Calling onRowDragEnd with", newRowData.length, "rows");
       // Call the parent callback with the reordered data
       onRowDragEnd(newRowData);
+      console.log("=== CohortTable handleRowDragEnd END ===");
     };
 
     const handleCellValueChanged = (event: any) => {

@@ -238,6 +238,7 @@ export class CohortDataService {
       }
 
       const i2 = {
+        id: createID(),
         class_name: "TimeRangePhenotype",
         codelist: "missing",
         domain: "OBSERVATION_PERIOD",
