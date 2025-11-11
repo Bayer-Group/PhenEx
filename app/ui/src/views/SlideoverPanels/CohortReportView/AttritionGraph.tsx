@@ -232,6 +232,10 @@ export const AttritionGraph: FC<AttritionGraphProps> = ({ dataService }) => {
 
   // Render phenotype item
   const renderAttritionItem = (item: AttritionItem, index: number) => {
+    console.log("RENDERING ITEM", item)
+    if (!item.realPhenotype) {
+      return null;
+    }
     const phenotypeType = item.realPhenotype.type as PhenotypeType;
     const isSelected = selectedId === item.phenotype.id;
     const typeHoverClass = typeStyles[`${phenotypeType}_list_item`] || '';

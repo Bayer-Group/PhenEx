@@ -88,6 +88,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     const handleRowDragEnd = () => {
+      console.log("Row drag ended")
       if (!onRowDragEnd) {
         return;
       }

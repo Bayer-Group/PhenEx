@@ -32,6 +32,45 @@ export class CohortDataService {
 
   private columns: ColumnDefinition[] = defaultColumns;
 
+  private proto_constants = {
+    f_baseline_period: {
+      anchor_phenotype: null,
+      class_name: "RelativeTimeRangeFilter",
+      max_days: {
+        class_name: "Value",
+        operator: "<=",
+        value: 365,
+      },
+      min_days: {
+        class_name: "Value",
+        operator: ">=",
+        value: 0,
+      },
+      useConstant: false,
+      useIndexDate: true,
+      when: "before",
+    },
+    f_followup_period:{
+      anchor_phenotype: null,
+      class_name: "RelativeTimeRangeFilter",
+      max_days: {
+        class_name: "Value",
+        operator: "<=",
+        value: 365,
+      },
+      min_days: {
+        class_name: "Value",
+        operator: ">=",
+        value: 0,
+      },
+      useConstant: false,
+      useIndexDate: true,
+      when: "after",
+    }
+
+  }
+
+
   private constructor() {
     this.issues_service = new CohortIssuesService();
     this.issues_service.setDataService(this);
@@ -107,6 +146,8 @@ export class CohortDataService {
       //   }
       // } 
       cohortResponse = cohortData.cohort_data;
+
+      console.log(cohortData, "THIS IS THE COHROT DATA");
       this._study_data = cohortData.study
 
      console.log("THIS WAS THE DATA", cohortResponse);
@@ -114,7 +155,8 @@ export class CohortDataService {
       console.log("JUST GOT DATA")
 
       this._cohort_data = cohortResponse;
-      
+      this.createEmptyCohortDefaultPhenotypes();
+
       // IMPORTANT: Ensure study_id is in _cohort_data for backend saves
       if (!this._cohort_data.study_id && cohortData.study_id) {
         this._cohort_data.study_id = cohortData.study_id;
@@ -156,37 +198,76 @@ export class CohortDataService {
     this.saveChangesToCohort();
   }
 
+
   public createEmptyCohortDefaultPhenotypes = () => {
     if (this._cohort_data.phenotypes.length == 0){
-      this._cohort_data.phenotypes = [
-        {
-          id: createID(),
-          name: 'Entry Criterion',
-          description: '',
-          type: 'entry',
-          effective_type: 'entry',
-          children: [],
-          class_name:'CodelistPhenotype'
-        },
-        {
-          id: createID(),
-          name: 'Adult',
-          description: 'Age greater than 18 years old',
-          type: 'inclusion',
-          effective_type: 'inclusion',
-          children: [],
-          class_name:'AgePhenotype'
-        },
-        {
-          id: createID(),
-          name: 'Exclusion Criterion',
-          description: '',
-          type: 'exclusion',
-          effective_type: 'exclusion',
-          children: [],
-          class_name:'CodelistPhenotype'
+      const entry = {
+        id: createID(),
+        name: 'Entry Criterion',
+        description: '',
+        type: 'entry',
+        effective_type: 'entry',
+        codelist: "missing",
+        domain: "missing",
+        hierarchical_index: "1",
+        class_name:'CodelistPhenotype',
+        return_date: "first"
+      }
+
+      const i1 = {
+        id: createID(),
+        class_name: "AgePhenotype",
+        codelist: "missing",
+        domain: "PERSON",
+        effective_type: "inclusion",
+        hierarchical_index: "1",
+        index: 1,
+        level: 0,
+        name: "Adult",
+        type: "inclusion",
+        value_filter: {
+            class_name: "ValueFilter",
+            column_name: "",
+            max_value: null,
+            min_value: {
+                class_name: "Value",
+                operator: ">=",
+                value: 18,
+            }
         }
+      }
+
+      const i2 = {
+        class_name: "TimeRangePhenotype",
+        codelist: "missing",
+        domain: "OBSERVATION_PERIOD",
+        type: "inclusion",
+        effective_type: "inclusion",
+        hierarchical_index: "2",
+        index: 2,
+        level: 0,
+        name: "Data coverage",
+        relative_time_range: [
+          {
+            anchor_phenotype: null,
+            class_name: "RelativeTimeRangeFilter",
+            max_days: null,
+            min_days: {
+              class_name: "Value",
+              operator: ">=",
+              value: 365,
+            },
+            useConstant: false,
+            useIndexDate: true,
+            when: "before",
+          }
+        ]
+      }
+      this._cohort_data.phenotypes = [
+        entry, i1, i2
       ];
+      this._cohort_data.entry_criterion = entry
+      this._cohort_data.inclusions = [i1, i2]
     }
 
   }
@@ -376,8 +457,20 @@ export class CohortDataService {
       newPhenotype.effective_type = type;
     } 
 
+    this._setNewPhenotypeDefaultValues(newPhenotype);
     this._cohort_data.phenotypes.push(newPhenotype);
     this.saveChangesToCohort(true, true);
+  }
+
+  public _setNewPhenotypeDefaultValues(newPhenotype){
+    if (newPhenotype.type == 'inclusion' || newPhenotype.type == 'exclusion' || newPhenotype.type == 'baseline'){
+      newPhenotype.return_date = "last";
+      newPhenotype.relative_time_range = [this.proto_constants.f_baseline_period]
+
+    } else if (newPhenotype.type == 'outcome'){
+      newPhenotype.return_date = "first";
+      newPhenotype.relative_time_range = [this.proto_constants.f_followup_period]
+    }
   }
 
   public getPhenotypeById(id: string): TableRow | undefined {
