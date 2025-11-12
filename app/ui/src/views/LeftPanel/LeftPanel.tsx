@@ -14,7 +14,6 @@ export const LeftPanel: FC<LeftPanelProps> = ({ isVisible, width, children, onPa
   return (
     <div
       className={`${styles.leftPanel} ${isVisible ? styles.visible : styles.hidden}`}
-      style={{ width: `${width}px` }}
     >
       <div className={styles.controls}>
         <UserLogin />

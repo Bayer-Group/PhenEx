@@ -48,7 +48,7 @@
   min-height: 0; /* Allow flex scrolling */
   overflow: hidden; /* No scrolling at this level */
   padding: 0;
-  background-color: blue;
+  width:100%;
   display: flex;
   flex-direction: column;
 }
