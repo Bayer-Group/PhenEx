@@ -220,6 +220,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         allowResize={!isLeftCollapsed || isHoverAnimating}
         onWidthChange={setLeftWidth}
         minWidth={minSizeLeft}
+        marginLeft={20}
         isHoverAnimating={isHoverAnimating}
         onHoverEnter={handleHoverTriggerEnter}
         onHoverLeave={handleHoverTriggerLeave}
