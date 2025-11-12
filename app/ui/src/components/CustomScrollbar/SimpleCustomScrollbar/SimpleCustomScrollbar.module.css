@@ -8,6 +8,7 @@
   cursor: pointer;
   z-index: 10;
   opacity: 0.5;
+  /* Remove any conflicting top/bottom positioning - let React handle it */
 }
 
 .scrollbar:hover {
@@ -47,7 +48,6 @@
 /* Horizontal scrollbar styles */
 .scrollbarHorizontal {
   position: absolute;
-  bottom: 10px;
   height: 5px;
   background: transparent;
   border-radius: 8px;
@@ -55,6 +55,7 @@
   cursor: pointer;
   z-index: 10;
   opacity: 0.5;
+  /* Remove conflicting bottom positioning - let React handle it */
 }
 
 .scrollbarHorizontal:hover {

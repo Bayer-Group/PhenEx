@@ -4,7 +4,7 @@ import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { ChatPanel } from '../../ChatPanel/ChatPanel'
 import BirdIcon from '../../../assets/bird_icon.png'
-import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { ResizableContainer } from '../../../components/ResizableContainer';
 import IssuesPopoverList from './IssuesPopoverList';
 

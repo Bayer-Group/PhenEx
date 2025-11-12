@@ -1,19 +1,51 @@
+
 .treeContainer {
-  height: 100%;
+  flex: 1; /* Fill the .content area */
+  min-height: 0; /* Allow flex scrolling */
   width: 100%;
-  overflow: auto;
-  padding: 8px;
+  overflow: hidden !important; /* Outer container never scrolls */
+  padding: 0;
+  position: relative; /* For absolute positioning of custom scrollbar */
+  display: flex;
+  flex-direction: column;
+  background-color: aqua;
 }
 
-/* Ensure tree is visible */
-.treeContainer :global(.rct-tree-root) {
-  height: 100%;
+/* Hide default scrollbars on the scroll container */
+.scrollContainer {
+  flex: 1; /* Fill the .treeContainer */
+  min-height: 0; /* Allow flex scrolling */
   width: 100%;
+  overflow-x: hidden !important; /* Never show horizontal scrollbar */
+  overflow-y: auto !important; /* Allow vertical scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding: 8px;
+  box-sizing: border-box;
+  background-color: red;
+}
+
+.scrollContainer::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+/* Ensure tree is visible and constrained */
+.treeContainer :global(.rct-tree-root) {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  min-height: 0; /* Allow shrinking */
+}
+
+.treeContainer :global(.rct-tree-item) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .treeContainer :global(.rct-tree) {
   height: auto !important;
-  min-height: 100%;
 }
 
 .treeContainer :global(.rct-tree-items-container) {
@@ -28,7 +60,6 @@
   width: 100%;
   padding: 0px 4px;
   overflow: hidden;
-  /* background-color: var(--background-color) !important; */
 }
 
 .itemTitle span {
@@ -129,6 +160,9 @@
   padding: 0;
 }
 
+.treeContainer{
+  overflow: hidden;
+}
 /* Ensure proper indentation for nested items */
 .treeContainer :global(.rct-tree-item-li) {
   padding-left: 0;

@@ -4,6 +4,10 @@ import styles from './SimpleCustomScrollbar.module.css';
 export interface SimpleCustomScrollbarProps {
   targetRef: React.RefObject<HTMLElement | null>;
   orientation?: 'vertical' | 'horizontal';
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
   classNameThumb?: string;
   classNameTrack?: string;
 }
@@ -11,6 +15,10 @@ export interface SimpleCustomScrollbarProps {
 export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   targetRef,
   orientation = 'vertical',
+  marginTop = 0,
+  marginBottom = 0,
+  marginLeft = 0,
+  marginRight = 0,
   classNameThumb = '',
   classNameTrack = ''
 }) => {
@@ -59,6 +67,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
 
   const handleThumbMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent propagation to parent draggable elements
     const element = targetRef.current;
     if (!element) return;
 
@@ -72,6 +81,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent propagation to parent draggable elements
     if (e.target === e.currentTarget) {
       const element = targetRef.current;
       if (!element) return;
@@ -104,18 +114,22 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
 
       if (orientation === 'vertical') {
         const deltaY = e.clientY - dragStart.y;
-        const scrollableHeight = scrollInfo.scrollHeight - scrollInfo.clientHeight;
-        const trackHeight = element.offsetHeight * 0.85; // Approximate track height
-        const scrollDelta = (deltaY / trackHeight) * scrollableHeight;
-        const newScrollTop = dragStart.scrollTop + scrollDelta;
-        element.scrollTop = Math.max(0, Math.min(newScrollTop, scrollableHeight));
+        const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
+        const thumbRange = 100 - ((scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
+        const effectiveTrackHeight = scrollInfo.clientHeight - marginTop - marginBottom;
+        const scrollRatio = deltaY / (effectiveTrackHeight * (thumbRange / 100));
+        
+        const newScrollTop = dragStart.scrollTop + (scrollRatio * scrollRange);
+        element.scrollTop = Math.max(0, Math.min(newScrollTop, scrollRange));
       } else {
         const deltaX = e.clientX - dragStart.x;
-        const scrollableWidth = scrollInfo.scrollWidth - scrollInfo.clientWidth;
-        const trackWidth = element.offsetWidth * 0.85; // Approximate track width
-        const scrollDelta = (deltaX / trackWidth) * scrollableWidth;
-        const newScrollLeft = dragStart.scrollLeft + scrollDelta;
-        element.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollableWidth));
+        const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
+        const thumbRange = 100 - ((scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
+        const effectiveTrackWidth = scrollInfo.clientWidth - marginLeft - marginRight;
+        const scrollRatio = deltaX / (effectiveTrackWidth * (thumbRange / 100));
+        
+        const newScrollLeft = dragStart.scrollLeft + (scrollRatio * scrollRange);
+        element.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollRange));
       }
     };
 
@@ -131,7 +145,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragStart, scrollInfo, orientation, targetRef]);
+  }, [isDragging, dragStart, scrollInfo, orientation, targetRef, marginTop, marginBottom, marginLeft, marginRight]);
 
   // Set up scroll listeners and observers
   useEffect(() => {
@@ -186,8 +200,8 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const thumbTop = (scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight)) * (100 - thumbHeight);
     
     scrollbarStyle = {
-      height: scrollInfo.clientHeight > 0 ? `${scrollInfo.clientHeight}px` : '100%',
-      top: 0,
+      top: `${marginTop}px`,
+      height: `calc(100% - ${marginTop + marginBottom}px)`,
       display: scrollInfo.isScrollable ? 'block' : 'none'
     };
     
@@ -201,8 +215,8 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const thumbLeft = (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * (100 - thumbWidth);
     
     scrollbarStyle = {
-      width: scrollInfo.clientWidth > 0 ? `${scrollInfo.clientWidth}px` : '100%',
-      left: 0,
+      left: `${marginLeft}px`,
+      width: `calc(100% - ${marginLeft + marginRight}px)`,
       display: scrollInfo.isScrollable ? 'block' : 'none'
     };
     
@@ -225,6 +239,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     <div
       className={scrollbarClass}
       onClick={handleTrackClick}
+      onMouseDown={(e) => e.stopPropagation()} // Prevent any mousedown events from propagating
       style={scrollbarStyle}
     >
       <div

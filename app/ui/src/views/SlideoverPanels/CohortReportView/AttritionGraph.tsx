@@ -6,7 +6,7 @@ import typeStyles from '../../../styles/study_types.module.css';
 import { PhenotypeType } from '../PhenotypeViewer/phenotype';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
-import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface AttritionGraphProps {
   dataService: ReportDataService;
