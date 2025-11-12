@@ -66,8 +66,65 @@
 /* Ensure center cols viewport keeps horizontal scrolling but hides scrollbars */
 .gridWrapper :global(.ag-center-cols-viewport) {
   overflow-x: scroll !important; /* Keep scrolling enabled */
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
 .gridWrapper :global(.ag-center-cols-container) {
   overflow-x: scroll !important; /* Keep scrolling enabled */
+}
+
+/* Additional comprehensive horizontal scrollbar hiding */
+.gridWrapper :global(.ag-root-wrapper) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-root-wrapper-body) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-body-horizontal-scroll-viewport) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-horizontal-left-spacer),
+.gridWrapper :global(.ag-horizontal-right-spacer) {
+  display: none !important;
+}
+
+/* Nuclear option - hide all scrollbars within the grid wrapper */
+.gridWrapper * {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
