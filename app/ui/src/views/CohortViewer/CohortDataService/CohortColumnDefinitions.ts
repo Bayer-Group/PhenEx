@@ -38,6 +38,7 @@ export const defaultColumns = [
     width: 60,
     pinned: 'left',
     rowDrag: true,
+    resizable: false,
     filter: false,
     suppressHeaderMenuButton: true,
     cellClass: 'row-drag-handle',
@@ -45,8 +46,9 @@ export const defaultColumns = [
   },
   {
     field: 'type',
-    headerName: 'Type',
+    headerName: '',
     width: 100,
+    resizable: false,
     pinned: 'left',
     editable: params => {
       return params.data.type != 'component';
@@ -61,9 +63,10 @@ export const defaultColumns = [
   },
   {
     field: 'name',
-    headerName: 'Name',
+    headerName: '',
     width: 250,
     pinned: 'left',
+    resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,
     cellEditor: 'agTextCellEditor',

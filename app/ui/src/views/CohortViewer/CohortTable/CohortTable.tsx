@@ -56,8 +56,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
-      headerFontSize: 14,
-      headerFontWeight: 'bold',
+      headerFontSize: 16,
+      // headerFontWeight: 'bold',
       headerRowBorder: true,
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'var(--background-color, red)',
@@ -392,7 +392,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             gridOptions = {gridOptions}
             defaultColDef={{
               sortable: true,
-              filter: true,
+              // filter: true,
               resizable: true,
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,
@@ -456,16 +456,22 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 current_max_height = Math.max(current_max_height, time_range_phenotype_height);
               }
 
-              if (!params.data?.description) {
-                return current_max_height;
-              }
+           
 
               const nameCol = params.api.getColumnDef('name');
               if (!nameCol || !params.data?.name) return 48; // Increased minimum height
               const nameWidth = nameCol.width || 250;
               const nameCharPerLine = Math.floor(nameWidth / 8);
               const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-              return Math.max(current_max_height, nameLines * 14 + 60); // Increased minimum height
+              const nameHeight = nameLines * 22 + 40; // 14px per line + padding
+              if (!params.data?.description) {
+                return Math.max(current_max_height, nameHeight); // Increased minimum height
+              }
+              const descriptionLines = params.data.description.split('\n').length;
+              const descriptionHeight = descriptionLines * 14 + 20; // 14px per line + padding
+              current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
+              
+              return current_max_height; // Increased minimum height
             }}
             rowClassRules={
               {

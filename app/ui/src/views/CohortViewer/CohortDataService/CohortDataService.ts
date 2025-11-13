@@ -508,19 +508,39 @@ export class CohortDataService {
   }
 
   private calculateHierarchicalIndices(): void {
-    // Group phenotypes by type to get base indices
-    const typeGroups = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    // Group 1: entry, inclusion, exclusion share indices
+    const sharedGroup = ['entry', 'inclusion', 'exclusion'];
+    let sharedIndex = 1;
+    console.log("CALCULATING HIERARCHICAL INDICES")
     
-    typeGroups.forEach(type => {
+    sharedGroup.forEach(type => {
       const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
       
-      phenotypesOfType.forEach((phenotype: any, index: number) => {
-        const baseIndex = index + 1; // 1-based indexing
-        phenotype.hierarchical_index = baseIndex.toString();
+      phenotypesOfType.forEach((phenotype: any) => {
+        phenotype.hierarchical_index = sharedIndex.toString();
         
         // Calculate hierarchical indices for all component descendants
-        this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+        this.calculateComponentHierarchicalIndices(phenotype.id, sharedIndex.toString());
+        
+        sharedIndex++; // Increment for next phenotype in the shared group
       });
+    });
+    console.log("AFTER CALCULATION", this._cohort_data)
+    
+    // Group 2: baseline has its own indexing
+    const baselinePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'baseline');
+    baselinePhenotypes.forEach((phenotype: any, index: number) => {
+      const baseIndex = index + 1;
+      phenotype.hierarchical_index = baseIndex.toString();
+      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+    });
+    
+    // Group 3: outcome has its own indexing
+    const outcomePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'outcome');
+    outcomePhenotypes.forEach((phenotype: any, index: number) => {
+      const baseIndex = index + 1;
+      phenotype.hierarchical_index = baseIndex.toString();
+      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
     });
   }
 

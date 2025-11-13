@@ -6,6 +6,7 @@ const TypeCellRenderer = (props: any) => {
   const type = props.value;
 
   const renderIndex = (phenotype: any) => {
+    return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
     if (phenotype.type === 'component' && phenotype.hierarchical_index) {
       // For component phenotypes, show hierarchical index (e.g., "1.2.3")
       return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
