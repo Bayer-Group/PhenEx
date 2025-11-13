@@ -1,11 +1,15 @@
 .block {
-  padding: 2px 5px;
+  padding: 0px 5px;
   border-radius: 4px;
+  font-size:24px;
+  font-family: "IBMPlexSans-regular";
+  cursor: pointer;
 }
 
 .block:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  opacity: 1;
+  cursor: pointer;
 }
 
 .container {

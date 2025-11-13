@@ -30,6 +30,7 @@ const TypeCellRenderer = (props: any) => {
         return hierarchicalIndex;
       }
     }
+    return `${renderIndex(props.data).props.children}`;
     
     // For non-components: show type + index
     return `${props.data.type === 'component' && props.data.effective_type ? props.data.effective_type : type} ${renderIndex(props.data).props.children}`;
@@ -62,7 +63,7 @@ const TypeCellRenderer = (props: any) => {
     <PhenexCellRenderer {...props}>
       <div className={styles.container} style={getIndentationStyle()}>
         <span
-          className={`${styles.block} ${colorClass}`}
+          className={`${styles.block} ${colorClassText}`}
           onClick={() => {
             props.api?.startEditingCell({
               rowIndex: props.node.rowIndex,

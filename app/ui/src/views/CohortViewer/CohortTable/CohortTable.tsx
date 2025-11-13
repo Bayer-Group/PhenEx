@@ -55,7 +55,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       accentColor: '#BBB',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
-      columnBorder: true,
+      columnBorder: false,
       headerFontSize: 14,
       headerFontWeight: 'bold',
       headerRowBorder: true,
