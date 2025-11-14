@@ -123,7 +123,11 @@ class Table1(Reporter):
             .execute()
         )
         # Return 0 if result is None or NaN (no rows with BOOLEAN=True)
-        return 0 if result is None or (isinstance(result, float) and pd.isna(result)) else int(result)
+        return (
+            0
+            if result is None or (isinstance(result, float) and pd.isna(result))
+            else int(result)
+        )
 
     def _report_boolean_columns(self):
         table = self.cohort.characteristics_table
@@ -220,7 +224,18 @@ class Table1(Reporter):
 
         self.df = self.df.round(self.decimal_places)
 
-        to_prettify = ["%", "Mean", "STD", "Min", "10th", "25th", "Median", "75th", "90th", "Max"]
+        to_prettify = [
+            "%",
+            "Mean",
+            "STD",
+            "Min",
+            "10th",
+            "25th",
+            "Median",
+            "75th",
+            "90th",
+            "Max",
+        ]
         for column in to_prettify:
             if column in self.df.columns:
                 self.df[column] = self.df[column].astype(str)
