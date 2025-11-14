@@ -1,13 +1,11 @@
 :root {
   --accordian_container_border_width: 1px;
-  --top_app_navigation_tab_bar: 85px;
   --centerPanelLeftMargin: 30px;
 }
 .tabsContainer {
   background-color: transparent;
-  position: absolute;
-  top: calc(var(--top_app_navigation_tab_bar) + 0px);
-  left: var(--centerPanelLeftMargin);
+  /* No absolute positioning - flows naturally below breadcrumbs */
+  margin-left: var(--centerPanelLeftMargin);
   /* z-index: 10; */
 }
 

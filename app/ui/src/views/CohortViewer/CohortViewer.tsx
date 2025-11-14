@@ -345,13 +345,13 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         {/* {renderTitle()} */}
         {renderBreadcrumbs()}
         <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
+        {renderSectionTabs()}
+      </div>
+      <div className={styles.bottomSection}>{renderTable()}</div>
         <IssuesDisplayControl 
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
-        {renderSectionTabs()}
-      </div>
-      <div className={styles.bottomSection}>{renderTable()}</div>
     </div>
   );
 };

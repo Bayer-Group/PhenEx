@@ -8,15 +8,21 @@
 }
 
 .topSection {
-  height: calc(var(--top_app_navigation_tab_bar) + 120px);
-}
-
-.bottomSection {
-  height: calc(100% - 0px);
-  padding-top:0px;
+  /* Height hugs content */
   width: 100%;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+}
+
+.bottomSection {
+  /* Fill remaining vertical space */
+  flex: 1;
+  padding-top: 0px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .visible {
@@ -72,10 +78,10 @@
   height: 40px;
 }
 .breadcrumbsContainer{
-  position: absolute;
-  margin-top:20px;
-  margin-left:var(--centerPanelLeftMargin);
-  font-size:40px !important;
+  /* No absolute positioning - flows naturally */
+  margin-top: 20px;
+  margin-left: var(--centerPanelLeftMargin);
+  font-size: 40px !important;
 }
 .breadcrumbItem{
   font-size: 40px !important;
@@ -100,8 +106,7 @@
   flex-direction: row;
   display: flex;
   margin-left: var(--centerPanelLeftMargin);
-  position: absolute;
-  top: calc(var(--top_app_navigation_tab_bar) + 35px);
+  /* No absolute positioning - flows naturally below RighPanelNavigationTabBar */
   background-color: transparent;
 }
 
