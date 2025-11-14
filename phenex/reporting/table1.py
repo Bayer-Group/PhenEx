@@ -58,6 +58,9 @@ class Table1(Reporter):
             self.df = self.df[column_order]
         logger.debug("Finished creating table1")
 
+        self.df = self.df.reset_index()
+        self.df.columns = ["Name"] + list(self.df.columns[1:])
+
         if self.pretty_display:
             self.create_pretty_display()
 
@@ -113,12 +116,14 @@ class Table1(Reporter):
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
-        return (
+        result = (
             phenotype.table.select(["PERSON_ID", "BOOLEAN"])
             .distinct()["BOOLEAN"]
             .sum()
             .execute()
         )
+        # Return 0 if result is None or NaN (no rows with BOOLEAN=True)
+        return 0 if result is None or (isinstance(result, float) and pd.isna(result)) else int(result)
 
     def _report_boolean_columns(self):
         table = self.cohort.characteristics_table
@@ -212,8 +217,6 @@ class Table1(Reporter):
     def create_pretty_display(self):
         # cast counts to integer and to str, so that we can display without 'NaNs'
         self.df["N"] = self.df["N"].astype("Int64").astype(str)
-        self.df = self.df.reset_index()
-        self.df.columns = ["Name"] + list(self.df.columns[1:])
 
         self.df = self.df.round(self.decimal_places)
 
