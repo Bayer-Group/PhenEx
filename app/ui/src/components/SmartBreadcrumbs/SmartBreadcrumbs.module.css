@@ -48,6 +48,7 @@
 
 .lastItem {
   color: var(--color-accent-bright);
+  font-family: "IBMPlexSans-bold";
 }
 
 .lastItem:hover {

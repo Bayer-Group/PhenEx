@@ -296,6 +296,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           tabs={tabs}
           onTabChange={onTabChange}
           active_tab_index={determineTabIndex()}
+          classNameTabs = {styles.classNameSectionTabs}
           classNameTabsContainer={styles.classNameTabsContainer}
         />
         <div className={styles.addPhenotypeButton}>
