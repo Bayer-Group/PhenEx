@@ -150,8 +150,11 @@ export const suggestChanges = async (
       history_length: conversation_history?.length || 0
     });
 
-    // Use authFetch for streaming responses with proper authentication
-    const url = new URL('/cohort/suggest_changes', api.defaults.baseURL);
+    // Get the base URL from the axios instance to ensure we use the same /api/ prefix
+    const baseURL = api.defaults.baseURL || '';
+    
+    // Build the complete URL with proper base URL and endpoint
+    const url = new URL('/cohort/suggest_changes', baseURL);
     url.searchParams.set('cohort_id', String(cohort_id));
     url.searchParams.set('model', model);
     url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
@@ -162,6 +165,7 @@ export const suggestChanges = async (
       conversation_history: conversation_history || []
     };
 
+    // Use authFetch for streaming responses with proper authentication
     const response = await authFetch(url.toString(), {
       method: 'POST',
       headers: {
