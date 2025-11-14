@@ -159,6 +159,7 @@ class ChatPanelDataService {
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -169,10 +170,40 @@ class ChatPanelDataService {
 
         console.log('Stream chunk received:', value);
         const decodedChunk = decoder.decode(value, { stream: true });
-        const processedText = this.processMessageText(decodedChunk);
-        if (processedText) {
-          assistantMessage.text += processedText;
-          this.notifyListeners();
+        buffer += decodedChunk;
+
+        // Process SSE messages
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6)); // Remove 'data: ' prefix
+              console.log('Parsed SSE data:', data);
+              
+              if (data.type === 'content') {
+                const processedText = this.processMessageText(data.message);
+                if (processedText) {
+                  assistantMessage.text += processedText;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'error') {
+                console.error('Stream error:', data.message);
+                assistantMessage.text += `\n\nError: ${data.message}`;
+                this.notifyListeners();
+                break;
+              } else if (data.type === 'complete') {
+                console.log('Stream completed');
+                break;
+              } else if (data.type === 'result') {
+                console.log('Received result data:', data.data);
+                // Handle result data if needed
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse SSE message:', line, parseError);
+            }
+          }
         }
       }
 

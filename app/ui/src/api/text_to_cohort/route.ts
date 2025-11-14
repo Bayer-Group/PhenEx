@@ -1,4 +1,4 @@
-import { api, authFetch, buildUrl } from '../httpClient';
+import { api, authFetch } from '../httpClient';
 
 export const getPublicCohorts = async () => {
   try {
@@ -149,14 +149,12 @@ export const suggestChanges = async (
     });
 
     // Use authFetch for streaming responses with proper authentication
-    const relativeUrl = buildUrl('/cohort/suggest_changes', {
-      cohort_id: String(cohort_id),
-      model,
-      return_updated_cohort: String(return_updated_cohort),
-    });
-    const absoluteUrl = new URL(relativeUrl, api.defaults.baseURL).toString();
+    const url = new URL('/cohort/suggest_changes', api.defaults.baseURL);
+    url.searchParams.set('cohort_id', String(cohort_id));
+    url.searchParams.set('model', model);
+    url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
 
-    const response = await authFetch(absoluteUrl, {
+    const response = await authFetch(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',

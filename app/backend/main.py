@@ -4,6 +4,7 @@ from fastapi import FastAPI, Body, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.authentication import AuthenticationMiddleware
+import asyncio
 import sys
 # Add /app to the Python path for phenex import during development
 # This replaces the PYTHONPATH=/app setting in the /backend/.env file
@@ -36,7 +37,8 @@ from .rag import router as rag_router, query_faiss_index
 
 load_dotenv()
 
-from openai import AzureOpenAI, OpenAI
+
+from openai import OpenAI
 
 # Constants and configuration
 COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
@@ -45,15 +47,14 @@ COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
 sessionmaker = get_sm(config["database"])
 db_manager = DatabaseManager()
 
-openai_client = AzureOpenAI()
-if "AZURE_OPENAI_ENDPOINT" in os.environ:
-    openai_client = AzureOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_version=os.environ["OPENAI_API_VERSION"],
-    )
-else:
-    openai_client = OpenAI()
+# Configure OpenAI client for Azure OpenAI
+from openai import AzureOpenAI
+
+openai_client = AzureOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -818,11 +819,18 @@ async def suggest_changes(
         inside_json = False
         trailing_buffer = ""  # To handle split tags
         json_buffer = ""
+        token_count = 0  # Counter for logging first 10 tokens
         try:
             for chunk in completion:
                 if len(chunk.choices):
                     current_response = chunk.choices[0].delta.content
                     if current_response is not None:
+                        # Log first 10 tokens received
+                        if token_count < 10:
+                            token_count += 1
+                            logger.info(f"Token {token_count}: '{current_response}'")
+                            
+                        # Rest of the existing logic
                         # Prepend trailing buffer to handle split tags
                         if not inside_json:
                             current_response = trailing_buffer + current_response
@@ -834,17 +842,18 @@ async def suggest_changes(
                             inside_json = True
                             json_buffer = current_response.split("<JSON>", 1)[1]
                             final_chunk = current_response.split("<JSON>", 1)[0]
-                            yield final_chunk
+                            if final_chunk:
+                                yield f"data: {json.dumps({'type': 'content', 'message': final_chunk})}\n\n"
                         elif inside_json:
                             json_buffer += current_response
                         elif not inside_json:
-                            yield current_response[
-                                :-10
-                            ]  # Yield response excluding trailing buffer
+                            content_chunk = current_response[:-10]  # Exclude trailing buffer
+                            if content_chunk:
+                                yield f"data: {json.dumps({'type': 'content', 'message': content_chunk})}\n\n"
 
             # Yield any remaining trailing buffer
             if not inside_json and trailing_buffer:
-                yield trailing_buffer
+                yield f"data: {json.dumps({'type': 'content', 'message': trailing_buffer})}\n\n"
 
             # Process the JSON if we found it
             if json_buffer:
@@ -869,28 +878,38 @@ async def suggest_changes(
                         new_version=False,
                     )
                     if return_updated_cohort:
-                        yield json.dumps(new_cohort, indent=4)
+                        yield f"data: {json.dumps({'type': 'result', 'data': new_cohort})}\n\n"
                     logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON: {e}")
-                    yield "\n\nError: Failed to parse AI response JSON. Please try again."
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to parse AI response JSON. Please try again.'})}\n\n"
                 except Exception as e:
                     logger.error(f"Error processing cohort update: {e}")
-                    yield "\n\nError: Failed to update cohort. Please try again."
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to update cohort. Please try again.'})}\n\n"
             else:
                 logger.warning("No JSON found in AI response")
 
         except Exception as e:
             logger.error(f"Error in stream_response: {e}")
-            yield "\n\nError: Streaming failed. Please try again."
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Streaming failed. Please try again.'})}\n\n"
+        
+        # Send completion signal
+        yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+
+    async def buffered_stream():
+        async for chunk in stream_response():
+            yield chunk
+            # Force immediate delivery by yielding an empty chunk
+            await asyncio.sleep(0)
 
     return StreamingResponse(
-        stream_response(),
-        media_type="text/plain",
+        buffered_stream(),
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
+            "Transfer-Encoding": "chunked",
         },
     )
 
