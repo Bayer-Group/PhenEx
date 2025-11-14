@@ -161,8 +161,12 @@ class Table1(Reporter):
                 "N": self._get_boolean_count_for_phenotype(phenotype),
                 "Mean": _table["VALUE"].mean().execute(),
                 "STD": _table["VALUE"].std().execute(),
-                "Median": _table["VALUE"].median().execute(),
                 "Min": _table["VALUE"].min().execute(),
+                "10th": _table["VALUE"].quantile(0.10).execute(),
+                "25th": _table["VALUE"].quantile(0.25).execute(),
+                "Median": _table["VALUE"].median().execute(),
+                "75th": _table["VALUE"].quantile(0.75).execute(),
+                "90th": _table["VALUE"].quantile(0.90).execute(),
                 "Max": _table["VALUE"].max().execute(),
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
             }
@@ -213,8 +217,9 @@ class Table1(Reporter):
 
         self.df = self.df.round(self.decimal_places)
 
-        to_prettify = ["%", "Mean", "STD", "Median", "Min", "Max"]
+        to_prettify = ["%", "Mean", "STD", "Min", "10th", "25th", "Median", "75th", "90th", "Max"]
         for column in to_prettify:
-            self.df[column] = self.df[column].astype(str)
+            if column in self.df.columns:
+                self.df[column] = self.df[column].astype(str)
 
         self.df = self.df.replace("<NA>", "").replace("nan", "")
