@@ -9,9 +9,10 @@ interface InteractionBarProps {
   onAccept?: () => void;
   onReject?: () => void;
   onRetry?: () => void;
+  onNewChat?: () => void;
 }
 
-export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onReject, onRetry }) => {
+export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onReject, onRetry, onNewChat }) => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
@@ -42,20 +43,33 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
     };
   }, [state]);
 
-  if (state === 'empty') {
-    return null;
-  }
-
   if (state === 'thinking') {
     return <span className={styles.thinkingContainer}>{dots}</span>;
   }
 
-  if (state === 'retry') {
-    return (
-      <div className={styles.buttonContainer}>
-        <ButtonsBar width="100%" buttons={['Retry']} actions={[onRetry || (() => {})]} />
-      </div>
-    );
+  // For all states, show appropriate buttons
+  let buttons: string[] = [];
+  let actions: (() => void)[] = [];
+
+  if (state === 'interactive') {
+    // Show ACCEPT REJECT NEW CHAT
+    buttons = ['Accept', 'Reject', 'New Chat'];
+    actions = [
+      onAccept || (() => {}),
+      onReject || (() => {}),
+      onNewChat || (() => {})
+    ];
+  } else if (state === 'retry') {
+    // Show RETRY NEW CHAT
+    buttons = ['Retry', 'New Chat'];
+    actions = [
+      onRetry || (() => {}),
+      onNewChat || (() => {})
+    ];
+  } else {
+    // For 'empty' state, show only NEW CHAT
+    buttons = ['New Chat'];
+    actions = [onNewChat || (() => {})];
   }
 
   return (
@@ -63,8 +77,8 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, onAccept, onRej
       <ButtonsBar
         width="100%"
         height={30}
-        buttons={['accept', 'reject']}
-        actions={[onAccept || (() => {}), onReject || (() => {})]}
+        buttons={buttons}
+        actions={actions}
       />
     </div>
   );

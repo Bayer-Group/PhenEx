@@ -4,7 +4,8 @@
   padding: 4px;
   background-color: transparent;
   border-radius: 8px;
-  margin-right: 30px;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .button {

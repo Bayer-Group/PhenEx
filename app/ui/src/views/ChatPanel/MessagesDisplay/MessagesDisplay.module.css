@@ -49,22 +49,19 @@
 
 .userMessage {
   max-width: calc(100% - 100px);
-
   align-self: flex-end;
   transition: all 0.2s ease-in-out;
   margin-right: 30px;
-  /* border-top-right-radius: 0px; */
-  /* margin-left: 20px; */
   padding-left: 15px !important;
   padding-right: 10px !important;
-  background-color: var(--background-color);
+  background-color: rgba(59, 130, 246, 0.1) !important; /* Light blue background for user */
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-  border: var(--border);
 }
 
 .userMessage:hover {
-  background-color: var(--color-accent-hover) !important;
+  background-color: rgba(59, 130, 246, 0.15) !important; /* Slightly darker blue on hover */
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition:
     transform 0.1s ease-in-out,
@@ -77,11 +74,18 @@
   padding-right: 20px !important;
   align-self: flex-start;
   color: var(--text-color);
-  /* border-top-left-radius: 0px; */
   margin-left: 10px;
   margin-right: 24px;
-  border: var(--border);
-  /* background: repeating-linear-gradient(-15deg, #f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 6px); */
+  background-color: rgba(34, 197, 94, 0.08) !important; /* Light green background for AI */
+  border: 1px solid rgba(34, 197, 94, 0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.assistantMessage:hover {
+  background-color: rgba(34, 197, 94, 0.12) !important; /* Slightly darker green on hover */
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .messagesContainer > div:first-child.assistantMessage {

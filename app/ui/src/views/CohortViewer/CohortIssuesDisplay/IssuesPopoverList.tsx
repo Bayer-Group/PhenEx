@@ -108,8 +108,15 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
 
   return (
     <>
-    <div className={styles.topPadding}/>
-      {allIssues.map((issue, index) => renderPhenotype(issue, index))}
+      <div className={styles.topPadding}/>
+      {allIssues.length === 0 ? (
+        <div className={styles.noIssuesMessage}>
+          <p>✅ No issues found!</p>
+          <p className={styles.noIssuesSubtext}>Your cohort configuration looks good.</p>
+        </div>
+      ) : (
+        allIssues.map((issue, index) => renderPhenotype(issue, index))
+      )}
     </>
   );
 };

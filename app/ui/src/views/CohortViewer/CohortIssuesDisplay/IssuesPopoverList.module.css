@@ -73,3 +73,21 @@
     height: 100px;
     width:100%;
 }
+
+.noIssuesMessage {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-color-active);
+}
+
+.noIssuesMessage p {
+    margin: 8px 0;
+    font-size: 18px;
+    font-family: 'IBMPlexSans-bold';
+}
+
+.noIssuesSubtext {
+    font-size: 14px !important;
+    color: var(--text-color-inactive) !important;
+    font-family: 'IBMPlexSans-regular' !important;
+}

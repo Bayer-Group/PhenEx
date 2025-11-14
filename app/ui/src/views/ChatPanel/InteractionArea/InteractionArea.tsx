@@ -28,9 +28,12 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
 
   useEffect(() => {
     const handleAICompletion = (success: boolean) => {
+      console.log('InteractionArea: handleAICompletion called with success:', success);
       if (success) {
+        console.log('InteractionArea: Setting state to interactive');
         setInteractionState('interactive');
       } else {
+        console.log('InteractionArea: Setting state to retry');
         setInteractionState('retry');
       }
     };
@@ -69,21 +72,35 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   };
 
   const handleAccept = () => {
-    // Handle accept action
-    setInteractionState('empty');
-    chatPanelDataService.acceptAIResult();
+    try {
+      // Handle accept action
+      setInteractionState('empty');
+      chatPanelDataService.acceptAIResult();
+    } catch (error) {
+      console.error('InteractionArea: Error in handleAccept:', error);
+    }
   };
 
   const handleReject = () => {
-    // Handle reject action
-    setInteractionState('empty');
-    chatPanelDataService.rejectAIResult();
+    try {
+      // Handle reject action
+      setInteractionState('empty');
+      chatPanelDataService.rejectAIResult();
+    } catch (error) {
+      console.error('InteractionArea: Error in handleReject:', error);
+    }
   };
 
   const handleRetry = () => {
-    // Handle reject action
+    // Handle retry action
     setInteractionState('thinking');
     chatPanelDataService.retryAIRequest();
+  };
+
+  const handleNewChat = () => {
+    // Clear conversation history and messages
+    chatPanelDataService.clearMessages();
+    setInteractionState('empty');
   };
 
   return (
@@ -94,6 +111,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           onAccept={handleAccept}
           onReject={handleReject}
           onRetry={handleRetry}
+          onNewChat={handleNewChat}
         />
       </div>
       <div className={styles.transparentHeaderGradient} />
