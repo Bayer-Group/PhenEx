@@ -138,14 +138,16 @@ export const suggestChanges = async (
   cohort_id: string,
   user_request: string,
   model: string = 'gpt-4o-mini',
-  return_updated_cohort: boolean = false
+  return_updated_cohort: boolean = false,
+  conversation_history?: Array<{user?: string; system?: string; user_action?: string}>
 ) => {
   try {
     console.log('suggestChanges: Starting request with params:', {
       cohort_id: String(cohort_id),
       model,
       return_updated_cohort: String(return_updated_cohort),
-      user_request_length: user_request.length
+      user_request_length: user_request.length,
+      history_length: conversation_history?.length || 0
     });
 
     // Use authFetch for streaming responses with proper authentication
@@ -154,12 +156,18 @@ export const suggestChanges = async (
     url.searchParams.set('model', model);
     url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
 
+    // Prepare the request body with conversation history
+    const requestBody = {
+      user_request,
+      conversation_history: conversation_history || []
+    };
+
     const response = await authFetch(url.toString(), {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       },
-      body: user_request,
+      body: JSON.stringify(requestBody),
     });
 
     console.log('suggestChanges: Received response, status:', response.status);

@@ -22,12 +22,12 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
           key={index} 
           className={styles.button} 
           style={{
-            backgroundColor: button === 'accept' ? 'var(--color_inclusion)' : 
-                           button === 'reject' ? 'var(--color_exclusion)' : 
+            backgroundColor: button.toLowerCase() === 'accept' ? 'var(--color_inclusion)' : 
+                           button.toLowerCase() === 'reject' ? 'var(--color_exclusion)' : 
                            button === 'Retry' ? 'var(--color_inclusion)' : 'transparent',
-            color: button === 'accept' || button === 'reject' || button === 'Retry' ? 'white' : 'var(--text-color-inactive)',
-            border: button === 'accept' ? '1px solid var(--color_inclusion)' : 
-                    button === 'reject' ? '1px solid var(--color_exclusion)' : 
+            color: button.toLowerCase() === 'accept' || button.toLowerCase() === 'reject' || button === 'Retry' ? 'white' : 'var(--text-color-inactive)',
+            border: button.toLowerCase() === 'accept' ? '1px solid var(--color_inclusion)' : 
+                    button.toLowerCase() === 'reject' ? '1px solid var(--color_exclusion)' : 
                     button === 'Retry' ? '1px solid var(--color_inclusion)' : '1px solid var(--line-color)',
             zIndex: 100
           }}

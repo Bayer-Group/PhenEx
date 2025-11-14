@@ -92,9 +92,15 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   };
 
   const handleRetry = () => {
-    // Handle reject action
+    // Handle retry action
     setInteractionState('thinking');
     chatPanelDataService.retryAIRequest();
+  };
+
+  const handleNewChat = () => {
+    // Clear conversation history and messages
+    chatPanelDataService.clearMessages();
+    setInteractionState('empty');
   };
 
   return (
@@ -105,6 +111,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           onAccept={handleAccept}
           onReject={handleReject}
           onRetry={handleRetry}
+          onNewChat={handleNewChat}
         />
       </div>
       <div className={styles.transparentHeaderGradient} />

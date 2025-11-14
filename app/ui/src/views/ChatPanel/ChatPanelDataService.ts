@@ -16,6 +16,12 @@ export interface Message {
   isUser: boolean;
 }
 
+export interface ConversationEntry {
+  user?: string;
+  system?: string;
+  user_action?: string;
+}
+
 class ChatPanelDataService {
   private static instance: ChatPanelDataService;
   private messages: Message[] = [
@@ -26,6 +32,8 @@ class ChatPanelDataService {
     },
   ];
   private lastMessageId = this.messages.length;
+  private conversationHistory: ConversationEntry[] = [];
+  private readonly MAX_HISTORY_ENTRIES = 25;
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
   private _cohortDataService: CohortDataService | null = null;
@@ -61,6 +69,7 @@ class ChatPanelDataService {
       isUser: true,
     };
     this.messages.push(newMessage);
+    this.addUserMessageToHistory(text);
     this.notifyListeners();
     this.sendAIRequest(text);
     return newMessage;
@@ -83,9 +92,41 @@ class ChatPanelDataService {
   }
 
   public clearMessages(): void {
-    this.messages = [];
-    this.lastMessageId = 0;
+    this.messages = [
+      {
+        id: 123,
+        text: '# Hi, I\'m Fox. How can I help?\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
+        isUser: false,
+      },
+    ];
+    this.lastMessageId = this.messages.length;
+    this.conversationHistory = [];
     this.notifyListeners();
+  }
+
+  public getConversationHistory(): ConversationEntry[] {
+    return [...this.conversationHistory];
+  }
+
+  private addToHistory(entry: ConversationEntry): void {
+    this.conversationHistory.push(entry);
+    
+    // Trim history to MAX_HISTORY_ENTRIES, keeping most recent
+    if (this.conversationHistory.length > this.MAX_HISTORY_ENTRIES) {
+      this.conversationHistory = this.conversationHistory.slice(-this.MAX_HISTORY_ENTRIES);
+    }
+  }
+
+  private addUserMessageToHistory(text: string): void {
+    this.addToHistory({ user: text });
+  }
+
+  private addSystemResponseToHistory(text: string): void {
+    this.addToHistory({ system: text });
+  }
+
+  private addUserActionToHistory(action: string): void {
+    this.addToHistory({ user_action: action });
   }
 
   private notifyListeners(): void {
@@ -144,7 +185,8 @@ class ChatPanelDataService {
         cohortId,
         inputText.trim(),
         "gpt-4o-mini",
-        false
+        false,
+        this.getConversationHistory()
       );
 
       console.log('Stream received from suggestChanges');
@@ -208,6 +250,12 @@ class ChatPanelDataService {
       }
 
       console.log('Finalizing assistant response');
+      
+      // Add the complete assistant response to history
+      if (assistantMessage.text.trim()) {
+        this.addSystemResponseToHistory(assistantMessage.text.trim());
+      }
+      
       if (this.cohortDataService.cohort_data?.id) {
         try {
           const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
@@ -235,6 +283,10 @@ class ChatPanelDataService {
         console.error('No cohort ID available for accepting changes');
         return;
       }
+      
+      // Track the accept action in conversation history
+      this.addUserActionToHistory('ACCEPT_CHANGES');
+      
       const response = await acceptChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
@@ -250,6 +302,10 @@ class ChatPanelDataService {
         console.error('No cohort ID available for rejecting changes');
         return;
       }
+      
+      // Track the reject action in conversation history
+      this.addUserActionToHistory('REJECT_CHANGES');
+      
       const response = await rejectChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();

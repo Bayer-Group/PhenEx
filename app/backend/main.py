@@ -680,27 +680,41 @@ async def suggest_changes(
     return_updated_cohort: bool = False,
 ):
     """
-    Generate or modify a cohort based on user instructions.
+    Generate or modify a cohort based on user instructions with conversation history.
 
     Args:
-        request (Request): The FastAPI request object containing the user request in the body.
+        request (Request): The FastAPI request object containing the request body.
         cohort_id (str): The ID of the cohort to modify for the authenticated user.
         model (str): The model to use for processing the request.
         return_updated_cohort (bool): Whether to return the updated cohort.
 
     Body:
-        user_request (str): Instructions for modifying the cohort (plain text in request body).
+        JSON object with:
+        - user_request (str): Instructions for modifying the cohort.
+        - conversation_history (list): List of conversation entries in chronological order.
 
     Returns:
         StreamingResponse: A stream of the response text.
     """
-    # Read the user request from the request body
+    # Read and parse the request body
     body = await request.body()
-    user_request = (
-        body.decode("utf-8")
-        if body
-        else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    )
+    try:
+        if body:
+            # Try to parse as JSON first (new format with conversation history)
+            request_data = json.loads(body.decode("utf-8"))
+            user_request = request_data.get("user_request", "")
+            conversation_history = request_data.get("conversation_history", [])
+        else:
+            # Fallback for empty body
+            user_request = "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+            conversation_history = []
+    except json.JSONDecodeError:
+        # Fallback to plain text format (backward compatibility)
+        user_request = body.decode("utf-8") if body else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+        conversation_history = []
+    
+    logger.info(f"User request: {user_request}")
+    logger.info(f"Conversation history length: {len(conversation_history)}")
 
     user_id = _get_authenticated_user_id(request)
     current_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
@@ -806,10 +820,23 @@ async def suggest_changes(
 
     {user_request}
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
+    
+    # Build messages array with conversation history
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history
+    for entry in conversation_history:
+        if "user" in entry:
+            messages.append({"role": "user", "content": entry["user"]})
+        elif "system" in entry:
+            messages.append({"role": "assistant", "content": entry["system"]})
+        elif "user_action" in entry:
+            # Represent user actions as user messages with special formatting
+            action_text = f"[User performed action: {entry['user_action']}]"
+            messages.append({"role": "user", "content": action_text})
+    
+    # Add the current user prompt
+    messages.append({"role": "user", "content": user_prompt})
 
     completion = openai_client.chat.completions.create(
         model=model, stream=True, messages=messages

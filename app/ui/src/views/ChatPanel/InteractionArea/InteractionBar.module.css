@@ -11,4 +11,7 @@
 .buttonContainer {
   margin-top: 0px;
   height: 40px;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }

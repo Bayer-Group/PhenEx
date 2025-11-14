@@ -15,7 +15,7 @@ interface IssuesPopoverProps {
 }
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, dragHandleRef }) => {
-  const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
+  const ISSUEPOPOVER_TABS = ['Chat with Fox', 'issues'];
   const [activeTabIndex, setActiveTabIndex] = useState(ISSUEPOPOVER_TABS.length - 1);
   const selectedView = ISSUEPOPOVER_TABS[activeTabIndex];
   const bodyRef = useRef<HTMLDivElement>(null);
