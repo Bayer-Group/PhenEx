@@ -74,25 +74,50 @@
 
 .tabsContainer {
   position: absolute;
-  top: 10px;
-  left:10px;
-  height: 60px;
-  border-radius: 20px;
-  padding:5px;
-  gap:5px;
-  background-color: rgba(250,250,250,.4)!important;
+  top: 15px;
+  left: 15px;
+  height: auto;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+  background-color: rgba(250,250,250,0.8)!important;
+  border: 1px solid var(--line-color)!important;
+  backdrop-filter: blur(10px);
+  width: fit-content;
 }
 
 .tabsContainer:hover{
+  background-color: var(--color-accent-hover)!important;
+  border: 1px solid var(--color-accent-bright)!important;
 }
 
 .tab{
-  font-size:40px;
-  padding: 2px 15px;
-  border-radius: 16px;
-  height: 60px;
-  color: var(--color_entry);
-  background-color: transparent!important;
+  font-size: 18px!important;
+  padding: 12px 20px!important;
+  border-radius: 6px!important;
+  height: auto!important;
+  min-height: 44px!important;
+  color: var(--text-color-inactive)!important;
+  background-color: var(--button-background-color-default)!important;
+  border: 1px solid var(--button-border-color-default)!important;
+  font-family: 'IBMPlexSans-bold'!important;
+  cursor: pointer!important;
+  transition: all 0.2s ease-in-out!important;
+  white-space: nowrap!important;
+}
+
+.tab:hover {
+  background-color: var(--button-background-color-hover)!important;
+  color: var(--color-accent-bright)!important;
+  border: 1px solid var(--color-accent-bright)!important;
+}
+
+/* This targets the active tab through the Tabs component's active class */
+.tab:global(.active) {
+  background-color: var(--color-accent-bright)!important;
+  color: white!important;
+  border: 1px solid var(--color-accent-bright)!important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)!important;
 }
 
 .transparentHeader{

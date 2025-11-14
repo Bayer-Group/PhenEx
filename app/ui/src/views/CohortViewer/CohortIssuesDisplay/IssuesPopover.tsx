@@ -3,7 +3,6 @@ import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { ChatPanel } from '../../ChatPanel/ChatPanel'
-import BirdIcon from '../../../assets/bird_icon.png'
 import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { ResizableContainer } from '../../../components/ResizableContainer';
 import IssuesPopoverList from './IssuesPopoverList';
@@ -15,8 +14,8 @@ interface IssuesPopoverProps {
 }
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, dragHandleRef }) => {
-  const ISSUEPOPOVER_TABS = ['Chat with Fox', 'issues'];
-  const [activeTabIndex, setActiveTabIndex] = useState(ISSUEPOPOVER_TABS.length - 1);
+  const ISSUEPOPOVER_TABS = ['Issues', 'AI Chat'];
+  const [activeTabIndex, setActiveTabIndex] = useState(0); // Default to Issues tab
   const selectedView = ISSUEPOPOVER_TABS[activeTabIndex];
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +30,6 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
       onTabChange={onTabChange}
       classNameTabsContainer={styles.tabsContainer}
       classNameTabs={styles.tab}
-      icons={{ 0: BirdIcon }}
     />
   );
 
@@ -72,7 +70,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     >
       <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
         {renderTransparentHeader()}
-        {selectedView === 'issues' ? (
+        {selectedView === 'Issues' ? (
           <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
         ) : (
           <div ref={bodyRef} className={styles.body}>
