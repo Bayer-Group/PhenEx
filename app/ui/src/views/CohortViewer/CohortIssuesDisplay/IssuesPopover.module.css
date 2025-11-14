@@ -67,7 +67,7 @@
 .body {
   flex: 1;
   overflow: auto!important;
-  padding: 10px var(--issues_popover_gutter) 0 px var(--issues_popover_gutter);
+  padding: 80px var(--issues_popover_gutter) 10px var(--issues_popover_gutter);
   margin-top: 0px;
   background-color: transparent;
 }
@@ -76,9 +76,17 @@
   position: absolute;
   top: 15px;
   left: 15px;
+  right: 15px;
   display: flex;
   align-items: center;
   gap: 12px;
+  background-color: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 10;
+  border: 1px solid var(--line-color);
 }
 
 .birdIcon {
