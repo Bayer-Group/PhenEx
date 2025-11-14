@@ -1,8 +1,24 @@
 .container {
   display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.topSection {
+  display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  width: 100%;
+  color: var(--color-accent-bright);
+  opacity: .4;
+}
+
+.bottomSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .itemWrapper {
@@ -31,9 +47,7 @@
 }
 
 .lastItem {
-  color: #1a73e8;
-  font-weight: 500;
-  background-color: #e8f0fe;
+  color: var(--color-accent-bright);
 }
 
 .lastItem:hover {

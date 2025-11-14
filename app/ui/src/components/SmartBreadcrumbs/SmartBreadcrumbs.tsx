@@ -49,25 +49,39 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
     return null;
   }
 
+  const allButLast = items.slice(0, -1);
+  const lastItem = items[items.length - 1];
+
   return (
     <>
       <div className={`${styles.container} ${classNameSmartBreadcrumbsContainer}`}>
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
-
-          return (
+        {/* Top section: all items except the last */}
+        <div className={styles.topSection}>
+          {allButLast.map((item, index) => (
             <div key={index} className={styles.itemWrapper}>
               <div
-                ref={isLast ? lastItemRef : null}
-                className={`${styles.item} ${isLast ? styles.lastItem : styles.regularItem} ${classNameBreadcrumbItem}`}
-                onClick={isLast ? handleLastItemClick : item.onClick}
+                className={`${styles.item} ${styles.regularItem} ${classNameBreadcrumbItem}`}
+                onClick={item.onClick}
               >
                 {item.displayName}
               </div>
-              {!isLast && <div className={styles.separator}>/</div>}
+              <div className={styles.separator}>/</div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+        
+        {/* Bottom section: the last item */}
+        <div className={styles.bottomSection}>
+          <div className={styles.itemWrapper}>
+            <div
+              ref={lastItemRef}
+              className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbItem}`}
+              onClick={handleLastItemClick}
+            >
+              {lastItem.displayName}
+            </div>
+          </div>
+        </div>
       </div>
       
       {showEditor && (
