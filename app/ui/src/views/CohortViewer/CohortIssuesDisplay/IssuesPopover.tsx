@@ -3,6 +3,7 @@ import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './IssuesPopover.module.css';
 import { CohortIssue } from './CohortIssuesDisplay';
 import { ChatPanel } from '../../ChatPanel/ChatPanel'
+import BirdIcon from '../../../assets/bird_icon.png'
 import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { ResizableContainer } from '../../../components/ResizableContainer';
 import IssuesPopoverList from './IssuesPopoverList';
@@ -24,13 +25,16 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
   };
 
   const renderTabs = () => (
-    <Tabs
-      tabs={ISSUEPOPOVER_TABS}
-      active_tab_index={activeTabIndex}
-      onTabChange={onTabChange}
-      classNameTabsContainer={styles.tabsContainer}
-      classNameTabs={styles.tab}
-    />
+    <div className={styles.tabsWithIcon}>
+      <img src={BirdIcon} alt="Fox" className={styles.birdIcon} />
+      <Tabs
+        tabs={ISSUEPOPOVER_TABS}
+        active_tab_index={activeTabIndex}
+        onTabChange={onTabChange}
+        classNameTabsContainer={styles.tabsContainer}
+        classNameTabs={styles.tab}
+      />
+    </div>
   );
 
   const renderCloseButton = () => (

@@ -72,10 +72,22 @@
   background-color: transparent;
 }
 
-.tabsContainer {
+.tabsWithIcon {
   position: absolute;
   top: 15px;
   left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.birdIcon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.tabsContainer {
   height: auto;
   border-radius: 8px;
   padding: 4px;
