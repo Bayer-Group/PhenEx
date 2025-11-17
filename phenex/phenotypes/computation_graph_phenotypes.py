@@ -421,16 +421,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
         _boolean_expression = self.expression.get_boolean_expression(
             joined_table, operate_on=self.operate_on
         )
-        ibis.options.interactive = True
-        print(_boolean_expression)
         joined_table = joined_table.mutate(BOOLEAN=_boolean_expression)
-        print(
-            joined_table.filter(joined_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
 
         # Get date columns for determining which phenotype's value to use
         date_columns = self._coalesce_all_date_columns(joined_table)
