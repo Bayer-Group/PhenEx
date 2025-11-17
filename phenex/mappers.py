@@ -61,7 +61,17 @@ class DomainsDictionary:
         # self.set_mapped_tables(con)
         mapped_tables = {}
         for domain, mapper in self.domains_dict.items():
-            mapped_tables[domain] = mapper(con.get_source_table(mapper.NAME_TABLE))
+            t = con.get_source_table(mapper.NAME_TABLE)
+            if 'SOURCE_JOINS' in mapper.__dict__:
+                for join_table, join_info in mapper.SOURCE_JOINS.items():
+                    join_t = con.get_source_table(join_table)
+                    for predicate in join_info["predicates"]:
+                        t = t.join(
+                            join_t,
+                            t[predicate[0]] == join_t[predicate[1]],
+                            how=join_info["how"],
+                        ).select(t.columns + join_t.columns)
+            mapped_tables[domain] = mapper(t)
         return mapped_tables
 
     def get_source_tables(self, con) -> Dict[str, str]:
@@ -228,10 +238,20 @@ class OMOPConditionOccurrenceSourceTable(CodeTable):
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "CONDITION_START_DATE",
-        "CODE": "CONDITION_SOURCE_VALUE",
+        "CODE": "CONCEPT_CODE",
+        "CODE_TYPE": "VOCABULARY_ID",
     }
     PATHS = {
         "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
+    }
+
+    SOURCE_JOINS = {
+        "CONCEPT": {
+            "how": "left",
+            "predicates": [
+                ("CONDITION_SOURCE_CONCEPT_ID", "CONCEPT_ID"),
+            ],
+        }
     }
 
 
