@@ -62,7 +62,10 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
 
 
 def select_phenotype_columns(
-    table, fill_date=ibis.null(date), fill_value=ibis.null(), fill_boolean=True
+    table,
+    fill_date=ibis.null(date),
+    fill_value=ibis.null().cast("int32"),
+    fill_boolean=True,
 ):
     if "PERSON_ID" not in table.columns:
         raise ValueError("Table must have a PERSON_ID column")
