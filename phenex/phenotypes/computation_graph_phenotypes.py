@@ -192,7 +192,11 @@ class ComputationGraphPhenotype(Phenotype):
         - If return_date='first'/'last'/'nearest' and return_value=None, aggregate to one row per person (reduce=True)
         - If return_date='first'/'last'/'nearest' and return_value='all', keep all rows on the selected date (reduce=False)
         """
-        if self.return_date is None or self.return_date == "all":
+        if (
+            self.return_date is None
+            or self.return_date == "all"
+            or isinstance(self.return_date, Phenotype)
+        ):
             return code_table
 
         if self.return_date == "first":
@@ -267,6 +271,12 @@ class ScorePhenotype(ComputationGraphPhenotype):
             value_filter=value_filter,
             **kwargs,
         )
+
+    def repr_short(self, level=0):
+        indent = "  " * level
+        s = f"Defined as a score calculated as : {str(self.expression)}"
+        s += self.repr_short_for_all_children(level + 1)
+        return f"{indent}- **{self.display_name}** : {s}"
 
 
 class ArithmeticPhenotype(ComputationGraphPhenotype):
@@ -572,3 +582,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         from phenex.phenotypes.functions import select_phenotype_columns
 
         return select_phenotype_columns(all_dates)
+
+    def repr_short(self, level=0):
+        indent = "  " * level
+        s = f"Defined as the logical expression : {str(self.expression)}"
+        s += self.repr_short_for_all_children(level + 1)
+
+        return f"{indent}- **{self.display_name}** : {s}"
