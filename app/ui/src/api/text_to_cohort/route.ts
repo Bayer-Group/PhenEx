@@ -150,11 +150,18 @@ export const suggestChanges = async (
       history_length: conversation_history?.length || 0
     });
 
-    // Get the base URL from the axios instance to ensure we use the same /api/ prefix
+    // Build the URL correctly by combining baseURL and endpoint path
     const baseURL = api.defaults.baseURL || '';
+    let fullURL = baseURL;
     
-    // Build the complete URL with proper base URL and endpoint
-    const url = new URL('/cohort/suggest_changes', baseURL);
+    // Ensure proper path joining - remove trailing slash from base, add leading slash to endpoint
+    if (fullURL.endsWith('/')) {
+      fullURL = fullURL.slice(0, -1);
+    }
+    fullURL += '/cohort/suggest_changes';
+    
+    // Build the URL with query parameters
+    const url = new URL(fullURL);
     url.searchParams.set('cohort_id', String(cohort_id));
     url.searchParams.set('model', model);
     url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
