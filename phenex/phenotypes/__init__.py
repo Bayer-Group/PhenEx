@@ -9,6 +9,7 @@ from .measurement_phenotype import MeasurementPhenotype
 from .measurement_change_phenotype import MeasurementChangePhenotype
 from .death_phenotype import DeathPhenotype
 from .categorical_phenotype import CategoricalPhenotype
+from .time_range_count_phenotype import TimeRangeCountPhenotype
 from .time_range_phenotype import TimeRangePhenotype
 from .user_defined_phenotype import UserDefinedPhenotype
 from .computation_graph_phenotypes import (

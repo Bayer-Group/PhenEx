@@ -6,6 +6,7 @@ from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
 from phenex.phenotypes.functions import hstack
 from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.aggregators import First, Last
 
 
 class ComputationGraphPhenotype(Phenotype):
@@ -44,6 +45,7 @@ class ComputationGraphPhenotype(Phenotype):
         operate_on: str = "boolean",
         populate: str = "value",
         reduce: bool = False,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
         if name is None:
@@ -55,6 +57,7 @@ class ComputationGraphPhenotype(Phenotype):
         self.operate_on = operate_on
         self.populate = populate
         self.reduce = reduce
+        self.value_filter = value_filter
         self.add_children(self.expression.get_leaf_phenotypes())
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
@@ -87,6 +90,8 @@ class ComputationGraphPhenotype(Phenotype):
             joined_table = joined_table.mutate(VALUE=_expression)
             # Arithmetic operations imply a boolean 'and' of children i.e. child1 + child two implies child1 and child2. if there are any null values in value calculations this is because one of the children is null, so we filter them out as the implied boolean condition is not met.
             joined_table = joined_table.filter(joined_table["VALUE"].notnull())
+            joined_table = self._perform_value_filtering(joined_table)
+            joined_table = joined_table.mutate(BOOLEAN=True)
 
         elif self.populate == "boolean":
             _expression = self.expression.get_boolean_expression(
@@ -109,6 +114,9 @@ class ComputationGraphPhenotype(Phenotype):
         else:
             joined_table = joined_table.mutate(EVENT_DATE=ibis.null(date))
 
+        # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+        joined_table = self._perform_date_selection(joined_table)
+
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
@@ -120,7 +128,7 @@ class ComputationGraphPhenotype(Phenotype):
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
-        return joined_table
+        return joined_table.distinct()
 
     def _return_all_dates(self, table, date_columns):
         """
@@ -175,6 +183,40 @@ class ComputationGraphPhenotype(Phenotype):
 
         return coalesce_expressions
 
+    def _perform_date_selection(self, code_table):
+        """
+        Perform date selection based on return_date and return_value parameters.
+
+        Logic:
+        - If return_date='all', return all rows (no date aggregation)
+        - If return_date='first'/'last'/'nearest' and return_value=None, aggregate to one row per person (reduce=True)
+        - If return_date='first'/'last'/'nearest' and return_value='all', keep all rows on the selected date (reduce=False)
+        """
+        if (
+            self.return_date is None
+            or self.return_date == "all"
+            or isinstance(self.return_date, Phenotype)
+        ):
+            return code_table
+
+        if self.return_date == "first":
+            aggregator = First(reduce=False, preserve_nulls=True)
+        elif self.return_date == "last":
+            aggregator = Last(reduce=False, preserve_nulls=True)
+        elif self.return_date == "nearest":
+            # Note: Nearest is not currently implemented in the aggregators
+            # This would need to be added to the aggregator module
+            raise NotImplementedError("Nearest aggregation not yet implemented")
+        else:
+            raise ValueError(f"Unknown return_date: {self.return_date}")
+
+        return aggregator.aggregate(code_table)
+
+    def _perform_value_filtering(self, table: Table) -> Table:
+        if self.value_filter is not None:
+            table = self.value_filter.filter(table)
+        return table
+
 
 class ScorePhenotype(ComputationGraphPhenotype):
     """
@@ -212,15 +254,29 @@ class ScorePhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ScorePhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="boolean",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
+
+    def repr_short(self, level=0):
+        indent = "  " * level
+        s = f"Defined as a score calculated as : {str(self.expression)}"
+        s += self.repr_short_for_all_children(level + 1)
+        return f"{indent}- **{self.display_name}** : {s}"
 
 
 class ArithmeticPhenotype(ComputationGraphPhenotype):
@@ -254,14 +310,22 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
         expression: ComputationGraph,
         return_date: Union[str, Phenotype] = "first",
         name: str = None,
+        value_filter: Optional["ValueFilter"] = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("operate_on", "populate")
+        }
+
         super(ArithmeticPhenotype, self).__init__(
             name=name,
             expression=expression,
             return_date=return_date,
             operate_on="value",
             populate="value",
+            value_filter=value_filter,
+            **kwargs,
         )
 
 
@@ -287,6 +351,13 @@ class LogicPhenotype(ComputationGraphPhenotype):
         name: str = None,
         **kwargs,
     ):
+        # Remove keys that we set explicitly to avoid duplicate keyword arguments
+        kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("operate_on", "populate", "reduce")
+        }
+
         super(LogicPhenotype, self).__init__(
             name=name,
             expression=expression,
@@ -294,7 +365,33 @@ class LogicPhenotype(ComputationGraphPhenotype):
             operate_on="boolean",
             populate="boolean",
             reduce=True,
+            **kwargs,
         )
+
+    def _get_value_column_types(self, table):
+        """
+        Inspect the VALUE columns of child phenotypes and categorize their types.
+
+        Args:
+            table: The Ibis table containing child phenotype columns
+
+        Returns:
+            set: A set of type categories ('numeric', 'string', 'other')
+        """
+        schema = table.schema()
+        value_col_types = set()
+        for child in self.children:
+            child_value_col = f"{child.name}_VALUE"
+            if child_value_col in schema:
+                col_type = schema[child_value_col]
+                # Categorize as numeric, string, or other
+                if col_type.is_numeric():
+                    value_col_types.add("numeric")
+                elif col_type.is_string():
+                    value_col_types.add("string")
+                else:
+                    value_col_types.add("other")
+        return value_col_types
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         """
@@ -309,7 +406,6 @@ class LogicPhenotype(ComputationGraphPhenotype):
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
         joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
-
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
@@ -350,32 +446,62 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 selected_date = ibis.null(date)
                 joined_table = joined_table.mutate(EVENT_DATE=selected_date)
 
-            # Populate the VALUE column with the value from the phenotype whose date matches the selected date
-            value_cases = []
-            for child in self.children:
-                child_date_col = f"{child.name}_EVENT_DATE"
-                child_value_col = f"{child.name}_VALUE"
+            # the least and greatest operation select the first/last event between the children phenotypes. however, if one of the child phenotypes returns more than one event, we need to select the first/last from among those (i.e. the child has return_date = 'all', which is necessary for and operations)
+            joined_table = self._perform_date_selection(joined_table)
 
-                # Check if this child's date matches the selected date
-                condition = getattr(joined_table, child_date_col) == selected_date
-                value_cases.append((condition, getattr(joined_table, child_value_col)))
+            # Check data types of VALUE columns to determine how to handle them
+            value_col_types = self._get_value_column_types(joined_table)
 
-            # Build the CASE expression: when date matches, use that phenotype's value
-            if value_cases:
-                selected_value = ibis.case()
-                for condition, value in value_cases:
-                    selected_value = selected_value.when(condition, value)
-                selected_value = selected_value.else_(ibis.null()).end()
-                joined_table = joined_table.mutate(VALUE=selected_value)
+            # If mixed types (e.g., string and numeric), set VALUE to NULL to avoid type conflicts
+            # Otherwise, use the appropriate type
+            if len(value_col_types) > 1:
+                # Mixed types - use string NULL as a common denominator
+                joined_table = joined_table.mutate(VALUE=ibis.null().cast("string"))
             else:
-                joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
+                # Homogeneous types - populate VALUE with the phenotype whose date matches
+                value_cases = []
+                for child in self.children:
+                    child_date_col = f"{child.name}_EVENT_DATE"
+                    child_value_col = f"{child.name}_VALUE"
+
+                    # Check if this child's date matches the selected date
+                    condition = getattr(joined_table, child_date_col) == selected_date
+                    value_cases.append(
+                        (condition, getattr(joined_table, child_value_col))
+                    )
+
+                # Build the CASE expression: when date matches, use that phenotype's value
+                if value_cases:
+                    selected_value = ibis.case()
+                    for condition, value in value_cases:
+                        selected_value = selected_value.when(condition, value)
+
+                    # Use appropriate null type based on the homogeneous type
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
+                    else:
+                        # Fallback to int32 for unknown types
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
+                    joined_table = joined_table.mutate(VALUE=selected_value)
+                else:
+                    # No value cases - use int32 as default
+                    joined_table = joined_table.mutate(VALUE=ibis.null().cast("int32"))
 
         # Reduce the table to only include rows where the boolean column is True
         if self.reduce:
             joined_table = joined_table.filter(joined_table.BOOLEAN == True)
 
         # Select only the required phenotype columns
-        return select_phenotype_columns(joined_table)
+        return select_phenotype_columns(joined_table).distinct()
 
     def _return_all_dates_with_value(self, table, date_columns):
         """
@@ -389,6 +515,9 @@ class LogicPhenotype(ComputationGraphPhenotype):
         Returns:
             Ibis expression representing the UNION of all non null dates with proper VALUE columns.
         """
+        # Check if component phenotypes are of mixed VALUE types (i.e. one has a string value, the other a numeric) to determine how to handle them
+        value_col_types = self._get_value_column_types(table)
+
         # get all the non-null dates for each date column and populate VALUE correctly
         non_null_dates_by_date_col = []
         for date_col in date_columns:
@@ -397,27 +526,50 @@ class LogicPhenotype(ComputationGraphPhenotype):
                 EVENT_DATE=date_col
             )
 
-            # For this specific date, find which phenotype's value to use
-            value_cases = []
-            for child in self.children:
-                child_date_col = f"{child.name}_EVENT_DATE"
-                child_value_col = f"{child.name}_VALUE"
-
-                # Check if this child's date matches the current date
-                condition = getattr(non_null_dates, child_date_col) == date_col
-                value_cases.append(
-                    (condition, getattr(non_null_dates, child_value_col))
-                )
-
-            # Build the CASE expression for this date
-            if value_cases:
-                selected_value = ibis.case()
-                for condition, value in value_cases:
-                    selected_value = selected_value.when(condition, value)
-                selected_value = selected_value.else_(ibis.null()).end()
-                non_null_dates = non_null_dates.mutate(VALUE=selected_value)
+            # If component phenotypes are of mixed VALUE types (i.e. one has a string value, the other a numeric), set VALUE to NULL; otherwise populate appropriately
+            if len(value_col_types) > 1:
+                # Mixed types - use string NULL as a common denominator
+                non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("string"))
             else:
-                non_null_dates = non_null_dates.mutate(VALUE=ibis.null().cast("int32"))
+                # For this specific date, find which phenotype's value to use
+                value_cases = []
+                for child in self.children:
+                    child_date_col = f"{child.name}_EVENT_DATE"
+                    child_value_col = f"{child.name}_VALUE"
+
+                    # Check if this child's date matches the current date
+                    condition = getattr(non_null_dates, child_date_col) == date_col
+                    value_cases.append(
+                        (condition, getattr(non_null_dates, child_value_col))
+                    )
+
+                # Build the CASE expression for this date
+                if value_cases:
+                    selected_value = ibis.case()
+                    for condition, value in value_cases:
+                        selected_value = selected_value.when(condition, value)
+
+                    # Use appropriate null type based on the homogeneous type
+                    if "numeric" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+                    elif "string" in value_col_types:
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("string")
+                        ).end()
+                    else:
+                        # Fallback to int32 for unknown types
+                        selected_value = selected_value.else_(
+                            ibis.null().cast("int32")
+                        ).end()
+
+                    non_null_dates = non_null_dates.mutate(VALUE=selected_value)
+                else:
+                    # No value cases - use int32 as default
+                    non_null_dates = non_null_dates.mutate(
+                        VALUE=ibis.null().cast("int32")
+                    )
 
             non_null_dates_by_date_col.append(non_null_dates)
 
@@ -430,3 +582,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         from phenex.phenotypes.functions import select_phenotype_columns
 
         return select_phenotype_columns(all_dates)
+
+    def repr_short(self, level=0):
+        indent = "  " * level
+        s = f"Defined as the logical expression : {str(self.expression)}"
+        s += self.repr_short_for_all_children(level + 1)
+
+        return f"{indent}- **{self.display_name}** : {s}"
