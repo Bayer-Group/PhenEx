@@ -1,5 +1,6 @@
 from typing import Optional, List
 import os
+import threading
 import ibis
 from ibis.backends import BaseBackend
 from ibis.expr.types import Table
@@ -21,6 +22,9 @@ def _check_env_vars(*vars: str) -> None:
         raise EnvironmentError(
             f"Missing required environment variables: {', '.join(missing_vars)}. Add to .env file or set in the environment."
         )
+
+
+_database_creation_lock = threading.Lock()
 
 
 class SnowflakeConnector:
@@ -224,6 +228,15 @@ class SnowflakeConnector:
             raise ValueError("Must specify name_table!")
         return name_table
 
+    def _ensure_dest_database_exists(self):
+        """Create the destination database if it does not exist."""
+        if self.SNOWFLAKE_DEST_DATABASE is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
+        catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
+        with _database_creation_lock:
+            if database not in self.dest_connection.list_databases(catalog=catalog):
+                self.dest_connection.create_database(name=database, catalog=catalog)
+
     def create_view(self, table, name_table=None, overwrite=False):
         """
         Create a view of a table in the destination Snowflake database.
@@ -240,10 +253,8 @@ class SnowflakeConnector:
             raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
         name_table = name_table or self._get_output_table_name(table)
 
-        # Check if the destination database exists, if not, create it
-        catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases(catalog=catalog):
-            self.dest_connection.create_database(name=database, catalog=catalog)
+        # Ensure database creation is serialized across threads
+        self._ensure_dest_database_exists()
 
         return self.dest_connection.create_view(
             name=name_table.upper(),
@@ -271,10 +282,8 @@ class SnowflakeConnector:
 
         name_table = name_table or self._get_output_table_name(table)
 
-        # Check if the destination database exists, if not, create it
-        catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
-        if not database in self.dest_connection.list_databases(catalog=catalog):
-            self.dest_connection.create_database(name=database, catalog=catalog)
+        # Ensure database creation is serialized across threads
+        self._ensure_dest_database_exists()
 
         return self.dest_connection.create_table(
             name=name_table.upper(),
