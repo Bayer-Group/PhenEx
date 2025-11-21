@@ -2,6 +2,7 @@ from typing import Optional, List
 import os
 import ibis
 from ibis.backends import BaseBackend
+from ibis.expr.types import Table
 
 
 # Snowflake connection function
@@ -539,3 +540,282 @@ class DuckDBConnector:
         if self.dest_connection is None:
             raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
         self.dest_connection.drop_view(name_table)
+
+
+class PostgresConnector:
+    """
+    PostgresConnector manages input (read) and output (write) connections to PostgreSQL using Ibis.
+    Parameters may be specified with environment variables of the same name or through the __init__() method interface.
+    Variables passed through __init__() take precedence.
+
+    Attributes:
+        POSTGRES_HOST: PostgreSQL server hostname or IP.
+        POSTGRES_PORT: PostgreSQL server port.
+        POSTGRES_USER: PostgreSQL user name.
+        POSTGRES_PASSWORD: PostgreSQL password.
+        POSTGRES_SOURCE_DATABASE: PostgreSQL source database name (e.g., 'source_db').
+        POSTGRES_SOURCE_SCHEMA: PostgreSQL source schema name (e.g., 'public').
+        POSTGRES_DEST_DATABASE: PostgreSQL destination database name (e.g., 'dest_db').
+        POSTGRES_DEST_SCHEMA: PostgreSQL destination schema name (e.g., 'staging').
+
+    Methods:
+        connect_dest() -> BaseBackend:
+            Establishes and returns an Ibis backend connection to the destination PostgreSQL database and schema.
+
+        connect_source() -> BaseBackend:
+            Establishes and returns an Ibis backend connection to the source PostgreSQL database and schema.
+
+        get_source_table(name_table: str) -> Table:
+            Retrieves a table from the source PostgreSQL database.
+
+        get_dest_table(name_table: str) -> Table:
+            Retrieves a table from the destination PostgreSQL database.
+
+        create_view(table: Table, name_table: Optional[str] = None, overwrite: bool = False) -> View:
+            Create a view of a table in the destination PostgreSQL database.
+
+        create_table(table: Table, name_table: Optional[str] = None, overwrite: bool = False) -> Table:
+            Materialize a table in the destination PostgreSQL database.
+
+        drop_table(name_table: str) -> None:
+            Drop a table from the destination PostgreSQL database.
+
+        drop_view(name_table: str) -> None:
+            Drop a view from the destination PostgreSQL database.
+    """
+
+    def __init__(
+        self,
+        POSTGRES_HOST: Optional[str] = None,
+        POSTGRES_PORT: Optional[int] = None,
+        POSTGRES_USER: Optional[str] = None,
+        POSTGRES_PASSWORD: Optional[str] = None,
+        POSTGRES_SOURCE_DATABASE: Optional[str] = None,
+        POSTGRES_SOURCE_SCHEMA: Optional[str] = None,
+        POSTGRES_DEST_DATABASE: Optional[str] = None,
+        POSTGRES_DEST_SCHEMA: Optional[str] = None,
+    ):
+        self.POSTGRES_HOST = POSTGRES_HOST or os.environ.get("POSTGRES_HOST")
+        # Convert port to int if it's set from env var
+        port_env = os.environ.get("POSTGRES_PORT")
+        self.POSTGRES_PORT = POSTGRES_PORT or (int(port_env) if port_env else None)
+        self.POSTGRES_USER = POSTGRES_USER or os.environ.get("POSTGRES_USER")
+        self.POSTGRES_PASSWORD = POSTGRES_PASSWORD or os.environ.get(
+            "POSTGRES_PASSWORD"
+        )
+        self.POSTGRES_SOURCE_DATABASE = POSTGRES_SOURCE_DATABASE or os.environ.get(
+            "POSTGRES_SOURCE_DATABASE"
+        )
+        self.POSTGRES_SOURCE_SCHEMA = POSTGRES_SOURCE_SCHEMA or os.environ.get(
+            "POSTGRES_SOURCE_SCHEMA", "public"  # Default to 'public' schema
+        )
+        self.POSTGRES_DEST_DATABASE = POSTGRES_DEST_DATABASE or os.environ.get(
+            "POSTGRES_DEST_DATABASE"
+        )
+        self.POSTGRES_DEST_SCHEMA = POSTGRES_DEST_SCHEMA or os.environ.get(
+            "POSTGRES_DEST_SCHEMA"
+        )
+
+        required_vars = [
+            "POSTGRES_HOST",
+            "POSTGRES_USER",
+            "POSTGRES_SOURCE_DATABASE",
+            # POSTGRES_PASSWORD is optional if other auth is used, but included for simplicity
+        ]
+        self._check_env_vars(required_vars)
+        self._check_source_dest()
+
+        # Initialize connections
+        self.source_connection = self.connect_source()
+        # If dest is specified, connect to it, otherwise use source connection
+        if self.POSTGRES_DEST_DATABASE and self.POSTGRES_DEST_SCHEMA:
+            self.dest_connection = self.connect_dest()
+        else:
+            self.dest_connection = self.source_connection
+
+    def _check_env_vars(self, required_vars: List[str]):
+        """Helper to check if required environment variables are set."""
+        for var in required_vars:
+            if not getattr(self, var):
+                raise ValueError(
+                    f"Missing required variable: {var}. Set in the environment or pass through __init__()."
+                )
+
+    def _check_source_dest(self):
+        """Checks if source and destination locations are the same."""
+        # Only check if destination is specified
+        if self.POSTGRES_DEST_DATABASE and self.POSTGRES_DEST_SCHEMA:
+            if (
+                self.POSTGRES_SOURCE_DATABASE == self.POSTGRES_DEST_DATABASE
+                and self.POSTGRES_SOURCE_SCHEMA == self.POSTGRES_DEST_SCHEMA
+            ):
+                raise ValueError("Source and destination locations cannot be the same.")
+
+    def _connect(self, database: str, schema: str) -> BaseBackend:
+        """Private method to get a database connection."""
+        return ibis.postgres.connect(
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=database,
+            user=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            schema=schema,
+        )
+
+    def connect_dest(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the destination PostgreSQL database/schema.
+
+        Returns:
+            BaseBackend: Ibis backend connection.
+        """
+        if self.POSTGRES_DEST_DATABASE is None or self.POSTGRES_DEST_SCHEMA is None:
+            raise ValueError(
+                "Must specify POSTGRES_DEST_DATABASE and POSTGRES_DEST_SCHEMA!"
+            )
+        return self._connect(
+            database=self.POSTGRES_DEST_DATABASE,
+            schema=self.POSTGRES_DEST_SCHEMA,
+        )
+
+    def connect_source(self) -> BaseBackend:
+        """
+        Establishes and returns an Ibis backend connection to the source PostgreSQL database/schema.
+
+        Returns:
+            BaseBackend: Ibis backend connection.
+        """
+        return self._connect(
+            database=self.POSTGRES_SOURCE_DATABASE,
+            schema=self.POSTGRES_SOURCE_SCHEMA,
+        )
+
+    def get_source_table(self, name_table: str) -> Table:
+        """
+        Retrieves a table from the source PostgreSQL database/schema.
+        """
+        return self.source_connection.table(
+            name_table,
+            database=(self.POSTGRES_SOURCE_DATABASE, self.POSTGRES_SOURCE_SCHEMA),
+        )
+
+    def get_dest_table(self, name_table: str) -> Table:
+        """
+        Retrieves a table from the destination PostgreSQL database/schema.
+        """
+        if self.POSTGRES_DEST_DATABASE is None:
+            raise ValueError("Must specify POSTGRES_DEST_DATABASE!")
+        existing_tables = self.dest_connection.list_tables(
+            database=(self.POSTGRES_DEST_DATABASE, self.POSTGRES_DEST_SCHEMA)
+        )
+
+        # Check for table name in different cases
+        if name_table in existing_tables:
+            return self.dest_connection.table(
+                name_table,
+                database=(self.POSTGRES_DEST_DATABASE, self.POSTGRES_DEST_SCHEMA),
+            )
+        else:
+            raise ValueError(
+                f"Table '{name_table}' does not exist in destination database/schema."
+            )
+
+    def _get_output_table_name(
+        self, table: Table, name_table: Optional[str] = None
+    ) -> str:
+        """Helper to get a table name from an Ibis expression."""
+        if name_table:
+            return name_table
+        if table.has_name():
+            # Ibis table name might be schema.table, so we take the last part
+            return table.get_name().split(".")[-1]
+        raise ValueError(
+            "Must specify name_table or ensure the table object has a name!"
+        )
+
+    def create_view(
+        self, table: Table, name_table: Optional[str] = None, overwrite: bool = False
+    ) -> Table:
+        """
+        Create a view of a table in the destination PostgreSQL database/schema.
+        """
+        if self.POSTGRES_DEST_DATABASE is None or self.POSTGRES_DEST_SCHEMA is None:
+            raise ValueError(
+                "Must specify POSTGRES_DEST_DATABASE and POSTGRES_DEST_SCHEMA!"
+            )
+
+        name_table = self._get_output_table_name(table, name_table)
+
+        # Postgres uses `schema` parameter, not `database` for list_tables/create_view/etc.
+        # list_tables is used to check if a schema exists (by checking if tables can be listed)
+
+        # NOTE: We skip checking and creating the *database* as it must exist before connection.
+        # We rely on Ibis to handle the schema creation if it doesn't exist, though typically
+        # the schema must also be created manually or by an admin if it's not the default 'public'.
+        # For simplicity and aligning with common Ibis PostgreSQL patterns, we assume the schema exists.
+
+        return self.dest_connection.create_view(
+            name=name_table.lower(),  # Postgres names are typically lowercase
+            database=self.POSTGRES_DEST_DATABASE,
+            schema=self.POSTGRES_DEST_SCHEMA,
+            obj=table,
+            overwrite=overwrite,
+        )
+
+    def create_table(
+        self,
+        table: Table,
+        name_table: Optional[str] = None,
+        overwrite: bool = False,
+        comment: Optional[str] = None,
+    ) -> Table:
+        """
+        Materialize a table in the destination PostgreSQL database/schema.
+        """
+        if self.POSTGRES_DEST_DATABASE is None or self.POSTGRES_DEST_SCHEMA is None:
+            raise ValueError(
+                "Must specify POSTGRES_DEST_DATABASE and POSTGRES_DEST_SCHEMA!"
+            )
+
+        name_table = self._get_output_table_name(table, name_table)
+
+        return self.dest_connection.create_table(
+            name=name_table.lower(),  # Postgres names are typically lowercase
+            database=self.POSTGRES_DEST_DATABASE,
+            schema=self.POSTGRES_DEST_SCHEMA,
+            obj=table,
+            overwrite=overwrite,
+            comment=comment,
+        )
+
+    def drop_table(self, name_table: str) -> None:
+        """
+        Drop a table from the destination PostgreSQL database/schema.
+        """
+        if self.POSTGRES_DEST_DATABASE is None or self.POSTGRES_DEST_SCHEMA is None:
+            raise ValueError(
+                "Must specify POSTGRES_DEST_DATABASE and POSTGRES_DEST_SCHEMA!"
+            )
+
+        # Use schema argument in drop_table for PostgreSQL
+        return self.dest_connection.drop_table(
+            name=name_table,
+            database=self.POSTGRES_DEST_DATABASE,
+            schema=self.POSTGRES_DEST_SCHEMA,
+        )
+
+    def drop_view(self, name_table: str) -> None:
+        """
+        Drop a view from the destination PostgreSQL database/schema.
+        """
+        if self.POSTGRES_DEST_DATABASE is None or self.POSTGRES_DEST_SCHEMA is None:
+            raise ValueError(
+                "Must specify POSTGRES_DEST_DATABASE and POSTGRES_DEST_SCHEMA!"
+            )
+
+        # Use schema argument in drop_view for PostgreSQL
+        return self.dest_connection.drop_view(
+            name=name_table,
+            database=self.POSTGRES_DEST_DATABASE,
+            schema=self.POSTGRES_DEST_SCHEMA,
+        )
