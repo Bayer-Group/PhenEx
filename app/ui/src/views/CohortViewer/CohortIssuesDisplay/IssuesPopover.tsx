@@ -15,8 +15,8 @@ interface IssuesPopoverProps {
 }
 
 export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, dragHandleRef }) => {
-  const ISSUEPOPOVER_TABS = ['phenex', 'issues'];
-  const [activeTabIndex, setActiveTabIndex] = useState(ISSUEPOPOVER_TABS.length - 1);
+  const ISSUEPOPOVER_TABS = ['Issues', 'AI Chat'];
+  const [activeTabIndex, setActiveTabIndex] = useState(0); // Default to Issues tab
   const selectedView = ISSUEPOPOVER_TABS[activeTabIndex];
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -25,14 +25,16 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
   };
 
   const renderTabs = () => (
-    <Tabs
-      tabs={ISSUEPOPOVER_TABS}
-      active_tab_index={activeTabIndex}
-      onTabChange={onTabChange}
-      classNameTabsContainer={styles.tabsContainer}
-      classNameTabs={styles.tab}
-      icons={{ 0: BirdIcon }}
-    />
+    <div className={styles.tabsWithIcon}>
+      <img src={BirdIcon} alt="Fox" className={styles.birdIcon} />
+      <Tabs
+        tabs={ISSUEPOPOVER_TABS}
+        active_tab_index={activeTabIndex}
+        onTabChange={onTabChange}
+        classNameTabsContainer={styles.tabsContainer}
+        classNameTabs={styles.tab}
+      />
+    </div>
   );
 
   const renderCloseButton = () => (
@@ -72,7 +74,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     >
       <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
         {renderTransparentHeader()}
-        {selectedView === 'issues' ? (
+        {selectedView === 'Issues' ? (
           <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
         ) : (
           <div ref={bodyRef} className={styles.body}>

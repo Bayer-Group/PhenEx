@@ -21,13 +21,16 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
       marginToEnd?: number; // marginBottom for horizontal scrollbar
       classNameThumb?: string;
       classNameTrack?: string;
+      thick?: boolean; // Enable thick scrollbar mode
     };
   };
   hideScrollbars?: boolean; // External control to hide all scrollbars
+  hideVerticalScrollbar?: boolean; // External control to hide only vertical scrollbar
+  hideHorizontalScrollbar?: boolean; // External control to hide only horizontal scrollbar
 }
 
 export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, hideScrollbars = false, className, ...agGridProps }, ref) => {
+  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
@@ -55,6 +58,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       marginToEnd: 30, // Default marginBottom for horizontal scrollbar
       classNameThumb: '',
       classNameTrack: '',
+      thick: true,
       ...scrollbarConfig?.horizontal
     };
 
@@ -159,7 +163,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           />
           
           {/* Custom Vertical Scrollbar */}
-          {verticalConfig.enabled && !hideScrollbars && (
+          {verticalConfig.enabled && !hideScrollbars && !hideVerticalScrollbar && (
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="vertical"
@@ -172,7 +176,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           )}
 
           {/* Custom Horizontal Scrollbar */}
-          {horizontalConfig.enabled && !hideScrollbars && (
+          {horizontalConfig.enabled && !hideScrollbars && !hideHorizontalScrollbar && (
             <AGGridCustomScrollbar 
               targetRef={gridContainerRef as React.RefObject<HTMLElement>} 
               orientation="horizontal"
@@ -181,6 +185,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
               marginToEnd={horizontalConfig.marginToEnd}
               classNameThumb={horizontalConfig.classNameThumb}
               classNameTrack={horizontalConfig.classNameTrack}
+              thick={horizontalConfig.thick}
             />
           )}
         </div>

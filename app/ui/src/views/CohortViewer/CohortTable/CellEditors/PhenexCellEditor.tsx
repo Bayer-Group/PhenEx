@@ -256,16 +256,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
         >
           <span className={styles.topLine}>
-            <span className={styles.filler}>editing</span>
-            <span className={styles.actionText}>{titleText}</span>
-          </span>
-          <br></br>
-
-          <span className={styles.bottomLine}>
-            <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+            <span className={styles.filler}>
+              {props.data.hierarchical_index}
+            </span>
             <span className={`${styles.phenotypeName} ${styles.actionText}`}>
               {props.data.name}
             </span>
+           </span>
+          <br></br>
+
+          <span className={styles.bottomLine}>
+
+            <span className={styles.actionText}>{titleText}</span>
+
           </span>
         </div>
       </PopoverHeader>

@@ -124,3 +124,41 @@
 .scrollbar.accent .thumb:hover {
   background-color: var(--color-accent-bright, rgba(0, 0, 0, 0.6));
 }
+
+/* Thick horizontal scrollbar - completely separate state, no transitions or hover effects */
+.scrollbarHorizontal.thick {
+  height: 30px !important;
+  border-radius: 10px !important;
+  transition: none !important;
+  border: var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  background-color: var(--color_translucent);
+}
+
+.scrollbarHorizontal.thick:hover {
+  /* height: 40px !important; */
+}
+
+.scrollbarHorizontal.thick.dragging {
+  /* height: 40px !important; */
+}
+
+.scrollbarHorizontal.thick .thumb,
+.scrollbarHorizontal.thick .thumbHorizontal {
+  height: calc(100% - 8px) !important;
+  bottom: auto !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  /* background: var(--color_translucent); */
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  transition: background 0.2s ease !important;
+  background-color: var(--line-color);
+}
+
+/* No hover size changes for thick scrollbar - it stays at 40px always */

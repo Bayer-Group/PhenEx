@@ -1,16 +1,17 @@
 import React from 'react';
 import styles from './DomainCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import typeStyles from '../../../../styles/study_types.module.css';
 
 const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatDomain = (value: string): string => {
     return value.split('_').join(' ');
   };
-
+  const colorClass = typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''
   const renderDomain = (value: string): string => {
     return (
       <span
-        className={styles.domainContainer}
+        className={`${styles.domainContainer} ${colorClass}`}
         onClick={() =>
           props.api?.startEditingCell({
             rowIndex: props.node.rowIndex,
@@ -24,13 +25,14 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   const noDomainPhenotypes = ['ScorePhenotype', 'ArithmeticPhenotype', 'LogicPhenotype'];
-  if (noDomainPhenotypes.includes(props.data.class_name)) {
-    return <div></div>;
+
+  if (props.data.class_name === 'LogicPhenotype'){
+  console.log('Rendering domain cell with LOGIC PHENOTYPE:', props);
+
   }
-  console.log('Rendering domain cell with value:', props.value);
   if (props.value === undefined || props.value === null || props.value === 'missing') {
     return (
-      <PhenexCellRenderer {...props}><></>
+      <PhenexCellRenderer {...props}><div></div>
       </PhenexCellRenderer>
     );
   }

@@ -8,6 +8,7 @@ interface EditableTextFieldProps {
   onSaveChanges: () => void;
   className?: string;
   classNameInput?: string;
+  multiline?: boolean;
 }
 
 export const EditableTextField: FC<EditableTextFieldProps> = ({
@@ -16,35 +17,59 @@ export const EditableTextField: FC<EditableTextFieldProps> = ({
   onChange,
   onSaveChanges,
   className,
-  classNameInput = ''
+  classNameInput = '',
+  multiline = false
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSave = () => {
     onSaveChanges();
     setIsFocused(false);
-    inputRef.current?.blur();
+    if (multiline) {
+      textareaRef.current?.blur();
+    } else {
+      inputRef.current?.blur();
+    }
   };
 
   return (
     <div className={`${styles.container} ${isFocused ? styles.focused : ''} ${className || ''}`}>
-      <input
-        ref={inputRef}
-        type="text"
-        className={`${styles.input} ${classNameInput}`}
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setIsFocused(true)}
-        // onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-        onBlur={() => handleSave()}
-        onKeyDown={e => {
-          if (e.key === 'Enter') {
-            handleSave();
-          }
-        }}
-      />
+      {multiline ? (
+        <textarea
+          ref={textareaRef}
+          className={`${styles.input} ${classNameInput}`}
+          placeholder={placeholder}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => handleSave()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSave();
+            }
+          }}
+          rows={1}
+        />
+      ) : (
+        <input
+          ref={inputRef}
+          type="text"
+          className={`${styles.input} ${classNameInput}`}
+          placeholder={placeholder}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => handleSave()}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              handleSave();
+            }
+          }}
+        />
+      )}
       {isFocused && (
         <div
           className={styles.saveIndicator}

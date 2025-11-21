@@ -2,7 +2,7 @@ import React from 'react';
 import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
 import moreHorizIcon from '../../../../assets/icons/more-horiz.svg';
 import styles from './NameCellRenderer.module.css';
-import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import { PhenexCellRendererProps, getHierarchicalBackgroundColor } from './PhenexCellRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from '../../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../TwoPanelCohortViewer/types';
@@ -11,6 +11,11 @@ import { SettingsCellEditor } from '../CellEditors/SettingsCellEditor';
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
+  const {
+    colorBackground = true,
+    colorBorder = true,
+  } = props;
+  
   const dataService = CohortDataService.getInstance();
   const onClickEdit = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
@@ -93,7 +98,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     };
 
     return (
-      <div className={`${styles.label} ${isSelected ? styles.selected : ''}`} style={getIndentationStyle()}>
+      <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${fontColor}`} style={getIndentationStyle()}>
         {props.value}
 
         <br></br>
@@ -121,8 +126,37 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     );
   }
 
+  // Check if data has explicit color properties (override component props)
+  const shouldColorBackground = props.data?.colorCellBackground !== undefined 
+    ? props.data.colorCellBackground 
+    : colorBackground;
+  
+  const shouldColorBorder = props.data?.colorCellBorder !== undefined 
+    ? props.data.colorCellBorder 
+    : colorBorder;
+
+  // Get dynamic background color with hierarchical alpha
+  const backgroundColor = shouldColorBackground
+    ? getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index)
+    : 'transparent';
+
+  const fontColor = typeStyles[`${props.data.effective_type}_text_color`] || ''
+
+  // Get the border color CSS variable for top border
+  const borderColorVar = shouldColorBorder && props.data?.effective_type 
+    ? `var(--color_${props.data.effective_type})` 
+    : 'transparent';
+
+  const containerStyle: React.CSSProperties = {
+    borderTopColor: borderColorVar,
+    ...(backgroundColor ? { backgroundColor } : {}),
+  };
+
   return (
-    <div className={styles.container}>
+    <div 
+      className={styles.container}
+      style={containerStyle}
+    >
       {renderNameAndDescription()}
 
       <div>

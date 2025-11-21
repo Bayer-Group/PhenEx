@@ -21,12 +21,7 @@ const TypeCellRenderer = (props: any) => {
       const effectiveType = props.data.effective_type;
       const hierarchicalIndex = props.data.hierarchical_index;
       
-      if (effectiveType === 'entry' && hierarchicalIndex) {
-        // For entry components: show "e" + index after first dot (1.1 becomes e.1)
-        const indexParts = hierarchicalIndex.split('.');
-        const suffixIndex = indexParts.slice(1).join('.'); // Everything after first part
-        return `e.${suffixIndex}`;
-      } else if (hierarchicalIndex) {
+      if (hierarchicalIndex) {
         // For other components: show only hierarchical index
         return hierarchicalIndex;
       }

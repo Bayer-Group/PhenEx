@@ -3,6 +3,7 @@
   flex-direction: column;
   padding: 0px;
   padding-top: 0px;
+  background-color: blue;
 }
 
 .header {
@@ -27,7 +28,6 @@
   padding-top: 15px;
   z-index: 1000;
   margin-bottom: 15px;
-  color: white !important;
 }
 
 .phenotypeNameInput {
@@ -41,8 +41,8 @@
 }
 
 .gridContainer {
-  margin-right:25px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
-  width: calc(100% - 25px);
+  margin-right:0px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
+  width: calc(100% - 0px);
   flex: 1;
   height: 100%;
 }

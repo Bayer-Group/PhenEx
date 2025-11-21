@@ -16,6 +16,12 @@ export interface Message {
   isUser: boolean;
 }
 
+export interface ConversationEntry {
+  user?: string;
+  system?: string;
+  user_action?: string;
+}
+
 class ChatPanelDataService {
   private static instance: ChatPanelDataService;
   private messages: Message[] = [
@@ -26,6 +32,8 @@ class ChatPanelDataService {
     },
   ];
   private lastMessageId = this.messages.length;
+  private conversationHistory: ConversationEntry[] = [];
+  private readonly MAX_HISTORY_ENTRIES = 25;
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
   private _cohortDataService: CohortDataService | null = null;
@@ -61,6 +69,7 @@ class ChatPanelDataService {
       isUser: true,
     };
     this.messages.push(newMessage);
+    this.addUserMessageToHistory(text);
     this.notifyListeners();
     this.sendAIRequest(text);
     return newMessage;
@@ -83,9 +92,41 @@ class ChatPanelDataService {
   }
 
   public clearMessages(): void {
-    this.messages = [];
-    this.lastMessageId = 0;
+    this.messages = [
+      {
+        id: 123,
+        text: '# Hi, I\'m Fox. How can I help?\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
+        isUser: false,
+      },
+    ];
+    this.lastMessageId = this.messages.length;
+    this.conversationHistory = [];
     this.notifyListeners();
+  }
+
+  public getConversationHistory(): ConversationEntry[] {
+    return [...this.conversationHistory];
+  }
+
+  private addToHistory(entry: ConversationEntry): void {
+    this.conversationHistory.push(entry);
+    
+    // Trim history to MAX_HISTORY_ENTRIES, keeping most recent
+    if (this.conversationHistory.length > this.MAX_HISTORY_ENTRIES) {
+      this.conversationHistory = this.conversationHistory.slice(-this.MAX_HISTORY_ENTRIES);
+    }
+  }
+
+  private addUserMessageToHistory(text: string): void {
+    this.addToHistory({ user: text });
+  }
+
+  private addSystemResponseToHistory(text: string): void {
+    this.addToHistory({ system: text });
+  }
+
+  private addUserActionToHistory(action: string): void {
+    this.addToHistory({ user_action: action });
   }
 
   private notifyListeners(): void {
@@ -144,7 +185,8 @@ class ChatPanelDataService {
         cohortId,
         inputText.trim(),
         "gpt-4o-mini",
-        false
+        false,
+        this.getConversationHistory()
       );
 
       console.log('Stream received from suggestChanges');
@@ -159,6 +201,7 @@ class ChatPanelDataService {
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -169,20 +212,63 @@ class ChatPanelDataService {
 
         console.log('Stream chunk received:', value);
         const decodedChunk = decoder.decode(value, { stream: true });
-        const processedText = this.processMessageText(decodedChunk);
-        if (processedText) {
-          assistantMessage.text += processedText;
-          this.notifyListeners();
+        buffer += decodedChunk;
+
+        // Process SSE messages
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6)); // Remove 'data: ' prefix
+              console.log('Parsed SSE data:', data);
+              
+              if (data.type === 'content') {
+                const processedText = this.processMessageText(data.message);
+                if (processedText) {
+                  assistantMessage.text += processedText;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'error') {
+                console.error('Stream error:', data.message);
+                assistantMessage.text += `\n\nError: ${data.message}`;
+                this.notifyListeners();
+                break;
+              } else if (data.type === 'complete') {
+                console.log('Stream completed');
+                break;
+              } else if (data.type === 'result') {
+                console.log('Received result data:', data.data);
+                // Handle result data if needed
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse SSE message:', line, parseError);
+            }
+          }
         }
       }
 
       console.log('Finalizing assistant response');
+      
+      // Add the complete assistant response to history
+      if (assistantMessage.text.trim()) {
+        this.addSystemResponseToHistory(assistantMessage.text.trim());
+      }
+      
       if (this.cohortDataService.cohort_data?.id) {
-        const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-        console.log('Response from suggestChanges:', response);
-        this.cohortDataService.updateCohortFromChat(response);
+        try {
+          const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+          console.log('Response from suggestChanges:', response);
+          this.cohortDataService.updateCohortFromChat(response);
+        } catch (error) {
+          console.error('Error fetching updated cohort:', error);
+          this.notifyAICompletionListeners(false);
+          return;
+        }
       }
       this.notifyListeners();
+      console.log('About to call notifyAICompletionListeners(true)');
       this.notifyAICompletionListeners(true);
       console.log('AI request completed successfully');
     } catch (error) {
@@ -197,6 +283,10 @@ class ChatPanelDataService {
         console.error('No cohort ID available for accepting changes');
         return;
       }
+      
+      // Track the accept action in conversation history
+      this.addUserActionToHistory('ACCEPT_CHANGES');
+      
       const response = await acceptChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
@@ -212,6 +302,10 @@ class ChatPanelDataService {
         console.error('No cohort ID available for rejecting changes');
         return;
       }
+      
+      // Track the reject action in conversation history
+      this.addUserActionToHistory('REJECT_CHANGES');
+      
       const response = await rejectChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
@@ -221,7 +315,20 @@ class ChatPanelDataService {
     }
   }
 
-  public retryAIRequest(): void {}
+  public retryAIRequest(): void {
+    // Get the last user message
+    const userMessages = this.messages.filter(message => message.isUser);
+    if (userMessages.length === 0) {
+      console.warn('No user messages found to retry');
+      return;
+    }
+    
+    const lastUserMessage = userMessages[userMessages.length - 1];
+    console.log('Retrying AI request with last user message:', lastUserMessage.text);
+    
+    // Resend the AI request with the last user message text
+    this.sendAIRequest(lastUserMessage.text);
+  }
 }
 
 export const chatPanelDataService = ChatPanelDataService.getInstance();

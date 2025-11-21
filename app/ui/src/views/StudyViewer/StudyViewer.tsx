@@ -7,6 +7,7 @@ import { StudyDataService } from './StudyDataService';
 import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
+import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
@@ -24,7 +25,7 @@ interface StudyViewerProps {
 }
 
 export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
-  const [studyName, setStudyName] = useState(data ?? '');
+  const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
   const [studyDataService] = useState(() => StudyDataService.getInstance());
   const [currentView, setCurrentView] = useState<StudyDefinitionViewType>(
@@ -109,6 +110,30 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
     );
   };
 
+  const navigateToMyStudies = () => {
+    // Empty function - placeholder for future navigation to studies list
+  };
+
+  const renderBreadcrumbs = () => {
+    const breadcrumbItems = [
+      {
+        displayName: 'My Studies',
+        onClick: navigateToMyStudies,
+      },
+      {
+        displayName: studyName || 'Unnamed Study',
+        onClick: () => {},
+      },
+    ];
+
+    const handleEditLastItem = async (newValue: string) => {
+      setStudyName(newValue);
+      studyDataService._study_name = newValue;
+      await studyDataService.saveChangesToStudy();
+    };
+
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
+  };
 
   const clickedOnAddNewCohort = async () => {
     // Get the study ID from the data prop
@@ -175,7 +200,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   return (
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
-        {renderTitle()}
+        {renderBreadcrumbs()}
         {renderSectionTabs()}
       </div>
       <div className={styles.bottomSection}>{renderContent()}</div>

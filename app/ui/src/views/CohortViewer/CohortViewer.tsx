@@ -11,6 +11,8 @@ import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
+import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { MainViewService, ViewType } from '../MainView/MainView';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -46,6 +48,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     CohortDefinitionViewType.Cohort
   );
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
 
   useEffect(() => {
@@ -65,6 +68,25 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [data]);
 
   useEffect(() => {
+    // Listen to right panel state changes
+    const cohortViewerService = TwoPanelCohortViewerService.getInstance();
+    
+    const handleRightPanelChange = (viewType: any, extraData: any, isCollapsed: boolean) => {
+      // Right panel is open if it's not collapsed
+      setIsRightPanelOpen(!isCollapsed);
+    };
+    
+    cohortViewerService.addListener(handleRightPanelChange);
+    
+    // Check initial state - assume collapsed initially
+    setIsRightPanelOpen(false);
+    
+    return () => {
+      cohortViewerService.removeListener(handleRightPanelChange);
+    };
+  }, []);
+
+  useEffect(() => {
     // Update cohort name and study name when data service changes
     const updateCohortData = () => {
       if (dataService.cohort_data?.name) {
@@ -82,14 +104,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [dataService]);
 
   const refreshGrid = () => {
-
+    // With getRowId callback in CohortTable, AG Grid automatically maintains scroll position
+    // We just need to update the grid data
     if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
       const api = gridRef.current.api;
-      // Store current scroll position
-      // const horizontalScroll = api.getHorizontalPixelRange();
-      const firstRow = api.getFirstDisplayedRowIndex();
-      const lastRow = api.getLastDisplayedRowIndex();
-
+      
       console.log(
         'Setting grid rowData to:',
         dataService.table_data['rows'].map(r => ({
@@ -99,21 +118,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           index: r.index,
         }))
       );
-      // Update grid data
+      
+      // Update grid data - AG Grid will maintain scroll position automatically with getRowId
       api.setGridOption('rowData', dataService.table_data['rows']);
-      api.setGridOption('columnDefs', dataService.table_data['columns']); // Changed from 'columns' to 'columnDefs'
-
-      // Restore scroll position after data update
-      requestAnimationFrame(() => {
-        // Check if grid is still alive before calling API methods
-        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
-          // Only ensure visible if we have valid row indices
-          if (lastRow >= 0) {
-            gridRef.current.api.ensureIndexVisible(lastRow, 'bottom');
-          }
-        }
-        // api.horizontalScroll().setScrollPosition({ left: horizontalScroll.left });
-      });
+      api.setGridOption('columnDefs', dataService.table_data['columns']);
     }
   };
   useEffect(() => {
@@ -314,16 +322,22 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
         hideScrollbars={showIssuesPopover}
+        hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
       />
     );
+  };
+
+  const navigateToStudyViewer = () => {
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({ viewType: ViewType.StudyViewer, data: dataService._study_data });
   };
 
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
       {
         displayName: studyName || 'Study',
-        onClick: () => {},
+        onClick: navigateToStudyViewer,
       },
       {
         displayName: cohortName || 'Unnamed Cohort',
@@ -337,7 +351,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       await dataService.saveChangesToCohort();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} />;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
   };  
   
   return (
@@ -348,7 +362,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         {renderSectionTabs()}
       </div>
-      <div className={styles.bottomSection}>{renderTable()}</div>
+      <div className={styles.bottomSection}>
+        {renderTable()}
+        <div className={styles.bottomGradient} />
+      </div>
         <IssuesDisplayControl 
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 

@@ -4,6 +4,7 @@ from fastapi import FastAPI, Body, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.middleware.authentication import AuthenticationMiddleware
+import asyncio
 import sys
 # Add /app to the Python path for phenex import during development
 # This replaces the PYTHONPATH=/app setting in the /backend/.env file
@@ -32,11 +33,12 @@ from .init.main import init_db
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-# from .rag import router as rag_router, query_faiss_index
+from .rag import router as rag_router, query_faiss_index
 
 load_dotenv()
 
-from openai import AzureOpenAI, OpenAI
+
+from openai import OpenAI
 
 # Constants and configuration
 COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
@@ -45,15 +47,14 @@ COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
 sessionmaker = get_sm(config["database"])
 db_manager = DatabaseManager()
 
-openai_client = AzureOpenAI()
-if "AZURE_OPENAI_ENDPOINT" in os.environ:
-    openai_client = AzureOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_version=os.environ["OPENAI_API_VERSION"],
-    )
-else:
-    openai_client = OpenAI()
+# Configure OpenAI client for Azure OpenAI
+from openai import AzureOpenAI
+
+openai_client = AzureOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -94,11 +95,45 @@ app.add_middleware(DBSessionMiddleware, sessionmaker=sessionmaker)
 async def health_check():
     """
     Health check endpoint for Docker health checks and service readiness.
+    Includes database connectivity test to ensure full system readiness.
 
     Returns:
-        dict: Simple health status
+        dict: Health status with database connectivity check
     """
-    return {"status": "healthy", "service": "phenex-backend"}
+    try:
+        # Test database connectivity by checking if we can connect and query
+        db_status = await db_manager.health_check()
+        
+        # Check if database health check passed and all required tables exist
+        if db_status.get("status") != "connected" or not db_status.get("all_tables_exist", False):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unhealthy",
+                    "service": "phenex-backend",
+                    "database": db_status,
+                    "error": "Database not ready or missing required tables",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            )
+        
+        return {
+            "status": "healthy", 
+            "service": "phenex-backend",
+            "database": db_status,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=503, 
+            detail={
+                "status": "unhealthy",
+                "service": "phenex-backend", 
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        )
 
 
 def _get_authenticated_user(request: Request) -> User:
@@ -163,23 +198,72 @@ async def get_cohort_for_user(request: Request, cohort_id: str):
         )
 
 
-# Modify the update_cohort endpoint to require user_id
 @app.post("/cohort", tags=["cohort"])
-async def update_cohort_for_user(
+async def create_cohort_for_user(
     request: Request,
     cohort_id: str,
     cohort: Dict = Body(...),
     study_id: str = None,
     provisional: bool = False,
+):
+    """
+    Create a new cohort for a specific user.
+
+    Args:
+        cohort_id (str): The ID of the cohort to create for the authenticated user.
+        cohort (Dict): The complete JSON specification of the cohort.
+        study_id (str): The ID of the study this cohort belongs to (required).
+        provisional (bool): Whether to save the cohort as provisional.
+
+    Returns:
+        dict: Status and message of the operation.
+    """
+    user_id = _get_authenticated_user_id(request)
+    
+    # Check if cohort already exists
+    existing_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if existing_cohort:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cohort {cohort_id} already exists. Use PATCH to update existing cohorts."
+        )
+    
+    # Get study_id from parameter or cohort data
+    if not study_id:
+        study_id = cohort.get("study_id")
+    
+    if not study_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="study_id is required for cohort creation"
+        )
+    
+    logger.info(f"Creating new cohort {cohort_id} with study_id {study_id}")
+    
+    try:
+        await db_manager.update_cohort_for_user(
+            user_id, cohort_id, cohort, study_id, provisional, new_version=False
+        )
+        return {"status": "success", "message": "Cohort created successfully."}
+    except Exception as e:
+        logger.error(f"Failed to create cohort for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create cohort.")
+
+
+@app.patch("/cohort", tags=["cohort"])
+async def update_cohort_for_user(
+    request: Request,
+    cohort_id: str,
+    cohort: Dict = Body(...),
+    provisional: bool = False,
     new_version: bool = False,
 ):
     """
-    Update or create a cohort for a specific user.
+    Update an existing cohort for a specific user.
 
     Args:
         cohort_id (str): The ID of the cohort to update for the authenticated user.
         cohort (Dict): The complete JSON specification of the cohort.
-        study_id (str): The ID of the study this cohort belongs to.
         provisional (bool): Whether to save the cohort as provisional.
         new_version (bool): If True, increment version. If False, replace existing version.
 
@@ -188,15 +272,23 @@ async def update_cohort_for_user(
     """
     user_id = _get_authenticated_user_id(request)
     
-    # Get study_id from cohort data if not provided as parameter
-    if not study_id:
-        study_id = cohort.get("study_id")
+    # Check if cohort exists
+    existing_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not existing_cohort:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cohort {cohort_id} not found. Use POST to create new cohorts."
+        )
     
+    # Use study_id from existing record
+    study_id = existing_cohort.get("study_id")
     if not study_id:
         raise HTTPException(
-            status_code=400, 
-            detail="study_id is required for cohort creation/update"
+            status_code=500,
+            detail=f"Existing cohort {cohort_id} has no study_id in database"
         )
+    
+    logger.info(f"Updating existing cohort {cohort_id} with study_id {study_id}")
     
     try:
         await db_manager.update_cohort_for_user(
@@ -240,38 +332,6 @@ async def delete_cohort_for_user(request: Request, cohort_id: str):
             status_code=500,
             detail=f"Failed to delete cohort {cohort_id} for user {user_id}",
         )
-
-
-@app.patch("/cohort/display_order", tags=["cohort"])
-async def update_cohort_display_order(
-    request: Request,
-    cohort_id: str,
-    display_order: int
-):
-    """
-    Update the display order of a cohort for the authenticated user.
-
-    Args:
-        cohort_id (str): The ID of the cohort to update.
-        display_order (int): The new display order value.
-
-    Returns:
-        dict: Status and message of the operation.
-    """
-    user_id = _get_authenticated_user_id(request)
-    try:
-        success = await db_manager.update_cohort_display_order(
-            user_id=user_id,
-            cohort_id=cohort_id,
-            display_order=display_order
-        )
-        
-        if success:
-            return {"status": "success", "message": "Cohort display order updated successfully."}
-        else:
-            raise HTTPException(status_code=404, detail="Cohort not found or access denied.")
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to update cohort display order.")
@@ -620,35 +680,56 @@ async def suggest_changes(
     return_updated_cohort: bool = False,
 ):
     """
-    Generate or modify a cohort based on user instructions.
+    Generate or modify a cohort based on user instructions with conversation history.
 
     Args:
-        request (Request): The FastAPI request object containing the user request in the body.
+        request (Request): The FastAPI request object containing the request body.
         cohort_id (str): The ID of the cohort to modify for the authenticated user.
         model (str): The model to use for processing the request.
         return_updated_cohort (bool): Whether to return the updated cohort.
 
     Body:
-        user_request (str): Instructions for modifying the cohort (plain text in request body).
+        JSON object with:
+        - user_request (str): Instructions for modifying the cohort.
+        - conversation_history (list): List of conversation entries in chronological order.
 
     Returns:
         StreamingResponse: A stream of the response text.
     """
-    # Read the user request from the request body
+    # Read and parse the request body
     body = await request.body()
-    user_request = (
-        body.decode("utf-8")
-        if body
-        else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
-    )
+    try:
+        if body:
+            # Try to parse as JSON first (new format with conversation history)
+            request_data = json.loads(body.decode("utf-8"))
+            user_request = request_data.get("user_request", "")
+            conversation_history = request_data.get("conversation_history", [])
+        else:
+            # Fallback for empty body
+            user_request = "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+            conversation_history = []
+    except json.JSONDecodeError:
+        # Fallback to plain text format (backward compatibility)
+        user_request = body.decode("utf-8") if body else "Generate a cohort of Atrial Fibrillation patients with no history of treatment with anti-coagulation therapies"
+        conversation_history = []
+    
+    logger.info(f"User request: {user_request}")
+    logger.info(f"Conversation history length: {len(conversation_history)}")
 
     user_id = _get_authenticated_user_id(request)
-    current_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
-    if not current_cohort:
+    current_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not current_cohort_record:
         raise HTTPException(
             status_code=404, detail=f"Cohort {cohort_id} not found for user {user_id}"
         )
-    current_cohort = json.loads(current_cohort["cohort_data"])
+    current_cohort = current_cohort_record["cohort_data"]
+    study_id = current_cohort_record["study_id"]
+
+    if not study_id:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"study_id is required for cohort updates but not found in cohort data: {current_cohort}"
+        )
     try:
         # these are duplicated i think, there is a phenotype key with everything
         del current_cohort["entry_criterion"]
@@ -739,10 +820,23 @@ async def suggest_changes(
 
     {user_request}
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
+    
+    # Build messages array with conversation history
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history
+    for entry in conversation_history:
+        if "user" in entry:
+            messages.append({"role": "user", "content": entry["user"]})
+        elif "system" in entry:
+            messages.append({"role": "assistant", "content": entry["system"]})
+        elif "user_action" in entry:
+            # Represent user actions as user messages with special formatting
+            action_text = f"[User performed action: {entry['user_action']}]"
+            messages.append({"role": "user", "content": action_text})
+    
+    # Add the current user prompt
+    messages.append({"role": "user", "content": user_prompt})
 
     completion = openai_client.chat.completions.create(
         model=model, stream=True, messages=messages
@@ -752,11 +846,18 @@ async def suggest_changes(
         inside_json = False
         trailing_buffer = ""  # To handle split tags
         json_buffer = ""
+        token_count = 0  # Counter for logging first 10 tokens
         try:
             for chunk in completion:
                 if len(chunk.choices):
                     current_response = chunk.choices[0].delta.content
                     if current_response is not None:
+                        # Log first 10 tokens received
+                        if token_count < 10:
+                            token_count += 1
+                            logger.info(f"Token {token_count}: '{current_response}'")
+                            
+                        # Rest of the existing logic
                         # Prepend trailing buffer to handle split tags
                         if not inside_json:
                             current_response = trailing_buffer + current_response
@@ -768,17 +869,18 @@ async def suggest_changes(
                             inside_json = True
                             json_buffer = current_response.split("<JSON>", 1)[1]
                             final_chunk = current_response.split("<JSON>", 1)[0]
-                            yield final_chunk
+                            if final_chunk:
+                                yield f"data: {json.dumps({'type': 'content', 'message': final_chunk})}\n\n"
                         elif inside_json:
                             json_buffer += current_response
                         elif not inside_json:
-                            yield current_response[
-                                :-10
-                            ]  # Yield response excluding trailing buffer
+                            content_chunk = current_response[:-10]  # Exclude trailing buffer
+                            if content_chunk:
+                                yield f"data: {json.dumps({'type': 'content', 'message': content_chunk})}\n\n"
 
             # Yield any remaining trailing buffer
             if not inside_json and trailing_buffer:
-                yield trailing_buffer
+                yield f"data: {json.dumps({'type': 'content', 'message': trailing_buffer})}\n\n"
 
             # Process the JSON if we found it
             if json_buffer:
@@ -798,32 +900,43 @@ async def suggest_changes(
                         user_id,
                         cohort_id,
                         new_cohort,
+                        study_id,
                         provisional=True,
                         new_version=False,
                     )
                     if return_updated_cohort:
-                        yield json.dumps(new_cohort, indent=4)
+                        yield f"data: {json.dumps({'type': 'result', 'data': new_cohort})}\n\n"
                     logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON: {e}")
-                    yield "\n\nError: Failed to parse AI response JSON. Please try again."
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to parse AI response JSON. Please try again.'})}\n\n"
                 except Exception as e:
                     logger.error(f"Error processing cohort update: {e}")
-                    yield "\n\nError: Failed to update cohort. Please try again."
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to update cohort. Please try again.'})}\n\n"
             else:
                 logger.warning("No JSON found in AI response")
 
         except Exception as e:
             logger.error(f"Error in stream_response: {e}")
-            yield "\n\nError: Streaming failed. Please try again."
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Streaming failed. Please try again.'})}\n\n"
+        
+        # Send completion signal
+        yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+
+    async def buffered_stream():
+        async for chunk in stream_response():
+            yield chunk
+            # Force immediate delivery by yielding an empty chunk
+            await asyncio.sleep(0)
 
     return StreamingResponse(
-        stream_response(),
-        media_type="text/plain",
+        buffered_stream(),
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
+            "Transfer-Encoding": "chunked",
         },
     )
 
@@ -1086,7 +1199,7 @@ async def execute_study(
 
                 print("Executing cohort...")
                 logger.info("Starting cohort execution against mapped tables...")
-                px_cohort.execute(mapped_tables)
+                px_cohort.execute(tables=mapped_tables)#, con = con, n_threads=6, overwrite=True, lazy_execution=True)
                 print("Appending counts...")
                 logger.info("Appending patient counts to cohort results...")
                 px_cohort.append_counts()
@@ -1098,7 +1211,7 @@ async def execute_study(
                 logger.info("Generating waterfall/attrition report...")
                 from phenex.reporting import Waterfall
 
-                r = Waterfall()
+                r = Waterfall(pretty_display=False,decimal_places=2)
                 df_waterfall = r.execute(px_cohort)
 
                 print("Finalizing results...")
@@ -1187,7 +1300,7 @@ async def execute_study(
 
 
 def append_count_to_cohort(phenex_cohort, cohort_dict):
-    cohort_dict["entry_criterion"]["count"] = phenex_cohort.entry_criterion.count
+    cohort_dict["entry_criterion"]["count"] = append_count_to_phenotype(phenex_cohort.entry_criterion, cohort_dict["entry_criterion"])
     if isinstance(phenex_cohort.inclusions, list) and len(phenex_cohort.inclusions) > 0:
         append_count_to_phenotypes(phenex_cohort.inclusions, cohort_dict["inclusions"])
     if isinstance(phenex_cohort.exclusions, list) and len(phenex_cohort.exclusions) > 0:
@@ -1203,11 +1316,69 @@ def append_count_to_cohort(phenex_cohort, cohort_dict):
         append_count_to_phenotypes(phenex_cohort.outcomes, cohort_dict["outcomes"])
 
 
+def append_count_to_phenotype(phenex_phenotype, phenotype_dict):
+    """
+    Recursively appends count to a phenotype and all its nested child phenotypes.
+    
+    For LogicPhenotypes with ComputationGraph expressions, this function traverses
+    the entire tree structure and appends counts to all embedded component phenotypes.
+    
+    Args:
+        phenex_phenotype: The executed PhenEx phenotype object with count information
+        phenotype_dict: The dictionary representation of the phenotype to update
+    """
+    # Append count to the current phenotype
+    if hasattr(phenex_phenotype, 'count'):
+        phenotype_dict["count"] = phenex_phenotype.count
+    
+    # If this is a LogicPhenotype with a ComputationGraph expression, recursively process nested phenotypes
+    if hasattr(phenex_phenotype, 'expression') and phenex_phenotype.expression is not None:
+        phenex_expression = phenex_phenotype.expression
+        
+        # The phenotype_dict should also have an expression field (ComputationGraph)
+        if "expression" in phenotype_dict and phenotype_dict["expression"] is not None:
+            dict_expression = phenotype_dict["expression"]
+            _append_count_to_computation_graph(phenex_expression, dict_expression)
+
+
+def _append_count_to_computation_graph(phenex_node, dict_node):
+    """
+    Helper function to recursively traverse a ComputationGraph and append counts to all nodes.
+    
+    Args:
+        phenex_node: The executed PhenEx ComputationGraph node or phenotype
+        dict_node: The dictionary representation of the node to update
+    """
+    # Check if this is a ComputationGraph node (has left and right children)
+    if hasattr(phenex_node, 'left') and hasattr(phenex_node, 'right'):
+        # Recursively process left and right branches
+        if "left" in dict_node:
+            _append_count_to_computation_graph(phenex_node.left, dict_node["left"])
+        if "right" in dict_node:
+            _append_count_to_computation_graph(phenex_node.right, dict_node["right"])
+    else:
+        # This is a leaf node (actual phenotype) - append its count
+        if hasattr(phenex_node, 'count'):
+            dict_node["count"] = phenex_node.count
+        
+        # If this leaf phenotype is itself a LogicPhenotype, recursively process its expression
+        if hasattr(phenex_node, 'expression') and phenex_node.expression is not None:
+            if "expression" in dict_node and dict_node["expression"] is not None:
+                _append_count_to_computation_graph(phenex_node.expression, dict_node["expression"])
+
+
 def append_count_to_phenotypes(phenex_phenotypes, list_of_phenotype_dicts):
+    """
+    Appends counts to a list of phenotypes and all their nested child phenotypes.
+    
+    Args:
+        phenex_phenotypes: List of executed PhenEx phenotype objects
+        list_of_phenotype_dicts: List of phenotype dictionaries to update
+    """
     for phenex_phenotype, phenotype_dict in zip(
         phenex_phenotypes, list_of_phenotype_dicts
     ):
-        phenotype_dict["count"] = phenex_phenotype.count
+        append_count_to_phenotype(phenex_phenotype, phenotype_dict)
 
 
 # -- CODELIST FILE MANAGEMENT ENDPOINTS
@@ -1731,6 +1902,10 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict], user_id):
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' is TimeRangePhenotype, preparing...")
             phenotype = prepare_time_range_phenotype(phenotype)
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' TimeRange preparation completed")
+        elif phenotype["class_name"] == "LogicPhenotype":
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' is LogicPhenotype, preparing expression...")
+            phenotype = prepare_logic_phenotype_expression(phenotype, user_id)
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' LogicPhenotype preparation completed")
         else:
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' requires no preparation")
             
@@ -1782,6 +1957,73 @@ def prepare_time_range_phenotype(phenotype: dict):
         if isinstance(phenotype["relative_time_range"], list):
             phenotype["relative_time_range"] = phenotype["relative_time_range"][0]
     return phenotype
+
+
+def prepare_logic_phenotype_expression(phenotype: dict, user_id: str):
+    """
+    Prepares a LogicPhenotype by recursively processing its ComputationGraph expression.
+    The frontend already sends the correct ComputationGraph structure, so we just need
+    to recursively prepare any nested phenotypes (codelists, etc.).
+    
+    Args:
+        phenotype: The LogicPhenotype dictionary with ComputationGraph expression
+        user_id: The authenticated user ID
+        
+    Returns:
+        The phenotype with all nested phenotypes prepared
+    """
+    if phenotype.get("class_name") != "LogicPhenotype":
+        return phenotype
+    
+    expression = phenotype.get("expression")
+    if not expression:
+        logger.warning(f"LogicPhenotype '{phenotype.get('name')}' missing expression")
+        return phenotype
+    
+    print(f"🧬 Recursively preparing ComputationGraph expression for '{phenotype.get('name')}'")
+    logger.info(f"🧬 Recursively preparing ComputationGraph expression for '{phenotype.get('name')}'")
+    
+    # Recursively prepare the expression tree
+    phenotype["expression"] = prepare_computation_graph_node(expression, user_id)
+    
+    return phenotype
+
+
+def prepare_computation_graph_node(node: dict, user_id: str):
+    """
+    Recursively processes a ComputationGraph node and prepares nested phenotypes.
+    
+    Args:
+        node: A node in the ComputationGraph (either a ComputationGraph or a phenotype)
+        user_id: The authenticated user ID
+        
+    Returns:
+        The prepared node
+    """
+    if node.get("class_name") == "ComputationGraph":
+        # This is a binary operator node - recursively process left and right
+        print(f"🧬 Processing ComputationGraph node with operator '{node.get('operator')}'")
+        
+        node["left"] = prepare_computation_graph_node(node["left"], user_id)
+        node["right"] = prepare_computation_graph_node(node["right"], user_id)
+        
+        return node
+    else:
+        # This is a leaf node (an actual phenotype) - prepare it
+        phenotype_class = node.get("class_name", "Unknown")
+        phenotype_name = node.get("name", "Unknown")
+        
+        print(f"🧬 Preparing leaf phenotype '{phenotype_name}' ({phenotype_class})")
+        
+        if phenotype_class in ["CodelistPhenotype", "MeasurementPhenotype"]:
+            node = prepare_codelists_for_phenotype(node, user_id)
+        elif phenotype_class == "TimeRangePhenotype":
+            node = prepare_time_range_phenotype(node)
+        elif phenotype_class == "LogicPhenotype":
+            # Nested LogicPhenotype - recursively prepare it
+            node = prepare_logic_phenotype_expression(node, user_id)
+        
+        return node
 
 
 def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):

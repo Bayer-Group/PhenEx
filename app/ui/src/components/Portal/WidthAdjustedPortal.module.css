@@ -14,7 +14,7 @@
   height: calc(100vh - 40px) !important;
   border-radius: 20px;
   margin-top: 20px;
-  box-shadow: var(--box_shadow);
+  box-shadow: var(--box_shadow) !important;
     border: var(--border);
 }
 

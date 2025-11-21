@@ -191,7 +191,7 @@ class DatabaseManager:
 
             # Check if there's a provisional version at the highest version number
             provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at 
+                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
             """
@@ -202,14 +202,18 @@ class DatabaseManager:
 
             if provisional_row:
                 # Return the provisional version at the highest version number
+                # Parse the cohort_data JSON string back to an object
+                parsed_cohort_data = (
+                    json.loads(provisional_row["cohort_data"])
+                    if provisional_row["cohort_data"]
+                    else {}
+                )
+                
                 cohort_data = {
-                    "cohort_data": (
-                        provisional_row["cohort_data"]
-                        if provisional_row["cohort_data"]
-                        else {}
-                    ),
+                    "cohort_data": parsed_cohort_data,
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
+                    "study_id": provisional_row["study_id"],
                     "created_at": (
                         provisional_row["created_at"].isoformat()
                         if provisional_row["created_at"]
@@ -225,7 +229,7 @@ class DatabaseManager:
 
             # No provisional at highest version, get the highest version non-provisional
             non_provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at 
+                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
             """
@@ -238,14 +242,18 @@ class DatabaseManager:
                 return None
 
             # Return the non-provisional version at the highest version number
+            # Parse the cohort_data JSON string back to an object
+            parsed_cohort_data = (
+                json.loads(non_provisional_row["cohort_data"])
+                if non_provisional_row["cohort_data"]
+                else {}
+            )
+            
             cohort_data = {
-                "cohort_data": (
-                    non_provisional_row["cohort_data"]
-                    if non_provisional_row["cohort_data"]
-                    else {}
-                ),
+                "cohort_data": parsed_cohort_data,
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
+                "study_id": non_provisional_row["study_id"],
                 "created_at": (
                     non_provisional_row["created_at"].isoformat()
                     if non_provisional_row["created_at"]
@@ -1366,60 +1374,6 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def update_cohort_display_order(
-        self, user_id: str, cohort_id: str, display_order: int
-    ) -> bool:
-        """
-        Update the display order of a cohort.
-
-        Args:
-            user_id (str): The user ID (UUID) who owns the cohort.
-            cohort_id (str): The ID of the cohort to update.
-            display_order (int): The new display order value.
-
-        Returns:
-            bool: True if successful, False if cohort not found or access denied.
-        """
-        conn = None
-        try:
-            conn = await self.get_connection()
-
-            # Check if the cohort belongs to a study owned by the user
-            check_query = f"""
-                SELECT c.cohort_id FROM {self.full_table_name} c
-                INNER JOIN study s ON c.study_id = s.study_id
-                WHERE c.cohort_id = $1 AND s.user_id = $2
-            """
-            existing = await conn.fetchrow(check_query, cohort_id, user_id)
-
-            if not existing:
-                logger.error(
-                    f"User {user_id} is not authorized to update cohort {cohort_id} or cohort not found"
-                )
-                return False
-
-            update_query = f"""
-                UPDATE {self.full_table_name}
-                SET display_order = $2, updated_at = NOW()
-                WHERE cohort_id = $1
-            """
-
-            await conn.execute(update_query, cohort_id, display_order)
-
-            logger.info(
-                f"Successfully updated display_order={display_order} for cohort {cohort_id}"
-            )
-            return True
-
-        except Exception as e:
-            logger.error(
-                f"Failed to update display order for cohort {cohort_id}: {e}"
-            )
-            raise
-        finally:
-            if conn:
-                await conn.close()
-
     async def delete_study_for_user(self, user_id: str, study_id: str) -> bool:
         """
         Delete a study and all associated cohorts for a user from the database.
@@ -1537,6 +1491,86 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Failed to retrieve cohorts for study {study_id}: {e}")
             raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def health_check(self) -> Dict:
+        """
+        Perform a health check by testing database connectivity and basic query.
+        
+        Returns:
+            Dict: Health status with connection details
+            
+        Raises:
+            Exception: If database is not accessible or query fails
+        """
+        conn = None
+        try:
+            # Test basic connection
+            conn = await self.get_connection()
+            
+            # Test a simple query to ensure database is responsive
+            result = await conn.fetchrow("SELECT 1 as test_value, NOW() as current_time")
+            
+            # Check for all required tables
+            required_tables = ['user', 'cohort', 'study']
+            table_results = {}
+            all_tables_exist = True
+            
+            for table_name in required_tables:
+                # Determine the correct schema for each table
+                if table_name in ['cohort']:
+                    schema = self.cohorts_schema
+                elif table_name in ['study']:
+                    schema = self.studies_schema
+                else:  # user table and others
+                    schema = 'public'  # user table is typically in public schema
+                
+                table_exists = await conn.fetchrow(f"""
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.tables 
+                        WHERE table_schema = '{schema}' 
+                        AND table_name = '{table_name}'
+                    ) as exists
+                """)
+                
+                exists = table_exists["exists"]
+                table_results[table_name] = {
+                    "exists": exists,
+                    "schema": schema,
+                    "full_name": f"{schema}.{table_name}"
+                }
+                
+                if not exists:
+                    all_tables_exist = False
+            
+            return {
+                "status": "connected",
+                "test_query": result["test_value"] == 1,
+                "database_time": result["current_time"].isoformat(),
+                "all_tables_exist": all_tables_exist,
+                "tables": table_results,
+                "schemas": {
+                    "cohorts": self.cohorts_schema,
+                    "studies": self.studies_schema
+                }
+            }
+            
+        except Exception as e:
+            error_msg = f"Database health check failed: {type(e).__name__}: {e}"
+            logger.error(error_msg)
+            logger.error(f"Connection string (without password): postgresql://{os.getenv('POSTGRES_USER')}:***@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}")
+            return {
+                "status": "failed",
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "schemas": {
+                    "cohorts": self.cohorts_schema,
+                    "studies": self.studies_schema
+                },
+                "message": "Database connection or query failed"
+            }
         finally:
             if conn:
                 await conn.close()

@@ -2,13 +2,17 @@
   margin-top: 5px;
   /* display: flex; */
   text-wrap: wrap;
-  background-color: var(--item-color-default);
+  background-color: transparent;
   line-height: 11px;
   padding: 3px 5px;
-  border-radius: 5px;
+  border-radius: 0px;
   border-radius: var(--item-radius);
   border: var(--item-border-default);
   transition: var(--item-transition);
+  font-family:var(--item-font-family);
+  font-size: var(--item-font-size);
+  color: var(--item-font-color);
+
 }
 
 .container:hover {

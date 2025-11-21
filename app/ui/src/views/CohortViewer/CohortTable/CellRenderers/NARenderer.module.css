@@ -1,6 +1,13 @@
 .naContainer {
   color: var(--line-color);
   font-style: italic;
-  padding: 4px 8px;
+  padding: 10px;
   font-size: 12px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  border-top: 1px solid;
+  font-size:16px;
+  font-family : "IBMPlexSans-bolditalic";
 }

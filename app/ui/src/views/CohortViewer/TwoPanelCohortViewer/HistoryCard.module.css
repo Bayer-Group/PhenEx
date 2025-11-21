@@ -12,7 +12,7 @@
   border: 1px solid var(--line-color);
   background: white;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* box-shadow:var(--box_shadow) !important; */
   
   /* Stack positioning using CSS custom property */
   right: calc(var(--card-index) * 10px);

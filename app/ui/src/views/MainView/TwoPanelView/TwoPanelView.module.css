@@ -1,6 +1,6 @@
 :root {
-  --margin_top_right_panel: 0px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
-  --border_radius_right_panel: 8px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --margin_top_right_panel: 20px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --border_radius_right_panel: 20px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
 }
 .container {
   display: flex;
@@ -45,7 +45,7 @@
 }
 
 .rightPanel {
-  /* border-radius: 20px 0px 0px 20px; */
+  border-radius: 20px 20px 20px 20px;
   background-color: red; /*var(--background-color) !important;*/
 }
 
@@ -73,16 +73,15 @@
 
 .rightPanelContent {
   position: relative;
-  height: 100%;
+  height: calc(100% - 2 * var(--margin_top_right_panel));
   z-index: 0;
-  /* border-radius: var(--border_radius_right_panel) var(--border_radius_right_panel) 0px
-    var(--border_radius_right_panel); */
+  border-radius: var(--border_radius_right_panel);
   background-color: var(--background-color) !important;
   /* border-left: 1px solid var(--line-color);
   border-top: 1px solid var(--line-color);
   border-right: 1px solid var(--line-color) !important; */
-  /* margin-right: 10px !important; */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  margin-right: 20px !important;
+  box-shadow:var(--box_shadow);
   /* border-left: var(--border); */
   margin-top: var(--margin_top_right_panel);
   overflow: hidden;
@@ -117,8 +116,6 @@
 }
 
 .collapseButton {
-  position: absolute;
-  padding: 4px;
   background-color: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -130,14 +127,12 @@
   display: flex;
   color: hsl(0, 0%, 60%);
   z-index: 1000;
-  left: 15px;
 
   transition: transform 0.2s ease;
   color: black;
   user-select: none;
   margin-top: 17px;
-  font-family: 'SNPro-black' !important;
-  font-size: 22px !important;
+  font-size: 40px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,11 +147,11 @@
     background-color 0.2s,
     color 0.2s;
   padding: 0;
-  line-height: 1;
+  line-height: 30px;
   position: absolute;
-  top: -5px;
-  left: 20px;
-  font-family: 'SNPro-black' !important;
+  top: 15px;
+  right: 30px;
+  font-family: 'IBMPlexSans-bold'!important;
   cursor: pointer;
   transition: color .3s ease;
 

@@ -3,6 +3,7 @@ import classDefinitionsRaw from '/assets/class_definitions.json?raw';
 let classDefinitions = JSON.parse(classDefinitionsRaw);
 import { defaultColumns } from './PhenotypeColumnDefinitions';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import typeStyles from '../../../styles/study_types.module.css'
 export interface Phenotype {
   name: string;
   description?: string;
@@ -23,7 +24,6 @@ export class PhenotypeDataService {
   public rowData: ParamRow[] = [
     { parameter: 'class_name', value: 'No phenotype selected' },
     { parameter: 'Type', value: 'Not set' },
-    { parameter: 'Description', value: 'Not set' },
   ];
 
   public componentPhenotypeTableData: TableData = {
@@ -35,7 +35,12 @@ export class PhenotypeDataService {
   private componentPhenotypeListeners: ((refreshGrid: boolean) => void)[] = [];
   public cohortDataService = CohortDataService.getInstance(); // Assuming CohortDataService is a singleton class
 
-  private constructor() {}
+  private constructor() {
+    // Listen to cohort data changes to refresh current phenotype
+    this.cohortDataService.addDataChangeListener(() => {
+      this.refreshCurrentPhenotypeFromCohort();
+    });
+  }
 
   public static getInstance(): PhenotypeDataService {
     if (!PhenotypeDataService.instance) {
@@ -51,7 +56,7 @@ export class PhenotypeDataService {
   public getTheme() {
     return themeQuartz.withParams({
       accentColor: '#DDDDDD',
-      borderColor: 'var(--line-color-grid)',
+      borderColor: 'transparent',
       browserColorScheme: 'light',
       columnBorder: true,
       headerFontSize: 14,
@@ -59,11 +64,14 @@ export class PhenotypeDataService {
       headerRowBorder: true,
       fontSize: '20px',
       cellHorizontalPadding: 10,
-      headerBackgroundColor: 'var(--background-color)',
-      backgroundColor: 'var(--background-color)',
+      // headerBackgroundColor: `var(--color_${this.currentPhenotype?.effective_type || ''}_dim)` || '',
+      // backgroundColor: `var(--color_${this.currentPhenotype?.effective_type || ''}_dim)` || '',
+      headerBackgroundColor: 'transparent',
+      backgroundColor: 'transparent',
       rowBorder: true,
       spacing: 8,
       wrapperBorder: false,
+      wrapperBorderRadius: 0,
     });
   }
 
@@ -98,8 +106,31 @@ export class PhenotypeDataService {
 
   public saveChangesToPhenotype(refreshGrid:boolean = false) {
     if (this.currentPhenotype) {
-      this.notifyListeners(refreshGrid);
+      this.notifyListeners(true);
       this.cohortDataService.saveChangesToCohort(false, true);
+    }
+  }
+
+  // Called when cohort data changes to refresh current phenotype from updated cohort data
+  public refreshCurrentPhenotypeFromCohort() {
+    if (this.currentPhenotype?.id) {
+      // Find the updated phenotype in the cohort data
+      const updatedPhenotype = this.cohortDataService.cohort_data.phenotypes.find(
+        (p: any) => p.id === this.currentPhenotype!.id
+      );
+      
+      if (updatedPhenotype) {
+        // Update current phenotype reference with latest data
+        this.currentPhenotype = updatedPhenotype;
+        this.updateRowData();
+        
+        // Also refresh component phenotype table data
+        this.updateComponentPhenotypeData();
+        
+        // Notify both regular and component phenotype listeners
+        this.notifyListeners(true);
+        this.notifyComponentPhenotypeListeners(true);
+      }
     }
   }
 

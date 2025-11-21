@@ -6,9 +6,10 @@ import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustom
 import typeStyles from '../../../styles/study_types.module.css';
 interface PhenotypeViewerProps {
   data?: Phenotype;
+  bottomMargin?: number;
 }
 
-export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
+export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMargin = 0 }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -104,14 +105,14 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div className = {styles.gridContainer}>
+      <div className={styles.gridContainer} style={{ marginBottom: `${bottomMargin}px` }}>
         <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
           ref={gridRef}
           theme={dataService.getTheme()}
           onCellValueChanged={onCellValueChanged}
-          scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 } }}
+          scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
           animateRows={false}
           
           getRowHeight={params => {

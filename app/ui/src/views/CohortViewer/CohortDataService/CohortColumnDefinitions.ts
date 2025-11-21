@@ -1,10 +1,11 @@
 import TypeCellRenderer from '../CohortTable/CellRenderers/TypeCellRenderer';
 import NameCellRenderer from '../CohortTable/CellRenderers/NameCellRenderer';
-import DescriptionCellRenderer from '../CohortTable/CellRenderers/DescriptionCellRenderer';
 import CodelistCellRenderer from '../CohortTable/CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer';
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
+import type { ICellEditorParams } from 'ag-grid-community';
+import RowDragCellRenderer from '../CohortTable/CellRenderers/RowDragCellRenderer';
 
 import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
@@ -31,6 +32,57 @@ export const columnNameToApplicablePhenotypeMapping = {
   codelist: ['CodelistPhenotype', 'MeasurementPhenotype'],
 };
 
+export const componentPhenotypeColumns: any[] = [
+  {
+    field: 'rowDrag',
+    headerName: '',
+    width: 60,
+    pinned: 'left',
+    rowDrag: true,
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellClass: 'row-drag-handle',
+    cellRenderer: RowDragCellRenderer,
+  },
+  {
+    field: 'type',
+    headerName: '',
+    width: 70,
+    resizable: false,
+    pinned: 'left',
+    editable: params => {
+      return params.data.type != 'component';
+    },
+    cellEditor: TypeSelectorCellEditor,
+    cellEditorParams: {
+      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
+    },
+    cellRenderer: TypeCellRenderer,
+    cellEditorPopup: true,
+  },
+  {
+    field: 'name',
+    headerName: '',
+    flex: 1,
+    resizable: false,
+    editable: true,
+    cellRenderer: NameCellRenderer,
+    cellEditor: 'agTextCellEditor',
+    cellEditorSelector: (params: ICellEditorParams) => {
+      if (params.eventKey == 'settings') {
+        return {
+          component: SettingsCellEditor,
+          popup: true,
+        };
+      }
+      return {
+        component: 'agTextCellEditor',
+      };
+    },
+  },
+];
+
 export const defaultColumns = [
   {
     field: 'rowDrag',
@@ -42,15 +94,15 @@ export const defaultColumns = [
     filter: false,
     suppressHeaderMenuButton: true,
     cellClass: 'row-drag-handle',
-    cellStyle: { textAlign: 'right', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' },
+    cellRenderer: RowDragCellRenderer,
   },
   {
     field: 'type',
     headerName: '',
-    width: 100,
+    width: 70,
     resizable: false,
     pinned: 'left',
-    editable: params => {
+    editable: (params: any) => {
       return params.data.type != 'component';
     },
 
@@ -96,6 +148,7 @@ export const defaultColumns = [
     headerName: 'Phenotype',
     width: 130,
     editable: true,
+    pinned: 'left',
     cellRenderer: PhenotypeCellRenderer,
     cellEditor: PhenotypeSelectorCellEditor,
     cellEditorParams: {
@@ -115,7 +168,7 @@ export const defaultColumns = [
   {
     field: 'domain',
     headerName: 'Domain',
-    width: 180,
+    width: 270,
     editable: true,
     cellRenderer: DomainCellRenderer,
     cellEditor: DomainSelectorCellEditor,
@@ -136,10 +189,10 @@ export const defaultColumns = [
     field: 'codelist',
     headerName: 'Codelists',
     width: 200,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       // this is required for codelist cell editor return value type
       // as data types returned are variable (i.e. if codelist present vs not)
       // TODO add value validation here
@@ -160,13 +213,13 @@ export const defaultColumns = [
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
     width: 200,
-    editable: params => {
+    editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
         columnNameToApplicablePhenotypeMapping.relative_time_range.includes(params.data.class_name)
       );
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }
@@ -184,11 +237,11 @@ export const defaultColumns = [
     field: 'value_filter',
     headerName: 'Value filters',
     width: 150,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.value_filter.includes(params.data.class_name);
     },
     cellEditorPopup: true,
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }
@@ -201,12 +254,12 @@ export const defaultColumns = [
     field: 'categorical_filter',
     headerName: 'Categorical filters',
     width: 400,
-    editable: params => {
+    editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(
         params.data.class_name
       );
     },
-    valueParser: params => {
+    valueParser: (params: any) => {
       if (params.newValue && typeof params.newValue === 'object') {
         return params.newValue;
       }

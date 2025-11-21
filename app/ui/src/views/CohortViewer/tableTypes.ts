@@ -11,11 +11,18 @@ export interface ColumnDefinition {
   filter?: boolean;
   resizable?: boolean;
   pinned?: 'left' | 'right' | boolean | null;
-  editable?: boolean;
+  editable?: boolean | ((params: any) => boolean);
   cellEditor?: any;
   cellEditorParams?: any;
+  cellEditorPopup?: boolean;
+  cellEditorSelector?: (params: any) => any;
   cellRenderer?: any;
+  cellStyle?: any;
+  cellClass?: string;
   rowDrag?: boolean | ((params: any) => boolean);
+  suppressHeaderMenuButton?: boolean;
+  valueParser?: (params: any) => any;
+  [key: string]: any; // Allow additional ag-Grid properties
 }
 
 export interface TableData {

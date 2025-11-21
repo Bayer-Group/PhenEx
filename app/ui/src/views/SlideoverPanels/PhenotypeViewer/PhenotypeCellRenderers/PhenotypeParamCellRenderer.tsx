@@ -7,6 +7,8 @@ import styles from './PhenotypeParamCellRenderer.module.css';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
 import ReactMarkdown from 'react-markdown';
 import { InfoPortal } from '../../../../components/Portal/InfoPortal';
+import typeStyles from '../../../../styles/study_types.module.css';
+
 let parametersInfo = JSON.parse(parametersInfoRaw);
 export interface PhenotypeParamCellRendererProps extends PhenexCellRendererProps {}
 
@@ -91,31 +93,20 @@ const getFullParameterDescription = (parameter: string): string => {
   const description = getParameterDescription(props.data.parameter);
   const fullDescription = getFullParameterDescription(props.data.parameter);
 
+  // Get dynamic text color class based on effective_type
+  const effectiveType = props.data?.effective_type || props.data?.type;
+  const textColorClass = effectiveType ? typeStyles[`${effectiveType}_text_color`] || '' : '';
+
   console.log("PARM CELL", props.data.parameter, props)
   return (
-    <div className={styles.container} style={{ width: '100%', overflow: 'hidden' }}>
-      <span className={styles.label} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{formatValue()}</span>
+    <div className={styles.container}>
+      <span className={`${styles.label} ${textColorClass}`}>{formatValue()}</span>
       <br></br>
-      <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-        
-        
-         <ReactMarkdown 
-            components={{
-              p: ({children}) => <p style={{
-                marginTop: '5px', 
-                padding: '0px', 
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word',
-                maxWidth: '100%'
-              }}>{children}</p>
-            }}
-          >
-            {description}
-          </ReactMarkdown>
-        
-        
-        </span>
+      <span className={`${styles.infotext} ${textColorClass}`}>
+        <ReactMarkdown>
+          {description}
+        </ReactMarkdown>
+      </span>
       <button 
         ref={infoButtonRef}
         className={styles.infoButton} 
@@ -136,13 +127,12 @@ const getFullParameterDescription = (parameter: string): string => {
           onHideRequest={handleInfoPortalHide}
         >
           <div
-            className={styles.infoPortalContainer}
+            className={`${styles.infoPortalContainer} ${textColorClass}`}
             style={{
               opacity: portalOpacity,
-              // transition: 'opacity 20ms ease-in-out',
             }}
           >
-            <span className={styles.label} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{formatValue()}</span>
+            <span className={styles.label}>{formatValue()}</span>
             <br></br>
             <ReactMarkdown>{fullDescription}</ReactMarkdown>
           </div>

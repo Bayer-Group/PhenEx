@@ -1,7 +1,7 @@
 /* Masking container - sits exactly where the history should be */
 .historyContainer {
     position: absolute;
-    top: 5px;
+    top: 35px;
     right: -1px;
     width: 170px; /* Base width */
     height: 60px; /* Enough to contain the cards */
@@ -49,5 +49,5 @@
 
 /* Enhanced shadow when history is expanded */
 .historyContainer:hover .cardStack {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow( 0 0px 8px rgba(0, 0, 0, .1));
 }

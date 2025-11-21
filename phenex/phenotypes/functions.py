@@ -51,13 +51,21 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         join_table = join_table.select(columns)
 
     for pt in phenotypes:
-        column_operation = join_table[f"{pt.name}_BOOLEAN"].fill_null(False)
+        # Handle both boolean and float64 types (ComputationGraphPhenotypes may have float64 BOOLEAN columns)
+        bool_column = join_table[f"{pt.name}_BOOLEAN"]
+        if bool_column.type().is_floating():
+            column_operation = bool_column.fill_null(0.0)
+        else:
+            column_operation = bool_column.fill_null(False)
         join_table = join_table.mutate(**{f"{pt.name}_BOOLEAN": column_operation})
     return join_table
 
 
 def select_phenotype_columns(
-    table, fill_date=ibis.null(date), fill_value=ibis.null(), fill_boolean=True
+    table,
+    fill_date=ibis.null(date),
+    fill_value=ibis.null().cast("int32"),
+    fill_boolean=True,
 ):
     if "PERSON_ID" not in table.columns:
         raise ValueError("Table must have a PERSON_ID column")

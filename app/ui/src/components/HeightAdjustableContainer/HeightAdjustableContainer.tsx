@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback } from 'react';
 import styles from './HeightAdjustableContainer.module.css';
 
 export interface HeightAdjustableContainerProps {
@@ -25,8 +25,7 @@ export const HeightAdjustableContainer: React.FC<HeightAdjustableContainerProps>
   onHeightChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(initialHeight);
-  const [dragState, setDragState] = useState<DragState>({
+  const dragStateRef = useRef<DragState>({
     isDragging: false,
     startY: 0,
     startHeight: 0,
@@ -39,59 +38,56 @@ export const HeightAdjustableContainer: React.FC<HeightAdjustableContainerProps>
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    setDragState({
+    dragStateRef.current = {
       isDragging: true,
       startY: e.clientY,
       startHeight: rect.height,
-    });
+    };
 
     // Prevent text selection during drag
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'ns-resize';
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   }, []);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!dragState.isDragging || !containerRef.current) return;
+    if (!dragStateRef.current.isDragging || !containerRef.current) return;
 
-    const deltaY = e.clientY - dragState.startY;
+    const deltaY = e.clientY - dragStateRef.current.startY;
     
     // Top border drag: moving up decreases height, moving down increases height
-    const newHeight = dragState.startHeight - deltaY;
+    const newHeight = dragStateRef.current.startHeight - deltaY;
 
     // Apply constraints
     const constrainedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
 
-    setHeight(constrainedHeight);
-    onHeightChange?.(constrainedHeight);
-  }, [dragState, minHeight, maxHeight, onHeightChange]);
+    // Update the DOM directly - no React state, no re-renders
+    containerRef.current.style.height = `${constrainedHeight}px`;
+  }, [minHeight, maxHeight]);
 
   const handleMouseUp = useCallback(() => {
-    setDragState(prev => ({ 
-      ...prev, 
-      isDragging: false 
-    }));
+    dragStateRef.current.isDragging = false;
+    
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
-  }, []);
-
-  // Global mouse events for dragging
-  useEffect(() => {
-    if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
+    
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Only call callback if provided, but don't trigger React re-render
+    if (onHeightChange && containerRef.current) {
+      const finalHeight = containerRef.current.offsetHeight;
+      onHeightChange(finalHeight);
     }
-  }, [dragState.isDragging, handleMouseMove, handleMouseUp]);
+  }, [onHeightChange, handleMouseMove]);
 
   return (
     <div
       ref={containerRef}
       className={`${styles.heightAdjustableContainer} ${className}`}
-      style={{ height: `${height}px` }}
+      style={{ height: `${initialHeight}px` }}
     >
       <div
         className={styles.dragHandle}

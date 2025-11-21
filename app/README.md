@@ -8,8 +8,7 @@ The PhenEx application consists of several components:
 
 - **Backend**: FastAPI-based REST API (`/backend`) with Python support for PhenEx phenotype extraction
 - **Frontend**: React + TypeScript application (`/ui`) for interactive cohort building and data visualization
-- **Database**: PostgreSQL with Supabase for authentication and data management
-- **Infrastructure**: Docker Compose orchestration with supporting services (Kong API Gateway, Supabase Studio)
+- **Database**: PostgreSQL database for data storage and management
 
 ## 🚀 Quick Start
 
@@ -36,11 +35,52 @@ Follow these steps to get the PhenEx application running locally:
    cp .env.example .env
    ```
 
-   Then edit the `.env` file and fill in any missing fields, particularly:
+   Then edit the `.env` file and configure the required settings. **Key configuration sections:**
 
-   - Database passwords and secrets
-   - API keys for external services (OpenAI, Snowflake, etc.)
-   - User-specific configuration values
+   **Database Configuration:**
+
+   ```bash
+   POSTGRES_HOST=db
+   POSTGRES_PASSWORD=password          # Change this for production!
+   POSTGRES_DB=phenex
+   POSTGRES_USER=phenex
+   POSTGRES_PORT=5432
+   ```
+
+   **Authentication Configuration:**
+   Choose your authentication method by configuring the relevant section:
+
+   - **Azure AD (Enterprise):** Configure `PHENEX_AUTH__AD__*` variables with your Azure tenant details
+   - **Password Auth (JWT):** Set `PHENEX_AUTH__PASSWORD__SECRET` to a secure secret
+   - **Anonymous (Development only):** Set `PHENEX_AUTH__ANONYMOUS__TOKEN` and `PHENEX_AUTH__ANONYMOUS__USER_ID`
+
+   **Data Warehouse Configuration:**
+
+   ```bash
+   # For Snowflake integration (optional)
+   SNOWFLAKE_USER=your-username
+   SNOWFLAKE_PASSWORD=your-password
+   SNOWFLAKE_ACCOUNT=your-account
+   SNOWFLAKE_WAREHOUSE=your-warehouse
+   SNOWFLAKE_ROLE=your-role
+   ```
+
+   **AI Features (Optional):**
+
+   ```bash
+   # For AI-powered features
+   AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+   AZURE_OPENAI_API_KEY=your-api-key
+   OPENAI_API_VERSION=2025-01-01-preview
+   ```
+
+   **Frontend Configuration:**
+
+   ```bash
+   VITE_BACKEND_URL=http://localhost:8000
+   VITE_ALLOWED_HOSTS=http://localhost:5173
+   ENABLE_ANONYMOUS_USERS=false
+   ```
 
    **Important**: Never commit the actual `.env` file with real credentials to version control.
 
@@ -53,36 +93,53 @@ Follow these steps to get the PhenEx application running locally:
    This command will:
 
    - Build and start all required services
-   - Initialize the PostgreSQL database with PhenEx schemas
-   - Start the backend API server on port 8001
+   - Automatically initialize the PostgreSQL database with PhenEx schemas
+   - Start the backend API server on port 8000
    - Start the frontend development server on port 5173
-   - Launch Supabase Studio for database management
-
-4. **Set up initial database**
-
-   ```bash
-   bash backend/scripts/reset-databases-local.sh
-   ```
-
-   This initializes the database schemas needed for the application to start properly.
+   - Launch Adminer for database management
 
 ### 🌐 Accessing the Application
 
 Once all services are running (this may take a few minutes on first startup):
 
-- **Supabase Studio**: http://localhost:8000 (database management interface)
 - **Frontend Application**: http://localhost:5173
-- **Backend API**: http://localhost:8001
-- **API Documentation**: http://localhost:8001/docs (FastAPI Swagger docs)
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs (FastAPI Swagger docs)
+- **Database Admin (Adminer)**: http://localhost:8080
+  - Server: `db`
+  - Username: `phenex`
+  - Password: (see `POSTGRES_PASSWORD` in `.env`)
+  - Database: `phenex`
 
-### 👤 Test User Login
+### 👤 Authentication
 
-To explore the application features, you can log in using the pre-configured test user:
+The application supports multiple authentication methods. Configure your preferred method in the `.env` file:
 
-- **Email**: `test@phenex.ai`
-- **Password**: `12345678`
+#### 1. **Azure AD (Recommended for Production)**
 
-This test user has access to sample data and pre-built cohorts that demonstrate PhenEx's capabilities for phenotype extraction and cohort building.
+```bash
+PHENEX_AUTH__AD__TENANT=your-azure-ad-tenant-id
+PHENEX_AUTH__AD__AUD=your-azure-ad-audience-id
+# Configure claims mapping as needed
+```
+
+#### 2. **Password Authentication (JWT)**
+
+```bash
+PHENEX_AUTH__PASSWORD__SECRET=your-secure-secret-key
+```
+
+Create user accounts through the API or admin interface.
+
+#### 3. **Anonymous Authentication (Development Only)**
+
+```bash
+PHENEX_AUTH__ANONYMOUS__TOKEN=anon-user
+PHENEX_AUTH__ANONYMOUS__USER_ID=your-anonymous-user-uuid
+ENABLE_ANONYMOUS_USERS=true
+```
+
+⚠️ **Warning**: Only use anonymous authentication in development environments.
 
 ## 🔧 Development
 
@@ -90,8 +147,24 @@ This test user has access to sample data and pre-built cohorts that demonstrate 
 
 The application uses environment variables for configuration. Key files:
 
-- `backend/.env` - Backend API configuration (database connections, API keys)
-- Root `.env` - Docker Compose environment variables
+- `.env` - Main configuration file (copy from `.env.example`)
+- Configuration is passed to all Docker Compose services
+
+### Database Schema Management
+
+Database migrations are managed automatically using the `migrate` tool:
+
+- Migration files are in `backend/migrate/`
+- **Migrations run automatically** when you start the application with `docker compose up`
+- Database schema is initialized on first startup
+
+**Manual database reset** (if needed):
+
+```bash
+# Complete database reset
+docker compose down -v  # Remove volumes and data
+docker compose up       # Recreate with fresh database
+```
 
 ### Development Mode
 
@@ -99,12 +172,21 @@ The Docker Compose setup is configured for development with:
 
 - **Hot reload**: Both frontend and backend automatically restart when code changes
 - **Volume mounting**: Local code is mounted into containers for live development
-- **Debug ports**: Exposed for debugging and testing
+- **Persistent data**: Database and user data stored in `~/.phenex/` directory
+
+### File Structure
+
+```
+~/.phenex/                          # PhenEx data directory (auto-created)
+├── data/phenex/cohorts/           # Cohort definitions
+├── data/phenex/users/             # User data
+└── volumes/db/data/               # PostgreSQL data
+```
 
 ### Stopping the Application
 
 ```bash
-# Stop all services
+# Stop all services (keeps data)
 docker compose down
 
 # Stop and remove all data (complete reset)
@@ -113,27 +195,44 @@ docker compose down -v --remove-orphans
 
 ## 📦 Services Overview
 
-| Service        | Purpose                             | Port  | Health Check |
-| -------------- | ----------------------------------- | ----- | ------------ |
-| `backend-dev`  | FastAPI backend with PhenEx library | 8001  | Manual       |
-| `frontend-dev` | React/Vite development server       | 5173  | Manual       |
-| `db`           | PostgreSQL database                 | 54322 | Automatic    |
-| `auth`         | Supabase Auth (GoTrue)              | -     | Automatic    |
-| `meta`         | PostgreSQL metadata API             | -     | -            |
-| `kong`         | API Gateway                         | 54321 | -            |
-| `studio`       | Supabase Studio UI                  | 54323 | Automatic    |
+| Service      | Purpose                              | Port | Health Check | Container Name    |
+| ------------ | ------------------------------------ | ---- | ------------ | ----------------- |
+| `backend`    | FastAPI backend with PhenEx library  | 8000 | Manual       | phenex-backend    |
+| `frontend`   | React/Vite development server        | 5173 | Manual       | phenex-frontend   |
+| `db`         | PostgreSQL database                  | 5432 | Automatic    | phenex-db         |
+| `migrations` | Database migration runner (one-time) | N/A  | Automatic    | phenex-migrations |
+| `adminer`    | Database administration interface    | 8080 | Manual       | phenex-adminer    |
 
 ## 🗃️ Data Persistence
 
-- **Database data**: Persisted in `./volumes/db/data`
+- **PostgreSQL data**: `~/.phenex/volumes/db/data/` (host directory)
+- **Cohort data**: `~/.phenex/data/phenex/cohorts/` (host directory)
+- **User data**: `~/.phenex/data/phenex/users/` (host directory)
+
+## 🏢 Data Warehouse Support
+
+The PhenEx UI currently supports **Snowflake** as the primary data warehouse backend. However, the underlying PhenEx library is built on [Ibis](https://ibis-project.org/), which provides support for many different data backends including:
+
+- Snowflake (currently supported in UI)
+- BigQuery
+- Redshift
+- Databricks
+- PostgreSQL
+- DuckDB
+- And many more...
+
+**Need another data warehouse?** Since PhenEx uses Ibis under the hood, adding support for additional Ibis-compatible backends is straightforward. Please create a GitHub issue requesting the specific backend you need, and we can work on adding UI support for it.
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **Port conflicts**: Ensure ports 5173, 8001, 54321-54323 are available
-2. **Memory issues**: Docker requires sufficient RAM (4GB+ recommended)
-3. **Permission errors**: Ensure Docker has permission to mount volumes
+1. **Port conflicts**: Ensure ports 5173, 8000, 8080, 5432 are available
+2. **Database connection**: Check PostgreSQL is running and credentials are correct
+3. **Authentication issues**: Verify Azure AD configuration or JWT secrets
+4. **Memory issues**: Docker requires sufficient RAM (4GB+ recommended)
+5. **Permission errors**: Ensure Docker has permission to mount volumes in `~/.phenex/`
+6. **Migration failures**: Check database connectivity and migration logs
 
 ### Logs and Debugging
 
@@ -142,10 +241,13 @@ docker compose down -v --remove-orphans
 docker compose logs
 
 # View logs for specific service
-docker compose logs backend-dev
+docker compose logs backend
 
 # Follow logs in real-time
-docker compose logs -f frontend-dev
+docker compose logs -f frontend
+
+# Check migration logs
+docker compose logs migrations
 ```
 
 ### Reset Everything
@@ -155,20 +257,25 @@ If you encounter persistent issues:
 ```bash
 # Complete reset (removes all data!)
 docker compose down -v --remove-orphans
-rm -rf volumes
-cp -r _init_volumes volumes
-docker compose up
+rm -rf ~/.phenex/  # Optional: Remove all PhenEx data
+docker compose up -d
 ```
 
-## 🧪 Testing
+### Backend API Testing
 
-The application includes test suites for both frontend and backend components. Tests can be run within the Docker containers or locally with appropriate dependencies installed.
+Test the backend API directly:
+
+```bash
+# Check API health
+curl http://localhost:8000/health
+
+# View API documentation
+# Open http://localhost:8000/docs in your browser
+```
 
 ## 📚 Related Documentation
 
 - [Main PhenEx Documentation](https://bayer-group.github.io/PhenEx)
-- [API Reference](../docs/api/)
-- [PhenEx Library](../phenex/)
 
 ## 🤝 Contributing
 

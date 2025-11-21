@@ -1,6 +1,6 @@
 import pytest
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, PropertyMock
 import pandas as pd
 
 
@@ -162,55 +162,6 @@ class TestPhenexNode:
 
         assert hash1 != hash2
 
-    @patch("phenex.node.DuckDBConnector")
-    def test_get_last_hash_no_table(self, mock_connector_class):
-        """Test _get_last_hash when no state table exists"""
-        mock_connector = Mock()
-        mock_connector.dest_connection.list_tables.return_value = []
-        mock_connector_class.return_value = mock_connector
-
-        node = Node("test")
-        result = node._get_last_hash()
-
-        assert result is None
-
-    @patch("phenex.node.DuckDBConnector")
-    def test_get_last_hash_with_existing_data(self, mock_connector_class):
-        """Test _get_last_hash with existing state data"""
-        mock_connector = Mock()
-        mock_connector.dest_connection.list_tables.return_value = [
-            NODE_STATES_TABLE_NAME
-        ]
-
-        # Mock table data
-        mock_table_data = pd.DataFrame(
-            {"NODE_NAME": ["TEST", "OTHER"], "LAST_HASH": [123, 456]}
-        )
-        mock_table = Mock()
-        mock_table.to_pandas.return_value = mock_table_data
-        mock_connector.get_dest_table.return_value = mock_table
-        mock_connector_class.return_value = mock_connector
-
-        node = Node("test")
-        result = node._get_last_hash()
-
-        assert result == 123
-
-    @patch("phenex.node.DuckDBConnector")
-    @patch("phenex.node.ibis.memtable")
-    def test_update_current_hash(self, mock_memtable, mock_connector_class):
-        """Test _update_current_hash"""
-        mock_connector = Mock()
-        mock_connector.dest_connection.list_tables.return_value = []
-        mock_connector_class.return_value = mock_connector
-        mock_memtable.return_value = Mock()
-
-        node = Node("test")
-        result = node._update_current_hash()
-
-        assert result is True
-        mock_connector.create_table.assert_called_once()
-
     def test_execute_not_implemented(self):
         """Test that _execute raises NotImplementedError"""
         node = Node("test")
@@ -310,7 +261,7 @@ class TestPhenexNodeExecution:
         assert parent.executed
         assert result is not None
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_execute_with_connector(self, mock_connector_class):
         """Test execution with database connector"""
         mock_connector = Mock()
@@ -324,27 +275,38 @@ class TestPhenexNodeExecution:
         assert node.executed
         mock_connector.create_table.assert_called_once()
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_execute_lazy_execution_first_time(self, mock_connector_class):
         """Test lazy execution when node hasn't been computed before"""
-        mock_connector = Mock()
-        mock_connector_class.return_value = mock_connector
+        # Mock the DuckDB connector used by NodeManager
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        # Mock user connector
+        mock_user_con = Mock()
+        mock_user_con.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
+        mock_result_table = MockTable()
+        mock_user_con.get_dest_table.return_value = mock_result_table
 
         node = ConcreteNode("test")
-        # Mock that node hasn't been computed before
-        node._get_last_hash = Mock(return_value=None)
-        node._get_current_hash = Mock(return_value=12345678)
-        node._update_current_hash = Mock(return_value=True)
-
         tables = {"domain1": MockTable()}
 
-        node.execute(tables, con=mock_connector, overwrite=True, lazy_execution=True)
+        # Mock NodeManager methods directly
+        with patch.object(Node._node_manager, "should_rerun", return_value=True):
+            with patch.object(
+                Node._node_manager, "update_run_params", return_value=True
+            ):
+                node.execute(
+                    tables, con=mock_user_con, overwrite=True, lazy_execution=True
+                )
 
         assert node.executed
-        mock_connector.create_table.assert_called_once()
-        node._update_current_hash.assert_called_once()
+        mock_user_con.create_table.assert_called_once()
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_execute_lazy_execution_unchanged(self, mock_connector_class):
         """Test lazy execution when node hasn't changed"""
         mock_connector = Mock()
@@ -355,20 +317,42 @@ class TestPhenexNodeExecution:
         mock_connector.get_dest_table.return_value = mock_table
         mock_connector_class.return_value = mock_connector
 
-        node = ConcreteNode("test")
-        # Mock that node hasn't changed
-        node._get_last_hash = Mock(return_value=12345678)
-        node._get_current_hash = Mock(return_value=12345678)
-
-        tables = {"domain1": MockTable()}
-
-        result = node.execute(
-            tables, con=mock_connector, overwrite=True, lazy_execution=True
+        # Configure mock to have only DuckDB attributes, not Snowflake
+        mock_connector.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
         )
+        # Remove any Snowflake attributes that might exist
+        if hasattr(mock_connector, "SNOWFLAKE_SOURCE_DATABASE"):
+            del mock_connector.SNOWFLAKE_SOURCE_DATABASE
+        if hasattr(mock_connector, "SNOWFLAKE_DEST_DATABASE"):
+            del mock_connector.SNOWFLAKE_DEST_DATABASE
 
-        assert not node.executed  # Should not execute
-        assert result == mock_table
-        mock_connector.create_table.assert_not_called()
+        node = ConcreteNode("test")
+
+        # Mock the NodeManager to indicate node hasn't changed
+        with patch.object(Node._node_manager, "should_rerun", return_value=False):
+            with patch.object(
+                Node._node_manager,
+                "get_run_params",
+                return_value=pd.DataFrame(
+                    [
+                        {
+                            "NODE_NAME": "TEST",
+                            "NODE_HASH": 12345678,
+                            "EXECUTION_PARAMS": '{"connector_type": "DuckDBConnector", "source_database": "source.db", "dest_database": "dest.db"}',
+                        }
+                    ]
+                ),
+            ):
+                tables = {"domain1": MockTable()}
+
+                result = node.execute(
+                    tables, con=mock_connector, overwrite=True, lazy_execution=True
+                )
+
+                assert not node.executed  # Should not execute
+                assert result == mock_table
+                mock_connector.create_table.assert_not_called()
 
     def test_execute_lazy_execution_no_overwrite_error(self):
         """Test that lazy execution without overwrite raises error"""
@@ -447,7 +431,7 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=True)
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_clear_cache_removes_hash(self, mock_connector_class):
         """Test that clear_cache removes node hash from state table"""
         # Mock the DuckDB connector for node states
@@ -460,7 +444,7 @@ class TestPhenexNodeExecution:
         mock_table_data = pd.DataFrame(
             {
                 "NODE_NAME": ["TEST", "OTHER_NODE"],
-                "LAST_HASH": ["hash123", "hash456"],
+                "LAST_HASH": [123456789, "hash456"],
                 "NODE_PARAMS": ["{}", "{}"],
                 "LAST_EXECUTED": ["2023-01-01", "2023-01-02"],
             }
@@ -488,7 +472,7 @@ class TestPhenexNodeExecution:
                 mock_updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
             )
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_clear_cache_with_connector_drops_table(self, mock_connector_class):
         """Test that clear_cache drops materialized table when connector provided"""
         # Mock the DuckDB connector for node states
@@ -510,7 +494,7 @@ class TestPhenexNodeExecution:
         mock_user_con.dest_connection.drop_table.assert_called_once_with("TEST")
         assert node.table is None
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_clear_cache_recursive(self, mock_connector_class):
         """Test that clear_cache recursively clears child nodes when recursive=True"""
         # Mock the DuckDB connector
@@ -536,7 +520,7 @@ class TestPhenexNodeExecution:
         assert child1.table is None
         assert child2.table is None
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_clear_cache_non_recursive(self, mock_connector_class):
         """Test that clear_cache only clears current node when recursive=False"""
         # Mock the DuckDB connector
@@ -559,51 +543,8 @@ class TestPhenexNodeExecution:
         assert parent.table is None
         assert child.table is not None  # Child should be unchanged
 
-    @patch("phenex.node.DuckDBConnector")
-    def test_clear_cache_forces_reexecution(self, mock_connector_class):
-        """Test that clearing cache forces re-execution in lazy mode"""
-        # Mock the DuckDB connector for both node states and user connector
-        mock_duckdb_con = Mock()
-        mock_duckdb_con.dest_connection.list_tables.return_value = []
-        mock_connector_class.return_value = mock_duckdb_con
-
-        # Mock user connector
-        mock_user_con = Mock()
-        mock_user_con.dest_connection.list_tables.return_value = []
-        mock_result_table = MockTable()
-        mock_user_con.get_dest_table.return_value = mock_result_table
-
-        node = ConcreteNode("test")
-        tables = {"domain1": MockTable()}
-
-        # First execution - should execute
-        node._get_last_hash = Mock(return_value=None)
-        node._get_current_hash = Mock(return_value="hash123")
-        node._update_current_hash = Mock(return_value=True)
-
-        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
-        assert node.executed
-
-        # Reset execution flag
-        node.executed = False
-
-        # Second execution without cache clear - should skip
-        node._get_last_hash = Mock(return_value="hash123")
-        node._get_current_hash = Mock(return_value="hash123")
-
-        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
-        assert not node.executed  # Should have skipped
-
-        # Clear cache
-        node.clear_cache(con=mock_user_con)
-
-        # Third execution after cache clear - should execute again
-        node._get_last_hash = Mock(return_value=None)  # Cache was cleared
-        node._get_current_hash = Mock(return_value="hash123")
-        node._update_current_hash = Mock(return_value=True)
-
-        node.execute(tables, con=mock_user_con, overwrite=True, lazy_execution=True)
-        assert node.executed  # Should have executed again
+    # test_clear_cache_forces_reexecution removed - this detailed behavior is tested in test_node_manager.py
+    # Node tests should focus on Node interface, not NodeManager internals
 
     def test_add_children_circular_dependency(self):
         """Test that adding a child that would create circular dependency raises ValueError"""
@@ -707,7 +648,7 @@ class TestPhenexNodeGroup:
         assert "CHILD" in viz
         assert "depends on" in viz
 
-    @patch("phenex.node.DuckDBConnector")
+    @patch("phenex.node_manager.DuckDBConnector")
     def test_execute_with_lazy_execution(self, mock_connector_class):
         """Test execution with lazy execution enabled"""
         mock_connector = Mock()
@@ -716,20 +657,32 @@ class TestPhenexNodeGroup:
         # Configure the mock connector to handle list_tables() calls
         mock_connector.dest_connection.list_tables.return_value = []
 
+        # Configure mock to have only DuckDB attributes
+        mock_connector.configure_mock(
+            **{"DUCKDB_SOURCE_DATABASE": "source.db", "DUCKDB_DEST_DATABASE": "dest.db"}
+        )
+
         child = ConcreteNode("child")
         parent = ConcreteNode("parent")
         parent.add_children(child)
 
         # Mock that nodes haven't been computed before
-        child._get_last_hash = Mock(return_value=None)
+        child._getlasthash = Mock(return_value=None)
         child._get_current_hash = Mock(return_value=2345)
-        child._update_current_hash = Mock(return_value=True)
+        child._update_run_params = Mock(return_value=True)
+        type(child).execution_metadata = PropertyMock(return_value=None)
 
-        parent._get_last_hash = Mock(return_value=None)
+        parent._getlasthash = Mock(return_value=None)
         parent._get_current_hash = Mock(return_value=1234)
-        parent._update_current_hash = Mock(return_value=True)
+        parent._update_run_params = Mock(return_value=True)
+        type(parent).execution_metadata = PropertyMock(return_value=None)
 
         grp = NodeGroup("test", [parent])
+        grp._getlasthash = Mock(return_value=None)
+        grp._get_current_hash = Mock(return_value=5678)
+        grp._update_run_params = Mock(return_value=True)
+        type(grp).execution_metadata = PropertyMock(return_value=None)
+
         tables = {"domain1": MockTable()}
 
         grp.execute(tables, con=mock_connector, overwrite=True, lazy_execution=True)

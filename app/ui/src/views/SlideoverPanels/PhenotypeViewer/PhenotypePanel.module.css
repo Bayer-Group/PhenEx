@@ -22,7 +22,6 @@
 }
 
 .phenotypeNameInput{
-  color: white !important;
   font-size:40px;
 }
 
@@ -43,10 +42,10 @@
 }
 
 .bottomSection {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0px;
-  min-height: 0; /* Allow flex item to shrink below content size */
+  background-color: transparent;
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
 }
 
 .fillerText {
@@ -81,3 +80,39 @@
   line-height: 20px;
 }
 
+/* .breadcrumbLastItem{
+  font-size:40px;
+}
+
+.breadcrumbItem{
+  font-size:32px;
+  font-family:"IBMPlexSans-regular";
+} */
+
+
+.index{
+  font-size: 32px !important;
+  margin-left:10px;
+}
+
+.breadcrumbsContainer{
+  /* No absolute positioning - flows naturally */
+  margin-top: 10px;
+  margin-left: 0px;
+  font-size: 40px !important;
+}
+.breadcrumbItem{
+  font-size: 20px !important;
+  line-height: 10px;
+}
+
+.breadcrumbLastItem{
+  font-size: 32px !important;
+  font-family: 'IBMPlexSans-bold' !important;
+  line-height: 28px;
+}
+
+.description{
+  font-family: "IBMPlexSans-regular";
+  font-size: 16px;
+}

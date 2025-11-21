@@ -11,6 +11,7 @@ export interface AGGridCustomScrollbarProps {
   marginToEnd?: number; // marginRight for vertical, marginBottom for horizontal
   classNameThumb?: string; // Additional class for the thumb
   classNameTrack?: string; // Additional class for the track
+  thick?: boolean; // Thick scrollbar mode (horizontal only)
 }
 
 export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({ 
@@ -22,7 +23,8 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
   marginRight = 0,
   marginToEnd = 0,
   classNameThumb = '',
-  classNameTrack = ''
+  classNameTrack = '',
+  thick = false
 }) => {
   const [scrollInfo, setScrollInfo] = useState({ 
     scrollTop: 0, 
@@ -38,7 +40,11 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     x: 0, 
     y: 0, 
     scrollTop: 0, 
-    scrollLeft: 0 
+    scrollLeft: 0,
+    scrollHeight: 0,
+    scrollWidth: 0,
+    clientHeight: 0,
+    clientWidth: 0
   });
 
   const updateScrollInfo = () => {
@@ -55,20 +61,6 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     const scrollWidth = scrollableElement.scrollWidth;
     const clientHeight = scrollableElement.clientHeight;
     const clientWidth = scrollableElement.clientWidth;
-    
-    // Check if this scroll change is relevant to this scrollbar's orientation
-    const currentScrollValue = orientation === 'vertical' ? scrollTop : scrollLeft;
-    const previousScrollValue = orientation === 'vertical' ? scrollInfo.scrollTop : scrollInfo.scrollLeft;
-    
-    // Only proceed with update if the relevant scroll value changed, or if this is the initial update
-    const isInitialUpdate = scrollInfo.scrollTop === 0 && scrollInfo.scrollLeft === 0 && 
-                           scrollInfo.scrollHeight === 0 && scrollInfo.scrollWidth === 0;
-    const relevantScrollChanged = currentScrollValue !== previousScrollValue;
-    
-    if (!isInitialUpdate && !relevantScrollChanged) {
-      // This scroll event doesn't affect this scrollbar, skip the update
-      return;
-    }
     
     // Test if element can actually scroll by temporarily setting scroll position
     const originalScrollTop = scrollableElement.scrollTop;
@@ -93,15 +85,32 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
       ? scrollHeight > clientHeight && canScrollVertically
       : actualCanScrollHorizontally;
 
-    // Removed excessive debug logging - keeping component lightweight
-    setScrollInfo({ 
-      scrollTop, 
-      scrollLeft, 
-      scrollHeight, 
-      scrollWidth, 
-      clientHeight, 
-      clientWidth, 
-      isScrollable 
+    // Use functional state update to avoid stale closure issues
+    setScrollInfo(prevInfo => {
+      // Check if this scroll change is relevant to this scrollbar's orientation
+      const currentScrollValue = orientation === 'vertical' ? scrollTop : scrollLeft;
+      const previousScrollValue = orientation === 'vertical' ? prevInfo.scrollTop : prevInfo.scrollLeft;
+      
+      // Only proceed with update if the relevant scroll value changed, or if this is the initial update
+      const isInitialUpdate = prevInfo.scrollTop === 0 && prevInfo.scrollLeft === 0 && 
+                             prevInfo.scrollHeight === 0 && prevInfo.scrollWidth === 0;
+      const relevantScrollChanged = Math.abs(currentScrollValue - previousScrollValue) > 0.5;
+      
+      if (!isInitialUpdate && !relevantScrollChanged) {
+        // This scroll event doesn't affect this scrollbar, skip the update
+        return prevInfo;
+      }
+
+      // Return new state
+      return { 
+        scrollTop, 
+        scrollLeft, 
+        scrollHeight, 
+        scrollWidth, 
+        clientHeight, 
+        clientWidth, 
+        isScrollable 
+      };
     });
   };
 
@@ -142,34 +151,63 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     }
   };  const handleThumbMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
+    
     const scrollableElement = getScrollableElement();
     if (!scrollableElement) return;
 
+    console.log(`[${orientation}] Starting drag:`, {
+      element: scrollableElement.className,
+      scrollLeft: scrollableElement.scrollLeft,
+      scrollWidth: scrollableElement.scrollWidth,
+      clientWidth: scrollableElement.clientWidth
+    });
+
     setIsDragging(true);
+    // Capture current dimensions at drag start to avoid stale state
     setDragStart({
       x: e.clientX,
       y: e.clientY,
       scrollTop: scrollableElement.scrollTop,
-      scrollLeft: scrollableElement.scrollLeft
+      scrollLeft: scrollableElement.scrollLeft,
+      // Store dimensions to avoid using potentially stale scrollInfo state
+      scrollHeight: scrollableElement.scrollHeight,
+      scrollWidth: scrollableElement.scrollWidth,
+      clientHeight: scrollableElement.clientHeight,
+      clientWidth: scrollableElement.clientWidth
     });
   };
 
-  const handleTrackClick = (e: React.MouseEvent) => {
-    // Only handle clicks on the track, not the thumb
+  const handleTrackMouseDown = (e: React.MouseEvent) => {
+    // Only handle mousedown on the track itself, not the thumb
     if (e.target !== e.currentTarget) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
     
     const scrollableElement = getScrollableElement();
     if (!scrollableElement) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     
+    // Get fresh dimensions to avoid using stale state
+    const scrollHeight = scrollableElement.scrollHeight;
+    const scrollWidth = scrollableElement.scrollWidth;
+    const clientHeight = scrollableElement.clientHeight;
+    const clientWidth = scrollableElement.clientWidth;
+    
     if (orientation === 'vertical') {
       const clickRatio = (e.clientY - rect.top) / rect.height;
-      scrollableElement.scrollTop = clickRatio * (scrollInfo.scrollHeight - scrollInfo.clientHeight);
+      const newScrollTop = clickRatio * (scrollHeight - clientHeight);
+      scrollableElement.scrollTop = Math.max(0, Math.min(scrollHeight - clientHeight, newScrollTop));
     } else {
       const clickRatio = (e.clientX - rect.left) / rect.width;
-      scrollableElement.scrollLeft = clickRatio * (scrollInfo.scrollWidth - scrollInfo.clientWidth);
+      const newScrollLeft = clickRatio * (scrollWidth - clientWidth);
+      scrollableElement.scrollLeft = Math.max(0, Math.min(scrollWidth - clientWidth, newScrollLeft));
     }
+    
+    // Important: Don't start dragging on track clicks - let the thumb position update naturally
+    // The scroll event will update the thumb position via updateScrollInfo
   };
 
   // Handle global mouse move and mouse up for dragging
@@ -177,21 +215,36 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const scrollableElement = getScrollableElement();
       if (!scrollableElement) return;
 
       if (orientation === 'vertical') {
         const deltaY = e.clientY - dragStart.y;
-        const trackHeight = scrollInfo.clientHeight;
-        const scrollRange = scrollInfo.scrollHeight - scrollInfo.clientHeight;
+        // Use dimensions captured at drag start, not current state
+        const trackHeight = dragStart.clientHeight;
+        const scrollRange = dragStart.scrollHeight - dragStart.clientHeight;
         const scrollDelta = (deltaY / trackHeight) * scrollRange;
-        scrollableElement.scrollTop = Math.max(0, Math.min(scrollRange, dragStart.scrollTop + scrollDelta));
+        const newScrollTop = Math.max(0, Math.min(scrollRange, dragStart.scrollTop + scrollDelta));
+        
+        // Only update if the value actually changed
+        if (Math.abs(scrollableElement.scrollTop - newScrollTop) > 0.5) {
+          scrollableElement.scrollTop = newScrollTop;
+        }
       } else {
         const deltaX = e.clientX - dragStart.x;
-        const trackWidth = scrollInfo.clientWidth;
-        const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
+        // Use dimensions captured at drag start, not current state
+        const trackWidth = dragStart.clientWidth;
+        const scrollRange = dragStart.scrollWidth - dragStart.clientWidth;
         const scrollDelta = (deltaX / trackWidth) * scrollRange;
-        scrollableElement.scrollLeft = Math.max(0, Math.min(scrollRange, dragStart.scrollLeft + scrollDelta));
+        const newScrollLeft = Math.max(0, Math.min(scrollRange, dragStart.scrollLeft + scrollDelta));
+        
+        // Only update if the value actually changed
+        if (Math.abs(scrollableElement.scrollLeft - newScrollLeft) > 0.5) {
+          scrollableElement.scrollLeft = newScrollLeft;
+        }
       }
     };
 
@@ -199,14 +252,15 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    // Use capture phase to ensure we get the event first
+    document.addEventListener('mousemove', handleMouseMove, true);
+    document.addEventListener('mouseup', handleMouseUp, true);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMouseMove, true);
+      document.removeEventListener('mouseup', handleMouseUp, true);
     };
-  }, [isDragging, dragStart, scrollInfo]);
+  }, [isDragging, dragStart, orientation]);
 
   useEffect(() => {
     const waitForAgGrid = () => {
@@ -491,16 +545,25 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
       width: `calc(100% - ${marginLeft + marginRight}px)`,
     };
     
-    thumbStyle = {
-      width: `${thumbWidth}%`,
-      left: `${thumbLeft}%`,
-      cursor: isDragging ? 'grabbing' : 'grab'
-    };
+    // For thick scrollbars, position thumb within the padded content area
+    if (thick) {
+      thumbStyle = {
+        width: `calc(${thumbWidth}% - 8px)`, // Subtract total padding (20px * 2)
+        left: `calc(4px + ${thumbLeft}%)`, // Add left padding offset
+        cursor: isDragging ? 'grabbing' : 'grab'
+      };
+    } else {
+      thumbStyle = {
+        width: `${thumbWidth}%`,
+        left: `${thumbLeft}%`,
+        cursor: isDragging ? 'grabbing' : 'grab'
+      };
+    }
   }
 
   const scrollbarClass = orientation === 'vertical' 
     ? `${styles.scrollbar} ${isDragging ? styles.dragging : ''} ${classNameTrack}`
-    : `${styles.scrollbarHorizontal} ${isDragging ? styles.dragging : ''} ${classNameTrack}`;
+    : `${styles.scrollbarHorizontal} ${isDragging ? styles.dragging : ''} ${thick ? styles.thick : ''} ${classNameTrack}`;
 
   const thumbClass = orientation === 'vertical'
     ? `${styles.thumb} ${classNameThumb}`
@@ -509,7 +572,7 @@ export const AGGridCustomScrollbar: React.FC<AGGridCustomScrollbarProps> = ({
   return (
     <div 
       className={scrollbarClass}
-      onClick={handleTrackClick}
+      onMouseDown={handleTrackMouseDown}
       style={scrollbarStyle}
     >
       <div 

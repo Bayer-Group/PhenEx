@@ -13,6 +13,7 @@ import { DomainSelectorCellEditor } from '../../../CohortViewer/CohortTable/Cell
 import { LogicalExpressionCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/LogicalExpressionCellEditor';
 import { DescriptionCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/DescriptionCellEditor';
 import { TypeSelectorCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/TypeSelectorCellEditor';
+import { ReturnDateCellEditor } from '@/views/CohortViewer/CohortTable/CellEditors/ReturnDateCellEditor';
 
 export interface PhenexPhenotypeCellEditorProps extends ICellEditorParams {
   value?: any;
@@ -29,6 +30,7 @@ const classNameToEditorMapping = {
   expression: LogicalExpressionCellEditor,
   description: DescriptionCellEditor,
   type: TypeSelectorCellEditor,
+  return_date: ReturnDateCellEditor,
 };
 
 export const PhenexPhenotypeCellEditor = forwardRef(

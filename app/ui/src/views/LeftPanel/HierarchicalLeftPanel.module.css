@@ -52,20 +52,20 @@
 
 /* Custom item title styling */
 .itemTitle {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   padding: 0px 4px;
   overflow: hidden;
 }
 
-.itemTitle span {
+.itemTitle > span:first-child {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  display: block;
 }
 
 /* Level-based styling */
@@ -123,28 +123,28 @@
 }
 
 .nodeButton {
-  display: inline-block;
-  margin-left: 8px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   padding: 2px 6px;
   font-size: 12px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid #ccc;
   border-radius: 8px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
-  flex-shrink: 0;
   text-align: center;
-  width: auto !important;
-  max-width: 70px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .itemTitle:hover .nodeButton {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .nodeButton:hover {

@@ -12,22 +12,64 @@ interface SmartBreadcrumbsProps {
   onEditLastItem?: (newValue: string) => void;
   classNameSmartBreadcrumbsContainer?: string;
   classNameBreadcrumbItem?: string;
+  classNameBreadcrumbLastItem?: string;
 }
 
-export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem, classNameSmartBreadcrumbsContainer, classNameBreadcrumbItem }) => {
+export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem, classNameSmartBreadcrumbsContainer, classNameBreadcrumbItem, classNameBreadcrumbLastItem }) => {
   const lastItemRef = useRef<HTMLDivElement>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editorPosition, setEditorPosition] = useState({ x: 0, y: 0 });
   const [editingValue, setEditingValue] = useState('');
 
-  const handleLastItemClick = () => {
+  const [elementHeight, setElementHeight] = useState(0);
+  const [elementWidth, setElementWidth] = useState(0);
+  const [fontSize, setFontSize] = useState('16px');
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  const handleLastItemClick = (e: React.MouseEvent) => {
     if (onEditLastItem && lastItemRef.current) {
       const rect = lastItemRef.current.getBoundingClientRect();
-      const x = rect.left;
-      const y = rect.bottom + 5; // Position slightly below the element
+      const computedStyle = window.getComputedStyle(lastItemRef.current);
       
-      setEditingValue(items[items.length - 1].displayName);
+      const x = rect.left;
+      const y = rect.top; // Use top instead of bottom to overlap
+      const height = rect.height;
+      const width = rect.width;
+      const elementFontSize = computedStyle.fontSize;
+      
+      // Calculate cursor position based on click location within the text
+      const clickX = e.clientX - rect.left;
+      const text = items[items.length - 1].displayName;
+      
+      // Create a temporary span to measure character positions
+      const measureSpan = document.createElement('span');
+      measureSpan.style.visibility = 'hidden';
+      measureSpan.style.position = 'absolute';
+      measureSpan.style.fontSize = elementFontSize;
+      measureSpan.style.fontFamily = computedStyle.fontFamily;
+      measureSpan.style.fontWeight = computedStyle.fontWeight;
+      document.body.appendChild(measureSpan);
+      
+      // Find the character position closest to the click
+      let position = 0;
+      for (let i = 0; i <= text.length; i++) {
+        measureSpan.textContent = text.substring(0, i);
+        const charWidth = measureSpan.offsetWidth;
+        if (charWidth >= clickX) {
+          position = i;
+          break;
+        }
+        position = i;
+      }
+      
+      document.body.removeChild(measureSpan);
+      
+      setEditingValue(text);
       setEditorPosition({ x, y });
+      setElementHeight(height);
+      setElementWidth(width);
+      setFontSize(elementFontSize);
+      setCursorPosition(position);
       setShowEditor(true);
     } else if (items.length > 0) {
       items[items.length - 1].onClick();
@@ -75,7 +117,7 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
           <div className={styles.itemWrapper}>
             <div
               ref={lastItemRef}
-              className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbItem}`}
+              className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbLastItem}`}
               onClick={handleLastItemClick}
             >
               {lastItem.displayName}
@@ -93,6 +135,10 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
           onSave={handleSave}
           onClose={handleClose}
           placeholder="Enter name..."
+          height={elementHeight}
+          width={elementWidth}
+          fontSize={fontSize}
+          initialCursorPosition={cursorPosition}
         />
       )}
     </>

@@ -136,6 +136,9 @@ class OMOPConditionOccurenceTable(CodeTable):
         "EVENT_DATE": "CONDITION_START_DATE",
         "CODE": "CONDITION_CONCEPT_ID",
     }
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
+    }
 
 
 class OMOPObservationTable(MeasurementTable):
@@ -171,7 +174,7 @@ class OMOPMeasurementTable(MeasurementTable):
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "MEASUREMENT_DATE",
-        "CODE": "MEASUREMENT_TYPE_CONCEPT_ID",
+        "CODE": "MEASUREMENT_CONCEPT_ID",
         "VALUE": "VALUE_AS_NUMBER",
     }
 
@@ -193,6 +196,9 @@ class OMOPProcedureOccurrenceTable(CodeTable):
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "PROCEDURE_DATE",
         "CODE": "PROCEDURE_CONCEPT_ID",
+    }
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
     }
 
 
@@ -224,6 +230,9 @@ class OMOPConditionOccurrenceSourceTable(CodeTable):
         "EVENT_DATE": "CONDITION_START_DATE",
         "CODE": "CONDITION_SOURCE_VALUE",
     }
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
+    }
 
 
 class OMOPProcedureOccurrenceSourceTable(CodeTable):
@@ -237,6 +246,9 @@ class OMOPProcedureOccurrenceSourceTable(CodeTable):
         "EVENT_DATE": "PROCEDURE_DATE",
         "CODE": "PROCEDURE_SOURCE_VALUE",
     }
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
+    }
 
 
 class OMOPDrugExposureSourceTable(CodeTable):
@@ -249,6 +261,9 @@ class OMOPDrugExposureSourceTable(CodeTable):
         "PERSON_ID": "PERSON_ID",
         "EVENT_DATE": "DRUG_EXPOSURE_START_DATE",
         "CODE": "DRUG_SOURCE_VALUE",
+    }
+    PATHS = {
+        "OMOPVisitDetailTable": ["OMOPVisitOccurrenceTable"],
     }
 
 
