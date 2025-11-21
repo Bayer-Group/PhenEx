@@ -1199,7 +1199,7 @@ async def execute_study(
 
                 print("Executing cohort...")
                 logger.info("Starting cohort execution against mapped tables...")
-                px_cohort.execute(mapped_tables)
+                px_cohort.execute(tables=mapped_tables)#, con = con, n_threads=6, overwrite=True, lazy_execution=True)
                 print("Appending counts...")
                 logger.info("Appending patient counts to cohort results...")
                 px_cohort.append_counts()
@@ -1211,7 +1211,7 @@ async def execute_study(
                 logger.info("Generating waterfall/attrition report...")
                 from phenex.reporting import Waterfall
 
-                r = Waterfall()
+                r = Waterfall(pretty_display=False,decimal_places=2)
                 df_waterfall = r.execute(px_cohort)
 
                 print("Finalizing results...")
@@ -1300,7 +1300,7 @@ async def execute_study(
 
 
 def append_count_to_cohort(phenex_cohort, cohort_dict):
-    cohort_dict["entry_criterion"]["count"] = phenex_cohort.entry_criterion.count
+    cohort_dict["entry_criterion"]["count"] = append_count_to_phenotype(phenex_cohort.entry_criterion, cohort_dict["entry_criterion"])
     if isinstance(phenex_cohort.inclusions, list) and len(phenex_cohort.inclusions) > 0:
         append_count_to_phenotypes(phenex_cohort.inclusions, cohort_dict["inclusions"])
     if isinstance(phenex_cohort.exclusions, list) and len(phenex_cohort.exclusions) > 0:
@@ -1316,11 +1316,69 @@ def append_count_to_cohort(phenex_cohort, cohort_dict):
         append_count_to_phenotypes(phenex_cohort.outcomes, cohort_dict["outcomes"])
 
 
+def append_count_to_phenotype(phenex_phenotype, phenotype_dict):
+    """
+    Recursively appends count to a phenotype and all its nested child phenotypes.
+    
+    For LogicPhenotypes with ComputationGraph expressions, this function traverses
+    the entire tree structure and appends counts to all embedded component phenotypes.
+    
+    Args:
+        phenex_phenotype: The executed PhenEx phenotype object with count information
+        phenotype_dict: The dictionary representation of the phenotype to update
+    """
+    # Append count to the current phenotype
+    if hasattr(phenex_phenotype, 'count'):
+        phenotype_dict["count"] = phenex_phenotype.count
+    
+    # If this is a LogicPhenotype with a ComputationGraph expression, recursively process nested phenotypes
+    if hasattr(phenex_phenotype, 'expression') and phenex_phenotype.expression is not None:
+        phenex_expression = phenex_phenotype.expression
+        
+        # The phenotype_dict should also have an expression field (ComputationGraph)
+        if "expression" in phenotype_dict and phenotype_dict["expression"] is not None:
+            dict_expression = phenotype_dict["expression"]
+            _append_count_to_computation_graph(phenex_expression, dict_expression)
+
+
+def _append_count_to_computation_graph(phenex_node, dict_node):
+    """
+    Helper function to recursively traverse a ComputationGraph and append counts to all nodes.
+    
+    Args:
+        phenex_node: The executed PhenEx ComputationGraph node or phenotype
+        dict_node: The dictionary representation of the node to update
+    """
+    # Check if this is a ComputationGraph node (has left and right children)
+    if hasattr(phenex_node, 'left') and hasattr(phenex_node, 'right'):
+        # Recursively process left and right branches
+        if "left" in dict_node:
+            _append_count_to_computation_graph(phenex_node.left, dict_node["left"])
+        if "right" in dict_node:
+            _append_count_to_computation_graph(phenex_node.right, dict_node["right"])
+    else:
+        # This is a leaf node (actual phenotype) - append its count
+        if hasattr(phenex_node, 'count'):
+            dict_node["count"] = phenex_node.count
+        
+        # If this leaf phenotype is itself a LogicPhenotype, recursively process its expression
+        if hasattr(phenex_node, 'expression') and phenex_node.expression is not None:
+            if "expression" in dict_node and dict_node["expression"] is not None:
+                _append_count_to_computation_graph(phenex_node.expression, dict_node["expression"])
+
+
 def append_count_to_phenotypes(phenex_phenotypes, list_of_phenotype_dicts):
+    """
+    Appends counts to a list of phenotypes and all their nested child phenotypes.
+    
+    Args:
+        phenex_phenotypes: List of executed PhenEx phenotype objects
+        list_of_phenotype_dicts: List of phenotype dictionaries to update
+    """
     for phenex_phenotype, phenotype_dict in zip(
         phenex_phenotypes, list_of_phenotype_dicts
     ):
-        phenotype_dict["count"] = phenex_phenotype.count
+        append_count_to_phenotype(phenex_phenotype, phenotype_dict)
 
 
 # -- CODELIST FILE MANAGEMENT ENDPOINTS
@@ -1844,6 +1902,10 @@ def prepare_phenotypes_for_phenex(phenotypes: list[dict], user_id):
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' is TimeRangePhenotype, preparing...")
             phenotype = prepare_time_range_phenotype(phenotype)
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' TimeRange preparation completed")
+        elif phenotype["class_name"] == "LogicPhenotype":
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' is LogicPhenotype, preparing expression...")
+            phenotype = prepare_logic_phenotype_expression(phenotype, user_id)
+            print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' LogicPhenotype preparation completed")
         else:
             print(f"🧬 INSIDE prepare_phenotypes_for_phenex - Phenotype '{phenotype_name}' requires no preparation")
             
@@ -1895,6 +1957,73 @@ def prepare_time_range_phenotype(phenotype: dict):
         if isinstance(phenotype["relative_time_range"], list):
             phenotype["relative_time_range"] = phenotype["relative_time_range"][0]
     return phenotype
+
+
+def prepare_logic_phenotype_expression(phenotype: dict, user_id: str):
+    """
+    Prepares a LogicPhenotype by recursively processing its ComputationGraph expression.
+    The frontend already sends the correct ComputationGraph structure, so we just need
+    to recursively prepare any nested phenotypes (codelists, etc.).
+    
+    Args:
+        phenotype: The LogicPhenotype dictionary with ComputationGraph expression
+        user_id: The authenticated user ID
+        
+    Returns:
+        The phenotype with all nested phenotypes prepared
+    """
+    if phenotype.get("class_name") != "LogicPhenotype":
+        return phenotype
+    
+    expression = phenotype.get("expression")
+    if not expression:
+        logger.warning(f"LogicPhenotype '{phenotype.get('name')}' missing expression")
+        return phenotype
+    
+    print(f"🧬 Recursively preparing ComputationGraph expression for '{phenotype.get('name')}'")
+    logger.info(f"🧬 Recursively preparing ComputationGraph expression for '{phenotype.get('name')}'")
+    
+    # Recursively prepare the expression tree
+    phenotype["expression"] = prepare_computation_graph_node(expression, user_id)
+    
+    return phenotype
+
+
+def prepare_computation_graph_node(node: dict, user_id: str):
+    """
+    Recursively processes a ComputationGraph node and prepares nested phenotypes.
+    
+    Args:
+        node: A node in the ComputationGraph (either a ComputationGraph or a phenotype)
+        user_id: The authenticated user ID
+        
+    Returns:
+        The prepared node
+    """
+    if node.get("class_name") == "ComputationGraph":
+        # This is a binary operator node - recursively process left and right
+        print(f"🧬 Processing ComputationGraph node with operator '{node.get('operator')}'")
+        
+        node["left"] = prepare_computation_graph_node(node["left"], user_id)
+        node["right"] = prepare_computation_graph_node(node["right"], user_id)
+        
+        return node
+    else:
+        # This is a leaf node (an actual phenotype) - prepare it
+        phenotype_class = node.get("class_name", "Unknown")
+        phenotype_name = node.get("name", "Unknown")
+        
+        print(f"🧬 Preparing leaf phenotype '{phenotype_name}' ({phenotype_class})")
+        
+        if phenotype_class in ["CodelistPhenotype", "MeasurementPhenotype"]:
+            node = prepare_codelists_for_phenotype(node, user_id)
+        elif phenotype_class == "TimeRangePhenotype":
+            node = prepare_time_range_phenotype(node)
+        elif phenotype_class == "LogicPhenotype":
+            # Nested LogicPhenotype - recursively prepare it
+            node = prepare_logic_phenotype_expression(node, user_id)
+        
+        return node
 
 
 def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):

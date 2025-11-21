@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './MessagesDisplay.module.css';
 import ReactMarkdown from 'react-markdown';
 import { Message, chatPanelDataService } from '../ChatPanelDataService';
-import { SimpleCustomScrollbar } from '../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface MessagesDisplayProps {
   bottomMargin?: number;

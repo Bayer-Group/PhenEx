@@ -1,20 +1,22 @@
 import React from 'react';
 import styles from './PhenotypeCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import typeStyles from '../../../../styles/study_types.module.css';
 
 const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatPhenotype = (value: string): string => {
     return value.replace('Phenotype', '');
   };
+  const colorClass = typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || '';
 
   return (
-    <PhenexCellRenderer {...props}>
+    <PhenexCellRenderer {...props} showRightBorder={true}>
       <span
-        className={styles.container}
+        className={`${styles.container} ${colorClass}`}
         onClick={() =>
           props.api?.startEditingCell({
-            rowIndex: props.node.rowIndex,
-            colKey: props.column.getColId(),
+            rowIndex: props.node.rowIndex ?? 0,
+            colKey: props.column?.getColId() ?? '',
           })
         }
       >

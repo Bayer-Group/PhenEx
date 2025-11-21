@@ -22,7 +22,14 @@
   border-radius: var(--border-radius);
   z-index: 10;
   text-wrap: wrap;
+  resize: none;
+  overflow: hidden;
   /* font-family: "IBMPlexSans-bold"; */
+}
+
+textarea.input {
+  min-height: 1.5em;
+  line-height: 1.5;
 }
 
 .saveIndicator {

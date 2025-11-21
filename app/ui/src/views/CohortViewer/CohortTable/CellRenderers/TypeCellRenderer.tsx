@@ -6,6 +6,7 @@ const TypeCellRenderer = (props: any) => {
   const type = props.value;
 
   const renderIndex = (phenotype: any) => {
+    return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
     if (phenotype.type === 'component' && phenotype.hierarchical_index) {
       // For component phenotypes, show hierarchical index (e.g., "1.2.3")
       return <span className={styles.index}>{phenotype.hierarchical_index}</span>;
@@ -20,16 +21,12 @@ const TypeCellRenderer = (props: any) => {
       const effectiveType = props.data.effective_type;
       const hierarchicalIndex = props.data.hierarchical_index;
       
-      if (effectiveType === 'entry' && hierarchicalIndex) {
-        // For entry components: show "e" + index after first dot (1.1 becomes e.1)
-        const indexParts = hierarchicalIndex.split('.');
-        const suffixIndex = indexParts.slice(1).join('.'); // Everything after first part
-        return `e.${suffixIndex}`;
-      } else if (hierarchicalIndex) {
+      if (hierarchicalIndex) {
         // For other components: show only hierarchical index
         return hierarchicalIndex;
       }
     }
+    return `${renderIndex(props.data).props.children}`;
     
     // For non-components: show type + index
     return `${props.data.type === 'component' && props.data.effective_type ? props.data.effective_type : type} ${renderIndex(props.data).props.children}`;
@@ -62,7 +59,7 @@ const TypeCellRenderer = (props: any) => {
     <PhenexCellRenderer {...props}>
       <div className={styles.container} style={getIndentationStyle()}>
         <span
-          className={`${styles.block} ${colorClass}`}
+          className={`${styles.block} ${colorClassText}`}
           onClick={() => {
             props.api?.startEditingCell({
               rowIndex: props.node.rowIndex,

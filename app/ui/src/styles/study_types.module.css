@@ -84,6 +84,31 @@
   color: white;
 }
 
+/* A color block DIM: BACKGROUND = type.color TEXT-COLOR = white*/
+.inclusion_color_block_dim {
+  background-color: var(--color_inclusion_dim) !important;
+}
+
+.exclusion_color_block_dim {
+  background-color: var(--color_exclusion_dim) !important;
+}
+
+.outcome_color_block_dim {
+  background-color: var(--color_outcome_dim) !important;
+}
+
+.entry_color_block_dim {
+  background-color: var(--color_entry_dim) !important;
+}
+
+.baseline_color_block_dim {
+  background-color: var(--color_baseline_dim) !important;
+}
+
+.component_color_block_dim {
+  background-color: var(--color_component_dim) !important;
+}
+
 
 
 /* BORDER and TEXT-COLOR = type.color ON HOVER */
@@ -142,6 +167,32 @@
   color: var(--color_component) !important;
 }
 
+/*TEXT-COLOR = type.color ON HOVER */
+.inclusion_text_color_dim {
+  color: var(--color_inclusion_dim) !important;
+}
+
+.exclusion_text_color_dim {
+  color: var(--color_exclusion_dim) !important;
+}
+
+.outcome_text_color_dim {
+  color: var(--color_outcome_dim) !important;
+}
+
+.entry_text_color_dim {
+  color: var(--color_entry_dim) !important;
+}
+
+.baseline_text_color_dim {
+  color: var(--color_baseline_dim) !important;
+}
+
+.component_text_color_dim {
+  color: var(--color_component_dim) !important;
+}
+
+
 
 /* BORDER = type.color */
 .inclusion_border_color {
@@ -166,4 +217,42 @@
 
 .component_border_color {
   border: 1px solid var(--color_component) !important;
+}
+
+
+/* A color block DIM: BACKGROUND = type.color_dim TEXT AND BORDER-COLOR = type.coloe*/
+.inclusion_color_block_text_and_border {
+  background-color: var(--color_inclusion_dim) !important;
+  border: 1px solid var(--color_inclusion) !important;
+  color:var(--color_inclusion) !important;
+}
+
+.exclusion_color_block_text_and_border {
+  background-color: var(--color_exclusion_dim) !important;
+  border: 1px solid var(--color_exclusion) !important;
+  color:var(--color_exclusion) !important;
+}
+
+.outcome_color_block_text_and_border {
+  background-color: var(--color_outcome_dim) !important;
+  border: 1px solid var(--color_outcome) !important;
+  color:var(--color_outcome) !important;
+}
+
+.entry_color_block_text_and_border {
+  background-color: var(--color_entry_dim) !important;
+  border: 1px solid var(--color_entry) !important;
+  color:var(--color_entry) !important;
+}
+
+.baseline_color_block_text_and_border {
+  background-color: var(--color_baseline_dim) !important;
+  border: 1px solid var(--color_baseline) !important;
+  color:var(--color_baseline) !important;
+}
+
+.component_color_block_text_and_border {
+  background-color: var(--color_component_dim) !important;
+  border: 1px solid var(--color_component) !important;
+  color:var(--color_component) !important;
 }

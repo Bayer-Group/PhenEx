@@ -6,6 +6,9 @@
   border-radius: var(--item-radius);
   border: var(--item-border-default);
   transition: var(--item-transition);
+  font-family:var(--item-font-family);
+  font-size: var(--item-font-size);
+  color: var(--item-font-color);
 }
 
 .domainContainer:hover {

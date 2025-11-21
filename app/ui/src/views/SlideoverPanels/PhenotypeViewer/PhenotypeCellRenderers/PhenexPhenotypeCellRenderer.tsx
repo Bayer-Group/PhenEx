@@ -29,6 +29,7 @@ const classNameToRendererMapping: { [key: string]: React.ComponentType<any> } = 
   expression: LogicalExpressionCellRenderer,
   type: TypeCellRenderer,
   description: DescriptionCellRenderer,
+  return_date: PhenexCellRenderer,
 };
 
 // Helper function to check if value is missing or empty
@@ -59,7 +60,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
     const description = getParameterDescription(props.data.parameter);
 
     return (
-    <PhenexCellRenderer {...props}>
+    <PhenexCellRenderer {...props} colorBackground={false} colorBorder={false}>
       <div 
         style={{ 
           fontSize: '18px', 
@@ -98,7 +99,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
 
   if (props.data?.parameter in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.parameter];
-    return <Renderer {...props} fontSize={'18px'} />;
+    return <Renderer {...props} fontSize={'18px'} colorBackground={false} colorBorder={false} />;
   }
   
   return <div>{props.data?.value}</div>;

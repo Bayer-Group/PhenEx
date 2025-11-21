@@ -41,7 +41,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     }
@@ -88,7 +88,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     }
@@ -99,7 +99,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": 0
     },
@@ -191,7 +191,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -256,7 +256,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -312,7 +312,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": 0
     },
@@ -477,7 +477,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -515,7 +515,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -562,7 +562,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -636,7 +636,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },
@@ -710,7 +710,7 @@
       "required": false,
       "default": null,
       "type": "str",
-      "user_visible": true,
+      "user_visible": false,
       "display_name": "description",
       "index": null
     },

@@ -167,7 +167,6 @@
 .leftPanel {
   width: 100%;
   background-color: var(--background-color);
-
   max-width: var(--initial-left-width);
   z-index: 10000;
   /* padding-right:10px; */
@@ -209,4 +208,11 @@
   background-color: transparent;
   z-index: 50;
   cursor: pointer;
+}
+
+/* Container for left panel content inside portal - must fill full height */
+.leftPanelWidthAdjustablePortal {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }

@@ -42,8 +42,14 @@ export class StudyViewerCohortDefinitionsDataService {
 
     console.log('Filtered phenotypes:', filteredPhenotypes);
 
+    // Add colorCellBorder property to each phenotype
+    const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
+      ...phenotype,
+      colorCellBorder: false,
+    }));
+
     return {
-      rows: filteredPhenotypes,
+      rows: phenotypesWithColorSettings,
       columns: cohortDefinitionColumns,
     };
   }

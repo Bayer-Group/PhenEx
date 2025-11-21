@@ -6,10 +6,11 @@ import { PhenotypeViewer } from './PhenotypeViewer';
 import { Phenotype, PhenotypeDataService } from './PhenotypeDataService';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { PhenotypeComponents } from './PhenotypeComponents/PhenotypeComponents';
-import { EditableTextField } from '../../../components/EditableTextField/EditableTextField';
+import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
+import { SmartTextField } from '../../../components/SmartTextField';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
-import { TwoPanelView } from '@/views/MainView/TwoPanelView/TwoPanelView';
+import { HeightAdjustableContainer } from '@/components/HeightAdjustableContainer/HeightAdjustableContainer';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -23,16 +24,45 @@ enum PhenotypePanelViewType {
 export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const [phenotypeName, setPhenotypeName] = useState('');
+  const [hierarchicalIndex, setHierarchicalIndex] = useState('');
+  const [description, setDescription] = useState('');
+  const [bottomContainerHeight, setBottomContainerHeight] = useState(300);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
   );
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
-  // Initialize phenotype name when data changes
+  const handleHeightChange = (height: number) => {
+    setBottomContainerHeight(height);
+  };
+
+  // Subscribe to data service updates
+  useEffect(() => {
+    const updateFromDataService = () => {
+      if (dataService.currentPhenotype) {
+        setPhenotypeName(dataService.currentPhenotype.name);
+        setHierarchicalIndex(dataService.currentPhenotype.hierarchical_index || '');
+        setDescription(dataService.currentPhenotype.description || '');
+      }
+    };
+
+    // Initialize
+    updateFromDataService();
+
+    // Listen for updates
+    dataService.addListener(updateFromDataService);
+
+    return () => {
+      dataService.removeListener(updateFromDataService);
+    };
+  }, [dataService]);
+
+  // Initialize phenotype data when data changes
   useEffect(() => {
     if (data) {
       setPhenotypeName(data.name);
+      setDescription(data.description || '');
     }
   }, [data]);
 
@@ -43,12 +73,6 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       setActiveTabIndex(0);
     }
   }, [data]);
-
-  const onSaveNameChanges = () => {
-    if (data) {
-      dataService.valueChanged({ parameter: 'name', value: phenotypeName }, phenotypeName);
-    }
-  };
 
   const onClickAncestor = (ancestor: Phenotype) => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
@@ -85,70 +109,104 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   if (!data) {
     return (
-      <SlideoverPanel title="Edit Phenotype" info={() => <span>No data available</span>}>
+      <SlideoverPanel title="" info={() => <span>No data available</span>}>
         <div>No phenotype data available</div>
       </SlideoverPanel>
     );
   }
 
-  const renderAncestors = () => {
-    if (data.type != 'component'){
-      return;
-    }
-    const ancestors = dataService.cohortDataService.getAllAncestors(data);
+  const renderBreadcrumbs = () => {
+    // Get ancestors if this is a component phenotype
+    const ancestors = data.type === 'component' 
+      ? dataService.cohortDataService.getAllAncestors(data)
+      : [];
+    
+    // Get cohort name only if this is a component phenotype
+    const cohortName = data.type != 'component' ? dataService.getCohortName() : null;
+    
+    // Build breadcrumb items: cohort first (if component), then ancestors, then current phenotype
+    const breadcrumbItems = [
+      ...(cohortName ? [{
+        displayName: cohortName || 'Unnamed Cohort',
+        onClick: () => {
+          // Close the phenotype panel to return to cohort view
+          const cohortViewer = TwoPanelCohortViewerService.getInstance();
+          cohortViewer.hideExtraContent();
+        },
+      }] : []),
+      ...ancestors.map(ancestor => ({
+        displayName: ancestor.name || ancestor.id || 'Unnamed',
+        onClick: () => onClickAncestor(ancestor as Phenotype),
+      })),
+      {
+        displayName: phenotypeName || data.name || 'Unnamed Phenotype',
+        onClick: () => {},
+      },
+    ];
+
+    const handleEditLastItem = async (newValue: string) => {
+      setPhenotypeName(newValue);
+      dataService.valueChanged({ parameter: 'name', value: newValue }, newValue);
+    };
+
     return (
-        <div className={styles.ancestorsLabel}>
-          {ancestors.map((ancestor, index) => (
-            <React.Fragment key={ancestor.id}>
-              <span 
-                className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.effective_type || ''}_color_block`] || ''}`}
-                onClick={() => onClickAncestor(ancestor as Phenotype)}
-                style={{ cursor: 'pointer' }}
-              >
-                {ancestor.name || ancestor.id}
-              </span>
-              {index < ancestors.length - 1 && (
-                <span className={styles.ancestorDivider}>{'⋅'}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+      <>
+      <div className={`${styles.index} ${typeStyles[`${data.effective_type}_text_color`]}`}>{hierarchicalIndex || data.hierarchical_index}</div>
+      <SmartBreadcrumbs 
+        items={breadcrumbItems} 
+        onEditLastItem={handleEditLastItem}
+        classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
+        classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
+        classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
+      />
+      </>
     );
-  }
+  };
+
+  const renderDescription = () => {
+    const handleDescriptionSave = (newValue: string) => {
+      setDescription(newValue);
+      dataService.valueChanged({ parameter: 'description', value: newValue }, newValue);
+    };
+
+    return (
+      <div className={styles.descriptionContainer}>
+        <SmartTextField
+          value={description}
+          onSave={handleDescriptionSave}
+          placeholder="Add description..."
+          className={`${styles.description} ${typeStyles[`${data.effective_type}_text_color`]}`}
+        />
+      </div>
+    );
+  };
 
   return (
     <SlideoverPanel
-      title="Edit Phenotype"
+      title=""
       info={infoContent()}
-      classNameHeader={typeStyles[`${data.effective_type}_color_block`]}
-      classNameButton={styles.whiteText}
+      classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
+      classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
       classNameContainer={typeStyles[`${data.effective_type}_border_color`]}
     >
-      <div className={styles.wrapper}>
-        <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block`]}`}>
-          <EditableTextField
-            value={phenotypeName}
-            placeholder="Enter phenotype name..."
-            classNameInput={styles.phenotypeNameInput}
-            onChange={newValue => {
-              setPhenotypeName(newValue);
-            }}
-            onSaveChanges={onSaveNameChanges}
-          />
-          {renderAncestors()}
+      {/* <div className={`${styles.wrapper}`}>
+        <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}> */}
+        <div className={`${styles.wrapper} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}>
+        <div className={`${styles.header}`}>
+          {renderBreadcrumbs()}
+          {renderDescription()}
         </div>
-        <div className={styles.mainContainer}>
+        <div className={styles.mainContainer} style={{ position: 'relative', height: '100%', width: '100%' }}>
+          <PhenotypeViewer data={data} bottomMargin={bottomContainerHeight} />
           <div className={styles.bottomSection}>
-          <TwoPanelView 
-                split="horizontal" 
-                initialSizeLeft={800} 
-                minSizeLeft={100}
-                // collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
-              >
-                <PhenotypeViewer data={data} />
-                <PhenotypeComponents data={data} /> 
-          </TwoPanelView>
-
+            <HeightAdjustableContainer
+              initialHeight={300}
+              minHeight={200}
+              maxHeight={600}
+              onHeightChange={handleHeightChange}
+            >
+              <PhenotypeComponents data={data} />
+            </HeightAdjustableContainer>
           </div>
         </div>
       </div>

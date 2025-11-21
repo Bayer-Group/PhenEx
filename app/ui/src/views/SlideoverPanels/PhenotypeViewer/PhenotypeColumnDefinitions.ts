@@ -7,9 +7,8 @@ import { max, min } from 'd3';
 export const defaultColumns = [
   {
     field: 'parameter',
-    headerName: 'Parameter',
+    headerName: '',
     sortable: true,
-    filter: true,
     width: 100,
     maxWidth: 240,
     minWidth: 200,
@@ -19,7 +18,7 @@ export const defaultColumns = [
   },
   {
     field: 'value',
-    headerName: 'Value',
+    headerName: '',
     editable: true,
     flex: 1,
     minWidth: 250,

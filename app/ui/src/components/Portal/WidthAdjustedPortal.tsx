@@ -10,6 +10,7 @@ interface WidthAdjustedPortalProps {
   allowResize: boolean; // Whether dragging is enabled
   onWidthChange: (newWidth: number) => void; // Callback to update the left panel width
   minWidth?: number;
+  marginLeft?: number; // Left margin for the portal content
   isHoverAnimating?: boolean; // Whether to show portal during hover animation
   onHoverEnter?: () => void; // Callback when portal is hovered
   onHoverLeave?: () => void; // Callback when portal hover ends
@@ -24,6 +25,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
   allowResize,
   onWidthChange,
   minWidth = 200,
+  marginLeft = 20,
   isHoverAnimating = false,
   onHoverEnter,
   onHoverLeave,
@@ -50,7 +52,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
         document.body.removeChild(container);
       }
     };
-  }, [container, width]);
+  }, [container, width, marginLeft]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -60,12 +62,19 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
       if (leftPanelRef.current) {
         const rect = leftPanelRef.current.getBoundingClientRect();
         
-        // Always position and size the portal container
-        container.style.left = `${rect.left + window.scrollX}px`;
+        // Position portal to align right edge with left panel's right edge
+        // The portal starts marginLeft pixels from the left, so its width is (leftPanelWidth - marginLeft)
+        const portalWidth = width - marginLeft;
+        const portalLeft = rect.left + marginLeft;
+        
+        container.style.left = `${portalLeft + window.scrollX}px`;
         container.style.top = `${rect.top + window.scrollY}px`;
-        container.style.width = `${width}px`;
+        container.style.width = `${portalWidth}px`;
         container.style.height = `${rect.height}px`;
         container.style.display = 'block';
+        
+        // Set CSS variable for margin to use in transform calculation
+        container.style.setProperty('--margin-left', `${marginLeft}px`);
         
         // Set CSS classes for animation states
         const classes = [styles.portalContainer];
@@ -81,7 +90,9 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
               width: Math.round(rect.width),
               height: Math.round(rect.height),
             },
-            portalWidth: width,
+            portalWidth: portalWidth,
+            leftPanelWidth: width,
+            marginLeft,
             isCollapsed,
             isHoverAnimating,
             className: container.className,
@@ -90,7 +101,7 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
               y: Math.round(window.scrollY),
             },
             portalPosition: {
-              left: `${rect.left + window.scrollX}px`,
+              left: `${portalLeft + window.scrollX}px`,
               top: `${rect.top + window.scrollY}px`,
             },
           };
@@ -197,12 +208,13 @@ export const WidthAdjustedPortal: React.FC<WidthAdjustedPortalProps> = ({
         resizeObserver.disconnect();
       }
     };
-  }, [leftPanelRef, width, isCollapsed, allowResize, onWidthChange, minWidth, isDragging, dragStartX, dragStartWidth, debug, container]);
+  }, [leftPanelRef, width, isCollapsed, allowResize, onWidthChange, minWidth, marginLeft, isDragging, dragStartX, dragStartWidth, debug, container]);
 
   // Update width whenever it changes
   useEffect(() => {
-    container.style.width = `${width}px`;
-  }, [width, container]);
+    const portalWidth = width - marginLeft;
+    container.style.width = `${portalWidth}px`;
+  }, [width, marginLeft, container]);
 
   const portalContent = (
     <div 

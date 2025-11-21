@@ -15,7 +15,7 @@ export const cohortDefinitionColumns: ColumnDefinition[] = [
   {
     field: 'type',
     headerName: 'Type',
-    width: 100,
+    width: 50,
     editable: false,
     resizable: false,
     filter: false,

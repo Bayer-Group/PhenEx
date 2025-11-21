@@ -14,33 +14,9 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const [tableData, setTableData] = useState(dataService.componentPhenotypeTableData);
 
   const refreshGrid = () => {
-    const maxRetries = 5;
-    const retryDelay = 100; // milliseconds
-    let retryCount = 0;
-
-    const tryRefresh = () => {
-      console.log('THERE IS  gridfRE', gridRef);
-      if (gridRef.current?.api) {
-        const api = gridRef.current.api;
-        const firstRow = api.getFirstDisplayedRow();
-        const lastRow = api.getLastDisplayedRow();
-        console.log('TRYING REFRESH');
-        console.log(dataService.componentPhenotypeTableData);
-        api.setGridOption('rowData', dataService.componentPhenotypeTableData.rows);
-        console.log('THERE IS  gridfREAFTER', gridRef);
-
-        requestAnimationFrame(() => {
-          api.ensureIndexVisible(firstRow, 'top');
-          api.ensureIndexVisible(lastRow, 'bottom');
-        });
-      } else if (retryCount < maxRetries) {
-        retryCount++;
-        setTimeout(tryRefresh, retryDelay);
-      }
-    };
-    // refresh ag-grid when new data is available.
-    // if ag-grid is not ready, retry after a delay.
-    tryRefresh();
+    // Grid will refresh automatically via React when tableData changes
+    // No need to manually call setGridOption which causes re-renders
+    console.log('Grid refresh requested - will happen via React re-render');
   };
 
   useEffect(() => {
@@ -90,13 +66,43 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
 
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
-      dataService.valueChanged(event.data, event.newValue);
+      // Component phenotypes are stored in the cohort data, not phenotype params
+      // Use CohortDataService to handle the change
+      dataService.cohortDataService.onCellValueChanged(event);
+      dataService.saveChangesToPhenotype(false);
     }
+  };
+
+  const onRowDragEnd = async (newRowData: any[]) => {
+    console.log('=== PhenotypeComponents onRowDragEnd ===');
+    // Component phenotypes are stored in cohort data
+    // Use specialized method for reordering components within a parent
+    const parentId = dataService.currentPhenotype?.id;
+    if (parentId) {
+      await dataService.cohortDataService.updateComponentOrder(parentId, newRowData);
+    }
+    // No need to manually refresh - cohort data change listener will handle it
   };
 
   const clickedOnAddButton = (e: React.MouseEvent) => {
     dataService.addNewComponentPhenotype();
   };
+
+  const default_theme = {
+      accentColor: '#BBB',
+      borderColor: 'var(--line-color-grid)',
+      browserColorScheme: 'light',
+      columnBorder: false,
+      headerFontSize: 16,
+      // headerFontWeight: 'bold',
+      headerRowBorder: true,
+      cellHorizontalPadding: 10,
+      headerBackgroundColor: 'transparent',
+      rowBorder: false,
+      spacing: 8,
+      wrapperBorder: false,
+      backgroundColor: 'transparent',
+    };
 
   return (
     <div className={styles.phenotypeContainer}>
@@ -112,8 +118,12 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
         <CohortTable
           data={tableData}
           onCellValueChanged={onCellValueChanged}
+          onRowDragEnd={onRowDragEnd}
           ref={gridRef}
           currentlyViewing={'components'}
+          tableTheme={default_theme}
+          hideHorizontalScrollbar={true}
+
         />
       </div>
     </div>

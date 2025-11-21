@@ -21,9 +21,10 @@ export class TwoPanelCohortViewerService {
   private static instance: TwoPanelCohortViewerService | null = null;
   private data?: string;
   private extraData?: any;
-  private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void }>;
   private currentViewType: any = CohortViewType.Info;
-  private listeners: Array<(viewType: any, extraData: any) => void> = [];
+  private isRightPanelCollapsed: boolean = true;
+  private listeners: Array<(viewType: any, extraData: any, isCollapsed: boolean) => void> = [];
+  private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>;
 
   private constructor() {}
 
@@ -42,7 +43,7 @@ export class TwoPanelCohortViewerService {
     return this.data;
   }
 
-  public setPanelRef(ref: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void }>) {
+  public setPanelRef(ref: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>) {
     this.panelRef = ref;
   }
 
@@ -56,6 +57,7 @@ export class TwoPanelCohortViewerService {
     
     this.currentViewType = viewType;
     this.extraData = data;
+    this.isRightPanelCollapsed = false;
     this.panelRef?.current?.collapseRightPanel(false);
     this.notifyListeners();
   };
@@ -65,6 +67,7 @@ export class TwoPanelCohortViewerService {
     
     this.currentViewType = viewType;
     this.extraData = data;
+    this.isRightPanelCollapsed = false;
     this.panelRef?.current?.collapseRightPanel(false);
     this.notifyListeners();
   };
@@ -76,6 +79,7 @@ export class TwoPanelCohortViewerService {
       historyService.addToHistory(this.currentViewType, this.extraData);
     }
     
+    this.isRightPanelCollapsed = true;
     this.panelRef?.current?.collapseRightPanel(true);
     this.notifyListeners();
   };
@@ -89,32 +93,41 @@ export class TwoPanelCohortViewerService {
   }
 
   private notifyListeners() {
-    this.listeners.forEach(listener => listener(this.currentViewType, this.extraData));
+    this.listeners.forEach(listener => listener(this.currentViewType, this.extraData, this.isRightPanelCollapsed));
   }
 
-  public addListener(listener: (viewType: any, extraData: any) => void) {
+  public addListener(listener: (viewType: any, extraData: any, isCollapsed: boolean) => void) {
     this.listeners.push(listener);
   }
 
-  public removeListener(listener: (viewType: any, extraData: any) => void) {
+  public removeListener(listener: (viewType: any, extraData: any, isCollapsed: boolean) => void) {
     this.listeners = this.listeners.filter(l => l !== listener);
   }
 }
 
 export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) => {
   const service = TwoPanelCohortViewerService.getInstance();
-  const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void }>(null);
-  service.setPanelRef(panelRef);
+  const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>(null);
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
 
-  // Handle right panel collapse events
+  React.useEffect(() => {
+    service.setPanelRef(panelRef);
+  }, [service]);
+
+  // Handle right panel collapse events from TwoPanelView collapse button
   const handleRightPanelCollapse = (isCollapsed: boolean) => {
-    if (isCollapsed && viewType === 'phenotype') {
-      const historyService = RightPanelHistoryDataService.getInstance();
-      console.log("HANDLING RIGHT PANEL COLLAPSE", extraData)
-      historyService.forceAddToHistory(viewType, extraData);
+    // Update service state when collapse button is clicked (without triggering panelRef call)
+    if (isCollapsed) {
+      if (viewType === 'phenotype') {
+        const historyService = RightPanelHistoryDataService.getInstance();
+        historyService.forceAddToHistory(viewType, extraData);
+      }
+      service['isRightPanelCollapsed'] = true;
+    } else {
+      service['isRightPanelCollapsed'] = false;
     }
+    service['notifyListeners']();
   };
 
   React.useEffect(() => {
@@ -122,11 +135,16 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       setViewType(viewType);
       setExtraData(extraData);
     };
-    updateState(service.getCurrentViewType(), service.getExtraData());
+    
     // Subscribe to service changes
     service.addListener(updateState);
+    
+    // Set initial state
+    updateState(service.getCurrentViewType(), service.getExtraData());
+    
     return () => service.removeListener(updateState);
   }, [service]);
+  
   service.setData(data);
 
   const renderRightPanel = () => {
@@ -159,7 +177,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       split="vertical" 
       initialSizeLeft={500} 
       minSizeLeft={100}
-      collapseButtonTheme={viewType === 'phenotype' ? 'light' : 'dark'}
+      collapseButtonTheme={'dark'}
       onRightPanelCollapse={handleRightPanelCollapse}
     >
       <>

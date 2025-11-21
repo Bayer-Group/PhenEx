@@ -4,9 +4,7 @@ import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRendere
 import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categoricalFilterEditor/types';
 
 const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  if (!props.value || typeof props.value !== 'object' || Array.isArray(props.value)) {
-    return null;
-  }
+  // Let PhenexCellRenderer handle missing values - don't return null early
   const renderFilter = (filter: FilterType | null | undefined, isRoot: boolean): JSX.Element => {
     if (!filter) {
       return <div className={styles.filterText}></div>;
@@ -41,9 +39,14 @@ const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props =
     return <div className={styles.filterText}>Invalid filter type</div>;
   };
 
+  // Only render custom content if value is valid, otherwise let PhenexCellRenderer handle it
+  const hasValidValue = props.value && typeof props.value === 'object' && !Array.isArray(props.value);
+
   return (
     <PhenexCellRenderer {...props}>
-      <div className={styles.fullText}>{renderFilter(props.value as FilterType, true)}</div>
+      {hasValidValue ? (
+        <div className={styles.fullText}>{renderFilter(props.value as FilterType, true)}</div>
+      ) : null}
     </PhenexCellRenderer>
   );
 };

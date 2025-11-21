@@ -6,6 +6,7 @@ import styles from './HierarchicalLeftPanel.module.css';
 import { HierarchicalTreeNode } from './CohortTreeListItem.tsx';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
 import { MainViewService } from '../MainView/MainView';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -51,6 +52,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const [focusedItem, setFocusedItem] = useState<TreeItemIndex>();
   const dataService = useRef(HierarchicalLeftPanelDataService.getInstance());
   const treeEnvironmentRef = useRef<TreeEnvironmentRef<HierarchicalTreeNode>>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
   const isExpandCollapseAction = useRef(false);
   const isDragging = useRef(false);
@@ -159,7 +161,10 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   return (
     <LeftPanel isVisible={isVisible} width={280}>
       <div className={styles.treeContainer}>
-                <div style={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
+        <div 
+          ref={scrollContainerRef}
+          className={styles.scrollContainer}
+        >
           <ControlledTreeEnvironment<HierarchicalTreeNode>
             ref={treeEnvironmentRef}
             items={items}
@@ -412,6 +417,12 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             <Tree treeId="hierarchical-tree" rootItem="root" treeLabel="Navigation Tree" />
           </ControlledTreeEnvironment>
         </div>
+        <SimpleCustomScrollbar 
+          targetRef={scrollContainerRef}
+          orientation="vertical"
+          marginBottom={20}
+          marginToEnd={3}
+        />
       </div>
     </LeftPanel>
   );

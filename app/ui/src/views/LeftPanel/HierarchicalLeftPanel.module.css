@@ -1,19 +1,49 @@
+
 .treeContainer {
-  height: 100%;
+  flex: 1; /* Fill the .content area */
+  min-height: 0; /* Allow flex scrolling */
   width: 100%;
-  overflow: auto;
-  padding: 8px;
+  overflow: hidden !important; /* Outer container never scrolls */
+  padding: 0;
+  position: relative; /* For absolute positioning of custom scrollbar */
+  display: flex;
+  flex-direction: column;
 }
 
-/* Ensure tree is visible */
-.treeContainer :global(.rct-tree-root) {
-  height: 100%;
+/* Hide default scrollbars on the scroll container */
+.scrollContainer {
+  flex: 1; /* Fill the .treeContainer */
+  min-height: 0; /* Allow flex scrolling */
   width: 100%;
+  overflow-x: hidden !important; /* Never show horizontal scrollbar */
+  overflow-y: auto !important; /* Allow vertical scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.scrollContainer::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+/* Ensure tree is visible and constrained */
+.treeContainer :global(.rct-tree-root) {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  min-height: 0; /* Allow shrinking */
+}
+
+.treeContainer :global(.rct-tree-item) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .treeContainer :global(.rct-tree) {
   height: auto !important;
-  min-height: 100%;
 }
 
 .treeContainer :global(.rct-tree-items-container) {
@@ -22,21 +52,20 @@
 
 /* Custom item title styling */
 .itemTitle {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   padding: 0px 4px;
   overflow: hidden;
-  /* background-color: var(--background-color) !important; */
 }
 
-.itemTitle span {
+.itemTitle > span:first-child {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  display: block;
 }
 
 /* Level-based styling */
@@ -94,28 +123,28 @@
 }
 
 .nodeButton {
-  display: inline-block;
-  margin-left: 8px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   padding: 2px 6px;
   font-size: 12px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid #ccc;
   border-radius: 8px;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
-  flex-shrink: 0;
   text-align: center;
-  width: auto !important;
-  max-width: 70px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .itemTitle:hover .nodeButton {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .nodeButton:hover {
@@ -129,6 +158,9 @@
   padding: 0;
 }
 
+.treeContainer{
+  overflow: hidden;
+}
 /* Ensure proper indentation for nested items */
 .treeContainer :global(.rct-tree-item-li) {
   padding-left: 0;

@@ -12,9 +12,9 @@
   -webkit-backdrop-filter: blur(8px);
 
   height: calc(100vh - 40px) !important;
-  border-radius: 0px 20px 20px 0px;
+  border-radius: 20px;
   margin-top: 20px;
-  box-shadow: var(--box_shadow);
+  box-shadow: var(--box_shadow) !important;
     border: var(--border);
 }
 
@@ -125,15 +125,16 @@
 
 /* Base portal container */
 .portalContainer {
+  --margin-left: 20px; /* Default value, overridden by JS */
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
 }
 
-/* When collapsed - hide completely off-screen */
+/* When collapsed - hide completely off-screen, accounting for left margin */
 .portalContainer.collapsed {
-  transform: translateX(-100%);
+  transform: translateX(calc(-100% - var(--margin-left)));
   pointer-events: none;
 }
 

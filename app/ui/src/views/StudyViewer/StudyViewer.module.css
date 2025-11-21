@@ -8,12 +8,25 @@
 }
 
 .topSection {
-  height: calc(var(--top_app_navigation_tab_bar) + 100px);
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  pointer-events: none;
+  padding: 20px 20px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.topSection > * {
+  pointer-events: auto;
 }
 
 .bottomSection {
-  height: calc(100% - 0px);
-  padding-top:0px;
+  height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -73,6 +86,24 @@
   margin-top:40px;
 }
 
+.breadcrumbsContainer{
+  /* No absolute positioning - flows naturally */
+  margin-top: 10px;
+  margin-left: 30px;
+  font-size: 40px !important;
+}
+
+.breadcrumbItem{
+  font-size: 20px !important;
+  line-height: 10px;
+}
+
+.breadcrumbLastItem{
+  font-size: 32px !important;
+  font-family: 'IBMPlexSans-bold' !important;
+  line-height: 28px;
+}
+
 .studyNameInput {
   border: none;
   padding: 0px;
@@ -93,8 +124,6 @@
   flex-direction: row;
   display: flex;
   margin-left: 20px;
-  position: absolute;
-  top: calc(var(--top_app_navigation_tab_bar) + 35px);
   background-color: transparent;
 }
 

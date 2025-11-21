@@ -5,6 +5,9 @@ import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer'
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import type { ICellEditorParams } from 'ag-grid-community';
+import RowDragCellRenderer from '../CohortTable/CellRenderers/RowDragCellRenderer';
+
+import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
 import ValueFilterCellRenderer from '../CohortTable/CellRenderers/ValueFilterCellRenderer';
@@ -29,6 +32,57 @@ export const columnNameToApplicablePhenotypeMapping = {
   codelist: ['CodelistPhenotype', 'MeasurementPhenotype'],
 };
 
+export const componentPhenotypeColumns: any[] = [
+  {
+    field: 'rowDrag',
+    headerName: '',
+    width: 60,
+    pinned: 'left',
+    rowDrag: true,
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellClass: 'row-drag-handle',
+    cellRenderer: RowDragCellRenderer,
+  },
+  {
+    field: 'type',
+    headerName: '',
+    width: 70,
+    resizable: false,
+    pinned: 'left',
+    editable: params => {
+      return params.data.type != 'component';
+    },
+    cellEditor: TypeSelectorCellEditor,
+    cellEditorParams: {
+      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
+    },
+    cellRenderer: TypeCellRenderer,
+    cellEditorPopup: true,
+  },
+  {
+    field: 'name',
+    headerName: '',
+    flex: 1,
+    resizable: false,
+    editable: true,
+    cellRenderer: NameCellRenderer,
+    cellEditor: 'agTextCellEditor',
+    cellEditorSelector: (params: ICellEditorParams) => {
+      if (params.eventKey == 'settings') {
+        return {
+          component: SettingsCellEditor,
+          popup: true,
+        };
+      }
+      return {
+        component: 'agTextCellEditor',
+      };
+    },
+  },
+];
+
 export const defaultColumns = [
   {
     field: 'rowDrag',
@@ -36,15 +90,17 @@ export const defaultColumns = [
     width: 60,
     pinned: 'left',
     rowDrag: true,
+    resizable: false,
     filter: false,
     suppressHeaderMenuButton: true,
     cellClass: 'row-drag-handle',
-    cellStyle: { textAlign: 'right', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' },
+    cellRenderer: RowDragCellRenderer,
   },
   {
     field: 'type',
-    headerName: 'Type',
-    width: 100,
+    headerName: '',
+    width: 70,
+    resizable: false,
     pinned: 'left',
     editable: (params: any) => {
       return params.data.type != 'component';
@@ -59,9 +115,10 @@ export const defaultColumns = [
   },
   {
     field: 'name',
-    headerName: 'Name',
+    headerName: '',
     width: 250,
     pinned: 'left',
+    resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,
     cellEditor: 'agTextCellEditor',
@@ -91,6 +148,7 @@ export const defaultColumns = [
     headerName: 'Phenotype',
     width: 130,
     editable: true,
+    pinned: 'left',
     cellRenderer: PhenotypeCellRenderer,
     cellEditor: PhenotypeSelectorCellEditor,
     cellEditorParams: {
@@ -110,7 +168,7 @@ export const defaultColumns = [
   {
     field: 'domain',
     headerName: 'Domain',
-    width: 180,
+    width: 270,
     editable: true,
     cellRenderer: DomainCellRenderer,
     cellEditor: DomainSelectorCellEditor,

@@ -8,15 +8,34 @@
 }
 
 .topSection {
-  height: calc(var(--top_app_navigation_tab_bar) + 120px);
-}
-
-.bottomSection {
-  height: calc(100% - 0px);
-  padding-top:0px;
+  /* Height hugs content */
   width: 100%;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  padding-bottom: 20px;
+}
+
+.bottomSection {
+  /* Fill remaining vertical space */
+  flex: 1;
+  padding-top: 0px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.bottomGradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(to top, #ffffff, #ffffff00);
+  pointer-events: none;
+  z-index: -100;
 }
 
 .visible {
@@ -72,13 +91,20 @@
   height: 40px;
 }
 .breadcrumbsContainer{
-  position: absolute;
-  margin-top:20px;
-  margin-left:var(--centerPanelLeftMargin);
-  font-size:40px !important;
+  /* No absolute positioning - flows naturally */
+  margin-top: 10px;
+  margin-left: var(--centerPanelLeftMargin);
+  font-size: 40px !important;
 }
 .breadcrumbItem{
-  font-size: 40px !important;
+  font-size: 20px !important;
+  line-height: 10px;
+}
+
+.breadcrumbLastItem{
+  font-size: 32px !important;
+  font-family: 'IBMPlexSans-bold' !important;
+  line-height: 28px;
 }
 .cohortNameInput {
   border: none;
@@ -100,8 +126,7 @@
   flex-direction: row;
   display: flex;
   margin-left: var(--centerPanelLeftMargin);
-  position: absolute;
-  top: calc(var(--top_app_navigation_tab_bar) + 35px);
+  /* No absolute positioning - flows naturally below RighPanelNavigationTabBar */
   background-color: transparent;
 }
 
@@ -109,10 +134,18 @@
   color:red !important;
   background-color: transparent !important;
   border-color:transparent;
+  height: 32px !important;
   backdrop-filter: none !important;
   /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: none !important;
 
+}
+
+.classNameSectionTabs{
+  font-size: 20px !important;
+  height: 32px !important;
+  padding-left: 10px;
+  padding-right:10px;
 }
 
 .addPhenotypeButton{

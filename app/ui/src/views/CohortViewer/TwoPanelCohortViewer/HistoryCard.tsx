@@ -21,8 +21,8 @@ export const HistoryCard: FC<HistoryCardProps> = ({ item, index, onClick, classN
     `${styles.cardIndex}${index}`, // Add specific index class for CSS targeting
     typeStyleClass,
     className,
-    typeStyles[`${item.extraData?.effective_type || ''}_color_block`] || '',
-    typeStyles[`${item.extraData?.effective_type || ''}_border_color`] || '',
+    typeStyles[`${item.extraData?.effective_type || ''}_color_block_text_and_border`] || '',
+    typeStyles[`${item.extraData?.effective_type || ''}_color_block_text_and_border`] || '',
     isHovered ? styles.cardHovered : '' // Apply cardHovered class when hovered
   ].filter(Boolean).join(' ');
 

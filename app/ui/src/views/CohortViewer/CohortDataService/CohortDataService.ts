@@ -1,16 +1,16 @@
 import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
-import { executeStudy } from '../../../api/execute_cohort/route';
 import {
   createCohort,
   updateCohort,
   deleteCohort,
 } from '../../../api/text_to_cohort/route';
-import { defaultColumns } from './CohortColumnDefinitions';
+import { defaultColumns, componentPhenotypeColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
 import { ConstantsDataService } from '../../SlideoverPanels/ConstantsPanel/ConstantsDataService';
 import { CodelistDataService } from '../../SlideoverPanels/CodelistsViewer/CodelistDataService';
 import { ReportDataService } from '../../SlideoverPanels/CohortReportView/ReportDataService';
+import { CohortExecutionService } from './CohortExecutionService';
 
 // export abstract class CohortDataService {
 export class CohortDataService {
@@ -23,6 +23,7 @@ export class CohortDataService {
   public constants_service: ConstantsDataService;
   public codelists_service: CodelistDataService;
   public report_service: ReportDataService;
+  public execution_service: CohortExecutionService;
 
   private _table_data: TableData = {
     rows: [],
@@ -79,6 +80,7 @@ export class CohortDataService {
     this.codelists_service.setCohortDataService(this);
     this.report_service = new ReportDataService();
     this.report_service.setCohortDataService(this);
+    this.execution_service = new CohortExecutionService();
   }
 
   public static getInstance(): CohortDataService {
@@ -364,6 +366,11 @@ export class CohortDataService {
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
+    
+    // Always notify data change listeners (for PhenotypeDataService sync)
+    this.notifyDataChangeListeners();
+    
+    // Only notify grid listeners if visual refresh is needed
     if (refreshGrid) {
       this.notifyListeners();
     }
@@ -507,19 +514,39 @@ export class CohortDataService {
   }
 
   private calculateHierarchicalIndices(): void {
-    // Group phenotypes by type to get base indices
-    const typeGroups = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+    // Group 1: entry, inclusion, exclusion share indices
+    const sharedGroup = ['entry', 'inclusion', 'exclusion'];
+    let sharedIndex = 1;
+    console.log("CALCULATING HIERARCHICAL INDICES")
     
-    typeGroups.forEach(type => {
+    sharedGroup.forEach(type => {
       const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
       
-      phenotypesOfType.forEach((phenotype: any, index: number) => {
-        const baseIndex = index + 1; // 1-based indexing
-        phenotype.hierarchical_index = baseIndex.toString();
+      phenotypesOfType.forEach((phenotype: any) => {
+        phenotype.hierarchical_index = sharedIndex.toString();
         
         // Calculate hierarchical indices for all component descendants
-        this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+        this.calculateComponentHierarchicalIndices(phenotype.id, sharedIndex.toString());
+        
+        sharedIndex++; // Increment for next phenotype in the shared group
       });
+    });
+    console.log("AFTER CALCULATION", this._cohort_data)
+    
+    // Group 2: baseline has its own indexing
+    const baselinePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'baseline');
+    baselinePhenotypes.forEach((phenotype: any, index: number) => {
+      const baseIndex = index + 1;
+      phenotype.hierarchical_index = baseIndex.toString();
+      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+    });
+    
+    // Group 3: outcome has its own indexing
+    const outcomePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'outcome');
+    outcomePhenotypes.forEach((phenotype: any, index: number) => {
+      const baseIndex = index + 1;
+      phenotype.hierarchical_index = baseIndex.toString();
+      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
     });
   }
 
@@ -685,6 +712,58 @@ export class CohortDataService {
     };
   }
 
+  // Reorder component phenotypes within a specific parent
+  public async updateComponentOrder(parentId: string, reorderedComponents: TableRow[]) {
+    console.log('=== updateComponentOrder START ===');
+    console.log('Parent ID:', parentId);
+    console.log('Reordered components:', reorderedComponents.map(r => ({ id: r.id, name: r.name })));
+
+    const allPhenotypes = [...this._cohort_data.phenotypes];
+    const reorderedIds = new Set(reorderedComponents.map(c => c.id));
+    
+    // Strip UI-specific properties from reordered components before saving to cohort data
+    const cleanedComponents = reorderedComponents.map(comp => {
+      const { colorCellBackground, ...cleanComp } = comp as any;
+      return cleanComp as TableRow;
+    });
+    
+    // Build new phenotype array with reordered components in their new positions
+    const newOrder: TableRow[] = [];
+    
+    for (const phenotype of allPhenotypes) {
+      // If this is not one of the reordered components, add it normally
+      if (!reorderedIds.has(phenotype.id)) {
+        newOrder.push(phenotype);
+        
+        // If this is the parent, add the cleaned reordered children after it
+        if (phenotype.id === parentId) {
+          newOrder.push(...cleanedComponents);
+        }
+      }
+    }
+    
+    console.log('New order:', newOrder.map(p => ({ id: p.id, type: p.type, name: p.name })));
+    
+    // Update cohort data
+    this._cohort_data.phenotypes = newOrder;
+    this._table_data = this.tableDataFromCohortData();
+    this.splitPhenotypesByType();
+    this._cohort_data.name = this._cohort_name;
+    
+    // Recalculate hierarchical indices
+    this.calculateHierarchicalIndices();
+    
+    await updateCohort(this._cohort_data.id, this._cohort_data);
+    this.notifyNameChangeListeners();
+    this.issues_service.validateCohort();
+    
+    // Notify both data change listeners (for cross-service sync) and grid refresh listeners
+    this.notifyDataChangeListeners();
+    this.notifyListeners();
+    
+    console.log('=== updateComponentOrder END ===');
+  }
+
   public async updateRowOrder(newRowData: TableRow[]) {
     console.log('=== updateRowOrder START ===');
     console.log(
@@ -787,6 +866,9 @@ export class CohortDataService {
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
+    
+    // Notify both data change listeners (for cross-service sync) and grid refresh listeners
+    this.notifyDataChangeListeners();
     this.notifyListeners();
   }
 
@@ -868,6 +950,9 @@ export class CohortDataService {
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
+    
+    // Notify both data change listeners (for cross-service sync) and grid refresh listeners
+    this.notifyDataChangeListeners();
     this.notifyListeners();
   }
   
@@ -997,33 +1082,37 @@ export class CohortDataService {
     this.listeners.forEach(listener => listener());
   }
 
+  // Data change listeners - called on every data change (for syncing with other services)
+  private dataChangeListeners: Array<() => void> = [];
+
+  public addDataChangeListener(listener: () => void) {
+    this.dataChangeListeners.push(listener);
+  }
+
+  public removeDataChangeListener(listener: () => void) {
+    const index = this.dataChangeListeners.indexOf(listener);
+    if (index > -1) {
+      this.dataChangeListeners.splice(index, 1);
+    }
+  }
+
+  private notifyDataChangeListeners() {
+    this.dataChangeListeners.forEach(listener => listener());
+  }
+
   private nameChangeListeners: Array<() => void> = [];
 
-  // Add execution progress listeners
-  private executionProgressListeners: Array<
-    (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
-  > = [];
-
+  // Execution progress listener management - delegate to execution service
   public addExecutionProgressListener(
     listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
   ) {
-    this.executionProgressListeners.push(listener);
+    this.execution_service.addExecutionProgressListener(listener);
   }
 
   public removeExecutionProgressListener(
     listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void
   ) {
-    const index = this.executionProgressListeners.indexOf(listener);
-    if (index > -1) {
-      this.executionProgressListeners.splice(index, 1);
-    }
-  }
-
-  private notifyExecutionProgressListeners(
-    message: string | any,
-    type: 'log' | 'error' | 'result' | 'complete'
-  ) {
-    this.executionProgressListeners.forEach(listener => listener(message, type));
+    this.execution_service.removeExecutionProgressListener(listener);
   }
 
   public addNameChangeListener(listener: () => void) {
@@ -1052,50 +1141,24 @@ export class CohortDataService {
 
   public async executeCohort(): Promise<void> {
     try {
-      const response = await executeStudy(
-        {
-          cohort: this._cohort_data,
-          database_config: this._cohort_data.database_config,
-        },
-        (message: string, type: 'log' | 'error' | 'result' | 'complete') => {
-          // Handle streaming messages
-          console.log(`[${type.toUpperCase()}]`, message);
-
-          // You can emit these to listeners or store them for display
-          this.notifyExecutionProgressListeners(message, type);
-        }
+      // Delegate to execution service
+      const processedCohort = await this.execution_service.executeCohort(
+        this._cohort_data,
+        this._cohort_data.database_config
       );
-
-      this._cohort_data = response.cohort;
-      this.preparePhenexCohortForUI();
+      
+      // Update cohort data with execution results
+      this._cohort_data = processedCohort;
+      
+      // Sort phenotypes and save changes
+      this.sortPhenotypes();
       this.saveChangesToCohort();
     } catch (error) {
-      console.error('Error fetching cohort explanation:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      this.notifyExecutionProgressListeners(`Error: ${errorMessage}`, 'error');
+      console.error('Error executing cohort:', error);
+      throw error;
     }
   }
 
-  private appendTypeKeyToPhenotypes(phenotypes: Array<Record<string, any>>, settype: string) {
-    for (let i = 0; i < phenotypes.length; i++) {
-      phenotypes[i].type = settype;
-    }
-  }
-
-  private preparePhenexCohortForUI() {
-    this._cohort_data.entry_criterion.type = 'entry';
-    this.appendTypeKeyToPhenotypes(this._cohort_data.inclusions, 'inclusion');
-    this.appendTypeKeyToPhenotypes(this._cohort_data.exclusions, 'exclusion');
-    this.appendTypeKeyToPhenotypes(this._cohort_data.characteristics, 'baseline');
-    this.appendTypeKeyToPhenotypes(this._cohort_data.outcomes, 'outcome');
-
-    this._cohort_data.phenotypes = [this._cohort_data.entry_criterion].concat(
-      this._cohort_data.inclusions,
-      this._cohort_data.exclusions,
-      this._cohort_data.characteristics,
-      this._cohort_data.outcomes
-    );
-  }
   async deleteCohort() {
     if (this._cohort_data.id) {
       await deleteCohort(this._cohort_data.id);
@@ -1131,9 +1194,16 @@ export class CohortDataService {
           phenotype.parentIds.includes(parentPhenotype.id)
       );
     }
+    
+    // Add colorCellBackground property to hide background colors
+    const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
+      ...phenotype,
+      colorCellBackground: false,
+    }));
+    
     return {
-      rows: filteredPhenotypes,
-      columns: this.columns,
+      rows: phenotypesWithColorSettings,
+      columns: componentPhenotypeColumns,
     };
   }
 }

@@ -6,13 +6,19 @@ export interface SimpleCustomScrollbarProps {
   orientation?: 'vertical' | 'horizontal';
   classNameThumb?: string;
   classNameTrack?: string;
+  marginTop?: number;
+  marginBottom?: number;
+  marginToEnd?: number; // Right margin for vertical, bottom margin for horizontal
 }
 
 export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   targetRef,
   orientation = 'vertical',
   classNameThumb = '',
-  classNameTrack = ''
+  classNameTrack = '',
+  marginTop = 0,
+  marginBottom = 0,
+  marginToEnd = 0
 }) => {
   const [scrollInfo, setScrollInfo] = useState({
     scrollTop: 0,
@@ -185,9 +191,14 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const thumbHeight = Math.max(20, (scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
     const thumbTop = (scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight)) * (100 - thumbHeight);
     
+    const effectiveHeight = scrollInfo.clientHeight > 0 
+      ? scrollInfo.clientHeight - marginTop - marginBottom 
+      : `calc(100% - ${marginTop + marginBottom}px)`;
+    
     scrollbarStyle = {
-      height: scrollInfo.clientHeight > 0 ? `${scrollInfo.clientHeight}px` : '100%',
-      top: 0,
+      height: typeof effectiveHeight === 'number' ? `${effectiveHeight}px` : effectiveHeight,
+      top: marginTop,
+      right: marginToEnd,
       display: scrollInfo.isScrollable ? 'block' : 'none'
     };
     
@@ -200,9 +211,14 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const thumbWidth = Math.max(20, (scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
     const thumbLeft = (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * (100 - thumbWidth);
     
+    const effectiveWidth = scrollInfo.clientWidth > 0 
+      ? scrollInfo.clientWidth - marginTop - marginToEnd
+      : `calc(100% - ${marginTop + marginToEnd}px)`;
+    
     scrollbarStyle = {
-      width: scrollInfo.clientWidth > 0 ? `${scrollInfo.clientWidth}px` : '100%',
-      left: 0,
+      width: typeof effectiveWidth === 'number' ? `${effectiveWidth}px` : effectiveWidth,
+      left: marginTop,
+      bottom: marginToEnd,
       display: scrollInfo.isScrollable ? 'block' : 'none'
     };
     

@@ -3,12 +3,15 @@
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
   --line-color: hsl(0, 0%, 88%);
-  --line-color-grid: hsl(0, 0%, 95%);
+  --line-color-grid: hsl(0, 0%, 88%);
   --line-width-grid: 1px;
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
-  --item-color-default: #ebebebea;
+  --item-color-default: transparent;
   --item-radius: 4px;
+  --item-font-size: 14px;
+  --item-font-family: "IBMPlexSans-bold";
+  --item-font-color: var(--color-accent-bright);
   --item-border-default: 1px solid var(--line-color);
   --item-margin-top: 5px;
 
@@ -59,7 +62,7 @@
   --color-accent: var(--color-accent-bright); /*var(--phenex-dark); /* #03396c;/*#fa934f;*/
   --color-accent_2: var(--color-accent);
 
-  --box_shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --box_shadow: 0 0px 20px rgba(0, 0, 0, .1);
   --box_shadow_hover: 0 4px 8px rgba(0, 0, 0, 0.05);
 
   /* --color-accent:  var(--phenex-red); */
@@ -88,12 +91,19 @@
   --button-font-family-default: 'IBMPlexSans-regular';
   --button-font-family-hover: 'IBMPlexSans-regular';
 
-  --color_inclusion: #79b239;
-  --color_exclusion: #eb4765;
+  --color_inclusion: #1A4225; /*79b239;*/
+  --color_exclusion: #C22D4E;
   --color_baseline: #27607c;
   --color_outcome: var(--color-accent-bright);
-  --color_entry: #3d90d9;
+  --color_entry: #1B384D;
   --color_component: gray;
+
+  --color_inclusion_dim: #1A422533;
+  --color_exclusion_dim: #C22D4E33;
+  --color_baseline_dim: #27607c33;
+  --color_outcome_dim: #41334633;
+  --color_entry_dim: #1B384D33;
+  --color_component_dim: gray;
 }
 
 .rag-blue-outer {

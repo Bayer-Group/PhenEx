@@ -12,6 +12,8 @@
   /* background-color: red; */
   /* border-left: var(--border); */
   border-right: 1px solid transparent;
+  border-radius: var(--border_radius_right_panel);
+  overflow: hidden;
   
 }
 
@@ -98,7 +100,7 @@ code {
 
 .infoButton {
   position: absolute !important;
-  right: 20px;
+  right: 60px;
   top: 10px;
   color: var(--button-text-color-default);
 

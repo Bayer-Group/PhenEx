@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'rea
 import { ICellEditorParams } from '@ag-grid-community/core';
 import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
-import { SimpleCustomScrollbar } from '../../../../components/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
 import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
@@ -256,16 +256,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
         >
           <span className={styles.topLine}>
-            <span className={styles.filler}>editing</span>
-            <span className={styles.actionText}>{titleText}</span>
-          </span>
-          <br></br>
-
-          <span className={styles.bottomLine}>
-            <span className={`${styles.filler} ${styles.bottomLabel}`}>in</span>
+            <span className={styles.filler}>
+              {props.data.hierarchical_index}
+            </span>
             <span className={`${styles.phenotypeName} ${styles.actionText}`}>
               {props.data.name}
             </span>
+           </span>
+          <br></br>
+
+          <span className={styles.bottomLine}>
+
+            <span className={styles.actionText}>{titleText}</span>
+
           </span>
         </div>
       </PopoverHeader>
