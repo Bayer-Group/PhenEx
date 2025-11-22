@@ -127,17 +127,17 @@
 
 /* Thick horizontal scrollbar - completely separate state, no transitions or hover effects */
 .scrollbarHorizontal.thick {
-  height: 30px !important;
+  height: 24px !important;
   border-radius: 10px !important;
   transition: none !important;
-  border: var(--border);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid var(--color-accent-bright);
+  /* backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); */
   display: flex;
   align-items: center;
   padding: 0 20px !important;
   box-sizing: border-box !important;
-  background-color: var(--color_translucent);
+  background-color: transparent;
 }
 
 .scrollbarHorizontal.thick:hover {

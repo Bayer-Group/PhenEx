@@ -1,0 +1,29 @@
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  border-top: 1px solid;
+  pointer-events: none;
+  z-index: 0;
+}
+
+:global(.row-drag-handle) {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+  padding-right: 10px !important;
+  padding-top: 0px !important;
+}
+
+:global(.row-drag-handle .ag-drag-handle) {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
