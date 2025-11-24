@@ -1,12 +1,7 @@
 import React from 'react';
-import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
-import moreHorizIcon from '../../../../assets/icons/more-horiz.svg';
 import styles from './NameCellRenderer.module.css';
-import { PhenexCellRendererProps, getHierarchicalBackgroundColor } from './PhenexCellRenderer';
+import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
-import { TwoPanelCohortViewerService } from '../../TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { CohortViewType } from '../../TwoPanelCohortViewer/types';
-import { SettingsCellEditor } from '../CellEditors/SettingsCellEditor';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
@@ -17,21 +12,6 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   } = props;
   
   const dataService = CohortDataService.getInstance();
-  const onClickEdit = () => {
-    const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('phenotype' as CohortViewType, props.data);
-  };
-
-  const onClickDelete = () => {
-    if (!props.node || !props.column) return;
-
-    const params = {
-      rowIndex: props.node.rowIndex,
-      colKey: props.column.getColId(),
-      key: 'settings',
-    };
-    props.api.startEditingCell(params);
-  };
 
   const renderComponentPhenotypeName = () => {
     const ancestors = dataService.getAllAncestors(props.data);
@@ -135,47 +115,17 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     ? props.data.colorCellBorder 
     : colorBorder;
 
-  // Get dynamic background color with hierarchical alpha
-  const backgroundColor = shouldColorBackground
-    ? getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index)
-    : 'transparent';
-
   const fontColor = typeStyles[`${props.data.effective_type}_text_color`] || ''
 
-  // Get the border color CSS variable for top border
-  const borderColorVar = shouldColorBorder && props.data?.effective_type 
-    ? `var(--color_${props.data.effective_type})` 
-    : 'transparent';
-
-  const containerStyle: React.CSSProperties = {
-    borderTopColor: borderColorVar,
-    ...(backgroundColor ? { backgroundColor } : {}),
-  };
-
   return (
-    <div 
-      className={styles.container}
-      style={containerStyle}
+    <PhenexCellRenderer
+      {...props}
+      colorBackground={shouldColorBackground}
+      colorBorder={shouldColorBorder}
+      showButtons={true}
     >
       {renderNameAndDescription()}
-
-      <div>
-        <button className={styles.editButton} onClick={onClickEdit}>
-          <img src={editPencilIcon} className={styles.editIcon} alt="Edit" />
-        </button>
-        <button
-          className={styles.deleteButton}
-          onClick={() => {
-            onClickDelete();
-            if (props.data?.id) {
-              // dataService.deletePhenotype(props.data.id);
-            }
-          }}
-        >
-          <img src={moreHorizIcon} className={styles.editIcon} alt="Delete" />
-        </button>
-      </div>
-    </div>
+    </PhenexCellRenderer>
   );
 };
 

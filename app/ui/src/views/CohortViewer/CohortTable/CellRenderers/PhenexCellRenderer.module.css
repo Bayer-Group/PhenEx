@@ -89,10 +89,51 @@
   font-size: 16px;
 }
 
+/* Button styles for cells */
+.buttonContainer {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
 
-/* .container {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  position: relative;
-} */
+.containerStyle:hover .buttonContainer {
+  opacity: 1;
+}
+
+.editButton,
+.deleteButton {
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: var(--border);
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.editButton:hover,
+.deleteButton:hover {
+  background: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-accent-bright);
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-color-normal);
+}
