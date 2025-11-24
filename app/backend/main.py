@@ -10,7 +10,6 @@ import sys
 # This replaces the PYTHONPATH=/app setting in the /backend/.env file
 sys.path = ['/app'] + sys.path
 import phenex 
-print("RIGHT NOW2", phenex.__file__)
 from phenex.ibis_connect import SnowflakeConnector
 from phenex.util.serialization.from_dict import from_dict
 

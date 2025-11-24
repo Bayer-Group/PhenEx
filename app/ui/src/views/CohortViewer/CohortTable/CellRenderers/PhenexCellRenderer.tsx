@@ -140,6 +140,22 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     ...(backgroundColor && !isMissing ? { backgroundColor } : {}),
   };
 
+  const renderButtons = () =>{
+    return (
+        <div className={styles.buttonContainer}>
+          <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
+            <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+          </button>
+          <button className={`${styles.editButton} ${typeStyles[`${props.data.effective_type}_color_block`]}`} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
+            Edit in PhenotypeBuilder
+          </button>
+
+        </div>
+      );
+  }
+
   return (
     <div
       className={`${styles.containerStyle} ${backgroundColorClass} ${props.node.isSelected() ? styles.selected : ''}`}
@@ -159,20 +175,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
         props.children ? props.children : props.value
       )}
       
-      {showButtons && (
-        <div className={styles.buttonContainer}>
-          <button className={styles.editButton} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
-            <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-          </button>
-          <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
-            <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-            </svg>
-          </button>
-        </div>
-      )}
+      {showButtons && renderButtons()}
     </div>
   );
 };

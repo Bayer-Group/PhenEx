@@ -93,12 +93,14 @@
 .buttonContainer {
   position: absolute;
   right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 0px;
   display: flex;
   gap: 4px;
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
+  flex-direction: column;
+  align-items: flex-end;
+
 }
 
 .containerStyle:hover .buttonContainer {
@@ -110,10 +112,9 @@
   background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: var(--border);
-  padding: 4px;
+  padding: 0px 8px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,14 +123,26 @@
     box-shadow 0.2s ease-in-out,
     border-color 0.2s ease-in-out;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.editButton:focus, .deleteButton:focus{
+  outline:none;
+  border:none;
+}
+
+.deleteButton {
+  width: 30px;
+}
+
+.editButton{
+  border-radius: 8px 8px 0px 0px;
 }
 
 .editButton:hover,
 .deleteButton:hover {
-  background: var(--button-color-hover);
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--color-accent-bright);
+  border-color:transparent;
 }
 
 .buttonIcon {

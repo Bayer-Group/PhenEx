@@ -14,7 +14,7 @@ const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const handleDelete = createDeleteHandler(props);
 
   return (
-    <PhenexCellRenderer {...props} showRightBorder={true}       onEdit={handleEdit}
+    <PhenexCellRenderer {...props} showButtons={false}
       onDelete={handleDelete}>
       <span
         className={`${styles.container} ${colorClass}`}

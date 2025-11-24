@@ -142,16 +142,16 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 40px;
+  font-size: 30px;
   transition:
     background-color 0.2s,
     color 0.2s;
   padding: 0;
   line-height: 30px;
   position: absolute;
-  top: 15px;
-  right: 30px;
-  font-family: 'IBMPlexSans-bold'!important;
+  top: 93px;
+  left: -35px;
+  font-family: 'SNPro-black'!important;
   cursor: pointer;
   transition: color .3s ease;
 

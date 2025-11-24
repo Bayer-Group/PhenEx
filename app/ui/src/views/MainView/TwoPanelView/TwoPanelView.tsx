@@ -166,7 +166,7 @@ export const TwoPanelView = React.forwardRef<
                 onRightPanelCollapse?.(newCollapsedState);
               }}
             >
-              {'-'}
+              {'>'}
             </div>
             <div
               className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
