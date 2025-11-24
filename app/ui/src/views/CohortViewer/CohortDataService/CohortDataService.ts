@@ -369,10 +369,10 @@ export class CohortDataService {
     this._table_data = this.tableDataFromCohortData();
     console.log("💾 SAVE CHANGES TO COHORT:", this._cohort_data);
     console.log("💾 study_id present?", this._cohort_data.study_id);
-    await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
-    
+    await updateCohort(this._cohort_data.id, this._cohort_data);
+
     // Always notify data change listeners (for PhenotypeDataService sync)
     this.notifyDataChangeListeners();
     
