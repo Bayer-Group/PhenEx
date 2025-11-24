@@ -451,6 +451,9 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             and "waterfall_table" in self.report_sections
         ):
             waterfall_df = self.report_sections["waterfall_table"]
+            # Extract DataFrame from Styler if needed
+            if hasattr(waterfall_df, 'data'):
+                waterfall_df = waterfall_df.data
             if not waterfall_df.empty:
                 context_parts.append(f"\nWATERFALL TABLE ({len(waterfall_df)} rows):")
                 context_parts.append(
@@ -879,6 +882,10 @@ The analysis provides a comprehensive view of the study population characteristi
         """Generate AI commentary for waterfall table."""
         logger.info("Generating waterfall table commentary")
 
+        # Extract DataFrame from Styler if needed
+        if hasattr(waterfall_df, 'data'):
+            waterfall_df = waterfall_df.data
+
         if waterfall_df is None or waterfall_df.empty:
             return "No waterfall data available for analysis."
 
@@ -1111,7 +1118,18 @@ The outcomes analysis contributes to our understanding of disease progression an
         waterfall_reporter = Waterfall(
             decimal_places=self.decimal_places, pretty_display=self.pretty_display
         )
-        waterfall_df = waterfall_reporter.execute(cohort)
+        waterfall_result = waterfall_reporter.execute(cohort)
+        
+        # Extract DataFrame from Styler if needed (pretty_display=True returns Styler)
+        if hasattr(waterfall_result, 'data'):  # It's a Styler object
+            waterfall_df = waterfall_result.data
+        else:
+            waterfall_df = waterfall_result
+        
+        # Remove the first row (typically "N persons in database" info row)
+        if not waterfall_df.empty and len(waterfall_df) > 0:
+            waterfall_df = waterfall_df.iloc[1:].reset_index(drop=True)
+        
         self.report_sections["waterfall_table"] = waterfall_df
 
         # Generate Table 1 (Baseline Characteristics)
@@ -1401,9 +1419,14 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             section_number += 1
 
         # 4. Patient Attrition (Waterfall Table)
+        waterfall_check = self.report_sections.get("waterfall_table")
+        # Extract DataFrame from Styler if needed for the check
+        if hasattr(waterfall_check, 'data'):
+            waterfall_check = waterfall_check.data
         if (
             "waterfall_table" in self.report_sections
-            and not self.report_sections["waterfall_table"].empty
+            and waterfall_check is not None
+            and not waterfall_check.empty
         ):
             md_content += f"## {section_number}. Patient Attrition\n\n"
 
@@ -1421,6 +1444,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
             # Add waterfall table
             waterfall_df = self.report_sections["waterfall_table"]
+            # Extract DataFrame from Styler if needed
+            if hasattr(waterfall_df, 'data'):
+                waterfall_df = waterfall_df.data
             md_content += self._dataframe_to_markdown_table(waterfall_df) + "\n\n"
 
             if "waterfall_commentary" in self.report_sections:
@@ -1555,6 +1581,9 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         # Waterfall Table
         waterfall_df = self.report_sections.get("waterfall_table")
+        # Extract DataFrame from Styler if needed
+        if hasattr(waterfall_df, 'data'):
+            waterfall_df = waterfall_df.data
         if waterfall_df is not None and not waterfall_df.empty:
             doc.add_heading("4. Patient Attrition (Waterfall Table)", level=1)
 
