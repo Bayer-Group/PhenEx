@@ -2,12 +2,18 @@ import React from 'react';
 import styles from './DomainCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 import typeStyles from '../../../../styles/study_types.module.css';
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 
 const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const formatDomain = (value: string): string => {
     return value.split('_').join(' ');
   };
   const colorClass = typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''
+
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
+
   const renderDomain = (value: string): string => {
     return (
       <span
@@ -37,7 +43,10 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     );
   }
   return (
-    <PhenexCellRenderer {...props}>
+    <PhenexCellRenderer {...props}
+          onEdit={handleEdit}
+      onDelete={handleDelete}
+>
       {renderDomain(props.value)}
     </PhenexCellRenderer>
   );

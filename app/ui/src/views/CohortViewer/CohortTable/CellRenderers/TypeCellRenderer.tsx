@@ -56,7 +56,7 @@ const TypeCellRenderer = (props: any) => {
   };
 
   return (
-    <PhenexCellRenderer {...props}>
+    <PhenexCellRenderer {...props} showButtons={false}>
       <div className={styles.container} style={getIndentationStyle()}>
         <span
           className={`${styles.block} ${colorClassText}`}

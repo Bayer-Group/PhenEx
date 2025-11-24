@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
@@ -12,6 +13,10 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   } = props;
   
   const dataService = CohortDataService.getInstance();
+  
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
 
   const renderComponentPhenotypeName = () => {
     const ancestors = dataService.getAllAncestors(props.data);
@@ -123,6 +128,8 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       colorBackground={shouldColorBackground}
       colorBorder={shouldColorBorder}
       showButtons={true}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
     >
       {renderNameAndDescription()}
     </PhenexCellRenderer>

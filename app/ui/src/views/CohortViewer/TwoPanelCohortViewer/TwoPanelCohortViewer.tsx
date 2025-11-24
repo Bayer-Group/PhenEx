@@ -52,7 +52,6 @@ export class TwoPanelCohortViewerService {
     
     // Add to history
     const historyService = RightPanelHistoryDataService.getInstance();
-    console.log("ADDING THE dATA HERE", data)
     historyService.addToHistory(viewType, data);
     
     this.currentViewType = viewType;

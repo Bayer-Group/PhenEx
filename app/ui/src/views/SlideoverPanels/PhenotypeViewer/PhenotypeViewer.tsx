@@ -50,16 +50,13 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
 
   useEffect(() => {
     const listener = (refreshPhenotypeGrid: boolean = false) => {
-      console.log("this is the REFRESHING", refreshPhenotypeGrid)
       if (refreshPhenotypeGrid) {
-        console.log("AM REFRESHING GRID!!")
         refreshGrid();
       }
     };
     dataService.addListener(listener);
 
     if (data) {
-      console.log('SETTING DATA', data);
       dataService.setData(data);
       
       // Multiple attempts to scroll to top when new data is loaded

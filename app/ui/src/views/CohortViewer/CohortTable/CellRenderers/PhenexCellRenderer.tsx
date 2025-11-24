@@ -59,18 +59,18 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     showLeftBorder = false,
     colorBackground = true,
     colorBorder = true,
-    showButtons = false,
+    showButtons = true,
     onEdit: onEditProp,
     onDelete: onDeleteProp,
   } = props;
 
   // Default handlers if not provided - using dynamic imports to avoid circular dependencies
   const handleEdit = onEditProp || (() => {
-    // Lazy import to avoid circular dependency
-    import('../../TwoPanelCohortViewer/TwoPanelCohortViewer').then(({ TwoPanelCohortViewerService }) => {
-      const cohortViewer = TwoPanelCohortViewerService.getInstance();
-      cohortViewer.displayExtraContent('phenotype' as any, props.data);
-    });
+    // // Lazy import to avoid circular dependency
+    // import('../../TwoPanelCohortViewer/TwoPanelCohortViewer').then(({ TwoPanelCohortViewerService }) => {
+    //   const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    //   cohortViewer.displayExtraContent('phenotype' as any, props.data);
+    // });
   });
 
   const handleDelete = onDeleteProp || (() => {

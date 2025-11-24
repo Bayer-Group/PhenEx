@@ -91,12 +91,8 @@ export class PhenotypeDataService {
   }
 
   public valueChanged(rowData: ParamRow, newValue: any) {
-    console.log("VALUE CHANGED", rowData, newValue)
     if (this.currentPhenotype) {
-      console.log("has currentphenotype")
       this.currentPhenotype[rowData.parameter] = newValue;
-      console.log("new value set", this.currentPhenotype)
-      console.log(rowData.parameter)
       if (rowData.parameter === 'class_name'){
         this.updateRowData()
       }
@@ -150,7 +146,6 @@ export class PhenotypeDataService {
         ...this.currentPhenotype,
       }));
 
-      console.log('IS IS THE PHENOTYP SHARED PARMS', sharedParams);
 
       this.rowData = [
         ...sharedParams,
@@ -176,7 +171,6 @@ export class PhenotypeDataService {
   }
 
   private notifyListeners(refreshGrid: boolean = false) {
-    console.log('NOTIFYING LISTENERS', this.listeners);
     this.listeners.forEach(listener => listener(refreshGrid));
   }
 
@@ -194,7 +188,6 @@ export class PhenotypeDataService {
     this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
       this.currentPhenotype
     );
-    console.log(this.cohortDataService);
   }
 
   public addNewComponentPhenotype() {
@@ -212,7 +205,6 @@ export class PhenotypeDataService {
   }
 
   private notifyComponentPhenotypeListeners(refreshGrid: boolean = false) {
-    console.log('NOTIFYING LISTENERS', this.componentPhenotypeListeners);
     this.componentPhenotypeListeners.forEach(listener => listener(refreshGrid));
   }
 

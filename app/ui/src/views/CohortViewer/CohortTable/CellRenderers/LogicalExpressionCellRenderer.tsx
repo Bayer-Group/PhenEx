@@ -2,9 +2,15 @@ import React from 'react';
 import styles from './CategoricalFilterCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categoricalFilterEditor/types';
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 
 const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   // Let PhenexCellRenderer handle missing values - don't return null early
+  
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
+
   const renderFilter = (filter: FilterType | null | undefined, isRoot: boolean): JSX.Element => {
     if (!filter) {
       return <div className={styles.filterText}></div>;
@@ -43,7 +49,8 @@ const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props =
   const hasValidValue = props.value && typeof props.value === 'object' && !Array.isArray(props.value);
 
   return (
-    <PhenexCellRenderer {...props}>
+    <PhenexCellRenderer {...props}       onEdit={handleEdit}
+      onDelete={handleDelete}>
       {hasValidValue ? (
         <div className={styles.fullText}>{renderFilter(props.value as FilterType, true)}</div>
       ) : null}

@@ -97,7 +97,6 @@ const getFullParameterDescription = (parameter: string): string => {
   const effectiveType = props.data?.effective_type || props.data?.type;
   const textColorClass = effectiveType ? typeStyles[`${effectiveType}_text_color`] || '' : '';
 
-  console.log("PARM CELL", props.data.parameter, props)
   return (
     <div className={styles.container}>
       <span className={`${styles.label} ${textColorClass}`}>{formatValue()}</span>

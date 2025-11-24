@@ -2,6 +2,7 @@ import React from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
 import styles from './CodelistCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 
 const MAX_CODES_TO_SHOW = 3;
 
@@ -13,12 +14,17 @@ interface CodelistCellRendererProps extends PhenexCellRendererProps {
     remove_punctuation?: boolean;
   };
 }
+  
 
 const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   //   if ( !columnNameToApplicablePhenotypeMapping.value_filter.includes(props.data.class_name))
   //  {
   //     return <NARenderer value={props.value} />
   //   }
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
+
   if (Array.isArray(props.value) || props.value?.codelist_type) {
     // if the codelist is an array, it's a list of codelists; we do want to render
   } else if (
@@ -29,7 +35,8 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
     Object.keys(props.value.codelist).length === 0
   ) {
     return (
-      <PhenexCellRenderer {...props}>
+      <PhenexCellRenderer {...props}       onEdit={handleEdit}
+      onDelete={handleDelete}>
         <div className={styles.missing}></div>
       </PhenexCellRenderer>
     );
@@ -95,7 +102,9 @@ const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
   const codelistContent = Array.isArray(props.value)
     ? props.value.map((codelist, index) => renderSingleCodelist(codelist, index))
     : renderSingleCodelist(props.value);
-  return <PhenexCellRenderer {...props}>{codelistContent}</PhenexCellRenderer>;
+  return <PhenexCellRenderer {...props}      
+      onEdit={handleEdit}
+      onDelete={handleDelete}>{codelistContent}</PhenexCellRenderer>;
 };
 
 export default CodelistCellRenderer;

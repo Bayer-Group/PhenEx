@@ -16,16 +16,10 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const refreshGrid = () => {
     // Grid will refresh automatically via React when tableData changes
     // No need to manually call setGridOption which causes re-renders
-    console.log('Grid refresh requested - will happen via React re-render');
   };
 
   useEffect(() => {
     const listener = (refreshPhenotypeGrid: boolean = false) => {
-      console.log(
-        'REFRESHING GRID ATTMPET',
-        refreshPhenotypeGrid,
-        dataService.componentPhenotypeTableData
-      );
       // Update the state to trigger re-render
       setTableData(dataService.componentPhenotypeTableData);
 
@@ -33,7 +27,6 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
         refreshGrid();
       }
     };
-    console.log('IA M ADDING A COMPONENT PHENOTYPE LISTNERE');
     dataService.addComponentPhenotypeListener(listener);
 
     return () => {
@@ -50,7 +43,6 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     dataService.addListener(listener);
 
     if (data) {
-      console.log('SETTING DATA', data);
       dataService.setData(data);
     }
 
@@ -74,7 +66,6 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   };
 
   const onRowDragEnd = async (newRowData: any[]) => {
-    console.log('=== PhenotypeComponents onRowDragEnd ===');
     // Component phenotypes are stored in cohort data
     // Use specialized method for reordering components within a parent
     const parentId = dataService.currentPhenotype?.id;
