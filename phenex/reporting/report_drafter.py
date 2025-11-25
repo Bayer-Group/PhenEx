@@ -359,6 +359,46 @@ FORMATTING:
 - Use bullet points for lists where appropriate
 - Ensure proper medical/scientific citation style"""
 
+    def _limit_codelists_in_dict(self, data_dict: dict, max_codes: int = 5) -> dict:
+        """
+        Recursively limit codelist sizes in a dictionary to prevent context overflow.
+
+        Args:
+            data_dict: Dictionary that may contain codelists
+            max_codes: Maximum number of codes to show (default: 5)
+
+        Returns:
+            Modified dictionary with limited codelists
+        """
+        if not isinstance(data_dict, dict):
+            return data_dict
+
+        result = {}
+        for key, value in data_dict.items():
+            if key == "codelist" and isinstance(value, list) and len(value) > max_codes:
+                # Limit the codelist and add a note
+                result[key] = value[:max_codes]
+                result["_codelist_note"] = (
+                    f"[Showing {max_codes} of {len(value)} codes for brevity]"
+                )
+            elif isinstance(value, dict):
+                # Recursively process nested dictionaries
+                result[key] = self._limit_codelists_in_dict(value, max_codes)
+            elif isinstance(value, list):
+                # Process lists that might contain dictionaries
+                result[key] = [
+                    (
+                        self._limit_codelists_in_dict(item, max_codes)
+                        if isinstance(item, dict)
+                        else item
+                    )
+                    for item in value
+                ]
+            else:
+                result[key] = value
+
+        return result
+
     def _build_global_ai_context(self, cohort) -> str:
         """
         Build comprehensive global context that is automatically injected into every AI call.
@@ -392,9 +432,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
 
         # Entry criteria
         context_parts.append(f"ENTRY CRITERION: {cohort.entry_criterion.name}")
-        context_parts.append(
-            f"\n\t{json.dumps(cohort.entry_criterion.to_dict(), indent=4)}"
-        )
+        entry_dict = self._limit_codelists_in_dict(cohort.entry_criterion.to_dict())
+        context_parts.append(f"\n\t{json.dumps(entry_dict, indent=4)}")
 
         # Inclusions
         if hasattr(cohort, "inclusions") and cohort.inclusions:
@@ -404,7 +443,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             for i, inclusion in enumerate(cohort.inclusions, 1):
                 name = getattr(inclusion, "name", f"Inclusion {i}")
                 context_parts.append(f"  {i}. {name}")
-                context_parts.append(f"\n\t{json.dumps(inclusion.to_dict(), indent=4)}")
+                inclusion_dict = self._limit_codelists_in_dict(inclusion.to_dict())
+                context_parts.append(f"\n\t{json.dumps(inclusion_dict, indent=4)}")
 
         # Exclusions
         if hasattr(cohort, "exclusions") and cohort.exclusions:
@@ -414,7 +454,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             for i, exclusion in enumerate(cohort.exclusions, 1):
                 name = getattr(exclusion, "name", f"Exclusion {i}")
                 context_parts.append(f"  {i}. {name}")
-                context_parts.append(f"\n\t{json.dumps(exclusion.to_dict(), indent=4)}")
+                exclusion_dict = self._limit_codelists_in_dict(exclusion.to_dict())
+                context_parts.append(f"\n\t{json.dumps(exclusion_dict, indent=4)}")
 
         # Characteristics
         if hasattr(cohort, "characteristics") and cohort.characteristics:
@@ -424,7 +465,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             for i, char in enumerate(cohort.characteristics, 1):
                 name = getattr(char, "name", f"Characteristic {i}")
                 context_parts.append(f"  {i}. {name}")
-                context_parts.append(f"\n\t{json.dumps(char.to_dict(), indent=4)}")
+                char_dict = self._limit_codelists_in_dict(char.to_dict())
+                context_parts.append(f"\n\t{json.dumps(char_dict, indent=4)}")
 
         # Outcomes
         if hasattr(cohort, "outcomes") and cohort.outcomes:
@@ -434,7 +476,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             for i, outcome in enumerate(cohort.outcomes, 1):
                 name = getattr(outcome, "name", f"Outcome {i}")
                 context_parts.append(f"  {i}. {name}")
-                context_parts.append(f"\n\t{json.dumps(outcome.to_dict(), indent=4)}")
+                outcome_dict = self._limit_codelists_in_dict(outcome.to_dict())
+                context_parts.append(f"\n\t{json.dumps(outcome_dict, indent=4)}")
 
         # Report generation metadata
         if hasattr(self, "author") and self.author:
