@@ -375,25 +375,15 @@ FORMATTING:
 
         result = {}
         for key, value in data_dict.items():
-            if key == "codelist" and isinstance(value, list) and len(value) > max_codes:
-                # Limit the codelist and add a note
-                result[key] = value[:max_codes]
-                result["_codelist_note"] = (
-                    f"[Showing {max_codes} of {len(value)} codes for brevity]"
-                )
+            if isinstance(value, list):
+                # Truncate any list to max_codes and add note
+                if len(value) > max_codes:
+                    result[key] = value[:max_codes] + ["... truncated codelist"]
+                else:
+                    result[key] = value
             elif isinstance(value, dict):
                 # Recursively process nested dictionaries
                 result[key] = self._limit_codelists_in_dict(value, max_codes)
-            elif isinstance(value, list):
-                # Process lists that might contain dictionaries
-                result[key] = [
-                    (
-                        self._limit_codelists_in_dict(item, max_codes)
-                        if isinstance(item, dict)
-                        else item
-                    )
-                    for item in value
-                ]
             else:
                 result[key] = value
 
