@@ -65,6 +65,11 @@ class ReportDrafter(Reporter):
         institution: Institution name
         date_range_start: Start date for data analysis (if None, inferred from cohort)
         date_range_end: End date for data analysis (if None, inferred from cohort)
+        decimal_places: Number of decimal places for numeric values (default: 1)
+        pretty_display: Whether to use pretty display formatting (default: True)
+        waterfall_reporter: Custom Waterfall reporter instance (if None, uses default)
+        table1_reporter: Custom Table1 reporter instance (if None, uses default)
+        table2_reporter: Custom Table2 reporter instance (if None, uses default)
     """
 
     def __init__(
@@ -80,6 +85,9 @@ class ReportDrafter(Reporter):
         date_range_end: Optional[Union[str, date]] = None,
         decimal_places: int = 1,
         pretty_display: bool = True,
+        waterfall_reporter: Optional[Any] = None,
+        table1_reporter: Optional[Any] = None,
+        table2_reporter: Optional[Any] = None,
     ):
         super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
 
@@ -96,6 +104,11 @@ class ReportDrafter(Reporter):
         )
         self.date_range_start = date_range_start
         self.date_range_end = date_range_end
+
+        # Store custom reporter instances (will be used if provided, otherwise defaults)
+        self.waterfall_reporter = waterfall_reporter
+        self.table1_reporter = table1_reporter
+        self.table2_reporter = table2_reporter
 
         # Initialize OpenAI client if available
         self.ai_client = None
@@ -1148,9 +1161,15 @@ The outcomes analysis contributes to our understanding of disease progression an
 
         # Generate Waterfall Table
         logger.info("Generating waterfall table...")
-        waterfall_reporter = Waterfall(
-            decimal_places=self.decimal_places, pretty_display=self.pretty_display
-        )
+        # Use custom reporter if provided, otherwise create default
+        if self.waterfall_reporter is not None:
+            waterfall_reporter = self.waterfall_reporter
+            logger.info("Using custom Waterfall reporter instance")
+        else:
+            waterfall_reporter = Waterfall(
+                decimal_places=self.decimal_places, pretty_display=self.pretty_display
+            )
+            logger.info("Using default Waterfall reporter")
         waterfall_result = waterfall_reporter.execute(cohort)
 
         # Extract DataFrame from Styler if needed (pretty_display=True returns Styler)
@@ -1168,9 +1187,15 @@ The outcomes analysis contributes to our understanding of disease progression an
         # Generate Table 1 (Baseline Characteristics)
         if cohort.characteristics:
             logger.info("Generating Table 1 (baseline characteristics)...")
-            table1_reporter = Table1(
-                decimal_places=self.decimal_places, pretty_display=True
-            )  # Enable pretty display for proper formatting
+            # Use custom reporter if provided, otherwise create default
+            if self.table1_reporter is not None:
+                table1_reporter = self.table1_reporter
+                logger.info("Using custom Table1 reporter instance")
+            else:
+                table1_reporter = Table1(
+                    decimal_places=self.decimal_places, pretty_display=True
+                )  # Enable pretty display for proper formatting
+                logger.info("Using default Table1 reporter")
             try:
                 table1_df = table1_reporter.execute(cohort)
                 self.report_sections["table1"] = table1_df
@@ -1194,12 +1219,18 @@ The outcomes analysis contributes to our understanding of disease progression an
         if cohort.outcomes:
             logger.info("Generating Table 2 (outcomes)...")
 
-            # Initialize Table2 reporter with the exposure phenotype
-            table2_reporter = Table2(
-                time_points=[365],  # 1 year follow-up
-                decimal_places=self.decimal_places,
-                pretty_display=True,
-            )
+            # Use custom reporter if provided, otherwise create default
+            if self.table2_reporter is not None:
+                table2_reporter = self.table2_reporter
+                logger.info("Using custom Table2 reporter instance")
+            else:
+                # Initialize Table2 reporter with the exposure phenotype
+                table2_reporter = Table2(
+                    time_points=[365],  # 1 year follow-up
+                    decimal_places=self.decimal_places,
+                    pretty_display=True,
+                )
+                logger.info("Using default Table2 reporter")
 
             try:
                 table2_df = table2_reporter.execute(cohort)
