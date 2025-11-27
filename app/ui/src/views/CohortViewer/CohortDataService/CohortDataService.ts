@@ -752,12 +752,14 @@ export class CohortDataService {
     
     // Update cohort data
     this._cohort_data.phenotypes = newOrder;
-    this._table_data = this.tableDataFromCohortData();
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
     
-    // Recalculate hierarchical indices
+    // Recalculate hierarchical indices after reordering
     this.calculateHierarchicalIndices();
+    
+    // Update table data AFTER calculating hierarchical indices so they're reflected in the grid
+    this._table_data = this.tableDataFromCohortData();
     
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
