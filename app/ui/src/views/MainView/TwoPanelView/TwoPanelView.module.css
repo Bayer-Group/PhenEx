@@ -1,6 +1,6 @@
 :root {
-  --margin_top_right_panel: 20px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
-  --border_radius_right_panel: 20px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --margin_top_right_panel:0; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --border_radius_right_panel: 0px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
 }
 .container {
   display: flex;
@@ -73,18 +73,19 @@
 
 .rightPanelContent {
   position: relative;
-  height: calc(100% - 2 * var(--margin_top_right_panel));
+  height: 100%;/*calc(100% - 2 * var(--margin_top_right_panel));*/
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
   background-color: var(--background-color) !important;
   /* border-left: 1px solid var(--line-color);
   border-top: 1px solid var(--line-color);
   border-right: 1px solid var(--line-color) !important; */
-  margin-right: 20px !important;
+  /* margin-right: 20px !important; */
   box-shadow:var(--box_shadow);
   /* border-left: var(--border); */
-  margin-top: var(--margin_top_right_panel);
+  /* margin-top: 0pxvar(--margin_top_right_panel); */
   overflow: hidden;
+
 
 }
 .divider.collapsed {
@@ -116,44 +117,33 @@
 }
 
 .collapseButton {
-  background-color: transparent;
-  border: 1px solid transparent;
+  background-color: var(--background-color) !important;
+  color: var(--color-accent-bright);
+
+  border: 1px solid var(--line-color);
+  border-right: none !important;
+  border-radius: 8px 0px 0px 8px;
   cursor: pointer;
   z-index: 1;
-  /* width: 30px;
-  height: 30px; */
-  border-radius: 50%;
   background-color: transparent;
-  display: flex;
-  color: hsl(0, 0%, 60%);
+  /* display: flex; */
+  position: absolute;
+  top: 45px;
+  left: -48px;
+  width: 48px;
+  padding: 0px 0px 0px 20px;
+  font-family: 'SNPro-black'!important;
+  box-sizing: border-box;
+
+  align-items: center;
+  font-size: 28px !important;
   z-index: 1000;
+  /* line-height: 30px; */
 
   transition: transform 0.2s ease;
-  color: black;
   user-select: none;
-  margin-top: 17px;
-  font-size: 40px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 30px;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-  padding: 0;
-  line-height: 30px;
-  position: absolute;
-  top: 93px;
-  left: -35px;
-  font-family: 'SNPro-black'!important;
-  cursor: pointer;
-  transition: color .3s ease;
+  color: var(--color-accent-bright);
+  cursor: pointer !important;
 
 }
 
@@ -304,7 +294,7 @@
 .collapseButtonHorizontal {
   position: absolute;
   padding: 4px;
-  background-color: transparent;
+  background-color: green;
   border: 1px solid transparent;
   cursor: pointer;
   z-index: 1;

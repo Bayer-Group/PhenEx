@@ -1,7 +1,7 @@
 /* Masking container - sits exactly where the history should be */
 .historyContainer {
     position: absolute;
-    top: 35px;
+    top: 0px;
     right: -1px;
     width: 170px; /* Base width */
     height: 60px; /* Enough to contain the cards */

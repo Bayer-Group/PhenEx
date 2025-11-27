@@ -14,7 +14,10 @@
   border-right: 1px solid transparent;
   border-radius: var(--border_radius_right_panel);
   overflow: hidden;
-  
+  border-top: none !important;
+    border-right: none !important;
+  border-bottom: none !important;
+
 }
 
 .title {
