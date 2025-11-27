@@ -229,25 +229,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     return Object.values(CohortDefinitionViewType).indexOf(currentView);
   };
 
-  const renderTitle = () => {
-    return (
-      <div className={styles.cohortNameContainer}>
-        <EditableTextField
-          value={cohortName}
-          placeholder="Name your cohort..."
-          classNameInput={styles.cohortNameInput}
-          onChange={newValue => {
-            setCohortName(newValue);
-            dataService.cohort_name = newValue;
-          }}
-          onSaveChanges={async () => {
-            await dataService.saveChangesToCohort();
-          }}
-        />
-      </div>
-    );
-  };
-
   // FOR ADD NEW PHENOTYPE DROPDOWN
   const renderAddNewPhenotypeDropdown = () => {
     return (
@@ -357,7 +338,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   return (
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
-        {/* {renderTitle()} */}
         {renderBreadcrumbs()}
         <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         {renderSectionTabs()}

@@ -1,3 +1,9 @@
+:root{
+  --font_size_pagetitle: 32px;
+  --font_size_breadcrumb: 20px;
+  --font_size_phenotypename: 18px;
+  --font_size_infotext: 12px;
+}
 .cohortTableContainer {
   display: flex;
   flex-direction: column;
@@ -94,33 +100,18 @@
   /* No absolute positioning - flows naturally */
   margin-top: 10px;
   margin-left: var(--centerPanelLeftMargin);
-  font-size: 40px !important;
 }
 .breadcrumbItem{
-  font-size: 20px !important;
+  font-size: var(--font_size_breadcrumb) !important;
   line-height: 10px;
 }
 
-.breadcrumbLastItem{
-  font-size: 32px !important;
+.breadcrumbLastItem{ /* this is the main title */
+  font-size: var(--font_size_pagetitle) !important;
   font-family: 'IBMPlexSans-bold' !important;
   line-height: 28px;
 }
-.cohortNameInput {
-  border: none;
-  padding: 0px;
-  font-size: 40px !important;
-  outline: none;
-  width: 60%;
-  font-family: 'IBMPlexSans-bold' !important;
-  margin-left: var(--centerPanelLeftMargin);
-  margin-top: 0px;
-  color:var(--text-color-normal) !important;
-}
 
-.cohortNameInput::placeholder {
-  color: var(--text-color-secondary);
-}
 
 .sectionTabsContainer {
   flex-direction: row;
