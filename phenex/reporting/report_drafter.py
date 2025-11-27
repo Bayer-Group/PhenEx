@@ -44,32 +44,161 @@ except ImportError:
 
 class ReportDrafter(Reporter):
     """
-    The ReportDrafter creates comprehensive final study reports including:
+    The ReportDrafter creates comprehensive draft study reports including:
     - Cohort definition description (entry, inclusion, exclusion criteria)
     - Data analysis description and date ranges
     - Waterfall table showing patient attrition
     - Study variables (characteristics and outcomes)
     - Table 1 (baseline characteristics)
     - Table 2 (outcomes analysis)
-    - AI-generated descriptive text and figure captions (when OpenAI is available)
+    - AI-generated descriptive text and figure captions (when AI is enabled)
 
-    The report can be exported to PDF or Word format.
+    **IMPORTANT: Human-in-the-Loop Required**
+    
+    The ReportDrafter generates DRAFT reports that require human review and editing before use. Reports are exported in editable formats (Markdown and Word) specifically to enable human oversight and refinement. AI-generated content should be verified for:
+    - Clinical accuracy and appropriateness
+    - Study-specific context and nuances
+    - Compliance with institutional guidelines
+    - Proper medical terminology and phrasing
+    
+    **Never use generated reports without thorough human review and approval.**
+
+    The report can be exported to Markdown or Word format for human editing.
+
+    What Does AI Generate?
+    ----------------------
+    **AI generates ONLY narrative text and commentary**, including:
+    - Executive summary and abstract
+    - Cohort definition descriptions
+    - Data analysis methodology descriptions
+    - Clinical interpretations and commentary for tables and figures
+    
+    **AI does NOT generate:**
+    - Tables (Waterfall, Table 1, Table 2), plots and figures - these are calculated directly from your data using PhenEx library code
+    
+    The AI only provides contextual narrative around the data-driven tables and plots.
+
+    AI Configuration
+    ----------------
+    The ReportDrafter can use OpenAI (Azure or standard) to generate professional medical research narrative text. If AI is not configured, it automatically falls back to rule-based text generation.
+    
+    **Option 1: Azure OpenAI**
+    
+    Set environment variables in Python:
+    
+    ```python
+    import os
+    # Environment variables for CREDENTIALS
+    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://your-resource.openai.azure.com/"
+    os.environ["AZURE_OPENAI_API_KEY"] = "your-api-key-here"
+    os.environ["OPENAI_API_VERSION"] = "2024-02-15-preview"
+    
+    from phenex.reporting import ReportDrafter
+    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    ```
+    
+    **Option 2: Standard OpenAI**
+    
+    Set environment variable in Python:
+    
+    ```python
+    import os
+    # Environment variable for CREDENTIALS
+    os.environ["OPENAI_API_KEY"] = "sk-your-api-key-here"
+    
+    from phenex.reporting import ReportDrafter
+    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    ```
+    
+    **Disabling AI**
+    
+    To use rule-based text generation instead of AI:
+    
+    ```python
+    reporter = ReportDrafter(use_ai=False)
+    ```
 
     Parameters:
-        use_ai: Whether to use OpenAI for generating descriptive text (default: True if API keys available)
-        ai_model: OpenAI model to use for text generation (default: "gpt-4o-mini")
-        include_plots: Whether to include plots in the report (default: True)
-        plot_dpi: DPI for plots (default: 300)
-        title: Report title (if None, will be generated from cohort name)
-        author: Report author(s)
-        institution: Institution name
-        date_range_start: Start date for data analysis (if None, inferred from cohort)
-        date_range_end: End date for data analysis (if None, inferred from cohort)
-        decimal_places: Number of decimal places for numeric values (default: 1)
-        pretty_display: Whether to use pretty display formatting (default: True)
-        waterfall_reporter: Custom Waterfall reporter instance (if None, uses default)
-        table1_reporter: Custom Table1 reporter instance (if None, uses default)
-        table2_reporter: Custom Table2 reporter instance (if None, uses default)
+        use_ai: Whether to use AI for generating descriptive text. If True but API keys are not available, automatically falls back to rule-based generation. Default is True.
+        ai_model: The model or deployment name to use when making API calls. Default is "gpt-4o-mini".
+        include_plots: Whether to include plots in the report (e.g., waterfall charts). Default is True.
+        plot_dpi: DPI (dots per inch) for plot image quality. Higher values produce better quality but larger file sizes. Default is 300.
+        title: Report title. If None, will be generated from cohort name.
+        author: Report author name(s) to display in report metadata.
+        institution: Institution name to display in report metadata.
+        date_range_start: Start date for data analysis period. If None, inferred from cohort.
+        date_range_end: End date for data analysis period. If None, inferred from cohort.
+        decimal_places: Number of decimal places for numeric values in tables. Default is 1.
+        pretty_display: Whether to use pretty display formatting with styled tables. Default is True.
+        waterfall_reporter: Custom Waterfall reporter instance. If None, uses default configuration.
+        table1_reporter: Custom Table1 reporter instance. If None, uses default configuration.
+        table2_reporter: Custom Table2 reporter instance. If None, uses default configuration.
+
+    Attributes:
+        report_sections (dict): Dictionary containing all generated report sections
+        figures (dict): Dictionary containing all generated figures and their metadata
+        use_ai (bool): Whether AI is enabled and configured
+        ai_client: The OpenAI client instance (if AI is enabled)
+
+    Examples:
+        
+        Basic usage with AI (requires API keys in environment):
+        ```python
+        from phenex.reporting import ReportDrafter
+        
+        # Initialize reporter
+        reporter = ReportDrafter(
+            title="My Study Report",
+            author="Dr. Jane Smith",
+            institution="Research University"
+        )
+        
+        # Generate DRAFT report from cohort
+        reporter.execute(cohort)
+        
+        # Export to editable Markdown format for human review
+        reporter.to_markdown("study_report_DRAFT.md", output_dir="./reports")
+        
+        # Export to editable Word format for human review and editing
+        reporter.to_word("study_report_DRAFT.docx", output_dir="./reports")
+        
+        # IMPORTANT: Review and edit the generated files before using in publications
+        # or formal reports. Verify all clinical statements, statistics, and interpretations.
+        ```
+        
+        Without AI (rule-based text generation):
+        ```python
+        reporter = ReportDrafter(use_ai=False)
+        reporter.execute(cohort)
+        reporter.to_markdown("study_report.md")
+        ```
+        
+        With custom reporters:
+        ```python
+        from phenex.reporting import Table1, Table2, Waterfall
+        
+        custom_table1 = Table1(decimal_places=2)
+        custom_table2 = Table2(time_points=[30, 90, 180, 365])
+        
+        reporter = ReportDrafter(
+            table1_reporter=custom_table1,
+            table2_reporter=custom_table2,
+            decimal_places=2
+        )
+        reporter.execute(cohort)
+        ```
+
+    Notes:
+        - **HUMAN REVIEW REQUIRED**: All generated reports are drafts that MUST be reviewed, validated, and edited by qualified researchers before use. The ReportDrafter is a starting point to accelerate report creation, not a replacement for human expertise.
+        - **AI generates ONLY text**: Tables, plots, and all statistical results are computed directly from your cohort data. AI only generates narrative text, descriptions, and clinical commentary.
+        - Reports are intentionally exported in editable formats (Markdown/Word) to facilitate human review and modification
+        - AI-generated content should be verified for clinical accuracy, institutional compliance, and study-specific appropriateness
+        - AI generation requires valid OpenAI or Azure OpenAI credentials
+        - If credentials are missing or invalid, automatically falls back to rule-based generation
+        - The reporter will log warnings if AI is requested but unavailable
+        - Generated reports include executive summary, methods, results, and clinical commentary
+        - Markdown output includes all tables and can embed plot images
+        - All numerical results in tables are computed from actual cohort data, not AI-generated
     """
 
     def __init__(
