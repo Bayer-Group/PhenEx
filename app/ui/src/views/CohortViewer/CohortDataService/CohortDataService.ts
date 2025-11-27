@@ -785,11 +785,16 @@ export class CohortDataService {
       allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
     );
 
-    // If components are in the filter, handle hierarchical reordering
-    if (this._currentFilter.includes('component')) {
+    // Check if we're actually reordering component phenotypes
+    // If all dragged items are components with the same parent, use hierarchical reordering
+    // Otherwise, use flat reordering to preserve drag order
+    const isComponentReorder = newRowData.length > 0 && 
+      newRowData.every(row => row.type === 'component');
+    
+    if (isComponentReorder) {
       await this.updateHierarchicalRowOrder(newRowData, allPhenotypes);
     } else {
-      // Original flat reordering logic for non-component filters
+      // Use flat reordering to preserve drag order for non-component phenotypes
       await this.updateFlatRowOrder(newRowData, allPhenotypes);
     }
 
@@ -854,20 +859,20 @@ export class CohortDataService {
     this._cohort_data.phenotypes = newCompleteOrder;
     console.log('Updated _cohort_data.phenotypes length:', this._cohort_data.phenotypes.length);
 
-    // Update table data before saving - do this manually to avoid sorting
-    this._table_data = this.tableDataFromCohortData();
-    console.log('Updated _table_data rows length:', this._table_data.rows.length);
-    console.log(
-      'Table data rows:',
-      this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
-    );
-
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
     this.splitPhenotypesByType();
     this._cohort_data.name = this._cohort_name;
     
     // Recalculate hierarchical indices after reordering
     this.calculateHierarchicalIndices();
+    
+    // Update table data AFTER calculating hierarchical indices so they're reflected in the grid
+    this._table_data = this.tableDataFromCohortData();
+    console.log('Updated _table_data rows length:', this._table_data.rows.length);
+    console.log(
+      'Table data rows:',
+      this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index, hierarchical_index: r.hierarchical_index }))
+    );
     
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
