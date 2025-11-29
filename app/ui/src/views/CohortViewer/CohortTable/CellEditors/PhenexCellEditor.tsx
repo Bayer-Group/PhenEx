@@ -56,7 +56,6 @@ const getGridDimensions = (gridElement: HTMLElement | null) => {
 
 export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) => {
   const [currentValue, setCurrentValue] = useState(() => props.value);
-  const [isDragging, setIsDragging] = useState(false);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
 
@@ -161,14 +160,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   } else {
     titleText = `${titleText}`;
   }
-  let cellRect = { left: 0, top: 0, width: 200, height: 100 };
 
-  if (props.eGridCell) {
-    const cellElement = props.eGridCell as HTMLElement;
-    cellRect = cellElement.getBoundingClientRect();
-  } else {
-    console.warn('Could not find grid cell element for editor positioning');
-  }
   const calculatePosition = () => {
     const viewport = getViewportDimensions();
     const cellElement = props.eGridCell as HTMLElement;
@@ -178,48 +170,75 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
     if (!cellRect || !gridDimensions) {
       console.warn('Could not find necessary elements for positioning');
-      return { left: 0, top: 0 };
+      return {
+        currentSelection: { left: 0, top: 0, width: 200, height: 100 },
+        composer: { left: 0, top: 0, width: 350, height: 500 },
+        cell: { width: 200, height: 100 }
+      };
     }
 
-    const editorWidth = 300;
-    const editorHeight = 800;
-
-    // Calculate initial position relative to cell
-    let left = cellRect.left;
-    let top = cellRect.top;
-
-    // Adjust for grid scroll (variables declared but not used in current positioning logic)
-    // const gridScrollTop = gridContainer.scrollTop || 0;
-    // const gridScrollLeft = gridContainer.scrollLeft || 0;
-
-    // Adjust position to stay within grid bounds
-    // First, try to position below the cell
-    if (top + editorHeight > gridDimensions.bottom) {
-      // If doesn't fit below, try above
-      top = Math.max(
-        gridDimensions.top,
-        Math.min(cellRect.top - editorHeight, viewport.height - editorHeight)
-      );
+    // Cell dimensions - bottom section matches exactly
+    const cellWidth = cellRect.width;
+    const cellHeight = cellRect.height;
+    
+    // Current Selection Panel dimensions
+    const topSectionHeight = 300; // Height of the section above the cell
+    const currentSelectionWidth = cellWidth;
+    
+    // Composer Panel dimensions
+    const composerWidth = 350;
+    const composerHeight = Math.min(600, viewport.height - 100); // Max height with padding
+    
+    // Position Current Selection Panel
+    // Bottom section is at exact cell position
+    const currentSelectionLeft = cellRect.left;
+    const currentSelectionTop = cellRect.top - topSectionHeight; // Top section extends upward
+    
+    // Ensure top section stays within viewport
+    const adjustedCurrentSelectionTop = Math.max(20, currentSelectionTop);
+    
+    // Position Composer Panel (left or right of Current Selection)
+    let composerLeft: number;
+    const composerPlacementThreshold = viewport.width / 2;
+    
+    if (cellRect.left < composerPlacementThreshold) {
+      // Cell is on left side - place composer on the right
+      composerLeft = currentSelectionLeft + currentSelectionWidth + 10; // 10px gap
+    } else {
+      // Cell is on right side - place composer on the left
+      composerLeft = currentSelectionLeft - composerWidth - 10; // 10px gap
     }
-
-    // Horizontal positioning
-    if (left + editorWidth > gridDimensions.right) {
-      // If doesn't fit to the right, try to the left
-      left = Math.max(
-        gridDimensions.left,
-        Math.min(cellRect.right - editorWidth, gridDimensions.right - editorWidth)
-      );
+    
+    // Ensure composer stays within viewport horizontally
+    composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
+    
+    // Position composer vertically to be visible
+    // Try to align with the top of current selection, but adjust if needed
+    let composerTop = adjustedCurrentSelectionTop;
+    
+    // Ensure composer fits in viewport
+    if (composerTop + composerHeight > viewport.height - 20) {
+      composerTop = Math.max(20, viewport.height - composerHeight - 20);
     }
-
-    // Final viewport bounds check
-    left = Math.max(0, Math.min(left, viewport.width - editorWidth));
-    top = Math.max(0, Math.min(top, viewport.height - editorHeight));
-
+    
     return {
-      left: `${left}px`,
-      top: `${top}px`,
-      maxHeight: `${Math.min(800, viewport.height - top)}px`,
-      maxWidth: `${Math.min(500, viewport.width - left)}px`, // DETERMINE WIDTH PHENEXCELLEDITOR
+      currentSelection: {
+        left: `${currentSelectionLeft}px`,
+        top: `${adjustedCurrentSelectionTop}px`,
+        width: `${currentSelectionWidth}px`,
+        topSectionHeight: `${topSectionHeight}px`,
+        bottomSectionHeight: `${cellHeight}px`,
+      },
+      composer: {
+        left: `${composerLeft}px`,
+        top: `${composerTop}px`,
+        width: `${composerWidth}px`,
+        height: `${composerHeight}px`,
+      },
+      cell: {
+        width: cellWidth,
+        height: cellHeight,
+      }
     };
   };
 
@@ -363,87 +382,141 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   return (
     <DraggablePortal
       initialPosition={{
-        left: portalPosition.left,
-        top: portalPosition.top,
+        left: '0px',
+        top: '0px',
       }}
       dragHandleSelector="[data-drag-handle='true']"
       onDragStart={() => {
-        setIsDragging(true);
         setRecentlyDragged(false);
       }}
       onDragEnd={wasDragged => {
-        setIsDragging(false);
         if (wasDragged) {
           setRecentlyDragged(true);
-          // Clear the flag after a short delay
           setTimeout(() => {
             setRecentlyDragged(false);
           }, 200);
         }
       }}
     >
-      <div
-        style={{
-          maxHeight: portalPosition.maxHeight,
-          maxWidth: portalPosition.maxWidth,
-          zIndex: 9999,
-        }}
-        ref={containerRef}
-        className={`${styles.container} ${colorBorder}`}
-        onClick={e => {
-          e.stopPropagation(); // Stop click from bubbling
-          e.nativeEvent.stopImmediatePropagation(); // Stop other listeners
-        }}
-        onMouseDown={e => {
-          // Check if this is a drag handle - if so, don't stop propagation
-          const target = e.target as HTMLElement;
-          const isDragHandle = target.closest('[data-drag-handle="true"]');
-
-          if (isDragHandle) {
-            return; // Don't stop propagation for drag handles
-          }
-
-          e.stopPropagation(); // Stop mousedown from bubbling
-          e.nativeEvent.stopImmediatePropagation();
-        }}
-        onKeyDown={e => {
-          if (e.key === 'Tab') {
-            e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
+      <div className={styles.twoPanelWrapper}>
+        {/* Current Selection Panel */}
+        <div
+          style={{
+            position: 'absolute',
+            left: portalPosition.currentSelection.left,
+            top: portalPosition.currentSelection.top,
+            width: portalPosition.currentSelection.width,
+            zIndex: 9999,
+          }}
+          className={styles.currentSelectionContainer}
+          onClick={e => {
             e.stopPropagation();
-            handleKeyDown(e);
-          }
-        }}
-        onKeyDownCapture={e => {
-          if (e.key === 'Tab') {
             e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
-        tabIndex={-1}
-      >
-        {renderPopoverHeader()}
-        <div className={`${styles.content}`}>
-          {renderInfoHeader()}
-          <div 
-            ref={contentScrollableRef}
-            className={`${styles.contentScrollable}`}
+          }}
+          onMouseDown={e => {
+            const target = e.target as HTMLElement;
+            const isDragHandle = target.closest('[data-drag-handle="true"]');
+            if (!isDragHandle) {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }
+          }}
+        >
+          {/* Top Section - extends above the cell */}
+          <div
+            className={`${styles.currentSelectionTopSection} ${colorBorder}`}
+            style={{
+              height: portalPosition.currentSelection.topSectionHeight,
+            }}
+            data-drag-handle="true"
           >
-            {isInfoOpen ? (
-              renderInfoContent()
-            ) : (
-              renderMainContent()
-            )}
+            <div className={styles.currentSelectionInfo}>
+              <span className={styles.currentSelectionLabel}>Current Selection</span>
+              <span className={`${styles.currentSelectionValue} ${typeStyles[`${props.data.effective_type || ''}_text_color`] || ''}`}>
+                {props.data[props.column?.getColDef().field || props.data?.parameter]}
+              </span>
+            </div>
           </div>
           
-          <SimpleCustomScrollbar 
-            targetRef={contentScrollableRef}
-            orientation="vertical"
-            marginTop={65}
-            marginBottom={5}
-            classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
-          />
+          {/* Bottom Section - matches calling cell exactly */}
+          <div
+            className={`${styles.currentSelectionBottomSection} ${colorBorder}`}
+            style={{
+              height: portalPosition.currentSelection.bottomSectionHeight,
+            }}
+            data-drag-handle="true"
+          >
+            <div className={styles.cellMirror}>
+              <span className={styles.cellMirrorContent}>
+                {props.value}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Composer Panel */}
+        <div
+          style={{
+            position: 'absolute',
+            left: portalPosition.composer.left,
+            top: portalPosition.composer.top,
+            width: portalPosition.composer.width,
+            height: portalPosition.composer.height,
+            zIndex: 9999,
+          }}
+          ref={containerRef}
+          className={`${styles.container} ${colorBorder}`}
+          onClick={e => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onMouseDown={e => {
+            const target = e.target as HTMLElement;
+            const isDragHandle = target.closest('[data-drag-handle="true"]');
+            if (!isDragHandle) {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Tab') {
+              e.nativeEvent.stopImmediatePropagation();
+              e.preventDefault();
+              e.stopPropagation();
+              handleKeyDown(e);
+            }
+          }}
+          onKeyDownCapture={e => {
+            if (e.key === 'Tab') {
+              e.nativeEvent.stopImmediatePropagation();
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+          tabIndex={-1}
+        >
+          {renderPopoverHeader()}
+          <div className={`${styles.content}`}>
+            {renderInfoHeader()}
+            <div 
+              ref={contentScrollableRef}
+              className={`${styles.contentScrollable}`}
+            >
+              {isInfoOpen ? (
+                renderInfoContent()
+              ) : (
+                renderMainContent()
+              )}
+            </div>
+            
+            <SimpleCustomScrollbar 
+              targetRef={contentScrollableRef}
+              orientation="vertical"
+              marginTop={65}
+              marginBottom={5}
+              classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
+            />
+          </div>
         </div>
       </div>
     </DraggablePortal>
