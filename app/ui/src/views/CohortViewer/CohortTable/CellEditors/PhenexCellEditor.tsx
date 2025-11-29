@@ -256,10 +256,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   // };
 
   const colorBorder = typeStyles[`${props.data.effective_type || ''}_border_color`] || ''
+  const colorBlock = typeStyles[`${props.data.effective_type || ''}_color_block_dim`] || ''
 
 
 
-  const renderPopoverHeader = () => {
+  const renderTitle = () => {
     // Build breadcrumb items for the phenotype
     const breadcrumbItems = [
       {
@@ -274,7 +275,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
     return (
       <div
-        className={styles.popoverHeader}
+        className={styles.threeLineTitle}
         data-drag-handle="true"
         onMouseDown={() => {
           // Don't stop propagation here - let it bubble up to DraggablePortal
@@ -393,7 +394,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     */
     return (
       <div
-        className={`${styles.currentSelectionTopSection} ${colorBorder}`}
+        className={`${styles.currentSelectionTopSection}`}
         style={{
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
@@ -417,8 +418,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div className={styles.currentSelectionInfo}>
-          {renderPopoverHeader()}
+        <div className={`${styles.currentSelectionInfo} ${colorBlock}`}>
+          {renderTitle()}
         </div>
       </div>
     );
@@ -426,11 +427,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderCurrentSelectionPanel_bottom = () => {
     /*
-    The current selection bottom panel mirrors content of the calling cell i.e. it displays current selection
+    The current selection bottom panel mirrors content of the calling cell i.e. it displays the current selection
     */
     return (
       <div
-        className={`${styles.currentSelectionBottomSection} ${colorBorder}`}
+        className={`${styles.currentSelectionBottomSection}`}
         style={{
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
@@ -454,7 +455,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div className={styles.cellMirror}>
+
+        <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
           <span className={styles.cellMirrorContent}>
           {renderInfoHeader()}
           </span>
