@@ -17,6 +17,7 @@
   border-top: none !important;
     border-right: none !important;
   border-bottom: none !important;
+  border-left: 1px solid var(--line-color);
 
 }
 

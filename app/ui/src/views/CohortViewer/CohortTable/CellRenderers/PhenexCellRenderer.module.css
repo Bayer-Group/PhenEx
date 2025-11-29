@@ -93,7 +93,7 @@
 .buttonContainer {
   position: absolute;
   right: 5px;
-  bottom: 0px;
+  bottom: 2px;
   display: flex;
   gap: 4px;
   opacity: 0;
@@ -136,7 +136,7 @@
 }
 
 .editButton{
-  border-radius: 8px 8px 0px 0px;
+  border-radius: 8px 8px 8px 8px;
 }
 
 .editButton:hover,

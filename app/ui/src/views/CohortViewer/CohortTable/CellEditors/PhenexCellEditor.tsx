@@ -182,7 +182,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     const editorWidth = 300;
-    const editorHeight = 500;
+    const editorHeight = 800;
 
     // Calculate initial position relative to cell
     let left = cellRect.left;
@@ -218,7 +218,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     return {
       left: `${left}px`,
       top: `${top}px`,
-      maxHeight: `${Math.min(500, viewport.height - top)}px`,
+      maxHeight: `${Math.min(800, viewport.height - top)}px`,
       maxWidth: `${Math.min(500, viewport.width - left)}px`, // DETERMINE WIDTH PHENEXCELLEDITOR
     };
   };

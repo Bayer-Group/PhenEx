@@ -54,7 +54,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
 
     const default_theme = {
-      accentColor: '#666666ff',
+      accentColor: '#4a4a4aff',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
@@ -67,6 +67,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       spacing: 8,
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
+      wrapperBorderRadius: 0
     };
     const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);
     

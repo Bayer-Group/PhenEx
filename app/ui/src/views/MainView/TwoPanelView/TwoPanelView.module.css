@@ -122,13 +122,13 @@
 
   border: 1px solid var(--line-color);
   border-right: none !important;
-  border-radius: 8px 0px 0px 8px;
+  border-radius: 12px 0px 0px 12px;
   cursor: pointer;
   z-index: 1;
   background-color: transparent;
   /* display: flex; */
   position: absolute;
-  top: 45px;
+  top: 55px;
   left: -48px;
   width: 48px;
   padding: 0px 0px 0px 20px;
@@ -140,7 +140,7 @@
   z-index: 1000;
   /* line-height: 30px; */
 
-  transition: transform 0.2s ease;
+  transition: all 0.5s ease;
   user-select: none;
   color: var(--color-accent-bright);
   cursor: pointer !important;
@@ -152,6 +152,7 @@
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
   color: var(--color_accent_orange);
   outline: none;
+  border-color: var(--color_accent_orange);
 }
 
 .collapseButton.collapsed {
