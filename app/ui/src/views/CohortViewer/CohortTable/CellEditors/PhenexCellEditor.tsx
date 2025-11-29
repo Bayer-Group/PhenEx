@@ -171,7 +171,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     if (!cellRect || !gridDimensions) {
       console.warn('Could not find necessary elements for positioning');
       return {
-        currentSelection: { left: 0, top: 0, width: 200, height: 100 },
+        currentSelection: { 
+          bottomLeft: 0, 
+          bottomTop: 0, 
+          width: 200, 
+          bottomHeight: 100 
+        },
         composer: { left: 0, top: 0, width: 350, height: 500 },
         cell: { width: 200, height: 100 }
       };
@@ -181,53 +186,49 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const cellWidth = cellRect.width;
     const cellHeight = cellRect.height;
     
-    // Current Selection Panel dimensions
-    const topSectionHeight = 300; // Height of the section above the cell
-    const currentSelectionWidth = cellWidth;
+    // Bottom section is positioned at EXACT cell coordinates
+    const bottomSectionLeft = cellRect.left;
+    const bottomSectionTop = cellRect.top;
     
     // Composer Panel dimensions
     const composerWidth = 350;
     const composerHeight = Math.min(600, viewport.height - 100); // Max height with padding
     
-    // Position Current Selection Panel
-    // Bottom section is at exact cell position
-    const currentSelectionLeft = cellRect.left;
-    const currentSelectionTop = cellRect.top - topSectionHeight; // Top section extends upward
-    
-    // Ensure top section stays within viewport
-    const adjustedCurrentSelectionTop = Math.max(20, currentSelectionTop);
-    
-    // Position Composer Panel (left or right of Current Selection)
+    // Position Composer Panel independently for maximum visibility
     let composerLeft: number;
+    let composerTop: number;
     const composerPlacementThreshold = viewport.width / 2;
     
     if (cellRect.left < composerPlacementThreshold) {
       // Cell is on left side - place composer on the right
-      composerLeft = currentSelectionLeft + currentSelectionWidth + 10; // 10px gap
+      composerLeft = Math.min(
+        cellRect.right + 10, // 10px gap from cell
+        viewport.width - composerWidth - 10 // Ensure it fits
+      );
     } else {
       // Cell is on right side - place composer on the left
-      composerLeft = currentSelectionLeft - composerWidth - 10; // 10px gap
+      composerLeft = Math.max(
+        10, // Minimum left padding
+        cellRect.left - composerWidth - 10 // 10px gap from cell
+      );
     }
     
-    // Ensure composer stays within viewport horizontally
-    composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
+    // Position composer vertically - try to align with cell top, but adjust for visibility
+    composerTop = cellRect.top;
     
-    // Position composer vertically to be visible
-    // Try to align with the top of current selection, but adjust if needed
-    let composerTop = adjustedCurrentSelectionTop;
-    
-    // Ensure composer fits in viewport
-    if (composerTop + composerHeight > viewport.height - 20) {
-      composerTop = Math.max(20, viewport.height - composerHeight - 20);
+    // Ensure composer fits in viewport vertically
+    if (composerTop + composerHeight > viewport.height - 10) {
+      composerTop = Math.max(10, viewport.height - composerHeight - 10);
     }
+    // Ensure composer doesn't go above viewport
+    composerTop = Math.max(10, composerTop);
     
     return {
       currentSelection: {
-        left: `${currentSelectionLeft}px`,
-        top: `${adjustedCurrentSelectionTop}px`,
-        width: `${currentSelectionWidth}px`,
-        topSectionHeight: `${topSectionHeight}px`,
-        bottomSectionHeight: `${cellHeight}px`,
+        bottomLeft: `${bottomSectionLeft}px`,
+        bottomTop: `${bottomSectionTop}px`,
+        width: `${cellWidth}px`,
+        bottomHeight: `${cellHeight}px`,
       },
       composer: {
         left: `${composerLeft}px`,
@@ -400,51 +401,61 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     >
       <div className={styles.twoPanelWrapper}>
         {/* Current Selection Panel */}
-        <div
-          style={{
-            position: 'absolute',
-            left: portalPosition.currentSelection.left,
-            top: portalPosition.currentSelection.top,
-            width: portalPosition.currentSelection.width,
-            zIndex: 9999,
-          }}
-          className={styles.currentSelectionContainer}
-          onClick={e => {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
-          }}
-          onMouseDown={e => {
-            const target = e.target as HTMLElement;
-            const isDragHandle = target.closest('[data-drag-handle="true"]');
-            if (!isDragHandle) {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }
-          }}
-        >
-          {/* Top Section - extends above the cell */}
+        <div className={styles.currentSelectionContainer}>
+          {/* Top Section - positioned above the bottom section, height hugs content */}
           <div
             className={`${styles.currentSelectionTopSection} ${colorBorder}`}
             style={{
-              height: portalPosition.currentSelection.topSectionHeight,
+              position: 'absolute',
+              left: portalPosition.currentSelection.bottomLeft,
+              top: portalPosition.currentSelection.bottomTop,
+              width: portalPosition.currentSelection.width,
+              transform: 'translateY(-100%)',
+              zIndex: 9998,
             }}
             data-drag-handle="true"
+            onClick={e => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onMouseDown={e => {
+              const target = e.target as HTMLElement;
+              const isDragHandle = target.closest('[data-drag-handle="true"]');
+              if (!isDragHandle) {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }
+            }}
           >
             <div className={styles.currentSelectionInfo}>
-              <span className={styles.currentSelectionLabel}>Current Selection</span>
-              <span className={`${styles.currentSelectionValue} ${typeStyles[`${props.data.effective_type || ''}_text_color`] || ''}`}>
-                {props.data[props.column?.getColDef().field || props.data?.parameter]}
-              </span>
+              {renderPopoverHeader()}
             </div>
           </div>
           
-          {/* Bottom Section - matches calling cell exactly */}
+          {/* Bottom Section - positioned at EXACT cell coordinates */}
           <div
             className={`${styles.currentSelectionBottomSection} ${colorBorder}`}
             style={{
-              height: portalPosition.currentSelection.bottomSectionHeight,
+              position: 'absolute',
+              left: portalPosition.currentSelection.bottomLeft,
+              top: portalPosition.currentSelection.bottomTop,
+              width: portalPosition.currentSelection.width,
+              height: portalPosition.currentSelection.bottomHeight,
+              zIndex: 9999,
             }}
             data-drag-handle="true"
+            onClick={e => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onMouseDown={e => {
+              const target = e.target as HTMLElement;
+              const isDragHandle = target.closest('[data-drag-handle="true"]');
+              if (!isDragHandle) {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }
+            }}
           >
             <div className={styles.cellMirror}>
               <span className={styles.cellMirrorContent}>
@@ -495,7 +506,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
           tabIndex={-1}
         >
-          {renderPopoverHeader()}
           <div className={`${styles.content}`}>
             {renderInfoHeader()}
             <div 

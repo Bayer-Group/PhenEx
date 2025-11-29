@@ -295,10 +295,12 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 15px;
-  overflow: hidden;
+  padding: 0;
+  overflow: visible;
   cursor: grab;
   user-select: none;
+  height: auto; /* Height hugs content */
+  min-height: fit-content;
 }
 
 .currentSelectionTopSection:active {
@@ -308,7 +310,8 @@
 .currentSelectionInfo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0px;
+  width: 100%;
 }
 
 .currentSelectionLabel {
