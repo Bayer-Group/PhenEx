@@ -4,8 +4,8 @@ import styles from './PhenexCellEditor.module.css';
 import { DraggablePortal } from '../../../../components/Portal';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 // import stylesXbutton from './../../../../components/ButtonsAndTabs/XButton/XButton.module.css';
-import { PopoverHeader } from '../../../../components/PopoverHeader/PopoverHeader';
 import { Button } from '../../../../components/ButtonsAndTabs/Button/Button';
+import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
 let parametersInfo = JSON.parse(parametersInfoRaw);
 import typeStyles from '../../../../styles/study_types.module.css';
@@ -255,49 +255,50 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   // };
 
-  const colorClass = typeStyles[`${props.data.effective_type || ''}_color_block_dim`] || ''
   const colorBorder = typeStyles[`${props.data.effective_type || ''}_border_color`] || ''
 
 
 
   const renderPopoverHeader = () => {
+    // Build breadcrumb items for the phenotype
+    const breadcrumbItems = [
+      {
+        displayName: props.data.name || 'Unnamed Phenotype',
+        onClick: () => {},
+      },
+      {
+        displayName: titleText,
+        onClick: () => {},
+      },
+    ];
+
     return (
-      <PopoverHeader
-        onClick={handleDone}
-        title={'Close or Drag'}
-        className={`${styles.popoverheader} ${colorClass} ${colorBorder}`}
+      <div
+        className={styles.popoverHeader}
+        data-drag-handle="true"
+        onMouseDown={() => {
+          // Don't stop propagation here - let it bubble up to DraggablePortal
+        }}
+        onClick={() => {
+          // Only handle click if we haven't recently dragged
+          if (!recentlyDragged) {
+            console.log("Drag handle clicked, calling handleDone");
+            handleDone();
+          }
+        }}
       >
-        <div
-          className={styles.popoverHeader}
-          data-drag-handle="true"
-          onMouseDown={() => {
-            // Don't stop propagation here - let it bubble up to DraggablePortal
-          }}
-          onClick={() => {
-            // Only handle click if we haven't recently dragged
-            if (!recentlyDragged) {
-              console.log("Drag handle clicked, calling handleDone");
-              handleDone();
-            }
-          }}
-        >
-          <span className={styles.topLine}>
-            <span className={styles.filler}>
-              {props.data.hierarchical_index}
-            </span>
-            <span className={`${styles.phenotypeName} ${styles.actionText}`}>
-              {props.data.name}
-            </span>
-           </span>
-          <br></br>
-
-          <span className={styles.bottomLine}>
-
-            <span className={styles.actionText}>{titleText}</span>
-
-          </span>
-        </div>
-      </PopoverHeader>
+        <>
+          <div className={`${styles.index} ${typeStyles[`${props.data.effective_type}_text_color`]}`}>
+            {props.data.hierarchical_index}
+          </div>
+          <SmartBreadcrumbs 
+            items={breadcrumbItems}
+            classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
+            classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
+            classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
+          />
+        </>
+      </div>
     );
   };
 

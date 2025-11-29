@@ -145,14 +145,9 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
         setHasDragged(true);
       }
 
-      // Keep the portal within viewport bounds
-      const maxX = window.innerWidth - 100; // Minimum 100px visible
-      const maxY = window.innerHeight - 100;
-
-      const clampedX = Math.max(0, Math.min(newX, maxX));
-      const clampedY = Math.max(0, Math.min(newY, maxY));
-
-      setPosition({ x: clampedX, y: clampedY });
+      // Allow dragging anywhere - no viewport bounds restriction
+      // The panels themselves handle their own positioning
+      setPosition({ x: newX, y: newY });
     },
     [isDragging, dragOffset, dragStartPosition, hasDragged]
   );
