@@ -37,12 +37,10 @@
     box-shadow 0.2s ease-in-out,
     transform 0.2s ease-in-out;
   position: relative;
-  color: var(--xbutton_color_orange_background);
   /* line-height:var(--popover_font_size); */
 }
 
 .header:hover {
-  color: white;
 }
 
 .popoverheader {
@@ -190,11 +188,9 @@
 }
 
 .xButton {
-  color: var(--xbutton_color_orange_background);
 }
 
 .header:hover .xButton {
-  color: white;
 }
 
 .popoverHeader {

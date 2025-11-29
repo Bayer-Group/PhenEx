@@ -186,6 +186,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const cellWidth = cellRect.width;
     const cellHeight = cellRect.height;
     
+    // Current Selection Panel dimensions (with minimum width)
+    const minCurrentSelectionWidth = 300;
+    const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth);
+    
     // Bottom section is positioned at EXACT cell coordinates
     const bottomSectionLeft = cellRect.left;
     const bottomSectionTop = cellRect.top;
@@ -195,21 +199,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const composerHeight = Math.min(600, viewport.height - 100); // Max height with padding
     
     // Position Composer Panel independently for maximum visibility
+    // Must account for actual current selection width (which may be larger than cell)
     let composerLeft: number;
     let composerTop: number;
     const composerPlacementThreshold = viewport.width / 2;
     
     if (cellRect.left < composerPlacementThreshold) {
       // Cell is on left side - place composer on the right
+      // Use the actual width of current selection panel (could be wider than cell due to minWidth)
       composerLeft = Math.min(
-        cellRect.right + 10, // 10px gap from cell
+        bottomSectionLeft + currentSelectionWidth + 10, // 10px gap from current selection panel
         viewport.width - composerWidth - 10 // Ensure it fits
       );
     } else {
       // Cell is on right side - place composer on the left
       composerLeft = Math.max(
         10, // Minimum left padding
-        cellRect.left - composerWidth - 10 // 10px gap from cell
+        bottomSectionLeft - composerWidth - 10 // 10px gap from current selection panel
       );
     }
     
@@ -249,7 +255,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
   // };
 
-  const colorClass = typeStyles[`${props.data.effective_type || ''}_color_block`] || ''
+  const colorClass = typeStyles[`${props.data.effective_type || ''}_color_block_dim`] || ''
   const colorBorder = typeStyles[`${props.data.effective_type || ''}_border_color`] || ''
 
 
@@ -380,6 +386,158 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
+  const renderCurrentSelectionPanel_top = () => {
+    /*
+    The current selection top panel is a header displaying the title of current parameter and phenotype
+    */
+    return (
+      <div
+        className={`${styles.currentSelectionTopSection} ${colorBorder}`}
+        style={{
+          position: 'absolute',
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop,
+          width: portalPosition.currentSelection.width,
+          minWidth: '300px',
+          transform: 'translateY(-100%)',
+          zIndex: 9998,
+        }}
+        data-drag-handle="true"
+        onClick={e => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onMouseDown={e => {
+          const target = e.target as HTMLElement;
+          const isDragHandle = target.closest('[data-drag-handle="true"]');
+          if (!isDragHandle) {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }
+        }}
+      >
+        <div className={styles.currentSelectionInfo}>
+          {renderPopoverHeader()}
+        </div>
+      </div>
+    );
+  }
+
+  const renderCurrentSelectionPanel_bottom = () => {
+    /*
+    The current selection bottom panel mirrors content of the calling cell i.e. it displays current selection
+    */
+    return (
+      <div
+        className={`${styles.currentSelectionBottomSection} ${colorBorder}`}
+        style={{
+          position: 'absolute',
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop,
+          width: portalPosition.currentSelection.width,
+          minWidth: '300px',
+          height: portalPosition.currentSelection.bottomHeight,
+          zIndex: 9999,
+        }}
+        data-drag-handle="true"
+        onClick={e => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onMouseDown={e => {
+          const target = e.target as HTMLElement;
+          const isDragHandle = target.closest('[data-drag-handle="true"]');
+          if (!isDragHandle) {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }
+        }}
+      >
+        <div className={styles.cellMirror}>
+          <span className={styles.cellMirrorContent}>
+          {renderInfoHeader()}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const renderCurrentSelectionPanel = () => {
+    return (
+      <div className={styles.currentSelectionContainer}>
+        {renderCurrentSelectionPanel_top()}
+        {renderCurrentSelectionPanel_bottom()}
+      </div>
+    );
+  };
+
+  const renderComposerPanel = () => {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: portalPosition.composer.left,
+          top: portalPosition.composer.top,
+          width: portalPosition.composer.width,
+          height: portalPosition.composer.height,
+          zIndex: 9999,
+        }}
+        ref={containerRef}
+        className={`${styles.container} ${colorBorder}`}
+        onClick={e => {
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+        }}
+        onMouseDown={e => {
+          const target = e.target as HTMLElement;
+          const isDragHandle = target.closest('[data-drag-handle="true"]');
+          if (!isDragHandle) {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Tab') {
+            e.nativeEvent.stopImmediatePropagation();
+            e.preventDefault();
+            e.stopPropagation();
+            handleKeyDown(e);
+          }
+        }}
+        onKeyDownCapture={e => {
+          if (e.key === 'Tab') {
+            e.nativeEvent.stopImmediatePropagation();
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        tabIndex={-1}
+      >
+        <div className={`${styles.content}`}>
+          <div 
+            ref={contentScrollableRef}
+            className={`${styles.contentScrollable}`}
+          >
+            {isInfoOpen ? (
+              renderInfoContent()
+            ) : (
+              renderMainContent()
+            )}
+          </div>
+          
+          <SimpleCustomScrollbar 
+            targetRef={contentScrollableRef}
+            orientation="vertical"
+            marginTop={65}
+            marginBottom={5}
+            classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
+          />
+        </div>
+      </div>
+    );
+
+  }
+
   return (
     <DraggablePortal
       initialPosition={{
@@ -400,134 +558,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       }}
     >
       <div className={styles.twoPanelWrapper}>
-        {/* Current Selection Panel */}
-        <div className={styles.currentSelectionContainer}>
-          {/* Top Section - positioned above the bottom section, height hugs content */}
-          <div
-            className={`${styles.currentSelectionTopSection} ${colorBorder}`}
-            style={{
-              position: 'absolute',
-              left: portalPosition.currentSelection.bottomLeft,
-              top: portalPosition.currentSelection.bottomTop,
-              width: portalPosition.currentSelection.width,
-              transform: 'translateY(-100%)',
-              zIndex: 9998,
-            }}
-            data-drag-handle="true"
-            onClick={e => {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onMouseDown={e => {
-              const target = e.target as HTMLElement;
-              const isDragHandle = target.closest('[data-drag-handle="true"]');
-              if (!isDragHandle) {
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }
-            }}
-          >
-            <div className={styles.currentSelectionInfo}>
-              {renderPopoverHeader()}
-            </div>
-          </div>
-          
-          {/* Bottom Section - positioned at EXACT cell coordinates */}
-          <div
-            className={`${styles.currentSelectionBottomSection} ${colorBorder}`}
-            style={{
-              position: 'absolute',
-              left: portalPosition.currentSelection.bottomLeft,
-              top: portalPosition.currentSelection.bottomTop,
-              width: portalPosition.currentSelection.width,
-              height: portalPosition.currentSelection.bottomHeight,
-              zIndex: 9999,
-            }}
-            data-drag-handle="true"
-            onClick={e => {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onMouseDown={e => {
-              const target = e.target as HTMLElement;
-              const isDragHandle = target.closest('[data-drag-handle="true"]');
-              if (!isDragHandle) {
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }
-            }}
-          >
-            <div className={styles.cellMirror}>
-              <span className={styles.cellMirrorContent}>
-                {props.value}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Composer Panel */}
-        <div
-          style={{
-            position: 'absolute',
-            left: portalPosition.composer.left,
-            top: portalPosition.composer.top,
-            width: portalPosition.composer.width,
-            height: portalPosition.composer.height,
-            zIndex: 9999,
-          }}
-          ref={containerRef}
-          className={`${styles.container} ${colorBorder}`}
-          onClick={e => {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
-          }}
-          onMouseDown={e => {
-            const target = e.target as HTMLElement;
-            const isDragHandle = target.closest('[data-drag-handle="true"]');
-            if (!isDragHandle) {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }
-          }}
-          onKeyDown={e => {
-            if (e.key === 'Tab') {
-              e.nativeEvent.stopImmediatePropagation();
-              e.preventDefault();
-              e.stopPropagation();
-              handleKeyDown(e);
-            }
-          }}
-          onKeyDownCapture={e => {
-            if (e.key === 'Tab') {
-              e.nativeEvent.stopImmediatePropagation();
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
-          tabIndex={-1}
-        >
-          <div className={`${styles.content}`}>
-            {renderInfoHeader()}
-            <div 
-              ref={contentScrollableRef}
-              className={`${styles.contentScrollable}`}
-            >
-              {isInfoOpen ? (
-                renderInfoContent()
-              ) : (
-                renderMainContent()
-              )}
-            </div>
-            
-            <SimpleCustomScrollbar 
-              targetRef={contentScrollableRef}
-              orientation="vertical"
-              marginTop={65}
-              marginBottom={5}
-              classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
-            />
-          </div>
-        </div>
+        {renderCurrentSelectionPanel()}
+        {renderComposerPanel()}
       </div>
     </DraggablePortal>
   );
