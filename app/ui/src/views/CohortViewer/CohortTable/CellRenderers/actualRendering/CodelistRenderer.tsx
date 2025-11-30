@@ -83,7 +83,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
         <div
           className={styles.codeBlock}
           onClick={(e) => {
-            e.stopPropagation();
+            // e.stopPropagation();
             if (onClick) {
               onClick();
             }
