@@ -193,23 +193,39 @@ export const defaultColumns = [
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
     valueParser: (params: any) => {
-      console.log("CaLLING VALUE PARSER!!!!!", params)
-      // this is required for codelist cell editor return value type
-      // as data types returned are variable (i.e. if codelist present vs not)
-      // Handle both single Codelist and arrays of Codelists
-      if (params.newValue && typeof params.newValue === 'object') {
-        // Check if it's an array of codelists
-        if (Array.isArray(params.newValue)) {
-          // Validate all items are Codelists
-          if (params.newValue.every((item: any) => item && item.class_name === 'Codelist')) {
-            return params.newValue;
-          }
-        }
-        // Check if it's a single codelist
-        else if (params.newValue.class_name === 'Codelist') {
+      console.log("=== CALLING VALUE PARSER ===", params);
+      console.log("newValue:", params.newValue);
+      console.log("newValue type:", typeof params.newValue);
+      console.log("newValue is Array?:", Array.isArray(params.newValue));
+      console.log("oldValue:", params.oldValue);
+      
+      // Accept arrays of Codelists (for complex item editors)
+      if (Array.isArray(params.newValue)) {
+        console.log("newValue is array, checking items...");
+        console.log("Array length:", params.newValue.length);
+        params.newValue.forEach((item: any, idx: number) => {
+          console.log(`  Item ${idx}:`, item, "class_name:", item?.class_name);
+        });
+        // Validate all items are Codelists
+        if (params.newValue.every((item: any) => item?.class_name === 'Codelist')) {
+          console.log("All items are Codelists, accepting array");
           return params.newValue;
+        } else {
+          console.log("NOT all items are Codelists, rejecting");
         }
       }
+      
+      // Accept single Codelist (for backward compatibility)
+      if (
+        params.newValue &&
+        typeof params.newValue === 'object' &&
+        params.newValue.class_name === 'Codelist'
+      ) {
+        console.log("newValue is single Codelist, accepting");
+        return params.newValue;
+      }
+      
+      console.log("Rejecting newValue, returning oldValue");
       return params.oldValue;
     },
     cellRenderer: CodelistCellRenderer,

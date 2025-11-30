@@ -6,10 +6,18 @@ const MAX_CODES_TO_SHOW = 3;
 
 export interface CodelistValue {
   class_name: 'Codelist';
-  codelist?: { [key: string]: string[] };
+  codelist?: { 
+    [key: string]: string[] | any;  // Can be manual codelist dict OR file codelist object
+    file_name?: string;
+    codelist_name?: string;
+    file_id?: string;
+    code_column?: string;
+    code_type_column?: string;
+    codelist_column?: string;
+  };
   codelist_type?: string;
-  codelist_name?: string;
-  file_name?: string;
+  codelist_name?: string;  // Legacy top-level (for backward compatibility)
+  file_name?: string;  // Legacy top-level (for backward compatibility)
   use_code_type?: boolean;
   remove_punctuation?: boolean;
 }
@@ -65,27 +73,34 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
     </div>
   );
 
-  const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => (
-    <div key={index} className={styles.codelistContainer}>
-      <div
-        className={styles.codeBlock}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onClick) {
-            onClick();
-          }
-        }}
-        style={{ cursor: onClick ? 'pointer' : 'default' }}
-      >
-        <div className={styles.codes}>
-          <span className={styles.code}>{codelistValue.codelist_name}</span>
+  const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => {
+    // Extract data from either top-level or nested codelist object
+    const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;
+    const codelistName = codelistValue.codelist_name || codelistValue.codelist?.codelist_name;
+    
+    return (
+      <div key={index} className={styles.codelistContainer}>
+        <div
+          className={styles.codeBlock}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onClick) {
+              onClick();
+            }
+          }}
+          style={{ cursor: onClick ? 'pointer' : 'default' }}
+        >
+          <div className={styles.codes}>
+            <span className={styles.code}>{codelistName || 'Unknown codelist'}</span>
+          </div>
+          <div className={styles.codeType}>{fileName || 'Unknown file'}</div>
         </div>
-        <div className={styles.codeType}>{codelistValue.file_name}</div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSingleCodelist = (codelistValue: CodelistValue, index: number = 0) => {
+    console.log("TRYING TO RENDER THIS")
     if (codelistValue.codelist_type === 'from file') {
       return renderFileCodelist(codelistValue, index);
     }

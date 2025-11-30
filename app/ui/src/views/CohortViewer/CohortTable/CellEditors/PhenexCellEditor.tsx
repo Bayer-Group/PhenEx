@@ -104,22 +104,41 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    getValue() {
-      console.log('PhenexCellEditor.getValue() called, returning:', currentValue);
-      return currentValue;
-    },
-    isPopup() {
-      return true;
-    },
-  }));
+  // Store currentValue in a ref so getValue() always gets the latest without recreating the handle
+  const currentValueRef = React.useRef(currentValue);
+  React.useEffect(() => {
+    currentValueRef.current = currentValue;
+  }, [currentValue]);
+
+  useImperativeHandle(ref, () => {
+    console.log('PhenexCellEditor: Setting up imperative handle');
+    return {
+      getValue() {
+        console.log('=== PhenexCellEditor.getValue() called ===');
+        console.log('Returning currentValueRef.current:', currentValueRef.current);
+        return currentValueRef.current;
+      },
+      isPopup() {
+        console.log('PhenexCellEditor: isPopup() called');
+        return true;
+      },
+      isCancelAfterEnd() {
+        console.log('PhenexCellEditor: isCancelAfterEnd() called');
+        return false;
+      },
+    };
+  }, []); // Empty deps - handle is stable, getValue reads from ref
 
   const handleDone = () => {
-    console.log("Handling done")
+    console.log("=== Handling done - closing editor ===");
+    console.log("Current value at close:", currentValueRef.current);
     if (recentlyDragged) {
+      console.log("Recently dragged, not closing");
       return; // Don't close if we just finished dragging
     }
-    props.api.stopEditing();
+    
+    console.log("Calling stopEditing() to close editor");
+    props.api.stopEditing(); // AG Grid will call getValue() which returns currentValueRef.current
   };
 
   const containerRef = React.useRef<HTMLDivElement>(null);
