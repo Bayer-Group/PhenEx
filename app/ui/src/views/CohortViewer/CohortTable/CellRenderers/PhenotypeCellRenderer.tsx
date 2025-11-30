@@ -15,10 +15,10 @@ const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   return (
-    <PhenexCellRenderer {...props} showButtons={false} onDelete={handleDelete}>
+    <PhenexCellRenderer {...props} showButtons={false}>
       <PhenotypeRenderer
         value={props.value}
-        effectiveType={props.data.effective_type}
+        data={props.data}
         onClick={handleClick}
       />
     </PhenexCellRenderer>

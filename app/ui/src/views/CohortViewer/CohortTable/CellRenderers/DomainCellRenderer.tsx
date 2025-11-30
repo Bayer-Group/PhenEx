@@ -33,7 +33,7 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
       <DomainRenderer
         value={props.value}
-        effectiveType={props.data.effective_type}
+        data={props.data}
         onClick={handleClick}
       />
     </PhenexCellRenderer>

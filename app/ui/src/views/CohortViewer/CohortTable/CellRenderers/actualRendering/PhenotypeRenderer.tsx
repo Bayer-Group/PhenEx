@@ -4,7 +4,7 @@ import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface PhenotypeRendererProps {
   value: string | null | undefined;
-  effectiveType?: string;
+  data?: any;
   onClick?: () => void;
 }
 
@@ -18,9 +18,10 @@ export interface PhenotypeRendererProps {
  */
 export const PhenotypeRenderer: React.FC<PhenotypeRendererProps> = ({
   value,
-  effectiveType,
+  data,
   onClick,
 }) => {
+  const effectiveType = data?.effective_type;
   const formatPhenotype = (val: string): string => {
     return val.replace('Phenotype', '');
   };

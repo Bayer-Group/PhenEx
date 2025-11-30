@@ -4,6 +4,7 @@ import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categorical
 
 export interface CategoricalFilterRendererProps {
   value: FilterType | null | undefined;
+  data?: any;
   onFilterClick?: (filter: FilterType, path: number[]) => void;
   path?: number[];
 }

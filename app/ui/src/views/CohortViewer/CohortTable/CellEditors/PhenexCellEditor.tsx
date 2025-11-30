@@ -15,6 +15,9 @@ import { PhenotypeRenderer } from '../CellRenderers/actualRendering/PhenotypeRen
 import { DomainRenderer } from '../CellRenderers/actualRendering/DomainRenderer';
 import { CodelistRenderer } from '../CellRenderers/actualRendering/CodelistRenderer';
 import { CategoricalFilterRenderer } from '../CellRenderers/actualRendering/CategoricalFilterRenderer';
+import { RelativeTimeRangeRenderer } from '../CellRenderers/actualRendering/RelativeTimeRangeRenderer';
+import { TypeRenderer } from '../CellRenderers/actualRendering/TypeRenderer';
+import { ValueFilterRenderer } from '../CellRenderers/actualRendering/ValueFilterRenderer';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -278,8 +281,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     'class_name': PhenotypeRenderer,
     'domain': DomainRenderer,
     'expression': LogicalExpressionRenderer,
-    'value_filter': CategoricalFilterRenderer,
+    'value_filter': ValueFilterRenderer,
+    'categorical_filter': CategoricalFilterRenderer,
     'codelist': CodelistRenderer,
+    'relative_time_range': RelativeTimeRangeRenderer,
+    'type': TypeRenderer,
     // Add more field-based renderers here as needed
   };
 
@@ -349,7 +355,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           <div className={styles.cellMirrorContents}>
             <RendererByField
               value={props.value}
-              effectiveType={props.data?.effective_type}
+              data={props.data}
             />
           </div>
         );

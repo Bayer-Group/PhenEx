@@ -1,91 +1,34 @@
 import React from 'react';
-import editPencilIcon from '../../../../assets/icons/edit-pencil.svg';
-import deleteIcon from '../../../../assets/icons/delete.svg';
-import styles from './RelativeTimeRangeCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 import { NARenderer } from './NARenderer';
-
-interface RelativeTimeRangeFilter {
-  class_name: 'RelativeTimeRangeFilter';
-  min_days: {
-    class_name: 'Value';
-    operator: string;
-    value: number;
-  };
-  max_days: {
-    class_name: 'Value';
-    operator: string;
-    value: number;
-  };
-  when: string;
-  useIndexDate: boolean;
-  anchor_phenotype: string | null;
-  useConstant: boolean;
-  constant?: 'one_year_pre_index' | 'any_time_post_index';
-}
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { RelativeTimeRangeRenderer } from './actualRendering/RelativeTimeRangeRenderer';
 
 const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  const formatTimeRange = (filter: RelativeTimeRangeFilter): JSX.Element => {
-    if (filter.useConstant && filter.constant) {
-      return (
-        <span className={styles.filterRowSpan}>
-          {filter.constant === 'one_year_pre_index' ? 'One Year Pre-Index' : 'Any Time Post-Index'}
-        </span>
-      );
-    }
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
 
-    const reference = filter.useIndexDate
-      ? 'index date'
-      : filter.anchor_phenotype || 'unknown phenotype';
-    return (
-      <span className={styles.filterRowSpan}>
-        {filter.min_days && (
-          <span className={`${styles.timeValue} ${styles.min}`}>
-            <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator} </span>
-            {filter.min_days.value}
-          </span>
-        )}
-        {filter.max_days && (
-          <span className={`${styles.timeValue} ${styles.max}`}>
-            <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator} </span>
-            {filter.max_days.value}
-          </span>
-        )}
-        days <span className={styles.when}>{filter.when}</span>
-        <span className={styles.reference}> {reference} </span>
-      </span>
-    );
+  const handleClick = () => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   };
 
-  let filters: RelativeTimeRangeFilter[] = Array.isArray(props.value) ? props.value : [];
   if (props.data.type === 'entry') {
     return (
-        <PhenexCellRenderer {...props}>
-
+      <PhenexCellRenderer {...props}>
         <NARenderer value={props.value} />
-        </PhenexCellRenderer>
+      </PhenexCellRenderer>
     );
   }
 
   return (
-    <PhenexCellRenderer {...props}>
-      <div className={styles.filtersContainer}>
-        {filters.map((filter, index) => (
-          <div
-            key={index}
-            className={styles.filterRow}
-            onClick={() => {
-              props.api?.startEditingCell({
-                rowIndex: props.node.rowIndex,
-                colKey: props.column.getColId(),
-              });
-            }}
-          >
-            {formatTimeRange(filter)}
-            <br />
-          </div>
-        ))}
-      </div>
+    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
+      <RelativeTimeRangeRenderer value={props.value as any} onClick={handleClick} />
     </PhenexCellRenderer>
   );
 };

@@ -4,7 +4,7 @@ import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface DomainRendererProps {
   value: string | null | undefined;
-  effectiveType?: string;
+  data?: any;
   onClick?: () => void;
 }
 
@@ -18,9 +18,10 @@ export interface DomainRendererProps {
  */
 export const DomainRenderer: React.FC<DomainRendererProps> = ({
   value,
-  effectiveType,
+  data,
   onClick,
 }) => {
+  const effectiveType = data?.effective_type;
   const formatDomain = (val: string): string => {
     return val.split('_').join(' ');
   };

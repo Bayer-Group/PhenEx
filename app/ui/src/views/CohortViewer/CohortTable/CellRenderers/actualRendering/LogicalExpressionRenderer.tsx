@@ -4,6 +4,7 @@ import { FilterType, SingleLogicalExpression } from '../../CellEditors/logicalEx
 
 export interface LogicalExpressionRendererProps {
   value: FilterType | null | undefined;
+  data?: any;
   onFilterClick?: (filter: FilterType, path: number[]) => void;
   path?: number[];
 }

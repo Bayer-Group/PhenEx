@@ -15,6 +15,7 @@ export interface CodelistValue {
 
 export interface CodelistRendererProps {
   value: CodelistValue | CodelistValue[] | null | undefined;
+  data?: any;
   onClick?: () => void;
 }
 
