@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './CodelistRenderer.module.css';
 import { ComplexItemRenderer } from './ComplexItemRenderer';
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 const MAX_CODES_TO_SHOW = 3;
 
@@ -34,10 +35,12 @@ export interface CodelistRendererProps {
  * Can be used in both CellRenderers and CellEditors
  * 
  * @param value - The codelist value(s) to render
+ * @param data - Row data for accessing effective_type and other row-level properties
  * @param onClick - Optional callback when a codelist is clicked
  */
 export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   value,
+  data,
   onClick,
   onItemClick,
 }) => {
@@ -78,6 +81,11 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
     </div>
   );
 
+  const effectiveType = data?.effective_type;
+  console.log("THIS IS THE DATA IN CODELIST RENDERER,", data);
+  const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
+  const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
+  console.log("THIS IS THE CODELIST CLOR CL", colorClass);
   const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => {
     // Extract data from either top-level or nested codelist object
     const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;
@@ -99,7 +107,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
           }}
           style={{ cursor: onClick ? 'pointer' : 'default' }}
         >
-          <div className={styles.codes}>
+          <div className={`${styles.codes} ${colorClass}`}>
             <span className={styles.code}>{displayCodelistName}</span>
           </div>
         </div>
@@ -124,6 +132,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
         items={value}
         renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
         onItemClick={onItemClick}
+        itemClassName={borderColorClass}
         emptyPlaceholder={<div className={styles.missing}></div>}
       />
     );
@@ -143,6 +152,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
       items={[value]}
       renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
       onItemClick={onItemClick}
+      itemClassName={borderColorClass}
       emptyPlaceholder={<div className={styles.missing}></div>}
     />
   );

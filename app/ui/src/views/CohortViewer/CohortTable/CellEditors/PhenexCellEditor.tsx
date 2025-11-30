@@ -536,7 +536,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           top: portalPosition.currentSelection.bottomTop,
           width: portalPosition.currentSelection.width,
           minWidth: '300px',
-          height: portalPosition.currentSelection.bottomHeight,
+          minHeight: portalPosition.currentSelection.bottomHeight,
           zIndex: 9999,
         }}
         data-drag-handle="true"

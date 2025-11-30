@@ -1,28 +1,34 @@
 .container {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   background-color: blue;
   width: 100%;
   height: 100%;
   background-color: transparent;
   flex-wrap: wrap;
+  padding:0px;
+  padding-top:3px;
 }
 
 .item {
   display: flex;
-  align-items: center;
-  border: 1px solid var(--color-accent-bright);
+  background-color: var(--item-color-default);
   border-radius: var(--item-radius);
+  border-width: var(--border_width_item) !important;
+  transition: var(--item-transition);
+  font-family: var(--item-font-family);
+  font-size: var(--item-font-size);
+  color: var(--item-font-color);
   padding: 0px;
-  transition: all 0.2s ease;
-  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  text-wrap: wrap;
+  border : 1px solid transparent;
 }
 
 .item:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--item-border-hover);
 }
 
 .operator {

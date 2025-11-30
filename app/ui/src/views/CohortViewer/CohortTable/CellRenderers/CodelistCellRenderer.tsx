@@ -28,7 +28,12 @@ const CodelistCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
-      <CodelistRenderer value={props.value as any} onClick={handleClick} onItemClick={handleItemClick} />
+      <CodelistRenderer 
+        value={props.value as any} 
+        data={props.data}
+        onClick={handleClick} 
+        onItemClick={handleItemClick} 
+      />
     </PhenexCellRenderer>
   );
 };

@@ -7,6 +7,7 @@ export interface ComplexItemRendererProps<T> {
   onItemClick?: (item: T, index: number) => void;
   operator?: string; // Optional operator to display between items (e.g., "AND", "OR", "+")
   emptyPlaceholder?: React.ReactNode;
+  itemClassName?: string; // Optional className to apply to each item wrapper
 }
 
 /**
@@ -18,6 +19,7 @@ export interface ComplexItemRendererProps<T> {
  * @param onItemClick - Callback when an item is clicked
  * @param operator - Optional operator to display between items
  * @param emptyPlaceholder - What to show when items array is empty
+ * @param itemClassName - Optional className to apply to each item wrapper
  */
 export function ComplexItemRenderer<T>({
   items,
@@ -25,6 +27,7 @@ export function ComplexItemRenderer<T>({
   onItemClick,
   operator,
   emptyPlaceholder = <div className={styles.empty}></div>,
+  itemClassName,
 }: ComplexItemRendererProps<T>) {
   
   if (!items || items.length === 0) {
@@ -36,7 +39,7 @@ export function ComplexItemRenderer<T>({
       {items.map((item, index) => (
         <React.Fragment key={index}>
           <div
-            className={styles.item}
+            className={`${styles.item} ${itemClassName || ''}`}
             onClick={(e) => {
               e.stopPropagation();
               if (onItemClick) {
