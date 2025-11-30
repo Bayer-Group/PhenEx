@@ -8,6 +8,7 @@ import { Tabs } from '../../../../../components/ButtonsAndTabs/Tabs/Tabs';
 export interface SingleCodelistEditorProps {
   value?: any;
   onValueChange?: (value: any) => void;
+  onEditingDone?: () => void;
   options?: string[];
   className?: string;
 }
@@ -23,6 +24,7 @@ const EDITOR_OPTIONS: { label: string; type: EditorType }[] = [
 export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   value,
   onValueChange,
+  onEditingDone,
   options,
   className,
 }) => {
@@ -40,13 +42,27 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   };
 
   const handleValueChange = (newValue: any) => {
-    console.log('SINGLE CODELIST EDITOR', newValue);
-    newValue.codelist_type = selectedEditor;
-    onValueChange?.(newValue);
+    // SingleCodelistEditor only works with a single codelist item
+    // The child editors return their specific data structure
+    // We wrap it in the proper Codelist object structure
+    const updatedCodelist = {
+      class_name: 'Codelist', // Always set
+      codelist: newValue, // Wrap child editor data in codelist property
+      codelist_type: selectedEditor,
+      use_code_type: value?.use_code_type ?? true,
+      remove_punctuation: value?.remove_punctuation ?? false,
+    };
+    onValueChange?.(updatedCodelist);
   };
 
   const renderEditor = () => {
-    const editorProps = { value, onValueChange, options };
+    // Pass value.codelist to child editors (they work with the inner data)
+    // SingleCodelistEditor manages the outer Codelist structure
+    const editorProps = { 
+      value: value?.codelist, // Extract the codelist data for child editors
+      options 
+    };
+    
     switch (selectedEditor) {
       case 'from file':
         return (
@@ -82,6 +98,16 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
         />
       </div>
       {renderEditor()}
+      {onEditingDone && (
+        <div className={styles.doneButtonContainer}>
+          <button 
+            className={styles.doneButton}
+            onClick={onEditingDone}
+          >
+            Done
+          </button>
+        </div>
+      )}
     </div>
   );
 };

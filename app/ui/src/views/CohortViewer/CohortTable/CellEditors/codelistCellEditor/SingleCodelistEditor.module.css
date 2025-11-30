@@ -19,3 +19,33 @@
 .editorTypeSelector {
   margin-bottom: 12px;
 }
+
+.doneButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-color);
+}
+
+.doneButton {
+  padding: 8px 24px;
+  background-color: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doneButton:hover {
+  background-color: var(--color-accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.doneButton:active {
+  transform: translateY(0);
+}

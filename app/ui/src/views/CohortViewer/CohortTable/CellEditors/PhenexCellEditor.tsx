@@ -25,6 +25,11 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   children?: React.ReactNode;
   autoCloseOnChange?: boolean; // If true, automatically close editor when value changes (for list-view editors)
   fieldName?: string; // Optional override for the field name used to determine which renderer to use
+  showComposerPanel?: boolean; // If false, hide composer panel (for complex item editors before selection)
+  showAddButton?: boolean; // If true, show a '+' button to add new items (for complex item editors)
+  onAddItem?: () => void; // Callback when add button is clicked
+  onItemSelect?: (item: any, index?: number) => void; // Callback when a complex item is selected for editing
+  onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -68,6 +73,20 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
+  const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
+
+  // Update currentValue when props.value changes (for complex item editors managing arrays)
+  useEffect(() => {
+    console.log('PhenexCellEditor: props.value changed to:', props.value);
+    setCurrentValue(props.value);
+  }, [props.value]);
+
+  // Update showComposer when prop changes
+  useEffect(() => {
+    if (props.showComposerPanel !== undefined) {
+      setShowComposer(props.showComposerPanel);
+    }
+  }, [props.showComposerPanel]);
 
   useEffect(() => {
     // Listen for storage changes from other tabs/windows
@@ -87,6 +106,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   useImperativeHandle(ref, () => ({
     getValue() {
+      console.log('PhenexCellEditor.getValue() called, returning:', currentValue);
       return currentValue;
     },
     isPopup() {
@@ -95,8 +115,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   }));
 
   const handleValueChange = (value: any) => {
+    console.log('PhenexCellEditor.handleValueChange called with:', value);
     setCurrentValue(value);
+    console.log('Set currentValue to:', value);
     props.onValueChange?.(value);
+    console.log('Called props.onValueChange with:', value);
     
     // Auto-close editor for list-view editors when a value is selected
     if (props.autoCloseOnChange) {
@@ -349,13 +372,15 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       const fieldName = props.fieldName || props.column?.getColDef().field;
       const RendererByField = fieldName ? rendererByField[fieldName] : null;
       
-      if (RendererByField && props.value) {
+      if (RendererByField) {
         // Use the custom renderer component for field-based rendering
+        // Always render, even if value is empty (for complex item editors)
         return (
           <div className={styles.cellMirrorContents}>
             <RendererByField
               value={props.value}
               data={props.data}
+              onItemClick={props.onItemSelect}
             />
           </div>
         );
@@ -392,6 +417,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             key: index,
             ...props,
             onValueChange: handleValueChange,
+            onEditingDone: props.onEditingDone,
           })
         : child
     );
@@ -504,6 +530,20 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
         <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
           {renderCellMirrorContents()}
+          {props.showAddButton && (
+            <button
+              className={`${styles.addButton} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                setShowComposer(true);
+                props.onAddItem?.();
+              }}
+              title="Add new item"
+            >
+              +
+            </button>
+          )}
         </div>
       </div>
     );
@@ -606,7 +646,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     >
       <div className={styles.twoPanelWrapper}>
         {renderCurrentSelectionPanel()}
-        {renderComposerPanel()}
+        {showComposer && renderComposerPanel()}
       </div>
     </DraggablePortal>
   );

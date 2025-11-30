@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from '../CodelistCellRenderer.module.css';
+import { ComplexItemRenderer } from './ComplexItemRenderer';
 
 const MAX_CODES_TO_SHOW = 3;
 
@@ -17,6 +18,7 @@ export interface CodelistRendererProps {
   value: CodelistValue | CodelistValue[] | null | undefined;
   data?: any;
   onClick?: () => void;
+  onItemClick?: (item: CodelistValue, index: number) => void; // Callback for clicking individual items in an array
 }
 
 /**
@@ -29,6 +31,7 @@ export interface CodelistRendererProps {
 export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   value,
   onClick,
+  onItemClick,
 }) => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
@@ -95,9 +98,12 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   if (Array.isArray(value)) {
     // If the codelist is an array, it's a list of codelists
     return (
-      <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
-        {value.map((codelist, index) => renderSingleCodelist(codelist, index))}
-      </div>
+      <ComplexItemRenderer
+        items={value}
+        renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+        onItemClick={onItemClick}
+        emptyPlaceholder={<div className={styles.missing}></div>}
+      />
     );
   }
 
@@ -109,9 +115,13 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
     return <div className={styles.missing}></div>;
   }
 
+  // Single item - treat as array of one for consistency
   return (
-    <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
-      {renderSingleCodelist(value)}
-    </div>
+    <ComplexItemRenderer
+      items={[value]}
+      renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+      onItemClick={onItemClick}
+      emptyPlaceholder={<div className={styles.missing}></div>}
+    />
   );
 };

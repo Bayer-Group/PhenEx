@@ -193,15 +193,22 @@ export const defaultColumns = [
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
     valueParser: (params: any) => {
+      console.log("CaLLING VALUE PARSER!!!!!", params)
       // this is required for codelist cell editor return value type
       // as data types returned are variable (i.e. if codelist present vs not)
-      // TODO add value validation here
-      if (
-        params.newValue &&
-        typeof params.newValue === 'object' &&
-        params.newValue.class_name === 'Codelist'
-      ) {
-        return params.newValue;
+      // Handle both single Codelist and arrays of Codelists
+      if (params.newValue && typeof params.newValue === 'object') {
+        // Check if it's an array of codelists
+        if (Array.isArray(params.newValue)) {
+          // Validate all items are Codelists
+          if (params.newValue.every((item: any) => item && item.class_name === 'Codelist')) {
+            return params.newValue;
+          }
+        }
+        // Check if it's a single codelist
+        else if (params.newValue.class_name === 'Codelist') {
+          return params.newValue;
+        }
       }
       return params.oldValue;
     },
