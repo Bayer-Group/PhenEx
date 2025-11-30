@@ -1,32 +1,26 @@
 import React from 'react';
-import styles from './PhenotypeCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-import typeStyles from '../../../../styles/study_types.module.css';
-import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { createDeleteHandler } from './cellRendererHandlers';
+import { PhenotypeRenderer } from './actualRendering/PhenotypeRenderer';
 
 const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  const formatPhenotype = (value: string): string => {
-    return value.replace('Phenotype', '');
-  };
-  const colorClass = typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || '';
   // Use shared handlers to avoid lazy loading delay
-  const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
 
+  const handleClick = () => {
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex ?? 0,
+      colKey: props.column?.getColId() ?? '',
+    });
+  };
+
   return (
-    <PhenexCellRenderer {...props} showButtons={false}
-      onDelete={handleDelete}>
-      <span
-        className={`${styles.container} ${colorClass}`}
-        onClick={() =>
-          props.api?.startEditingCell({
-            rowIndex: props.node.rowIndex ?? 0,
-            colKey: props.column?.getColId() ?? '',
-          })
-        }
-      >
-        {props.value ? formatPhenotype(props.value) : null}
-      </span>
+    <PhenexCellRenderer {...props} showButtons={false} onDelete={handleDelete}>
+      <PhenotypeRenderer
+        value={props.value}
+        effectiveType={props.data.effective_type}
+        onClick={handleClick}
+      />
     </PhenexCellRenderer>
   );
 };

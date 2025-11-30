@@ -1,53 +1,41 @@
 import React from 'react';
-import styles from './DomainCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-import typeStyles from '../../../../styles/study_types.module.css';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { DomainRenderer } from './actualRendering/DomainRenderer';
 
 const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  const formatDomain = (value: string): string => {
-    return value.split('_').join(' ');
-  };
-  const colorClass = typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''
-
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
 
-  const renderDomain = (value: string): string => {
-    return (
-      <span
-        className={`${styles.domainContainer} ${colorClass}`}
-        onClick={() =>
-          props.api?.startEditingCell({
-            rowIndex: props.node.rowIndex,
-            colKey: props.column.getColId(),
-          })
-        }
-      >
-        {props.value ? formatDomain(props.value) : null}
-      </span>
-    );
+  const handleClick = () => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   };
 
-  const noDomainPhenotypes = ['ScorePhenotype', 'ArithmeticPhenotype', 'LogicPhenotype'];
-
-  if (props.data.class_name === 'LogicPhenotype'){
-  console.log('Rendering domain cell with LOGIC PHENOTYPE:', props);
-
+  if (props.data.class_name === 'LogicPhenotype') {
+    console.log('Rendering domain cell with LOGIC PHENOTYPE:', props);
   }
+
   if (props.value === undefined || props.value === null || props.value === 'missing') {
     return (
-      <PhenexCellRenderer {...props}><div></div>
+      <PhenexCellRenderer {...props}>
+        <div></div>
       </PhenexCellRenderer>
     );
   }
+
   return (
-    <PhenexCellRenderer {...props}
-          onEdit={handleEdit}
-      onDelete={handleDelete}
->
-      {renderDomain(props.value)}
+    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
+      <DomainRenderer
+        value={props.value}
+        effectiveType={props.data.effective_type}
+        onClick={handleClick}
+      />
     </PhenexCellRenderer>
   );
 };

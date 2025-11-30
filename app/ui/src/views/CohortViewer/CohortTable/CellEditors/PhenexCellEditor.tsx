@@ -10,6 +10,10 @@ import parametersInfoRaw from '/assets/parameters_info.json?raw';
 let parametersInfo = JSON.parse(parametersInfoRaw);
 import typeStyles from '../../../../styles/study_types.module.css';
 import ReactMarkdown from 'react-markdown';
+import { LogicalExpressionRenderer } from '../CellRenderers/actualRendering/LogicalExpressionRenderer';
+import { FilterType } from './logicalExpressionEditor/types';
+import { PhenotypeRenderer } from '../CellRenderers/actualRendering/PhenotypeRenderer';
+import { DomainRenderer } from '../CellRenderers/actualRendering/DomainRenderer';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -259,6 +263,13 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const colorBlock = typeStyles[`${props.data.effective_type || ''}_color_block_dim`] || ''
 
 
+  const rendererByField: Record<string, React.ComponentType<any>> = {
+    'class_name': PhenotypeRenderer,
+    'domain': DomainRenderer,
+    'expression': LogicalExpressionRenderer,
+
+    // Add more field-based renderers here as needed
+  };
 
   const renderTitle = () => {
     // Build breadcrumb items for the phenotype
@@ -303,7 +314,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
-  const renderInfoHeader = () => {
+  const renderCellMirrorContents = () => {
     /*
     Render the info container with current selection and info button.
     This should maintain consistent height regardless of info state.
@@ -315,6 +326,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
 
     const renderCurrentSelection = () => {
+
+      // Check if we have a custom renderer for this field (for simple string values)
+      const fieldName = props.column?.getColDef().field;
+      const RendererByField = fieldName ? rendererByField[fieldName] : null;
+      
+      if (RendererByField && props.value) {
+        // Use the custom renderer component for field-based rendering (e.g., domain, class_name)
+        return (
+          <div className={styles.cellMirrorContents}>
+            <RendererByField
+              value={props.value}
+              effectiveType={props.data?.effective_type}
+            />
+          </div>
+        );
+      }
+      
       if (parameterInfo && parameterInfo.showSelection == 'selection') {
         return (
           <>
@@ -328,14 +356,14 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     return (
-      <div className={styles.infoContainer}>
-        {renderCurrentSelection()}
-        <Button
-          title={isInfoOpen ? "Back to Editor" : "Help"}
-          onClick={toggleInfobox}
-          className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''}`}
-        />
-      </div>
+      // <div className={styles.infoContainer}>
+        renderCurrentSelection()
+      //   <Button
+      //     title={isInfoOpen ? "Back to Editor" : "Help"}
+      //     onClick={toggleInfobox}
+      //     className={`${styles.infoButton} ${isInfoOpen ? styles.open : styles.closed} ${typeStyles[`${props.data.effective_type || ''}_list_item_selected`] || ''}`}
+      //   />
+      // </div>
     );
   };
 
@@ -457,9 +485,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       >
 
         <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
-          <span className={styles.cellMirrorContent}>
-          {renderInfoHeader()}
-          </span>
+          {renderCellMirrorContents()}
         </div>
       </div>
     );
