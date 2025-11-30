@@ -19,6 +19,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
   onValueChange?: (value: any) => void;
   children?: React.ReactNode;
+  autoCloseOnChange?: boolean; // If true, automatically close editor when value changes (for list-view editors)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -91,6 +92,14 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const handleValueChange = (value: any) => {
     setCurrentValue(value);
     props.onValueChange?.(value);
+    
+    // Auto-close editor for list-view editors when a value is selected
+    if (props.autoCloseOnChange) {
+      // Small delay to ensure the value is saved before closing
+      setTimeout(() => {
+        props.api.stopEditing();
+      }, 0);
+    }
   };
 
   const handleDone = () => {

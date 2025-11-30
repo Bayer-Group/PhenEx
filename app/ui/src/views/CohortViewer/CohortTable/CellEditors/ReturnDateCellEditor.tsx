@@ -3,7 +3,7 @@ import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { ReturnDateEditor } from './returnDateEditor/ReturnDateEditor';
 
 interface ReturnDateCellEditorProps extends PhenexCellEditorProps {
-  value?: any;
+  // value is inherited from PhenexCellEditorProps
 }
 
 export const ReturnDateCellEditor = forwardRef<any, ReturnDateCellEditorProps>(
@@ -13,7 +13,7 @@ export const ReturnDateCellEditor = forwardRef<any, ReturnDateCellEditorProps>(
     };
 
     return (
-      <PhenexCellEditor {...props} ref={ref}>
+      <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
         <ReturnDateEditor {...props} onValueChange={handleValueChange} />
       </PhenexCellEditor>
     );

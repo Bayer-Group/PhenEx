@@ -3,7 +3,7 @@ import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { PhenotypeSelectorEditor } from './phenotypeSelectorEditor/PhenotypeSelectorEditor';
 
 interface PhenotypeSelectorCellEditorProps extends PhenexCellEditorProps {
-  value?: any;
+  // value is inherited from PhenexCellEditorProps
 }
 
 export const PhenotypeSelectorCellEditor = forwardRef<any, PhenotypeSelectorCellEditorProps>(
@@ -13,7 +13,7 @@ export const PhenotypeSelectorCellEditor = forwardRef<any, PhenotypeSelectorCell
     };
 
     return (
-      <PhenexCellEditor {...props} ref={ref}>
+      <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
         <PhenotypeSelectorEditor {...props} onValueChange={handleValueChange} />
       </PhenexCellEditor>
     );

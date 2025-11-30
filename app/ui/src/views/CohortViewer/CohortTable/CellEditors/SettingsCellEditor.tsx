@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { SettingsEditor, SettingsEditorProps } from './settingsEditor/SettingsEditor';
 interface SettingsCellEditorProps extends PhenexCellEditorProps {
-  value?: any;
+  // value is inherited from PhenexCellEditorProps
 }
 
 export const SettingsCellEditor = forwardRef<any, SettingsCellEditorProps>((props, ref) => {
@@ -11,7 +11,7 @@ export const SettingsCellEditor = forwardRef<any, SettingsCellEditorProps>((prop
   };
 
   return (
-    <PhenexCellEditor {...props} ref={ref}>
+    <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
       <SettingsEditor {...props} onValueChange={handleValueChange} />
     </PhenexCellEditor>
   );

@@ -3,7 +3,7 @@ import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { DomainSelectorEditor } from './domainSelectorEditor/DomainSelectorEditor';
 
 interface DomainSelectorCellEditorProps extends PhenexCellEditorProps {
-  value?: any;
+  // value is inherited from PhenexCellEditorProps
 }
 
 export const DomainSelectorCellEditor = forwardRef<any, DomainSelectorCellEditorProps>(
@@ -13,7 +13,7 @@ export const DomainSelectorCellEditor = forwardRef<any, DomainSelectorCellEditor
     };
 
     return (
-      <PhenexCellEditor {...props} ref={ref}>
+      <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
         <DomainSelectorEditor {...props} onValueChange={handleValueChange} />
       </PhenexCellEditor>
     );
