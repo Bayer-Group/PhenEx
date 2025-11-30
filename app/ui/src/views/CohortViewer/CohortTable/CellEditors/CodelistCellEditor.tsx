@@ -55,11 +55,12 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
       use_code_type: true,
       remove_punctuation: false,
     }),
-    onValueChange: (updatedItems) => {
-      // Update PhenexCellEditor's value so getValue() returns the correct array
-      props.onValueChange?.(updatedItems);
-    },
   });
+
+  // Sync items to PhenexCellEditor whenever they change
+  React.useEffect(() => {
+    props.onValueChange?.(items);
+  }, [items, props.onValueChange]);
 
   return (
     <PhenexCellEditor 

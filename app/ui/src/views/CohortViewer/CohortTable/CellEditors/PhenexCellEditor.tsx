@@ -409,17 +409,20 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   // Callback for children to update the current value
   // Used by list-view editors to update value and trigger auto-close
-  const handleChildValueChange = (value: any) => {
-    console.log('PhenexCellEditor.handleChildValueChange called with:', value);
+  const handleValueChange = (value: any) => {
+    console.log('PhenexCellEditor.handleValueChange called with:', value);
     setCurrentValue(value);
+    console.log('Set currentValue to:', value);
     
     // Notify parent if callback provided
     props.onValueChange?.(value);
+    console.log('Called props.onValueChange with:', value);
     
-    // Auto-close editor for list-view editors
+    // Auto-close editor for list-view editors when a value is selected
     if (props.autoCloseOnChange) {
+      // Small delay to ensure the value is saved before closing
       setTimeout(() => {
-        props.api?.stopEditing();
+        props.api.stopEditing();
       }, 0);
     }
   };
@@ -433,7 +436,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             key: index,
             // Only pass onValueChange if child doesn't already have one
             // (Complex item editors manage their own onValueChange)
-            ...((child.props as any).onValueChange ? {} : { onValueChange: handleChildValueChange }),
+            ...((child.props as any).onValueChange ? {} : { onValueChange: handleValueChange }),
           })
         : child
     );
