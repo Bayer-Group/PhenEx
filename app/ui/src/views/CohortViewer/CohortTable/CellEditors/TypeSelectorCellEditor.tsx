@@ -7,13 +7,9 @@ interface TypeSelectorCellEditorProps extends PhenexCellEditorProps {
 }
 
 export const TypeSelectorCellEditor = forwardRef<any, TypeSelectorCellEditorProps>((props, ref) => {
-  const handleValueChange = (value: any) => {
-    props.onValueChange?.(value);
-  };
-
   return (
     <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
-      <TypeSelectorEditor {...props} onValueChange={handleValueChange} />
+      <TypeSelectorEditor {...props} />
     </PhenexCellEditor>
   );
 });

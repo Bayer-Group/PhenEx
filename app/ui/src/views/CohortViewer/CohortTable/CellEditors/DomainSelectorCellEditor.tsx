@@ -8,13 +8,9 @@ interface DomainSelectorCellEditorProps extends PhenexCellEditorProps {
 
 export const DomainSelectorCellEditor = forwardRef<any, DomainSelectorCellEditorProps>(
   (props, ref) => {
-    const handleValueChange = (value: any) => {
-      props.onValueChange?.(value);
-    };
-
     return (
       <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
-        <DomainSelectorEditor {...props} onValueChange={handleValueChange} />
+        <DomainSelectorEditor {...props} />
       </PhenexCellEditor>
     );
   }

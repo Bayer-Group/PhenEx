@@ -429,17 +429,24 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderMainContent = () => {
     // Don't spread all props to avoid passing AG Grid props to DOM elements
-    // Only pass onValueChange for list-view editors (if child doesn't already have it)
-    return React.Children.map(props.children, (child, index) =>
-      React.isValidElement(child)
-        ? React.cloneElement(child as React.ReactElement<any>, {
-            key: index,
-            // Only pass onValueChange if child doesn't already have one
-            // (Complex item editors manage their own onValueChange)
-            ...((child.props as any).onValueChange ? {} : { onValueChange: handleValueChange }),
-          })
-        : child
-    );
+    // For list-view editors with autoCloseOnChange, ALWAYS inject handleValueChange
+    // For complex item editors, they manage their own onValueChange
+    return React.Children.map(props.children, (child, index) => {
+      if (React.isValidElement(child)) {
+        console.log('PhenexCellEditor.renderMainContent: autoCloseOnChange?', props.autoCloseOnChange);
+        
+        return React.cloneElement(child as React.ReactElement<any>, {
+          key: index,
+          // If autoCloseOnChange is true, ALWAYS override with handleValueChange
+          // Otherwise, only pass if child doesn't have one
+          ...(props.autoCloseOnChange 
+            ? { onValueChange: handleValueChange }
+            : ((child.props as any).onValueChange ? {} : { onValueChange: handleValueChange })
+          ),
+        });
+      }
+      return child;
+    });
   };
 
   const renderInfoContent = () => {

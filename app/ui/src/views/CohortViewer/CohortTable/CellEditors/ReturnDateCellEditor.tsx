@@ -8,13 +8,9 @@ interface ReturnDateCellEditorProps extends PhenexCellEditorProps {
 
 export const ReturnDateCellEditor = forwardRef<any, ReturnDateCellEditorProps>(
   (props, ref) => {
-    const handleValueChange = (value: any) => {
-      props.onValueChange?.(value);
-    };
-
     return (
       <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
-        <ReturnDateEditor {...props} onValueChange={handleValueChange} />
+        <ReturnDateEditor {...props} />
       </PhenexCellEditor>
     );
   }

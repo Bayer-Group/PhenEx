@@ -8,13 +8,9 @@ interface PhenotypeSelectorCellEditorProps extends PhenexCellEditorProps {
 
 export const PhenotypeSelectorCellEditor = forwardRef<any, PhenotypeSelectorCellEditorProps>(
   (props, ref) => {
-    const handleValueChange = (value: any) => {
-      props.onValueChange?.(value);
-    };
-
     return (
       <PhenexCellEditor {...props} ref={ref} autoCloseOnChange={true}>
-        <PhenotypeSelectorEditor {...props} onValueChange={handleValueChange} />
+        <PhenotypeSelectorEditor {...props} />
       </PhenexCellEditor>
     );
   }
