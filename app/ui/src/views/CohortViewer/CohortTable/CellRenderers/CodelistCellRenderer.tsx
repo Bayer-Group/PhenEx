@@ -17,9 +17,18 @@ const CodelistCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     });
   };
 
+  const handleItemClick = (_item: any, _index: number) => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
+  };
+
   return (
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
-      <CodelistRenderer value={props.value as any} onClick={handleClick} />
+      <CodelistRenderer value={props.value as any} onClick={handleClick} onItemClick={handleItemClick} />
     </PhenexCellRenderer>
   );
 };
