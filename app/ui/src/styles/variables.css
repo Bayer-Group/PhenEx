@@ -8,12 +8,14 @@
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
   --item-color-default: transparent;
-  --item-radius: 4px;
+  --item-radius: 8px;
   --item-font-size: 14px;
   --item-font-family: "IBMPlexSans-bold";
   --item-font-color: var(--color-accent-bright);
   --item-border-default: 1px solid var(--line-color);
   --item-margin-top: 5px;
+  --padding_horizontal_item: 8px;
+  --padding_vertical_item: 4px;
 
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);

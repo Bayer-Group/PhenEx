@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../CodelistCellRenderer.module.css';
+import styles from './CodelistRenderer.module.css';
 import { ComplexItemRenderer } from './ComplexItemRenderer';
 
 const MAX_CODES_TO_SHOW = 3;
@@ -43,33 +43,38 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
 }) => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
-      {Object.entries(codelist).map(([codeType, codes], codeIndex) => (
-        <div
-          key={codeIndex}
-          className={styles.codeBlock}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onClick) {
-              onClick();
-            }
-          }}
-          style={{ cursor: onClick ? 'pointer' : 'default' }}
-        >
-          <div className={styles.codes}>
-            {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
-              <span key={i} className={styles.code}>
-                {code}
-              </span>
-            ))}
-            {codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
+      {Object.entries(codelist).map(([codeType, codes], codeIndex) => {
+        // Replace underscores with spaces for better readability
+        const displayCodeType = codeType.replace(/_/g, ' ');
+        
+        return (
+          <div
+            key={codeIndex}
+            className={styles.codeBlock}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClick) {
+                onClick();
+              }
+            }}
+            style={{ cursor: onClick ? 'pointer' : 'default' }}
+          >
+            <div className={styles.codes}>
+              {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
+                <span key={i} className={styles.code}>
+                  {code}
+                </span>
+              ))}
+              {codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
+            </div>
+            <div className={styles.codeType}>
+              {displayCodeType}
+              {parentValue.use_code_type ? ' (use code type)' : ' (ignore code type)'}
+              {parentValue.remove_punctuation ? ' (remove punctuation)' : ''}
+            </div>
           </div>
-          <div className={styles.codeType}>
-            {codeType}
-            {parentValue.use_code_type ? ' (use code type)' : ' (ignore code type)'}
-            {parentValue.remove_punctuation ? ' (remove_punctuation)' : ''}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -77,6 +82,10 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
     // Extract data from either top-level or nested codelist object
     const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;
     const codelistName = codelistValue.codelist_name || codelistValue.codelist?.codelist_name;
+    
+    // Replace underscores with spaces for better readability
+    const displayCodelistName = codelistName?.replace(/_/g, ' ') || 'Unknown codelist';
+    const displayFileName = fileName?.replace(/_/g, ' ') || 'Unknown file';
     
     return (
       <div key={index} className={styles.codelistContainer}>
@@ -91,16 +100,14 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
           style={{ cursor: onClick ? 'pointer' : 'default' }}
         >
           <div className={styles.codes}>
-            <span className={styles.code}>{codelistName || 'Unknown codelist'}</span>
+            <span className={styles.code}>{displayCodelistName}</span>
           </div>
-          <div className={styles.codeType}>{fileName || 'Unknown file'}</div>
         </div>
       </div>
     );
   };
 
   const renderSingleCodelist = (codelistValue: CodelistValue, index: number = 0) => {
-    console.log("TRYING TO RENDER THIS")
     if (codelistValue.codelist_type === 'from file') {
       return renderFileCodelist(codelistValue, index);
     }
