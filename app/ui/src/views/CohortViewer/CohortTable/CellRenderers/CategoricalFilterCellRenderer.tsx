@@ -1,54 +1,31 @@
 import React from 'react';
-import styles from './CategoricalFilterCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
-import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categoricalFilterEditor/types';
+import { FilterType } from '../CellEditors/categoricalFilterEditor/types';
+import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { CategoricalFilterRenderer } from './actualRendering/CategoricalFilterRenderer';
 
 const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props => {
-  const renderFilter = (filter: FilterType | null | undefined, isRoot: boolean): JSX.Element => {
-    if (!filter) {
-      return <div className={styles.filterText}></div>;
-    }
+  // Use shared handlers to avoid lazy loading delay
+  const handleEdit = createEditHandler(props);
+  const handleDelete = createDeleteHandler(props);
 
-    if (filter.class_name === 'CategoricalFilter') {
-      const categoricalFilter = filter as BaseCategoricalFilter;
-      return (
-        <>
-          <div
-            className={styles.unit}
-            onClick={() => {
-              props.api?.startEditingCell({
-                rowIndex: props.node.rowIndex,
-                colKey: props.column.getColId(),
-              });
-            }}
-          >
-            <div className={styles.top}>{categoricalFilter.allowed_values.join(', ')}</div>
-            <div className={styles.bottom}>{categoricalFilter.column_name}</div>
-          </div>
-        </>
-      );
-    }
-
-    if ('filter1' in filter && 'filter2' in filter) {
-      return (
-        <>
-          <span className={styles.punctuation}>{isRoot ? '' : '('}</span>
-          {renderFilter(filter.filter1, false)}
-          <span className={styles.logicalOperator}>
-            {filter.class_name === 'OrFilter' ? '|' : '&'}
-          </span>
-          {renderFilter(filter.filter2, false)}
-          <span className={styles.punctuation}>{isRoot ? '' : ')'}</span>
-        </>
-      );
-    }
-
-    return <div className={styles.filterText}>Invalid filter type</div>;
+  // Handler for when individual filters are clicked
+  const handleFilterClick = (_filter: FilterType, _path: number[]) => {
+    // Open the cell editor when a filter is clicked
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   };
 
   return (
-    <PhenexCellRenderer {...props}>
-      <div className={styles.fullText}>{renderFilter(props.value as FilterType, true)}</div>
+    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
+      <CategoricalFilterRenderer
+        value={props.value as unknown as FilterType}
+        onFilterClick={handleFilterClick}
+      />
     </PhenexCellRenderer>
   );
 };

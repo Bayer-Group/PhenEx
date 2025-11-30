@@ -1,110 +1,27 @@
 import React from 'react';
-import { ICellRendererParams } from 'ag-grid-community';
-import styles from './CodelistCellRenderer.module.css';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { CodelistRenderer } from './actualRendering/CodelistRenderer';
 
-const MAX_CODES_TO_SHOW = 3;
-
-interface CodelistCellRendererProps extends PhenexCellRendererProps {
-  value: {
-    class_name: 'Codelist';
-    codelist: { [key: string]: string[] } | Array<{ [key: string]: string[] }>;
-    use_code_type?: boolean;
-    remove_punctuation?: boolean;
-  };
-}
-  
-
-const CodelistCellRenderer: React.FC<CodelistCellRendererProps> = props => {
-  //   if ( !columnNameToApplicablePhenotypeMapping.value_filter.includes(props.data.class_name))
-  //  {
-  //     return <NARenderer value={props.value} />
-  //   }
+const CodelistCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
 
-  if (Array.isArray(props.value) || props.value?.codelist_type) {
-    // if the codelist is an array, it's a list of codelists; we do want to render
-  } else if (
-    !props.value ||
-    typeof props.value !== 'object' ||
-    !props.value.codelist ||
-    typeof props.value.codelist !== 'object' ||
-    Object.keys(props.value.codelist).length === 0
-  ) {
-    return (
-      <PhenexCellRenderer {...props}       onEdit={handleEdit}
-      onDelete={handleDelete}>
-        <div className={styles.missing}></div>
-      </PhenexCellRenderer>
-    );
-  }
-
-  const renderManualCodelist = (codelist: { [key: string]: string[] }, index: number = 0) => (
-    <div key={index} className={styles.codelistContainer}>
-      {Object.entries(codelist).map(([codeType, codes], codeIndex) => (
-        <div
-          key={codeIndex}
-          className={styles.codeBlock}
-          onClick={() => {
-            props.api?.startEditingCell({
-              rowIndex: props.node.rowIndex,
-              colKey: props.column.getColId(),
-            });
-          }}
-        >
-          <div className={styles.codes}>
-            {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
-              <span key={i} className={styles.code}>
-                {code}
-              </span>
-            ))}
-            {codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
-          </div>
-          <div className={styles.codeType}>
-            {codeType}
-            {props.value.use_code_type ? ' (use code type)' : ' (ignore code type)'}
-            {props.value.remove_punctuation ? ' (remove_punctuation)' : ''}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderFileCodelist = (value: any, index: number = 0) => (
-    <div key={index} className={styles.codelistContainer}>
-      <div
-        className={styles.codeBlock}
-        onClick={() => {
-          props.api?.startEditingCell({
-            rowIndex: props.node.rowIndex,
-            colKey: props.column.getColId(),
-          });
-        }}
-      >
-        <div className={styles.codes}>
-          <span className={styles.code}>{value.codelist_name}</span>
-        </div>
-        <div className={styles.codeType}>{value.file_name}</div>
-      </div>
-    </div>
-  );
-
-  const renderSingleCodelist = (value: any, index: number = 0) => {
-    if (value.codelist_type === 'from file') {
-      return renderFileCodelist(value, index);
-    }
-    return renderManualCodelist(value.codelist, index);
+  const handleClick = () => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   };
 
-  const codelistContent = Array.isArray(props.value)
-    ? props.value.map((codelist, index) => renderSingleCodelist(codelist, index))
-    : renderSingleCodelist(props.value);
-  return <PhenexCellRenderer {...props}      
-      onEdit={handleEdit}
-      onDelete={handleDelete}>{codelistContent}</PhenexCellRenderer>;
+  return (
+    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
+      <CodelistRenderer value={props.value as any} onClick={handleClick} />
+    </PhenexCellRenderer>
+  );
 };
 
 export default CodelistCellRenderer;

@@ -11,9 +11,10 @@ let parametersInfo = JSON.parse(parametersInfoRaw);
 import typeStyles from '../../../../styles/study_types.module.css';
 import ReactMarkdown from 'react-markdown';
 import { LogicalExpressionRenderer } from '../CellRenderers/actualRendering/LogicalExpressionRenderer';
-import { FilterType } from './logicalExpressionEditor/types';
 import { PhenotypeRenderer } from '../CellRenderers/actualRendering/PhenotypeRenderer';
 import { DomainRenderer } from '../CellRenderers/actualRendering/DomainRenderer';
+import { CodelistRenderer } from '../CellRenderers/actualRendering/CodelistRenderer';
+import { CategoricalFilterRenderer } from '../CellRenderers/actualRendering/CategoricalFilterRenderer';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -271,12 +272,13 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const colorBorder = typeStyles[`${props.data.effective_type || ''}_border_color`] || ''
   const colorBlock = typeStyles[`${props.data.effective_type || ''}_color_block_dim`] || ''
 
-
+  // Dictionary mapping field name to their respective renderers
   const rendererByField: Record<string, React.ComponentType<any>> = {
     'class_name': PhenotypeRenderer,
     'domain': DomainRenderer,
     'expression': LogicalExpressionRenderer,
-
+    'value_filter': CategoricalFilterRenderer,
+    'codelist': CodelistRenderer,
     // Add more field-based renderers here as needed
   };
 
@@ -335,13 +337,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const parameterInfo = parametersInfo[parameterKey as keyof typeof parametersInfo];
 
     const renderCurrentSelection = () => {
-
-      // Check if we have a custom renderer for this field (for simple string values)
+      // Check if we have a custom renderer for this field
       const fieldName = props.column?.getColDef().field;
       const RendererByField = fieldName ? rendererByField[fieldName] : null;
       
       if (RendererByField && props.value) {
-        // Use the custom renderer component for field-based rendering (e.g., domain, class_name)
+        // Use the custom renderer component for field-based rendering
         return (
           <div className={styles.cellMirrorContents}>
             <RendererByField
