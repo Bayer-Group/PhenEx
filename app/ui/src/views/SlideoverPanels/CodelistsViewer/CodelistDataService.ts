@@ -132,39 +132,31 @@ export class CodelistDataService {
     const entry = cache.find(c => c.filename === filename);
     
     if (!entry) {
-      console.log('📦 No cache entry for file:', filename);
       return null;
     }
 
     // Check if the requested column matches the cached mapping
     if (entry.mapping.codelist_column === column) {
-      console.log('✅ Cache HIT for file:', filename, 'column:', column);
       return entry.codelists;
     }
 
-    console.log('⚠️ Cache MISS - column mismatch. Cached:', entry.mapping.codelist_column, 'Requested:', column);
     return null;
   }
 
   public async setFilenamesForCohort() {
     const cohortId = this.cohortDataService.cohort_data.id;
     
-    console.log('🚀 setFilenamesForCohort: Starting...');
     
     // If we already have filenames loaded for this cohort, skip the backend call
     if (this._filenames && this._filenames.length > 0) {
-      console.log('✅ Already have', this._filenames.length, 'filenames loaded - skipping backend fetch');
       return;
     }
     
     // Check localStorage cache first to see if we have recent data
     const cache = this.getCodelistCache(cohortId);
-    console.log('📦 Found', cache.length, 'cached files in localStorage');
     
     // Fetch metadata from backend (lightweight call)
-    console.log('⏳ Fetching file metadata from backend...');
     const filenames = await getCodelistFilenamesForCohort(cohortId);
-    console.log('setFilenamesForCohort: raw filenames from API:', filenames);
     
     // Store the metadata (including cached codelists array) separately
     // This allows us to avoid loading full file contents when we just need codelist names
@@ -197,7 +189,6 @@ export class CodelistDataService {
     
     // Remove any surrounding quotes from filenames
     this._filenames = this.filesMetadata.map(meta => meta.filename);
-    console.log('setFilenamesForCohort: processed _filenames:', this._filenames);
     
     // OPTIMIZATION: Only load full file contents if we don't have them in cache
     // This is the SLOW part that we want to avoid
@@ -210,23 +201,18 @@ export class CodelistDataService {
     });
     
     if (filesToLoad.length > 0) {
-      console.log('⏳ Loading', filesToLoad.length, 'full file contents from backend (slow)...');
       const filePromises = await Promise.all(
         filesToLoad.map(fileinfo =>
           getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
         )
       );
-      console.log('setFilenamesForCohort: raw file promises:', filePromises);
       
       // Filter out any undefined/null results and add to existing files
       const newFiles = filePromises.filter(file => file && file.contents && file.contents.data);
       this.files = [...this.files, ...newFiles];
     } else {
-      console.log('✅ All files already loaded in memory - skipping backend fetch');
     }
     
-    console.log('setFilenamesForCohort: filtered files:', this.files);
-    console.log('setFilenamesForCohort: file filenames:', this.files.map(f => f.filename));
     this.notifyListeners();
   }
 
@@ -265,7 +251,6 @@ export class CodelistDataService {
 
   public addFile(file: { filename: string; contents: any }): void {
     const csvData = this.parseCSVContents(file.contents);
-    console.log("Parsed data", csvData)
     const newFile: CodelistFile = {
       filename: file.filename,
       id: createID(),
@@ -274,7 +259,6 @@ export class CodelistDataService {
       codelist_column: 'codelist',
       contents: csvData,
     };
-    console.log("Parsed, files are", this.files)
     this.files.push(newFile);
     this._filenames.push(newFile.filename);
     this.notifyListeners();
@@ -443,7 +427,6 @@ export class CodelistDataService {
   }
 
   public saveChangesToActiveFile() {
-    console.log('saveChangesToActiveFile', this.activeFile);
     uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, this.activeFile);
   }
 
@@ -460,9 +443,7 @@ export class CodelistDataService {
     };
 
     try {
-      console.log('Saving column mapping for file:', this.activeFile.id, columnMapping);
       const response = await updateCodelistFileColumnMapping(this.activeFile.id, columnMapping);
-      console.log('Column mapping saved successfully, response:', response);
       
       // Update localStorage cache with new codelists from backend response
       if (response && response.codelists) {
@@ -473,7 +454,6 @@ export class CodelistDataService {
           columnMapping,
           response.codelists
         );
-        console.log('📦 Updated localStorage cache with new codelists:', response.codelists);
       }
       
       this.notifyListeners();
@@ -483,8 +463,6 @@ export class CodelistDataService {
   }
 
   public getColumnsForFile(filename: string) {
-    console.log('getColumnsForFile called with filename:', filename);
-    console.log('Available files:', this.files.map(f => f.filename));
     
     // Remove quotes if they exist in the search filename
     let searchFilename = filename;
@@ -494,11 +472,10 @@ export class CodelistDataService {
     
     const file = this.files.find(file => file.filename === searchFilename);
     if (!file) {
-      console.log('File not found:', filename, 'searched for:', searchFilename);
       return [];
     }
     
-    console.log('Found file:', file.filename, 'columns:', file.contents.headers);
+    return file.contents.headers || [];
     return file.contents.headers || [];
   }
 
@@ -509,9 +486,6 @@ export class CodelistDataService {
   }
 
   public getCodelistsForFileInColumn(filename: string, column: string) {
-    console.log('=== getCodelistsForFileInColumn ===');
-    console.log('Requested file:', filename, 'column:', column);
-    
     const cohortId = this.cohortDataService.cohort_data.id;
     
     // Remove quotes if they exist in the search filename
@@ -520,26 +494,17 @@ export class CodelistDataService {
       searchFilename = searchFilename.slice(1, -1);
     }
     
-    console.log('→ TIER 1: Checking localStorage cache...');
     // STEP 1: Check localStorage cache first (fastest)
     const cachedCodelists = this.getCodelistsFromCache(cohortId, searchFilename, column);
     if (cachedCodelists) {
-      console.log('✅ TIER 1 HIT: Using localStorage cache (instant)');
-      console.log('Codelists:', cachedCodelists);
       return cachedCodelists;
     }
-    console.log('⚠️ TIER 1 MISS: Not in localStorage');
-    
-    console.log('→ TIER 2: Checking in-memory metadata from backend...');
     // STEP 2: Check in-memory metadata from backend (fast, avoids loading full file)
     const metadata = this.filesMetadata.find(meta => meta.filename === searchFilename);
     if (metadata) {
-      console.log('Found metadata for file:', metadata.filename);
       
       // If the column matches the stored codelist_column, use cached codelists array
       if (metadata.codelist_column === column && metadata.codelists && metadata.codelists.length > 0) {
-        console.log('✅ TIER 2 HIT: Using backend metadata (no file load needed)');
-        console.log('Codelists:', metadata.codelists);
         // Store to localStorage for next time
         this.updateCacheForFile(
           cohortId,
@@ -551,32 +516,22 @@ export class CodelistDataService {
           },
           metadata.codelists
         );
-        console.log('💾 Saved to localStorage for future use');
         return metadata.codelists;
       }
     }
-    console.log('⚠️ TIER 2 MISS: Metadata unavailable or column mismatch');
-    
-    console.log('→ TIER 3: Loading full file data (slowest path)...');
     // STEP 3: Fall back to loading full file data if column doesn't match or cache is empty (slow)
     
     const file = this.files.find(file => file.filename === searchFilename);
     if (!file) {
-      console.log('❌ TIER 3 FAILED: File not found:', searchFilename);
       return [];
     }
     
-    console.log('✅ TIER 3: Found file, parsing full data...');
     
     if (!file.contents?.data || !file.contents.data[column]) {
-      console.log('❌ TIER 3 FAILED: Column not found or no data:', column);
       return [];
     }
     
     const uniqueCodelistNames = Array.from(new Set(file.contents.data[column]));
-    console.log('✅ TIER 3 SUCCESS: Extracted', uniqueCodelistNames.length, 'unique codelists');
-    console.log('Codelists:', uniqueCodelistNames);
-    
     // Store the result in localStorage for next time
     this.updateCacheForFile(
       cohortId,
@@ -588,13 +543,11 @@ export class CodelistDataService {
       },
       uniqueCodelistNames
     );
-    console.log('💾 Saved to localStorage for future use');
     
     return uniqueCodelistNames;
   }
 
   public getDefaultColumnForFile(filename: string, column: string) {
-    console.log('getDefaultColumnForFile:', filename, column);
     
     // Remove quotes if they exist in the search filename
     let searchFilename = filename;
@@ -604,17 +557,9 @@ export class CodelistDataService {
     
     const file = this.files.find(file => file.filename === searchFilename);
     if (!file) {
-      console.log('File not found for getDefaultColumnForFile:', filename, 'searched for:', searchFilename);
-      console.log('Available filenames:', this.files.map(f => f.filename));
       return null;
     }
     
-    console.log('Found file for getDefaultColumnForFile:', file);
-    console.log('File column mappings:', {
-      code_column: file.code_column,
-      code_type_column: file.code_type_column,
-      codelist_column: file.codelist_column
-    });
     
     switch (column) {
       case 'code_column':
