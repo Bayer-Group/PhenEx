@@ -94,15 +94,13 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
       onEditingDone={handleEditingDone}
     >
       {isEditing && editingItem ? (
-        <div>
-          <SingleCodelistEditor
-            key={selectedItemIndex}
-            value={editingItem}
-            options={props.options}
-            onValueChange={handleItemChange}
-            onEditingDone={handleEditingDone}
-          />
-        </div>
+        <SingleCodelistEditor
+          key={selectedItemIndex}
+          value={editingItem}
+          options={props.options}
+          onValueChange={handleItemChange}
+          onEditingDone={handleEditingDone}
+        />
       ) : null}
       {/* <div className={styles.chin}>
           <label className={styles.checkboxLabel}>

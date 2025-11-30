@@ -114,34 +114,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     },
   }));
 
-  const handleValueChange = (value: any) => {
-    console.log('PhenexCellEditor.handleValueChange called with:', value);
-    setCurrentValue(value);
-    console.log('Set currentValue to:', value);
-    props.onValueChange?.(value);
-    console.log('Called props.onValueChange with:', value);
-    
-    // Auto-close editor for list-view editors when a value is selected
-    if (props.autoCloseOnChange) {
-      // Small delay to ensure the value is saved before closing
-      setTimeout(() => {
-        props.api.stopEditing();
-      }, 0);
-    }
-  };
-
   const handleDone = () => {
     console.log("Handling done")
     if (recentlyDragged) {
       return; // Don't close if we just finished dragging
     }
     props.api.stopEditing();
-  };
-
-  const toggleInfobox = () => {
-    const newState = !isInfoOpen;
-    setIsInfoOpen(newState);
-    setInfoBoxState(newState);
   };
 
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -410,14 +388,33 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
+  // Callback for children to update the current value
+  // Used by list-view editors to update value and trigger auto-close
+  const handleChildValueChange = (value: any) => {
+    console.log('PhenexCellEditor.handleChildValueChange called with:', value);
+    setCurrentValue(value);
+    
+    // Notify parent if callback provided
+    props.onValueChange?.(value);
+    
+    // Auto-close editor for list-view editors
+    if (props.autoCloseOnChange) {
+      setTimeout(() => {
+        props.api?.stopEditing();
+      }, 0);
+    }
+  };
+
   const renderMainContent = () => {
+    // Don't spread all props to avoid passing AG Grid props to DOM elements
+    // Only pass onValueChange for list-view editors (if child doesn't already have it)
     return React.Children.map(props.children, (child, index) =>
       React.isValidElement(child)
         ? React.cloneElement(child as React.ReactElement<any>, {
             key: index,
-            ...props,
-            onValueChange: handleValueChange,
-            onEditingDone: props.onEditingDone,
+            // Only pass onValueChange if child doesn't already have one
+            // (Complex item editors manage their own onValueChange)
+            ...((child.props as any).onValueChange ? {} : { onValueChange: handleChildValueChange }),
           })
         : child
     );
