@@ -27,7 +27,7 @@ export const DomainRenderer: React.FC<DomainRendererProps> = ({
   };
 
   const colorClass = typeStyles[`${effectiveType || ''}_list_item_selected`] || '';
-
+  
   if (!value) return null;
 
   return (

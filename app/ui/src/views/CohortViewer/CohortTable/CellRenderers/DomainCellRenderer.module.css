@@ -1,7 +1,7 @@
 .domainContainer {
   margin-top: var(--item-margin-top);
   background-color: var(--item-color-default);
-  line-height: 11px;
+  line-height: var(--item-font-size);
   /* padding: 2px 4px; */
   border-radius: var(--item-radius);
   border: var(--item-border-default);
@@ -11,6 +11,8 @@
   color: var(--item-font-color);
   border-width : var(--border_width_item) !important;
   padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  flex-wrap: wrap;
+  text-wrap: wrap;
 
 }
 
@@ -26,4 +28,6 @@
   border-radius: 4px;
   color: #333;
   border: 1px solid #e0e0e0;
+  text-wrap: wrap;
+
 }

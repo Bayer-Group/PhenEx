@@ -3,28 +3,20 @@
   /* display: flex; */
   text-wrap: wrap;
   background-color: transparent;
-  line-height: 11px;
-  padding: 3px 5px;
-  border-radius: 0px;
+  line-height: var(--item-font-size);
   border-radius: var(--item-radius);
   border: var(--item-border-default);
   transition: var(--item-transition);
   font-family:var(--item-font-family);
   font-size: var(--item-font-size);
   color: var(--item-font-color);
+  border-width : var(--border_width_item) !important;
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
 
 }
 
 .container:hover {
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--item-border-hover);
 }
 
-.domainPart {
-  background-color: var(--item-color-default);
-  padding: 2px 2px;
-  border-radius: var(--item-radius);
-  color: #333;
-  border: 1px solid #e0e0e0;
-}
