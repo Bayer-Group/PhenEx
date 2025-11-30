@@ -1,7 +1,7 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef } from 'react';
+import { ICellEditorParams } from '@ag-grid-community/core';
 import {
   PhenexCellEditor,
-  PhenexCellEditorProps,
 } from '../../../CohortViewer/CohortTable/CellEditors/PhenexCellEditor';
 import { RelativeTimeRangeFilterCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/RelativeTimeRangeFilterCellEditor';
 import { CategoricalFilterCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/CategoricalFilterCellEditor';
@@ -16,7 +16,6 @@ import { TypeSelectorCellEditor } from '../../../CohortViewer/CohortTable/CellEd
 import { ReturnDateCellEditor } from '@/views/CohortViewer/CohortTable/CellEditors/ReturnDateCellEditor';
 
 export interface PhenexPhenotypeCellEditorProps extends ICellEditorParams {
-  value?: any;
   onValueChange?: (value: any) => void;
 }
 
@@ -35,11 +34,12 @@ const classNameToEditorMapping = {
 
 export const PhenexPhenotypeCellEditor = forwardRef(
   (props: PhenexPhenotypeCellEditorProps, ref) => {
-    if (props.data?.parameter in classNameToEditorMapping) {
-      const Editor = classNameToEditorMapping[props.data?.parameter];
-      console.log("SHOWING EDITOR FOR", props.data?.parameter, props.onValueChange);
-      return <Editor {...props} onValueChange={props.onValueChange} ref={ref} />;
+    const parameter = props.data?.parameter;
+    if (parameter && parameter in classNameToEditorMapping) {
+      const Editor = classNameToEditorMapping[parameter as keyof typeof classNameToEditorMapping];
+      console.log("SHOWING EDITOR FOR", parameter, props.onValueChange);
+      return <Editor {...props} onValueChange={props.onValueChange} fieldName={parameter} ref={ref} />;
     }
-    return <PhenexCellEditor {...props} onValueChange={props.onValueChange} ref={ref} />;
+    return <PhenexCellEditor {...props} onValueChange={props.onValueChange} fieldName={parameter} ref={ref} />;
   }
 );

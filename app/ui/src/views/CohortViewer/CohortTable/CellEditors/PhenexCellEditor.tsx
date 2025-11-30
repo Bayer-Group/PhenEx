@@ -21,6 +21,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onValueChange?: (value: any) => void;
   children?: React.ReactNode;
   autoCloseOnChange?: boolean; // If true, automatically close editor when value changes (for list-view editors)
+  fieldName?: string; // Optional override for the field name used to determine which renderer to use
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -338,7 +339,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
     const renderCurrentSelection = () => {
       // Check if we have a custom renderer for this field
-      const fieldName = props.column?.getColDef().field;
+      // Use the explicit fieldName prop if provided, otherwise fallback to column field
+      const fieldName = props.fieldName || props.column?.getColDef().field;
       const RendererByField = fieldName ? rendererByField[fieldName] : null;
       
       if (RendererByField && props.value) {
