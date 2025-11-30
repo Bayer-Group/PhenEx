@@ -1,0 +1,54 @@
+.codelistContainer {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.codeBlock {
+  border-radius: var(--item-radius);
+  /* padding: 4px; */
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 100%;
+  /* border: 1px solid red; */
+}
+
+.codeBlock:hover {
+}
+
+.codes {
+  display: flex;
+  flex-wrap: wrap;
+
+}
+
+.code {
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 11px;
+  display: inline-flex;
+  align-items: center;
+  white-space: normal;
+  word-break: break-word;
+  font-size: var(--item-font-size);
+  font-family: var(--item-font-family);
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+
+}
+
+.codeType {
+  font-size: 11px;
+  margin-bottom: 0;
+  margin-top: 2px;
+  margin-left: 4px;
+  line-height: 12px;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.missing {
+  color: red;
+}
