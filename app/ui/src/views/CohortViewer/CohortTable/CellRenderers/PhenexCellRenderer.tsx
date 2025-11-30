@@ -118,7 +118,8 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       ? `var(--color_${props.data.effective_type})`
       : getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index))
     : 'transparent';
-  const backgroundColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_color_block`] || '') : '';
+  const backgroundColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_color_block_dim`] || '') : '';
+  const textColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_text_color`] || '') : '';
 
   // Get the border color CSS variable
   const borderColorVar = shouldColorBorder && props.data?.effective_type 
@@ -170,7 +171,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       style={combinedStyle}
     >
       {isMissing ? (
-        <span className={styles.missingLabel}>missing</span>
+        <span className={`${styles.missingLabel} ${textColorClass}`}>required</span>
       ) : (
         props.children ? props.children : props.value
       )}
