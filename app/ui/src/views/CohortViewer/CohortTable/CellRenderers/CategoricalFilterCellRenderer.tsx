@@ -24,6 +24,7 @@ const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props =
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
       <CategoricalFilterRenderer
         value={props.value as unknown as FilterType}
+        data={props.data}
         onFilterClick={handleFilterClick}
       />
     </PhenexCellRenderer>

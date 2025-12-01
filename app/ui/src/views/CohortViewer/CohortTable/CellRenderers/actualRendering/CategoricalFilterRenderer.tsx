@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../CategoricalFilterCellRenderer.module.css';
 import { FilterType, BaseCategoricalFilter } from '../../CellEditors/categoricalFilterEditor/types';
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface CategoricalFilterRendererProps {
   value: FilterType | null | undefined;
@@ -14,14 +15,19 @@ export interface CategoricalFilterRendererProps {
  * Can be used in both CellRenderers and CellEditors
  * 
  * @param value - The filter tree to render
+ * @param data - Row data for accessing effective_type and other row-level properties
  * @param onFilterClick - Optional callback when a filter unit is clicked, receives the filter and its path
  * @param path - Internal tracking of the path to this filter in the tree
  */
 export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps> = ({
   value,
+  data,
   onFilterClick,
   path = [],
 }) => {
+  const effectiveType = data?.effective_type;
+  const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
+
   const renderFilter = (filter: FilterType | null | undefined, currentPath: number[]): React.JSX.Element => {
     if (!filter) {
       return <div className={styles.filterText}></div>;
@@ -31,7 +37,7 @@ export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps>
       const categoricalFilter = filter as BaseCategoricalFilter;
       return (
         <div
-          className={styles.unit}
+          className={`${styles.unit} ${borderColorClass}`}
           onClick={(e) => {
             e.stopPropagation();
             if (onFilterClick) {

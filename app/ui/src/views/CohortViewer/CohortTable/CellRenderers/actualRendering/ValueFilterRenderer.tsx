@@ -1,6 +1,8 @@
 import React from 'react';
 import styles from '../ValueFilterCellRenderer.module.css';
 import { ValueFilter, AndFilter } from '../../CellEditors/valueFilterEditor/types';
+import { ComplexItemRenderer } from './ComplexItemRenderer';
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 export type ValueFilterValue = ValueFilter | AndFilter | null | undefined;
 
@@ -8,6 +10,7 @@ export interface ValueFilterRendererProps {
   value: ValueFilterValue;
   data?: any;
   onClick?: () => void;
+  onItemClick?: (item: ValueFilter, index: number) => void;
 }
 
 /**
@@ -15,15 +18,24 @@ export interface ValueFilterRendererProps {
  * Can be used in both CellRenderers and CellEditors
  * 
  * @param value - The value filter(s) to render
+ * @param data - Row data for accessing effective_type and other row-level properties
  * @param onClick - Optional callback when a filter is clicked
+ * @param onItemClick - Optional callback when an individual filter item is clicked
  */
 export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
   value,
-  onClick,
+  data,
+  onItemClick,
 }) => {
+
+
+  const effectiveType = data?.effective_type;
+  const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
+  const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
+
   const formatValueFilter = (filter: ValueFilter): React.JSX.Element => {
     return (
-      <div className={styles.filterContent}>
+      <div className={`${styles.filterContent} ${colorClass}`}>
         <span className={styles.columnName}>{filter.column_name}</span>
         {filter.min_value && (
           <span className={`${styles.filterValue} ${styles.min}`}>
@@ -43,43 +55,28 @@ export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
     );
   };
 
-  const formatFilter = (filterValue: ValueFilter | AndFilter): React.JSX.Element[] => {
+  const getFilters = (filterValue: ValueFilter | AndFilter): ValueFilter[] => {
     if (filterValue.class_name === 'AndFilter') {
-      return [formatValueFilter(filterValue.filter1), formatValueFilter(filterValue.filter2)];
+      return [filterValue.filter1, filterValue.filter2];
     }
-    return [formatValueFilter(filterValue)];
+    return [filterValue];
   };
 
   if (!value || typeof value === null) {
     return null;
   }
-
-  const filters = formatFilter(value);
-
+  const filters = getFilters(value);
   return (
-    <div 
-      className={styles.filtersContainer}
-      style={{ 
-        width: '100%', 
-        height: '100%', 
-        backgroundColor: 'transparent' 
-      }}
-    >
-      {filters.map((filter, index) => (
-        <div
-          key={index}
-          className={styles.filterRow}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onClick) {
-              onClick();
-            }
-          }}
-          style={{ cursor: onClick ? 'pointer' : 'default' }}
-        >
-          {filter}
+    <ComplexItemRenderer
+      items={filters}
+      renderItem={(filter) => (
+        <div className={styles.filtersContainer}>
+          {formatValueFilter(filter)}
         </div>
-      ))}
-    </div>
+      )}
+      onItemClick={onItemClick}
+      itemClassName={borderColorClass}
+      emptyPlaceholder={null}
+    />
   );
 };

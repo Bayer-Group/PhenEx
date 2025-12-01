@@ -2,16 +2,11 @@
   /* width: 100%; */
   text-wrap: wrap;
   gap: 3px;
-  line-height: 11px;
-  font-size: 11px;
-  font-family: 'IBMPlexSans-regular';
 }
 
 .filterRow {
   gap: 8px;
-  margin-top: 3px;
 
-  padding: 5px 10px;
   background-color: var(--item-color-default);
   border-radius: var(--item-radius);
 }
@@ -31,12 +26,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: 'IBMPlexSans-regular';
 }
 
 .operator {
   color: var(--text-color-inactive);
-  font-family: 'IBMPlexSans-bold';
 }
 
 /* .min {

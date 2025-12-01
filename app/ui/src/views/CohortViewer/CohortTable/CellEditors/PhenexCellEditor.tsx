@@ -305,6 +305,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     'categorical_filter': CategoricalFilterRenderer,
     'codelist': CodelistRenderer,
     'relative_time_range': RelativeTimeRangeRenderer,
+    'relative_time_range_filter': RelativeTimeRangeRenderer, // Support both field names
     'type': TypeRenderer,
     // Add more field-based renderers here as needed
   };
