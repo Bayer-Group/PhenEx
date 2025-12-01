@@ -1,5 +1,7 @@
 import React from 'react';
 import styles from '../RelativeTimeRangeCellRenderer.module.css';
+import { ComplexItemRenderer } from './ComplexItemRenderer';
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface RelativeTimeRangeFilter {
   class_name: 'RelativeTimeRangeFilter';
@@ -24,6 +26,7 @@ export interface RelativeTimeRangeRendererProps {
   value: RelativeTimeRangeFilter[] | null | undefined;
   data?: any;
   onClick?: () => void;
+  onItemClick?: (item: RelativeTimeRangeFilter, index: number) => void;
 }
 
 /**
@@ -31,11 +34,14 @@ export interface RelativeTimeRangeRendererProps {
  * Can be used in both CellRenderers and CellEditors
  * 
  * @param value - Array of time range filters to render
+ * @param data - Row data for accessing effective_type and other row-level properties
  * @param onClick - Optional callback when a filter is clicked
+ * @param onItemClick - Optional callback when an individual filter item is clicked
  */
 export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps> = ({
   value,
-  onClick,
+  data,
+  onItemClick,
 }) => {
   const formatTimeRange = (filter: RelativeTimeRangeFilter): React.JSX.Element => {
     if (filter.useConstant && filter.constant) {
@@ -75,31 +81,21 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
     return null;
   }
 
+  const effectiveType = data?.effective_type;
+  const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
+  const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
+
   return (
-    <div 
-      className={styles.filtersContainer}
-      style={{ 
-        width: '100%', 
-        height: '100%', 
-        backgroundColor: 'transparent' 
-      }}
-    >
-      {filters.map((filter, index) => (
-        <div
-          key={index}
-          className={styles.filterRow}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onClick) {
-              onClick();
-            }
-          }}
-          style={{ cursor: onClick ? 'pointer' : 'default' }}
-        >
+    <ComplexItemRenderer
+      items={filters}
+      renderItem={(filter) => (
+        <div className={`${styles.filtersContainer} ${colorClass}`}>
           {formatTimeRange(filter)}
-          <br />
         </div>
-      ))}
-    </div>
+      )}
+      onItemClick={onItemClick}
+      itemClassName={borderColorClass}
+      emptyPlaceholder={null}
+    />
   );
 };

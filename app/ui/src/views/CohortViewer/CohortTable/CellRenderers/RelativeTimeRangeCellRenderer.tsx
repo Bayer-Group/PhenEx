@@ -18,6 +18,15 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     });
   };
 
+  const handleItemClick = (_item: any, _index: number) => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
+  };
+
   if (props.data.type === 'entry') {
     return (
       <PhenexCellRenderer {...props}>
@@ -28,7 +37,12 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
 
   return (
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
-      <RelativeTimeRangeRenderer value={props.value as any} onClick={handleClick} />
+      <RelativeTimeRangeRenderer 
+        value={props.value as any} 
+        data={props.data}
+        onClick={handleClick} 
+        onItemClick={handleItemClick}
+      />
     </PhenexCellRenderer>
   );
 };
