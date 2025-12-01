@@ -34,7 +34,6 @@
   word-break: break-word;
   font-size: var(--item-font-size);
   font-family: var(--item-font-family);
-  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
 
 }
 
