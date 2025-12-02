@@ -345,7 +345,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           <SmartBreadcrumbs 
             items={breadcrumbItems}
             classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
-            classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
+            classNameBreadcrumbItem={`${typeStyles[`${props.data.effective_type}_text_color`]} ${styles.breadcrumbItem} `}
             classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
           />
         </>
@@ -646,6 +646,21 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             marginBottom={5}
             classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
           />
+          
+          {props.onEditingDone && showComposer && (
+            <div className={styles.doneButtonContainer}>
+              <button 
+                className={`${styles.doneButton} ${typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  props.onEditingDone?.();
+                }}
+              >
+                Done
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -24,7 +24,6 @@ const EDITOR_OPTIONS: { label: string; type: EditorType }[] = [
 export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
   value,
   onValueChange,
-  onEditingDone,
   options,
   className,
 }) => {
@@ -98,16 +97,6 @@ export const SingleCodelistEditor: React.FC<SingleCodelistEditorProps> = ({
         />
       </div>
       {renderEditor()}
-      {onEditingDone && (
-        <div className={styles.doneButtonContainer}>
-          <button 
-            className={styles.doneButton}
-            onClick={onEditingDone}
-          >
-            Done
-          </button>
-        </div>
-      )}
     </div>
   );
 };

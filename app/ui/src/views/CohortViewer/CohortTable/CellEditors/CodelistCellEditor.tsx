@@ -80,7 +80,6 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
           value={editingItem}
           options={props.options}
           onValueChange={handleItemChange}
-          onEditingDone={handleEditingDone}
         />
       ) : null}
     </PhenexCellEditor>

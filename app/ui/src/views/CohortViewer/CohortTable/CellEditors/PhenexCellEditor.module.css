@@ -211,6 +211,7 @@
 .breadcrumbItem {
   font-size: var(--font_size_breadcrumb) !important;
   line-height: 20px;
+  opacity: 1 !important;
 }
 
 .breadcrumbLastItem {

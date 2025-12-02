@@ -5,7 +5,6 @@ import { TimeRangeFilter } from './types';
 interface SingleRelativeTimeRangeFilterEditorProps {
   value: TimeRangeFilter;
   onValueChange?: (value: TimeRangeFilter) => void;
-  onEditingDone?: () => void;
 }
 
 // Constants for default values
