@@ -9,23 +9,11 @@ const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props =
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
 
-  // Handler for when individual filters are clicked
-  const handleFilterClick = (_filter: FilterType, _path: number[]) => {
-    // Open the cell editor when a filter is clicked
-    if (!props.node || !props.column || props.node.rowIndex === null) return;
-    
-    props.api?.startEditingCell({
-      rowIndex: props.node.rowIndex,
-      colKey: props.column.getColId(),
-    });
-  };
-
   return (
     <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
       <CategoricalFilterRenderer
         value={props.value as unknown as FilterType}
         data={props.data}
-        onFilterClick={handleFilterClick}
       />
     </PhenexCellRenderer>
   );

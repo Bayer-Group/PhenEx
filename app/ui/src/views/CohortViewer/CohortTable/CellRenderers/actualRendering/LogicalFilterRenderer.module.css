@@ -1,0 +1,59 @@
+/* LogicalFilterRenderer.module.css - Styles for logical filter tree rendering */
+
+.container {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--item-padding-horizontal, 8px);
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.empty {
+  color: var(--color-text-secondary, #888);
+  font-style: italic;
+}
+
+.filterItem {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.filterItem:hover {
+  opacity: 0.8;
+}
+
+.operator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--item-padding-vertical, 4px) var(--item-padding-horizontal, 8px);
+  border-radius: var(--item-radius, 4px);
+  background-color: var(--color-operator-bg, #f0f0f0);
+  color: var(--color-operator-text, #333);
+  font-weight: 600;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  user-select: none;
+}
+
+.operator:hover {
+  background-color: var(--color-operator-bg-hover, #e0e0e0);
+  transform: scale(1.05);
+}
+
+.operator:active {
+  transform: scale(0.95);
+}
+
+.parenthesis {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--color-text-secondary, #666);
+  padding: 0 var(--item-padding-horizontal-small, 4px);
+}

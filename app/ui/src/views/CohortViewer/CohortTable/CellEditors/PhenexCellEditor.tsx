@@ -31,6 +31,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onItemSelect?: (item: any, index?: number) => void; // Callback when a complex item is selected for editing
   onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
   selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
+  rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -384,6 +385,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               onItemClick={props.onItemSelect}
               selectedIndex={props.selectedItemIndex}
               selectedClassName={selectedClassName}
+              {...(props.rendererProps || {})}
             />
           </div>
         );
