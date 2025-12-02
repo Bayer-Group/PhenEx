@@ -8,6 +8,8 @@ export interface ComplexItemRendererProps<T> {
   operator?: string; // Optional operator to display between items (e.g., "AND", "OR", "+")
   emptyPlaceholder?: React.ReactNode;
   itemClassName?: string; // Optional className to apply to each item wrapper
+  selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
+  selectedClassName?: string; // Optional className to apply to the selected item
 }
 
 /**
@@ -28,6 +30,8 @@ export function ComplexItemRenderer<T>({
   operator,
   emptyPlaceholder = <div className={styles.empty}></div>,
   itemClassName,
+  selectedIndex,
+  selectedClassName,
 }: ComplexItemRendererProps<T>) {
   
   if (!items || items.length === 0) {
@@ -36,25 +40,30 @@ export function ComplexItemRenderer<T>({
 
   return (
     <div className={styles.container}>
-      {items.map((item, index) => (
-        <React.Fragment key={index}>
-          <div
-            className={`${styles.item} ${itemClassName || ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onItemClick) {
-                onItemClick(item, index);
-              }
-            }}
-            style={{ cursor: onItemClick ? 'pointer' : 'default' }}
-          >
-            {renderItem(item, index)}
-          </div>
-          {operator && index < items.length - 1 && (
-            <div className={styles.operator}>{operator}</div>
-          )}
-        </React.Fragment>
-      ))}
+      {items.map((item, index) => {
+        const isSelected = selectedIndex !== undefined && selectedIndex === index;
+        const itemClasses = `${styles.item} ${itemClassName || ''} ${isSelected && selectedClassName ? selectedClassName : ''}`;
+        
+        return (
+          <React.Fragment key={index}>
+            <div
+              className={itemClasses}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onItemClick) {
+                  onItemClick(item, index);
+                }
+              }}
+              style={{ cursor: onItemClick ? 'pointer' : 'default' }}
+            >
+              {renderItem(item, index)}
+            </div>
+            {operator && index < items.length - 1 && (
+              <div className={styles.operator}>{operator}</div>
+            )}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

@@ -73,6 +73,7 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
       onAddItem={handleAddItem}
       onItemSelect={handleItemSelect}
       onEditingDone={handleEditingDone}
+      selectedItemIndex={selectedItemIndex ?? undefined}
     >
       {isEditing && editingItem ? (
         <SingleCodelistEditor

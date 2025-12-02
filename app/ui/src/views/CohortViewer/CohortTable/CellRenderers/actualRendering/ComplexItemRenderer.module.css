@@ -41,6 +41,15 @@
   border: var(--item-border-hover);
 }
 
+/* Selected item styling - applies white text when item has a color_block class */
+.item:global([class*="_color_block"]) {
+  color: white;
+}
+
+.item:global([class*="_color_block"]) * {
+  color: white !important;
+}
+
 .operator {
   font-family: "IBMPlexSans-semibold";
   font-size: 12px;

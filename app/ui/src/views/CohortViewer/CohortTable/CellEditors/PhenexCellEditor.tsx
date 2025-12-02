@@ -30,6 +30,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onAddItem?: () => void; // Callback when add button is clicked
   onItemSelect?: (item: any, index?: number) => void; // Callback when a complex item is selected for editing
   onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
+  selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -373,12 +374,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       if (RendererByField) {
         // Use the custom renderer component for field-based rendering
         // Always render, even if value is empty (for complex item editors)
+        const selectedClassName = typeStyles[`${props.data.effective_type || ''}_color_block`] || '';
+        
         return (
           <div className={styles.cellMirrorContents}>
             <RendererByField
               value={props.value}
               data={props.data}
               onItemClick={props.onItemSelect}
+              selectedIndex={props.selectedItemIndex}
+              selectedClassName={selectedClassName}
             />
           </div>
         );

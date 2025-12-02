@@ -28,6 +28,8 @@ export interface CodelistRendererProps {
   data?: any;
   onClick?: () => void;
   onItemClick?: (item: CodelistValue, index: number) => void; // Callback for clicking individual items in an array
+  selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
+  selectedClassName?: string; // Optional className to apply to the selected item
 }
 
 /**
@@ -43,6 +45,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   data,
   onClick,
   onItemClick,
+  selectedIndex,
+  selectedClassName,
 }) => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
@@ -133,6 +137,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
         renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
         onItemClick={onItemClick}
         itemClassName={borderColorClass}
+        selectedIndex={selectedIndex}
+        selectedClassName={selectedClassName}
         emptyPlaceholder={<div className={styles.missing}></div>}
       />
     );
@@ -153,6 +159,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
       renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
       onItemClick={onItemClick}
       itemClassName={borderColorClass}
+      selectedIndex={selectedIndex}
+      selectedClassName={selectedClassName}
       emptyPlaceholder={<div className={styles.missing}></div>}
     />
   );

@@ -11,6 +11,8 @@ export interface ValueFilterRendererProps {
   data?: any;
   onClick?: () => void;
   onItemClick?: (item: ValueFilter, index: number) => void;
+  selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
+  selectedClassName?: string; // Optional className to apply to the selected item
 }
 
 /**
@@ -21,11 +23,15 @@ export interface ValueFilterRendererProps {
  * @param data - Row data for accessing effective_type and other row-level properties
  * @param onClick - Optional callback when a filter is clicked
  * @param onItemClick - Optional callback when an individual filter item is clicked
+ * @param selectedIndex - Index of the currently selected item (for visual highlighting)
+ * @param selectedClassName - Optional className to apply to the selected item
  */
 export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
   value,
   data,
   onItemClick,
+  selectedIndex,
+  selectedClassName,
 }) => {
 
 
@@ -76,6 +82,8 @@ export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
       )}
       onItemClick={onItemClick}
       itemClassName={borderColorClass}
+      selectedIndex={selectedIndex}
+      selectedClassName={selectedClassName}
       emptyPlaceholder={null}
     />
   );

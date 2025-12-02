@@ -150,7 +150,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
             </svg>
           </button>
           <button className={`${styles.editButton} ${typeStyles[`${props.data.effective_type}_color_block`]}`} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
-            Edit in PhenotypeBuilder
+            Edit
           </button>
 
         </div>

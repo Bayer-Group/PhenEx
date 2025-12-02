@@ -49,6 +49,7 @@ export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeT
       onAddItem={handleAddItem}
       onItemSelect={handleItemSelect}
       onEditingDone={handleEditingDone}
+      selectedItemIndex={selectedItemIndex ?? undefined}
     >
       {isEditing && editingItem ? (
         <SingleRelativeTimeRangeFilterEditor
