@@ -1,6 +1,7 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
+import { getUserCohort, getPublicCohort } from '../../api/text_to_cohort/route';
 
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
@@ -53,11 +54,25 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
-    const loadData = () => {
-      console.log("loading cohort data")
+    const loadData = async () => {
       if (data !== undefined) {
-        dataService.loadCohortData(data);
-        console.log("finished loading cohort data", dataService.cohort_data)
+        // If data is a string (cohort ID), fetch the full cohort data
+        if (typeof data === 'string') {
+          try {
+            let cohortData;
+            try {
+              cohortData = await getUserCohort(data);
+            } catch (error) {
+              cohortData = await getPublicCohort(data);
+            }
+            dataService.loadCohortData(cohortData);
+          } catch (error) {
+            console.error('Failed to load cohort:', error);
+          }
+        } else {
+          // Data is already a full cohort object
+          dataService.loadCohortData(data);
+        }
       } else {
         dataService.createNewCohort();
       }

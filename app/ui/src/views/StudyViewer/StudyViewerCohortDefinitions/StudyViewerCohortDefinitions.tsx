@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
@@ -14,6 +15,7 @@ interface StudyViewerCohortDefinitionsProps {
 export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitionsProps> = ({ studyDataService }) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Function to update cohort definitions when study data changes
@@ -47,8 +49,20 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   }
   const clickedOnCohort = (cohortDef: CohortWithTableData) => {
     console.log('Clicked on cohort:', cohortDef);
-        const mainViewService = MainViewService.getInstance();
-        mainViewService.navigateTo({viewType: ViewType.CohortDefinition, data: cohortDef.cohort});
+    
+    // Get study ID from the cohort or from studyDataService
+    const studyId = cohortDef.cohort.study_id || studyDataService.study_data?.id;
+    const cohortId = cohortDef.cohort.id;
+    
+    if (studyId && cohortId) {
+      // Navigate using URL
+      navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+    } else {
+      console.error('Missing study_id or cohort_id for navigation');
+      // Fallback to old navigation
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({viewType: ViewType.CohortDefinition, data: cohortDef.cohort});
+    }
   };
 
   const renderCohortCard = (cohortDef: CohortWithTableData, index: number) => {

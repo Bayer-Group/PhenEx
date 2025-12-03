@@ -20,9 +20,22 @@ import { CohortsDataService, StudyData, CohortData as ServiceCohortData } from '
 import { MainViewService } from '../MainView/MainView';
 import { getCurrentUser, onUserChange } from '@/auth/userProviderBridge';
 
-interface HierarchicalTreeNode {
+export interface HierarchicalTreeNode {
   id: string;
+  displayName?: string;
+  level?: number;
   viewInfo?: ViewInfo;
+  children?: HierarchicalTreeNode[];
+  height?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  collapsed?: boolean;
+  selected?: boolean;
+  hasButton?: boolean;
+  buttonTitle?: string;
+  buttonOnClick?: () => void;
+  hideButton?: boolean;
+  onClick?: () => void;
 }
 
 interface CohortData {
@@ -108,7 +121,7 @@ export class HierarchicalLeftPanelDataService {
       id: study.id,
       displayName: study.name,
       level: level,
-      viewInfo: { viewType: ViewType.StudyViewer, data: study },
+      viewInfo: { viewType: ViewType.StudyViewer, data: study.id },
       children: children,
       height: 35,
       fontSize: 16,
@@ -206,7 +219,7 @@ export class HierarchicalLeftPanelDataService {
       displayName,
       level: 0,
       children: id === 'mystudies' ? await createUserStudies() : await createPublicStudies(),
-      viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+      viewInfo: { viewType: ViewType.Empty, data: { navigateTo: '/studies' } },
       height: 60,
       fontSize: 18,
       fontFamily: 'IBMPlexSans-bold',

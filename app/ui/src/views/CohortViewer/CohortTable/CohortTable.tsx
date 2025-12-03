@@ -106,12 +106,9 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
         });
       }
       
-      console.log("📊 Collected newRowData:", newRowData.length, "rows");
-      console.log("First 3 rows:", newRowData.slice(0, 3).map(r => ({ id: r.id, type: r.type, name: r.name })));
-
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
-        console.log("❌ Validation failed: newRowData is empty");
+        console.log("Validation failed: newRowData is empty");
         return;
       }
 

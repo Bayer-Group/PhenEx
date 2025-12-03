@@ -5,12 +5,15 @@ import './styles/fonts.css';
 import App from './App.tsx';
 import { AuthProvider } from './auth/AuthProvider.tsx';
 import { FontLoaderProvider } from './contexts/FontLoaderContext';
+import { BrowserRouter } from 'react-router-dom';
 
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>
   <FontLoaderProvider>
     <AuthProvider>
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </AuthProvider>
   </FontLoaderProvider>
   // </StrictMode>

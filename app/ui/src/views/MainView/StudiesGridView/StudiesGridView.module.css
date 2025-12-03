@@ -1,0 +1,110 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 40px;
+  overflow-y: auto;
+  background: var(--background-color);
+}
+
+.loading, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-color-secondary);
+  font-size: 16px;
+}
+
+.signInPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-color-secondary);
+  font-size: 16px;
+  font-style: italic;
+  background: var(--card-background, #f9f9f9);
+  border: 1px dashed var(--border-color, #e0e0e0);
+  border-radius: 8px;
+}
+
+.emptyState p {
+  margin: 8px 0;
+}
+
+.section {
+  margin-bottom: 48px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 24px;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.studiesGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.studyCard {
+  background: var(--card-background, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+  flex: 1 1 300px;
+  max-width: 400px;
+}
+
+.studyCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: var(--accent-color, #0066cc);
+}
+
+.studyCardHeader {
+  margin-bottom: 12px;
+}
+
+.studyCardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.studyCardDescription {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.studyCardFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.studyCardType {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--text-color-tertiary);
+  letter-spacing: 0.5px;
+}

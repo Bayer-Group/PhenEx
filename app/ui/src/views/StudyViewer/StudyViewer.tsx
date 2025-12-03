@@ -36,7 +36,39 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
     // Update cohort data when a new cohort is selected
     const loadData = async () => {
       if (data !== undefined) {
-        studyDataService.loadStudyData(data);
+        
+        // If data is a string (study ID), fetch the full study data
+        if (typeof data === 'string') {
+          try {
+            const cohortsDataService = CohortsDataService.getInstance();
+            
+            // Try to find the study in the cached studies first
+            const userStudies = await cohortsDataService.getUserStudies();
+            const publicStudies = await cohortsDataService.getPublicStudies();
+            const allStudies = [...userStudies, ...publicStudies];
+            
+            let studyData = allStudies.find(s => s.id === data);
+            
+            if (!studyData) {
+              console.error('📚 Study not found in cache, attempting direct fetch');
+              // TODO: Add API call to fetch single study by ID if needed
+              return;
+            }
+            
+            // Fetch cohorts for this study
+            const cohorts = await cohortsDataService.getCohortsForStudy(data);
+            
+            // Add cohorts to study data
+            studyData = { ...studyData, cohorts };
+            
+            studyDataService.loadStudyData(studyData);
+          } catch (error) {
+            console.error('Error loading study:', error);
+          }
+        } else {
+          // Data is already a full study object
+          studyDataService.loadStudyData(data);
+        }
       } else {
         studyDataService.createNewStudy();
       }

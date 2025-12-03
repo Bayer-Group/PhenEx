@@ -3,10 +3,11 @@ import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, TreeEnvironme
 import 'react-complex-tree/lib/style-modern.css';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
-import { HierarchicalTreeNode } from './CohortTreeListItem.tsx';
+import { HierarchicalTreeNode } from './HierarchicalLeftPanelDataService';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
 import { MainViewService } from '../MainView/MainView';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
+import { useNavigate } from 'react-router-dom';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -56,6 +57,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
   const isExpandCollapseAction = useRef(false);
   const isDragging = useRef(false);
+  const navigate = useNavigate();
 
   const DOUBLE_CLICK_THRESHOLD = 300; // ms
 
@@ -272,24 +274,19 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                     return;
                   }
 
-                  console.log('📚 Renaming study:', node.id, 'to:', newName);
-                  
                   // Update study name via data service
                   try {
                     await dataService.current.updateStudyName(node.id, newName);
-                    console.log('✅ Study renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename study:', error);
+                    console.error('Failed to rename study:', error);
                   }
                 } else if (isCohort) {
-                  console.log('📋 Renaming cohort:', node.id, 'to:', newName);
                   
                   // Update cohort name via data service
                   try {
                     await dataService.current.updateCohortName(node.id, newName);
-                    console.log('✅ Cohort renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename cohort:', error);
+                    console.error('Failed to rename cohort:', error);
                   }
                 } else {
                   console.warn('⚠️ Cannot determine item type for rename');
@@ -332,11 +329,42 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                     return;
                   }
                   
+                  // Handle root items that navigate to /studies
+                  if (node.id === 'mystudies' || node.id === 'publicstudies') {
+                    navigate('/studies');
+                    return;
+                  }
+                  
                   dataService.current.selectNode(node.id);
                   if (node.viewInfo) {
-                    const mainViewService = MainViewService.getInstance();
-                    console.log("NAVIGATING TO:", node.viewInfo);
-                    mainViewService.navigateTo(node.viewInfo);
+                    // Check if we should navigate to a URL
+                    if (node.viewInfo.data?.navigateTo) {
+                      navigate(node.viewInfo.data.navigateTo);
+                    } else if (node.viewInfo.viewType === 'studyViewer') {
+                      // Navigate to study URL
+                      navigate(`/studies/${node.viewInfo.data}`);
+                    } else if (node.viewInfo.viewType === 'sdef' || node.viewInfo.viewType === 'psdef') {
+                      // Navigate to cohort URL - need to find study_id from cohort data
+                      const cohortData = typeof node.viewInfo.data === 'string' ? { id: node.viewInfo.data } : node.viewInfo.data;
+                      const cohortId = cohortData?.id || node.viewInfo.data;
+                      
+                      // Find the parent study from the tree
+                      const parentItem = Object.values(items).find(i => i.children?.includes(itemId as string));
+                      const studyId = parentItem?.data?.id;
+                      
+                      if (studyId && cohortId) {
+                        navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+                      } else {
+                        // Fallback to MainViewService if we can't construct URL
+                        const mainViewService = MainViewService.getInstance();
+                        mainViewService.navigateTo(node.viewInfo);
+                      }
+                    } else {
+                      // Use traditional navigation for other view types
+                      const mainViewService = MainViewService.getInstance();
+                      console.log("NAVIGATING TO:", node.viewInfo);
+                      mainViewService.navigateTo(node.viewInfo);
+                    }
                   }
                 }
               }

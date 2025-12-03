@@ -318,7 +318,6 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
               className={styles.dropdown}
               value={selectedDatabase}
               onChange={e => {
-                console.log('📋 Database select onChange triggered with:', e.target.value);
                 handleDatabaseChange(e.target.value);
               }}
             >
