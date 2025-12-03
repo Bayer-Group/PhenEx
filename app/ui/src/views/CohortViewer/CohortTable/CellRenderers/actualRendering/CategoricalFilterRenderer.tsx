@@ -104,7 +104,7 @@ export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps>
    */
   const renderFilter = (filter: BaseCategoricalFilter): React.ReactNode => {
     return (
-      <div className={`${styles.unit} ${borderColorClass} ${colorTextClass}`}>
+      <div className={`${styles.unit} ${colorTextClass}`}>
         {filter.allowed_values.join(', ')} {filter.column_name}
       </div>
     );
@@ -130,6 +130,7 @@ export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps>
         onOperatorClick={onOperatorClick}
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName}
+        filterClassName={borderColorClass}
       />
     </div>
   );

@@ -16,30 +16,44 @@
 
 .filterItem {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   width: fit-content;
   max-width: 100%;
   cursor: pointer;
   transition: opacity 0.2s;
+  background-color: var(--item-color-default);
+  border-radius: var(--item-radius);
+  border-width: var(--border_width_item) !important;
+  transition: var(--item-transition);
+
+  font-family: var(--item-font-family);
+  font-size: var(--item-font-size);
+  line-height: var(--item-font-size);
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item) !important;
+
 }
+
 
 .filterItem:hover {
   opacity: 0.8;
 }
 
 .operator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--item-padding-vertical, 4px) var(--item-padding-horizontal, 8px);
+  /* display: inline-flex; */
+  /* align-items: center;
+  justify-content: center; */
+  /* padding: var(--item-padding-vertical, 4px) var(--item-padding-horizontal, 8px); */
   border-radius: var(--item-radius, 4px);
   background-color: var(--color-operator-bg, #f0f0f0);
   color: var(--color-operator-text, #333);
-  font-weight: 600;
-  font-size: 0.85em;
+  font-size: var(--item-font-size);
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
   user-select: none;
+  background-color: transparent;
+  padding: 4px 0px;
+  line-height:var(--item-font-size);
+
 }
 
 .operator:hover {
@@ -52,8 +66,17 @@
 }
 
 .parenthesis {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: var(--color-text-secondary, #666);
-  padding: 0 var(--item-padding-horizontal-small, 4px);
+  font-size: calc(var(--item-font-size) * 2);
+  width: 4px;
+  padding: 0 0;
+  margin-top:-3px;
+}
+
+/* Selected item styling - applies white text when item has a color_block class */
+.filterItem:global([class*="_color_block"]) {
+  color: white;
+}
+
+.filterItem:global([class*="_color_block"]) * {
+  color: white !important;
 }
