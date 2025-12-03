@@ -76,7 +76,15 @@ export class PhenotypeDataService {
   }
 
   public setData(data: Phenotype | undefined) {
-    this.currentPhenotype = data || null;
+    // Always reference the actual phenotype from the cohort, not the passed-in data object
+    if (data?.id) {
+      const phenotypeInCohort = this.cohortDataService.cohort_data.phenotypes.find(
+        (p: any) => p.id === data.id
+      );
+      this.currentPhenotype = phenotypeInCohort || data;
+    } else {
+      this.currentPhenotype = data || null;
+    }
     this.updateRowData();
     this.updateComponentPhenotypeData();
     this.notifyListeners(true);
@@ -90,13 +98,13 @@ export class PhenotypeDataService {
     return this.rowData;
   }
 
-  public valueChanged(rowData: ParamRow, newValue: any) {
+  public valueChanged(parameter: string, newValue: any) {
     if (this.currentPhenotype) {
-      this.currentPhenotype[rowData.parameter] = newValue;
-      if (rowData.parameter === 'class_name'){
+      this.currentPhenotype[parameter] = newValue;
+      if (parameter === 'class_name'){
         this.updateRowData()
       }
-      this.saveChangesToPhenotype(rowData.parameter === 'class_name' ? true : false);
+      this.saveChangesToPhenotype(parameter === 'class_name' ? true : false);
     }
   }
 

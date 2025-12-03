@@ -35,8 +35,6 @@ export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps>
   selectedIndex,
   selectedClassName,
 }) => {
-  console.log('CategoricalFilterRenderer - onItemClick:', !!onItemClick, 'selectedIndex:', selectedIndex);
-  
   const effectiveType = data?.effective_type;
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
   const colorBlockClass = typeStyles[`${effectiveType || ''}_color_block`] || '';
