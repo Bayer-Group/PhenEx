@@ -38,6 +38,7 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
   const effectiveType = data?.effective_type;
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
   const colorBlockClass = typeStyles[`${effectiveType || ''}_color_block`] || '';
+  const colorTextClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
 
   // Flatten the expression tree for rendering
   const flattenedItems = useMemo(() => {
@@ -103,7 +104,7 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
    */
   const renderFilter = (expression: SingleLogicalExpression): React.ReactNode => {
     return (
-      <div className={`${styles.unit} ${borderColorClass}`}>
+      <div className={`${styles.unit} ${colorTextClass}`}>
         <div className={styles.top}>{expression.phenotype_name || '(empty)'}</div>
         <div className={styles.bottom}></div>
       </div>
@@ -123,6 +124,8 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
         onOperatorClick={onOperatorClick}
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName || colorBlockClass}
+        filterClassName={borderColorClass}
+        operatorClassName={colorTextClass}
       />
     </div>
   );

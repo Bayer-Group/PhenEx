@@ -45,7 +45,6 @@
   /* padding: var(--item-padding-vertical, 4px) var(--item-padding-horizontal, 8px); */
   border-radius: var(--item-radius, 4px);
   background-color: var(--color-operator-bg, #f0f0f0);
-  color: var(--color-operator-text, #333);
   font-size: var(--item-font-size);
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
@@ -70,6 +69,7 @@
   width: 4px;
   padding: 0 0;
   margin-top:-3px;
+  opacity:.3;
 }
 
 /* Selected item styling - applies white text when item has a color_block class */

@@ -131,6 +131,7 @@ export const CategoricalFilterRenderer: React.FC<CategoricalFilterRendererProps>
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName}
         filterClassName={borderColorClass}
+        operatorClassName={colorTextClass}
       />
     </div>
   );

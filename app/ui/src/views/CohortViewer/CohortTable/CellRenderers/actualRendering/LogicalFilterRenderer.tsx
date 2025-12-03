@@ -64,7 +64,7 @@ export function LogicalFilterRenderer<T>({
           
           case 'operator': {
             const classes = `${styles.operator} ${operatorClassName}`.trim();
-            
+
             return (
               <div
                 key={`operator-${item.index}`}
@@ -82,10 +82,11 @@ export function LogicalFilterRenderer<T>({
           }
           
           case 'parenthesis': {
+            const classes_parenthesis = `${styles.parenthesis} ${operatorClassName}`.trim();
             return (
               <span
                 key={`paren-${item.index}`}
-                className={styles.parenthesis}
+                className={classes_parenthesis}
               >
                 {item.paren}
               </span>
