@@ -35,6 +35,8 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
   selectedIndex,
   selectedClassName,
 }) => {
+  console.log('LogicalExpressionRenderer - onItemClick:', !!onItemClick, 'selectedIndex:', selectedIndex);
+  
   const effectiveType = data?.effective_type;
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
   const colorBlockClass = typeStyles[`${effectiveType || ''}_color_block`] || '';

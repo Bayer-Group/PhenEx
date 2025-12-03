@@ -372,10 +372,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       const fieldName = props.fieldName || props.column?.getColDef().field;
       const RendererByField = fieldName ? rendererByField[fieldName] : null;
       
+      console.log('PhenexCellEditor.renderCurrentSelection - fieldName:', fieldName, 'hasRenderer:', !!RendererByField);
+      
       if (RendererByField) {
         // Use the custom renderer component for field-based rendering
         // Always render, even if value is empty (for complex item editors)
         const selectedClassName = typeStyles[`${props.data.effective_type || ''}_color_block`] || '';
+        
+        console.log('PhenexCellEditor - Rendering with:', {
+          fieldName,
+          hasOnItemSelect: !!props.onItemSelect,
+          selectedItemIndex: props.selectedItemIndex,
+          rendererProps: props.rendererProps
+        });
         
         return (
           <div className={styles.cellMirrorContents}>

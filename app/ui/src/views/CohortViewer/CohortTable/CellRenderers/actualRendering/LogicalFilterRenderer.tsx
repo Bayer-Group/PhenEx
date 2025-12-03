@@ -53,6 +53,7 @@ export function LogicalFilterRenderer<T>({
                 className={classes}
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log('LogicalFilterRenderer - filter clicked, onItemClick:', !!onItemClick, 'item:', item);
                   onItemClick?.(item);
                 }}
                 style={{ cursor: onItemClick ? 'pointer' : 'default' }}

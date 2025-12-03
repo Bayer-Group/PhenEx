@@ -13,6 +13,13 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
  */
 export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps>(
   (props, ref) => {
+    console.log('LogicalExpressionCellEditor - props received:', {
+      column: props.column?.getColDef().field,
+      hasOnItemSelect: 'onItemSelect' in props,
+      onItemSelectValue: props.onItemSelect,
+      allPropKeys: Object.keys(props)
+    });
+    
     const initialValue = props.value as FilterType | undefined;
 
     // Type guard to identify leaf nodes (SingleLogicalExpression)
@@ -55,11 +62,22 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
       },
     }));
 
+    // Extract AG Grid-specific props and exclude our custom props to avoid conflicts
+    const { onValueChange, showComposerPanel: _showComposerPanel, ...agGridProps } = props;
+
+    console.log('LogicalExpressionCellEditor - about to render PhenexCellEditor with:', {
+      hasOnItemSelect: !!handleItemSelect,
+      isEditing,
+      selectedItemIndex,
+      hasEditingItem: !!editingItem
+    });
+
     return (
       <PhenexCellEditor
-        {...props}
+        {...agGridProps}
         ref={ref}
         value={filterTree}
+        onValueChange={onValueChange}
         selectedItemIndex={selectedItemIndex ?? undefined}
         onEditingDone={handleEditingDone}
         onAddItem={() => handleAddFilter('AND')}

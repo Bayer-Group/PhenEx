@@ -22,6 +22,7 @@ import { TypeSelectorCellEditor } from '../CohortTable/CellEditors/TypeSelectorC
 import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCellEditor';
 import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
 import { ReturnDateCellEditor } from '../CohortTable/CellEditors/ReturnDateCellEditor';
+import { LogicalExpressionCellEditor } from '../CohortTable/CellEditors/LogicalExpressionCellEditor';
 
 import LogicalExpressionCellRenderer from '../CohortTable/CellRenderers/LogicalExpressionCellRenderer';
 
@@ -360,7 +361,13 @@ export const defaultColumns = [
     headerName: 'Expression',
     width: 250,
     editable: true,
-    cellEditor: DescriptionCellEditor,
+    valueParser: (params: any) => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
+    cellEditor: LogicalExpressionCellEditor,
     cellEditorPopup: true,
     cellRenderer: LogicalExpressionCellRenderer,
   },

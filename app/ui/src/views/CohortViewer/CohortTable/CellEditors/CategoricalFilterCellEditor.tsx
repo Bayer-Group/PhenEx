@@ -56,11 +56,15 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
       },
     }));
 
+    // Extract AG Grid-specific props and exclude our custom props to avoid conflicts
+    const { onValueChange, showComposerPanel: _showComposerPanel, ...agGridProps } = props;
+
     return (
       <PhenexCellEditor
-        {...props}
+        {...agGridProps}
         ref={ref}
         value={filterTree}
+        onValueChange={onValueChange}
         selectedItemIndex={selectedItemIndex ?? undefined}
         onEditingDone={handleEditingDone}
         onAddItem={() => handleAddFilter('AND')}
