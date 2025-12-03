@@ -51,6 +51,17 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
       {Object.entries(codelist).map(([codeType, codes], codeIndex) => {
+        // Skip entries that have file metadata properties
+        if (codeType === 'file_name' || codeType === 'codelist_name' || codeType === 'file_id' || 
+            codeType === 'code_column' || codeType === 'code_type_column' || codeType === 'codelist_column') {
+          return null;
+        }
+        
+        // Skip if codes is not an array
+        if (!Array.isArray(codes)) {
+          return null;
+        }
+        
         // Replace underscores with spaces for better readability
         const displayCodeType = codeType.replace(/_/g, ' ');
         
@@ -59,10 +70,10 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
             key={codeIndex}
             className={styles.codeBlock}
             onClick={(e) => {
-              e.stopPropagation();
-              if (onClick) {
-                onClick();
-              }
+              // e.stopPropagation();
+              // if (onClick) {
+              //   onClick();
+              // }
             }}
             style={{ cursor: onClick ? 'pointer' : 'default' }}
           >
@@ -124,7 +135,10 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
       return renderFileCodelist(codelistValue, index);
     }
     if (codelistValue.codelist) {
-      return renderManualCodelist(codelistValue.codelist, codelistValue, index);
+      // Check if codelist.codelist exists (nested Codelist structure)
+      // This happens when a Codelist object is nested inside another Codelist object
+      const actualCodelist = (codelistValue.codelist as any).codelist || codelistValue.codelist;
+      return renderManualCodelist(actualCodelist, codelistValue, index);
     }
     return null;
   };
