@@ -76,24 +76,63 @@ export function useLogicalFilterEditor<T>({
   isLeafNode,
 }: UseLogicalFilterEditorOptions<T>): UseLogicalFilterEditorReturn<T> {
   
+  // Helper to ensure binary tree completeness (used for initial values from database)
+  const ensureComplete = (node: LogicalFilterTree<T> | null | undefined): LogicalFilterTree<T> => {
+    if (!node) return createNewItem();
+    
+    // Check if it's a valid object (not a string or other primitive)
+    if (typeof node !== 'object') return createNewItem();
+    
+    // Check if it's a valid filter structure with class_name
+    if (!('class_name' in node) || typeof node.class_name !== 'string') {
+      return createNewItem();
+    }
+    
+    if (isLeafNode(node)) return node;
+    
+    const logicalNode = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
+    
+    // Only process if it's actually a logical node
+    if (logicalNode.class_name !== 'AndFilter' && logicalNode.class_name !== 'OrFilter') {
+      return createNewItem();
+    }
+    
+    return {
+      ...logicalNode,
+      filter1: ensureComplete(logicalNode.filter1),
+      filter2: ensureComplete(logicalNode.filter2),
+    };
+  };
+
   // Initialize with empty filter if no value provided
+  // If initial value exists, ensure it's complete (fill missing children)
   const [filterTree, setFilterTree] = useState<LogicalFilterTree<T>>(() => {
-    if (initialValue) return initialValue;
-    return createNewItem();
+    if (!initialValue || initialValue === 'missing' || (typeof initialValue === 'string')) {
+      return createNewItem();
+    }
+    return ensureComplete(initialValue);
   });
 
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<T | null>(null);
 
-  /**
-   * Flatten the filter tree into a linear array for rendering
-   * Includes filters, operators (AND/OR), and parentheses
-   */
   const flattenedItems = useMemo(() => {
     const items: FlattenedItem<T>[] = [];
     let itemIndex = 0;
 
+    // Helper to check if a node exists (even if empty - we want to render empty placeholders)
+    const hasContent = (node: LogicalFilterTree<T> | null | undefined): boolean => {
+      if (!node) return false;
+      if (isLeafNode(node)) return true; // Any leaf node counts, even empty ones
+      
+      const logicalNode = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
+      return hasContent(logicalNode.filter1) || hasContent(logicalNode.filter2);
+    };
+
     const flatten = (node: LogicalFilterTree<T>, path: number[], depth: number): void => {
+      // Check if node exists
+      if (!node) return;
+      
       // Check if this is a leaf node (actual filter)
       if (isLeafNode(node)) {
         items.push({
@@ -107,6 +146,27 @@ export function useLogicalFilterEditor<T>({
 
       // It's a logical node (AND/OR)
       const logicalNode = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
+      
+      const hasLeftContent = hasContent(logicalNode.filter1);
+      const hasRightContent = hasContent(logicalNode.filter2);
+      
+      // If both children are empty, return
+      if (!hasLeftContent && !hasRightContent) {
+        return;
+      }
+      
+      // If only one child has content, just flatten that child (skip the operator)
+      if (!hasLeftContent && hasRightContent) {
+        flatten(logicalNode.filter2, [...path, 2], depth);
+        return;
+      }
+      
+      if (hasLeftContent && !hasRightContent) {
+        flatten(logicalNode.filter1, [...path, 1], depth);
+        return;
+      }
+      
+      // Both children have content - render with operator
       const operator = logicalNode.class_name === 'AndFilter' ? 'AND' : 'OR';
 
       // Add opening parenthesis for nested expressions (not root)
@@ -199,35 +259,49 @@ export function useLogicalFilterEditor<T>({
 
   /**
    * Add a new filter with specified logical operator
-   * Creates a new logical node at the root with current tree and new empty filter
+   * 
+   * Logic:
+   * - If tree is null/undefined or a single empty filter: just create a single new empty filter
+   * - Otherwise: create a logical node combining existing tree with new empty filter
    */
   const handleAddFilter = useCallback((logicalOp: 'AND' | 'OR') => {
     console.log('=== Add filter with operator:', logicalOp);
+    console.log('Current filterTree:', filterTree);
+    console.log('isLeafNode(filterTree):', isLeafNode(filterTree));
+    console.log('filterTree.status:', (filterTree as any)?.status);
     
     const newFilter = createNewItem();
-    const newTree: LogicalFilterTree<T> = {
-      class_name: logicalOp === 'AND' ? 'AndFilter' : 'OrFilter',
-      filter1: filterTree,
-      filter2: newFilter,
-    } as LogicalAndFilter<T> | LogicalOrFilter<T>;
+    
+    // Check if we're starting from nothing or from a single empty filter
+    const isStartingEmpty = !filterTree || 
+      (isLeafNode(filterTree) && (filterTree as any).status === 'empty');
+    
+    console.log('isStartingEmpty:', isStartingEmpty);
+    
+    let newTree: LogicalFilterTree<T>;
+    
+    if (isStartingEmpty) {
+      // First item - just create a single filter, no logical operator yet
+      console.log('Creating single filter (first item)');
+      newTree = newFilter;
+    } else {
+      // Second or later item - create a logical node
+      console.log('Creating logical node (second+ item)');
+      newTree = {
+        class_name: logicalOp === 'AND' ? 'AndFilter' : 'OrFilter',
+        filter1: filterTree,
+        filter2: newFilter,
+      } as LogicalAndFilter<T> | LogicalOrFilter<T>;
+    }
 
+    console.log('New tree:', newTree);
     setFilterTree(newTree);
     onValueChange?.(newTree);
     
-    // Auto-select the new filter for editing
-    // We need to recalculate the flattened items to get the correct index
-    // For now, we'll just select it after the update (React will re-render)
-    setTimeout(() => {
-      // Find the new filter in the flattened items
-      const newFlattenedItems = flattenedItems;
-      // The new item will be at the end
-      const lastFilterItem = newFlattenedItems.filter(item => item.type === 'filter').pop();
-      if (lastFilterItem && lastFilterItem.type === 'filter') {
-        setSelectedItemIndex(lastFilterItem.index);
-        setEditingItem(newFilter);
-      }
-    }, 0);
-  }, [filterTree, createNewItem, onValueChange, flattenedItems]);
+    // Don't auto-select - let user click on the item to edit
+    setSelectedItemIndex(null);
+    setEditingItem(null);
+  }, [filterTree, createNewItem, onValueChange, isLeafNode]);
 
   /**
    * Update the currently selected filter with new values
@@ -240,6 +314,8 @@ export function useLogicalFilterEditor<T>({
 
     // Find the path to the editing item
     const findPath = (node: LogicalFilterTree<T>, target: T, currentPath: number[]): number[] | null => {
+      if (!node) return null;
+      
       if (isLeafNode(node) && node === editingItem) {
         return currentPath;
       }
@@ -247,11 +323,15 @@ export function useLogicalFilterEditor<T>({
       if (!isLeafNode(node)) {
         const logicalNode = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
         
-        const leftPath = findPath(logicalNode.filter1, target, [...currentPath, 1]);
-        if (leftPath) return leftPath;
+        if (logicalNode.filter1) {
+          const leftPath = findPath(logicalNode.filter1, target, [...currentPath, 1]);
+          if (leftPath) return leftPath;
+        }
         
-        const rightPath = findPath(logicalNode.filter2, target, [...currentPath, 2]);
-        if (rightPath) return rightPath;
+        if (logicalNode.filter2) {
+          const rightPath = findPath(logicalNode.filter2, target, [...currentPath, 2]);
+          if (rightPath) return rightPath;
+        }
       }
       
       return null;
@@ -268,16 +348,18 @@ export function useLogicalFilterEditor<T>({
         return newItem;
       }
 
+      if (!node) return node;
+
       if (!isLeafNode(node)) {
         const logicalNode = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
         const [next, ...rest] = currentPath;
         
-        if (next === 1) {
+        if (next === 1 && logicalNode.filter1) {
           return {
             ...logicalNode,
             filter1: traverse(logicalNode.filter1, rest),
           };
-        } else if (next === 2) {
+        } else if (next === 2 && logicalNode.filter2) {
           return {
             ...logicalNode,
             filter2: traverse(logicalNode.filter2, rest),
