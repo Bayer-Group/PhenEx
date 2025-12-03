@@ -75,6 +75,17 @@ class ChatPanelDataService {
     return newMessage;
   }
 
+  public addSystemMessage(text: string): Message {
+    const newMessage: Message = {
+      id: ++this.lastMessageId,
+      text: text,
+      isUser: false,
+    };
+    this.messages.push(newMessage);
+    this.notifyListeners();
+    return newMessage;
+  }
+
   public onMessagesUpdated(callback: MessageCallback): void {
     this.listeners.add(callback);
   }
@@ -138,34 +149,7 @@ class ChatPanelDataService {
     this.aiCompletionListeners.forEach(listener => listener(success));
   }
 
-  private buffer: string = '';
-  private isInThinkingBlock: boolean = false;
 
-  private processMessageText(chunk: string): string {
-    this.buffer += chunk;
-    let result = '';
-    let currentIndex = 0;
-    while (true) {
-      if (this.isInThinkingBlock) {
-        const endIndex = this.buffer.indexOf('-->', currentIndex);
-        if (endIndex === -1) break;
-        currentIndex = endIndex + '-->'.length;
-        this.isInThinkingBlock = false;
-      } else {
-        const startIndex = this.buffer.indexOf('<!-- THINKING:', currentIndex);
-        if (startIndex === -1) {
-          result += this.buffer.slice(currentIndex);
-          this.buffer = '';
-          break;
-        }
-        result += this.buffer.slice(currentIndex, startIndex);
-        currentIndex = startIndex + '<!-- THINKING:'.length;
-        this.isInThinkingBlock = true;
-      }
-    }
-
-    return result;
-  }
 
   private async sendAIRequest(inputText: string): Promise<void> {
     console.log('sendAIRequest called with inputText:', inputText);
@@ -178,7 +162,31 @@ class ChatPanelDataService {
     }
     
     const cohortId = this.cohortDataService.cohort_data.id;
+    
+    // Extract plain text from description (which is a Quill Delta object)
+    let cohortDescription: string | null = null;
+    if (this.cohortDataService.cohort_data.description) {
+      try {
+        const delta = this.cohortDataService.cohort_data.description;
+        // If it's a Quill Delta object, extract text from ops
+        if (delta.ops && Array.isArray(delta.ops)) {
+          cohortDescription = delta.ops
+            .map((op: any) => (typeof op.insert === 'string' ? op.insert : ''))
+            .join('')
+            .trim();
+        } else if (typeof delta === 'string') {
+          cohortDescription = delta.trim();
+        }
+      } catch (e) {
+        console.warn('Failed to extract cohort description:', e);
+      }
+    }
+    
     console.log('Using cohort ID:', cohortId);
+    console.log('Cohort description available:', !!cohortDescription);
+    if (cohortDescription) {
+      console.log('Description length:', cohortDescription.length, 'characters');
+    }
     
     try {
       const stream = await suggestChanges(
@@ -186,7 +194,8 @@ class ChatPanelDataService {
         inputText.trim(),
         "gpt-4o-mini",
         false,
-        this.getConversationHistory()
+        this.getConversationHistory(),
+        cohortDescription || undefined
       );
 
       console.log('Stream received from suggestChanges');
@@ -225,14 +234,41 @@ class ChatPanelDataService {
               console.log('Parsed SSE data:', data);
               
               if (data.type === 'content') {
-                const processedText = this.processMessageText(data.message);
-                if (processedText) {
-                  assistantMessage.text += processedText;
+                // Regular AI content - just add to message
+                if (data.message) {
+                  assistantMessage.text += data.message;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'info') {
+                // Info messages - skip rendering
+                // These are not useful to display
+              } else if (data.type === 'tool_call') {
+                // Tool call messages - skip rendering (internal operations)
+                // User doesn't need to see these
+              } else if (data.type === 'tool_result') {
+                // Tool result messages - skip rendering (internal operations)
+                // User doesn't need to see these
+              } else if (data.type === 'tool_error') {
+                // Tool error messages
+                if (data.message) {
+                  assistantMessage.text += `\n❌ **Error:** ${data.message}\n`;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'function_explanation') {
+                // Function call explanation - add with special formatting (legacy support)
+                if (data.message) {
+                  assistantMessage.text += `\n\n**🔄 Making changes:** ${data.message}\n\n`;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'function_success') {
+                // Function call success - add confirmation (legacy support)
+                if (data.message) {
+                  assistantMessage.text += `\n✅ ${data.message}\n`;
                   this.notifyListeners();
                 }
               } else if (data.type === 'error') {
                 console.error('Stream error:', data.message);
-                assistantMessage.text += `\n\nError: ${data.message}`;
+                assistantMessage.text += `\n\n❌ **Error:** ${data.message}`;
                 this.notifyListeners();
                 break;
               } else if (data.type === 'complete') {
@@ -259,7 +295,6 @@ class ChatPanelDataService {
       if (this.cohortDataService.cohort_data?.id) {
         try {
           const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-          console.log('Response from suggestChanges:', response);
           this.cohortDataService.updateCohortFromChat(response);
         } catch (error) {
           console.error('Error fetching updated cohort:', error);

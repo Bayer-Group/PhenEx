@@ -58,6 +58,13 @@ openai_client = AzureOpenAI(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Disable verbose SQLAlchemy logging
+logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy').setLevel(logging.ERROR)
+
 from fastapi.middleware.cors import CORSMiddleware
 
 init_db()
@@ -670,8 +677,12 @@ async def get_cohorts_for_study(request: Request, study_id: str):
 # Include the router from rag.py
 # app.include_router(rag_router, prefix="/rag")
 
+# Include the new AI router
+from .routes.ai import router as ai_router
+app.include_router(ai_router, prefix="/cohort")
 
-@app.post("/cohort/suggest_changes", tags=["AI"])
+
+@app.post("/cohort/suggest_changes_old", tags=["AI"])
 async def suggest_changes(
     request: Request,
     cohort_id: str,
@@ -739,68 +750,205 @@ async def suggest_changes(
     except KeyError:
         pass
 
-    # Perform RAG search to get the context
-    logger.info(f"Retrieving context for user request: {user_request}")
-    query = user_request
-    top_k = 10
-    try:
-        results = query_faiss_index(query=query, top_k=top_k)
-        context = "\n\n".join(results)
-    except Exception as e:
-        logger.error(f"Error during RAG search: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve context for the request."
-        )
-
-    logger.info(f"Context retrieved: {len(context.split())} words")
-
     system_prompt = f"""
-    Consider the following library code: 
-        {context}
+    Your task is to create or modify a cohort according to the user instructions. A cohort consists of multiple phenotypes. You have access to functions that allow you modify individual phenotypes.
 
-    Your task is to create or modify a cohort according to the user instructions given below. 
+    **YOUR SUCCESS DEPENDS ON ACCURATE PARAMETERS**: The PhenEx framework is highly structured with specific parameter requirements. You will be provided with relevant documentation automatically based on your request.
+
+    **YOUR JOB**: Complete the user's request by making the necessary phenotype changes:
+    - Add the requested phenotype(s) 
+    - Update existing phenotype(s)
+    - Delete phenotype(s)
+    - Or ask the user for clarification if the request is unclear
+
+    **USE THE PROVIDED DOCUMENTATION**: All relevant documentation has been automatically gathered and provided in your context. Use it to construct accurate parameters!
+
+    IMPORTANT GUIDELINES:
+    - Use the add_phenotype, update_phenotype, and delete_phenotype functions to make changes - THIS IS YOUR REAL JOB
+    - Available phenotypes: CodelistPhenotype, MeasurementPhenotype, CategoricalPhenotype, TimeRangePhenotype, AgePhenotype, SexPhenotype, DeathPhenotype, LogicPhenotype, ScorePhenotype, ArithmeticPhenotype, EventCountPhenotype, MeasurementChange, BinPhenotype
+    - You can call these functions multiple times if needed to make incremental changes
+    - NEVER STOP until the user query is satisfied or you decide you need clarifying input from the user.
+    - Always provide clear, concise explanations of what changes you're making
+    - When adding new phenotypes, always include good descriptions and names
+    - Format your explanations using markdown for better readability
+    - Indicate any ambiguities or decisions that may need user review
+    - Choose appropriate domains for phenotypes based on the data source
+    - All phenotypes must have a 'type' key: 'entry', 'inclusion', 'exclusion', 'characteristics', or 'outcome'
     
-    In performing your task, you may use any tools at your disposal to complete the task as well as possible.
-     
-    Include in your response three types of output: 
-        1) output intended for display to user, 
-        2) thinking output used only by you, and 
-        3) a final answer in valid JSON format
-     
-    1) Text displayed to the user must consist of VERY BRIEF, concise plain text (no code, no python, no json, just plain language) explanation of the changes you are making. In the explanation, indicate any points of ambiguity regarding the implementation choices you made (if any) that require attention from the user (e.g. missing codelists, ambiguity about < versus <=, unspecified dependencies). Format your explanation using markdown (e.g. lists for items to review) to make the response visually appealing. Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
-
-    2) You must think in order to plan your response. Thinking is not displayed to the user and is only seen by you. Put your thoughts inside markdown comments labelled "THINKING", as below:
+    🚨 CRITICAL FUNCTION CALLING RULES 🚨
     
-<!-- THINKING: (your thoughts here) -->
-
-    THINKING will be removed before your answer is displayed to the user but will help you plan your tasks. For example, if you need to make a tool call, you may use <!-- THINKING: (your thoughts here) --> to plan that out. Or you may use <!-- THINKING: (your thoughts here) --> to explain what parameters you are going to fill in to the output JSON.
-
-    3) At the end of your response, create a JSON with the phenotypes of the cohort that need to be updated. Write this json inside the tags <JSON> </JSON>. You only need to include the phenotypes that need updating. Phenotypes that are unchanged may be omitted. Thus, your response will conclude with the following structure:
-
-    <JSON>
-        {{
-            "id": "{current_cohort['id']}",
-            "name": "{current_cohort['name']}",
-            "class_name": "{current_cohort['class_name']}",
-            "phenotypes": [
-                COMPLETE SPECIFICATION OF PHENOTYPES TO BE UPDATED
-            ]
+    FOR ANY FUNCTIONAL CHANGE TO A PHENOTYPE, YOU **MUST** INCLUDE THE COMPLETE phenotype_params OBJECT!
+    
+    ✅ EXAMPLE - To implement an age filter on an existing AgePhenotype with id xyz:
+    update_phenotype(id="xyz", explanation="Adding age filter", 
+        phenotype_params={{
+            "name": "Age Filter",
+            "description": "Patients older than 45 years",  
+            "domain": "PERSON",
+            "value_filter": {{
+                "class_name": "ValueFilter",
+                "min_value": {{
+                    "class_name": "GreaterThan", 
+                    "value": 45
+                }}
+            }}
+        }})
+    
+    **WORKFLOW GUIDANCE**:
+    
+    When you need to create or modify phenotypes with specific functional parameters (filters, codelists, etc.), consider using lookup_documentation first to get the exact parameter structures. This dramatically increases your success rate and reduces parameter errors.
+    
+    **THINK STRATEGICALLY**: 
+    - Complex new phenotypes → lookup_documentation is very helpful
+    - Simple updates (name/description only) → probably not needed
+    - Multiple similar phenotypes → one lookup may cover all of them
+    - Unfamiliar parameter structures → lookup_documentation is essential
+    
+    REMEMBER: phenotype_params must include ALL initialization parameters:
+    - name (human-readable name)
+    - description (human-readable description) 
+    - domain (OMOP domain like "PERSON", "CONDITION_OCCURRENCE")
+    - PLUS the functional parameters (value_filter, codelist, categorical_filter, etc.)
+    
+    The phenotype_params object represents the COMPLETE reconstruction of the phenotype via from_dict().
+    
+    The phenotype_params will be passed to the phenotype constructor via from_dict(), so use proper PhenEx serialization format with class_name fields. Lookup documentation for from_dict() as needed.
+    
+    CONCRETE EXAMPLES OF VALID from_dict() INPUT:
+    
+    📋 VALUE FILTER EXAMPLES:
+    
+    Age > 45 years:
+    "phenotype_params": {{
+        "name": "Age Filter",
+        "description": "Patients older than 45 years",
+        "domain": "PERSON",
+        "value_filter": {{
+            "class_name": "ValueFilter",
+            "min_value": {{
+                "class_name": "GreaterThan", 
+                "value": 45
+            }}
         }}
-    </JSON>
+    }}
+    
+    Age 18-65 years:
+    "phenotype_params": {{
+        "name": "Adult Age Range",
+        "description": "Patients aged 18 to 65 years",
+        "domain": "PERSON", 
+        "value_filter": {{
+            "class_name": "ValueFilter",
+            "min_value": {{
+                "class_name": "GreaterThanOrEqualTo",
+                "value": 18
+            }},
+            "max_value": {{
+                "class_name": "LessThanOrEqualTo", 
+                "value": 65
+            }}
+        }}
+    }}
+    
+    📋 CODELIST FILTER EXAMPLES:
+    
+    ICD-10 codes for Atrial Fibrillation:
+    "phenotype_params": {{
+        "name": "Atrial Fibrillation",
+        "description": "Diagnosis of atrial fibrillation",
+        "domain": "CONDITION_OCCURRENCE",
+        "codelist": {{
+            "class_name": "Codelist",
+            "codes": ["I48", "I48.0", "I48.1", "I48.9"],
+            "name": "atrial_fibrillation_icd10"
+        }},
+        "return_date": "first"
+    }}
+    
+    📋 CATEGORICAL FILTER EXAMPLES:
+    
+    Male patients only:
+    "phenotype_params": {{
+        "name": "Male Sex",
+        "description": "Male patients only",
+        "domain": "PERSON",
+        "categorical_filter": {{
+            "class_name": "CategoricalFilter", 
+            "column_name": "SEX",
+            "allowed_values": ["M"]
+        }}
+    }}
+    
+    📋 TIME RANGE FILTER EXAMPLES:
+    
+    Hospitalization on index date (0 days before/after):
+    "phenotype_params": {{
+        "name": "Hospitalization on Index Date",
+        "description": "Hospitalization that occurs on the index date",
+        "domain": "VISIT_OCCURRENCE",
+        "relative_time_range": [{{
+            "class_name": "RelativeTimeRangeFilter",
+            "when": "before",
+            "anchor_phenotype": null,
+            "useIndexDate": true,
+            "useConstant": false,
+            "min_days": {{
+                "class_name": "Value",
+                "value": 0,
+                "operator": ">="
+            }},
+            "max_days": {{
+                "class_name": "Value", 
+                "value": 0,
+                "operator": "<="
+            }}
+        }}]
+    }}
+    
+    365 days before index date:
+    "phenotype_params": {{
+        "name": "Prior Year Coverage",
+        "description": "365 days of coverage before index date",
+        "domain": "OBSERVATION_PERIOD",
+        "relative_time_range": [{{
+            "class_name": "RelativeTimeRangeFilter",
+            "when": "before",
+            "anchor_phenotype": null,
+            "useIndexDate": true, 
+            "useConstant": false,
+            "min_days": {{
+                "class_name": "Value",
+                "value": 365,
+                "operator": ">="
+            }},
+            "max_days": null
+        }}]
+    }}
+    
+    30 days after index date:
+    "phenotype_params": {{
+        "name": "Follow-up Period",
+        "description": "30 days after index date",
+        "domain": "CONDITION_OCCURRENCE",
+        "relative_time_range": [{{
+            "class_name": "RelativeTimeRangeFilter", 
+            "when": "after",
+            "anchor_phenotype": null,
+            "useIndexDate": true,
+            "useConstant": false,
+            "min_days": null,
+            "max_days": {{
+                "class_name": "Value",
+                "value": 30,
+                "operator": "<="
+            }}
+        }}]
+    }}
 
-    You may switch back and forth between (1) and (2) freely but (3) occurs only once and at the end of your response. Do not number or label these sections except as instructed. Do not refer to the JSON you are outputting, as the JSON will be stripped from the text before being displayed to the user. The user sees only the output of (1).
-
-    Additional guidelines:
-
-    - When adding a new phenotype to the cohort, ALWAYS give the phenotype a good description.
-    - When modifying an existing phenotype in the cohort, UPDATE the phenotype description only if necessary.
-    - Do NOT modify the description of existing phenotypes if you are not changing any thing else in the phenotype UNLESS explicitly asked to do so by the user.
-    - Only include the phenotypes that need updating in your response
-    - The text within the <JSON> </JSON> tags must be valid JSON; therefore comments are not allowed in this text. Any comments you wish to make to the user must be made with (1) type output
-    - Do not refer to the output JSON as the user does not see this and will have no idea what you're talking about
-    - Make sure to choose the appropriate domain for each phenotype for the given data source
-    - all phenotypes must have a 'type' key, being either 'entry', 'inclusion', 'exclusion', 'characteristics' (for baseline characteristics) or 'outcome'. phenotypes without a 'type' key will not be displayed
-    - If a phenotype is to be removed, then return the phenotype in the list of to-be-updated phenotypes in the form {{"id": PTID, "class_name": null}}.
+    SAFETY GUARDRAILS:
+    - The functions include safety checks to prevent accidental deletions
+    - You cannot remove existing phenotypes unless explicitly requested by the user
+    - The functions will validate all changes before applying them
     """
 
     user_prompt = f"""     
@@ -818,6 +966,8 @@ async def suggest_changes(
     Modify the current Cohort according to the following instructions:
 
     {user_request}
+    
+    🚨 REMEMBER: Use the provided documentation to construct accurate parameters and complete the requested changes!
     """
     
     # Build messages array with conversation history
@@ -837,87 +987,572 @@ async def suggest_changes(
     # Add the current user prompt
     messages.append({"role": "user", "content": user_prompt})
 
+    # Define the function tools for the AI - simpler phenotype-level operations
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "add_phenotype",
+                "description": "Add a new phenotype to the cohort. For best results with complex parameters, consider using lookup_documentation first to get exact parameter structures and examples.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string", "description": "Suggested identifier (will be replaced with auto-generated unique ID)"},
+                        "name": {"type": "string", "description": "Short, descriptive name for the phenotype"},
+                        "class_name": {"type": "string", "description": "PhenEx class name (e.g., 'AgePhenotype', 'CodelistPhenotype')"},
+                        "type": {"type": "string", "enum": ["entry", "inclusion", "exclusion", "characteristics", "outcome"], "description": "Type of phenotype"},
+                        "description": {"type": "string", "description": "Human-readable description"},
+                        "explanation": {"type": "string", "description": "Brief explanation of why adding this phenotype"},
+                        "phenotype_params": {
+                            "type": "object", 
+                            "description": "REQUIRED! Complete initialization parameters including name, description, domain, and functional parameters (value_filter, codelist, categorical_filter, etc.)"
+                        }
+                    },
+                    "required": ["id", "name", "class_name", "type", "description", "explanation", "phenotype_params"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "update_phenotype",
+                "description": "Update an existing phenotype in the cohort. For functional changes (filters, codelists, etc.), provide complete phenotype_params with all initialization parameters. Consider using lookup_documentation first for complex parameter structures.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string", "description": "ID of the phenotype to update"},
+                        "explanation": {"type": "string", "description": "Brief explanation of what is being changed"},
+                        "phenotype_params": {
+                            "type": "object", 
+                            "description": "REQUIRED for functional changes! Complete set of parameters that define the phenotype behavior. This includes ALL constructor parameters like domain, value_filter, codelist, categorical_filter, etc. For AgePhenotype with age>45, MUST include: {'value_filter': {'class_name': 'ValueFilter', 'min_value': {'class_name': 'GreaterThan', 'value': 45}}, 'domain': 'PERSON', 'name': 'Updated Name', 'description': 'New description'}. NEVER omit this for functional changes!"
+                        }
+                    },
+                    "required": ["id", "explanation", "phenotype_params"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "delete_phenotype",
+                "description": "Remove a phenotype from the cohort",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string", "description": "ID of the phenotype to delete"},
+                        "explanation": {"type": "string", "description": "Brief explanation of why removing this phenotype"}
+                    },
+                    "required": ["id", "explanation"]
+                }
+            }
+        }
+    ]
+
+
+
     completion = openai_client.chat.completions.create(
-        model=model, stream=True, messages=messages
+        model=model, 
+        stream=True, 
+        messages=messages,
+        tools=tools,
+        tool_choice="auto"
     )
 
+    def validate_phenotype_fields(phenotype_data: dict, operation: str) -> None:
+        """Validate phenotype fields for different operations using from_dict validation"""
+        if operation in ["add", "update"]:
+            # Validate class_name format if provided
+            class_name = phenotype_data.get("class_name")
+            if class_name:
+                if not isinstance(class_name, str) or not class_name.strip():
+                    raise ValueError("class_name must be a non-empty string")
+            
+            # Validate phenotype type if provided
+            phenotype_type = phenotype_data.get("type")
+            if phenotype_type:
+                valid_types = ["entry", "inclusion", "exclusion", "characteristics", "outcome"]
+                if phenotype_type not in valid_types:
+                    raise ValueError(f"Invalid type '{phenotype_type}'. Must be one of: {valid_types}")
+            
+            # Validate phenotype_params using from_dict if class_name and params are provided
+            phenotype_params = phenotype_data.get("phenotype_params", {})
+            if class_name and phenotype_params and operation == "add":
+                try:
+                    # Create test phenotype dict for validation
+                    test_phenotype_dict = {
+                        "class_name": class_name,
+                        **phenotype_params
+                    }
+                    
+                    # Try to deserialize using from_dict to validate structure
+                    from phenex.util.serialization.from_dict import from_dict
+                    test_phenotype = from_dict(test_phenotype_dict)
+                    logger.info(f"✓ Validated {class_name} parameters successfully")
+                    
+                except Exception as e:
+                    logger.error(f"✗ Invalid parameters for {class_name}: {e}")
+                    raise ValueError(f"Invalid parameters for {class_name}: {str(e)}")
+            
+            # Log parameter validation for debugging
+            logger.info(f"Validating {operation} for {class_name}: phenotype_params = {phenotype_params}")
+
+    async def process_add_phenotype_call(arguments_json: str):
+        """Process an add_phenotype function call"""
+        try:
+            logger.info(f"=== ADD PHENOTYPE CALL ===")
+            logger.info(f"Raw arguments received: {arguments_json}")
+            
+            # Documentation is now loaded proactively, so no need to check
+            logger.info("ℹ️ Adding phenotype with proactively loaded documentation")
+            
+            # Handle case where multiple JSON objects are concatenated
+            if arguments_json.count('{"id"') > 1:
+                logger.warning(f"⚠️ Multiple JSON objects detected in single call - taking first one")
+                # Find the end of the first JSON object
+                brace_count = 0
+                for i, char in enumerate(arguments_json):
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            arguments_json = arguments_json[:i+1]
+                            break
+                logger.info(f"Cleaned arguments: {arguments_json}")
+            
+            args = json.loads(arguments_json)
+            
+            ai_provided_id = args["id"]
+            phenotype_name = args["name"]
+            class_name = args["class_name"]
+            phenotype_type = args["type"]
+            description = args["description"]
+            explanation = args["explanation"]
+            
+            logger.info(f"Adding phenotype: {ai_provided_id} ({class_name})")
+            logger.info(f"📋 FULL ADD ARGS: {json.dumps(args, indent=2)}")
+            
+            yield f"data: {json.dumps({'type': 'function_explanation', 'message': f'**➕ Adding {phenotype_name}:** {explanation}'})}\n\n"
+            
+            # Validate fields
+            validate_phenotype_fields(args, "add")
+            
+            # Get latest cohort state before checking
+            latest_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+            if not latest_cohort_record:
+                raise ValueError("Cohort not found")
+            latest_cohort = latest_cohort_record["cohort_data"]
+            
+            # Generate a unique computer-friendly ID (regardless of what AI provided)
+            import random
+            import string
+            def generate_unique_id(existing_ids):
+                while True:
+                    # Generate 10-character alphanumeric ID
+                    unique_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+                    if unique_id not in existing_ids:
+                        return unique_id
+            
+            existing_phenotypes = latest_cohort.get("phenotypes", [])
+            existing_ids = {p.get("id") for p in existing_phenotypes}
+            phenotype_id = generate_unique_id(existing_ids)
+            
+            logger.info(f"🔄 Generated unique ID: {ai_provided_id} → {phenotype_id}")
+            
+            # Create new phenotype with generated unique ID
+            new_phenotype = {
+                "id": phenotype_id,
+                "name": phenotype_name,
+                "class_name": class_name,
+                "type": phenotype_type,
+                "description": description
+            }
+            
+            # STRICT VALIDATION: phenotype_params is now required for add_phenotype too
+            phenotype_params = args.get("phenotype_params", {})
+            logger.info(f"📋 PHENOTYPE_PARAMS PROVIDED: {json.dumps(phenotype_params, indent=2)}")
+            
+            if not phenotype_params:
+                error_msg = f"❌ CRITICAL ERROR: phenotype_params is REQUIRED for add_phenotype! You must provide complete initialization parameters including name, description, domain, and functional parameters. This call will be REJECTED."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Validate that phenotype_params has required fields
+            required_fields = ["name", "description", "domain"]
+            missing_fields = [f for f in required_fields if f not in phenotype_params]
+            if missing_fields:
+                error_msg = f"❌ CRITICAL ERROR: phenotype_params is missing required fields: {missing_fields}. You must provide name, description, domain, plus functional parameters. This call will be REJECTED."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info(f"✅ Validation passed! Applying complete phenotype_params to new phenotype")
+            
+            # Create new phenotype with generated unique ID and complete parameters
+            new_phenotype = {
+                "id": phenotype_id,  # Use the auto-generated unique ID
+                "class_name": class_name,
+                "type": phenotype_type,
+                **phenotype_params  # Apply all the initialization parameters
+            }
+            
+            logger.info(f"📋 NEW PHENOTYPE: {json.dumps(new_phenotype, indent=2)}")
+            
+            # Add to current cohort
+            updated_phenotypes = existing_phenotypes + [new_phenotype]
+            await save_updated_cohort(updated_phenotypes, f"Added phenotype: {phenotype_id}", latest_cohort)
+            
+            yield f"data: {json.dumps({'type': 'function_success', 'message': f'Added {phenotype_name} successfully'})}\n\n"
+            
+        except Exception as e:
+            logger.error(f"Error in add_phenotype: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    async def process_update_phenotype_call(arguments_json: str, documentation_tracker: dict):
+        """Process an update_phenotype function call"""
+        try:
+            logger.info(f"=== UPDATE PHENOTYPE CALL ===")
+            
+            # Documentation is now loaded proactively, so no need to check
+            logger.info("ℹ️ Updating phenotype with proactively loaded documentation")
+            
+            args = json.loads(arguments_json)
+            
+            phenotype_id = args["id"]
+            explanation = args["explanation"]
+            
+            logger.info(f"Updating phenotype: {phenotype_id}")
+            logger.info(f"📋 FULL UPDATE ARGS: {json.dumps(args, indent=2)}")
+            
+            # Get latest cohort state before updating
+            latest_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+            if not latest_cohort_record:
+                raise ValueError("Cohort not found")
+            latest_cohort = latest_cohort_record["cohort_data"]
+            
+            # Find existing phenotype
+            existing_phenotypes = latest_cohort.get("phenotypes", [])
+            phenotype_index = None
+            existing_phenotype = None
+            for i, p in enumerate(existing_phenotypes):
+                if p.get("id") == phenotype_id:
+                    phenotype_index = i
+                    existing_phenotype = p
+                    break
+            
+            if phenotype_index is None:
+                raise ValueError(f"Phenotype with ID '{phenotype_id}' not found. Use add_phenotype to create new phenotypes.")
+            
+            logger.info(f"📋 EXISTING PHENOTYPE: {json.dumps(existing_phenotype, indent=2)}")
+            
+            phenotype_name = existing_phenotype.get("name", existing_phenotype.get("description", phenotype_id))
+            yield f"data: {json.dumps({'type': 'function_explanation', 'message': f'**✏️ Updating {phenotype_name}:** {explanation}'})}\n\n"
+            
+            # Validate fields
+            validate_phenotype_fields(args, "update")
+            
+            # Update phenotype with provided fields
+            updated_phenotype = existing_phenotypes[phenotype_index].copy()
+            for field in ["name", "class_name", "type", "description"]:
+                if field in args:
+                    logger.info(f"🔄 Updating field '{field}': {args[field]}")
+                    updated_phenotype[field] = args[field]
+            
+            # STRICT VALIDATION: phenotype_params is now required
+            phenotype_params = args.get("phenotype_params", {})
+            logger.info(f"📋 PHENOTYPE_PARAMS PROVIDED: {json.dumps(phenotype_params, indent=2)}")
+            
+            # Validate that phenotype_params has required fields
+            required_fields = ["name", "description", "domain"]
+            missing_fields = [f for f in required_fields if f not in phenotype_params]
+            if missing_fields:
+                error_msg = f"❌ CRITICAL ERROR: phenotype_params is missing required fields: {missing_fields}. You must provide name, description, domain, plus functional parameters. This call will be REJECTED."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info(f"✅ Validation passed! Applying complete phenotype_params to phenotype")
+            
+            # Replace the entire phenotype with new parameters (this is a complete reconstruction)
+            updated_phenotype = {
+                "id": phenotype_id,  # Keep the same ID
+                "class_name": existing_phenotype.get("class_name"),  # Keep the same class
+                "type": existing_phenotype.get("type"),  # Keep the same type
+                **phenotype_params  # Apply all the new parameters
+            }
+            
+            logger.info(f"📋 UPDATED PHENOTYPE (complete reconstruction): {json.dumps(updated_phenotype, indent=2)}")
+            
+            # Replace in list
+            updated_phenotypes = existing_phenotypes.copy()
+            updated_phenotypes[phenotype_index] = updated_phenotype
+            
+            await save_updated_cohort(updated_phenotypes, f"Updated phenotype: {phenotype_id}", latest_cohort)
+            
+            # Use updated name for success message
+            updated_name = updated_phenotype.get("name", updated_phenotype.get("description", phenotype_id))
+            yield f"data: {json.dumps({'type': 'function_success', 'message': f'Updated {updated_name} successfully'})}\n\n"
+            
+        except Exception as e:
+            logger.error(f"Error in update_phenotype: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    async def process_delete_phenotype_call(arguments_json: str):
+        """Process a delete_phenotype function call"""
+        try:
+            logger.info(f"=== DELETE PHENOTYPE CALL ===")
+            args = json.loads(arguments_json)
+            
+            phenotype_id = args["id"]
+            explanation = args["explanation"]
+            
+            logger.info(f"Deleting phenotype: {phenotype_id}")
+            
+            # Get latest cohort state before deleting
+            latest_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+            if not latest_cohort_record:
+                raise ValueError("Cohort not found")
+            latest_cohort = latest_cohort_record["cohort_data"]
+            
+            # Find phenotype to get its name before deleting
+            existing_phenotypes = latest_cohort.get("phenotypes", [])
+            logger.info(f"📋 EXISTING PHENOTYPES BEFORE DELETE: {json.dumps([p.get('id') for p in existing_phenotypes])}")
+            
+            phenotype_to_delete = None
+            for p in existing_phenotypes:
+                if p.get("id") == phenotype_id:
+                    phenotype_to_delete = p
+                    break
+            
+            if not phenotype_to_delete:
+                raise ValueError(f"Phenotype with ID '{phenotype_id}' not found")
+            
+            logger.info(f"📋 PHENOTYPE TO DELETE: {json.dumps(phenotype_to_delete, indent=2)}")
+            
+            phenotype_name = phenotype_to_delete.get("name", phenotype_to_delete.get("description", phenotype_id))
+            yield f"data: {json.dumps({'type': 'function_explanation', 'message': f'**🗑️ Removing {phenotype_name}:** {explanation}'})}\n\n"
+            
+            # Remove phenotype
+            updated_phenotypes = [p for p in existing_phenotypes if p.get("id") != phenotype_id]
+            logger.info(f"📋 UPDATED PHENOTYPES AFTER DELETE: {json.dumps([p.get('id') for p in updated_phenotypes])}")
+            logger.info(f"📊 PHENOTYPE COUNT: Before={len(existing_phenotypes)}, After={len(updated_phenotypes)}")
+            
+            await save_updated_cohort(updated_phenotypes, f"Deleted phenotype: {phenotype_id}", latest_cohort)
+            
+            yield f"data: {json.dumps({'type': 'function_success', 'message': f'Removed {phenotype_name} successfully'})}\n\n"
+            
+        except Exception as e:
+            logger.error(f"Error in delete_phenotype: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+
+
+    async def save_updated_cohort(updated_phenotypes: list, change_description: str, base_cohort: dict):
+        """Helper to save updated cohort with new phenotype list"""
+        try:
+            logger.info(f"💾 SAVING UPDATED COHORT: {change_description}")
+            logger.info(f"📋 INPUT PHENOTYPES: {json.dumps([p.get('id') for p in updated_phenotypes])}")
+            
+            # Create updated cohort data
+            new_phenotypes_data = {
+                "id": base_cohort['id'],
+                "name": base_cohort['name'],
+                "class_name": base_cohort['class_name'],
+                "phenotypes": updated_phenotypes
+            }
+            
+            logger.info(f"📋 NEW PHENOTYPES DATA: {json.dumps(new_phenotypes_data, indent=2)}")
+            
+            # Process through CohortUtils - but skip update_cohort for deletions since it adds back missing phenotypes
+            c = CohortUtils()
+            
+            # For deletions, directly use the new phenotypes data instead of merging with old cohort
+            # This prevents CohortUtils.update_cohort from adding back deleted phenotypes
+            logger.info(f"🔄 Using direct phenotype replacement to avoid restoring deleted phenotypes")
+            updated_cohort_data = new_phenotypes_data.copy()
+            logger.info(f"📋 UPDATED COHORT DATA (direct replacement): {json.dumps(updated_cohort_data.get('phenotypes', []), indent=2)}")
+            
+            new_cohort = c.convert_phenotypes_to_structure(updated_cohort_data)
+            logger.info(f"📋 FINAL COHORT STRUCTURE: phenotypes count = {len(new_cohort.get('phenotypes', []))}")
+            logger.info(f"📋 FINAL PHENOTYPE IDs: {[p.get('id') for p in new_cohort.get('phenotypes', [])]}")
+            
+            # Validate structure
+            if not isinstance(new_cohort, dict):
+                raise ValueError("Generated cohort is not a valid dictionary")
+            
+            required_fields = ["id", "name", "class_name"]
+            for field in required_fields:
+                if field not in new_cohort:
+                    raise ValueError(f"Generated cohort missing required field: {field}")
+            
+            # Save as provisional
+            await db_manager.update_cohort_for_user(
+                user_id,
+                cohort_id,
+                new_cohort,
+                study_id,
+                provisional=True,
+                new_version=False,
+            )
+            
+            logger.info(f"Successfully saved cohort: {change_description}")
+            
+        except Exception as e:
+            logger.error(f"Error saving cohort: {e}")
+            raise ValueError(f"Failed to save cohort changes: {e}")
+
     async def stream_response():
-        inside_json = False
-        trailing_buffer = ""  # To handle split tags
-        json_buffer = ""
-        token_count = 0  # Counter for logging first 10 tokens
+        function_call_buffer = {}
+        accumulated_content = ""
+        # Documentation is now loaded proactively, no need for tracking
+        
         try:
             for chunk in completion:
                 if len(chunk.choices):
-                    current_response = chunk.choices[0].delta.content
-                    if current_response is not None:
-                        # Log first 10 tokens received
-                        if token_count < 10:
-                            token_count += 1
-                            logger.info(f"Token {token_count}: '{current_response}'")
+                    delta = chunk.choices[0].delta
+                    
+                    # Handle regular content
+                    if delta.content is not None:
+                        logger.debug(f"📝 Content token: '{delta.content}'")
+                        accumulated_content += delta.content
+                        yield f"data: {json.dumps({'type': 'content', 'message': delta.content})}\n\n"
+                    
+                    # Handle function calls
+                    if delta.tool_calls:
+                        for tool_call in delta.tool_calls:
+                            call_id = tool_call.id if tool_call.id else "unknown"
                             
-                        # Rest of the existing logic
-                        # Prepend trailing buffer to handle split tags
-                        if not inside_json:
-                            current_response = trailing_buffer + current_response
-                            trailing_buffer = current_response[
-                                -10:
-                            ]  # Keep last 10 characters for next iteration
+                            # Get function info safely
+                            function_name = ""
+                            function_args = ""
+                            if tool_call.function:
+                                function_name = tool_call.function.name or ""
+                                function_args = tool_call.function.arguments or ""
+                            
+                            # Initialize buffer for this call if not exists
+                            if call_id not in function_call_buffer:
+                                function_call_buffer[call_id] = {
+                                    "name": "",
+                                    "arguments": "",
+                                    "complete": False
+                                }
+                            
+                            # Update function name if provided (and merge with existing if needed)
+                            if function_name:
+                                if not function_call_buffer[call_id]["name"]:
+                                    function_call_buffer[call_id]["name"] = function_name
+                                elif function_call_buffer[call_id]["name"] != function_name:
+                                    logger.warning(f"Function name mismatch for {call_id}: existing='{function_call_buffer[call_id]['name']}', new='{function_name}'")
+                            
+                            # Accumulate arguments
+                            if function_args:
+                                function_call_buffer[call_id]["arguments"] += function_args
 
-                        if "<JSON>" in current_response:
-                            inside_json = True
-                            json_buffer = current_response.split("<JSON>", 1)[1]
-                            final_chunk = current_response.split("<JSON>", 1)[0]
-                            if final_chunk:
-                                yield f"data: {json.dumps({'type': 'content', 'message': final_chunk})}\n\n"
-                        elif inside_json:
-                            json_buffer += current_response
-                        elif not inside_json:
-                            content_chunk = current_response[:-10]  # Exclude trailing buffer
-                            if content_chunk:
-                                yield f"data: {json.dumps({'type': 'content', 'message': content_chunk})}\n\n"
+            # After processing all chunks, handle any complete function calls
+            logger.info(f"=== FUNCTION CALL SUMMARY ===")
+            logger.info(f"Found {len(function_call_buffer)} function call(s)")
+            
+            # Find all executable function calls
+            executable_calls = []
+            valid_function_names = ["add_phenotype", "update_phenotype", "delete_phenotype"]
+            
+            for call_id, call_data in function_call_buffer.items():
+                if call_data["name"] in valid_function_names and call_data["arguments"]:
+                    executable_calls.append((call_id, call_data))
+                elif call_data["arguments"] and not call_data["name"]:
+                    # Handle case where arguments are present but function name might be missing
+                    logger.info(f"Found call {call_id} with arguments but no name - checking function type")
+                    
+                    # Try to merge with named calls that have no arguments
+                    for other_call_id, other_call_data in function_call_buffer.items():
+                        if other_call_data["name"] in valid_function_names and not other_call_data["arguments"]:
+                            logger.info(f"Merging arguments from {call_id} into {other_call_id}")
+                            other_call_data["arguments"] = call_data["arguments"]
+                            executable_calls.append((other_call_id, other_call_data))
+                            break
+                    else:
+                        # Try to infer function type from arguments structure
+                        if call_data["arguments"].strip().startswith('{'):
+                            try:
+                                args = json.loads(call_data["arguments"])
+                                # Simple heuristic: if it has class_name and type, it's likely add_phenotype
+                                if "class_name" in args and "type" in args:
+                                    logger.info(f"Inferring {call_id} as add_phenotype based on arguments")
+                                    call_data["name"] = "add_phenotype"
+                                    executable_calls.append((call_id, call_data))
+                            except json.JSONDecodeError:
+                                logger.warning(f"Could not parse arguments for {call_id}")
+            
+            logger.info(f"Found {len(executable_calls)} executable function calls")
+            
+            # Execute the calls
+            for call_id, call_data in executable_calls:
+                if not call_data["complete"]:
+                    function_name = call_data["name"]
+                    logger.info(f"=== EXECUTING {function_name.upper()} CALL {call_id} ===")
+                    logger.info(f"Arguments: {call_data['arguments']}")
+                    
+                    # Route to appropriate handler
+                    try:
+                        if function_name == "add_phenotype":
+                            async for message in process_add_phenotype_call(call_data["arguments"]):
+                                yield message
+                        elif function_name == "update_phenotype":
+                            async for message in process_update_phenotype_call(call_data["arguments"]):
+                                yield message
+                        elif function_name == "delete_phenotype":
+                            async for message in process_delete_phenotype_call(call_data["arguments"]):
+                                yield message
+                        elif function_name == "lookup_documentation":
+                            logger.warning(f"⚠️ lookup_documentation called but this function is now handled proactively")
+                            yield f"data: {json.dumps({'type': 'info', 'message': 'Documentation is now loaded automatically - no need for manual lookup'})}\n\n"
+                        else:
+                            logger.error(f"Unknown function name: {function_name}")
+                            yield f"data: {json.dumps({'type': 'error', 'message': f'Unknown function: {function_name}'})}\n\n"
+                    except Exception as e:
+                        logger.error(f"Error executing {function_name}: {e}")
+                        yield f"data: {json.dumps({'type': 'error', 'message': f'Error in {function_name}: {str(e)}'})}\n\n"
+                    
+                    call_data["complete"] = True
+                    logger.info(f"=== COMPLETED {function_name.upper()} CALL {call_id} ===")
+            
+            logger.info(f"=== END FUNCTION CALL PROCESSING ===")
+            logger.info(f"📊 EXECUTION SUMMARY: Total executable calls: {len(executable_calls)}")
+            logger.info(f"📊 Documentation loaded proactively")
+            
+            # Show what content was generated
+            logger.info(f"📝 Content generated: {len(accumulated_content)} characters")
+            if accumulated_content:
+                logger.info(f"Content preview: {accumulated_content[:200]}...")
+            
+            # If no executable calls were found but we have accumulated content, send it to user
+            if not executable_calls and accumulated_content:
+                logger.info(f"No function calls executed. AI responded with text only.")
+                yield f"data: {json.dumps({'type': 'ai_response', 'message': accumulated_content})}\n\n"
+            elif not executable_calls and not accumulated_content:
+                logger.warning("No function calls executed AND no content received from AI!")
+                yield f"data: {json.dumps({'type': 'ai_response', 'message': 'No response received from AI.'})}\n\n"
+            elif not executable_calls:
+                logger.warning("No executable function calls found despite having function call data")
+            
+            # If we had both content and function calls, show a completion message
+            if executable_calls and accumulated_content:
+                yield f"data: {json.dumps({'type': 'ai_response', 'message': accumulated_content})}\n\n"
+            elif executable_calls and not accumulated_content:
+                yield f"data: {json.dumps({'type': 'ai_response', 'message': f'✅ Completed {len(executable_calls)} operation(s) successfully.'})}\n\n"
+            
+            # Catch incomplete workflow: if only lookup_documentation was called
+            if len(executable_calls) == 1 and executable_calls[0][1]["name"] == "lookup_documentation":
+                logger.warning("🚨 INCOMPLETE: AI only performed documentation lookup but didn't complete the actual task!")
+                yield f"data: {json.dumps({'type': 'error', 'message': '⚠️ The AI looked up documentation but failed to complete your request. This appears to be an AI reasoning error. Please try rephrasing your request or be more specific about what changes you want made.'})}\n\n"
 
-            # Yield any remaining trailing buffer
-            if not inside_json and trailing_buffer:
-                yield f"data: {json.dumps({'type': 'content', 'message': trailing_buffer})}\n\n"
-
-            # Process the JSON if we found it
-            if json_buffer:
-                try:
-                    parsed_json = json_buffer.replace("</JSON>", "")
-                    logger.info(f"Parsed JSON: {parsed_json}")
-                    new_phenotypes = json.loads(parsed_json)
-                    logger.info(
-                        f"Suggested cohort revision: {json.dumps(new_phenotypes, indent=4)}"
-                    )
-
-                    c = CohortUtils()
-                    new_cohort = c.convert_phenotypes_to_structure(
-                        c.update_cohort(current_cohort, new_phenotypes)
-                    )
-                    await db_manager.update_cohort_for_user(
-                        user_id,
-                        cohort_id,
-                        new_cohort,
-                        study_id,
-                        provisional=True,
-                        new_version=False,
-                    )
-                    if return_updated_cohort:
-                        yield f"data: {json.dumps({'type': 'result', 'data': new_cohort})}\n\n"
-                    logger.info(f"Updated cohort: {json.dumps(new_cohort, indent=4)}")
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON: {e}")
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to parse AI response JSON. Please try again.'})}\n\n"
-                except Exception as e:
-                    logger.error(f"Error processing cohort update: {e}")
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to update cohort. Please try again.'})}\n\n"
-            else:
-                logger.warning("No JSON found in AI response")
+            # Final processing complete
+            if return_updated_cohort:
+                updated_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
+                if updated_cohort:
+                    yield f"data: {json.dumps({'type': 'result', 'data': updated_cohort['cohort_data']})}\n\n"
 
         except Exception as e:
             logger.error(f"Error in stream_response: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': 'Streaming failed. Please try again.'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Streaming failed: {str(e)}'})}\n\n"
         
         # Send completion signal
         yield f"data: {json.dumps({'type': 'complete'})}\n\n"
@@ -983,9 +1618,11 @@ async def reject_changes(request: Request, cohort_id: str):
     """
     user_id = _get_authenticated_user_id(request)
     try:
+        logger.info(f"Rejecting changes for user {user_id}, cohort {cohort_id}")
         await db_manager.reject_changes(user_id, cohort_id)
 
         # Return the non-provisional cohort
+        logger.info(f"Fetching non-provisional cohort after rejection")
         cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)
         if not cohort:
             raise HTTPException(
@@ -1640,6 +2277,9 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
         column_mapping = codelist_file.get("column_mapping", {})
         codelist_data = codelist_file.get("codelist_data", codelist_file)
         
+        # Extract filename from the codelist data
+        file_name = codelist_data.get("filename") or codelist_data.get("name") or file_id
+        
         # Calculate codelists array from the data
         codelists_array = []
         codelist_column = column_mapping.get("codelist_column")
@@ -1650,11 +2290,11 @@ async def save_codelist_file_for_cohort(db_manager, cohort_id: str, file_id: str
                 # Get unique codelist names
                 codelists_array = list(set(data[codelist_column]))
         
-        logger.info(f"save_codelist_file_for_cohort: calculated {len(codelists_array)} unique codelists")
+        logger.info(f"save_codelist_file_for_cohort: calculated {len(codelists_array)} unique codelists for file {file_name}")
         
-        # Save codelist to database
+        # Save codelist to database with filename
         return await db_manager.save_codelist(
-            user_id, file_id, codelist_data, column_mapping, codelists_array, cohort_id
+            user_id, file_id, codelist_data, column_mapping, codelists_array, cohort_id, file_name
         )
     except Exception as e:
         logger.error(f"Failed to save codelist file {file_id} for cohort {cohort_id}: {e}")
@@ -1704,9 +2344,13 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
     # For execution time, create a sync wrapper around the async function
     import asyncio
     
-    file_id = phenexui_codelist.get("file_id", "Unknown")
+    # Handle both old format (top-level keys) and new format (nested in codelist object)
+    # New format: {"class_name": "Codelist", "codelist": {"file_id": "...", "file_name": "...", "codelist_name": "..."}, "codelist_type": "from file"}
+    # Old format: {"file_id": "...", "codelist_name": "...", "codelist_type": "from_file", ...}
+    codelist_obj = phenexui_codelist.get("codelist", {})
+    file_id = codelist_obj.get("file_id") or phenexui_codelist.get("codelist_id") or phenexui_codelist.get("file_id", "Unknown")
     cohort_id = phenexui_codelist.get("cohort_id", "Unknown")
-    codelist_name = phenexui_codelist.get("codelist_name", "Unknown")
+    codelist_name = codelist_obj.get("codelist_name") or phenexui_codelist.get("codelist_name", "Unknown")
     
     print(f"📄 INSIDE resolve_phenexui_codelist_file - Resolving codelist file '{file_id}' for codelist '{codelist_name}' in cohort '{cohort_id}' for user {user_id}")
     logger.info(f"📄 Resolving codelist file '{file_id}' for codelist '{codelist_name}' in cohort '{cohort_id}'")
@@ -1717,9 +2361,14 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
         
         print(f"📄 INSIDE _resolve_codelist_file - Fetching codelist file '{file_id}' for user '{user_id}'")
         logger.info(f"📄 Fetching codelist file '{file_id}' for user '{user_id}'")
-        # Get the codelist file
+        # Get the codelist file (handle both old and new formats)
+        codelist_obj = phenexui_codelist.get("codelist", {})
+        actual_file_id = codelist_obj.get("file_id") or phenexui_codelist.get("codelist_id") or phenexui_codelist.get("file_id")
+        actual_cohort_id = phenexui_codelist.get("cohort_id")
+        if not actual_file_id or not actual_cohort_id:
+            raise ValueError(f"Missing required file_id or cohort_id in codelist: {phenexui_codelist}")
         codelist_file = await get_codelist_file_for_cohort(
-            db_manager, phenexui_codelist["cohort_id"], phenexui_codelist["file_id"], user_id
+            db_manager, actual_cohort_id, actual_file_id, user_id
         )
         
         if codelist_file:
@@ -1750,9 +2399,11 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
         raise ValueError(f"Could not resolve codelist file {phenexui_codelist['file_id']} for execution")
 
     # variables phenexui codelist components (for ease of reading...)
-    code_column = phenexui_codelist["code_column"]
-    code_type_column = phenexui_codelist["code_type_column"]
-    codelist_column = phenexui_codelist["codelist_column"]
+    # Handle both old format (top-level) and new format (nested in codelist object)
+    codelist_obj = phenexui_codelist.get("codelist", {})
+    code_column = codelist_obj.get("code_column") or phenexui_codelist.get("code_column", "code")
+    code_type_column = codelist_obj.get("code_type_column") or phenexui_codelist.get("code_type_column", "code_type")
+    codelist_column = codelist_obj.get("codelist_column") or phenexui_codelist.get("codelist_column", "codelist")
     data = codelist_file["contents"]["data"]
     
     print(f"📄 INSIDE resolve_phenexui_codelist_file - File data structure - columns: {list(data.keys())}")
@@ -1854,7 +2505,7 @@ def prepare_codelist_for_phenex(phenexui_codelist, user_id):
         print(f"📋 INSIDE prepare_codelist_for_phenex - Manual codelist '{codelist_name}' has {codes_count} codes")
         logger.info(f"📋 Manual codelist '{codelist_name}' has {codes_count} codes")
         return phenexui_codelist
-    elif codelist_type == "from file":
+    elif codelist_type == "from file" or codelist_type == "from_file":
         print(f"📋 INSIDE prepare_codelist_for_phenex - Resolving file-based codelist '{codelist_name}' for user {user_id}")
         logger.info(f"📋 Resolving file-based codelist '{codelist_name}' for user {user_id}")
         resolved = resolve_phenexui_codelist_file(phenexui_codelist, user_id)

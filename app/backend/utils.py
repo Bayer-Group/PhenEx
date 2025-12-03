@@ -1,4 +1,119 @@
-from typing import Dict, List
+from typing import Dict, List, Any
+
+
+def transform_value_filter_for_ui(value_filter: Dict) -> Dict:
+    """
+    Transform PhenEx value_filter format to UI format.
+    PhenEx uses class names (GreaterThanOrEqual) while UI expects operator strings (>=).
+    
+    Args:
+        value_filter: ValueFilter dict from PhenEx
+        
+    Returns:
+        Transformed value_filter dict for UI
+    """
+    if not value_filter or not isinstance(value_filter, dict):
+        return value_filter
+    
+    # Mapping from PhenEx class names to UI operators
+    class_to_operator = {
+        'GreaterThan': '>',
+        'GreaterThanOrEqual': '>=',
+        'GreaterThanOrEqualTo': '>=',  # Alternative name
+        'LessThan': '<',
+        'LessThanOrEqual': '<=',
+        'LessThanOrEqualTo': '<=',  # Alternative name
+    }
+    
+    result = {
+        'class_name': 'ValueFilter',
+        'column_name': value_filter.get('column_name', '')
+    }
+    
+    # Transform min_value
+    if 'min_value' in value_filter and value_filter['min_value']:
+        min_val = value_filter['min_value']
+        if isinstance(min_val, dict):
+            operator_class = min_val.get('class_name', '')
+            result['min_value'] = {
+                'class_name': 'Value',
+                'operator': class_to_operator.get(operator_class, '>='),
+                'value': min_val.get('value')
+            }
+        else:
+            result['min_value'] = None
+    else:
+        result['min_value'] = None
+    
+    # Transform max_value  
+    if 'max_value' in value_filter and value_filter['max_value']:
+        max_val = value_filter['max_value']
+        if isinstance(max_val, dict):
+            operator_class = max_val.get('class_name', '')
+            result['max_value'] = {
+                'class_name': 'Value',
+                'operator': class_to_operator.get(operator_class, '<='),
+                'value': max_val.get('value')
+            }
+        else:
+            result['max_value'] = None
+    else:
+        result['max_value'] = None
+    
+    return result
+
+
+def transform_phenotype_for_ui(phenotype: Dict) -> Dict:
+    """
+    Transform a phenotype from PhenEx format to UI format.
+    Recursively transforms value_filter fields.
+    
+    Args:
+        phenotype: Phenotype dict from PhenEx
+        
+    Returns:
+        Transformed phenotype dict for UI
+    """
+    if not phenotype or not isinstance(phenotype, dict):
+        return phenotype
+    
+    result = phenotype.copy()
+    
+    # Transform value_filter if present
+    if 'value_filter' in result and result['value_filter']:
+        result['value_filter'] = transform_value_filter_for_ui(result['value_filter'])
+    
+    return result
+
+
+def transform_cohort_for_ui(cohort: Dict) -> Dict:
+    """
+    Transform entire cohort from PhenEx format to UI format.
+    
+    Args:
+        cohort: Cohort dict from PhenEx
+        
+    Returns:
+        Transformed cohort dict for UI
+    """
+    if not cohort or not isinstance(cohort, dict):
+        return cohort
+    
+    result = cohort.copy()
+    
+    # Transform phenotypes list
+    if 'phenotypes' in result and result['phenotypes']:
+        result['phenotypes'] = [transform_phenotype_for_ui(p) for p in result['phenotypes']]
+    
+    # Transform categorized phenotype lists
+    for category in ['entry_criterion', 'inclusions', 'exclusions', 'characteristics', 'outcomes']:
+        if category in result:
+            if category == 'entry_criterion' and result[category]:
+                result[category] = transform_phenotype_for_ui(result[category])
+            elif isinstance(result[category], list):
+                result[category] = [transform_phenotype_for_ui(p) for p in result[category]]
+    
+    return result
 
 
 class CohortUtils:

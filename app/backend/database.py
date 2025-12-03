@@ -27,7 +27,7 @@ def get_engine(config: "ConfigView"):
         _engine = create_engine(
             url=config["url"].get(str),
             future=True,
-            echo=config["echo"].get(confuse.Optional(bool, default=False)),
+            echo=False,
             pool_pre_ping=True,
         )
         _sm = sessionmaker(_engine)
@@ -772,14 +772,14 @@ class DatabaseManager:
             # Query to get the latest version of each codelist
             query = """
                 WITH latest_codelists AS (
-                    SELECT codelist_id, MAX(version) as max_version
+                    SELECT file_id, MAX(version) as max_version
                     FROM codelistfile 
                     WHERE user_id = $1
-                    GROUP BY codelist_id
+                    GROUP BY file_id
                 )
-                SELECT c.codelist_id, c.codelist_data->'filename' as filename, c.codelists, c.created_at, c.updated_at 
+                SELECT c.file_id, c.file_name, c.codelist_data->'filename' as filename, c.codelists, c.created_at, c.updated_at 
                 FROM codelistfile c
-                INNER JOIN latest_codelists lc ON c.codelist_id = lc.codelist_id AND c.version = lc.max_version
+                INNER JOIN latest_codelists lc ON c.file_id = lc.file_id AND c.version = lc.max_version
                 WHERE c.user_id = $1
                 ORDER BY c.updated_at DESC
             """
@@ -789,8 +789,8 @@ class DatabaseManager:
             codelists = []
             for row in rows:
                 codelists.append({
-                    "id": row["codelist_id"],
-                    "filename": row["filename"],
+                    "id": row["file_id"],
+                    "filename": row["file_name"] or row["filename"],
                     "codelists": row["codelists"],
                     "created_at": row["created_at"].isoformat() if row["created_at"] else None,
                     "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -823,7 +823,8 @@ class DatabaseManager:
 
             query = """
                 SELECT 
-                    codelist_id, 
+                    file_id, 
+                    file_name,
                     codelist_data->'filename' as filename, 
                     codelists, 
                     column_mapping,
@@ -844,8 +845,8 @@ class DatabaseManager:
                     column_mapping = json.loads(column_mapping)
                 
                 codelists.append({
-                    "id": row["codelist_id"],
-                    "filename": row["filename"],
+                    "id": row["file_id"],
+                    "filename": row["file_name"] or row["filename"],
                     "codelists": row["codelists"],
                     "code_column": column_mapping.get("code_column") if column_mapping else None,
                     "code_type_column": column_mapping.get("code_type_column") if column_mapping else None,
@@ -884,7 +885,7 @@ class DatabaseManager:
             query = """
                 SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
                 FROM codelistfile 
-                WHERE user_id = $1 AND codelist_id = $2
+                WHERE user_id = $1 AND file_id = $2
                 ORDER BY version DESC
                 LIMIT 1
             """
@@ -912,17 +913,18 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def save_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict, column_mapping: Dict, codelists: List[str], cohort_id: Optional[str] = None) -> bool:
+    async def save_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict, column_mapping: Dict, codelists: List[str], cohort_id: Optional[str] = None, file_name: Optional[str] = None) -> bool:
         """
         Save a codelist to the database. Creates a new version if it already exists.
 
         Args:
             user_id (str): The user ID (UUID).
-            codelist_id (str): The ID of the codelist.
+            codelist_id (str): The ID of the codelist (file_id).
             codelist_data (Dict): The codelist data.
             column_mapping (Dict): The column mapping.
             codelists (List[str]): List of codelist names contained in the file.
             cohort_id (Optional[str]): The ID of the associated cohort, if applicable.
+            file_name (Optional[str]): The name of the file. If not provided, will use first codelist name.
 
         Returns:
             bool: True if successful.
@@ -932,11 +934,15 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
+            # Determine file_name if not provided
+            if not file_name:
+                file_name = codelists[0] if codelists else 'unknown'
+
             # Get the current max version
             version_query = """
                 SELECT MAX(version) as max_version 
                 FROM codelistfile 
-                WHERE codelist_id = $1
+                WHERE file_id = $1
             """
 
             version_row = await conn.fetchrow(version_query, codelist_id)
@@ -946,16 +952,16 @@ class DatabaseManager:
             # Insert the new version
             if cohort_id:
                 insert_query = """
-                    INSERT INTO codelistfile (codelist_id, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                    INSERT INTO codelistfile (file_id, file_name, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
                 """
-                await conn.execute(insert_query, codelist_id, user_id, cohort_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+                await conn.execute(insert_query, codelist_id, file_name, user_id, cohort_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
             else:
                 insert_query = """
-                    INSERT INTO codelistfile (codelist_id, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                    INSERT INTO codelistfile (file_id, file_name, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                 """
-                await conn.execute(insert_query, codelist_id, user_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+                await conn.execute(insert_query, codelist_id, file_name, user_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
 
             logger.info(f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}")
             return True
@@ -989,7 +995,7 @@ class DatabaseManager:
             version_query = """
                 SELECT MAX(version) as max_version 
                 FROM codelistfile 
-                WHERE codelist_id = $1 AND user_id = $2
+                WHERE file_id = $1 AND user_id = $2
             """
 
             version_row = await conn.fetchrow(version_query, codelist_id, user_id)
@@ -1028,7 +1034,7 @@ class DatabaseManager:
             update_query = f"""
                 UPDATE codelistfile 
                 SET {", ".join(update_parts)}
-                WHERE user_id = $1 AND codelist_id = $2 AND version = $3
+                WHERE user_id = $1 AND file_id = $2 AND version = $3
             """
             
             result = await conn.execute(update_query, *params)
@@ -1063,7 +1069,7 @@ class DatabaseManager:
 
             query = """
                 DELETE FROM codelistfile 
-                WHERE user_id = $1 AND codelist_id = $2
+                WHERE user_id = $1 AND file_id = $2
             """
 
             result = await conn.execute(query, user_id, codelist_id)

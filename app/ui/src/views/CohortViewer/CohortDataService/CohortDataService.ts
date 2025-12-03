@@ -154,14 +154,13 @@ export class CohortDataService {
       // } 
       cohortResponse = cohortData.cohort_data;
 
-      console.log(cohortData, "THIS IS THE COHROT DATA");
       this._study_data = cohortData.study
-
-     console.log("THIS WAS THE DATA", cohortResponse);
-      console.log("ORIGINAL", cohortData)
-      console.log("JUST GOT DATA")
-
       this._cohort_data = cohortResponse;
+      
+      // Preserve is_provisional flag from top-level cohortData (only if explicitly true or false)
+      // Backend always returns this field, so we need to copy it
+      this._cohort_data.is_provisional = cohortData.is_provisional === true;
+      
       this.createEmptyCohortDefaultPhenotypes();
 
       // IMPORTANT: Ensure study_id is in _cohort_data for backend saves
@@ -1143,11 +1142,26 @@ export class CohortDataService {
     this.nameChangeListeners.forEach(listener => listener());
   }
 
-  public updateCohortFromChat(newCohort: any) {
-    this._cohort_data = newCohort;
-    console.log(this._cohort_data);
-    this.ensureEffectiveTypes(); // Ensure all phenotypes have effective_type
-
+  public updateCohortFromChat(response: any) {
+    // Response structure from backend:
+    // { cohort_data: {...}, is_provisional: true/false, version: number, ... }
+    
+    // If response has cohort_data nested, extract it but preserve is_provisional
+    if (response.cohort_data) {
+      this._cohort_data = response.cohort_data;
+      // Store the is_provisional flag at the top level of cohort_data for easy access
+      // Use explicit === true to ensure false is properly handled (not truthy check)
+      this._cohort_data.is_provisional = response.is_provisional === true;
+      this._cohort_data.version = response.version;
+    } else {
+      // Fallback for responses that are already in cohort_data format
+      this._cohort_data = response;
+      // Ensure is_provisional is explicitly boolean
+      if (this._cohort_data.is_provisional !== undefined) {
+        this._cohort_data.is_provisional = this._cohort_data.is_provisional === true;
+      }
+    }
+    
     this.sortPhenotypes();
     this.splitPhenotypesByType();
     // this._cohort_data.name = this._cohort_name;

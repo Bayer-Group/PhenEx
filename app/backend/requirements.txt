@@ -3,6 +3,7 @@ fastapi[standard]
 gunicorn
 uvicorn
 openai
+pydantic-ai[openai]
 deepdiff
 fastembed
 faiss-cpu
