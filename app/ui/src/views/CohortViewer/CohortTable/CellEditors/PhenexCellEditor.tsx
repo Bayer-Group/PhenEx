@@ -236,7 +236,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     
     // Composer Panel dimensions
     const composerWidth = 350;
-    const composerHeight = Math.min(600, viewport.height - 100); // Max height with padding
+    const composerMaxHeight = viewport.height - 100; // Max height with padding
     
     // Position Composer Panel independently for maximum visibility
     // Must account for actual current selection width (which may be larger than cell)
@@ -262,12 +262,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     // Position composer vertically - try to align with cell top, but adjust for visibility
     composerTop = cellRect.top;
     
-    // Ensure composer fits in viewport vertically
-    if (composerTop + composerHeight > viewport.height - 10) {
-      composerTop = Math.max(10, viewport.height - composerHeight - 10);
-    }
-    // Ensure composer doesn't go above viewport
-    composerTop = Math.max(10, composerTop);
+    // Ensure composer doesn't go above viewport or too close to bottom
+    composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150)); // Ensure minimum space at bottom
     
     return {
       currentSelection: {
@@ -280,7 +276,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         left: `${composerLeft}px`,
         top: `${composerTop}px`,
         width: `${composerWidth}px`,
-        height: `${composerHeight}px`,
+        maxHeight: `${composerMaxHeight}px`,
       },
       cell: {
         width: cellWidth,
@@ -600,7 +596,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           left: portalPosition.composer.left,
           top: portalPosition.composer.top,
           width: portalPosition.composer.width,
-          height: portalPosition.composer.height,
+          maxHeight: portalPosition.composer.maxHeight,
           zIndex: 9999,
         }}
         ref={containerRef}
