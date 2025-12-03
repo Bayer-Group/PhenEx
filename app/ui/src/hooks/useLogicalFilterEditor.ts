@@ -259,48 +259,50 @@ export function useLogicalFilterEditor<T>({
 
   /**
    * Add a new filter with specified logical operator
-   * 
-   * Logic:
-   * - If tree is null/undefined or a single empty filter: just create a single new empty filter
-   * - Otherwise: create a logical node combining existing tree with new empty filter
+   * Creates a new logical node at the root with current tree and new empty filter
    */
-  const handleAddFilter = useCallback((logicalOp: 'AND' | 'OR') => {
-    console.log('=== Add filter with operator:', logicalOp);
-    console.log('Current filterTree:', filterTree);
-    console.log('isLeafNode(filterTree):', isLeafNode(filterTree));
-    console.log('filterTree.status:', (filterTree as any)?.status);
-    
+  const handleAddFilter = useCallback((logicalOp: 'AND' | 'OR') => {    
     const newFilter = createNewItem();
     
     // Check if we're starting from nothing or from a single empty filter
     const isStartingEmpty = !filterTree || 
       (isLeafNode(filterTree) && (filterTree as any).status === 'empty');
     
-    console.log('isStartingEmpty:', isStartingEmpty);
     
     let newTree: LogicalFilterTree<T>;
+    let newItemIndex: number;
     
     if (isStartingEmpty) {
       // First item - just create a single filter, no logical operator yet
-      console.log('Creating single filter (first item)');
       newTree = newFilter;
+      newItemIndex = 0; // The only filter item
     } else {
       // Second or later item - create a logical node
-      console.log('Creating logical node (second+ item)');
       newTree = {
         class_name: logicalOp === 'AND' ? 'AndFilter' : 'OrFilter',
         filter1: filterTree,
         filter2: newFilter,
       } as LogicalAndFilter<T> | LogicalOrFilter<T>;
+      
+      // The new filter will be filter2, which appears after the operator
+      // Count existing filter items to get the new index
+      // After flattening: [existing filters...] [operator] [NEW filter]
+      // So count all current filter items
+      const countFilters = (node: LogicalFilterTree<T>): number => {
+        if (!node) return 0;
+        if (isLeafNode(node)) return 1;
+        const logical = node as LogicalAndFilter<T> | LogicalOrFilter<T>;
+        return countFilters(logical.filter1) + countFilters(logical.filter2);
+      };
+      newItemIndex = countFilters(filterTree); // New filter comes after all existing ones
     }
 
-    console.log('New tree:', newTree);
     setFilterTree(newTree);
     onValueChange?.(newTree);
     
-    // Don't auto-select - let user click on the item to edit
-    setSelectedItemIndex(null);
-    setEditingItem(null);
+    // Auto-select the newly added item so the composer panel opens
+    setSelectedItemIndex(newItemIndex);
+    setEditingItem(newFilter);
   }, [filterTree, createNewItem, onValueChange, isLeafNode]);
 
   /**
