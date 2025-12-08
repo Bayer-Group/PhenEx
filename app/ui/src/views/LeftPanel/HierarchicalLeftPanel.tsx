@@ -5,9 +5,9 @@ import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
 import { HierarchicalTreeNode } from './HierarchicalLeftPanelDataService';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
-import { MainViewService } from '../MainView/MainView';
+import { MainViewService, ViewType } from '../MainView/MainView';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -58,13 +58,17 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const isExpandCollapseAction = useRef(false);
   const isDragging = useRef(false);
   const navigate = useNavigate();
+  const { studyId, cohortId } = useParams();
+  const location = useLocation();
 
   const DOUBLE_CLICK_THRESHOLD = 300; // ms
 
   useEffect(() => {
     const updateTreeData = () => {
+      console.log('🎨 HierarchicalLeftPanel: Updating tree data in React state');
       const rawTreeData = dataService.current.getTreeData();
-      setTreeData(rawTreeData);
+      console.log('🎨 HierarchicalLeftPanel: Got tree data with', rawTreeData.length, 'root nodes');
+      setTreeData([...rawTreeData]); // Force new array reference to trigger re-render
     };
 
     updateTreeData();
@@ -73,10 +77,45 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     return () => dataService.current.removeListener(updateTreeData);
   }, []);
 
+  // Auto-expand and select based on URL
+  useEffect(() => {
+    if (!studyId) return;
+
+    // Always expand the study when viewing a study or cohort
+    const newExpandedItems = ['root', 'mystudies'];
+    if (!expandedItems.includes(studyId)) {
+      newExpandedItems.push(studyId);
+    } else {
+      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies'));
+    }
+    setExpandedItems(newExpandedItems);
+
+    // Select the current study or cohort
+    if (cohortId) {
+      setSelectedItems([cohortId]);
+      dataService.current.selectNode(cohortId);
+    } else {
+      setSelectedItems([studyId]);
+      dataService.current.selectNode(studyId);
+    }
+  }, [studyId, cohortId, location.pathname]);
+
   const items = useMemo(() => {
     const converted = convertToComplexTree(treeData);
     return converted;
   }, [treeData]);
+
+  const handleAddNewStudy = async () => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewStudy } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewStudy(navigate);
+  };
+
+  const handleAddNewCohortToStudy = async (studyId: string) => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewCohort } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewCohort(studyId, navigate);
+  };
 
   const handleItemClick = (itemId: TreeItemIndex, item: TreeItem<HierarchicalTreeNode>) => {
     const now = Date.now();
@@ -111,7 +150,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle special action items
     if (node.id === 'new-study-action') {
-      dataService.current.addNewStudy();
+      handleAddNewStudy();
       return;
     }
 
@@ -125,9 +164,22 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle selection
     dataService.current.selectNode(node.id);
+    
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -143,10 +195,21 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     // Handle selection in data service
     dataService.current.selectNode(node.id);
 
-    // Handle navigation
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -214,7 +277,12 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                       className={styles.nodeButton}
                       onClick={(e) => {
                         e.stopPropagation();
-                        node.buttonOnClick?.();
+                        // If it's a study node, handle adding cohort with navigation
+                        if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
+                          handleAddNewCohortToStudy(node.id);
+                        } else {
+                          node.buttonOnClick?.();
+                        }
                       }}
                       title={node.buttonTitle}
                       role="button"
@@ -223,7 +291,12 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          node.buttonOnClick?.();
+                          // If it's a study node, handle adding cohort with navigation
+                          if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
+                            handleAddNewCohortToStudy(node.id);
+                          } else {
+                            node.buttonOnClick?.();
+                          }
                         }
                       }}
                     >
@@ -325,7 +398,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                   
                   // Handle special action items
                   if (node.id === 'new-study-action') {
-                    dataService.current.addNewStudy();
+                    handleAddNewStudy();
                     return;
                   }
                   
@@ -337,11 +410,14 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                   
                   dataService.current.selectNode(node.id);
                   if (node.viewInfo) {
+                    console.log('🔍 Navigation - viewType:', node.viewInfo.viewType, 'data:', node.viewInfo.data);
                     // Check if we should navigate to a URL
                     if (node.viewInfo.data?.navigateTo) {
+                      console.log('✅ Navigating via navigateTo:', node.viewInfo.data.navigateTo);
                       navigate(node.viewInfo.data.navigateTo);
-                    } else if (node.viewInfo.viewType === 'studyViewer') {
+                    } else if (node.viewInfo.viewType === 'studyViewer' || node.viewInfo.viewType === ViewType.StudyViewer) {
                       // Navigate to study URL
+                      console.log('✅ Navigating to study:', `/studies/${node.viewInfo.data}`);
                       navigate(`/studies/${node.viewInfo.data}`);
                     } else if (node.viewInfo.viewType === 'sdef' || node.viewInfo.viewType === 'psdef') {
                       // Navigate to cohort URL - need to find study_id from cohort data

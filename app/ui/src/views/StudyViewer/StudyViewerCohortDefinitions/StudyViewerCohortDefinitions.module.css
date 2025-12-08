@@ -59,6 +59,71 @@
   font-weight: bold;
 }
 
+.cohortHeaderContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cohortHeaderTitle {
+  flex: 1;
+}
+
+.menuContainer {
+  position: relative;
+  margin-left: 8px;
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.menuButton:hover {
+  background: var(--hover-background, #f0f0f0);
+  color: var(--text-color);
+}
+
+.menuDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card-background, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 150px;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: var(--text-color);
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  border-radius: 6px;
+}
+
+.menuItem:hover {
+  background: var(--hover-background, #f0f0f0);
+  color: #d32f2f;
+}
+
 .tableContainer {
   width: 100%;
   height: fit-content;
@@ -73,4 +138,215 @@
   padding: 2rem;
   color: var(--text-color-secondary);
   font-style: italic;
+}
+
+.cohortsContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyStateWithCta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px 20px;
+  width: 100%;
+}
+
+.ctaContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  background: var(--card-background, #ffffff);
+  border: 2px dashed var(--border-color, #e0e0e0);
+  border-radius: 16px;
+  padding: 40px 32px;
+  transition: all 0.3s ease;
+}
+
+.ctaContent:hover {
+  border-color: var(--accent-color, #0066cc);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.ctaTitle {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 16px 0;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.ctaDescription {
+  font-size: 16px;
+  color: var(--text-color-secondary);
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+}
+
+.ctaButton {
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
+}
+
+.ctaButton:hover {
+  background: #0052a3;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.ctaButton:active {
+  transform: scale(0.98);
+}
+
+/* Alert Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(2px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.alertModal {
+  background: var(--card-background, #ffffff);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.2s ease;
+  text-align: center;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.alertIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.alertIcon svg {
+  width: 40px;
+  height: 40px;
+  stroke-width: 2.5;
+}
+
+.alertTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 16px 0;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.alertMessage {
+  font-size: 16px;
+  color: var(--text-color);
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.alertMessage strong {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.alertWarning {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+  margin: 0 0 32px 0;
+}
+
+.alertActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.alertCancelButton,
+.alertDeleteButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  min-width: 120px;
+}
+
+.alertCancelButton {
+  background: var(--background-color, #f5f5f5);
+  color: var(--text-color);
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.alertCancelButton:hover {
+  background: var(--border-color, #e0e0e0);
+}
+
+.alertDeleteButton {
+  background: #d32f2f;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.alertDeleteButton:hover {
+  background: #b71c1c;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+  transform: translateY(-1px);
+}
+
+.alertDeleteButton:active {
+  transform: translateY(0);
 }

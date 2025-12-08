@@ -70,13 +70,17 @@ export class CohortsDataService {
   public async getUserStudies(): Promise<StudyData[]> {
     if (this._userStudies === null) {
       try {
+        console.log('📚 CohortsDataService: Fetching fresh user studies from backend...');
         const studies = await getUserStudies();
+        console.log('📚 CohortsDataService: Received studies:', studies.map((s: any) => ({ id: s.id, name: s.name })));
         // Assign display_order if missing and sort
         this._userStudies = this.ensureDisplayOrder(studies);
       } catch (error) {
         console.warn('🚨 Failed to fetch user studies, likely auth not ready:', error);
         this._userStudies = [];
       }
+    } else {
+      console.log('📚 CohortsDataService: Using cached user studies:', this._userStudies.map((s: any) => ({ id: s.id, name: s.name })));
     }
     return this._userStudies || [];
   }
@@ -195,8 +199,10 @@ export class CohortsDataService {
     this.studyDataService = StudyDataService.getInstance();
     this.studyDataService.addNameChangeListener(() => {
       // When study name changes, refresh all cached data
+      console.log('🔔 CohortsDataService: Study name changed, invalidating cache...');
       this.invalidateCache();
       this.notifyListeners();
+      console.log('🔔 CohortsDataService: Cache invalidated and listeners notified');
     });
   }
 
@@ -212,9 +218,16 @@ export class CohortsDataService {
     Creates an in-memory study data structure with optimistic UI updates.
     The UI updates immediately while the database save happens in the background.
     */
+    // Generate study ID first
+    const studyId = createID();
+    
+    // Use study ID as the default name to ensure uniqueness
+    // User is forced to rename it to something meaningful
+    const defaultName = `Study ${studyId}`;
+    
     const newStudyData: StudyData = {
-      id: createID(),
-      name: 'New Study',
+      id: studyId,
+      name: defaultName,
       description: 'A new study',
       is_public: false,
       creator_id: '', // Will be set by backend
@@ -255,10 +268,6 @@ export class CohortsDataService {
     The UI updates immediately while the database save happens in the background.
     Returns a cohort in the same format as getCohortsForStudy() returns.
     */
-    console.log("🔍 createNewCohort called with study_data:", study_data);
-    console.log("🔍 study_data type:", typeof study_data);
-    console.log("🔍 study_data.id:", study_data?.id);
-    
     // Handle if study_data is just an ID string
     let studyId: string;
     let studyObject: any;
@@ -268,7 +277,6 @@ export class CohortsDataService {
       studyId = study_data;
       studyObject = this._userStudies?.find(s => s.id === studyId) || 
                     this._publicStudies?.find(s => s.id === studyId);
-      console.log("🔍 Converted string ID to study object:", studyObject);
     } else {
       // study_data is an object
       studyId = study_data.id;
@@ -276,16 +284,21 @@ export class CohortsDataService {
     }
     
     if (!studyId) {
-      console.error("❌ No study ID found!");
       throw new Error("Cannot create cohort without study ID");
     }
     
     const existingCohorts = studyObject?.cohorts || [];
     
+    // Generate cohort ID first
+    const cohortId = createID();
+    
+    // Use cohort ID as default name to force user to rename it
+    const defaultName = `Cohort ${cohortId}`;
+    
     // Create the actual cohort JSON representation (what CohortDataService expects)
     const cohortJson = {
-      id: createID(),
-      name: 'New Cohort',
+      id: cohortId,
+      name: defaultName,
       class_name: 'Cohort',
       study_id: studyId,           // IMPORTANT: Include study_id in cohort_data!
       phenotypes: [],
@@ -303,8 +316,6 @@ export class CohortsDataService {
       study: studyObject,          // For CohortDataService: cohortData.study
       cohort_data: cohortJson,     // For CohortDataService: cohortData.cohort_data
     };
-    
-    console.log("✅ Created newCohortData:", newCohortData);
 
     // Optimistically add to cache for immediate UI update
     const cachedCohorts = this._studyCohortsCache.get(studyId);
@@ -324,8 +335,6 @@ export class CohortsDataService {
       constants: cohortJson.constants,
       display_order: newCohortData.display_order,
     };
-    
-    console.log("💾 Sending to backend:", backendPayload);
 
     // Save to database in background - only send backend-compatible fields
     try {

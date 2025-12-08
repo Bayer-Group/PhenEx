@@ -1,7 +1,8 @@
 import { FC, useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
-import { getUserCohort, getPublicCohort } from '../../api/text_to_cohort/route';
+import { getUserCohort, getPublicCohort, getStudy } from '../../api/text_to_cohort/route';
 
 import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
@@ -13,7 +14,6 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { MainViewService, ViewType } from '../MainView/MainView';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -41,6 +41,7 @@ export enum CohortViewType {
 }
 
 export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
+  const navigate = useNavigate();
   const [cohortName, setCohortName] = useState('');
   const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
@@ -65,6 +66,17 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
             } catch (error) {
               cohortData = await getPublicCohort(data);
             }
+            
+            // Fetch the study data if study_id exists
+            if (cohortData.study_id) {
+              try {
+                const studyData = await getStudy(cohortData.study_id);
+                cohortData.study = studyData;
+              } catch (error) {
+                console.error('Failed to load study:', error);
+              }
+            }
+            
             dataService.loadCohortData(cohortData);
           } catch (error) {
             console.error('Failed to load cohort:', error);
@@ -282,11 +294,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     return (
         <CustomizableDropdownButton
           key={"new phenotype"}
-          label={"Add a new phenotype"}
+          label={"+ New Phenotype"}
           content={renderAddNewPhenotypeDropdown()}
           ref={customizableDropdownButtonRef}
-          buttonClassName={styles.addPhenotypeButtonLabel}
-          outline={true}
+          buttonClassName={styles.newPhenotypeButtonLabel}
+          outline={false}
         />
     );
   };
@@ -303,9 +315,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           classNameTabs = {styles.classNameSectionTabs}
           classNameTabsContainer={styles.classNameTabsContainer}
         />
-        <div className={styles.addPhenotypeButton}>
-          {renderAddNewPhenotypeButton()}
-        </div>
       </div>
     );
   };
@@ -325,8 +334,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   };
 
   const navigateToStudyViewer = () => {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({ viewType: ViewType.StudyViewer, data: dataService._study_data });
+    const studyId = dataService.cohort_data?.study_id;
+    if (studyId) {
+      navigate(`/studies/${studyId}`);
+    }
   };
 
   const renderBreadcrumbs = () => {
@@ -356,6 +367,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         {renderBreadcrumbs()}
         <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         {renderSectionTabs()}
+      </div>
+      <div className={styles.newPhenotypeButton}>
+        {renderAddNewPhenotypeButton()}
       </div>
       <div className={styles.bottomSection}>
         {renderTable()}

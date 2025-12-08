@@ -1,8 +1,8 @@
 import { FC, useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
-import { Button } from '@/components/ButtonsAndTabs/Button/Button';
 import { StudyDataService } from './StudyDataService';
 import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
 import { MainViewService, ViewType } from '../MainView/MainView';
@@ -25,6 +25,7 @@ interface StudyViewerProps {
 }
 
 export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
+  const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
   const [studyDataService] = useState(() => StudyDataService.getInstance());
@@ -143,7 +144,8 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   };
 
   const navigateToMyStudies = () => {
-    // Empty function - placeholder for future navigation to studies list
+    // Navigate back to studies page
+    window.location.href = '/studies';
   };
 
   const renderBreadcrumbs = () => {
@@ -168,39 +170,24 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   };
 
   const clickedOnAddNewCohort = async () => {
-    // Get the study ID from the data prop
-    const studyId = studyDataService.study_data?.id;
+    // Get the study ID from the data prop or the service
+    let studyId = studyDataService.study_data?.id;
+    if (!studyId && typeof data === 'string') {
+      studyId = data;
+    } else if (!studyId && data && typeof data === 'object') {
+      studyId = (data as any).id;
+    }
     
     if (!studyId) {
       console.error('No study ID found');
       return;
     }
 
-    // Create a new cohort for this study
-    const cohortsDataService = CohortsDataService.getInstance();
-    const newCohortData = await cohortsDataService.createNewCohort(studyDataService.study_data);
-    
-    if (newCohortData) {
-      // Navigate to the NewCohort view which will show the wizard
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({ 
-        viewType: ViewType.NewCohort, 
-        data: newCohortData 
-      });
-    }
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewCohort } = await import('../LeftPanel/studyNavigationHelpers');
+    await createAndNavigateToNewCohort(studyId, navigate);
   };
 
-
-  // FOR ADD NEW PHENOTYPE DROPDOWN
-  const renderAddNewPhenotypeButton = () => {
-    return (
-        <Button
-          key={"new cohort"}
-          title="+ New Cohort"
-          onClick={clickedOnAddNewCohort}
-        />
-    );
-  };
 
   const renderSectionTabs = () => {
     return (
@@ -213,9 +200,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
           active_tab_index={determineTabIndex()}
           classNameTabsContainer={styles.classNameTabsContainer}
         />
-        <div className={styles.addPhenotypeButton}>
-          {renderAddNewPhenotypeButton()}
-        </div>
       </div>
     );
   };
@@ -223,6 +207,9 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   const renderContent = () => {
     switch (currentView) {
       case StudyDefinitionViewType.Cohort:
+        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
+      case StudyDefinitionViewType.Baseline:
+      case StudyDefinitionViewType.Outcomes:
         return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
       default:
         return <div />;
@@ -235,6 +222,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
         {renderBreadcrumbs()}
         {renderSectionTabs()}
       </div>
+      <button 
+        className={styles.newCohortButton}
+        onClick={clickedOnAddNewCohort}
+      >
+        + New Cohort
+      </button>
       <div className={styles.bottomSection}>{renderContent()}</div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { HierarchicalLeftPanel } from '../LeftPanel/HierarchicalLeftPanel';
 import { RightPanel } from './RightPanel';
 import { CohortViewer } from '../CohortViewer/CohortViewer';
@@ -11,7 +11,7 @@ import { NewCohortWizard } from '../CohortViewer/NewCohortWizard';
 import { StudiesGridView } from './StudiesGridView/StudiesGridView';
 
 import styles from './MainView.module.css';
-import { StudyViewer } from '../StudyViewer/StudyViewer';
+import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -68,6 +68,7 @@ export class MainViewService {
 export const MainView = () => {
   const { studyId, cohortId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const [currentView, setCurrentView] = useState<ViewInfo>({
     viewType: ViewType.Empty,
@@ -77,6 +78,8 @@ export const MainView = () => {
   // Determine view based on URL
   useEffect(() => {
     const pathname = location.pathname;
+    const searchParams = new URLSearchParams(location.search);
+    const showOnboarding = searchParams.get('onboarding') === 'true';
     
     if (pathname === '/' || pathname === '') {
       setCurrentView({ viewType: ViewType.Empty, data: undefined });
@@ -85,13 +88,17 @@ export const MainView = () => {
       setCurrentView({ viewType: ViewType.StudiesGrid, data: undefined });
     } else if (cohortId && studyId) {
       // We have both study ID and cohort ID - show cohort view
-      // Pass cohort ID as the data
-      setCurrentView({ viewType: ViewType.CohortDefinition, data: cohortId });
+      // If onboarding=true query param is present, show the wizard
+      if (showOnboarding) {
+        setCurrentView({ viewType: ViewType.NewCohort, data: cohortId });
+      } else {
+        setCurrentView({ viewType: ViewType.CohortDefinition, data: cohortId });
+      }
     } else if (studyId) {
       // We have a study ID - show study view
       setCurrentView({ viewType: ViewType.StudyViewer, data: studyId });
     }
-  }, [location.pathname, studyId, cohortId]);
+  }, [location.pathname, location.search, studyId, cohortId]);
 
   // Also listen to MainViewService for programmatic navigation
   useEffect(() => {
@@ -113,7 +120,7 @@ export const MainView = () => {
       case ViewType.StudiesGrid:
         return <StudiesGridView />;
       case ViewType.StudyViewer:
-        return <StudyViewer data={currentView.data} />;
+        return <StudyViewerWrapper data={currentView.data} />;
       case ViewType.CohortDefinition:
         console.log("DISPLAYING COHORT IN MAINVIEW", currentView)
         return <TwoPanelCohortViewer data={currentView.data} />;
@@ -134,7 +141,7 @@ export const MainView = () => {
       case ViewType.NewStudy:
         return (
           <>
-            <StudyViewer data={currentView.data} />
+            <StudyViewerWrapper data={currentView.data} />
             <NewCohortWizard
               isVisible={true}
               onClose={closeNewCohortWizard}
@@ -150,10 +157,10 @@ export const MainView = () => {
 
   const closeNewCohortWizard = () => {
     console.log('Closing new cohort wizard');
-    setCurrentView({
-      viewType: ViewType.CohortDefinition,
-      data: currentView.data,
-    });
+    // Remove the onboarding query parameter
+    if (studyId && cohortId) {
+      navigate(`/studies/${studyId}/cohorts/${cohortId}`, { replace: true });
+    }
   };
 
   /*

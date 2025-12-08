@@ -171,8 +171,12 @@ export class CohortDataService {
       this.issues_service.validateCohort();
       this.ensureEffectiveTypes(); // Ensure all phenotypes have effective_type
       this.sortPhenotypes();
-      console.log("AFTER SORT", this._cohort_data)
-      this._cohort_name = this._cohort_data.name || 'Unnamed Cohort';
+      
+      // Ensure cohort always has a name - fix legacy cohorts with empty names
+      if (!this._cohort_data.name || this._cohort_data.name.trim() === '') {
+        this._cohort_data.name = `Cohort ${this._cohort_data.id}`;
+      }
+      this._cohort_name = this._cohort_data.name;
       if (!this._cohort_data.id) {
         this._cohort_data.id = createID();
       }

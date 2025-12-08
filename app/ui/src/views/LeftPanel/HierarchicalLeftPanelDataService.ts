@@ -68,6 +68,7 @@ export class HierarchicalLeftPanelDataService {
 
     this.dataService.addListener(() => {
       // When cohort data changes, refresh the cohort names and IDs
+      console.log('🔔 HierarchicalLeftPanelDataService: CohortsDataService changed, updating tree...');
       this.updateTreeData();
     });
 
@@ -129,7 +130,7 @@ export class HierarchicalLeftPanelDataService {
       collapsed: true, // Start collapsed - TreeListItem will manage its own state
       selected: isSelected,
       hasButton: !isPublic,
-      buttonTitle: 'Add Cohort',
+      buttonTitle: 'New',
       buttonOnClick: () => this.addNewCohortToStudy(study.id),
       hideButton: true, // Hide button by default, show on hover
     };
@@ -138,6 +139,7 @@ export class HierarchicalLeftPanelDataService {
   };
 
   public async updateTreeData() {
+    console.log('🔄 HierarchicalLeftPanelDataService: updateTreeData called');
 
     // Capture currently selected node ID before rebuilding
     const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
@@ -147,6 +149,7 @@ export class HierarchicalLeftPanelDataService {
       await this.dataService.loadUserWorkspace();
       this.cachedUserStudies = await this.dataService.getUserStudies();
       this.cachedPublicStudies = await this.dataService.getPublicStudies();
+      console.log('🔄 HierarchicalLeftPanelDataService: Fetched studies, user:', this.cachedUserStudies.length, 'public:', this.cachedPublicStudies.length);
     } catch (error) {
       console.warn('🚨 Failed to load workspace, likely auth not ready:', error);
       // Set empty arrays and return early if auth not ready
@@ -232,14 +235,16 @@ export class HierarchicalLeftPanelDataService {
 
     this.treeData = [];
     if (!getCurrentUser()?.isAnonymous) {
-      this.treeData.push(await createRootNode('mystudies', 'Studies'));
+      this.treeData.push(await createRootNode('mystudies', 'My Studies'));
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
 
+    console.log('🔄 HierarchicalLeftPanelDataService: Tree rebuilt, notifying', this.changeListeners.length, 'listeners');
     this.notifyListeners();
   }
 
   private notifyListeners() {
+    console.log('📢 HierarchicalLeftPanelDataService: Notifying listeners');
     this.changeListeners.forEach(listener => listener());
   }
 
@@ -255,7 +260,8 @@ export class HierarchicalLeftPanelDataService {
   }
 
   getTreeData(): HierarchicalTreeNode[] {
-    return this.treeData;
+    // Return a new array reference to ensure React detects changes
+    return [...this.treeData];
   }
 
   // Recursively deselect all nodes in the tree
@@ -333,7 +339,7 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async addNewStudy() {
-    // Don't await - let it happen in background
+    // Create a new study and navigate to it
     const newStudyPromise = this.dataService.createNewStudy();
     
     // Get the study data immediately (it's created synchronously)
@@ -343,8 +349,13 @@ export class HierarchicalLeftPanelDataService {
     // when dataService.notifyListeners() is called from createNewStudy
     
     if (newStudyData) {
-      console.log('CREATING NEW STUDY:', newStudyData);
-      this.addNewCohortToStudy(newStudyData);
+      console.log('✅ Created new study:', newStudyData);
+      // Navigate to the study viewer (don't create a cohort yet)
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({ 
+        viewType: ViewType.StudyViewer, 
+        data: newStudyData.id 
+      });
     }
 
     // Handle errors in background
@@ -353,7 +364,7 @@ export class HierarchicalLeftPanelDataService {
       // Tree will be updated by the revert in createNewStudy()
     });
 
-    return ViewType.CohortDefinition;
+    return ViewType.StudyViewer;
   }
 
   public async addNewCohortToStudy(study_data: any) {
