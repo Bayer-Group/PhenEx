@@ -1,6 +1,9 @@
 """
-AI-powered cohort modification endpoint using Pydantic AI.
-Clean, simple, and reliable approach.
+AI-powered cohort modification endpoints using Pydantic AI.
+
+This module provides AI-assisted cohort building capabilities, allowing users to
+modify cohort definitions through natural language requests. The AI agent can create,
+update, and delete phenotypes while maintaining cohort integrity.
 """
 
 from typing import Dict, List, Optional, Any, Union
@@ -2708,7 +2711,7 @@ from ...utils.auth import get_authenticated_user_id
 router = APIRouter(tags=["AI"])
 
 
-@router.post("/suggest_changes")
+@router.post("/suggest_changes", tags=["AI"])
 async def suggest_changes_v2(
     request: Request,
     req_body: SuggestChangesRequest = Body(...),
@@ -2717,18 +2720,71 @@ async def suggest_changes_v2(
     return_updated_cohort: bool = Query(False),
 ):
     """
-    AI-powered cohort modification endpoint with streaming feedback.
+    AI-powered cohort modification with streaming feedback.
 
-    This version uses Pydantic AI with real-time streaming to show users
-    what the AI is doing as it modifies their cohort.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to modify
+    - model (str, optional): AI model to use (default: "gpt-4o-mini")
+    - return_updated_cohort (bool, optional): If true, returns full cohort after modifications (default: false)
 
-    Args:
-        request: FastAPI request object
-        cohort_id: ID of the cohort to modify
-        req_body: Request body with user_request and conversation_history
-        database_config: Optional database configuration to get domain mappers from.
-                        If not provided, defaults to OMOP domains.
-        model: AI model to use (default: gpt-4o-mini)
+    Request Body:
+    - SuggestChangesRequest: Contains the user's natural language request and conversation context:
+        - user_request (str): Natural language instruction for cohort modifications
+        - conversation_history (list[dict], optional): Previous conversation messages for context
+        - cohort_description (str, optional): Overall study/cohort description to inform AI decisions
+
+    Authentication:
+    - Requires authenticated user. Modifies cohorts owned by the authenticated user.
+
+    Behavior:
+    - Processes natural language requests to modify cohort definitions
+    - Creates, updates, or deletes phenotypes based on user instructions
+    - Maintains provisional changes that can be accepted or rejected
+    - Streams real-time feedback showing AI reasoning and tool usage
+    - Supports conversation context for multi-turn interactions
+
+    Streaming Response:
+    - Server-Sent Events (SSE) stream with multiple message types:
+        - "content": AI's textual response and explanations
+        - "tool_call": AI is executing a specific operation
+        - "tool_result": Result of a tool execution
+        - "tool_error": Error during tool execution
+        - "complete": Stream has finished
+        - "result": Final cohort data (if return_updated_cohort=true)
+
+    Example Request Body:
+    ```json
+    {
+        "user_request": "Add an exclusion criterion for patients with cancer history",
+        "conversation_history": [
+            {"user": "Add diabetes as inclusion"},
+            {"system": "I've added diabetes as an inclusion criterion..."}
+        ],
+        "cohort_description": "Type 2 diabetes study with 1-year follow-up"
+    }
+    ```
+
+    Example SSE Stream:
+    ```
+    data: {"type": "content", "message": "I'll add a cancer exclusion criterion..."}
+    data: {"type": "tool_call", "message": "➕ Creating phenotype: Cancer History"}
+    data: {"type": "tool_result", "message": "✅ Created Cancer History"}
+    data: {"type": "content", "message": "Successfully added the exclusion."}
+    data: {"type": "complete", "message": "Operation completed"}
+    ```
+
+    Supported Operations:
+    - Create phenotypes (CodelistPhenotype, AgePhenotype, MeasurementPhenotype, etc.)
+    - Update phenotype properties (codelists, time ranges, value filters)
+    - Delete phenotypes
+    - Modify entry criterion, inclusions, exclusions, characteristics, outcomes
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If cohort is not found
+    - 400: If study_id is missing from cohort
+    - 503: If AI agent is not properly configured
+    - 500: If there's an error during AI processing or database operations
     """
     # Check if AI agent is properly configured
     if agent is None:
@@ -3069,13 +3125,44 @@ Please modify this cohort according to the user's instructions. Use the availabl
 @router.get("/accept_changes", tags=["AI"])
 async def accept_changes(request: Request, cohort_id: str):
     """
-    Accept changes made to a provisional cohort by setting is_provisional to False.
+    Accept and finalize provisional AI-generated changes to a cohort.
 
-    Args:
-        cohort_id (str): The ID of the cohort to finalize for the authenticated user.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort with provisional changes
+
+    Authentication:
+    - Requires authenticated user. Only finalizes changes for cohorts owned by the authenticated user.
+
+    Behavior:
+    - Marks provisional cohort changes as accepted
+    - Sets is_provisional flag to false, making changes permanent
+    - Deletes the non-provisional version, replacing it with the provisional version
+    - This operation cannot be undone (use /get_changes beforehand to review)
 
     Returns:
-        dict: The finalized cohort data.
+    - dict: Complete finalized cohort object containing:
+        - id (str): Cohort identifier
+        - name (str): Cohort name
+        - phenotypes (list): All phenotype definitions
+        - is_provisional (bool): false after acceptance
+        - All other cohort fields
+
+    Example Response:
+    ```json
+    {
+        "id": "cohort_123",
+        "name": "T2DM Study",
+        "phenotypes": [...],
+        "is_provisional": false,
+        "created_at": "2025-12-09T10:00:00Z",
+        "updated_at": "2025-12-09T11:30:00Z"
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If no provisional changes exist for the cohort
+    - 500: If there's an error finalizing the changes in the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -3099,13 +3186,49 @@ async def accept_changes(request: Request, cohort_id: str):
 @router.get("/reject_changes", tags=["AI"])
 async def reject_changes(request: Request, cohort_id: str):
     """
-    Reject changes made to a provisional cohort by deleting provisional versions.
+    Reject and discard provisional AI-generated changes to a cohort.
 
-    Args:
-        cohort_id (str): The ID of the cohort to discard provisional changes for authenticated user.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort with provisional changes
+
+    Authentication:
+    - Requires authenticated user. Only discards changes for cohorts owned by the authenticated user.
+
+    Behavior:
+    - Deletes all provisional cohort versions
+    - Restores the cohort to its last non-provisional state
+    - All AI-suggested changes since last acceptance are discarded
+    - This operation cannot be undone
 
     Returns:
-        dict: The non-provisional cohort data.
+    - dict: Complete non-provisional cohort object containing:
+        - id (str): Cohort identifier
+        - name (str): Cohort name
+        - phenotypes (list): All phenotype definitions (pre-AI changes)
+        - is_provisional (bool): false
+        - All other cohort fields
+
+    Example Response:
+    ```json
+    {
+        "id": "cohort_123",
+        "name": "T2DM Study",
+        "phenotypes": [...],
+        "is_provisional": false,
+        "created_at": "2025-12-09T10:00:00Z",
+        "updated_at": "2025-12-09T10:30:00Z"
+    }
+    ```
+
+    Use Case:
+    - User tried AI modifications but wants to revert to the previous version
+    - AI made incorrect changes that need to be discarded
+    - User wants to start over with a clean slate from last accepted state
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If cohort is not found after rejecting changes
+    - 500: If there's an error discarding changes in the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -3133,14 +3256,69 @@ async def reject_changes(request: Request, cohort_id: str):
 @router.get("/get_changes", tags=["AI"])
 async def get_changes(request: Request, cohort_id: str):
     """
-    Get differences between the provisional and non-provisional versions of a cohort.
-    Returns empty dict if there is no provisional cohort.
+    Get a detailed diff showing AI-generated changes awaiting review.
 
-    Args:
-        cohort_id (str): The ID of the cohort to compare for the authenticated user.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to compare
+
+    Authentication:
+    - Requires authenticated user. Only shows changes for cohorts owned by the authenticated user.
+
+    Behavior:
+    - Compares provisional (AI-modified) version with non-provisional (accepted) version
+    - Returns structured diff highlighting additions, deletions, and modifications
+    - Returns empty dict if no provisional changes exist
+    - Used to review AI changes before accepting or rejecting
 
     Returns:
-        dict: Dictionary of changes between provisional and non-provisional versions.
+    - dict: Change summary containing:
+        - added_phenotypes (list): Phenotypes added by AI
+        - deleted_phenotypes (list): Phenotypes removed by AI
+        - modified_phenotypes (list): Phenotypes changed by AI with before/after
+        - metadata_changes (dict): Changes to cohort-level properties
+        - Empty dict ({}) if no provisional version exists
+
+    Example Response (with changes):
+    ```json
+    {
+        "added_phenotypes": [
+            {
+                "id": "abc123",
+                "name": "Cancer Exclusion",
+                "type": "exclusion",
+                "class_name": "CodelistPhenotype"
+            }
+        ],
+        "deleted_phenotypes": [],
+        "modified_phenotypes": [
+            {
+                "id": "xyz789",
+                "name": "Age Range",
+                "changes": {
+                    "value_filter": {
+                        "before": {"min": 18, "max": 75},
+                        "after": {"min": 21, "max": 65}
+                    }
+                }
+            }
+        ],
+        "metadata_changes": {}
+    }
+    ```
+
+    Example Response (no changes):
+    ```json
+    {}
+    ```
+
+    Use Case:
+    - Review AI suggestions before accepting
+    - Audit what changed during AI interaction
+    - Verify AI understood instructions correctly
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error comparing cohort versions in the database
     """
     user_id = get_authenticated_user_id(request)
     try:

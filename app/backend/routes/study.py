@@ -1,5 +1,6 @@
 from typing import Dict
 from fastapi import APIRouter, Body, HTTPException, Request
+from pydantic import BaseModel
 import logging
 import os
 
@@ -14,13 +15,73 @@ from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
 
 
+# -- PYDANTIC MODELS --
+
+
+class StudyMetadata(BaseModel):
+    """Metadata for a study."""
+    
+    id: str
+    name: str
+    description: str = ""
+    is_public: bool = False
+    display_order: int = 0
+
+
+class StatusResponse(BaseModel):
+    """Standard status response."""
+    
+    status: str
+    message: str
+
+
+# -- STUDY API ENDPOINTS --
+
+
 @router.get("/studies/private", tags=["study"])
 async def get_all_studies_for_user(request: Request):
     """
-    Retrieve a list of all available studies for the authenticated user.
+    Get a list of all studies owned by the authenticated user.
+
+    Authentication:
+    - Requires authenticated user. Returns only studies owned by the authenticated user.
 
     Returns:
-        list: A list of study objects with id, name, and metadata.
+    - list[dict]: A list of study objects, each containing:
+        - id (str): Unique identifier for the study
+        - name (str): Name of the study
+        - description (str): Description of the study
+        - is_public (bool): Whether the study is publicly accessible
+        - display_order (int): Display order for UI sorting
+        - baseline_characteristics (dict): Baseline characteristics configuration
+        - outcomes (dict): Outcomes configuration
+        - analysis (dict): Analysis configuration
+        - visible_by (list[str]): List of user IDs with access
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    [
+        {
+            "id": "study_123",
+            "name": "Diabetes Study",
+            "description": "A study of type 2 diabetes patients",
+            "is_public": false,
+            "display_order": 0,
+            "baseline_characteristics": {},
+            "outcomes": {},
+            "analysis": {},
+            "visible_by": [],
+            "created_at": "2025-12-09T10:00:00Z",
+            "updated_at": "2025-12-09T10:00:00Z"
+        }
+    ]
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error retrieving studies from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -33,10 +94,46 @@ async def get_all_studies_for_user(request: Request):
 @router.get("/studies/public", tags=["study"])
 async def get_all_public_studies():
     """
-    Retrieve a list of all public studies (studies with is_public=True).
+    Get a list of all publicly accessible studies.
+
+    Authentication:
+    - No authentication required. Returns all studies with is_public=True.
 
     Returns:
-        list: A list of public study objects.
+    - list[dict]: A list of public study objects, each containing:
+        - id (str): Unique identifier for the study
+        - name (str): Name of the study
+        - description (str): Description of the study
+        - is_public (bool): Always true for this endpoint
+        - display_order (int): Display order for UI sorting
+        - baseline_characteristics (dict): Baseline characteristics configuration
+        - outcomes (dict): Outcomes configuration
+        - analysis (dict): Analysis configuration
+        - visible_by (list[str]): List of user IDs with access
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    [
+        {
+            "id": "study_public_1",
+            "name": "Public COVID-19 Study",
+            "description": "Publicly accessible COVID-19 research study",
+            "is_public": true,
+            "display_order": 0,
+            "baseline_characteristics": {},
+            "outcomes": {},
+            "analysis": {},
+            "visible_by": [],
+            "created_at": "2025-12-09T10:00:00Z",
+            "updated_at": "2025-12-09T10:00:00Z"
+        }
+    ]
+    ```
+
+    Raises:
+    - 500: If there's an error retrieving public studies from the database
     """
     try:
         # Get all studies where is_public=True, regardless of owner
@@ -54,13 +151,56 @@ async def get_all_public_studies():
 @router.get("/study", tags=["study"])
 async def get_study_for_user(request: Request, study_id: str):
     """
-    Retrieve a study by its ID for the authenticated user.
+    Get a specific study by ID for the authenticated user.
 
-    Args:
-        study_id (str): The ID of the study to retrieve.
+    Query Parameters:
+    - study_id (str): The unique identifier of the study to retrieve
+
+    Authentication:
+    - Requires authenticated user. Only returns studies owned by the authenticated user.
 
     Returns:
-        dict: The study data.
+    - dict: Complete study object containing:
+        - id (str): Unique identifier for the study
+        - name (str): Name of the study
+        - description (str): Description of the study
+        - is_public (bool): Whether the study is publicly accessible
+        - display_order (int): Display order for UI sorting
+        - baseline_characteristics (dict): Baseline characteristics configuration
+        - outcomes (dict): Outcomes configuration
+        - analysis (dict): Analysis configuration
+        - visible_by (list[str]): List of user IDs with access
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    {
+        "id": "study_123",
+        "name": "Diabetes Study",
+        "description": "A study of type 2 diabetes patients",
+        "is_public": false,
+        "display_order": 0,
+        "baseline_characteristics": {
+            "age": {"type": "continuous"},
+            "gender": {"type": "categorical"}
+        },
+        "outcomes": {
+            "mortality": {"type": "time_to_event"}
+        },
+        "analysis": {
+            "method": "cox_regression"
+        },
+        "visible_by": [],
+        "created_at": "2025-12-09T10:00:00Z",
+        "updated_at": "2025-12-09T10:00:00Z"
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If study is not found or user doesn't have access
+    - 500: If there's an error retrieving the study from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -84,13 +224,48 @@ async def get_study_for_user(request: Request, study_id: str):
 @router.get("/study/public", tags=["study"])
 async def get_public_study(study_id: str):
     """
-    Retrieve a public study by its ID.
+    Get a specific public study by ID.
 
-    Args:
-        study_id (str): The ID of the study to retrieve.
+    Query Parameters:
+    - study_id (str): The unique identifier of the public study to retrieve
+
+    Authentication:
+    - No authentication required. Only returns studies with is_public=True.
 
     Returns:
-        dict: The study data.
+    - dict: Complete public study object containing:
+        - id (str): Unique identifier for the study
+        - name (str): Name of the study
+        - description (str): Description of the study
+        - is_public (bool): Always true for this endpoint
+        - display_order (int): Display order for UI sorting
+        - baseline_characteristics (dict): Baseline characteristics configuration
+        - outcomes (dict): Outcomes configuration
+        - analysis (dict): Analysis configuration
+        - visible_by (list[str]): List of user IDs with access
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    {
+        "id": "study_public_1",
+        "name": "Public COVID-19 Study",
+        "description": "Publicly accessible COVID-19 research study",
+        "is_public": true,
+        "display_order": 0,
+        "baseline_characteristics": {},
+        "outcomes": {},
+        "analysis": {},
+        "visible_by": [],
+        "created_at": "2025-12-09T10:00:00Z",
+        "updated_at": "2025-12-09T10:00:00Z"
+    }
+    ```
+
+    Raises:
+    - 404: If public study is not found or study is not marked as public
+    - 500: If PUBLIC_USER_ID environment variable is not set or database error occurs
     """
     try:
         public_user_id = os.getenv("PUBLIC_USER_ID")
@@ -110,22 +285,64 @@ async def get_public_study(study_id: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve public study")
 
 
-@router.put("/study", tags=["study"])
+@router.put("/study", tags=["study"], response_model=Dict)
 async def create_or_update_study(
     request: Request,
     study: Dict = Body(...),
 ):
     """
-    Create or update a study for the authenticated user.
+    Create a new study or update an existing study (idempotent operation).
 
-    If study_id is provided in the body, updates the existing study.
-    If no study_id is provided, creates a new study.
+    Authentication:
+    - Requires authenticated user. Creates/updates studies for the authenticated user.
 
-    Args:
-        study (Dict): The complete JSON specification of the study.
+    Request Body:
+    - study (dict): The complete study data containing:
+        - id (str, optional): Unique identifier. If provided, updates existing study. If omitted, creates new study.
+        - name (str): Name of the study (required for new studies, defaults to "New Study")
+        - description (str, optional): Description of the study
+        - is_public (bool, optional): Whether the study should be publicly accessible (default: false)
+        - display_order (int, optional): Display order for UI sorting (default: 0)
+        - baseline_characteristics (dict, optional): Configuration for baseline characteristics
+        - outcomes (dict, optional): Configuration for outcomes
+        - analysis (dict, optional): Configuration for analysis methods
+        - visible_by (list[str], optional): List of user IDs with access
+
+    Example Request Body (Create):
+    ```json
+    {
+        "name": "New Diabetes Study",
+        "description": "Study of type 2 diabetes treatment outcomes",
+        "is_public": false,
+        "baseline_characteristics": {
+            "age": {"type": "continuous"},
+            "gender": {"type": "categorical"}
+        },
+        "outcomes": {
+            "mortality": {"type": "time_to_event"}
+        },
+        "analysis": {
+            "method": "cox_regression"
+        }
+    }
+    ```
+
+    Example Request Body (Update):
+    ```json
+    {
+        "id": "study_123",
+        "name": "Updated Study Name",
+        "description": "Updated description",
+        "is_public": true
+    }
+    ```
 
     Returns:
-        dict: The created/updated study data.
+    - dict: The created/updated study object with all fields
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error creating or updating the study in the database
     """
     user_id = get_authenticated_user_id(request)
     study_id = study.get("id")
@@ -156,16 +373,39 @@ async def create_or_update_study(
         raise HTTPException(status_code=500, detail="Failed to create/update study.")
 
 
-@router.delete("/study", tags=["study"])
+@router.delete("/study", tags=["study"], response_model=StatusResponse)
 async def delete_study_for_user(request: Request, study_id: str):
     """
-    Delete a study and all associated cohorts for the authenticated user.
+    Delete a study and all associated cohorts.
 
-    Args:
-        study_id (str): The ID of the study to delete.
+    Query Parameters:
+    - study_id (str): The unique identifier of the study to delete
+
+    Authentication:
+    - Requires authenticated user. Only allows deletion of studies owned by the authenticated user.
+
+    Behavior:
+    - Deletes the study with the specified ID
+    - Cascades deletion to all cohorts associated with the study
+    - This operation is permanent and cannot be undone
 
     Returns:
-        dict: Status and message of the operation.
+    - StatusResponse: Status object containing:
+        - status (str): "success" if deletion completed
+        - message (str): Confirmation message with study ID
+
+    Example Response:
+    ```json
+    {
+        "status": "success",
+        "message": "Study study_123 and all associated cohorts deleted successfully."
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If study is not found or user doesn't have access to delete it
+    - 500: If there's an error deleting the study from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -190,19 +430,42 @@ async def delete_study_for_user(request: Request, study_id: str):
         )
 
 
-@router.patch("/study/display_order", tags=["study"])
+@router.patch("/study/display_order", tags=["study"], response_model=StatusResponse)
 async def update_study_display_order(
     request: Request, study_id: str, display_order: int
 ):
     """
-    Update the display order of a study for the authenticated user.
+    Update the display order of a study.
 
-    Args:
-        study_id (str): The ID of the study to update.
-        display_order (int): The new display order value.
+    Query Parameters:
+    - study_id (str): The unique identifier of the study to update
+    - display_order (int): The new display order value for UI sorting
+
+    Authentication:
+    - Requires authenticated user. Only allows updating studies owned by the authenticated user.
+
+    Behavior:
+    - Updates only the display_order field, leaving all other study fields unchanged
+    - Display order is typically used for custom sorting in the UI
+    - Lower values typically appear first in sorted lists
 
     Returns:
-        dict: Status and message of the operation.
+    - StatusResponse: Status object containing:
+        - status (str): "success" if update completed
+        - message (str): Confirmation message
+
+    Example Response:
+    ```json
+    {
+        "status": "success",
+        "message": "Study display order updated successfully."
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If study is not found or user doesn't have access to update it
+    - 500: If there's an error updating the study in the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -231,13 +494,50 @@ async def update_study_display_order(
 @router.get("/study/cohorts", tags=["study"])
 async def get_cohorts_for_study(request: Request, study_id: str):
     """
-    Retrieve all cohorts associated with a specific study.
+    Get all cohorts associated with a specific study.
 
-    Args:
-        study_id (str): The ID of the study.
+    Query Parameters:
+    - study_id (str): The unique identifier of the study
+
+    Authentication:
+    - Requires authenticated user. Only returns cohorts from studies owned by the authenticated user.
 
     Returns:
-        list: A list of cohort objects associated with the study.
+    - list[dict]: A list of cohort objects, each containing:
+        - id (str): Unique identifier for the cohort
+        - name (str): Name of the cohort
+        - description (dict): Rich text description (Quill Delta format)
+        - study_id (str): ID of the parent study
+        - phenotypes (list): List of phenotype definitions
+        - entry_criterion (dict): Entry criterion definition
+        - inclusion_criteria (list): List of inclusion criteria
+        - exclusion_criteria (list): List of exclusion criteria
+        - display_order (int): Display order for UI sorting
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    [
+        {
+            "id": "cohort_456",
+            "name": "T2DM Cohort",
+            "description": {"ops": [{"insert": "Type 2 diabetes patients"}]},
+            "study_id": "study_123",
+            "phenotypes": [],
+            "entry_criterion": {},
+            "inclusion_criteria": [],
+            "exclusion_criteria": [],
+            "display_order": 0,
+            "created_at": "2025-12-09T10:00:00Z",
+            "updated_at": "2025-12-09T10:00:00Z"
+        }
+    ]
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error retrieving cohorts from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
