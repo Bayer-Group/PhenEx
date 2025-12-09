@@ -1,8 +1,35 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './SplashPage.module.css';
 import phenexLogo from '../../../assets/bird_icon.png';
+import { LoginModal } from '../../../components/Form';
+import { getCurrentUser } from '@/auth/userProviderBridge';
 
 export const SplashPage = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    setIsAnonymous(currentUser?.isAnonymous ?? true);
+  }, []);
+
+  const handleSignIn = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleExploreStudies = () => {
+    navigate('/studies');
+  };
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false);
+    setIsAnonymous(false);
+    // Navigate to studies page after login
+    navigate('/studies');
+  };
+
   return (
     <div className={styles.container}>
       <div className={`${styles.label} ${styles.topLeft}`}></div>
@@ -21,13 +48,39 @@ export const SplashPage = () => {
             datasets is <em>automatically generated</em>. Table1 and time to event analyses are also
             included.
           </p>
-          <p>
-            <em>To get started</em> with PhenEx, select a cohort from the left navigation area. Log
-            in or register if you want to create cohorts.
-          </p>
+        </div>
+
+        <div className={styles.ctaSection}>
+          <div className={styles.ctaButtons}>
+            {isAnonymous ? (
+              <>
+                <button className={styles.primaryCta} onClick={handleSignIn}>
+                  Sign In to Create Studies
+                </button>
+                <button className={styles.secondaryCta} onClick={handleExploreStudies}>
+                  Explore Public Studies
+                </button>
+              </>
+            ) : (
+              <>
+                <button className={styles.primaryCta} onClick={handleExploreStudies}>
+                  Start Creating Studies
+                </button>
+                <button className={styles.secondaryCta} onClick={handleExploreStudies}>
+                  Explore Public Studies
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <div className={`${styles.label} ${styles.bottomRight}`}></div>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 };

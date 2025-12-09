@@ -218,7 +218,7 @@
 .modalOverlay {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 300px; /* Offset for left panel */
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);

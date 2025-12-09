@@ -85,6 +85,13 @@ export class HierarchicalLeftPanelDataService {
     return HierarchicalLeftPanelDataService.instance;
   }
 
+  /**
+   * Check if a study is a public study (vs a user study)
+   */
+  public isPublicStudy(studyId: string): boolean {
+    return this.cachedPublicStudies.some(s => s.id === studyId);
+  }
+
   private createCohortNode = (
     cohort: CohortData,
     level: number,

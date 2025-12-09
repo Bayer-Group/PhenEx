@@ -27,6 +27,7 @@ interface StudyViewerProps {
 export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
+  const [isPublicStudy, setIsPublicStudy] = useState(false);
   const gridRef = useRef<any>(null);
   const [studyDataService] = useState(() => StudyDataService.getInstance());
   const [currentView, setCurrentView] = useState<StudyDefinitionViewType>(
@@ -55,6 +56,10 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
               // TODO: Add API call to fetch single study by ID if needed
               return;
             }
+            
+            // Check if this is a public study
+            const isPublic = publicStudies.some(s => s.id === data);
+            setIsPublicStudy(isPublic);
             
             // Fetch cohorts for this study
             const cohorts = await cohortsDataService.getCohortsForStudy(data);
@@ -151,7 +156,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
       {
-        displayName: 'My Studies',
+        displayName: isPublicStudy ? 'Public Studies' : 'My Studies',
         onClick: navigateToMyStudies,
       },
       {

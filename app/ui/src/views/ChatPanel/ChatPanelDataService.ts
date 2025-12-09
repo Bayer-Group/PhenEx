@@ -14,6 +14,7 @@ export interface Message {
   id: number;
   text: string;
   isUser: boolean;
+  isLoading?: boolean;
 }
 
 export interface ConversationEntry {
@@ -203,6 +204,7 @@ class ChatPanelDataService {
         id: ++this.lastMessageId,
         text: '',
         isUser: false,
+        isLoading: true,
       };
       this.messages.push(assistantMessage);
       this.notifyListeners();
@@ -287,6 +289,9 @@ class ChatPanelDataService {
 
       console.log('Finalizing assistant response');
       
+      // Mark as no longer loading
+      assistantMessage.isLoading = false;
+      
       // Add the complete assistant response to history
       if (assistantMessage.text.trim()) {
         this.addSystemResponseToHistory(assistantMessage.text.trim());
@@ -308,6 +313,12 @@ class ChatPanelDataService {
       console.log('AI request completed successfully');
     } catch (error) {
       console.error('Error in sendAIRequest:', error);
+      // Mark the last assistant message as no longer loading if it exists
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (lastMessage && !lastMessage.isUser && lastMessage.isLoading) {
+        lastMessage.isLoading = false;
+        this.notifyListeners();
+      }
       this.notifyAICompletionListeners(false);
     }
   }

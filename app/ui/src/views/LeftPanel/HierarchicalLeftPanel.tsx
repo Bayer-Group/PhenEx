@@ -81,12 +81,16 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   useEffect(() => {
     if (!studyId) return;
 
-    // Always expand the study when viewing a study or cohort
-    const newExpandedItems = ['root', 'mystudies'];
+    // Determine if this is a public study or user study
+    const isPublicStudy = dataService.current.isPublicStudy(studyId);
+    const rootSection = isPublicStudy ? 'publicstudies' : 'mystudies';
+
+    // Always expand the appropriate root section and the study
+    const newExpandedItems = ['root', rootSection];
     if (!expandedItems.includes(studyId)) {
       newExpandedItems.push(studyId);
     } else {
-      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies'));
+      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies' && id !== 'publicstudies'));
     }
     setExpandedItems(newExpandedItems);
 

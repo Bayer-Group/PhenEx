@@ -62,7 +62,7 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 export const createCohort = async (cohort_id: string, cohort_data: any, study_id: string) => {
   try {
     console.log('I AM CREATING THE COHORT', cohort_data);
-    const response = await api.post('/cohort', cohort_data, {
+    const response = await api.put('/cohort', cohort_data, {
       params: { cohort_id, study_id },
     });
     return response.data;
@@ -75,7 +75,7 @@ export const createCohort = async (cohort_id: string, cohort_data: any, study_id
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
     console.log('I AM UPDATING THE COHORT', cohort_data);
-    const response = await api.patch('/cohort', cohort_data, {
+    const response = await api.put('/cohort', cohort_data, {
       params: { cohort_id },
     });
     return response.data;
@@ -214,7 +214,7 @@ export const suggestChanges = async (
 
 export const getUserStudies = async () => {
   try {
-    const response = await api.get('/studies');
+    const response = await api.get('/studies/private');
     return response.data;
   } catch (error) {
     console.error('Error in getUserStudies:', error);
@@ -259,9 +259,8 @@ export const getPublicStudy = async (study_id: string) => {
 export const updateStudy = async (study_id: string, study_data: any) => {
   try {
     console.log('Updating study:', study_data);
-    const response = await api.post('/study', study_data, {
-      params: { study_id },
-    });
+    // Ensure study_id is in the body for updates
+    const response = await api.put('/study', { ...study_data, id: study_id });
     return response.data;
   } catch (error) {
     console.error('Error in updateStudy:', error);
@@ -296,7 +295,7 @@ export const getCohortsForStudy = async (study_id: string) => {
 export const createNewStudy = async (study_data: any) => {
   try {
     console.log('Creating new study:', study_data);
-    const response = await api.post('/study/new', study_data);
+    const response = await api.put('/study', study_data);
     return response.data;
   } catch (error) {
     console.error('Error in createNewStudy:', error);

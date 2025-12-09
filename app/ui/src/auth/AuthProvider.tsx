@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!email || !password) return { success: false, error: 'Email and password required' };
 
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       const authToken = (res.data as any)?.auth_token;
       if (!authToken) return { success: false, error: 'Token missing in response' };
 
@@ -236,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!email || !password) return { success: false, error: 'Email and password required' };
 
-      const res = await api.post('/register', { email, password, username });
+      const res = await api.post('/auth/register', { email, password, username });
       if (res.data?.status !== 'success') {
         return { success: false, error: res.data?.message || 'Registration failed' };
       }

@@ -64,7 +64,7 @@ class DatabaseManager:
         self.cohorts_table = os.getenv("COHORTS_TABLE", "cohort")
         self.cohorts_schema = os.getenv("COHORTS_SCHEMA", "public")
         self.full_table_name = f"{self.cohorts_schema}.{self.cohorts_table}"
-        
+
         # Studies table configuration
         self.studies_table = os.getenv("STUDIES_TABLE", "study")
         self.studies_schema = os.getenv("STUDIES_SCHEMA", "public")
@@ -208,7 +208,7 @@ class DatabaseManager:
                     if provisional_row["cohort_data"]
                     else {}
                 )
-                
+
                 cohort_data = {
                     "cohort_data": parsed_cohort_data,
                     "version": provisional_row["version"],
@@ -248,7 +248,7 @@ class DatabaseManager:
                 if non_provisional_row["cohort_data"]
                 else {}
             )
-            
+
             cohort_data = {
                 "cohort_data": parsed_cohort_data,
                 "version": non_provisional_row["version"],
@@ -788,13 +788,19 @@ class DatabaseManager:
 
             codelists = []
             for row in rows:
-                codelists.append({
-                    "id": row["file_id"],
-                    "filename": row["file_name"] or row["filename"],
-                    "codelists": row["codelists"],
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                })
+                codelists.append(
+                    {
+                        "id": row["file_id"],
+                        "filename": row["file_name"] or row["filename"],
+                        "codelists": row["codelists"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
 
             logger.info(f"Retrieved {len(codelists)} codelists for user {user_id}")
             return codelists
@@ -843,17 +849,35 @@ class DatabaseManager:
                 column_mapping = row["column_mapping"]
                 if isinstance(column_mapping, str):
                     column_mapping = json.loads(column_mapping)
-                
-                codelists.append({
-                    "id": row["file_id"],
-                    "filename": row["file_name"] or row["filename"],
-                    "codelists": row["codelists"],
-                    "code_column": column_mapping.get("code_column") if column_mapping else None,
-                    "code_type_column": column_mapping.get("code_type_column") if column_mapping else None,
-                    "codelist_column": column_mapping.get("codelist_column") if column_mapping else None,
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                })
+
+                codelists.append(
+                    {
+                        "id": row["file_id"],
+                        "filename": row["file_name"] or row["filename"],
+                        "codelists": row["codelists"],
+                        "code_column": (
+                            column_mapping.get("code_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "code_type_column": (
+                            column_mapping.get("code_type_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "codelist_column": (
+                            column_mapping.get("codelist_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
 
             logger.info(f"Retrieved {len(codelists)} codelists for cohort {cohort_id}")
             return codelists
@@ -900,20 +924,37 @@ class DatabaseManager:
                 "column_mapping": row["column_mapping"],
                 "codelists": row["codelists"],
                 "version": row["version"],
-                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+                "updated_at": (
+                    row["updated_at"].isoformat() if row["updated_at"] else None
+                ),
             }
 
             return codelist_data
 
         except Exception as e:
-            logger.error(f"Failed to retrieve codelist {codelist_id} for user {user_id}: {e}")
+            # Truncate error message to prevent log flooding with large data
+            error_msg = str(e)[:500]
+            logger.error(
+                f"Failed to retrieve codelist {codelist_id} for user {user_id}: {error_msg}"
+            )
             raise
         finally:
             if conn:
                 await conn.close()
 
-    async def save_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict, column_mapping: Dict, codelists: List[str], cohort_id: Optional[str] = None, file_name: Optional[str] = None) -> bool:
+    async def save_codelist(
+        self,
+        user_id: str,
+        codelist_id: str,
+        codelist_data: Dict,
+        column_mapping: Dict,
+        codelists: List[str],
+        cohort_id: Optional[str] = None,
+        file_name: Optional[str] = None,
+    ) -> bool:
         """
         Save a codelist to the database. Creates a new version if it already exists.
 
@@ -930,13 +971,15 @@ class DatabaseManager:
             bool: True if successful.
         """
         conn = None
-        logger.info(f"save_codelist: Getting to save codelist {codelist_id} for user {user_id}")
+        logger.info(
+            f"save_codelist: Getting to save codelist {codelist_id} for user {user_id}"
+        )
         try:
             conn = await self.get_connection()
 
             # Determine file_name if not provided
             if not file_name:
-                file_name = codelists[0] if codelists else 'unknown'
+                file_name = codelists[0] if codelists else "unknown"
 
             # Get the current max version
             version_query = """
@@ -946,7 +989,11 @@ class DatabaseManager:
             """
 
             version_row = await conn.fetchrow(version_query, codelist_id)
-            current_max_version = version_row["max_version"] if version_row and version_row["max_version"] else 0
+            current_max_version = (
+                version_row["max_version"]
+                if version_row and version_row["max_version"]
+                else 0
+            )
             target_version = current_max_version + 1
 
             # Insert the new version
@@ -955,25 +1002,57 @@ class DatabaseManager:
                     INSERT INTO codelistfile (file_id, file_name, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
                 """
-                await conn.execute(insert_query, codelist_id, file_name, user_id, cohort_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+                await conn.execute(
+                    insert_query,
+                    codelist_id,
+                    file_name,
+                    user_id,
+                    cohort_id,
+                    target_version,
+                    json.dumps(codelist_data),
+                    json.dumps(column_mapping),
+                    codelists,
+                )
             else:
                 insert_query = """
                     INSERT INTO codelistfile (file_id, file_name, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                 """
-                await conn.execute(insert_query, codelist_id, file_name, user_id, target_version, json.dumps(codelist_data), json.dumps(column_mapping), codelists)
+                await conn.execute(
+                    insert_query,
+                    codelist_id,
+                    file_name,
+                    user_id,
+                    target_version,
+                    json.dumps(codelist_data),
+                    json.dumps(column_mapping),
+                    codelists,
+                )
 
-            logger.info(f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}")
+            logger.info(
+                f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}"
+            )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to save codelist {codelist_id} for user {user_id}: {e}")
+            # Truncate error message to prevent log flooding with large data
+            error_msg = str(e)[:500]
+            logger.error(
+                f"Failed to save codelist {codelist_id} for user {user_id}: {error_msg}"
+            )
             raise
         finally:
             if conn:
                 await conn.close()
 
-    async def update_codelist(self, user_id: str, codelist_id: str, codelist_data: Dict = None, column_mapping: Dict = None, codelists: List[str] = None) -> bool:
+    async def update_codelist(
+        self,
+        user_id: str,
+        codelist_id: str,
+        codelist_data: Dict = None,
+        column_mapping: Dict = None,
+        codelists: List[str] = None,
+    ) -> bool:
         """
         Update an existing codelist without creating a new version.
 
@@ -999,54 +1078,58 @@ class DatabaseManager:
             """
 
             version_row = await conn.fetchrow(version_query, codelist_id, user_id)
-            
+
             if not version_row or not version_row["max_version"]:
                 return False  # Codelist doesn't exist
 
             current_version = version_row["max_version"]
-            
+
             # Prepare update query parts
             update_parts = []
             params = [user_id, codelist_id, current_version]
             param_idx = 4
-            
+
             if codelist_data is not None:
                 update_parts.append(f"codelist_data = ${param_idx}")
                 params.append(json.dumps(codelist_data))
                 param_idx += 1
-                
+
             if column_mapping is not None:
                 update_parts.append(f"column_mapping = ${param_idx}")
                 params.append(json.dumps(column_mapping))
                 param_idx += 1
-                
+
             if codelists is not None:
                 update_parts.append(f"codelists = ${param_idx}")
                 params.append(codelists)
                 param_idx += 1
-            
+
             update_parts.append("updated_at = NOW()")
-            
+
             if not update_parts:
                 return True  # Nothing to update
-            
+
             # Construct and execute the update query
             update_query = f"""
                 UPDATE codelistfile 
                 SET {", ".join(update_parts)}
                 WHERE user_id = $1 AND file_id = $2 AND version = $3
             """
-            
+
             result = await conn.execute(update_query, *params)
-            
+
             if result == "UPDATE 0":
                 return False  # No rows updated
-            
-            logger.info(f"Successfully updated codelist {codelist_id} for user {user_id}")
+
+            logger.info(
+                f"Successfully updated codelist {codelist_id} for user {user_id}"
+            )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to update codelist {codelist_id} for user {user_id}: {e}")
+            logger.error(
+                f"Failed to update codelist {codelist_id} for user {user_id}: {e}"
+            )
             raise
         finally:
             if conn:
@@ -1077,11 +1160,15 @@ class DatabaseManager:
             if result == "DELETE 0":
                 return False  # Codelist not found
 
-            logger.info(f"Successfully deleted codelist {codelist_id} for user {user_id}")
+            logger.info(
+                f"Successfully deleted codelist {codelist_id} for user {user_id}"
+            )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to delete codelist {codelist_id} for user {user_id}: {e}")
+            logger.error(
+                f"Failed to delete codelist {codelist_id} for user {user_id}: {e}"
+            )
             raise
         finally:
             if conn:
@@ -1118,17 +1205,23 @@ class DatabaseManager:
 
             studies = []
             for row in rows:
-                studies.append({
-                    "id": row["study_id"],
-                    "name": row["name"],
-                    "description": row["description"],
-                    "is_public": row["is_public"],
-                    "creator_id": row["creator_id"],
-                    "visible_by": row["visible_by"],
-                    "display_order": row["display_order"],
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                })
+                studies.append(
+                    {
+                        "id": row["study_id"],
+                        "name": row["name"],
+                        "description": row["description"],
+                        "is_public": row["is_public"],
+                        "creator_id": row["creator_id"],
+                        "visible_by": row["visible_by"],
+                        "display_order": row["display_order"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
 
             logger.info(f"Retrieved {len(studies)} studies for user {user_id}")
             return studies
@@ -1143,7 +1236,7 @@ class DatabaseManager:
     async def get_all_public_studies(self) -> List[Dict]:
         """
         Retrieve all public studies (is_public=True) from the database.
-        
+
         Returns:
             List[Dict]: A list of public study objects with id, name, and metadata.
         """
@@ -1164,17 +1257,23 @@ class DatabaseManager:
 
             studies = []
             for row in rows:
-                studies.append({
-                    "id": row["study_id"],
-                    "name": row["name"],
-                    "description": row["description"],
-                    "is_public": row["is_public"],
-                    "creator_id": row["creator_id"],
-                    "visible_by": row["visible_by"],
-                    "display_order": row["display_order"],
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                })
+                studies.append(
+                    {
+                        "id": row["study_id"],
+                        "name": row["name"],
+                        "description": row["description"],
+                        "is_public": row["is_public"],
+                        "creator_id": row["creator_id"],
+                        "visible_by": row["visible_by"],
+                        "display_order": row["display_order"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
 
             logger.info(f"Retrieved {len(studies)} public studies")
             return studies
@@ -1224,8 +1323,12 @@ class DatabaseManager:
                 "is_public": row["is_public"],
                 "creator_id": row["creator_id"],
                 "visible_by": row["visible_by"],
-                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+                "updated_at": (
+                    row["updated_at"].isoformat() if row["updated_at"] else None
+                ),
             }
 
             return study_data
@@ -1290,7 +1393,11 @@ class DatabaseManager:
                     user_id,
                     name,
                     description,
-                    json.dumps(baseline_characteristics) if baseline_characteristics else None,
+                    (
+                        json.dumps(baseline_characteristics)
+                        if baseline_characteristics
+                        else None
+                    ),
                     json.dumps(outcomes) if outcomes else None,
                     json.dumps(analysis) if analysis else None,
                     visible_by or [],
@@ -1298,7 +1405,9 @@ class DatabaseManager:
                 )
 
                 if result == "UPDATE 0":
-                    logger.error(f"User {user_id} is not authorized to update study {study_id}")
+                    logger.error(
+                        f"User {user_id} is not authorized to update study {study_id}"
+                    )
                     return False
 
                 logger.info(f"Successfully updated study {study_id} for user {user_id}")
@@ -1316,7 +1425,11 @@ class DatabaseManager:
                     user_id,
                     name,
                     description,
-                    json.dumps(baseline_characteristics) if baseline_characteristics else None,
+                    (
+                        json.dumps(baseline_characteristics)
+                        if baseline_characteristics
+                        else None
+                    ),
                     json.dumps(outcomes) if outcomes else None,
                     json.dumps(analysis) if analysis else None,
                     visible_by or [],
@@ -1372,9 +1485,7 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(
-                f"Failed to update display order for study {study_id}: {e}"
-            )
+            logger.error(f"Failed to update display order for study {study_id}: {e}")
             raise
         finally:
             if conn:
@@ -1413,10 +1524,14 @@ class DatabaseManager:
                 study_result = await conn.execute(delete_study_query, study_id, user_id)
 
                 if study_result == "DELETE 0":
-                    logger.error(f"User {user_id} is not authorized to delete study {study_id} or study not found")
+                    logger.error(
+                        f"User {user_id} is not authorized to delete study {study_id} or study not found"
+                    )
                     return False
 
-            logger.info(f"Successfully deleted study {study_id} and associated cohorts for user {user_id}")
+            logger.info(
+                f"Successfully deleted study {study_id} and associated cohorts for user {user_id}"
+            )
             return True
 
         except Exception as e:
@@ -1426,7 +1541,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_cohorts_for_study(self, study_id: str, user_id: str = None) -> List[Dict]:
+    async def get_cohorts_for_study(
+        self, study_id: str, user_id: str = None
+    ) -> List[Dict]:
         """
         Retrieve all cohorts associated with a specific study.
 
@@ -1476,20 +1593,31 @@ class DatabaseManager:
             rows = await conn.fetch(query, study_id)
 
             import json
+
             cohorts = []
             for row in rows:
-                cohorts.append({
-                    "id": row["cohort_id"],
-                    "name": row["name"] or f"Cohort {row['cohort_id']}",
-                    "version": row["version"],
-                    "is_provisional": row["is_provisional"],
-                    "parent_cohort_id": row["parent_cohort_id"],
-                    "display_order": row["display_order"],
-                    "study_id": study_id,
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                    "cohort_data": json.loads(row["cohort_data"]) if row["cohort_data"] else None
-                })
+                cohorts.append(
+                    {
+                        "id": row["cohort_id"],
+                        "name": row["name"] or f"Cohort {row['cohort_id']}",
+                        "version": row["version"],
+                        "is_provisional": row["is_provisional"],
+                        "parent_cohort_id": row["parent_cohort_id"],
+                        "display_order": row["display_order"],
+                        "study_id": study_id,
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                        "cohort_data": (
+                            json.loads(row["cohort_data"])
+                            if row["cohort_data"]
+                            else None
+                        ),
+                    }
+                )
 
             logger.info(f"Retrieved {len(cohorts)} cohorts for study {study_id}")
             return cohorts
@@ -1504,10 +1632,10 @@ class DatabaseManager:
     async def health_check(self) -> Dict:
         """
         Perform a health check by testing database connectivity and basic query.
-        
+
         Returns:
             Dict: Health status with connection details
-            
+
         Raises:
             Exception: If database is not accessible or query fails
         """
@@ -1515,42 +1643,46 @@ class DatabaseManager:
         try:
             # Test basic connection
             conn = await self.get_connection()
-            
+
             # Test a simple query to ensure database is responsive
-            result = await conn.fetchrow("SELECT 1 as test_value, NOW() as current_time")
-            
+            result = await conn.fetchrow(
+                "SELECT 1 as test_value, NOW() as current_time"
+            )
+
             # Check for all required tables
-            required_tables = ['user', 'cohort', 'study']
+            required_tables = ["user", "cohort", "study"]
             table_results = {}
             all_tables_exist = True
-            
+
             for table_name in required_tables:
                 # Determine the correct schema for each table
-                if table_name in ['cohort']:
+                if table_name in ["cohort"]:
                     schema = self.cohorts_schema
-                elif table_name in ['study']:
+                elif table_name in ["study"]:
                     schema = self.studies_schema
                 else:  # user table and others
-                    schema = 'public'  # user table is typically in public schema
-                
-                table_exists = await conn.fetchrow(f"""
+                    schema = "public"  # user table is typically in public schema
+
+                table_exists = await conn.fetchrow(
+                    f"""
                     SELECT EXISTS (
                         SELECT 1 FROM information_schema.tables 
                         WHERE table_schema = '{schema}' 
                         AND table_name = '{table_name}'
                     ) as exists
-                """)
-                
+                """
+                )
+
                 exists = table_exists["exists"]
                 table_results[table_name] = {
                     "exists": exists,
                     "schema": schema,
-                    "full_name": f"{schema}.{table_name}"
+                    "full_name": f"{schema}.{table_name}",
                 }
-                
+
                 if not exists:
                     all_tables_exist = False
-            
+
             return {
                 "status": "connected",
                 "test_query": result["test_value"] == 1,
@@ -1559,23 +1691,25 @@ class DatabaseManager:
                 "tables": table_results,
                 "schemas": {
                     "cohorts": self.cohorts_schema,
-                    "studies": self.studies_schema
-                }
+                    "studies": self.studies_schema,
+                },
             }
-            
+
         except Exception as e:
             error_msg = f"Database health check failed: {type(e).__name__}: {e}"
             logger.error(error_msg)
-            logger.error(f"Connection string (without password): postgresql://{os.getenv('POSTGRES_USER')}:***@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}")
+            logger.error(
+                f"Connection string (without password): postgresql://{os.getenv('POSTGRES_USER')}:***@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+            )
             return {
                 "status": "failed",
                 "error": str(e),
                 "error_type": type(e).__name__,
                 "schemas": {
                     "cohorts": self.cohorts_schema,
-                    "studies": self.studies_schema
+                    "studies": self.studies_schema,
                 },
-                "message": "Database connection or query failed"
+                "message": "Database connection or query failed",
             }
         finally:
             if conn:

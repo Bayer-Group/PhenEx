@@ -4,6 +4,7 @@ import styles from './StudiesGridView.module.css';
 import { CohortsDataService, StudyData } from '../../LeftPanel/CohortsDataService';
 import { getCurrentUser } from '@/auth/userProviderBridge';
 import { deleteStudy } from '@/api/text_to_cohort/route';
+import { LoginModal } from '../../../components/Form';
 
 export const StudiesGridView = () => {
   const [userStudies, setUserStudies] = useState<StudyData[]>([]);
@@ -12,6 +13,7 @@ export const StudiesGridView = () => {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmStudy, setDeleteConfirmStudy] = useState<StudyData | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const dataService = CohortsDataService.getInstance();
@@ -82,6 +84,42 @@ export const StudiesGridView = () => {
     } catch (error) {
       console.error('Failed to create study:', error);
     }
+  };
+
+  const handleSignIn = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false);
+    // Reload studies after successful login
+    // Add a small delay to allow auth state to propagate
+    setTimeout(async () => {
+      setLoading(true);
+      try {
+        const currentUser = getCurrentUser();
+        const isUserAnonymous = currentUser?.isAnonymous ?? true;
+        setIsAnonymous(isUserAnonymous);
+        
+        // Force fresh data by clearing cache
+        // @ts-ignore
+        dataService._userStudies = null;
+        // @ts-ignore
+        dataService._publicStudies = null;
+        
+        const [user, publicStuds] = await Promise.all([
+          dataService.getUserStudies(),
+          dataService.getPublicStudies()
+        ]);
+        
+        setUserStudies(user);
+        setPublicStudies(publicStuds);
+      } catch (error) {
+        console.error('Failed to reload studies after login:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 100);
   };
 
   const handleMenuClick = (e: React.MouseEvent, studyId: string) => {
@@ -202,8 +240,19 @@ export const StudiesGridView = () => {
           )}
         </div>
         {isAnonymous ? (
-          <div className={styles.signInPrompt}>
-            Sign in to see your studies
+          <div className={styles.emptyStateWithCta}>
+            <div className={styles.ctaContent}>
+              <h3 className={styles.ctaTitle}>Welcome to PhenEx!</h3>
+              <p className={styles.ctaDescription}>
+                Sign in to create and manage your own studies, save your work, and access your personal cohort definitions.
+              </p>
+              <button 
+                className={styles.ctaButton}
+                onClick={handleSignIn}
+              >
+                Sign In
+              </button>
+            </div>
           </div>
         ) : userStudies.length > 0 ? (
           <div className={styles.studiesGrid}>
@@ -265,6 +314,13 @@ export const StudiesGridView = () => {
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 };

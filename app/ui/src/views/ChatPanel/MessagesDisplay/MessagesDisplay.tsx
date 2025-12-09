@@ -152,12 +152,20 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({ bottomMargin =
               marginBottom: index === messages.length - 1 ? `${bottomMargin + 20}px` : undefined
             }}
           >
-            <div 
-              className={styles.markdownContent}
-              dangerouslySetInnerHTML={{ 
-                __html: convertMarkdownToHTML(message.text) 
-              }}
-            />
+            {message.isLoading && message.text === '' ? (
+              <div className={styles.loadingIndicator}>
+                <span className={styles.dot}></span>
+                <span className={styles.dot}></span>
+                <span className={styles.dot}></span>
+              </div>
+            ) : (
+              <div 
+                className={styles.markdownContent}
+                dangerouslySetInnerHTML={{ 
+                  __html: convertMarkdownToHTML(message.text) 
+                }}
+              />
+            )}
           </div>
         ))}
       </div>
