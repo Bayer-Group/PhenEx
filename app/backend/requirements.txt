@@ -2,7 +2,7 @@ phenex
 fastapi[standard]
 gunicorn
 uvicorn
-openai
+openai==1.52.0
 pydantic-ai[openai]
 deepdiff
 fastembed
