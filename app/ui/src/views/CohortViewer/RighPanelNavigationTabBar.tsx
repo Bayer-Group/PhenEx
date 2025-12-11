@@ -1,19 +1,15 @@
-import { FC, useState, useEffect, useRef } from 'react';
+import { FC, useState, useEffect } from 'react';
 import styles from './RighPanelNavigationTabBar.module.css';
 import { TabsWithDropdown } from '../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
-import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 
 import { CohortDataService } from './CohortDataService/CohortDataService';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ConstantsTable } from '../SlideoverPanels/ConstantsPanel/ConstantsTable';
-import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
+
 interface RighPanelNavigationTabBarProps {
   title: string;
   infoContent?: string;
   onSectionTabChange?: (index: number) => void;
 }
-
-import { CodelistsInfoDisplay } from '../SlideoverPanels/CodelistsViewer/CodelistsInfoDisplay/CodelistsInfoDisplay';
 
 enum InfoTabType {
   Info = 'Info',
@@ -25,11 +21,8 @@ enum InfoTabType {
   Report = 'Report',
 }
 
-export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
-  title,
-  infoContent,
-  onSectionTabChange,
-}) => {
+export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = () => {
+  // Note: props title, infoContent, and onSectionTabChange are currently unused
   const [dataService] = useState(() => CohortDataService.getInstance());
   const [isOpen, setIsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<InfoTabType>(InfoTabType.Info);
@@ -54,42 +47,41 @@ export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
 
   const showCodelists = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('codelists');
+    cohortViewer.displayExtraContent('codelists', null);
   };
 
   const showReport = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('report');
+    cohortViewer.displayExtraContent('report', null);
   };
 
   const showExecute = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('execute');
+    cohortViewer.displayExtraContent('execute', null);
   };
 
   const showDatabase = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('database');
+    cohortViewer.displayExtraContent('database', null);
   };
 
   const showConstants = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('constants');
+    cohortViewer.displayExtraContent('constants', null);
   };
 
   const showVisibility = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('visibility');
+    cohortViewer.displayExtraContent('visibility', null);
   };
 
   const showInfo = () => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    cohortViewer.displayExtraContent('info');
+    cohortViewer.displayExtraContent('info', null);
   };
 
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
-    const currentTabIndex = tabTypes.indexOf(currentTab);
     if (index == 0) {
       setIsOpen(false);
     }
@@ -119,10 +111,6 @@ export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
       //   setCurrentTab(tabTypes[index]);
       // }
     }
-  };
-
-  const executeCohort = async () => {
-    await dataService.executeCohort();
   };
 
   return (
