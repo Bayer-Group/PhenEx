@@ -1747,7 +1747,7 @@ async def atomic_update_codelist(
                 "codelist": {
                     "file_id": file_id_found,
                     "file_name": result.get(
-                        "codelists", "unknown_file"
+                        "file_name", "unknown_file"
                     ),  # Get filename from database
                     "codelist_name": found_codelist_name,  # Specific codelist name within the file
                     "code_column": column_mapping.get("code_column", "code"),
@@ -1764,7 +1764,7 @@ async def atomic_update_codelist(
             }
             print(f"✅ CREATED CODELIST REFERENCE:")
             print(f"   file_id: {file_id_found}")
-            print(f"   file_name: {result.get('codelists', 'unknown_file')}")
+            print(f"   file_name: {result.get('file_name', 'unknown_file')}")
             print(f"   codelist_name: {found_codelist_name}")
             print(f"   code_column: {column_mapping.get('code_column', 'code')}")
             print(
