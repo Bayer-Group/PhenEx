@@ -190,6 +190,18 @@ class ChatPanelDataService {
     }
     
     try {
+      // Create the loading indicator message BEFORE making the request
+      // so it appears immediately in the UI
+      const assistantMessage: Message = {
+        id: ++this.lastMessageId,
+        text: '',
+        isUser: false,
+        isLoading: true,
+      };
+      this.messages.push(assistantMessage);
+      this.notifyListeners();
+      console.log('Assistant message initialized:', assistantMessage);
+      
       const stream = await suggestChanges(
         cohortId,
         inputText.trim(),
@@ -200,15 +212,6 @@ class ChatPanelDataService {
       );
 
       console.log('Stream received from suggestChanges');
-      const assistantMessage: Message = {
-        id: ++this.lastMessageId,
-        text: '',
-        isUser: false,
-        isLoading: true,
-      };
-      this.messages.push(assistantMessage);
-      this.notifyListeners();
-      console.log('Assistant message initialized:', assistantMessage);
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
