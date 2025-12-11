@@ -107,7 +107,6 @@ export class CohortDataService {
   }
 
   public getStudyNameForCohort(): string {
-    console.log("GETTING STUYD NAME", this._cohort_data)
     return this._study_data?.name || 'Unknown Study';
   }
 
@@ -188,11 +187,7 @@ export class CohortDataService {
 
       this._table_data = this.tableDataFromCohortData();
       this.constants_service.refreshConstants();
-      console.log(this._table_data)
       this.notifyListeners(); // Notify listeners after loading data
-    // } catch (error) {
-    //   console.error('Error loading cohort data:', error);
-    // }
   }
 
   public setDatabaseSettings(databaseConfig: any) {
@@ -291,7 +286,6 @@ export class CohortDataService {
   }
 
   public onCellValueChanged(event: any, selectedRows?: any[]) {
-    console.log("ON CELL VALUE CHANGED", event, selectedRows)
     /*
     Update phenotype data with new value from grid editor
     */
@@ -300,8 +294,10 @@ export class CohortDataService {
     
     // Determine which rows to update
     const rowsToUpdate = this.determineRowsToUpdate(event, selectedRows);
-    console.log(`Updating field '${fieldEdited}' to '${newValue}' for ${rowsToUpdate.length} row(s):`, 
-                rowsToUpdate.map(r => ({ id: r.id, name: r.name })));
+    
+    if (rowsToUpdate.length > 1) {
+      console.log(`Updating ${rowsToUpdate.length} rows: field '${fieldEdited}' → '${newValue}'`);
+    }
     
     // Apply changes to all target rows
     const changedRows = this.applyFieldChangesToRows(fieldEdited, newValue, rowsToUpdate);
@@ -372,8 +368,11 @@ export class CohortDataService {
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
-    console.log("💾 SAVE CHANGES TO COHORT:", this._cohort_data);
-    console.log("💾 study_id present?", this._cohort_data.study_id);
+    
+    if (this._cohort_data.study_id) {
+      console.log(`Saving cohort '${this._cohort_name}' to backend...`);
+    }
+    
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     
@@ -515,7 +514,6 @@ export class CohortDataService {
     // Group 1: entry, inclusion, exclusion share indices
     const sharedGroup = ['entry', 'inclusion', 'exclusion'];
     let sharedIndex = 1;
-    console.log("CALCULATING HIERARCHICAL INDICES")
     
     sharedGroup.forEach(type => {
       const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
@@ -529,7 +527,6 @@ export class CohortDataService {
         sharedIndex++; // Increment for next phenotype in the shared group
       });
     });
-    console.log("AFTER CALCULATION", this._cohort_data)
     
     // Group 2: baseline has its own indexing
     const baselinePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'baseline');
@@ -712,9 +709,7 @@ export class CohortDataService {
 
   // Reorder component phenotypes within a specific parent
   public async updateComponentOrder(parentId: string, reorderedComponents: TableRow[]) {
-    console.log('=== updateComponentOrder START ===');
-    console.log('Parent ID:', parentId);
-    console.log('Reordered components:', reorderedComponents.map(r => ({ id: r.id, name: r.name })));
+    console.log(`Reordering ${reorderedComponents.length} components under parent: ${parentId}`);
 
     const allPhenotypes = [...this._cohort_data.phenotypes];
     const reorderedIds = new Set(reorderedComponents.map(c => c.id));
@@ -740,8 +735,6 @@ export class CohortDataService {
       }
     }
     
-    console.log('New order:', newOrder.map(p => ({ id: p.id, type: p.type, name: p.name })));
-    
     // Update cohort data
     this._cohort_data.phenotypes = newOrder;
     // No longer split phenotypes by type - backend expects phenotypes array only
@@ -760,24 +753,13 @@ export class CohortDataService {
     // Notify both data change listeners (for cross-service sync) and grid refresh listeners
     this.notifyDataChangeListeners();
     this.notifyListeners();
-    
-    console.log('=== updateComponentOrder END ===');
   }
 
   public async updateRowOrder(newRowData: TableRow[]) {
-    console.log('=== updateRowOrder START ===');
-    console.log(
-      'newRowData received:',
-      newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
-    );
-    console.log('Current filter:', this._currentFilter);
+    console.log(`Reordering ${newRowData.length} phenotypes...`);
 
     // Get all phenotypes (including those not currently visible due to filter)
     const allPhenotypes = [...this._cohort_data.phenotypes];
-    console.log(
-      'All phenotypes before reorder:',
-      allPhenotypes.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
-    );
 
     // Check if we're actually reordering component phenotypes
     // If all dragged items are components with the same parent, use hierarchical reordering
@@ -791,8 +773,6 @@ export class CohortDataService {
       // Use flat reordering to preserve drag order for non-component phenotypes
       await this.updateFlatRowOrder(newRowData, allPhenotypes);
     }
-
-    console.log('=== updateRowOrder END ===');
   }
 
   private async updateFlatRowOrder(newRowData: TableRow[], allPhenotypes: TableRow[]) {
@@ -804,11 +784,9 @@ export class CohortDataService {
       }
       reorderedVisibleByType[row.type].push(row);
     });
-    console.log('Reordered visible by type:', reorderedVisibleByType);
 
     // Create a map of visible phenotype IDs for quick lookup
     const visiblePhenotypeIds = new Set(newRowData.map(row => row.id));
-    console.log('Visible phenotype IDs:', Array.from(visiblePhenotypeIds));
 
     // Separate hidden phenotypes by type
     const hiddenPhenotypesByType: { [key: string]: TableRow[] } = {};
@@ -820,7 +798,6 @@ export class CohortDataService {
         hiddenPhenotypesByType[phenotype.type].push(phenotype);
       }
     });
-    console.log('Hidden phenotypes by type:', hiddenPhenotypesByType);
 
     // Rebuild the complete phenotypes array maintaining order within each type
     const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component', 'NA'];
@@ -832,10 +809,6 @@ export class CohortDataService {
       const hiddenOfType = hiddenPhenotypesByType[type] || [];
       const allOfType = [...visibleOfType, ...hiddenOfType];
 
-      console.log(
-        `Type ${type}: visible=${visibleOfType.length}, hidden=${hiddenOfType.length}, total=${allOfType.length}`
-      );
-
       // Update indices within each type
       allOfType.forEach((phenotype, index) => {
         phenotype.index = index + 1;
@@ -844,14 +817,8 @@ export class CohortDataService {
       newCompleteOrder = newCompleteOrder.concat(allOfType);
     }
 
-    console.log(
-      'New complete order:',
-      newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index }))
-    );
-
     // Update the cohort data with the complete new order
     this._cohort_data.phenotypes = newCompleteOrder;
-    console.log('Updated _cohort_data.phenotypes length:', this._cohort_data.phenotypes.length);
 
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
     // No longer split phenotypes by type - backend expects phenotypes array only
@@ -862,11 +829,6 @@ export class CohortDataService {
     
     // Update table data AFTER calculating hierarchical indices so they're reflected in the grid
     this._table_data = this.tableDataFromCohortData();
-    console.log('Updated _table_data rows length:', this._table_data.rows.length);
-    console.log(
-      'Table data rows:',
-      this._table_data.rows.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index, hierarchical_index: r.hierarchical_index }))
-    );
     
     await updateCohort(this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
@@ -878,7 +840,6 @@ export class CohortDataService {
   }
 
   private async updateHierarchicalRowOrder(newRowData: TableRow[], allPhenotypes: TableRow[]) {
-    console.log('=== Hierarchical reordering ===');
     
     // Create a map of all phenotypes for quick lookup
     const visibleIds = new Set(newRowData.map(r => r.id));
@@ -936,11 +897,6 @@ export class CohortDataService {
       p.type === 'component' && !addedIds.has(p.id)
     );
     newCompleteOrder.push(...orphanedComponents);
-    
-    console.log(
-      'New hierarchical order:',
-      newCompleteOrder.map(p => ({ id: p.id, type: p.type, name: p.name, index: p.index, level: p.level }))
-    );
     
     // Update the cohort data
     this._cohort_data.phenotypes = newCompleteOrder;
@@ -1202,7 +1158,6 @@ export class CohortDataService {
   public updateColumns(newColumns: ColumnDefinition[]): void {
     this.columns = newColumns;
     this._table_data = this.tableDataFromCohortData();
-    console.log(this._table_data);
     this.notifyListeners();
   }
 

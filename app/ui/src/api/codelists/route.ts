@@ -17,7 +17,7 @@ export const getCodelistsForCohort = async (cohort_id: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error in getCodelistsForCohort:', error);
+    console.error('Failed to fetch codelists:', error);
     throw error;
   }
 };
@@ -40,7 +40,7 @@ export const getCodelist = async (cohort_id: string, file_id: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error in getCodelist:', error);
+    console.error('Failed to fetch codelist:', error);
     throw error;
   }
 };
@@ -64,18 +64,15 @@ export const getCodelist = async (cohort_id: string, file_id: string) => {
  */
 export const saveCodelist = async (cohort_id: string, file: any) => {
   try {
-    console.log("SAVING CODELIST", cohort_id, file);
+    console.log(`Saving codelist '${file.filename}' to cohort ${cohort_id}`);
     const response = await api.put(
       `/codelist?cohort_id=${encodeURIComponent(cohort_id)}`, 
       file
     );
-    console.log("SAVED CODELIST", response);
+    console.log(`Codelist '${file.filename}' saved successfully`);
     return response.data;
   } catch (error) {
-    console.error('Error in saveCodelist:', error);
-    if (error.response) {
-      console.error('Error details:', error.response.data);
-    }
+    console.error('Failed to save codelist:', error);
     throw error;
   }
 };
@@ -97,7 +94,7 @@ export const deleteCodelist = async (cohort_id: string, file_id: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error in deleteCodelist:', error);
+    console.error('Failed to delete codelist:', error);
     throw error;
   }
 };
@@ -125,18 +122,15 @@ export const updateCodelistColumnMapping = async (file_id: string, column_mappin
   codelist_column: string;
 }) => {
   try {
-    console.log("UPDATING COLUMN MAPPING", file_id, column_mapping);
+    console.log(`Updating column mapping for codelist ${file_id}:`, column_mapping);
     const response = await api.patch(
       `/codelist/column_mapping?file_id=${encodeURIComponent(file_id)}`,
       column_mapping
     );
-    console.log("UPDATED COLUMN MAPPING", response);
+    console.log('Column mapping updated successfully');
     return response.data;
   } catch (error: any) {
-    console.error('Error in updateCodelistColumnMapping:', error);
-    if (error.response) {
-      console.error('Error details:', error.response.data);
-    }
+    console.error('Failed to update codelist column mapping:', error);
     throw error;
   }
 };

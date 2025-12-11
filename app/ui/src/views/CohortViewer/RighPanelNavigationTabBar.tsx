@@ -53,43 +53,36 @@ export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
   const tabs = Object.values(InfoTabType).map(value => value.charAt(0) + value.slice(1));
 
   const showCodelists = () => {
-    console.log('SH?OWING CODELISTS');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('codelists');
   };
 
   const showReport = () => {
-    console.log('SH?OWING CODELISTS');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('report');
   };
 
   const showExecute = () => {
-    console.log('SH?OWING Execute');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('execute');
   };
 
   const showDatabase = () => {
-    console.log('showing database');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('database');
   };
 
   const showConstants = () => {
-    console.log('showing constants');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('constants');
   };
 
   const showVisibility = () => {
-    console.log('showing constants');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('visibility');
   };
 
   const showInfo = () => {
-    console.log('showing constants');
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
     cohortViewer.displayExtraContent('info');
   };
@@ -97,7 +90,6 @@ export const RighPanelNavigationTabBar: FC<RighPanelNavigationTabBarProps> = ({
   const onTabChange = (index: number) => {
     const tabTypes = Object.values(InfoTabType);
     const currentTabIndex = tabTypes.indexOf(currentTab);
-    console.log('ON TAB CHANGE', index, currentTabIndex);
     if (index == 0) {
       setIsOpen(false);
     }
