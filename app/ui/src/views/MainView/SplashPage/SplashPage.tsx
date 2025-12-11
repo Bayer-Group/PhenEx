@@ -1,19 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './SplashPage.module.css';
 import phenexLogo from '../../../assets/bird_icon.png';
 import { LoginModal } from '../../../components/Form';
-import { getCurrentUser } from '@/auth/userProviderBridge';
+import { AuthContext } from '@/auth/AuthProvider';
 
 export const SplashPage = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    setIsAnonymous(currentUser?.isAnonymous ?? true);
-  }, []);
+  const { user } = useContext(AuthContext);
+  
+  const isAnonymous = user?.isAnonymous ?? true;
 
   const handleSignIn = () => {
     setIsLoginModalOpen(true);
@@ -25,7 +22,6 @@ export const SplashPage = () => {
 
   const handleLoginSuccess = () => {
     setIsLoginModalOpen(false);
-    setIsAnonymous(false);
     // Navigate to studies page after login
     navigate('/studies');
   };

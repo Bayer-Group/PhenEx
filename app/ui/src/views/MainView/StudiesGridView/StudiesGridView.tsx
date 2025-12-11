@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudiesGridView.module.css';
 import { CohortsDataService, StudyData } from '../../LeftPanel/CohortsDataService';
-import { getCurrentUser } from '@/auth/userProviderBridge';
+import { AuthContext } from '@/auth/AuthProvider';
 import { deleteStudy } from '@/api/text_to_cohort/route';
 import { LoginModal } from '../../../components/Form';
 
@@ -10,22 +10,20 @@ export const StudiesGridView = () => {
   const [userStudies, setUserStudies] = useState<StudyData[]>([]);
   const [publicStudies, setPublicStudies] = useState<StudyData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAnonymous, setIsAnonymous] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmStudy, setDeleteConfirmStudy] = useState<StudyData | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const dataService = CohortsDataService.getInstance();
+
+  const isAnonymous = user?.isAnonymous ?? true;
 
   useEffect(() => {
     const loadStudies = async () => {
       setLoading(true);
       try {
-        // Check if user is signed in
-        const currentUser = getCurrentUser();
-        const isUserAnonymous = currentUser?.isAnonymous ?? true;
-        setIsAnonymous(isUserAnonymous);
 
         // Force fresh data by clearing cache in the data service
         // @ts-ignore - accessing private properties to force refresh
@@ -56,7 +54,7 @@ export const StudiesGridView = () => {
     dataService.addListener(listener);
 
     return () => dataService.removeListener(listener);
-  }, []);
+  }, [user]); // Re-load studies when user changes
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -92,34 +90,7 @@ export const StudiesGridView = () => {
 
   const handleLoginSuccess = () => {
     setIsLoginModalOpen(false);
-    // Reload studies after successful login
-    // Add a small delay to allow auth state to propagate
-    setTimeout(async () => {
-      setLoading(true);
-      try {
-        const currentUser = getCurrentUser();
-        const isUserAnonymous = currentUser?.isAnonymous ?? true;
-        setIsAnonymous(isUserAnonymous);
-        
-        // Force fresh data by clearing cache
-        // @ts-ignore
-        dataService._userStudies = null;
-        // @ts-ignore
-        dataService._publicStudies = null;
-        
-        const [user, publicStuds] = await Promise.all([
-          dataService.getUserStudies(),
-          dataService.getPublicStudies()
-        ]);
-        
-        setUserStudies(user);
-        setPublicStudies(publicStuds);
-      } catch (error) {
-        console.error('Failed to reload studies after login:', error);
-      } finally {
-        setLoading(false);
-      }
-    }, 100);
+    // The useEffect hook will automatically reload studies when the user context changes
   };
 
   const handleMenuClick = (e: React.MouseEvent, studyId: string) => {
