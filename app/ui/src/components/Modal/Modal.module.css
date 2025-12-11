@@ -3,8 +3,8 @@
 .overlay {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 100vw;
+  left: 300px; /* Offset for left panel */
+  width: calc(100vw - 300px); /* Adjust width to account for left panel */
   height: 100vh;
   z-index: 9999;
   opacity: 0;

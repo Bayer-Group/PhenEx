@@ -4,6 +4,7 @@ import io
 import base64
 import os
 import json
+import re
 from typing import Optional, Dict, Any, Union
 from datetime import datetime, date
 from pathlib import Path
@@ -22,7 +23,6 @@ try:
     from docx import Document
     from docx.shared import Inches
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.oxml.shared import OxmlElement, qn
 
     DOCX_AVAILABLE = True
 except ImportError:
@@ -44,32 +44,159 @@ except ImportError:
 
 class ReportDrafter(Reporter):
     """
-    The ReportDrafter creates comprehensive final study reports including:
+    The ReportDrafter creates comprehensive draft study reports including:
     - Cohort definition description (entry, inclusion, exclusion criteria)
     - Data analysis description and date ranges
     - Waterfall table showing patient attrition
     - Study variables (characteristics and outcomes)
     - Table 1 (baseline characteristics)
     - Table 2 (outcomes analysis)
-    - AI-generated descriptive text and figure captions (when OpenAI is available)
+    - AI-generated descriptive text and figure captions (when AI is enabled)
 
-    The report can be exported to PDF or Word format.
+    **IMPORTANT: Human-in-the-Loop Required**
+
+    The ReportDrafter generates DRAFT reports that require human review and editing before use. Reports are exported in editable formats (Markdown and Word) specifically to enable human oversight and refinement. AI-generated content should be verified for:
+    - Clinical accuracy and appropriateness
+    - Study-specific context and nuances
+    - Compliance with institutional guidelines
+    - Proper medical terminology and phrasing
+
+    **Never use generated reports without thorough human review and approval.**
+
+    The report can be exported to Markdown or Word format for human editing.
+
+    What Does AI Generate?
+    ----------------------
+    **AI generates ONLY narrative text and commentary**, including:
+    - Executive summary and abstract
+    - Cohort definition descriptions
+    - Data analysis methodology descriptions
+    - Clinical interpretations and commentary for tables and figures
+
+    **AI does NOT generate:**
+    - Tables (Waterfall, Table 1, Table 2), plots and figures - these are calculated directly from your data using PhenEx library code
+
+    The AI only provides contextual narrative around the data-driven tables and plots.
+
+    AI Configuration
+    ----------------
+    The ReportDrafter can use OpenAI (Azure or standard) to generate professional medical research narrative text. If AI is not configured, it automatically falls back to rule-based text generation.
+
+    **Option 1: Azure OpenAI**
+
+    Set environment variables in Python:
+
+    ```python
+    import os
+    # Environment variables for CREDENTIALS
+    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://your-resource.openai.azure.com/"
+    os.environ["AZURE_OPENAI_API_KEY"] = "your-api-key-here"
+    os.environ["OPENAI_API_VERSION"] = "2024-02-15-preview"
+
+    from phenex.reporting import ReportDrafter
+    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    ```
+
+    **Option 2: Standard OpenAI**
+
+    Set environment variable in Python:
+
+    ```python
+    import os
+    # Environment variable for CREDENTIALS
+    os.environ["OPENAI_API_KEY"] = "sk-your-api-key-here"
+
+    from phenex.reporting import ReportDrafter
+    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    ```
+
+    **Disabling AI**
+
+    To use rule-based text generation instead of AI:
+
+    ```python
+    reporter = ReportDrafter(use_ai=False)
+    ```
 
     Parameters:
-        use_ai: Whether to use OpenAI for generating descriptive text (default: True if API keys available)
-        ai_model: OpenAI model to use for text generation (default: "gpt-4o-mini")
-        include_plots: Whether to include plots in the report (default: True)
-        plot_dpi: DPI for plots (default: 300)
-        title: Report title (if None, will be generated from cohort name)
-        author: Report author(s)
-        institution: Institution name
-        date_range_start: Start date for data analysis (if None, inferred from cohort)
-        date_range_end: End date for data analysis (if None, inferred from cohort)
-        decimal_places: Number of decimal places for numeric values (default: 1)
-        pretty_display: Whether to use pretty display formatting (default: True)
-        waterfall_reporter: Custom Waterfall reporter instance (if None, uses default)
-        table1_reporter: Custom Table1 reporter instance (if None, uses default)
-        table2_reporter: Custom Table2 reporter instance (if None, uses default)
+        use_ai: Whether to use AI for generating descriptive text. If True but API keys are not available, automatically falls back to rule-based generation. Default is True.
+        ai_model: The model or deployment name to use when making API calls. Default is "gpt-4o-mini".
+        include_plots: Whether to include plots in the report (e.g., waterfall charts). Default is True.
+        plot_dpi: DPI (dots per inch) for plot image quality. Higher values produce better quality but larger file sizes. Default is 300.
+        title: Report title. If None, will be generated from cohort name.
+        author: Report author name(s) to display in report metadata.
+        institution: Institution name to display in report metadata.
+        decimal_places: Number of decimal places for numeric values in tables. Default is 1.
+        pretty_display: Whether to use pretty display formatting with styled tables. Default is True.
+        waterfall_reporter: Custom Waterfall reporter instance. If None, uses default configuration.
+        table1_reporter: Custom Table1 reporter instance. If None, uses default configuration.
+        table2_reporter: Custom Table2 reporter instance. If None, uses default configuration.
+
+    Attributes:
+        report_sections (dict): Dictionary containing all generated report sections
+        figures (dict): Dictionary containing all generated figures and their metadata
+        use_ai (bool): Whether AI is enabled and configured
+        ai_client: The OpenAI client instance (if AI is enabled)
+
+    Examples:
+
+        Basic usage with AI (requires API keys in environment):
+        ```python
+        from phenex.reporting import ReportDrafter
+
+        # Initialize reporter
+        reporter = ReportDrafter(
+            title="My Study Report",
+            author="Dr. Jane Smith",
+            institution="Research University"
+        )
+
+        # Generate DRAFT report from cohort
+        reporter.execute(cohort)
+
+        # Export to editable Markdown format for human review
+        reporter.to_markdown("study_report_DRAFT.md", output_dir="./reports")
+
+        # Export to editable Word format for human review and editing
+        reporter.to_word("study_report_DRAFT.docx", output_dir="./reports")
+
+        # IMPORTANT: Review and edit the generated files before using in publications
+        # or formal reports. Verify all clinical statements, statistics, and interpretations.
+        ```
+
+        Without AI (rule-based text generation):
+        ```python
+        reporter = ReportDrafter(use_ai=False)
+        reporter.execute(cohort)
+        reporter.to_markdown("study_report.md")
+        ```
+
+        With custom reporters:
+        ```python
+        from phenex.reporting import Table1, Table2, Waterfall
+
+        custom_table1 = Table1(decimal_places=2)
+        custom_table2 = Table2(time_points=[30, 90, 180, 365])
+
+        reporter = ReportDrafter(
+            table1_reporter=custom_table1,
+            table2_reporter=custom_table2,
+            decimal_places=2
+        )
+        reporter.execute(cohort)
+        ```
+
+    Notes:
+        - **HUMAN REVIEW REQUIRED**: All generated reports are drafts that MUST be reviewed, validated, and edited by qualified researchers before use. The ReportDrafter is a starting point to accelerate report creation, not a replacement for human expertise.
+        - **AI generates ONLY text**: Tables, plots, and all statistical results are computed directly from your cohort data. AI only generates narrative text, descriptions, and clinical commentary.
+        - Reports are intentionally exported in editable formats (Markdown/Word) to facilitate human review and modification
+        - AI-generated content should be verified for clinical accuracy, institutional compliance, and study-specific appropriateness
+        - AI generation requires valid OpenAI or Azure OpenAI credentials
+        - If credentials are missing or invalid, automatically falls back to rule-based generation
+        - The reporter will log warnings if AI is requested but unavailable
+        - Generated reports include executive summary, methods, results, and clinical commentary
+        - Markdown output includes all tables and can embed plot images
+        - All numerical results in tables are computed from actual cohort data, not AI-generated
     """
 
     def __init__(
@@ -81,8 +208,6 @@ class ReportDrafter(Reporter):
         title: Optional[str] = None,
         author: Optional[str] = None,
         institution: Optional[str] = None,
-        date_range_start: Optional[Union[str, date]] = None,
-        date_range_end: Optional[Union[str, date]] = None,
         decimal_places: int = 1,
         pretty_display: bool = True,
         waterfall_reporter: Optional[Any] = None,
@@ -102,8 +227,9 @@ class ReportDrafter(Reporter):
         logger.info(
             f"ReportDrafter initialized with include_plots={self.include_plots}"
         )
-        self.date_range_start = date_range_start
-        self.date_range_end = date_range_end
+
+        # Set report date to current date
+        self.date = datetime.now().strftime("%Y-%m-%d")
 
         # Store custom reporter instances (will be used if provided, otherwise defaults)
         self.waterfall_reporter = waterfall_reporter
@@ -112,6 +238,7 @@ class ReportDrafter(Reporter):
 
         # Initialize OpenAI client if available
         self.ai_client = None
+        self._is_azure = False
         if self.use_ai:
             self._initialize_ai_client()
 
@@ -121,181 +248,81 @@ class ReportDrafter(Reporter):
 
     def _check_openai_config(self) -> bool:
         """Check if OpenAI configuration is available in environment variables."""
-        logger.debug("🔍 Checking OpenAI configuration in environment variables...")
-
-        # Check for Azure OpenAI or standard OpenAI configuration
+        # Check for Azure OpenAI configuration
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        api_version = os.getenv("OPENAI_API_VERSION")
+
+        # Check for standard OpenAI configuration
         openai_api_key = os.getenv("OPENAI_API_KEY")
 
-        logger.debug(f"Environment check results:")
-        logger.debug(
-            f"  AZURE_OPENAI_ENDPOINT: {'✅ Set' if azure_endpoint else '❌ Not set'}"
-        )
-        logger.debug(
-            f"  AZURE_OPENAI_API_KEY: {'✅ Set' if azure_api_key else '❌ Not set'}"
-        )
-        logger.debug(
-            f"  OPENAI_API_VERSION: {'✅ Set' if api_version else '❌ Not set'} ({api_version})"
-        )
-        logger.debug(
-            f"  OPENAI_API_KEY: {'✅ Set' if openai_api_key else '❌ Not set'}"
-        )
-
-        has_azure = bool(azure_endpoint and azure_api_key)
-        has_openai = bool(openai_api_key)
-
-        logger.debug(f"Configuration status: Azure={has_azure}, OpenAI={has_openai}")
-
-        return has_azure or has_openai
+        return bool(azure_endpoint and azure_api_key) or bool(openai_api_key)
 
     def _initialize_ai_client(self):
-        """Initialize OpenAI client (Azure or standard)."""
-        logger.info("Attempting to initialize AI client for text generation")
-
-        # Try to load environment variables from common locations
-        env_paths = [
-            Path.cwd() / ".env",
-            Path.cwd() / "app" / ".env",
-            Path(__file__).parent.parent.parent / "app" / ".env",
-        ]
-
-        logger.debug(f"Attempting to load environment from common locations...")
-        for env_path in env_paths:
-            if env_path.exists():
-                logger.info(f"📁 Found .env file at: {env_path}")
-                try:
-                    from dotenv import load_dotenv
-
-                    load_dotenv(env_path)
-                    logger.info(f"✅ Successfully loaded environment from: {env_path}")
-                    break
-                except Exception as e:
-                    logger.warning(f"Failed to load .env from {env_path}: {e}")
-            else:
-                logger.debug(f"No .env file found at: {env_path}")
-
+        """Initialize OpenAI client and report configuration status to user."""
         try:
-            # Check for Azure OpenAI configuration
+            # Check for Azure OpenAI configuration first
             azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
             azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
             api_version = os.getenv("OPENAI_API_VERSION", "2024-02-15-preview")
 
-            logger.debug(f"Current environment state after loading:")
-            logger.debug(
-                f"  AZURE_OPENAI_ENDPOINT: {azure_endpoint[:50] + '...' if azure_endpoint else 'Not set'}"
-            )
-            logger.debug(
-                f"  AZURE_OPENAI_API_KEY: {'*' * min(20, len(azure_api_key)) if azure_api_key else 'Not set'}"
-            )
-            logger.debug(f"  OPENAI_API_VERSION: {api_version}")
-            logger.debug(f"  Selected AI Model: {self.ai_model}")
-
             if azure_endpoint and azure_api_key:
-                logger.info(
-                    f"Found Azure OpenAI credentials - endpoint: {azure_endpoint[:50]}..., API version: {api_version}"
-                )
-                # Clean up API version (remove quotes if present)
+                # Configure Azure OpenAI
                 if api_version.startswith('"') and api_version.endswith('"'):
                     api_version = api_version.strip('"')
 
-                # Initialize Azure OpenAI client with minimal parameters
-                logger.info("Initializing Azure OpenAI client...")
-
-                # First try with normal SSL verification
                 self.ai_client = AzureOpenAI(
                     azure_endpoint=azure_endpoint.strip(),
                     api_key=azure_api_key.strip(),
                     api_version=api_version.strip(),
                 )
-                logger.debug("✅ Azure OpenAI client initialized with SSL verification")
-
-                # Keep the model name as specified in constructor (gpt-4o-mini by default)
                 self._is_azure = True
-                logger.info(
-                    f"Azure OpenAI client initialized successfully with API version: {api_version}"
+
+                # Test the connection
+                test_response = self.ai_client.chat.completions.create(
+                    model=self.ai_model,
+                    messages=[{"role": "user", "content": "Test"}],
+                    max_tokens=5,
                 )
 
-                # Test the connection with a simple call
-                try:
-                    logger.info(
-                        "Testing Azure OpenAI connection with minimal API call..."
-                    )
-                    logger.debug(
-                        f"Test call details: model={self.ai_model}, endpoint={azure_endpoint}"
-                    )
-                    logger.debug(f"API version: {api_version}")
+                logger.info(f"✅ Using Azure OpenAI (model: {self.ai_model})")
+                return
 
-                    test_response = self.ai_client.chat.completions.create(
-                        model=self.ai_model,
-                        messages=[{"role": "user", "content": "Test connection"}],
-                        max_tokens=5,
-                    )
-                    logger.info(
-                        "✅ Azure OpenAI connection test successful - AI functionality is fully operational"
-                    )
-                    logger.debug(
-                        f"Test response received: {len(test_response.choices[0].message.content)} chars"
-                    )
+            # Check for standard OpenAI configuration
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if openai_api_key:
+                self.ai_client = OpenAI(api_key=openai_api_key.strip())
+                self._is_azure = False
+                logger.info(f"✅ Using OpenAI (model: {self.ai_model})")
+                return
 
-                except Exception as test_error:
-                    logger.error(
-                        f"❌ Azure OpenAI connection test failed: {test_error}"
-                    )
-                    logger.debug(f"Error type: {type(test_error).__name__}")
-                    logger.debug(f"Full error details: {str(test_error)}")
-
-                    # Provide specific debugging based on error type
-                    error_str = str(test_error).lower()
-                    if "connection" in error_str:
-                        logger.error("🌐 Connection Error Debugging:")
-                        logger.error(f"   • Endpoint: {azure_endpoint}")
-                        logger.error(f"   • Check network connectivity")
-                        logger.error(f"   • Verify firewall/proxy settings")
-                        logger.error(f"   • Confirm endpoint URL is correct")
-                    elif "authentication" in error_str or "unauthorized" in error_str:
-                        logger.error("🔑 Authentication Error Debugging:")
-                        logger.error(
-                            f"   • API key length: {len(azure_api_key) if azure_api_key else 0} chars"
-                        )
-                        logger.error(f"   • Check API key validity")
-                        logger.error(f"   • Verify key permissions")
-                    elif "model" in error_str:
-                        logger.error("🤖 Model Error Debugging:")
-                        logger.error(f"   • Requested model: {self.ai_model}")
-                        logger.error(f"   • Check model deployment name")
-                        logger.error(
-                            f"   • Verify model availability in your Azure instance"
-                        )
-
-                    raise test_error
-
-            else:
-                # Fall back to standard OpenAI
-                openai_api_key = os.getenv("OPENAI_API_KEY")
-                if openai_api_key:
-                    logger.info(
-                        "Found standard OpenAI API key, initializing standard OpenAI client..."
-                    )
-                    self.ai_client = OpenAI(api_key=openai_api_key.strip())
-                    # Keep the model name as specified in constructor
-                    self._is_azure = False
-                    logger.info("✅ Standard OpenAI client initialized successfully")
-                else:
-                    logger.warning("No OpenAI API keys found in environment variables")
-                    raise Exception("No valid API keys found")
+            # No valid configuration found
+            raise Exception("No AI configuration found")
 
         except Exception as e:
-            logger.warning(f"Failed to initialize OpenAI client: {e}")
-            # Log more details for debugging
-            if "proxies" in str(e):
-                logger.info(
-                    "Note: 'proxies' error may be due to library version or environment configuration"
-                )
+            # AI initialization failed - provide clear guidance
             self.ai_client = None
             self.use_ai = False
             self._is_azure = False
+
+            logger.warning("⚠️ Using rule-based text generation (AI not configured)")
+            logger.info("")
+            logger.info(
+                "To enable AI-powered text generation, set environment variables:"
+            )
+            logger.info("")
+            logger.info("Option 1 - Azure OpenAI:")
+            logger.info(
+                '  os.environ["AZURE_OPENAI_ENDPOINT"] = "https://your-resource.openai.azure.com/"'
+            )
+            logger.info('  os.environ["AZURE_OPENAI_API_KEY"] = "your-api-key"')
+            logger.info('  os.environ["OPENAI_API_VERSION"] = "2024-02-15-preview"')
+            logger.info("")
+            logger.info("Option 2 - Standard OpenAI:")
+            logger.info('  os.environ["OPENAI_API_KEY"] = "sk-your-api-key"')
+            logger.info("")
+
+            if str(e) != "No AI configuration found":
+                logger.debug(f"AI initialization error details: {e}")
 
     def _generate_ai_text(
         self,
@@ -611,8 +638,6 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             return name
 
         # Convert snake_case or camelCase to Title Case
-        import re
-
         # Handle snake_case (e.g., study_tutorial_cohort -> Study Tutorial Cohort)
         formatted = re.sub(r"_", " ", name)
 

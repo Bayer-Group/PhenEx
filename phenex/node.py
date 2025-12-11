@@ -100,7 +100,7 @@ class Node:
             # object has already been added or an otherwise identical object has
             # already been added
             raise ValueError(
-                f"Duplicate node found: the node '{child.name}' has already been added to the list of children."
+                f"Duplicate node found: the node '{child.name}' (class {child.__class__.__name__}) has already been added to the list of children."
             )
 
         # Check for circular dependencies: ensure that self is not already a dependency of child
@@ -113,7 +113,11 @@ class Node:
         for dep in self.dependencies:
             if child.name == dep.name and child is not dep:
                 raise ValueError(
-                    f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
+                    f"Duplicate node name found: the name '{child.name}' is used by multiple different node instances. "
+                    f"This node (class {child.__class__.__name__}) conflicts with an existing dependency "
+                    f"(class: {str(dep)}) in the dependency tree of '{self.name}'. "
+                    f"Each node in a dependency tree must have a unique name. "
+                    f"To resolve: either use the same node instance for both dependencies, or give one of them a different name."
                 )
 
         return True
@@ -526,6 +530,10 @@ class Node:
 
     def __repr__(self):
         return f"Node('{self.name}')"
+
+    def __str__(self):
+        dict_repr = json.dumps(self.to_dict(), indent=2, default=str)
+        return f"{self.__class__.__name__}(\n{dict_repr}\n)"
 
     def visualize_dependencies(self) -> str:
         """

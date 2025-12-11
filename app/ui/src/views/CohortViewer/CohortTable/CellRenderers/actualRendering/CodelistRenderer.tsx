@@ -69,8 +69,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
           <div
             key={codeIndex}
             className={styles.codeBlock}
-            onClick={(e) => {
-              // e.stopPropagation();
+            onClick={() => {
+              // Disabled for now
               // if (onClick) {
               //   onClick();
               // }
@@ -100,22 +100,19 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   console.log("THIS IS THE DATA IN CODELIST RENDERER,", data);
   const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
-  console.log("THIS IS THE CODELIST CLOR CL", colorClass);
+  console.log("THIS IS THE CODELIST COLOR", colorClass);
   const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => {
     // Extract data from either top-level or nested codelist object
-    const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;
     const codelistName = codelistValue.codelist_name || codelistValue.codelist?.codelist_name;
     
     // Replace underscores with spaces for better readability
     const displayCodelistName = codelistName?.replace(/_/g, ' ') || 'Unknown codelist';
-    const displayFileName = fileName?.replace(/_/g, ' ') || 'Unknown file';
     
     return (
       <div key={index} className={styles.codelistContainer}>
         <div
           className={styles.codeBlock}
-          onClick={(e) => {
-            // e.stopPropagation();
+          onClick={() => {
             if (onClick) {
               onClick();
             }

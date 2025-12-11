@@ -1,8 +1,11 @@
-phenex
+phenex==0.7.4
 fastapi[standard]
 gunicorn
 uvicorn
 openai
+httpx
+typing-extensions>=4.11.0,<5.0.0
+pydantic-ai[openai]
 deepdiff
 fastembed
 faiss-cpu

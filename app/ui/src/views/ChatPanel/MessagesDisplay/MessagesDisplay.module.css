@@ -44,6 +44,7 @@
   background-color: var(--background-color);
   padding-top: 10px;
   padding-bottom: 10px;
+  line-height: 1.2 !important; /* Override global 1.5 line-height */
 
 }
 
@@ -94,31 +95,33 @@
 
 .messageBubble {
   font-family: 'IBMPlexSans-regular';
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .messageBubble h1 {
-  font-size: 22px;
+  font-size: 18px;
   font-family: 'IBMPlexSans-bold';
-  line-height: 22px;
+  line-height: 18px;
+  margin: 4px 0;
   color: var(--text-color);
 }
 
 .messageBubble h2 {
-  font-size: 18px;
+  font-size: 16px;
   font-family: 'IBMPlexSans-bold';
+  margin: 4px 0;
   color: var(--text-color);
 }
 
 .messageBubble h3 {
-  font-size: 16px;
+  font-size: 14px;
   margin: 0.3em 0;
   font-family: 'IBMPlexSans-bold';
   color: var(--text-color);
 }
 
 .messageBubble h4 {
-  font-size: 14px;
+  font-size: 13px;
   margin: 0.2em 0;
   font-family: 'IBMPlexSans-bold';
   color: var(--text-color);
@@ -149,14 +152,110 @@
 
 .messageBubble ol {
   padding-left: 20px;
-  margin: 8px 0;
+  margin: 4px 0;
 }
 
 .messageBubble ol li {
-  margin-bottom: 4px;
+  margin-bottom: 1px;
 }
 
 .messageBubble ul {
   padding-left: 20px;
-  margin: 8px 0;
+  margin: 4px 0;
 }
+
+.messageBubble ul li {
+  margin-bottom: 1px;
+}
+
+/* Nested lists - CRITICAL for compact rendering */
+.messageBubble ul ul,
+.messageBubble ul ol,
+.messageBubble ol ul,
+.messageBubble ol ol {
+  margin: 0 !important;
+  padding-left: 15px !important;
+}
+
+.messageBubble p {
+  margin: 2px 0;
+  line-height: 1.2;
+}
+
+/* Simple markdown content styling */
+.markdownContent {
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.markdownContent h1 {
+  margin: 6px 0 4px 0;
+}
+
+.markdownContent h2 {
+  margin: 6px 0 4px 0;
+}
+
+.markdownContent h3 {
+  margin: 4px 0 2px 0;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.markdownContent li {
+  margin: 1px 0;
+  line-height: 1.4;
+}
+
+.markdownContent p {
+  margin: 3px 0;
+  line-height: 1.4;
+}
+
+.markdownContent strong {
+  font-weight: 600;
+}
+
+/* Loading indicator styles */
+.loadingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(34, 197, 94, 0.6);
+  animation: dotPulse 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+

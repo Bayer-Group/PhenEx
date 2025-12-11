@@ -5,7 +5,7 @@ export const executeStudy = async (
   onProgress?: (message: string, type: 'log' | 'error' | 'result' | 'complete') => void
 ) => {
   try {
-    const response = await authFetch(`${BACKEND_URL}/execute_study`, {
+    const response = await authFetch(`${BACKEND_URL}/cohort/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

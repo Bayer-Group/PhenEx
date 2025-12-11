@@ -14,6 +14,7 @@ export interface Message {
   id: number;
   text: string;
   isUser: boolean;
+  isLoading?: boolean;
 }
 
 export interface ConversationEntry {
@@ -72,6 +73,17 @@ class ChatPanelDataService {
     this.addUserMessageToHistory(text);
     this.notifyListeners();
     this.sendAIRequest(text);
+    return newMessage;
+  }
+
+  public addSystemMessage(text: string): Message {
+    const newMessage: Message = {
+      id: ++this.lastMessageId,
+      text: text,
+      isUser: false,
+    };
+    this.messages.push(newMessage);
+    this.notifyListeners();
     return newMessage;
   }
 
@@ -138,79 +150,73 @@ class ChatPanelDataService {
     this.aiCompletionListeners.forEach(listener => listener(success));
   }
 
-  private buffer: string = '';
-  private isInThinkingBlock: boolean = false;
 
-  private processMessageText(chunk: string): string {
-    this.buffer += chunk;
-    let result = '';
-    let currentIndex = 0;
-    while (true) {
-      if (this.isInThinkingBlock) {
-        const endIndex = this.buffer.indexOf('-->', currentIndex);
-        if (endIndex === -1) break;
-        currentIndex = endIndex + '-->'.length;
-        this.isInThinkingBlock = false;
-      } else {
-        const startIndex = this.buffer.indexOf('<!-- THINKING:', currentIndex);
-        if (startIndex === -1) {
-          result += this.buffer.slice(currentIndex);
-          this.buffer = '';
-          break;
-        }
-        result += this.buffer.slice(currentIndex, startIndex);
-        currentIndex = startIndex + '<!-- THINKING:'.length;
-        this.isInThinkingBlock = true;
-      }
-    }
-
-    return result;
-  }
 
   private async sendAIRequest(inputText: string): Promise<void> {
-    console.log('sendAIRequest called with inputText:', inputText);
-    
     // Check if cohort data is available
     if (!this.cohortDataService.cohort_data || !this.cohortDataService.cohort_data.id) {
-      console.error('No cohort data available or missing cohort ID');
+      console.error('AI request failed: No cohort data available');
       this.notifyAICompletionListeners(false);
       return;
     }
     
     const cohortId = this.cohortDataService.cohort_data.id;
-    console.log('Using cohort ID:', cohortId);
+    
+    // Extract plain text from description (which is a Quill Delta object)
+    let cohortDescription: string | null = null;
+    if (this.cohortDataService.cohort_data.description) {
+      try {
+        const delta = this.cohortDataService.cohort_data.description;
+        // If it's a Quill Delta object, extract text from ops
+        if (delta.ops && Array.isArray(delta.ops)) {
+          cohortDescription = delta.ops
+            .map((op: any) => (typeof op.insert === 'string' ? op.insert : ''))
+            .join('')
+            .trim();
+        } else if (typeof delta === 'string') {
+          cohortDescription = delta.trim();
+        }
+      } catch (e) {
+        console.warn('Failed to extract cohort description:', e);
+      }
+    }
+    
+    console.log('Sending AI request for cohort:', cohortId, cohortDescription ? `(${cohortDescription.length} chars description)` : '(no description)');
     
     try {
+      // Create the loading indicator message BEFORE making the request
+      // so it appears immediately in the UI
+      const assistantMessage: Message = {
+        id: ++this.lastMessageId,
+        text: '',
+        isUser: false,
+        isLoading: true,
+      };
+      this.messages.push(assistantMessage);
+      this.notifyListeners();
+      
       const stream = await suggestChanges(
         cohortId,
         inputText.trim(),
         "gpt-4o-mini",
         false,
-        this.getConversationHistory()
+        this.getConversationHistory(),
+        cohortDescription || undefined
       );
-
-      console.log('Stream received from suggestChanges');
-      const assistantMessage: Message = {
-        id: ++this.lastMessageId,
-        text: '',
-        isUser: false,
-      };
-      this.messages.push(assistantMessage);
-      this.notifyListeners();
-      console.log('Assistant message initialized:', assistantMessage);
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      
+      console.log('Receiving AI response stream...');
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          console.log('Stream reading completed');
+          console.log('AI response stream completed');
           break;
         }
 
-        console.log('Stream chunk received:', value);
         const decodedChunk = decoder.decode(value, { stream: true });
         buffer += decodedChunk;
 
@@ -222,34 +228,59 @@ class ChatPanelDataService {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6)); // Remove 'data: ' prefix
-              console.log('Parsed SSE data:', data);
               
               if (data.type === 'content') {
-                const processedText = this.processMessageText(data.message);
-                if (processedText) {
-                  assistantMessage.text += processedText;
+                // Regular AI content - just add to message
+                if (data.message) {
+                  assistantMessage.text += data.message;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'info') {
+                // Info messages - skip rendering
+                // These are not useful to display
+              } else if (data.type === 'tool_call') {
+                // Tool call messages - skip rendering (internal operations)
+                // User doesn't need to see these
+              } else if (data.type === 'tool_result') {
+                // Tool result messages - skip rendering (internal operations)
+                // User doesn't need to see these
+              } else if (data.type === 'tool_error') {
+                // Tool error messages
+                if (data.message) {
+                  assistantMessage.text += `\n❌ **Error:** ${data.message}\n`;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'function_explanation') {
+                // Function call explanation - add with special formatting (legacy support)
+                if (data.message) {
+                  assistantMessage.text += `\n\n**🔄 Making changes:** ${data.message}\n\n`;
+                  this.notifyListeners();
+                }
+              } else if (data.type === 'function_success') {
+                // Function call success - add confirmation (legacy support)
+                if (data.message) {
+                  assistantMessage.text += `\n✅ ${data.message}\n`;
                   this.notifyListeners();
                 }
               } else if (data.type === 'error') {
-                console.error('Stream error:', data.message);
-                assistantMessage.text += `\n\nError: ${data.message}`;
+                console.error('AI stream error:', data.message);
+                assistantMessage.text += `\n\n❌ **Error:** ${data.message}`;
                 this.notifyListeners();
                 break;
               } else if (data.type === 'complete') {
-                console.log('Stream completed');
                 break;
               } else if (data.type === 'result') {
-                console.log('Received result data:', data.data);
                 // Handle result data if needed
               }
             } catch (parseError) {
-              console.warn('Failed to parse SSE message:', line, parseError);
+              console.warn('Failed to parse SSE message:', parseError);
             }
           }
         }
       }
-
-      console.log('Finalizing assistant response');
+      
+      // Mark as no longer loading
+      assistantMessage.isLoading = false;
       
       // Add the complete assistant response to history
       if (assistantMessage.text.trim()) {
@@ -258,21 +289,26 @@ class ChatPanelDataService {
       
       if (this.cohortDataService.cohort_data?.id) {
         try {
+          console.log('Fetching updated cohort after AI changes...');
           const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
-          console.log('Response from suggestChanges:', response);
           this.cohortDataService.updateCohortFromChat(response);
         } catch (error) {
-          console.error('Error fetching updated cohort:', error);
+          console.error('Failed to fetch updated cohort after AI changes:', error);
           this.notifyAICompletionListeners(false);
           return;
         }
       }
       this.notifyListeners();
-      console.log('About to call notifyAICompletionListeners(true)');
       this.notifyAICompletionListeners(true);
       console.log('AI request completed successfully');
     } catch (error) {
-      console.error('Error in sendAIRequest:', error);
+      console.error('AI request failed:', error);
+      // Mark the last assistant message as no longer loading if it exists
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (lastMessage && !lastMessage.isUser && lastMessage.isLoading) {
+        lastMessage.isLoading = false;
+        this.notifyListeners();
+      }
       this.notifyAICompletionListeners(false);
     }
   }
@@ -280,38 +316,40 @@ class ChatPanelDataService {
   public async acceptAIResult(): Promise<void> {
     try {
       if (!this.cohortDataService.cohort_data?.id) {
-        console.error('No cohort ID available for accepting changes');
+        console.error('Accept failed: No cohort ID available');
         return;
       }
       
+      console.log('Accepting AI changes...');
       // Track the accept action in conversation history
       this.addUserActionToHistory('ACCEPT_CHANGES');
       
       const response = await acceptChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
-      console.log('AI result accepted successfully');
+      console.log('AI changes accepted successfully');
     } catch (error) {
-      console.error('Error in acceptAIResult:', error);
+      console.error('Failed to accept AI changes:', error);
     }
   }
 
   public async rejectAIResult(): Promise<void> {
     try {
       if (!this.cohortDataService.cohort_data?.id) {
-        console.error('No cohort ID available for rejecting changes');
+        console.error('Reject failed: No cohort ID available');
         return;
       }
       
+      console.log('Rejecting AI changes...');
       // Track the reject action in conversation history
       this.addUserActionToHistory('REJECT_CHANGES');
       
       const response = await rejectChanges(this.cohortDataService.cohort_data.id);
       this.cohortDataService.updateCohortFromChat(response);
       this.notifyListeners();
-      console.log('AI result rejected successfully');
+      console.log('AI changes rejected successfully');
     } catch (error) {
-      console.error('Error in rejectAIResult:', error);
+      console.error('Failed to reject AI changes:', error);
     }
   }
 
@@ -319,12 +357,11 @@ class ChatPanelDataService {
     // Get the last user message
     const userMessages = this.messages.filter(message => message.isUser);
     if (userMessages.length === 0) {
-      console.warn('No user messages found to retry');
+      console.warn('Retry failed: No user messages found');
       return;
     }
     
     const lastUserMessage = userMessages[userMessages.length - 1];
-    console.log('Retrying AI request with last user message:', lastUserMessage.text);
     
     // Resend the AI request with the last user message text
     this.sendAIRequest(lastUserMessage.text);

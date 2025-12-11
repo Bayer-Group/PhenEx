@@ -7,9 +7,9 @@ from fastembed import TextEmbedding
 import numpy as np
 import ast
 import phenex
-from examples import EXAMPLES
+from .examples import EXAMPLES
 from dotenv import load_dotenv
-from scripts.download_model import load_rag_model
+from ...scripts.download_model import load_rag_model
 
 load_dotenv()
 
@@ -21,6 +21,7 @@ router = APIRouter()
 
 # Load a pre-trained sentence embedding model
 embeddings_model = load_rag_model()
+
 
 def get_phenex_context_documents():
     # get context documents for LLM layer

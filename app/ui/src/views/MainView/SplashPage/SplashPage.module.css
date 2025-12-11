@@ -32,6 +32,64 @@
   font-family: 'IBMPlexSans-Bold';
 }
 
+.ctaSection {
+  margin-top: 60px;
+  display: flex;
+  justify-content: center;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.primaryCta, .secondaryCta {
+  padding: 18px 36px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  border: 2px solid transparent;
+}
+
+.primaryCta {
+  color: #ffffff;
+  background: #0066cc;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.primaryCta:hover {
+  background: #0052a3;
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+  transform: translateY(-2px);
+}
+
+.primaryCta:active {
+  transform: translateY(0);
+}
+
+.secondaryCta {
+  color: var(--text-color);
+  background: transparent;
+  border: 2px solid var(--color-accent-bright);
+}
+
+.secondaryCta:hover {
+  background: var(--color-accent-bright);
+  color: var(--background-color);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+  transform: translateY(-2px);
+}
+
+.secondaryCta:active {
+  transform: translateY(0);
+}
+
 .content p {
   color: var(--text-color-secondary);
   z-index: 10;

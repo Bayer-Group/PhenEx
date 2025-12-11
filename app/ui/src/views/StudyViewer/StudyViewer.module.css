@@ -137,14 +137,30 @@
   
 }
 
-.addPhenotypeButton{
-  margin-left:30px;
-  margin-top:5px;
-  font-family: "IBMPlexSans-regular" !important;
+.newCohortButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
 }
 
-.addPhenotypeButtonLabel{
-  /* height: 32px !important; */
-  padding-left: 8px!important;
-  padding-right: 8px !important;
+.newCohortButton:hover {
+  background: #0052a3;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.newCohortButton:active {
+  transform: scale(0.98);
 }

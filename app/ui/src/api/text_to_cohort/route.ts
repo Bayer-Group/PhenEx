@@ -47,11 +47,12 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
-      return JSON.parse(response.data.cohort_data);
+      response.data.cohort_data = JSON.parse(response.data.cohort_data);
     }
 
-    // Fallback to return the original data if cohort_data is not present or already parsed
-    return response.data.cohort_data || response.data;
+    // Return the full response data which includes is_provisional, version, etc.
+    // The cohort_data field is nested inside
+    return response.data;
   } catch (error) {
     console.error('Error in getUserCohort:', error);
     throw error;
@@ -61,7 +62,7 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
 export const createCohort = async (cohort_id: string, cohort_data: any, study_id: string) => {
   try {
     console.log('I AM CREATING THE COHORT', cohort_data);
-    const response = await api.post('/cohort', cohort_data, {
+    const response = await api.put('/cohort', cohort_data, {
       params: { cohort_id, study_id },
     });
     return response.data;
@@ -74,7 +75,7 @@ export const createCohort = async (cohort_id: string, cohort_data: any, study_id
 export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   try {
     console.log('I AM UPDATING THE COHORT', cohort_data);
-    const response = await api.patch('/cohort', cohort_data, {
+    const response = await api.put('/cohort', cohort_data, {
       params: { cohort_id },
     });
     return response.data;
@@ -104,11 +105,11 @@ export const acceptChanges = async (cohort_id: string) => {
 
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
-      return JSON.parse(response.data.cohort_data);
+      response.data.cohort_data = JSON.parse(response.data.cohort_data);
     }
 
-    // Fallback to return the original data if cohort_data is not present or already parsed
-    return response.data.cohort_data || response.data;
+    // Return the full response data which includes is_provisional, version, etc.
+    return response.data;
   } catch (error) {
     console.error('Error in acceptChanges:', error);
     throw error;
@@ -123,11 +124,11 @@ export const rejectChanges = async (cohort_id: string) => {
 
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
-      return JSON.parse(response.data.cohort_data);
+      response.data.cohort_data = JSON.parse(response.data.cohort_data);
     }
 
-    // Fallback to return the original data if cohort_data is not present or already parsed
-    return response.data.cohort_data || response.data;
+    // Return the full response data which includes is_provisional, version, etc.
+    return response.data;
   } catch (error) {
     console.error('Error in rejectChanges:', error);
     throw error;
@@ -139,7 +140,8 @@ export const suggestChanges = async (
   user_request: string,
   model: string = 'gpt-4o-mini',
   return_updated_cohort: boolean = false,
-  conversation_history?: Array<{user?: string; system?: string; user_action?: string}>
+  conversation_history?: Array<{user?: string; system?: string; user_action?: string}>,
+  cohort_description?: string
 ) => {
   try {
     console.log('suggestChanges: Starting request with params:', {
@@ -147,7 +149,8 @@ export const suggestChanges = async (
       model,
       return_updated_cohort: String(return_updated_cohort),
       user_request_length: user_request.length,
-      history_length: conversation_history?.length || 0
+      history_length: conversation_history?.length || 0,
+      has_description: !!cohort_description
     });
 
     // Build the URL correctly by combining baseURL and endpoint path
@@ -166,10 +169,11 @@ export const suggestChanges = async (
     url.searchParams.set('model', model);
     url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
 
-    // Prepare the request body with conversation history
+    // Prepare the request body with conversation history and cohort description
     const requestBody = {
       user_request,
-      conversation_history: conversation_history || []
+      conversation_history: conversation_history || [],
+      cohort_description: cohort_description || null
     };
 
     // Use authFetch for streaming responses with proper authentication
@@ -210,7 +214,7 @@ export const suggestChanges = async (
 
 export const getUserStudies = async () => {
   try {
-    const response = await api.get('/studies');
+    const response = await api.get('/studies/private');
     return response.data;
   } catch (error) {
     console.error('Error in getUserStudies:', error);
@@ -255,9 +259,8 @@ export const getPublicStudy = async (study_id: string) => {
 export const updateStudy = async (study_id: string, study_data: any) => {
   try {
     console.log('Updating study:', study_data);
-    const response = await api.post('/study', study_data, {
-      params: { study_id },
-    });
+    // Ensure study_id is in the body for updates
+    const response = await api.put('/study', { ...study_data, id: study_id });
     return response.data;
   } catch (error) {
     console.error('Error in updateStudy:', error);
@@ -292,7 +295,7 @@ export const getCohortsForStudy = async (study_id: string) => {
 export const createNewStudy = async (study_data: any) => {
   try {
     console.log('Creating new study:', study_data);
-    const response = await api.post('/study/new', study_data);
+    const response = await api.put('/study', study_data);
     return response.data;
   } catch (error) {
     console.error('Error in createNewStudy:', error);

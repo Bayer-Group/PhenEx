@@ -150,3 +150,35 @@
   padding-left: 8px!important;
   padding-right: 8px !important;
 }
+
+.newPhenotypeButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+}
+
+.newPhenotypeButtonLabel {
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: #0066cc !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-family: 'IBMPlexSans-semibold', sans-serif !important;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2) !important;
+  height: auto !important;
+}
+
+.newPhenotypeButtonLabel:hover {
+  background: #0052a3 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3) !important;
+}
+
+.newPhenotypeButtonLabel:active {
+  transform: scale(0.98) !important;
+}

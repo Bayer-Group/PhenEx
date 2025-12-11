@@ -1,0 +1,74 @@
+.errorContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+  background: var(--background-color, #f5f5f5);
+  padding: 40px;
+}
+
+.errorContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  background: var(--card-background, #ffffff);
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.errorIcon {
+  color: #d32f2f;
+  margin-bottom: 24px;
+}
+
+.errorTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-color, #1a1a1a);
+  margin: 0 0 16px 0;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.errorMessage {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-color, #1a1a1a);
+  margin: 0 0 12px 0;
+  font-family: 'IBMPlexSans-medium', sans-serif;
+}
+
+.errorDescription {
+  font-size: 14px;
+  color: var(--text-color-secondary, #666666);
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+}
+
+.errorButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
+}
+
+.errorButton:hover {
+  background: #0052a3;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.errorButton:active {
+  transform: scale(0.98);
+}

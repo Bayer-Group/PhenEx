@@ -74,21 +74,17 @@
 
 .navigationButtons {
   display: flex;
-  /* flex-wrap: wrap; */
   gap: 4px 6px;
   border-radius: 8px;
   border: var(--border);
   padding: 4px;
   background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
-  /* border: 1px solid var(--line-color); */
   -webkit-backdrop-filter: blur(10px);
   user-select: none;
-    position: absolute;
-    bottom: 10px;
-    right:20px;
-
-  /* background-color: yellow; */
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
 }
 
 .navigationButtons:hover {

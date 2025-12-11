@@ -3,10 +3,11 @@ import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, TreeEnvironme
 import 'react-complex-tree/lib/style-modern.css';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
-import { HierarchicalTreeNode } from './CohortTreeListItem.tsx';
+import { HierarchicalTreeNode } from './HierarchicalLeftPanelDataService';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
-import { MainViewService } from '../MainView/MainView';
+import { MainViewService, ViewType } from '../MainView/MainView';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -56,13 +57,18 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
   const isExpandCollapseAction = useRef(false);
   const isDragging = useRef(false);
+  const navigate = useNavigate();
+  const { studyId, cohortId } = useParams();
+  const location = useLocation();
 
   const DOUBLE_CLICK_THRESHOLD = 300; // ms
 
   useEffect(() => {
     const updateTreeData = () => {
+      console.log('🎨 HierarchicalLeftPanel: Updating tree data in React state');
       const rawTreeData = dataService.current.getTreeData();
-      setTreeData(rawTreeData);
+      console.log('🎨 HierarchicalLeftPanel: Got tree data with', rawTreeData.length, 'root nodes');
+      setTreeData([...rawTreeData]); // Force new array reference to trigger re-render
     };
 
     updateTreeData();
@@ -71,10 +77,49 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     return () => dataService.current.removeListener(updateTreeData);
   }, []);
 
+  // Auto-expand and select based on URL
+  useEffect(() => {
+    if (!studyId) return;
+
+    // Determine if this is a public study or user study
+    const isPublicStudy = dataService.current.isPublicStudy(studyId);
+    const rootSection = isPublicStudy ? 'publicstudies' : 'mystudies';
+
+    // Always expand the appropriate root section and the study
+    const newExpandedItems = ['root', rootSection];
+    if (!expandedItems.includes(studyId)) {
+      newExpandedItems.push(studyId);
+    } else {
+      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies' && id !== 'publicstudies'));
+    }
+    setExpandedItems(newExpandedItems);
+
+    // Select the current study or cohort
+    if (cohortId) {
+      setSelectedItems([cohortId]);
+      dataService.current.selectNode(cohortId);
+    } else {
+      setSelectedItems([studyId]);
+      dataService.current.selectNode(studyId);
+    }
+  }, [studyId, cohortId, location.pathname]);
+
   const items = useMemo(() => {
     const converted = convertToComplexTree(treeData);
     return converted;
   }, [treeData]);
+
+  const handleAddNewStudy = async () => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewStudy } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewStudy(navigate);
+  };
+
+  const handleAddNewCohortToStudy = async (studyId: string) => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewCohort } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewCohort(studyId, navigate);
+  };
 
   const handleItemClick = (itemId: TreeItemIndex, item: TreeItem<HierarchicalTreeNode>) => {
     const now = Date.now();
@@ -109,7 +154,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle special action items
     if (node.id === 'new-study-action') {
-      dataService.current.addNewStudy();
+      handleAddNewStudy();
       return;
     }
 
@@ -123,9 +168,22 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle selection
     dataService.current.selectNode(node.id);
+    
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -141,10 +199,21 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     // Handle selection in data service
     dataService.current.selectNode(node.id);
 
-    // Handle navigation
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -212,7 +281,12 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                       className={styles.nodeButton}
                       onClick={(e) => {
                         e.stopPropagation();
-                        node.buttonOnClick?.();
+                        // If it's a study node, handle adding cohort with navigation
+                        if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
+                          handleAddNewCohortToStudy(node.id);
+                        } else {
+                          node.buttonOnClick?.();
+                        }
                       }}
                       title={node.buttonTitle}
                       role="button"
@@ -221,7 +295,12 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          node.buttonOnClick?.();
+                          // If it's a study node, handle adding cohort with navigation
+                          if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
+                            handleAddNewCohortToStudy(node.id);
+                          } else {
+                            node.buttonOnClick?.();
+                          }
                         }
                       }}
                     >
@@ -272,24 +351,19 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                     return;
                   }
 
-                  console.log('📚 Renaming study:', node.id, 'to:', newName);
-                  
                   // Update study name via data service
                   try {
                     await dataService.current.updateStudyName(node.id, newName);
-                    console.log('✅ Study renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename study:', error);
+                    console.error('Failed to rename study:', error);
                   }
                 } else if (isCohort) {
-                  console.log('📋 Renaming cohort:', node.id, 'to:', newName);
                   
                   // Update cohort name via data service
                   try {
                     await dataService.current.updateCohortName(node.id, newName);
-                    console.log('✅ Cohort renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename cohort:', error);
+                    console.error('Failed to rename cohort:', error);
                   }
                 } else {
                   console.warn('⚠️ Cannot determine item type for rename');
@@ -328,15 +402,49 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                   
                   // Handle special action items
                   if (node.id === 'new-study-action') {
-                    dataService.current.addNewStudy();
+                    handleAddNewStudy();
+                    return;
+                  }
+                  
+                  // Handle root items that navigate to /studies
+                  if (node.id === 'mystudies' || node.id === 'publicstudies') {
+                    navigate('/studies');
                     return;
                   }
                   
                   dataService.current.selectNode(node.id);
                   if (node.viewInfo) {
-                    const mainViewService = MainViewService.getInstance();
-                    console.log("NAVIGATING TO:", node.viewInfo);
-                    mainViewService.navigateTo(node.viewInfo);
+                    console.log('🔍 Navigation - viewType:', node.viewInfo.viewType, 'data:', node.viewInfo.data);
+                    // Check if we should navigate to a URL
+                    if (node.viewInfo.data?.navigateTo) {
+                      console.log('✅ Navigating via navigateTo:', node.viewInfo.data.navigateTo);
+                      navigate(node.viewInfo.data.navigateTo);
+                    } else if (node.viewInfo.viewType === 'studyViewer' || node.viewInfo.viewType === ViewType.StudyViewer) {
+                      // Navigate to study URL
+                      console.log('✅ Navigating to study:', `/studies/${node.viewInfo.data}`);
+                      navigate(`/studies/${node.viewInfo.data}`);
+                    } else if (node.viewInfo.viewType === 'sdef' || node.viewInfo.viewType === 'psdef') {
+                      // Navigate to cohort URL - need to find study_id from cohort data
+                      const cohortData = typeof node.viewInfo.data === 'string' ? { id: node.viewInfo.data } : node.viewInfo.data;
+                      const cohortId = cohortData?.id || node.viewInfo.data;
+                      
+                      // Find the parent study from the tree
+                      const parentItem = Object.values(items).find(i => i.children?.includes(itemId as string));
+                      const studyId = parentItem?.data?.id;
+                      
+                      if (studyId && cohortId) {
+                        navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+                      } else {
+                        // Fallback to MainViewService if we can't construct URL
+                        const mainViewService = MainViewService.getInstance();
+                        mainViewService.navigateTo(node.viewInfo);
+                      }
+                    } else {
+                      // Use traditional navigation for other view types
+                      const mainViewService = MainViewService.getInstance();
+                      console.log("NAVIGATING TO:", node.viewInfo);
+                      mainViewService.navigateTo(node.viewInfo);
+                    }
                   }
                 }
               }
