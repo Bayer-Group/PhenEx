@@ -35,7 +35,7 @@ class CodelistContents(BaseModel):
     """Contents of a codelist file."""
 
     data: dict[str, list]
-    columns: list[str]
+    headers: list[str]
 
 
 class CodelistFile(BaseModel):
@@ -156,7 +156,7 @@ async def get_codelist(request: Request, cohort_id: str, file_id: str):
                 "category": ["diabetes", "diabetes", "hypertension"],
                 "description": ["Type 2 diabetes", "Type 1 diabetes", "Essential hypertension"]
             },
-            "columns": ["code", "code_system", "category", "description"]
+            "headers": ["code", "code_system", "category", "description"]
         },
         "codelists": ["diabetes", "hypertension"],
         "version": 1,
@@ -246,7 +246,7 @@ async def create_or_update_codelist(
                     "code_system": ["ICD10", "ICD10"],
                     "category": ["diabetes", "diabetes"]
                 },
-                "columns": ["code", "code_system", "category"]
+                "headers": ["code", "code_system", "category"]
             }
         }
     }
@@ -521,11 +521,11 @@ async def get_codelist_file_for_cohort(
 
             column_mapping = json.loads(column_mapping)
 
-        # Get contents and ensure it has both data and columns
+        # Get contents and ensure it has both data and headers
         contents = codelist_data.get("contents", {})
-        if "columns" not in contents and "data" in contents:
-            # If columns is missing, derive it from the data keys
-            contents["columns"] = list(contents["data"].keys())
+        if "headers" not in contents and "data" in contents:
+            # If headers is missing, derive it from the data keys
+            contents["headers"] = list(contents["data"].keys())
 
         # Create the reconstructed file structure
         reconstructed_file = {
