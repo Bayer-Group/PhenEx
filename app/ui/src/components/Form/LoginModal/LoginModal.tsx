@@ -100,7 +100,11 @@ export const LoginModal: FC<LoginModalProps> = ({ isOpen, onClose, onLoginSucces
       // Currently only msal (azure) supported via context action. For other providers we would add similar actions.
       if (provider === 'azure') {
         const result = await loginWithMsal();
-        if (!result.success) {
+        if (result.success) {
+          onLoginSuccess?.();
+          onClose();
+          setFormData({ email: '', password: '', username: '' });
+        } else {
           setErrors({ general: result.error || 'OAuth login failed.' });
         }
       } else {

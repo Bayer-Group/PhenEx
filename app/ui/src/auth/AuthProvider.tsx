@@ -252,10 +252,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!config.loginOptions.msal || !msalInstance || !config.msal)
       return { success: false, error: 'MSAL auth disabled' };
     try {
-      getMsalToken(msalInstance, config.msal.scopes).then(token => {
-        if (token) processToken(token, 'msal');
-      });
-      return { success: true };
+      const token = await getMsalToken(msalInstance, config.msal.scopes);
+      if (token) {
+        await processToken(token, 'msal');
+        return { success: true };
+      } else {
+        return { success: false, error: 'Failed to acquire token' };
+      }
     } catch (err: any) {
       return { success: false, error: err?.message || 'MSAL login failed' };
     }
