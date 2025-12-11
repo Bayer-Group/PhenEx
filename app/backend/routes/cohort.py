@@ -19,10 +19,42 @@ from ..utils.validation import validate_cohort_data_format
 @router.get("/cohorts", tags=["cohort"])
 async def get_all_cohorts_for_user(request: Request):
     """
-    Retrieve a list of all available cohorts for the authenticated user.
+    Retrieve a list of all cohorts for the authenticated user.
+
+    Authentication:
+    - Requires authenticated user. Only returns cohorts owned by the authenticated user.
 
     Returns:
-        dict: A list of cohort IDs and names for that user.
+    - list[dict]: Array of cohort summary objects, each containing:
+        - id (str): Unique identifier for the cohort
+        - name (str): Name of the cohort
+        - study_id (str): ID of the parent study
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    [
+        {
+            "id": "cohort_123",
+            "name": "Type 2 Diabetes Cohort",
+            "study_id": "study_456",
+            "created_at": "2025-12-09T10:00:00Z",
+            "updated_at": "2025-12-11T15:30:00Z"
+        },
+        {
+            "id": "cohort_789",
+            "name": "Hypertension Cohort",
+            "study_id": "study_456",
+            "created_at": "2025-12-10T14:20:00Z",
+            "updated_at": "2025-12-10T14:20:00Z"
+        }
+    ]
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error retrieving cohorts from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -242,13 +274,32 @@ async def create_or_update_cohort(
 @router.delete("/cohort", tags=["cohort"])
 async def delete_cohort_for_user(request: Request, cohort_id: str):
     """
-    Delete a cohort by its ID.
+    Delete a cohort and all its versions for the authenticated user.
 
-    Args:
-        cohort_id (str): The ID of the cohort to delete for the authenticated user.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to delete
+
+    Authentication:
+    - Requires authenticated user. Only deletes cohorts owned by the authenticated user.
+
+    Behavior:
+    - Deletes all versions of the specified cohort (both provisional and committed)
+    - This operation is permanent and cannot be undone
+    - If the cohort doesn't exist or user doesn't have access, returns 404
 
     Returns:
-        dict: Status and message of the operation.
+    - dict: Status and confirmation message
+        ```json
+        {
+            "status": "success",
+            "message": "Cohort {cohort_id} deleted successfully."
+        }
+        ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If cohort is not found or user doesn't have access
+    - 500: If there's an error deleting the cohort from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -271,20 +322,39 @@ async def delete_cohort_for_user(request: Request, cohort_id: str):
             status_code=500,
             detail=f"Failed to delete cohort {cohort_id} for user {user_id}",
         )
-    except Exception as e:
-        logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to update cohort display order."
-        )
 
 
 @router.get("/cohorts/public", tags=["cohort"])
 async def get_all_public_cohorts():
     """
-    Retrieve a list of all cohorts for the public user (latest versions only).
+    Retrieve a list of all public cohorts available to anonymous users.
+
+    Authentication:
+    - No authentication required. Returns cohorts for the public user account.
 
     Returns:
-        dict: A list of cohort IDs and names for the public user.
+    - list[dict]: Array of cohort summary objects, each containing:
+        - id (str): Unique identifier for the cohort
+        - name (str): Name of the cohort
+        - study_id (str): ID of the parent study
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Example Response:
+    ```json
+    [
+        {
+            "id": "public_cohort_1",
+            "name": "Example Diabetes Study",
+            "study_id": "public_study_1",
+            "created_at": "2025-12-01T10:00:00Z",
+            "updated_at": "2025-12-01T10:00:00Z"
+        }
+    ]
+    ```
+
+    Raises:
+    - 500: If PUBLIC_USER_ID environment variable is not set or database error occurs
     """
     try:
         public_user_id = os.getenv("PUBLIC_USER_ID")
@@ -307,13 +377,29 @@ async def get_all_public_cohorts():
 @router.get("/cohort/public", tags=["cohort"])
 async def get_public_cohort(cohort_id: str):
     """
-    Retrieve a cohort by its ID for the public user. Retrieves the latest version.
+    Retrieve a public cohort by its ID. Returns the latest version.
 
-    Args:
-        cohort_id (str): The ID of the cohort to retrieve.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to retrieve
+
+    Authentication:
+    - No authentication required. Returns cohorts for the public user account.
 
     Returns:
-        dict: The cohort data.
+    - dict: Complete cohort object with same structure as GET /cohort endpoint:
+        - id (str): Unique identifier for the cohort
+        - name (str): Name of the cohort
+        - study_id (str): ID of the parent study
+        - phenotypes (list[dict]): Array of phenotype definitions
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Data Format:
+    - Returns cohorts in phenotypes-only format (see GET /cohort for details)
+
+    Raises:
+    - 404: If cohort is not found in public user account
+    - 500: If PUBLIC_USER_ID environment variable is not set or database error occurs
     """
     try:
         public_user_id = os.getenv("PUBLIC_USER_ID")
