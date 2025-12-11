@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Import database manager and authentication utilities
 from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
+from ..utils.validation import validate_cohort_data_format
 
 
 # Modify the get_all_cohorts endpoint to accept user_id
@@ -37,11 +38,62 @@ async def get_cohort_for_user(request: Request, cohort_id: str):
     """
     Retrieve a cohort by its ID for a specific user. Retrieves the latest version.
 
-    Args:
-        cohort_id (str): The ID of the cohort to retrieve for the authenticated user.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to retrieve
+
+    Authentication:
+    - Requires authenticated user. Only returns cohorts owned by the authenticated user.
 
     Returns:
-        dict: The cohort data.
+    - dict: Complete cohort object containing:
+        - id (str): Unique identifier for the cohort
+        - name (str): Name of the cohort
+        - study_id (str): ID of the parent study
+        - phenotypes (list[dict]): Array of phenotype definitions. Each phenotype has:
+            - id (str): Unique identifier
+            - type (str): One of 'entry', 'inclusion', 'exclusion', 'baseline', 'outcome', 'component'
+            - name (str): Phenotype name
+            - class_name (str): Phenotype class (e.g., 'CodelistPhenotype', 'LogicPhenotype')
+            - Additional fields specific to the phenotype class
+        - created_at (str): ISO timestamp when created
+        - updated_at (str): ISO timestamp of last update
+
+    Data Format:
+    - Cohorts use the phenotypes-only format where all phenotypes are in a single 'phenotypes' array
+    - Each phenotype has a 'type' field indicating its role (entry, inclusion, exclusion, etc.)
+    - Legacy format with separate entry_criterion, inclusions, exclusions keys is NOT returned
+
+    Example Response:
+    ```json
+    {
+        "id": "cohort_123",
+        "name": "Type 2 Diabetes Cohort",
+        "study_id": "study_456",
+        "phenotypes": [
+            {
+                "id": "pheno_1",
+                "type": "entry",
+                "name": "T2DM Diagnosis",
+                "class_name": "CodelistPhenotype",
+                "codelist": {...}
+            },
+            {
+                "id": "pheno_2",
+                "type": "inclusion",
+                "name": "Age >= 18",
+                "class_name": "MeasurementPhenotype",
+                ...
+            }
+        ],
+        "created_at": "2025-12-09T10:00:00Z",
+        "updated_at": "2025-12-11T15:30:00Z"
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If cohort is not found or user doesn't have access
+    - 500: If there's an error retrieving the cohort from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -51,6 +103,14 @@ async def get_cohort_for_user(request: Request, cohort_id: str):
                 status_code=404,
                 detail=f"Cohort {cohort_id} not found for user {user_id}",
             )
+        
+        # Validate that returned cohort_data follows phenotypes-only format
+        # Note: db_manager returns {cohort_data: {...}, version: ..., is_provisional: ...}
+        try:
+            validate_cohort_data_format(cohort["cohort_data"])
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        
         return cohort
     except HTTPException:
         raise
@@ -74,17 +134,70 @@ async def create_or_update_cohort(
     """
     Create or update a cohort for a specific user (idempotent operation).
 
-    Args:
-        cohort_id (str): The ID of the cohort to create/update for the authenticated user.
-        cohort (Dict): The complete JSON specification of the cohort.
-        study_id (str): The ID of the study this cohort belongs to (required for new cohorts).
-        provisional (bool): Whether to save the cohort as provisional.
-        new_version (bool): If True, increment version. If False, replace existing version.
+    Query Parameters:
+    - cohort_id (str): The unique identifier of the cohort to create/update
+    - study_id (str, optional): The ID of the parent study (required for new cohorts)
+    - provisional (bool, default=False): Whether to save as provisional version
+    - new_version (bool, default=False): If True, increment version; if False, replace existing
+
+    Request Body:
+    - cohort (dict): Complete cohort specification in phenotypes-only format
+
+    Authentication:
+    - Requires authenticated user. Creates/updates cohort for the authenticated user only.
+
+    Data Format Requirements:
+    - Cohort MUST contain a 'phenotypes' array
+    - Each phenotype must have a 'type' field (entry, inclusion, exclusion, baseline, outcome, component)
+    - Legacy format with separate entry_criterion, inclusions, exclusions keys is NOT accepted
+    - Request will be rejected with 422 if legacy format is detected
+
+    Example Request Body:
+    ```json
+    {
+        "id": "cohort_123",
+        "name": "Type 2 Diabetes Cohort",
+        "phenotypes": [
+            {
+                "id": "pheno_1",
+                "type": "entry",
+                "name": "T2DM Diagnosis",
+                "class_name": "CodelistPhenotype",
+                "codelist": {...}
+            },
+            {
+                "id": "pheno_2",
+                "type": "inclusion",
+                "name": "Age >= 18",
+                "class_name": "MeasurementPhenotype",
+                ...
+            }
+        ]
+    }
+    ```
 
     Returns:
-        dict: Status and message of the operation.
+    - dict: Status and message indicating success
+        ```json
+        {
+            "status": "success",
+            "message": "Cohort created successfully." | "Cohort updated successfully."
+        }
+        ```
+
+    Raises:
+    - 400: If study_id is missing for new cohort creation
+    - 401: If user is not authenticated
+    - 422: If cohort data format is invalid (missing phenotypes array or contains legacy keys)
+    - 500: If there's an error saving the cohort to the database
     """
     user_id = get_authenticated_user_id(request)
+    
+    # Validate cohort data format before processing
+    try:
+        validate_cohort_data_format(cohort)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
     # Check if cohort already exists
     existing_cohort = await db_manager.get_cohort_for_user(user_id, cohort_id)

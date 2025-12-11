@@ -1256,21 +1256,8 @@ async def delete_phenotype(
         if streaming_ctx:
             streaming_ctx.stream_message("tool_call", f"🗑️ Deleting phenotype")
 
-        # Get phenotypes from all categories (both flat and grouped structures)
+        # Get phenotypes from phenotypes array
         existing_phenotypes = await get_context_phenotypes(ctx.deps)
-
-        # If no flat phenotypes, collect from grouped structure
-        if not existing_phenotypes:
-            for category in [
-                "entry_criterion",
-                "inclusions",
-                "exclusions",
-                "characteristics",
-                "outcomes",
-            ]:
-                category_phenotypes = ctx.deps.current_cohort.get(category, [])
-                if isinstance(category_phenotypes, list):
-                    existing_phenotypes.extend(category_phenotypes)
 
         # Find phenotype to delete
         phenotype_to_delete = None
@@ -2628,35 +2615,23 @@ async def save_updated_cohort(
             )
             logger.info(f"Saving updated cohort: {change_description}")
 
-            # Create updated cohort data
-            new_cohort_data = {
+            # Create updated cohort data in phenotypes-only format
+            new_cohort = {
                 "id": context.current_cohort["id"],
                 "name": context.current_cohort["name"],
                 "class_name": context.current_cohort["class_name"],
                 "phenotypes": updated_phenotypes,
+                "constants": context.current_cohort.get("constants", []),
+                "database_config": context.current_cohort.get("database_config", {}),
             }
 
-            # Process through CohortUtils
-            print(f"💾 SAVE_COHORT: Processing through CohortUtils...")
-            cohort_utils = CohortUtils()
-            new_cohort = cohort_utils.convert_phenotypes_to_structure(new_cohort_data)
-
-            # Check what CohortUtils produced
-            print(f"💾 SAVE_COHORT: After CohortUtils processing:")
-            for category in [
-                "entry_criterion",
-                "inclusions",
-                "exclusions",
-                "characteristics",
-                "outcomes",
-            ]:
-                cat_data = new_cohort.get(category, [])
-                if isinstance(cat_data, list):
-                    print(f"💾 SAVE_COHORT:   {category}: {len(cat_data)} items")
-                    for i, item in enumerate(cat_data):
-                        print(
-                            f"💾 SAVE_COHORT:     {i}: {item.get('name')} (ID: {item.get('id')})"
-                        )
+            # Verify phenotypes-only format
+            print(f"💾 SAVE_COHORT: Using phenotypes-only format with {len(updated_phenotypes)} phenotypes")
+            phenotype_types = {}
+            for p in updated_phenotypes:
+                ptype = p.get("type", "unknown")
+                phenotype_types[ptype] = phenotype_types.get(ptype, 0) + 1
+            print(f"💾 SAVE_COHORT: Phenotype breakdown: {phenotype_types}")
 
             # Save as provisional, replacing existing provisional version
             print(f"💾 SAVE_COHORT: Saving to database...")
@@ -2672,9 +2647,9 @@ async def save_updated_cohort(
                 new_version=False,  # Replace existing provisional version
             )
 
-            # CRITICAL: Update the context's current_cohort with the processed structure
+            # CRITICAL: Update the context's current_cohort with the saved cohort
             # This ensures subsequent operations see the actual saved structure
-            print(f"💾 SAVE_COHORT: Updating context with processed structure...")
+            print(f"💾 SAVE_COHORT: Updating context with saved cohort...")
             context.current_cohort.clear()
             context.current_cohort.update(new_cohort)
 
@@ -2682,18 +2657,13 @@ async def save_updated_cohort(
             print(f"💾 SAVE_COHORT: Context update verification:")
             if "phenotypes" in context.current_cohort:
                 print(
-                    f"💾 SAVE_COHORT:   Context has 'phenotypes' field with {len(context.current_cohort['phenotypes'])} items"
+                    f"💾 SAVE_COHORT:   Context has 'phenotypes' field with {len(context.current_cohort['phenotypes'])} phenotypes"
                 )
-            for category in ["inclusions", "exclusions"]:
-                cat_data = context.current_cohort.get(category, [])
-                if isinstance(cat_data, list):
-                    print(
-                        f"💾 SAVE_COHORT:   Context {category}: {len(cat_data)} items"
-                    )
-                    for item in cat_data:
-                        print(
-                            f"💾 SAVE_COHORT:     - {item.get('name')} (ID: {item.get('id')})"
-                        )
+                phenotype_types = {}
+                for p in context.current_cohort['phenotypes']:
+                    ptype = p.get("type", "unknown")
+                    phenotype_types[ptype] = phenotype_types.get(ptype, 0) + 1
+                print(f"💾 SAVE_COHORT:   Phenotype types: {phenotype_types}")
 
             print(f"💾 SAVE_COHORT: ✅ Successfully completed save operation")
             logger.info(f"Successfully saved cohort: {change_description}")
@@ -2704,8 +2674,9 @@ async def save_updated_cohort(
             raise
 
 
-# Import authentication utilities
+# Import authentication and validation utilities
 from ...utils.auth import get_authenticated_user_id
+from ...utils.validation import validate_cohort_data_format
 
 # FastAPI router
 router = APIRouter(tags=["AI"])
@@ -2777,7 +2748,7 @@ async def suggest_changes_v2(
     - Create phenotypes (CodelistPhenotype, AgePhenotype, MeasurementPhenotype, etc.)
     - Update phenotype properties (codelists, time ranges, value filters)
     - Delete phenotypes
-    - Modify entry criterion, inclusions, exclusions, characteristics, outcomes
+    - Modify phenotypes of any type (entry, inclusion, exclusion, baseline, outcome)
 
     Raises:
     - 401: If user is not authenticated
@@ -2806,18 +2777,16 @@ async def suggest_changes_v2(
     if not study_id:
         raise HTTPException(status_code=400, detail="study_id is required")
 
-    # Clean up duplicated fields
+    # Validate cohort uses phenotypes-only format
     try:
-        for field in [
-            "entry_criterion",
-            "inclusions",
-            "exclusions",
-            "characteristics",
-            "outcomes",
-        ]:
-            current_cohort.pop(field, None)
-    except KeyError:
-        pass
+        validate_cohort_data_format(current_cohort)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    
+    # Remove any legacy structured keys if they somehow exist (for backwards compatibility during migration)
+    legacy_keys = ["entry_criterion", "inclusions", "exclusions", "characteristics", "outcomes"]
+    for field in legacy_keys:
+        current_cohort.pop(field, None)
 
     # Prepare context and capture initial state for comparison
     initial_cohort_data = current_cohort.copy()

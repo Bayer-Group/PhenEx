@@ -15,6 +15,7 @@ except ImportError:
 from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
 from ..routes.codelist import get_codelist_file_for_cohort
+from ..utils.validation import validate_cohort_data_format
 
 # Create router for cohort execution endpoint
 router = APIRouter()
@@ -30,20 +31,90 @@ async def execute_cohort(
     database_config: Dict = None,
 ):
     """
-    Execute a study using the provided cohort and database configuration with streaming output.
+    Execute a cohort against a database with streaming output.
 
-    Args:
-        request (Request): The request object for authentication.
-        cohort (Dict): The cohort definition.
-        database_config (Dict): The database configuration for the study.
+    Request Body:
+    - cohort (dict): Complete cohort specification in phenotypes-only format
+    - database_config (dict): Database connection and mapper configuration
+
+    Authentication:
+    - Requires authenticated user. Execution runs with authenticated user's permissions.
+
+    Cohort Data Format Requirements:
+    - Cohort MUST contain a 'phenotypes' array
+    - Each phenotype must have a 'type' field (entry, inclusion, exclusion, baseline, outcome, component)
+    - During execution, phenotypes array is converted to structured format for PhenEx library
+
+    Example Request Body:
+    ```json
+    {
+        "cohort": {
+            "id": "cohort_123",
+            "name": "Type 2 Diabetes Cohort",
+            "phenotypes": [
+                {
+                    "id": "pheno_1",
+                    "type": "entry",
+                    "name": "T2DM Diagnosis",
+                    "class_name": "CodelistPhenotype",
+                    "codelist": {...}
+                },
+                {
+                    "id": "pheno_2",
+                    "type": "inclusion",
+                    "name": "Age >= 18",
+                    "class_name": "MeasurementPhenotype",
+                    ...
+                }
+            ]
+        },
+        "database_config": {
+            "mapper": "OMOP",
+            "config": {
+                "source_database": "omop_db",
+                "destination_database": "results_db"
+            }
+        }
+    }
+    ```
 
     Returns:
-        StreamingResponse: A stream of execution logs followed by the final results.
+    - StreamingResponse: Server-Sent Events (SSE) stream containing:
+        - Log messages: `{"type": "log", "message": "..."}`
+        - Error messages: `{"type": "error", "message": "..."}`
+        - Final results: `{"type": "result", "data": {...}}`
+        - Completion marker: `{"type": "complete"}`
+
+    Final Result Structure:
+    ```json
+    {
+        "type": "result",
+        "data": {
+            "cohort": {
+                ...original cohort with added count fields...,
+                "table1": {...baseline characteristics table...},
+                "waterfall": {...attrition/waterfall report...}
+            }
+        }
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 422: If cohort data format is invalid
+    - 500: If execution fails (streamed as error message)
     """
     # Get authenticated user_id and add it to cohort
     user_id = get_authenticated_user_id(request)
+    
+    # Validate cohort data format before execution
     if cohort:
+        try:
+            validate_cohort_data_format(cohort)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
         cohort["user_id"] = user_id
+    
     import sys
     import asyncio
     from queue import Queue
@@ -163,7 +234,6 @@ async def execute_cohort(
                     f"Successfully retrieved {len(mapped_tables)} mapped tables"
                 )
 
-                del cohort["phenotypes"]
                 print("Preparing cohort for phenex...")
                 logger.info("Converting cohort data structure for phenex processing...")
 
@@ -222,6 +292,11 @@ async def execute_cohort(
 
                 cohort["table1"] = loads(px_cohort.table1.to_json(orient="split"))
                 cohort["waterfall"] = loads(df_waterfall.to_json(orient="split"))
+
+                # Convert back to phenotypes-only format for frontend
+                print("Converting results back to phenotypes-only format...")
+                logger.info("Converting cohort from structured format back to phenotypes array for frontend...")
+                cohort = convert_structured_to_phenotypes(cohort)
 
                 final_result["cohort"] = cohort
 
@@ -297,6 +372,81 @@ async def execute_cohort(
             "Content-Type": "text/event-stream",
         },
     )
+
+
+def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
+    """
+    Converts a cohort from structured format back to phenotypes-only format.
+    
+    Takes a cohort with separate entry_criterion, inclusions, exclusions, characteristics, 
+    and outcomes keys and combines them into a single 'phenotypes' array with type fields.
+    
+    This is the reverse operation of the conversion done in prepare_cohort_for_phenex.
+    Used to return execution results to the frontend in the expected format.
+    
+    Args:
+        cohort_dict: Cohort in structured format with entry_criterion, inclusions, etc.
+        
+    Returns:
+        Dict: Cohort with all phenotypes in a single 'phenotypes' array
+    """
+    import copy
+    
+    result = copy.deepcopy(cohort_dict)
+    phenotypes = []
+    
+    # Add entry criterion
+    if "entry_criterion" in result:
+        entry = result["entry_criterion"]
+        if entry:
+            # Ensure it has type field
+            if "type" not in entry:
+                entry["type"] = "entry"
+            phenotypes.append(entry)
+        del result["entry_criterion"]
+    
+    # Add inclusions
+    if "inclusions" in result:
+        for inclusion in result["inclusions"]:
+            # Ensure it has type field
+            if "type" not in inclusion:
+                inclusion["type"] = "inclusion"
+            phenotypes.append(inclusion)
+        del result["inclusions"]
+    
+    # Add exclusions
+    if "exclusions" in result:
+        for exclusion in result["exclusions"]:
+            # Ensure it has type field
+            if "type" not in exclusion:
+                exclusion["type"] = "exclusion"
+            phenotypes.append(exclusion)
+        del result["exclusions"]
+    
+    # Add characteristics
+    if "characteristics" in result:
+        for characteristic in result["characteristics"]:
+            # Ensure it has type field
+            if "type" not in characteristic:
+                characteristic["type"] = "baseline"
+            phenotypes.append(characteristic)
+        del result["characteristics"]
+    
+    # Add outcomes
+    if "outcomes" in result:
+        for outcome in result["outcomes"]:
+            # Ensure it has type field
+            if "type" not in outcome:
+                outcome["type"] = "outcome"
+            phenotypes.append(outcome)
+        del result["outcomes"]
+    
+    # Set the phenotypes array
+    result["phenotypes"] = phenotypes
+    
+    logger.info(f"Converted cohort from structured format to phenotypes array with {len(phenotypes)} phenotypes")
+    
+    return result
 
 
 def append_count_to_cohort(phenex_cohort, cohort_dict):
@@ -862,13 +1012,29 @@ def prepare_computation_graph_node(node: dict, user_id: str):
 
 def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
     """
-    Codelists in the UI are of three types : manual, from file, from medconb. Additionally, a single phenotype can receive a list of codelists, each of various types (manual, file, medconb). Prior to PhenEx execution, we resolve each codelist individually i.e. getting codes from the csv file or pulling them from medconb. Then, if a list of codelists is passed, we combine them into a single codelist and store original references in a CompositeCodelist class.
+    Prepares a cohort from PhenEx UI for PhenEx library execution.
+    
+    This function performs two main tasks:
+    1. Converts phenotypes-only format to structured format (entry_criterion, inclusions, etc.) 
+       required by PhenEx library
+    2. Resolves codelists (manual, from file, from medconb) to actual code lists
+    
+    The UI sends cohorts in phenotypes-only format with a single 'phenotypes' array where each
+    phenotype has a 'type' field. The PhenEx library expects the structured format with separate
+    keys for entry_criterion, inclusions, exclusions, characteristics, and outcomes.
 
     Args:
-        phenexui_cohort : The cohort dictionary representation generated by PhenExUI.
-        user_id (str): The authenticated user ID.
+        phenexui_cohort: The cohort dictionary from PhenExUI with phenotypes array
+        user_id (str): The authenticated user ID for codelist file resolution
+
     Returns:
-        phenex_cohort : The cohort dictionary representation with codelists ready for PhenEx execution
+        dict: The cohort dictionary in PhenEx library format with:
+            - entry_criterion: Single phenotype object
+            - inclusions: List of phenotypes
+            - exclusions: List of phenotypes  
+            - characteristics: List of phenotypes
+            - outcomes: List of phenotypes
+            - All codelists resolved with actual codes
     """
     import copy
 
@@ -880,45 +1046,86 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
 
     phenex_cohort = copy.deepcopy(phenexui_cohort)
 
-    logger.info(f"🏥 Preparing entry criterion for cohort '{cohort_name}'")
-    phenex_cohort["entry_criterion"] = prepare_phenotypes_for_phenex(
-        [phenex_cohort["entry_criterion"]], user_id
-    )[0]
-
-    if "inclusions" in phenex_cohort.keys():
+    # Convert phenotypes-only format to structured format for PhenEx library
+    if "phenotypes" in phenex_cohort:
         logger.info(
-            f"🏥 Preparing {len(phenex_cohort['inclusions'])} inclusions for cohort '{cohort_name}'"
+            f"🏥 Converting {len(phenex_cohort['phenotypes'])} phenotypes from array format to structured format"
+        )
+        
+        phenotypes = phenex_cohort["phenotypes"]
+        
+        # Split phenotypes by type
+        entry_phenotypes = [p for p in phenotypes if p.get("type") == "entry"]
+        inclusion_phenotypes = [p for p in phenotypes if p.get("type") == "inclusion"]
+        exclusion_phenotypes = [p for p in phenotypes if p.get("type") == "exclusion"]
+        baseline_phenotypes = [p for p in phenotypes if p.get("type") == "baseline"]
+        outcome_phenotypes = [p for p in phenotypes if p.get("type") == "outcome"]
+        
+        # Set entry_criterion (should be exactly one)
+        if entry_phenotypes:
+            phenex_cohort["entry_criterion"] = entry_phenotypes[0]
+            logger.info(f"🏥 Set entry_criterion: {entry_phenotypes[0].get('name', 'Unnamed')}")
+        else:
+            logger.warning(f"🏥 No entry phenotype found in cohort '{cohort_name}'")
+        
+        # Set other categories
+        if inclusion_phenotypes:
+            phenex_cohort["inclusions"] = inclusion_phenotypes
+            logger.info(f"🏥 Set {len(inclusion_phenotypes)} inclusions")
+        
+        if exclusion_phenotypes:
+            phenex_cohort["exclusions"] = exclusion_phenotypes
+            logger.info(f"🏥 Set {len(exclusion_phenotypes)} exclusions")
+        
+        if baseline_phenotypes:
+            phenex_cohort["characteristics"] = baseline_phenotypes
+            logger.info(f"🏥 Set {len(baseline_phenotypes)} characteristics")
+        
+        if outcome_phenotypes:
+            phenex_cohort["outcomes"] = outcome_phenotypes
+            logger.info(f"🏥 Set {len(outcome_phenotypes)} outcomes")
+        
+        # Remove the phenotypes array as it's no longer needed
+        del phenex_cohort["phenotypes"]
+        logger.info(f"🏥 Removed phenotypes array after conversion")
+
+    # Now prepare codelists for each category
+    if "entry_criterion" in phenex_cohort:
+        logger.info(f"🏥 Preparing entry criterion codelists for cohort '{cohort_name}'")
+        phenex_cohort["entry_criterion"] = prepare_phenotypes_for_phenex(
+            [phenex_cohort["entry_criterion"]], user_id
+        )[0]
+
+    if "inclusions" in phenex_cohort:
+        logger.info(
+            f"🏥 Preparing codelists for {len(phenex_cohort['inclusions'])} inclusions"
         )
         phenex_cohort["inclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["inclusions"], user_id
         )
-    if "exclusions" in phenex_cohort.keys():
+    
+    if "exclusions" in phenex_cohort:
         logger.info(
-            f"🏥 Preparing {len(phenex_cohort['exclusions'])} exclusions for cohort '{cohort_name}'"
+            f"🏥 Preparing codelists for {len(phenex_cohort['exclusions'])} exclusions"
         )
         phenex_cohort["exclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["exclusions"], user_id
         )
-    if "characteristics" in phenex_cohort.keys():
+    
+    if "characteristics" in phenex_cohort:
         logger.info(
-            f"🏥 Preparing {len(phenex_cohort['characteristics'])} characteristics for cohort '{cohort_name}'"
+            f"🏥 Preparing codelists for {len(phenex_cohort['characteristics'])} characteristics"
         )
         phenex_cohort["characteristics"] = prepare_phenotypes_for_phenex(
             phenex_cohort["characteristics"], user_id
         )
-    if "outcomes" in phenex_cohort.keys():
+    
+    if "outcomes" in phenex_cohort:
         logger.info(
-            f"🏥 Preparing {len(phenex_cohort['outcomes'])} outcomes for cohort '{cohort_name}'"
+            f"🏥 Preparing codelists for {len(phenex_cohort['outcomes'])} outcomes"
         )
         phenex_cohort["outcomes"] = prepare_phenotypes_for_phenex(
             phenex_cohort["outcomes"], user_id
-        )
-    if "phenotypes" in phenex_cohort.keys():
-        logger.info(
-            f"🏥 Preparing {len(phenex_cohort['phenotypes'])} phenotypes for cohort '{cohort_name}'"
-        )
-        phenex_cohort["phenotypes"] = prepare_phenotypes_for_phenex(
-            phenex_cohort["phenotypes"], user_id
         )
 
     logger.info(f"🏥 Completed cohort preparation for '{cohort_name}'")

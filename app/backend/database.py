@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker, Session
 
 from .domain.user import User, UserID
+from .utils.validation import validate_cohort_data_format
 
 
 if TYPE_CHECKING:
@@ -302,6 +303,10 @@ class DatabaseManager:
         Returns:
             bool: True if successful.
         """
+        # Validate cohort data format using centralized validation function
+        # ValueError will bubble up to caller
+        validate_cohort_data_format(cohort_data)
+        
         conn = None
         try:
             conn = await self.get_connection()

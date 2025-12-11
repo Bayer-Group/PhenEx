@@ -277,8 +277,10 @@ export class CohortDataService {
       this._cohort_data.phenotypes = [
         entry, i1, i2
       ];
-      this._cohort_data.entry_criterion = entry
-      this._cohort_data.inclusions = [i1, i2]
+      // Keep structured keys for internal frontend use (execution service needs them)
+      // but strip them out before sending to backend (see stripLegacyStructuredKeys)
+      this._cohort_data.entry_criterion = entry;
+      this._cohort_data.inclusions = [i1, i2];
     }
 
   }
@@ -366,7 +368,7 @@ export class CohortDataService {
   public async saveChangesToCohort(changesToCohort: boolean = true, refreshGrid: boolean = true) {
     if (changesToCohort) {
       this.sortPhenotypes();
-      this.splitPhenotypesByType();
+      // No longer split phenotypes by type - backend expects phenotypes array only
     }
     this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
@@ -374,7 +376,10 @@ export class CohortDataService {
     console.log("💾 study_id present?", this._cohort_data.study_id);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
-    await updateCohort(this._cohort_data.id, this._cohort_data);
+    
+    // Strip legacy structured keys before sending to backend
+    const cohortForBackend = this.stripLegacyStructuredKeys(this._cohort_data);
+    await updateCohort(this._cohort_data.id, cohortForBackend);
 
     // Always notify data change listeners (for PhenotypeDataService sync)
     this.notifyDataChangeListeners();
@@ -383,6 +388,16 @@ export class CohortDataService {
     if (refreshGrid) {
       this.notifyListeners();
     }
+  }
+
+  private stripLegacyStructuredKeys(cohortData: Record<string, any>): Record<string, any> {
+    /**
+     * Strips legacy structured keys (entry_criterion, inclusions, etc.) from cohort data
+     * before sending to backend. Frontend keeps these keys internally for execution service,
+     * but backend expects only phenotypes array.
+     */
+    const { entry_criterion, inclusions, exclusions, characteristics, outcomes, ...cleanedCohort } = cohortData;
+    return cleanedCohort;
   }
 
   private sortPhenotypes() {
@@ -408,32 +423,6 @@ export class CohortDataService {
     
     // Recalculate hierarchical indices after sorting
     this.calculateHierarchicalIndices();
-  }
-
-  private splitPhenotypesByType() {
-    const types = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
-    const type_keys = [
-      'entry_criterion',
-      'inclusions',
-      'exclusions',
-      'characteristics',
-      'outcomes',
-    ];
-
-    // iterate over order, finding phenotypes of that type and appending to a new array of phenotypes
-    let i = 0;
-    for (const type of types) {
-      const phenotypesOfType = this._cohort_data.phenotypes.filter(
-        (row: TableRow) => row.type === type
-      );
-      if (type == 'entry') {
-        this._cohort_data.entry_criterion = phenotypesOfType[0];
-      } else {
-        const type_key = type_keys[i];
-        this._cohort_data[type_key] = phenotypesOfType;
-      }
-      i++;
-    }
   }
 
   public addPhenotype(type: string = 'NA', parentPhenotypeId: string | null = null) {
@@ -755,7 +744,7 @@ export class CohortDataService {
     
     // Update cohort data
     this._cohort_data.phenotypes = newOrder;
-    this.splitPhenotypesByType();
+    // No longer split phenotypes by type - backend expects phenotypes array only
     this._cohort_data.name = this._cohort_name;
     
     // Recalculate hierarchical indices after reordering
@@ -865,7 +854,7 @@ export class CohortDataService {
     console.log('Updated _cohort_data.phenotypes length:', this._cohort_data.phenotypes.length);
 
     // Don't call sortPhenotypes() during drag operations as it will mess up our ordering
-    this.splitPhenotypesByType();
+    // No longer split phenotypes by type - backend expects phenotypes array only
     this._cohort_data.name = this._cohort_name;
     
     // Recalculate hierarchical indices after reordering
@@ -957,7 +946,7 @@ export class CohortDataService {
     this._cohort_data.phenotypes = newCompleteOrder;
     this._table_data = this.tableDataFromCohortData();
     
-    this.splitPhenotypesByType();
+    // No longer split phenotypes by type - backend expects phenotypes array only
     this._cohort_data.name = this._cohort_name;
     
     // Recalculate hierarchical indices after hierarchical reordering
@@ -1167,7 +1156,7 @@ export class CohortDataService {
     }
     
     this.sortPhenotypes();
-    this.splitPhenotypesByType();
+    // No longer split phenotypes by type - backend expects phenotypes array only
     // this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
