@@ -1,28 +1,346 @@
+from typing import Any, Union, Dict
+import pandas as pd
+from pathlib import Path
+
+
 class Reporter:
     """
-    A reporter creates an analysis of a cohort. It should receive a cohort, execute and return the report.
+    Base class for all PhenEx reporters.
 
-    To subclass:
-        1. implement execute method, returning a table
+    A reporter creates an analysis of a cohort. It receives a cohort, executes the reporting analysis, and returns the results. Results can be exported to various formats.
 
+    Subclasses must implement:
+        - execute(cohort): Perform the reporting analysis and return results
+
+    Subclasses may implement custom export / formatting methods as appropriate for their output type:
+
+        - to_excel(filename): Export to Excel format
+        - to_csv(filename): Export to CSV format
+        - to_html(filename): Export to HTML format
+        - to_markdown(filename): Export to Markdown format
+        - to_word(filename): Export to Word document format
+        - create_pretty_display(): Format results for display (modifies self.df or similar)
+
+    Default implementations for each of these methods are defined if execute() returns self.df as a pandas DataFrame.
 
     Parameters:
-        pretty_display: True by default. If true, dataframe is ready for display in a study report with values rounded to the decimal place and phenotype display names shown. Additionally, numeric values are cast to strings so that empty strings "" are displayed rather than NaNs.
-        decimal_places: Number of decimal places to round to. By default set to 1.
+        decimal_places: Number of decimal places to round to. Default: 1
+        pretty_display: If True, format output for display (rounded decimals, display names, empty strings instead of NaNs). Default: True
     """
 
     def __init__(
         self,
         decimal_places: int = 1,
         pretty_display: bool = True,
-        include_component_phenotypes_level=None,
     ):
         self.decimal_places = decimal_places
         self.pretty_display = pretty_display
-        self.include_component_phenotypes_level = include_component_phenotypes_level
 
-    def execute(self, cohort):
-        raise NotImplementedError
+    def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
+        """
+        Execute the reporter analysis on a cohort.
 
-    def to_excel(self):
-        raise NotImplementedError
+        This is the main entry point for all reporters. Subclasses should:
+        1. Store the cohort: `self.cohort = cohort`
+        2. Perform analysis and store results in `self.df` (or `self.report` for Dict-based reporters)
+        3. Apply formatting if `self.pretty_display` is True
+        4. Return the primary result (DataFrame or Dict)
+
+        Args:
+            cohort: The cohort to analyze
+
+        Returns:
+            Analysis results: self.df or self.report if not returning a DataFrame.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclass
+        """
+        raise NotImplementedError("Subclasses must implement execute()")
+
+    def create_pretty_display(self) -> None:
+        """
+        Format the reporter's results for display.
+
+        Default implementation modifies self.df to:
+        - Round numeric values to decimal_places
+        - Replace NaN values with empty strings for cleaner display
+
+        Subclasses can override this method for custom formatting (e.g., phenotype display names).
+
+        Raises:
+            AttributeError: If self.df is not defined
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom create_pretty_display() method."
+            )
+
+        # Round numeric columns to decimal_places
+        numeric_columns = self.df.select_dtypes(include=["number"]).columns
+        self.df[numeric_columns] = self.df[numeric_columns].round(self.decimal_places)
+
+        # Replace NaN with empty strings for cleaner display
+        self.df = self.df.fillna("")
+
+    def to_excel(self, filename: str) -> str:
+        """
+        Export reporter results to Excel format.
+
+        Default implementation exports self.df if it exists. Subclasses can override for custom behavior.
+        If pretty_display=True and create_pretty_display() is implemented, formats the DataFrame before export.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .xlsx extension)
+
+        Returns:
+            str: Full path to the created file
+
+        Raises:
+            AttributeError: If self.df is not defined (call execute() first)
+            ImportError: If openpyxl is not installed
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_excel() method."
+            )
+
+        # Convert to Path object and ensure .xlsx extension
+        filepath = Path(filename)
+        if filepath.suffix != ".xlsx":
+            filepath = filepath.with_suffix(".xlsx")
+
+        # Create parent directories if needed
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Apply pretty display if requested
+        df_to_export = self.df
+        if self.pretty_display:
+            # Create a copy to avoid modifying the original
+            temp_df = self.df.copy()
+            original_df = self.df
+            self.df = temp_df
+            self.create_pretty_display()
+            df_to_export = self.df
+            self.df = original_df  # Restore original
+
+        # Export to Excel
+        df_to_export.to_excel(filepath, index=False)
+
+        return str(filepath.absolute())
+
+    def to_csv(self, filename: str) -> str:
+        """
+        Export reporter results to CSV format.
+
+        Default implementation exports self.df if it exists. Subclasses can override for custom behavior. If pretty_display=True, formats the DataFrame before export.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .csv extension)
+
+        Returns:
+            str: Full path to the created file
+
+        Raises:
+            AttributeError: If self.df is not defined (call execute() first)
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_csv() method."
+            )
+
+        # Convert to Path object and ensure .csv extension
+        filepath = Path(filename)
+        if filepath.suffix != ".csv":
+            filepath = filepath.with_suffix(".csv")
+
+        # Create parent directories if needed
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Apply pretty display if requested
+        df_to_export = self.df
+        if self.pretty_display:
+            # Create a copy to avoid modifying the original
+            temp_df = self.df.copy()
+            original_df = self.df
+            self.df = temp_df
+            self.create_pretty_display()
+            df_to_export = self.df
+            self.df = original_df  # Restore original
+
+        # Export to CSV
+        df_to_export.to_csv(filepath, index=False)
+
+        return str(filepath.absolute())
+
+    def to_html(self, filename: str) -> str:
+        """
+        Export reporter results to HTML format.
+
+        Default implementation exports self.df if it exists. Subclasses can override for custom behavior. If pretty_display=True, formats the DataFrame before export.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .html extension)
+
+        Returns:
+            str: Full path to the created file
+
+        Raises:
+            AttributeError: If self.df is not defined (call execute() first)
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_html() method."
+            )
+
+        # Convert to Path object and ensure .html extension
+        filepath = Path(filename)
+        if filepath.suffix != ".html":
+            filepath = filepath.with_suffix(".html")
+
+        # Create parent directories if needed
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Apply pretty display if requested
+        df_to_export = self.df
+        if self.pretty_display:
+            # Create a copy to avoid modifying the original
+            temp_df = self.df.copy()
+            original_df = self.df
+            self.df = temp_df
+            self.create_pretty_display()
+            df_to_export = self.df
+            self.df = original_df  # Restore original
+
+        # Export to HTML
+        df_to_export.to_html(filepath, index=False)
+
+        return str(filepath.absolute())
+
+    def to_markdown(self, filename: str) -> str:
+        """
+        Export reporter results to Markdown format.
+
+        Default implementation exports self.df if it exists. Subclasses can override for custom behavior. If pretty_display=True, formats the DataFrame before export.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .md extension)
+
+        Returns:
+            str: Full path to the created file
+
+        Raises:
+            AttributeError: If self.df is not defined (call execute() first)
+            ImportError: If tabulate is not installed (required for df.to_markdown())
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_markdown() method."
+            )
+
+        # Convert to Path object and ensure .md extension
+        filepath = Path(filename)
+        if filepath.suffix != ".md":
+            filepath = filepath.with_suffix(".md")
+
+        # Create parent directories if needed
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Apply pretty display if requested
+        df_to_export = self.df
+        if self.pretty_display:
+            # Create a copy to avoid modifying the original
+            temp_df = self.df.copy()
+            original_df = self.df
+            self.df = temp_df
+            self.create_pretty_display()
+            df_to_export = self.df
+            self.df = original_df  # Restore original
+
+        # Export to Markdown (requires tabulate package)
+        try:
+            markdown_content = df_to_export.to_markdown(index=False)
+            filepath.write_text(markdown_content)
+        except ImportError:
+            raise ImportError(
+                "tabulate is required for Markdown export. Install with: pip install tabulate"
+            )
+
+        return str(filepath.absolute())
+
+    def to_word(self, filename: str) -> str:
+        """
+        Export reporter results to Microsoft Word format.
+
+        Default implementation exports self.df as a simple table if it exists.
+        Subclasses can override for custom formatting (headers, styling, etc).
+        If pretty_display=True and create_pretty_display() is implemented, formats the DataFrame before export.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .docx extension)
+
+        Returns:
+            str: Full path to the created file
+
+        Raises:
+            AttributeError: If self.df is not defined (call execute() first)
+            ImportError: If python-docx is not installed
+        """
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_word() method."
+            )
+
+        try:
+            from docx import Document
+        except ImportError:
+            raise ImportError(
+                "python-docx is required for Word export. Install with: pip install python-docx"
+            )
+
+        # Convert to Path object and ensure .docx extension
+        filepath = Path(filename)
+        if filepath.suffix != ".docx":
+            filepath = filepath.with_suffix(".docx")
+
+        # Create parent directories if needed
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Apply pretty display if requested
+        df_to_export = self.df
+        if self.pretty_display:
+            # Create a copy to avoid modifying the original
+            temp_df = self.df.copy()
+            original_df = self.df
+            self.df = temp_df
+            self.create_pretty_display()
+            df_to_export = self.df
+            self.df = original_df  # Restore original
+
+        # Create Word document with table
+        doc = Document()
+
+        # Add table (rows + 1 for header)
+        table = doc.add_table(
+            rows=len(df_to_export) + 1, cols=len(df_to_export.columns)
+        )
+        table.style = "Light Grid Accent 1"
+
+        # Add header row
+        for col_idx, column_name in enumerate(df_to_export.columns):
+            table.rows[0].cells[col_idx].text = str(column_name)
+
+        # Add data rows
+        for row_idx, (_, row_data) in enumerate(df_to_export.iterrows(), start=1):
+            for col_idx, value in enumerate(row_data):
+                table.rows[row_idx].cells[col_idx].text = str(value)
+
+        # Save document
+        doc.save(str(filepath))
+
+        return str(filepath.absolute())

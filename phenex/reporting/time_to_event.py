@@ -1,6 +1,7 @@
 from typing import Union, Optional, List
 import math
 import os
+import pandas as pd
 from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 
@@ -50,12 +51,15 @@ class TimeToEvent(Reporter):
         self.end_of_study_period = end_of_study_period
         self._date_column_names = None
 
-    def execute(self, cohort: "Cohort"):
+    def execute(self, cohort: "Cohort") -> pd.DataFrame:
         """
         Execute the time to event analysis for a provided cohort. This will generate a table with all necessary cohort outcome event dates and right censoring event dates. Following execution, a Kaplan Meier curve will be generated.
 
         Parameters:
             cohort: The cohort for which the time to event analysis should be performed.
+
+        Returns:
+            DataFrame with time-to-event data for each patient
         """
         self.cohort = cohort
         self._execute_right_censoring_phenotypes(self.cohort)
@@ -66,9 +70,10 @@ class TimeToEvent(Reporter):
         table = self._append_date_events(table)
         table = self._append_days_to_event(table)
         table = self._append_date_and_days_to_first_event(table)
-        self.table = table
+        self.df = table.execute()  # Convert to pandas DataFrame
         logger.info("time to event finished execution")
         self.plot_multiple_kaplan_meier()
+        return self.df
 
     def _execute_right_censoring_phenotypes(self, cohort):
         for phenotype in self.right_censor_phenotypes:
@@ -252,7 +257,7 @@ class TimeToEvent(Reporter):
     def fit_kaplan_meier_for_phenotype(self, phenotype):
         indicator = f"INDICATOR_{phenotype.name.upper()}"
         durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-        _sdf = self.table.select([indicator, durations])
+        _sdf = self.df[[indicator, durations]]
         _df = _sdf.to_pandas()
         kmf = KaplanMeierFitter(label=phenotype.name)
         kmf.fit(durations=_df[durations], event_observed=_df[indicator])

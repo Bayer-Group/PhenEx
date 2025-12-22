@@ -112,7 +112,7 @@ class Table2(Reporter):
             self.df = pd.DataFrame()
 
         if self.pretty_display and not self.df.empty:
-            self._create_pretty_display()
+            self.create_pretty_display()
 
         logger.info("Completed Table2 analysis")
         return self.df
@@ -402,7 +402,7 @@ class Table2(Reporter):
 
         return result
 
-    def _create_pretty_display(self):
+    def create_pretty_display(self):
         """
         Create formatted display version of results.
 
