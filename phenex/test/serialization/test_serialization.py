@@ -16,7 +16,7 @@ import datetime
 
 PATH_ARTIFACTS = "phenex/test/serialization/artifacts"
 if not os.path.exists(PATH_ARTIFACTS):
-    os.mkdir(PATH_ARTIFACTS)
+    os.makedirs(PATH_ARTIFACTS, exist_ok=True)
 
 
 def test_CodelistPhenotype():
