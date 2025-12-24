@@ -590,82 +590,98 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderComposerPanel = () => {
     return (
-      <div
-        style={{
-          position: 'absolute',
+      <DraggablePortal
+        initialPosition={{
           left: portalPosition.composer.left,
           top: portalPosition.composer.top,
-          width: portalPosition.composer.width,
-          maxHeight: portalPosition.composer.maxHeight,
-          zIndex: 9999,
         }}
-        ref={containerRef}
-        className={`${styles.container} ${colorBorder}`}
-        onClick={e => {
-          e.stopPropagation();
-          e.nativeEvent.stopImmediatePropagation();
+        dragHandleSelector="[data-drag-handle='true']"
+        onDragStart={() => {
+          setRecentlyDragged(false);
         }}
-        onMouseDown={e => {
-          const target = e.target as HTMLElement;
-          const isDragHandle = target.closest('[data-drag-handle="true"]');
-          if (!isDragHandle) {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
+        onDragEnd={wasDragged => {
+          if (wasDragged) {
+            setRecentlyDragged(true);
+            setTimeout(() => {
+              setRecentlyDragged(false);
+            }, 200);
           }
         }}
-        onKeyDown={e => {
-          if (e.key === 'Tab') {
-            e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
-            e.stopPropagation();
-            handleKeyDown(e);
-          }
-        }}
-        onKeyDownCapture={e => {
-          if (e.key === 'Tab') {
-            e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
-        tabIndex={-1}
       >
-        <div className={`${styles.content}`}>
-          <div 
-            ref={contentScrollableRef}
-            className={`${styles.contentScrollable}`}
-          >
-            {isInfoOpen ? (
-              renderInfoContent()
-            ) : (
-              renderMainContent()
+        <div
+          style={{
+            width: portalPosition.composer.width,
+            maxHeight: portalPosition.composer.maxHeight,
+            zIndex: 9999,
+          }}
+          ref={containerRef}
+          className={`${styles.container} ${colorBorder}`}
+          onClick={e => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onMouseDown={e => {
+            const target = e.target as HTMLElement;
+            const isDragHandle = target.closest('[data-drag-handle="true"]');
+            if (!isDragHandle) {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Tab') {
+              e.nativeEvent.stopImmediatePropagation();
+              e.preventDefault();
+              e.stopPropagation();
+              handleKeyDown(e);
+            }
+          }}
+          onKeyDownCapture={e => {
+            if (e.key === 'Tab') {
+              e.nativeEvent.stopImmediatePropagation();
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div className={`${styles.content}`} data-drag-handle="true">
+            <div 
+              ref={contentScrollableRef}
+              className={`${styles.contentScrollable}`}
+            >
+              {isInfoOpen ? (
+                renderInfoContent()
+              ) : (
+                renderMainContent()
+              )}
+            </div>
+            
+            <SimpleCustomScrollbar 
+              targetRef={contentScrollableRef}
+              orientation="vertical"
+              marginTop={65}
+              marginBottom={5}
+              classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
+            />
+            
+            {props.onEditingDone && showComposer && (
+              <div className={styles.doneButtonContainer}>
+                <button 
+                  className={`${styles.doneButton} ${typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
+                    props.onEditingDone?.();
+                  }}
+                >
+                  Done
+                </button>
+              </div>
             )}
           </div>
-          
-          <SimpleCustomScrollbar 
-            targetRef={contentScrollableRef}
-            orientation="vertical"
-            marginTop={65}
-            marginBottom={5}
-            classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
-          />
-          
-          {props.onEditingDone && showComposer && (
-            <div className={styles.doneButtonContainer}>
-              <button 
-                className={`${styles.doneButton} ${typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.nativeEvent.stopImmediatePropagation();
-                  props.onEditingDone?.();
-                }}
-              >
-                Done
-              </button>
-            </div>
-          )}
         </div>
-      </div>
+      </DraggablePortal>
     );
 
   }
