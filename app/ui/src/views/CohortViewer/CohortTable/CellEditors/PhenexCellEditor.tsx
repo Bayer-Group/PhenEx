@@ -32,6 +32,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
   selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
   rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
+  onRequestPositionAdjustment?: (offset: { x: number; y: number }) => void; // Callback for children to adjust composer position
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -388,6 +389,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
   };
 
+  // Handler for children to adjust composer position (e.g., to align a dropdown with clicked item)
+  const handlePositionAdjustment = (offset: { x: number; y: number }) => {
+    if (clickedItemPosition) {
+      setClickedItemPosition({
+        x: clickedItemPosition.x + offset.x,
+        y: clickedItemPosition.y + offset.y,
+      });
+    }
+  };
+
   const renderCellMirrorContents = () => {
     /*
     Render the info container with current selection and info button.
@@ -484,6 +495,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             ? { onValueChange: handleValueChange }
             : ((child.props as any).onValueChange ? {} : { onValueChange: handleValueChange })
           ),
+          // Pass position adjustment callback to all children
+          onRequestPositionAdjustment: handlePositionAdjustment,
         });
       }
       return child;
