@@ -682,7 +682,14 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
           tabIndex={-1}
         >
-          <div className={`${styles.content}`} data-drag-handle="true">
+          <div className={`${styles.content}`}>
+            {/* Drag handle bar at the top */}
+            <div 
+              className={styles.composerDragHandle}
+              data-drag-handle="true"
+            >
+              ⋮⋮ Drag to reposition
+            </div>
             <div 
               ref={contentScrollableRef}
               className={`${styles.contentScrollable}`}
