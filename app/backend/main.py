@@ -46,17 +46,21 @@ COHORTS_DIR = os.environ.get('COHORTS_DIR', '/data/cohorts')
 sessionmaker = get_sm(config["database"])
 db_manager = DatabaseManager()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Configure OpenAI client for Azure OpenAI
 from openai import AzureOpenAI
 
-openai_client = AzureOpenAI(
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
-)
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+try:
+    openai_client = AzureOpenAI(
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
+    )
+except Exception as e:
+    logger.warning(f"Failed to initialize AzureOpenAI client: {e}. AI features will be disabled.")
+    openai_client = None
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -836,6 +840,11 @@ async def suggest_changes(
     
     # Add the current user prompt
     messages.append({"role": "user", "content": user_prompt})
+
+    if openai_client is None:
+        async def dummy_stream():
+            yield "AI features are currently unavailable (Client initialization failed)."
+        return StreamingResponse(dummy_stream(), media_type="text/event-stream")
 
     completion = openai_client.chat.completions.create(
         model=model, stream=True, messages=messages
