@@ -96,7 +96,7 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
   return (
     <div className={`${styles.editorBox} ${colorBlock}`}>
       <div className={styles.field}>
-        <label>Component Phenotype:</label>
+        <label data-drag-handle="true" style={{ cursor: 'grab' }}>Component Phenotype:</label>
         <select
           ref={selectRef}
           value={value.phenotype_name || ''}

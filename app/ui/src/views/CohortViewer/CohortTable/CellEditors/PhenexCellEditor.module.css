@@ -105,6 +105,7 @@
 
 .composerDragHandle {
   padding: 8px 12px;
+  padding: 0px;
   cursor: move;
   border : none !important;
   font-size: 12px;
