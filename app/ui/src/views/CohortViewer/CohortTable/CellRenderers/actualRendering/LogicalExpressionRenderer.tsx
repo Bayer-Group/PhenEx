@@ -8,7 +8,7 @@ import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor'
 export interface LogicalExpressionRendererProps {
   value: FilterType | null | undefined;
   data?: any;
-  onItemClick?: (item: FlattenedItem<SingleLogicalExpression>) => void;
+  onItemClick?: (item: FlattenedItem<SingleLogicalExpression>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
   selectedIndex?: number;
   selectedClassName?: string;

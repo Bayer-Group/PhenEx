@@ -28,7 +28,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   showComposerPanel?: boolean; // If false, hide composer panel (for complex item editors before selection)
   showAddButton?: boolean; // If true, show a '+' button to add new items (for complex item editors)
   onAddItem?: () => void; // Callback when add button is clicked
-  onItemSelect?: (item: any, index?: number) => void; // Callback when a complex item is selected for editing
+  onItemSelect?: (item: any, index?: number, position?: { x: number; y: number }) => void; // Callback when a complex item is selected for editing
   onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
   selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
   rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
@@ -76,6 +76,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
+  const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Update currentValue when props.value changes (for complex item editors managing arrays)
   useEffect(() => {
@@ -238,32 +239,39 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const composerWidth = 350;
     const composerMaxHeight = viewport.height - 100; // Max height with padding
     
-    // Position Composer Panel independently for maximum visibility
-    // Must account for actual current selection width (which may be larger than cell)
+    // Position Composer Panel - use clicked item position if available, otherwise use default logic
     let composerLeft: number;
     let composerTop: number;
-    const composerPlacementThreshold = viewport.width / 2;
     
-    if (cellRect.left < composerPlacementThreshold) {
-      // Cell is on left side - place composer on the right
-      // Use the actual width of current selection panel (could be wider than cell due to minWidth)
-      composerLeft = Math.min(
-        bottomSectionLeft + currentSelectionWidth + 10, // 10px gap from current selection panel
-        viewport.width - composerWidth - 10 // Ensure it fits
-      );
+    if (clickedItemPosition) {
+      // Use the clicked item's position
+      composerLeft = clickedItemPosition.x;
+      composerTop = clickedItemPosition.y;
+      
+      // Ensure composer stays within viewport bounds
+      composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
+      composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150));
     } else {
-      // Cell is on right side - place composer on the left
-      composerLeft = Math.max(
-        10, // Minimum left padding
-        bottomSectionLeft - composerWidth - 10 // 10px gap from current selection panel
-      );
+      // Default positioning logic when no item has been clicked
+      const composerPlacementThreshold = viewport.width / 2;
+      
+      if (cellRect.left < composerPlacementThreshold) {
+        // Cell is on left side - place composer on the right
+        composerLeft = Math.min(
+          bottomSectionLeft + currentSelectionWidth + 10,
+          viewport.width - composerWidth - 10
+        );
+      } else {
+        // Cell is on right side - place composer on the left
+        composerLeft = Math.max(
+          10,
+          bottomSectionLeft - composerWidth - 10
+        );
+      }
+      
+      composerTop = cellRect.top;
+      composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150));
     }
-    
-    // Position composer vertically - try to align with cell top, but adjust for visibility
-    composerTop = cellRect.top;
-    
-    // Ensure composer doesn't go above viewport or too close to bottom
-    composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150)); // Ensure minimum space at bottom
     
     return {
       currentSelection: {
@@ -285,7 +293,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     };
   };
 
-  const portalPosition = calculatePosition();
+  const portalPosition = React.useMemo(() => {
+    return calculatePosition();
+  }, [clickedItemPosition, props.eGridCell]); // Recalculate when clicked position changes
 
   // const renderXButton = () => {
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
@@ -351,6 +361,33 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
+  // Internal handler that captures click position and calls parent's onItemSelect
+  const handleItemClick = (item: any, index?: number, event?: React.MouseEvent) => {
+    console.log('=== handleItemClick called ===');
+    console.log('item:', item);
+    console.log('index:', index);
+    console.log('event:', event);
+    
+    if (event) {
+      // Use the actual target element that was clicked
+      const clickedElement = event.currentTarget as HTMLElement;
+      const rect = clickedElement.getBoundingClientRect();
+      const position = { x: rect.left, y: rect.top };
+      
+      console.log('handleItemClick - clicked element:', clickedElement);
+      console.log('handleItemClick - rect:', rect);
+      console.log('handleItemClick - position:', position);
+      
+      setClickedItemPosition(position);
+      setShowComposer(true);
+      props.onItemSelect?.(item, index, position);
+    } else {
+      console.log('handleItemClick - NO EVENT provided, using default position');
+      setShowComposer(true);
+      props.onItemSelect?.(item, index);
+    }
+  };
+
   const renderCellMirrorContents = () => {
     /*
     Render the info container with current selection and info button.
@@ -378,7 +415,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             <RendererByField
               value={props.value}
               data={props.data}
-              onItemClick={props.onItemSelect}
+              onItemClick={handleItemClick}
               selectedIndex={props.selectedItemIndex}
               selectedClassName={selectedClassName}
               {...(props.rendererProps || {})}

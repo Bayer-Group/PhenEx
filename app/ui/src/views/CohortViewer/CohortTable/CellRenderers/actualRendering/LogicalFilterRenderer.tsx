@@ -5,7 +5,7 @@ import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor'
 export interface LogicalFilterRendererProps<T> {
   flattenedItems: FlattenedItem<T>[];
   renderFilter: (filter: T) => React.ReactNode;
-  onItemClick?: (item: FlattenedItem<T>) => void;
+  onItemClick?: (item: FlattenedItem<T>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
   selectedIndex?: number;
   filterClassName?: string; // CSS class for filter items
@@ -53,7 +53,7 @@ export function LogicalFilterRenderer<T>({
                 className={classes}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onItemClick?.(item);
+                  onItemClick?.(item, item.index, e);
                 }}
                 style={{ cursor: onItemClick ? 'pointer' : 'default' }}
               >
