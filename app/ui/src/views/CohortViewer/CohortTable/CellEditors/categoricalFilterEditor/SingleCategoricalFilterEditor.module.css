@@ -51,7 +51,7 @@
   /* display: inline-block; */
   color: #666;
   font-size: 18px;
-  background-color: var(--background-color);
+  background-color: red !important;
   /* padding: 10px 10px; */
   border: var(--border);
 }
@@ -67,10 +67,13 @@
 
 /* this is the box around an entire editing categorical filter, including the constants checkbox and fieldsbox and done button*/
 .editorBox {
-  background-color: var(--background-color);
-  border: 3px solid var(--color-accent);
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  
+  border-radius: 10px;
   padding: 20px;
   position: relative;
 }

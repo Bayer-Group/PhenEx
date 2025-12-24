@@ -3,6 +3,7 @@ import styles from '../categoricalFilterEditor/SingleCategoricalFilterEditor.mod
 import { SingleLogicalExpression } from './types';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 import { TableRow } from '../../../tableTypes';
+import typeStyles from '../../../../../styles/study_types.module.css';
 
 interface SimplifiedSingleLogicalExpressionEditorProps {
   value: SingleLogicalExpression;
@@ -90,8 +91,10 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
     }
   };
 
+  const colorBlock = typeStyles[`${phenotype?.effective_type || ''}_color_block_dim`] || '';
+
   return (
-    <div className={styles.editorBox}>
+    <div className={`${styles.editorBox} ${colorBlock}`}>
       <div className={styles.field}>
         <label>Component Phenotype:</label>
         <select
