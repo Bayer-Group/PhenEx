@@ -338,14 +338,26 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     };
 
     return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
-  };  
+  };
+
+  const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
+    console.log('ViewNavigation arrow clicked:', direction);
+  };
+
+  const handleViewNavigationScroll = (percentage: number) => {
+    console.log('ViewNavigation scroll:', percentage.toFixed(2) + '%');
+  };
+
+  const handleViewNavigationVisibilityClicked = () => {
+    console.log('ViewNavigation visibility clicked');
+  };
   
   return (
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
         {renderBreadcrumbs()}
-        <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-        {renderSectionTabs()}
+        {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
+        {renderSectionTabs()} */}
       </div>
       <div className={styles.bottomSection}>
         {renderTable()}
@@ -376,7 +388,13 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           onClose={() => setResetNavBarToPositioned(true)}
           dragHandleRef={navBarDragHandleRef}
         >
-          <PhenExNavBar onSectionTabChange={onTabChange} dragHandleRef={navBarDragHandleRef} />
+          <PhenExNavBar
+            onSectionTabChange={onTabChange}
+            dragHandleRef={navBarDragHandleRef}
+            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+            onViewNavigationScroll={handleViewNavigationScroll}
+            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+          />
         </DraggablePositionedPortal>
     </div>
   );
