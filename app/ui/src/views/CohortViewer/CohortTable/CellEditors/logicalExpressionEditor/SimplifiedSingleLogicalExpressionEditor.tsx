@@ -63,8 +63,8 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
           const composerRect = composerPanel.getBoundingClientRect();
           
           // Calculate how far the select is from the composer's top-left corner
-          const offsetX = selectRect.left - composerRect.left;
-          const offsetY = selectRect.top - composerRect.top;
+          const offsetX = selectRect.left - composerRect.left + 10;
+          const offsetY = selectRect.top - composerRect.top + 10;
 
           // Request negative offset to shift composer UP and LEFT
           // so select's top-left appears at the clicked position
@@ -72,7 +72,7 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
         }
       });
     }
-  }, []); // Run once after mount
+  }, [value]); // Re-run when value changes (new item selected)
 
   /**
    * Handle phenotype selection and immediately notify parent

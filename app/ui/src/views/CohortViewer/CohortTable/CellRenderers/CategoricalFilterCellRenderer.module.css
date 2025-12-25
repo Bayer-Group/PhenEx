@@ -5,10 +5,10 @@
 }
 
 .fullText {
-  /* display: flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  line-height: 10px; */
+  line-height: 10px;
 }
 
 .punctuation {
