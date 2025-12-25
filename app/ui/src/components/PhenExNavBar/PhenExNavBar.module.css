@@ -1,0 +1,15 @@
+.phenexNavBar {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.phenexNavBar > * {
+  pointer-events: auto;
+}

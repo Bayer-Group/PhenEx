@@ -1,0 +1,77 @@
+.navBar {
+  display: flex;
+  align-items: center;
+  padding: 5px 15px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line-color);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: fit-content;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: opacity 0.2s;
+}
+
+.actionButton:hover {
+  opacity: 0.7;
+}
+
+.issuesLabel {
+  font-size: 14px;
+  user-select: none;
+}
+
+.birdIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.viewContent {
+  font-size: 14px;
+  user-select: none;
+}
+
+
+.classNameTabsContainer{
+  background-color: transparent !important;
+  border-color:transparent;
+  height: 32px !important;
+  backdrop-filter: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  /* border: 1px solid var(--line-color); */
+
+}
+
+.classNameTabsContainer:hover{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+}
+
+.classNameSectionTabs{
+  font-size: 20px !important;
+  height: 32px !important;
+  padding-left: 10px;
+  padding-right:10px;
+  border-radius: 10px !important;
+}
