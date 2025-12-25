@@ -341,11 +341,15 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   };
 
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
-    console.log('ViewNavigation arrow clicked:', direction);
+    if (gridRef.current?.scrollByColumn) {
+      gridRef.current.scrollByColumn(direction);
+    }
   };
 
   const handleViewNavigationScroll = (percentage: number) => {
-    console.log('ViewNavigation scroll:', percentage.toFixed(2) + '%');
+    if (gridRef.current?.scrollToPercentage) {
+      gridRef.current.scrollToPercentage(percentage);
+    }
   };
 
   const handleViewNavigationVisibilityClicked = () => {

@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useEffect, useState } from 'react';
+import React, { forwardRef, useRef, useEffect, useState, useImperativeHandle } from 'react';
 import { AgGridReact, AgGridReactProps } from '@ag-grid-community/react';
 import { AGGridCustomScrollbar } from '../CustomScrollbar/AGGridCustomScrollbar';
 import styles from './AgGridWithCustomScrollbars.module.css';
@@ -32,6 +32,7 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
 export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
   ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
+    const agGridRef = useRef<any>(null);
     const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
       x: 0, 
@@ -74,6 +75,96 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       
       return viewport as HTMLElement;
     };
+
+    // Expose scroll control methods to parent components
+    useImperativeHandle(ref, () => ({
+      // Pass through AG Grid API
+      api: agGridRef.current?.api,
+      columnApi: agGridRef.current?.columnApi,
+      eGridDiv: gridContainerRef.current,
+      
+      // Scroll by column (left/right)
+      scrollByColumn: (direction: 'left' | 'right') => {
+        const viewport = getScrollableElement();
+        const api = agGridRef.current?.api;
+        
+        if (!viewport || !api) return;
+        
+        // Get all displayed columns and filter out pinned columns
+        const allColumns = api.getAllDisplayedColumns();
+        if (!allColumns || allColumns.length === 0) return;
+        
+        // Filter to only unpinned (scrollable) columns
+        const columns = allColumns.filter(col => !col.getPinned());
+        if (columns.length === 0) return;
+        
+        // Build array of column positions (cumulative widths)
+        const columnPositions: number[] = [];
+        let cumulativeWidth = 0;
+        
+        columns.forEach((col) => {
+          columnPositions.push(cumulativeWidth);
+          cumulativeWidth += col.getActualWidth();
+        });
+        
+        const currentScroll = viewport.scrollLeft;
+        
+        // Find the leftmost visible column (the one at or just past currentScroll)
+        let targetColumnIndex = 0;
+        for (let i = 0; i < columnPositions.length; i++) {
+          if (columnPositions[i] >= currentScroll) {
+            targetColumnIndex = i;
+            break;
+          }
+          if (i === columnPositions.length - 1) {
+            targetColumnIndex = i;
+          } else if (columnPositions[i] < currentScroll && columnPositions[i + 1] > currentScroll) {
+            targetColumnIndex = i + 1;
+            break;
+          }
+        }
+        
+        // Calculate target scroll position
+        let newScroll;
+        if (direction === 'left') {
+          // Scroll to previous column
+          const prevIndex = Math.max(0, targetColumnIndex - 1);
+          newScroll = columnPositions[prevIndex];
+        } else {
+          // Scroll to next column
+          const nextIndex = Math.min(columns.length - 1, targetColumnIndex + 1);
+          newScroll = columnPositions[nextIndex];
+        }
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        newScroll = Math.max(0, Math.min(maxScroll, newScroll));
+        
+        console.log('Current column index:', targetColumnIndex, 'New scroll:', newScroll);
+        
+        // Direct scroll assignment
+        viewport.scrollLeft = newScroll;
+      },
+      
+      // Scroll to percentage (0-100)
+      scrollToPercentage: (percentage: number) => {
+        const viewport = getScrollableElement();
+        if (!viewport) return;
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        viewport.scrollLeft = (percentage / 100) * maxScroll;
+      },
+      
+      // Get current scroll percentage
+      getScrollPercentage: () => {
+        const viewport = getScrollableElement();
+        if (!viewport) return 0;
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        if (maxScroll === 0) return 0;
+        
+        return (viewport.scrollLeft / maxScroll) * 100;
+      }
+    }), []);
 
     // Pan drag handlers for the entire viewport
     const handlePanMouseDown = (e: React.MouseEvent) => {
@@ -158,7 +249,7 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           style={{ cursor: isPanDragging ? 'grabbing' : 'grab' }}
         >
           <AgGridReact
-            ref={ref}
+            ref={agGridRef}
             {...agGridProps}
           />
           
