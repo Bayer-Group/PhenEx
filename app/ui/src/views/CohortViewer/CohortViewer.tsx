@@ -13,6 +13,7 @@ import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
+import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -350,6 +351,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
+        <PhenExNavBar onSectionTabChange={onTabChange} />
     </div>
   );
 };
