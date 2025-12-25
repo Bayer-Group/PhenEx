@@ -7,6 +7,9 @@ import { ViewNavBar } from './ViewNavBar';
 interface PhenExNavBarProps {
   onSectionTabChange?: (index: number) => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
+  scrollPercentage?: number;
+  canScrollLeft?: boolean;
+  canScrollRight?: boolean;
   onViewNavigationArrowClicked?: (direction: 'left' | 'right') => void;
   onViewNavigationScroll?: (percentage: number) => void;
   onViewNavigationVisibilityClicked?: () => void;
@@ -15,6 +18,9 @@ interface PhenExNavBarProps {
 export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   onSectionTabChange,
   dragHandleRef,
+  scrollPercentage,
+  canScrollLeft,
+  canScrollRight,
   onViewNavigationArrowClicked,
   onViewNavigationScroll,
   onViewNavigationVisibilityClicked,
@@ -27,6 +33,9 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
       <ActionNavBar height={heightNavBar} />
       <ViewNavBar
         height={heightNavBar}
+        scrollPercentage={scrollPercentage}
+        canScrollLeft={canScrollLeft}
+        canScrollRight={canScrollRight}
         onViewNavigationArrowClicked={onViewNavigationArrowClicked}
         onViewNavigationScroll={onViewNavigationScroll}
         onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}

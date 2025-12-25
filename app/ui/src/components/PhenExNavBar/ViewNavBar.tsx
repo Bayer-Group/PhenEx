@@ -3,6 +3,9 @@ import styles from './NavBar.module.css';
 
 interface ViewNavBarProps {
   height: number;
+  scrollPercentage?: number; // Controlled scroll percentage
+  canScrollLeft?: boolean;
+  canScrollRight?: boolean;
   onViewNavigationArrowClicked?: (direction: 'left' | 'right') => void;
   onViewNavigationScroll?: (percentage: number) => void;
   onViewNavigationVisibilityClicked?: () => void;
@@ -10,11 +13,13 @@ interface ViewNavBarProps {
 
 export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   height,
+  scrollPercentage = 0,
+  canScrollLeft = true,
+  canScrollRight = true,
   onViewNavigationArrowClicked,
   onViewNavigationScroll,
   onViewNavigationVisibilityClicked,
 }) => {
-  const [scrollPercentage, setScrollPercentage] = useState(0);
   const scrollBarRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
@@ -46,7 +51,6 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
     const x = (e as MouseEvent).clientX - rect.left;
     const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
     
-    setScrollPercentage(percentage);
     onViewNavigationScroll?.(percentage);
   };
 
@@ -56,7 +60,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         <button
           className={styles.navArrowButton}
           onClick={() => onViewNavigationArrowClicked?.('left')}
+          disabled={!canScrollLeft}
           title="Navigate left"
+          style={{ opacity: canScrollLeft ? 1 : 0.3, cursor: canScrollLeft ? 'pointer' : 'not-allowed' }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M10 12L6 8l4-4v8z" />
@@ -77,7 +83,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         <button
           className={styles.navArrowButton}
           onClick={() => onViewNavigationArrowClicked?.('right')}
+          disabled={!canScrollRight}
           title="Navigate right"
+          style={{ opacity: canScrollRight ? 1 : 0.3, cursor: canScrollRight ? 'pointer' : 'not-allowed' }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M6 4l4 4-4 4V4z" />

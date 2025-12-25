@@ -55,6 +55,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const navBarTriggerRef = useRef<HTMLDivElement>(null);
   const navBarDragHandleRef = useRef<HTMLDivElement>(null);
   const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
+  const [scrollPercentage, setScrollPercentage] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -343,18 +346,53 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
     if (gridRef.current?.scrollByColumn) {
       gridRef.current.scrollByColumn(direction);
+      // Update scroll state after scrolling
+      updateScrollState();
     }
   };
 
   const handleViewNavigationScroll = (percentage: number) => {
     if (gridRef.current?.scrollToPercentage) {
       gridRef.current.scrollToPercentage(percentage);
+      setScrollPercentage(percentage);
+      updateScrollState();
     }
   };
 
   const handleViewNavigationVisibilityClicked = () => {
     console.log('ViewNavigation visibility clicked');
   };
+
+  const updateScrollState = () => {
+    if (gridRef.current?.getScrollPercentage) {
+      const percentage = gridRef.current.getScrollPercentage();
+      setScrollPercentage(percentage);
+      setCanScrollLeft(percentage > 0);
+      setCanScrollRight(percentage < 100);
+    }
+  };
+
+  // Listen to grid scroll events to update navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      updateScrollState();
+    };
+
+    // Find the grid viewport and attach scroll listener
+    const gridElement = gridRef.current?.eGridDiv;
+    if (gridElement) {
+      const viewport = gridElement.querySelector('.ag-center-cols-viewport');
+      if (viewport) {
+        viewport.addEventListener('scroll', handleScroll);
+        // Initial state update
+        updateScrollState();
+        
+        return () => {
+          viewport.removeEventListener('scroll', handleScroll);
+        };
+      }
+    }
+  }, [dataService.table_data]);
   
   return (
     <div className={styles.cohortTableContainer}>
@@ -395,6 +433,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           <PhenExNavBar
             onSectionTabChange={onTabChange}
             dragHandleRef={navBarDragHandleRef}
+            scrollPercentage={scrollPercentage}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
             onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
             onViewNavigationScroll={handleViewNavigationScroll}
             onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
