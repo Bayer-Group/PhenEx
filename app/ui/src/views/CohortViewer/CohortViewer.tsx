@@ -14,6 +14,7 @@ import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
+import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -51,6 +52,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
+  const navBarTriggerRef = useRef<HTMLDivElement>(null);
+  const navBarDragHandleRef = useRef<HTMLDivElement>(null);
+  const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -351,7 +355,29 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
-        <PhenExNavBar onSectionTabChange={onTabChange} />
+        {/* Invisible trigger for PhenExNavBar portal at bottom right */}
+        <div 
+          ref={navBarTriggerRef} 
+          style={{ 
+            position: 'absolute', 
+            bottom: '10px', 
+            right: '10px', 
+            width: '1px', 
+            height: '1px',
+            pointerEvents: 'none'
+          }} 
+        />
+        <DraggablePositionedPortal
+          triggerRef={navBarTriggerRef}
+          position="above"
+          offsetY={0}
+          alignment="right"
+          resetToPositioned={resetNavBarToPositioned}
+          onClose={() => setResetNavBarToPositioned(true)}
+          dragHandleRef={navBarDragHandleRef}
+        >
+          <PhenExNavBar onSectionTabChange={onTabChange} dragHandleRef={navBarDragHandleRef} />
+        </DraggablePositionedPortal>
     </div>
   );
 };
