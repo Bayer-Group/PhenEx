@@ -225,8 +225,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     // Cell dimensions - bottom section matches exactly
-    const offsetX = 0;
-    const offsetY = 4;
+    const offsetX = 15;
+    const offsetY = 15;
     const cellWidth = cellRect.width + 2*offsetX;
     const cellHeight = cellRect.height + 2*offsetY;
     
@@ -350,14 +350,14 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
       >
         <>
-          <div className={`${styles.index} ${typeStyles[`${props.data.effective_type}_text_color`]}`}>
+          <div className={`${styles.index} `}>
             {props.data.hierarchical_index}
           </div>
           <SmartBreadcrumbs 
             items={breadcrumbItems}
             classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
-            classNameBreadcrumbItem={`${typeStyles[`${props.data.effective_type}_text_color`]} ${styles.breadcrumbItem} `}
-            classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
+            classNameBreadcrumbItem={`${styles.breadcrumbItem} `}
+            classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} `}
           />
         </>
       </div>
@@ -551,11 +551,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         className={`${styles.currentSelectionTopSection}`}
         style={{
           position: 'absolute',
-          left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
-          width: portalPosition.currentSelection.width,
+          left: 0,
+          bottom: '100%',
+          width: '100%',
           minWidth: '300px',
-          transform: 'translateY(-100%)',
           zIndex: 9998,
         }}
         data-drag-handle="true"
@@ -587,10 +586,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       <div
         className={`${styles.currentSelectionBottomSection}`}
         style={{
-          position: 'absolute',
-          left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
-          width: portalPosition.currentSelection.width,
+          position: 'relative',
+          width: '100%',
           minWidth: '300px',
           minHeight: portalPosition.currentSelection.bottomHeight,
           zIndex: 9999,
@@ -633,9 +630,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderCurrentSelectionPanel = () => {
     return (
-      <div className={styles.currentSelectionContainer}>
+      <div 
+        className={styles.currentSelectionContainer}
+        style={{
+          position: 'absolute',
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop,
+        }}
+      >
         {renderCurrentSelectionPanel_top()}
         {renderCurrentSelectionPanel_bottom()}
+        <div className={styles.blocker}></div>
       </div>
     );
   };

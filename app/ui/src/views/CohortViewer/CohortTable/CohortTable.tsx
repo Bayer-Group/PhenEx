@@ -54,7 +54,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
 
     const default_theme = {
-      accentColor: 'var(--color_accent_orange)',
+      accentColor: 'var(--accent-color)',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
