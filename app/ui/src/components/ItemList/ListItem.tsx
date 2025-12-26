@@ -26,7 +26,7 @@ export const ListItem: React.FC<ListItemProps> = ({
       role="button"
     >
       <div className={styles.itemName}>{name}</div>
-      <p className={styles.itemInfo}>{info}</p>
+      {/* <p className={styles.itemInfo}>{info}</p> */}
     </div>
   );
 };

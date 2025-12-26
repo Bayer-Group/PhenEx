@@ -5,6 +5,7 @@
   --popover_font_size: 20px;
   --padding_custom_two_line_header: 5px 10px 20px 10px;
   --border_radius_sharp: 2px;
+  --border_radius_currenselection: 3px;
 }
 :global(.ag-popup-editor) {
   background-color: transparent !important;
@@ -68,7 +69,6 @@
 }
 
 .container > * {
-  background-color: transparent;
 }
 
 .container {
@@ -78,6 +78,8 @@
   /* Removed min-height to allow container to hug content */
   max-height: none; /* Remove height restriction */
   padding: 0px;
+  background-color: var(--background_color_focus);
+  border-radius: 10px;
   /* border: 1px solid var(--color-accent-bright); */
   /* border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top)
     var(--popover_border_radius_bottom) var(--popover_border_radius_bottom); */
@@ -85,6 +87,7 @@
   position: relative;
   margin-bottom: 20px !important;
   margin-right: 20px !important;
+  color: white;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px); */
@@ -313,6 +316,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  background-color: aqua;
+  height: 100%;
+  width: 100%;
 }
 
 .currentSelectionTopSection {
@@ -323,7 +329,6 @@
   /* background-color: var(--background-color) !important; */
   border-radius: var(--border_radius_sharp) var(--border_radius_sharp) 0px 0px;
   border-bottom: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -346,6 +351,13 @@
   flex-direction: column;
   gap: 0px;
   width: 100%;
+  background-color: var(--background-color);
+  transform: translateY(10px);
+  color: white !important;
+  margin: 0px 2px;
+  width:calc(100% + 8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 20px 20px 0px 0px;
 }
 
 .currentSelectionLabel {
@@ -362,7 +374,8 @@
   cursor: grab;
   transition: box-shadow 0.2s ease-in-out;
   background-color: var(--background-color);
-  border-radius: 10px;
+  border-radius: var(--border_radius_currenselection);
+;
 
 }
 
@@ -381,7 +394,7 @@
   flex-direction: column;
   font-size: 18px;
   position: relative;
-  border-radius: 10px;
+  border-radius: var(--border_radius_currenselection);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
 }

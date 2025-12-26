@@ -225,16 +225,18 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     // Cell dimensions - bottom section matches exactly
-    const cellWidth = cellRect.width;
-    const cellHeight = cellRect.height + 8;
+    const offsetX = 0;
+    const offsetY = 4;
+    const cellWidth = cellRect.width + 2*offsetX;
+    const cellHeight = cellRect.height + 2*offsetY;
     
     // Current Selection Panel dimensions (with minimum width)
     const minCurrentSelectionWidth = 300;
-    const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth);
+    const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth) +2*offsetX;
     
     // Bottom section is positioned at EXACT cell coordinates
-    const bottomSectionLeft = cellRect.left;
-    const bottomSectionTop = cellRect.top - 4;
+    const bottomSectionLeft = cellRect.left - offsetX;
+    const bottomSectionTop = cellRect.top - offsetY;
     
     // Composer Panel dimensions
     const composerWidth = 350;
@@ -570,7 +572,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div className={`${styles.currentSelectionInfo} ${colorBlock}`}>
+        <div className={`${styles.currentSelectionInfo}`}>
           {renderTitle()}
         </div>
       </div>

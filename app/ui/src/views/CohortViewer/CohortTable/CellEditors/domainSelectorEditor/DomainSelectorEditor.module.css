@@ -54,16 +54,14 @@
   color: black;
 }
 
-.domainName {
-  font-family: 'IBMPlexSans-bold';
-  text-wrap: wrap;
-  font-size: 16px;
-  line-height: 16px;
-  margin: 0px;
-}
-
 .domainInfo {
   font-family: 'IBMPlexSans-regular';
   font-size: 10px;
   margin: 0px;
+}
+
+.listItem{
+  color: white !important;
+  font-size: var(--font_size_items) !important;
+
 }

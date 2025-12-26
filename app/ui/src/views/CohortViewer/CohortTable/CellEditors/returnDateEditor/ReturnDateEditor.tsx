@@ -40,8 +40,11 @@ export const ReturnDateEditor: React.FC<ReturnDateEditorProps> = props => {
         items={returnDateOptions}
         selectedName={selectedOption || undefined}
         onSelect={handleOptionSelect}
-        classNameListItem={typeStyles[`${props.data?.effective_type}_list_item`]}
-        classNameListItemSelected={`${typeStyles[`${props.data?.effective_type}_list_item_selected`]}`}
+        classNameListItem={styles.listItem}
+        classNameListItemSelected={styles.listItemSelected}
+        // classNameListItem={typeStyles[`${props.data?.effective_type}_list_item`]}
+        // classNameListItemSelected={`${typeStyles[`${props.data?.effective_type}_list_item_selected`]}`}
+
       />
     </div>
   );

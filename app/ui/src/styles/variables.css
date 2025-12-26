@@ -20,6 +20,7 @@
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;/*#faf1e5;*/
+  --background_color_focus: #000000bb;
   --background-color-content: white;
   --border: 1px solid var(--line-color);
   --border-radius: 8px;
@@ -55,6 +56,8 @@
   --color-accent-hover: rgb(240, 240, 240);
 
   /* --color-accent-bright: hsl(24, 90%, 60%); */
+  --color_accent_blue: hsl(204, 98%, 50%);
+
   --color_accent_orange: hsl(14, 100%, 63%); /* ff6e42*/
   --color-accent-bright: #413346;
   --phenex-dark: hsl(0, 40%, 5%);
@@ -106,6 +109,13 @@
   --color_outcome_dim: #41334633;
   --color_entry_dim: #1B384D33;
   --color_component_dim: gray;
+  --font_size_pagetitle:32px;
+  --font_size_breadcrumb:20px;
+  --font_size_phenotypename:18px;
+  --font_size_infotext:12px;
+  --font_size_items:14px;
+  --font_size_mid_phenotype_info:16px;
+  
 }
 
 .rag-blue-outer {

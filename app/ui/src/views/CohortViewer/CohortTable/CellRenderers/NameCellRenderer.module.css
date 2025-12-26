@@ -60,7 +60,7 @@
 .label {
   text-wrap: wrap;
   line-height: 1 !important;
-  font-size: 18px;
+  font-size: var(--font_size_phenotypename);
   font-family: "IBMPlexSans-regular";
   /* padding: 4px 0; */
   /* font-weight: bold; */
@@ -107,6 +107,6 @@
 }
 
 .infotext{
-  font-size: 12px;
+      font-size: var(--font_size_infotext);
   font-family:"IBMPlexSans-regular";
 }

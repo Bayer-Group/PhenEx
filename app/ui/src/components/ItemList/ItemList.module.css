@@ -1,23 +1,25 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
 }
 
 .listItem {
   cursor: pointer;
-  padding: 4px 30px 8px 8px;
   border-radius: 8px;
   transition:
     background 0.2s,
     box-shadow 0.2s;
   outline: none;
 
-  color: var(--button-text-color-default);
+  color: white;
   background-color: var(--button-background-color-default);
   font-family: var(--button-font-family-default) !important;
   border: 1px solid var(--button-border-color-default);
+  font-size: var(--font_size_items);
   user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .listItem:hover {
@@ -43,8 +45,7 @@
 
 .itemName {
   /* font-family:"IBMPlexSans-Bold"; */
-  font-size: 18px;
-  line-height: 1.2;
+  /* line-height: 1.2; */
 }
 .listItem:hover .itemName {
   font-family: var(--button-font-family-hover);
@@ -53,6 +54,9 @@
 .listItem.selected .itemName {
   font-family: var(--button-font-family-selected);
 }
+.listItem:hover {
+  background-color: var(--color_accent_blue);
+}
 
 .itemInfo {
   margin: 0;
@@ -60,7 +64,7 @@
   padding-left: 3px;
   font-size: 12px;
   font-family: 'IBMPlexSans-Regular';
-  color: rgb(100, 100, 100);
+  color: white;
 }
 
 /* .listItem:hover .itemInfo{
