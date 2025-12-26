@@ -1,7 +1,7 @@
 .navBar {
   display: flex;
   align-items: center;
-  padding: 5px 15px;
+  padding: 5px 0px;
   background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -15,18 +15,23 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 0px 10px;
 }
 
 .actionButton {
   background: none;
   border: none;
-  padding: 4px 8px;
+  padding: 0px 0px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: currentColor;
   transition: opacity 0.2s;
+  height:40px;
+  width:40px;
+  outline: none;
+  border:none
 }
 
 .actionButton:hover {
@@ -39,8 +44,8 @@
 }
 
 .birdIcon {
-  width: 20px;
-  height: 20px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
@@ -49,10 +54,17 @@
   user-select: none;
 }
 
+.viewNavBar{
+  border-radius:15px !important;
+
+}
+
 .viewNavContent {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
+  padding-left:5px;
+  padding-right:5px;
 }
 
 .navArrowButton {
@@ -67,34 +79,49 @@
   transition: opacity 0.2s;
   min-width: 24px;
 }
-
+.navArrowButton:focus{
+  outline:none;
+}
 .navArrowButton:hover {
   opacity: 0.7;
+}
+
+.horizontalScrollContainer{
+    padding: 2px 25px;
+    background-color: var(--background-color);
+    border-radius: 20px;
+    border: var(--line-color) 1px solid;
+  height: 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .horizontalScrollbar {
   position: relative;
   width: 80px;
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.2);
+  height: 100%;
+  background-color: transparent;
   border-radius: 3px;
-  cursor: pointer;
+  cursor: default;
 }
 
 .scrollbarThumb {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  background-color: currentColor;
-  border-radius: 50%;
-  pointer-events: none;
+  width: 40px;
+  height: 45px;
+  background-color: var(--line-color);
+  border-radius: 14px;
+  cursor: grab;
   transition: background-color 0.2s;
 }
 
-.horizontalScrollbar:hover .scrollbarThumb {
-  background-color: rgba(255, 255, 255, 0.9);
+.scrollbarThumb:hover {
+  background-color: var(--color_accent_orange);
+}
+
+.scrollbarThumb:active {
+  cursor: grabbing;
 }
 
 .eyeButton {

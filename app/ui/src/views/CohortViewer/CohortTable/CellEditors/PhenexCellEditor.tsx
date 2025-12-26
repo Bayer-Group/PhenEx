@@ -226,7 +226,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
     // Cell dimensions - bottom section matches exactly
     const cellWidth = cellRect.width;
-    const cellHeight = cellRect.height;
+    const cellHeight = cellRect.height + 8;
     
     // Current Selection Panel dimensions (with minimum width)
     const minCurrentSelectionWidth = 300;
@@ -234,7 +234,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     
     // Bottom section is positioned at EXACT cell coordinates
     const bottomSectionLeft = cellRect.left;
-    const bottomSectionTop = cellRect.top;
+    const bottomSectionTop = cellRect.top - 4;
     
     // Composer Panel dimensions
     const composerWidth = 350;
@@ -607,7 +607,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-
+{/* ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''} */}
         <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
           {renderCellMirrorContents()}
           {props.showAddButton && (

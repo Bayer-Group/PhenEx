@@ -54,7 +54,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
   ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
 
     const default_theme = {
-      accentColor: '#4a4a4aff',
+      accentColor: 'var(--color_accent_orange)',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
@@ -384,7 +384,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:20}}}
             hideScrollbars={hideScrollbars}
             hideVerticalScrollbar={hideVerticalScrollbar}
-            hideHorizontalScrollbar={hideHorizontalScrollbar}
+            hideHorizontalScrollbar={true}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}
             noRowsOverlayComponent={NoRowsOverlayText()}

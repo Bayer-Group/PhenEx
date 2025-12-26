@@ -333,7 +333,8 @@
   user-select: none;
   height: auto; /* Height hugs content */
   min-height: fit-content;
-  background-color: var(--background-color);
+  background-color: var(--background-color) !important;
+  background-color: var(--color-background)  !important; /* TEMPORARY - REMOVE LATER */
 }
 
 .currentSelectionTopSection:active {
@@ -355,21 +356,21 @@
 }
 
 .currentSelectionBottomSection {
-  background-color: var(--background-color);
-  border-radius: 0px 0px var(--border_radius_sharp) var(--border_radius_sharp);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: stretch;
   padding: 0px;
   cursor: grab;
   transition: box-shadow 0.2s ease-in-out;
+  background-color: var(--background-color);
+  border-radius: 10px;
+
 }
 
 .currentSelectionBottomSection:active {
   cursor: grabbing;
 }
 
-.currentSelectionBottomSection:hover {
+.cellMirror:hover {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
@@ -380,6 +381,9 @@
   flex-direction: column;
   font-size: 18px;
   position: relative;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
 }
 
 .cellMirrorContents{

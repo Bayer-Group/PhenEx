@@ -13,7 +13,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
 
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>
-      <div ref={dragHandleRef} style={{ cursor: 'grab', userSelect: 'none', padding: '0 8px' }}>
+      <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 8px' }}>
         ⋮⋮
       </div>
       <Tabs

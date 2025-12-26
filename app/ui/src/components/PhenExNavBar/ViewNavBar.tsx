@@ -55,7 +55,7 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   };
 
   return (
-    <div className={styles.navBar} style={{ height: `${height}px` }}>
+    <div className={`${styles.navBar} ${styles.viewNavBar}`} style={{ height: `${height-16}px` , marginTop: `${8}px`}}>
       <div className={styles.viewNavContent}>
         <button
           className={styles.navArrowButton}
@@ -68,18 +68,7 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
             <path d="M10 12L6 8l4-4v8z" />
           </svg>
         </button>
-        
-        <div
-          ref={scrollBarRef}
-          className={styles.horizontalScrollbar}
-          onMouseDown={handleMouseDown}
-        >
-          <div
-            className={styles.scrollbarThumb}
-            style={{ left: `${scrollPercentage}%` }}
-          />
-        </div>
-        
+
         <button
           className={styles.navArrowButton}
           onClick={() => onViewNavigationArrowClicked?.('right')}
@@ -91,6 +80,19 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
             <path d="M6 4l4 4-4 4V4z" />
           </svg>
         </button>
+        
+        <div className={styles.horizontalScrollContainer}>
+        <div
+          ref={scrollBarRef}
+          className={styles.horizontalScrollbar}
+          onMouseDown={handleMouseDown}
+        >
+          <div
+            className={styles.scrollbarThumb}
+            style={{ left: `${scrollPercentage}%` }}
+          />
+        </div>
+        </div>
         
         <button
           className={styles.eyeButton}

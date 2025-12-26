@@ -14,7 +14,7 @@ import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
-import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
+import { DraggablePortal } from '../../components/Portal/DraggablePortal';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -52,9 +52,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
-  const navBarTriggerRef = useRef<HTMLDivElement>(null);
   const navBarDragHandleRef = useRef<HTMLDivElement>(null);
-  const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -409,38 +407,26 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
-        {/* Invisible trigger for PhenExNavBar portal at bottom right */}
-        <div 
-          ref={navBarTriggerRef} 
-          style={{ 
-            position: 'absolute', 
-            bottom: '10px', 
-            right: '10px', 
-            width: '1px', 
-            height: '1px',
-            pointerEvents: 'none'
-          }} 
-        />
-        <DraggablePositionedPortal
-          triggerRef={navBarTriggerRef}
-          position="above"
-          offsetY={0}
-          alignment="right"
-          resetToPositioned={resetNavBarToPositioned}
-          onClose={() => setResetNavBarToPositioned(true)}
-          dragHandleRef={navBarDragHandleRef}
+        <DraggablePortal
+          initialPosition={{
+            left: typeof window !== 'undefined' ? (window.innerWidth / 2) : 800,
+            top: typeof window !== 'undefined' ? (window.innerHeight - 80) : 700
+          }}
+          dragHandleSelector="[data-drag-handle]"
         >
-          <PhenExNavBar
-            onSectionTabChange={onTabChange}
-            dragHandleRef={navBarDragHandleRef}
-            scrollPercentage={scrollPercentage}
-            canScrollLeft={canScrollLeft}
-            canScrollRight={canScrollRight}
-            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-            onViewNavigationScroll={handleViewNavigationScroll}
-            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-          />
-        </DraggablePositionedPortal>
+          <div style={{ transform: 'translateX(-50%)', display: 'inline-block' }}>
+            <PhenExNavBar
+              onSectionTabChange={onTabChange}
+              dragHandleRef={navBarDragHandleRef}
+              scrollPercentage={scrollPercentage}
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+              onViewNavigationScroll={handleViewNavigationScroll}
+              onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+            />
+          </div>
+        </DraggablePortal>
     </div>
   );
 };
