@@ -19,7 +19,7 @@ export const TwoPanelView = React.forwardRef<
   TwoPanelViewProps
 >((props, ref) => {
   const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
-  const viewType = props.viewType || 'slideover';
+  const viewType = props.viewType || 'popover';
 
   React.useImperativeHandle(ref, () => ({
     collapseRightPanel: (collapse: boolean) => {

@@ -1,7 +1,7 @@
 .phenexNavBar {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
+  /* position: absolute; */
+  /* bottom: 10px;
+  right: 10px; */
   display: flex;
   flex-direction: row;
   gap: 10px;

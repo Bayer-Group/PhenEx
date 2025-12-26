@@ -14,7 +14,7 @@ import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
-import { DraggablePortal } from '../../components/Portal/DraggablePortal';
+import { Portal } from '../../components/Portal/Portal';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -407,14 +407,14 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
-        <DraggablePortal
-          initialPosition={{
-            left: typeof window !== 'undefined' ? (window.innerWidth / 2) : 800,
-            top: typeof window !== 'undefined' ? (window.innerHeight - 80) : 700
-          }}
-          dragHandleSelector="[data-drag-handle]"
-        >
-          <div style={{ transform: 'translateX(-50%)', display: 'inline-block' }}>
+        <Portal>
+          <div style={{
+            position: 'fixed',
+            bottom: '0px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000
+          }}>
             <PhenExNavBar
               onSectionTabChange={onTabChange}
               dragHandleRef={navBarDragHandleRef}
@@ -426,7 +426,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
               onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
             />
           </div>
-        </DraggablePortal>
+        </Portal>
     </div>
   );
 };
