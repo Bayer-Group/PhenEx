@@ -247,13 +247,16 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     let composerTop: number;
     
     if (clickedItemPosition) {
-      // Use the clicked item's position
       composerLeft = clickedItemPosition.x;
       composerTop = clickedItemPosition.y;
       
-      // Ensure composer stays within viewport bounds
+      // Shift up only if it would be cut off (estimate 500px height)
+      if (composerTop + 500 > viewport.height) {
+        composerTop = viewport.height - 500;
+      }
+      
       composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
-      composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150));
+      composerTop = Math.max(10, composerTop);
     } else {
       // Default positioning logic when no item has been clicked
       const composerPlacementThreshold = viewport.width / 2;
@@ -273,7 +276,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       }
       
       composerTop = cellRect.top;
-      composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150));
+      // Shift up only if it would be cut off (estimate 500px height)
+      if (composerTop + 500 > viewport.height) {
+        composerTop = viewport.height - 500;
+      }
+      composerTop = Math.max(10, composerTop);
     }
     
     return {
