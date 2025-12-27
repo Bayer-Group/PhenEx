@@ -67,6 +67,8 @@
   /* padding:0px;
   margin:0px;
   line-height: 1; */
+  padding-top:var(--item-margin-top);
+
 }
 
 .container {
@@ -81,6 +83,7 @@
   align-items: flex-start;
   position: relative;
   border-top: 1px solid;
+  background-color: red !important;
 }
 
 .ancestorLabel{

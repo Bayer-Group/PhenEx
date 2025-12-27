@@ -113,9 +113,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     // With getRowId callback in CohortTable, AG Grid automatically maintains scroll position
     // We just need to update the grid data
     console.log("Refreshing grid IN THE COHORT VIEWER");
-    console.log("gridRef.current:", gridRef.current);
-    console.log("gridRef.current?.api:", gridRef.current?.api);
-    console.log("gridRef.current?.api.isDestroyed():", gridRef.current?.api?.isDestroyed());
     if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
       const api = gridRef.current.api;
       console.log("ENTERING THE REFRESH")
@@ -156,14 +153,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [currentView]);
 
   const onCellValueChanged = async (event: any, selectedRows?: any[]) => {
-    console.log("onCellValueChanged called, field:", event.colDef.field);
     if (event.newValue !== event.oldValue) {
       dataService.onCellValueChanged(event, selectedRows);
       // setTableData(dataService.table_data);
     }
 
     if (['description', 'class_name'].includes(event.colDef.field)) {
-      console.log("Field is description or class_name, calling refreshGrid");
       refreshGrid();
     }
   };

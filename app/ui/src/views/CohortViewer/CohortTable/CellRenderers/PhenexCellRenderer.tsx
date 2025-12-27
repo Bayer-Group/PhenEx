@@ -123,7 +123,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   // Get the border color CSS variable
   const borderColorVar = shouldColorBorder && props.data?.effective_type 
-    ? `var(--color_${props.data.effective_type})` 
+    ? `var(--color_${props.data.effective_type}_dim)` 
     : 'transparent';
 
   // Build border color object based on which borders are shown

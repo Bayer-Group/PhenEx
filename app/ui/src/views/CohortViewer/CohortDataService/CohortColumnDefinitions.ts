@@ -37,7 +37,7 @@ export const componentPhenotypeColumns: any[] = [
   {
     field: 'rowDrag',
     headerName: '',
-    width: 60,
+    width: 40,
     pinned: 'left',
     rowDrag: true,
     resizable: false,
@@ -49,7 +49,7 @@ export const componentPhenotypeColumns: any[] = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 50,
     resizable: false,
     pinned: 'left',
     editable: params => {
@@ -88,7 +88,7 @@ export const defaultColumns = [
   {
     field: 'rowDrag',
     headerName: '',
-    width: 60,
+    width: 30,
     pinned: 'left',
     rowDrag: true,
     resizable: false,
@@ -100,7 +100,7 @@ export const defaultColumns = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 40,
     resizable: false,
     pinned: 'left',
     editable: (params: any) => {

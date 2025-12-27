@@ -442,13 +442,14 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             animateRows={true}
             getRowHeight={params => {
               // Calculate height of CODELISTS
-              let current_max_height = 48;
+              let current_max_height = 24;
+              const minHeight = 24; 
               if (
                 params.data?.class_name == 'CodelistPhenotype' &&
                 params.data.codelist?.codelist
               ) {
                 const numEntries = Object.keys(params.data.codelist.codelist).length;
-                const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
+                const codelist_phenotype_height = Math.max(minHeight, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
                 current_max_height = Math.max(current_max_height, codelist_phenotype_height);
               }
 
@@ -458,23 +459,23 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 Array.isArray(params.data.relative_time_range)
               ) {
                 const numEntries = params.data.relative_time_range.length;
-                const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
+                const time_range_phenotype_height = Math.max(minHeight, numEntries * 30 + 20); // Adjust row height based on number of entries
                 current_max_height = Math.max(current_max_height, time_range_phenotype_height);
               }
 
            
 
               const nameCol = params.api.getColumnDef('name');
-              if (!nameCol || !params.data?.name) return 48; // Increased minimum height
+              if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
               const nameWidth = nameCol.width || 250;
               const nameCharPerLine = Math.floor(nameWidth / 8);
               const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-              const nameHeight = nameLines * 22 + 40; // 14px per line + padding
+              const nameHeight = nameLines * 22 + 10; // 14px per line + padding
               if (!params.data?.description) {
                 return Math.max(current_max_height, nameHeight); // Increased minimum height
               }
               const descriptionLines = params.data.description.split('\n').length;
-              const descriptionHeight = descriptionLines * 14 + 20; // 14px per line + padding
+              const descriptionHeight = descriptionLines * 14 + 10; // 14px per line + padding
               current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
               
               return current_max_height; // Increased minimum height

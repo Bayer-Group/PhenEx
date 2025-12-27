@@ -85,15 +85,13 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     return (
       <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${fontColor}`} style={getIndentationStyle()}>
         {props.value}
-
-        <br></br>
         <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
           
           
           <ReactMarkdown 
               components={{
                 p: ({children}) => <p style={{
-                  marginTop: '5px', 
+                  marginTop: '0px', 
                   padding: '0px', 
                   whiteSpace: 'normal',
                   wordBreak: 'break-word',
