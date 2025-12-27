@@ -97,10 +97,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   );
 
   const effectiveType = data?.effective_type;
-  console.log("THIS IS THE DATA IN CODELIST RENDERER,", data);
   const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
-  console.log("THIS IS THE CODELIST CLOR CL", colorClass);
   const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => {
     // Extract data from either top-level or nested codelist object
     const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;

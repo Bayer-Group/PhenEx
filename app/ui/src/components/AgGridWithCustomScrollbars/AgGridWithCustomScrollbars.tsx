@@ -78,10 +78,16 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
 
     // Expose scroll control methods to parent components
     useImperativeHandle(ref, () => ({
-      // Pass through AG Grid API
-      api: agGridRef.current?.api,
-      columnApi: agGridRef.current?.columnApi,
-      eGridDiv: gridContainerRef.current,
+      // Pass through AG Grid API with getters to ensure latest values
+      get api() {
+        return agGridRef.current?.api;
+      },
+      get columnApi() {
+        return agGridRef.current?.columnApi;
+      },
+      get eGridDiv() {
+        return gridContainerRef.current;
+      },
       
       // Scroll by column (left/right)
       scrollByColumn: (direction: 'left' | 'right') => {

@@ -372,12 +372,13 @@ export class CohortDataService {
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     await updateCohort(this._cohort_data.id, this._cohort_data);
-
+    console.log("💾 SAVED COHORT");
     // Always notify data change listeners (for PhenotypeDataService sync)
     this.notifyDataChangeListeners();
     
     // Only notify grid listeners if visual refresh is needed
     if (refreshGrid) {
+      console.log("REFRESHING GRID");
       this.notifyListeners();
     }
   }
