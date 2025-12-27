@@ -261,14 +261,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       // Default positioning logic when no item has been clicked
       const composerPlacementThreshold = viewport.width / 2;
       
-      if (cellRect.left < composerPlacementThreshold) {
-        // Cell is on left side - place composer on the right
+      if (cellWidth > 200) {
+        // If cell is wide, overlap at 200px from left edge
+        composerLeft = bottomSectionLeft + 200;
+      } else if (cellRect.left < composerPlacementThreshold) {
+        // Cell is narrow and on left side - place composer on the right
         composerLeft = Math.min(
           bottomSectionLeft + currentSelectionWidth + 10,
           viewport.width - composerWidth - 10
         );
       } else {
-        // Cell is on right side - place composer on the left
+        // Cell is narrow and on right side - place composer on the left
         composerLeft = Math.max(
           10,
           bottomSectionLeft - composerWidth - 10
@@ -642,7 +645,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
           top: portalPosition.currentSelection.bottomTop,
-          minWidth: portalPosition.currentSelection.width
+          minWidth: portalPosition.currentSelection.width,
         }}
       >
         {renderCurrentSelectionPanel_top()}
@@ -676,7 +679,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           style={{
             width: portalPosition.composer.width,
             maxHeight: portalPosition.composer.maxHeight,
-            zIndex: 9999,
+            zIndex: 100000,
           }}
           ref={containerRef}
           className={`${styles.container} ${colorBorder}`}
@@ -757,29 +760,29 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   }
 
   return (
-    <DraggablePortal
-      initialPosition={{
-        left: '0px',
-        top: '0px',
-      }}
-      dragHandleSelector="[data-drag-handle='true']"
-      onDragStart={() => {
-        setRecentlyDragged(false);
-      }}
-      onDragEnd={wasDragged => {
-        if (wasDragged) {
-          setRecentlyDragged(true);
-          setTimeout(() => {
-            setRecentlyDragged(false);
-          }, 200);
-        }
-      }}
-    >
-      <div className={styles.twoPanelWrapper}>
+    <>
+      <DraggablePortal
+        initialPosition={{
+          left: '0px',
+          top: '0px',
+        }}
+        dragHandleSelector="[data-drag-handle='true']"
+        onDragStart={() => {
+          setRecentlyDragged(false);
+        }}
+        onDragEnd={wasDragged => {
+          if (wasDragged) {
+            setRecentlyDragged(true);
+            setTimeout(() => {
+              setRecentlyDragged(false);
+            }, 200);
+          }
+        }}
+      >
         {renderCurrentSelectionPanel()}
-        {showComposer && renderComposerPanel()}
-      </div>
-    </DraggablePortal>
+      </DraggablePortal>
+      {showComposer && renderComposerPanel()}
+    </>
   );
 });
 
