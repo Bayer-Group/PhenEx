@@ -225,10 +225,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     // Cell dimensions - bottom section matches exactly
-    const offsetX = 15;
-    const offsetY = 15;
-    const cellWidth = cellRect.width + 2*offsetX;
-    const cellHeight = cellRect.height + 2*offsetY;
+    const offsetX = 10;
+    const offsetY = 10;
+    const cellWidth = cellRect.width;
+    const cellHeight = cellRect.height;
     
     // Current Selection Panel dimensions (with minimum width)
     const minCurrentSelectionWidth = 300;
@@ -239,7 +239,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const bottomSectionTop = cellRect.top - offsetY;
     
     // Composer Panel dimensions
-    const composerWidth = 350;
+    const composerWidth = 250;
     const composerMaxHeight = viewport.height - 100; // Max height with padding
     
     // Position Composer Panel - use clicked item position if available, otherwise use default logic
@@ -554,7 +554,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           left: 0,
           bottom: '100%',
           width: '100%',
-          minWidth: '300px',
           zIndex: 9998,
         }}
         data-drag-handle="true"
@@ -636,6 +635,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
           top: portalPosition.currentSelection.bottomTop,
+          minWidth: portalPosition.currentSelection.width
         }}
       >
         {renderCurrentSelectionPanel_top()}
