@@ -18,7 +18,6 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       </div>
       <Tabs
         width={400}
-        height={height - 10}
         tabs={tabs}
         onTabChange={onSectionTabChange || (() => {})}
         active_tab_index={0}

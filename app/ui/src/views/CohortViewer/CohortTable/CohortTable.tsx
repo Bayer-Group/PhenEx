@@ -459,7 +459,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 Array.isArray(params.data.relative_time_range)
               ) {
                 const numEntries = params.data.relative_time_range.length;
-                const time_range_phenotype_height = Math.max(minHeight, numEntries * 30 + 20); // Adjust row height based on number of entries
+                const time_range_phenotype_height = Math.max(minHeight, numEntries * 30 + 10); // Adjust row height based on number of entries
                 current_max_height = Math.max(current_max_height, time_range_phenotype_height);
               }
 
@@ -467,7 +467,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
               const nameCol = params.api.getColumnDef('name');
               if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
-              const nameWidth = nameCol.width || 250;
+              const nameWidth = (nameCol.width - 100) || 100;
               const nameCharPerLine = Math.floor(nameWidth / 8);
               const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
               const nameHeight = nameLines * 22 + 10; // 14px per line + padding
@@ -475,7 +475,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 return Math.max(current_max_height, nameHeight); // Increased minimum height
               }
               const descriptionLines = params.data.description.split('\n').length;
-              const descriptionHeight = descriptionLines * 14 + 10; // 14px per line + padding
+              // if (descriptionLines.length === 0) {
+              //   return Math.max(current_max_height, nameHeight); // Increased minimum height
+              // }
+              const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
               current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
               
               return current_max_height; // Increased minimum height

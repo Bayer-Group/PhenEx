@@ -5,7 +5,7 @@
   --popover_font_size: 20px;
   --padding_custom_two_line_header: 5px 10px 20px 10px;
   --border_radius_sharp: 2px;
-  --border_radius_currenselection: 3px;
+  --border_radius_currenselection: 8px;
 }
 :global(.ag-popup-editor) {
   background-color: transparent !important;
@@ -323,7 +323,7 @@
   display: flex;
   flex-direction: column;
   background-color: var(--background_color_focus) !important;
-  padding: 10px;
+  padding: 5px;
   border-radius: 0 0 10px 10px;
   /* border-left: var(--border);
   border-bottom: var(--border);
@@ -365,7 +365,7 @@
   background-color: var(--background-color);
   color: white !important;
   /* width:calc(100% + 8px); */
-  border-radius: 20px 20px 0px 0px;
+  border-radius: 10px 10px 0px 0px;
   background-color: var(--background_color_focus)  !important; /* TEMPORARY - REMOVE LATER */
 
 }
@@ -410,7 +410,7 @@
 }
 
 .cellMirrorContents{
-  padding: 10px;
+  padding: 5px var(--item-margin-horizontal);
   flex: 1;
   display: flex;
   flex-direction: column;

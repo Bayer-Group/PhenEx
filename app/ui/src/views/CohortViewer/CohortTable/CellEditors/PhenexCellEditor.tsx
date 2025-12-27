@@ -225,7 +225,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     // Cell dimensions - bottom section matches exactly
-    const offsetX = 10;
+    const offsetX = 5;
     const offsetY = 10;
     const cellWidth = cellRect.width;
     const cellHeight = cellRect.height;
@@ -261,9 +261,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       // Default positioning logic when no item has been clicked
       const composerPlacementThreshold = viewport.width / 2;
       
-      if (cellWidth > 200) {
-        // If cell is wide, overlap at 200px from left edge
-        composerLeft = bottomSectionLeft + 200;
+      if (cellWidth > 350) {
+        // If cell is wide, overlap at 350px from left edge
+        composerLeft = bottomSectionLeft + 350;
       } else if (cellRect.left < composerPlacementThreshold) {
         // Cell is narrow and on left side - place composer on the right
         composerLeft = Math.min(
