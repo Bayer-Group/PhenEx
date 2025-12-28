@@ -33,14 +33,14 @@ export class StudyViewerCohortDefinitionsDataService {
     console.log('All phenotypes before filter:', filteredPhenotypes);
     console.log('Phenotype types found:', filteredPhenotypes.map(p => p.type));
     
-    filteredPhenotypes = filteredPhenotypes.filter(
-      (phenotype: any) =>
-        phenotype.type === 'entry' ||
-        phenotype.type === 'inclusion' ||
-        phenotype.type === 'exclusion'
-    );
+    // filteredPhenotypes = filteredPhenotypes.filter(
+    //   (phenotype: any) =>
+    //     phenotype.type === 'entry' ||
+    //     phenotype.type === 'inclusion' ||
+    //     phenotype.type === 'exclusion' ||
+    // );
 
-    console.log('Filtered phenotypes:', filteredPhenotypes);
+    // console.log('Filtered phenotypes:', filteredPhenotypes);
 
     // Add colorCellBorder property to each phenotype
     const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
