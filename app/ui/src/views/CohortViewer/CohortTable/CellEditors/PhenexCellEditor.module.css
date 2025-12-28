@@ -68,33 +68,24 @@
   display: block;
 }
 
-.container > * {
+.composerContainer > * {
 }
 
-.container {
-  display: flex;
+.composerContainer {
+  /* display: flex;
   flex-direction: column;
-  width: 350px;
+  width: 350px; */
+  width:100%;
   /* Removed min-height to allow container to hug content */
-  max-height: none; /* Remove height restriction */
-  padding: 0px;
   background-color: var(--background_color_focus);
   border-radius: 10px;
-  /* border: 1px solid var(--color-accent-bright); */
-  /* border-radius: var(--popover_border_radius_top) var(--popover_border_radius_top)
-    var(--popover_border_radius_bottom) var(--popover_border_radius_bottom); */
-  padding-bottom: 10px;
   position: relative;
-  margin-bottom: 20px !important;
-  margin-right: 20px !important;
   color: white;
-  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); */
-  /* background-color: var(--color_translucent); */
   overflow: hidden;
   animation: fadeIn 0.05s ease-in-out;
   border: none !important;
+  padding: 10px 5px;
+
 }
 
 @keyframes fadeIn {
@@ -107,30 +98,40 @@
 }
 
 .composerDragHandle {
-  padding: 8px 12px;
-  padding: 0px;
-  cursor: move;
-  border : none !important;
-  font-size: 12px;
-  opacity: 0.7;
-  user-select: none;
+  /* No longer used - entire container is draggable */
+  display: none;
 }
 
-.content {
+.composerContainer {
+  cursor: grab;
+}
+
+.composerContainer:active {
+  cursor: grabbing;
+}
+
+.testDiv{
+  background-color: purple !important;
+}
+
+.composerContent {
   position: relative;
   display: flex;
   flex-direction: column;
-  /* Remove flex: 1 to allow content to determine height */
+  padding: 0px !important;
+  margin: 0px !important;
   overflow: hidden; /* Prevent outer scrolling */
+  width: 100%;
+  height: 100%;
 }
 
 .contentScrollable {
   overflow-y: auto;
   /* Remove flex: 1 and min-height to allow content to determine height */
 }
-
+/* 
 .infoContentArea {
-  padding: 20px;
+  padding: 0px;
   height: 100%;
   overflow-y: auto;
 }
@@ -154,7 +155,7 @@
   font-size: 14px;
   line-height: 1.4;
   color: var(--text-color);
-}
+} */
 
 .filler {
   font-size: var(--popover_font_size);

@@ -33,7 +33,7 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
       <div className={styles.header}>
         <p className={styles.headerText}>
           Using {mapper} mappers. Configure in Database<br />
-          Current selection: {selectedDomain}
+          
         </p>
       </div>
       <div className={styles.content}>
@@ -41,6 +41,9 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
           items={domains}
           selectedName={selectedDomain || undefined}
           onSelect={handleDomainSelect}
+        classNameListItem={styles.listItem}
+        classNameListItemSelected={styles.listItemSelected}
+
         />
       </div>
     </div>

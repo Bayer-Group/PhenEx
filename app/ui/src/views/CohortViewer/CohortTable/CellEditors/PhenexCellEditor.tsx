@@ -682,7 +682,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             zIndex: 100000,
           }}
           ref={containerRef}
-          className={`${styles.container} ${colorBorder}`}
+          className={`${styles.composerContainer}`}
+          data-drag-handle="true"
           onClick={e => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -712,32 +713,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
           tabIndex={-1}
         >
-          <div className={`${styles.content}`}>
-            {/* Drag handle bar at the top */}
-            <div 
-              className={styles.composerDragHandle}
-              data-drag-handle="true"
-            >
-            </div>
-            <div 
-              ref={contentScrollableRef}
-              className={`${styles.contentScrollable}`}
-            >
-              {isInfoOpen ? (
-                renderInfoContent()
-              ) : (
-                renderMainContent()
-              )}
-            </div>
-            
-            <SimpleCustomScrollbar 
-              targetRef={contentScrollableRef}
-              orientation="vertical"
-              marginTop={65}
-              marginBottom={5}
-              classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
-            />
-            
+          <div className={`${styles.composerContent}`}>
+            {renderMainContent()}
             {props.onEditingDone && showComposer && (
               <div className={styles.doneButtonContainer}>
                 <button 

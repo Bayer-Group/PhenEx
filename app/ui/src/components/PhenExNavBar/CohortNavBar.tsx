@@ -9,20 +9,21 @@ interface CohortNavBarProps {
 }
 
 export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
-  const tabs = ['Cohort definition', 'Characteristics', 'Outcomes'];/*, 'All phenotypes'];*/
+  const tabs = ['Definition', 'Characteristics', 'Outcomes'];/*, 'All phenotypes'];*/
 
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>
-      <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 8px' }}>
-        ⋮⋮
+      <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
+        {/* ⋮⋮ */}
       </div>
       <Tabs
-        width={400}
         tabs={tabs}
         onTabChange={onSectionTabChange || (() => {})}
         active_tab_index={0}
         classNameTabs = {styles.classNameSectionTabs}
         classNameTabsContainer={styles.classNameTabsContainer}
+        classNameActiveTab={styles.classNameActiveTab}
+        classNameHoverTab={styles.classNameHoverTab}
       />
     </div>
   );

@@ -60,14 +60,15 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       columnBorder: false,
       headerFontSize: 16,
       // headerFontWeight: 'bold',
-      headerRowBorder: true,
+      headerRowBorder: false,
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'transparent',
       rowBorder: false,
-      spacing: 8,
+      spacing: 0,
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
-      wrapperBorderRadius: 0
+      wrapperBorderRadius: 0,
+      headerHeight: 10,
     };
     const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);
     

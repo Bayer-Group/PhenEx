@@ -25,7 +25,7 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   onViewNavigationScroll,
   onViewNavigationVisibilityClicked,
 }) => {
-  const heightNavBar = 30;
+  const heightNavBar = 44;
 
   return (
     <div className={styles.phenexNavBar}>

@@ -1,14 +1,18 @@
+:root{
+    --scale_transform: scale(1.3);
+}
 .navBar {
   display: flex;
   align-items: center;
-  padding: 5px 0px;
+  padding: 0px 0px;
   background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--line-color);
-  border-radius: 20px;
+  border: 8px solid var(--li);
+  border-radius: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: fit-content;
+  user-select: none;
 }
 
 .actionButtons {
@@ -36,6 +40,13 @@
 
 .actionButton:hover {
   opacity: 0.7;
+  outline: none;
+  border: none;
+}
+
+.actionButton:focus {
+  outline: none;
+  border: none;
 }
 
 .issuesLabel {
@@ -44,9 +55,15 @@
 }
 
 .birdIcon {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.birdIcon:hover {
+  transform: var(--scale_transform);
 }
 
 .viewContent {
@@ -62,37 +79,49 @@
 .viewNavContent {
   display: flex;
   align-items: center;
-  gap: 3px;
   padding-left:5px;
   padding-right:5px;
+  height: 100%;
+}
+
+.navArrowsContainer{
+  display: flex;
+
+  align-items: center;
+    gap: 10px;
+    margin-right:12px;
+    margin-left:12px;
 }
 
 .navArrowButton {
   background: none;
   border: none;
-  padding: 4px;
+  padding: 0px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: currentColor;
-  transition: opacity 0.2s;
-  min-width: 24px;
+  transition: opacity 0.2s, transform 0.2s;
+  width: 22px;
+  border: none;
+  outline: none;
 }
 .navArrowButton:focus{
   outline:none;
 }
 .navArrowButton:hover {
   opacity: 0.7;
+  transform: scale(1.5);
 }
 
 .horizontalScrollContainer{
-    padding: 2px 25px;
-    background-color: var(--background-color);
-    border-radius: 20px;
+    padding: 4px 4px;
     border: var(--line-color) 1px solid;
-  height: 50px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background-color: var(--line-color);
+    border-radius: 10px;
+  /* height: 100%; */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); */
 }
 
 .horizontalScrollbar {
@@ -102,26 +131,30 @@
   background-color: transparent;
   border-radius: 3px;
   cursor: default;
+    border-radius: 10px !important;
+
 }
 
 .scrollbarThumb {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 40px;
-  height: 45px;
-  background-color: var(--line-color);
-  border-radius: 14px;
+  width: 8px;
+  height: 24px;
+  background-color:var(--color-accent);
+  border-radius: 9px;
   cursor: grab;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
 }
 
 .scrollbarThumb:hover {
   background-color: var(--color_accent_orange);
+  transform: translate(-50%, -50%) var(--scale_transform);
 }
 
 .scrollbarThumb:active {
   cursor: grabbing;
+  transform: translate(-50%, -50%) var(--scale_transform);
 }
 
 .eyeButton {
@@ -135,6 +168,7 @@
   color: currentColor;
   transition: opacity 0.2s;
   min-width: 24px;
+  margin:0px 10px;
 }
 
 .eyeButton:hover {
@@ -145,10 +179,12 @@
 .classNameTabsContainer{
   background-color: transparent !important;
   border-color:transparent;
-  height: 32px !important;
+
   backdrop-filter: none !important;
-  background-color: transparent !important;
   border: none !important;
+  padding: 0px 10px !important;
+  gap: 8px !important;
+  
   /* border: 1px solid var(--line-color); */
 
 }
@@ -161,9 +197,21 @@
 }
 
 .classNameSectionTabs{
-  font-size: var(--font_size_breadcrumb)!important;
-  height: 32px !important;
-  padding-left: 10px;
-  padding-right:10px;
+  font-size: var(--font_size_phenotypename)!important;
+  height: 30px !important;
+  padding: 0px 10px !important;
   border-radius: 10px !important;
+}
+
+.classNameActiveTab {
+  background-color: red !important;
+  /* font-size: 100px !important; */
+  background-color: red !important;
+  transform: var(--scale_transform) !important;
+  font-family:"IBMPlexSans-regular" !important;
+}
+
+.classNameHoverTab:hover {
+  transform: var(--scale_transform) !important;
+  transition: transform 0.2s !important;
 }

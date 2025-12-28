@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
+  overflow: hidden;
+  margin:0px;
 }
 
 .listItem {
@@ -56,6 +58,21 @@
 }
 .listItem:hover {
   background-color: var(--color_accent_blue);
+}
+
+.listItem.selected {
+  color: var(--color_accent_blue);
+}
+
+
+.listItem.selected {
+  border-color: var(--color_accent_blue);
+}
+
+
+.listItem.selected:hover {
+  background-color: var(--color_accent_blue);
+  color:white !important;
 }
 
 .itemInfo {

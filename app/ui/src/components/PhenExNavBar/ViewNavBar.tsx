@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import styles from './NavBar.module.css';
-
+import LeftArrow from '../../assets/icons/left_arrow.svg';
 interface ViewNavBarProps {
   height: number;
   scrollPercentage?: number; // Controlled scroll percentage
@@ -53,33 +53,41 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
     
     onViewNavigationScroll?.(percentage);
   };
+  
+  const renderArrows = () => {
+    return (
+
+    <div className={styles.navArrowsContainer}>
+        <button
+            className={styles.navArrowButton}
+            onClick={() => onViewNavigationArrowClicked?.('left')}
+            disabled={!canScrollLeft}
+            title="Navigate left"
+            style={{ opacity: canScrollLeft ? 1 : 0.3, cursor: canScrollLeft ? 'pointer' : 'not-allowed' }}
+        >
+            <img src={LeftArrow} alt="left" style={{ width: '25px', height: '28px' }} />
+        </button>
+
+        <button
+            className={styles.navArrowButton}
+            onClick={() => onViewNavigationArrowClicked?.('right')}
+            disabled={!canScrollRight}
+            title="Navigate right"
+            style={{ opacity: canScrollRight ? 1 : 0.3, cursor: canScrollRight ? 'pointer' : 'not-allowed' }}
+        >
+            <img src={LeftArrow} alt="right" style={{ width: '25px', height: '28px', transform: 'rotate(180deg)' }} />
+        </button>
+    </div>
+    );
+
+    };
 
   return (
-    <div className={`${styles.navBar} ${styles.viewNavBar}`} style={{ height: `${height-16}px` , marginTop: `${8}px`}}>
+    <div className={`${styles.navBar} `} style={{ height: `${height}px` , marginTop: `${0}px`}}>
       <div className={styles.viewNavContent}>
-        <button
-          className={styles.navArrowButton}
-          onClick={() => onViewNavigationArrowClicked?.('left')}
-          disabled={!canScrollLeft}
-          title="Navigate left"
-          style={{ opacity: canScrollLeft ? 1 : 0.3, cursor: canScrollLeft ? 'pointer' : 'not-allowed' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M10 12L6 8l4-4v8z" />
-          </svg>
-        </button>
 
-        <button
-          className={styles.navArrowButton}
-          onClick={() => onViewNavigationArrowClicked?.('right')}
-          disabled={!canScrollRight}
-          title="Navigate right"
-          style={{ opacity: canScrollRight ? 1 : 0.3, cursor: canScrollRight ? 'pointer' : 'not-allowed' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M6 4l4 4-4 4V4z" />
-          </svg>
-        </button>
+
+       {renderArrows()}
         
         <div className={styles.horizontalScrollContainer}>
         <div

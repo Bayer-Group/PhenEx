@@ -21,10 +21,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px;
+  padding: 0px;
   overflow-y: auto;
   height: calc(100% - 50px);
-  padding-right: 20px;
 }
 
 .domainSection {
@@ -64,4 +63,8 @@
   color: white !important;
   font-size: var(--font_size_items) !important;
 
+}
+
+.listItemSelected{
+  border-color: white;
 }
