@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import styles from './NavBar.module.css';
-import LeftArrow from '../../assets/icons/left_arrow.svg';
+
 interface ViewNavBarProps {
   height: number;
   scrollPercentage?: number; // Controlled scroll percentage
@@ -65,7 +65,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
             title="Navigate left"
             style={{ opacity: canScrollLeft ? 1 : 0.3, cursor: canScrollLeft ? 'pointer' : 'not-allowed' }}
         >
-            <img src={LeftArrow} alt="left" style={{ width: '25px', height: '28px' }} />
+            <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
+              <path d="M17 23L8.34772 14.0494C8.15571 13.8507 8.16118 13.534 8.35992 13.3422L17 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
         </button>
 
         <button
@@ -75,7 +77,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
             title="Navigate right"
             style={{ opacity: canScrollRight ? 1 : 0.3, cursor: canScrollRight ? 'pointer' : 'not-allowed' }}
         >
-            <img src={LeftArrow} alt="right" style={{ width: '25px', height: '28px', transform: 'rotate(180deg)' }} />
+            <svg width="25" height="28" viewBox="0 0 25 28" fill="none" style={{ transform: 'rotate(180deg)' }}>
+              <path d="M17 23L8.34772 14.0494C8.15571 13.8507 8.16118 13.534 8.35992 13.3422L17 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
         </button>
     </div>
     );

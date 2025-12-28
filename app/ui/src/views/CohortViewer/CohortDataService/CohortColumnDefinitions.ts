@@ -37,7 +37,7 @@ export const componentPhenotypeColumns: any[] = [
   {
     field: 'rowDrag',
     headerName: '',
-    width: 40,
+    width: 30,
     pinned: 'left',
     rowDrag: true,
     resizable: false,
@@ -189,7 +189,7 @@ export const defaultColumns = [
   {
     field: 'codelist',
     headerName: 'Codelists',
-    width: 200,
+    width: 350,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },

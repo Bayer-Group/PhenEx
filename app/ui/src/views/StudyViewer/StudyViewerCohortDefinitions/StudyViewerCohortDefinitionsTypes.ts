@@ -5,6 +5,7 @@ import DescriptionCellRenderer from '../../CohortViewer/CohortTable/CellRenderer
 import PhenotypeCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/PhenotypeCellRenderer';
 import DomainCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/DomainCellRenderer';
 import CodelistCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/CodelistCellRenderer';
+import RowDragCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/RowDragCellRenderer';
 
 export interface CohortWithTableData {
   cohort: Record<string, any>;
@@ -13,9 +14,21 @@ export interface CohortWithTableData {
 
 export const cohortDefinitionColumns: ColumnDefinition[] = [
   {
+    field: 'rowDrag',
+    headerName: '',
+    width: 30,
+    pinned: 'left',
+    rowDrag: true,
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellClass: 'row-drag-handle',
+    cellRenderer: RowDragCellRenderer,
+  },
+  {
     field: 'type',
     headerName: 'Type',
-    width: 50,
+    width: 0,
     editable: false,
     resizable: false,
     filter: false,

@@ -115,8 +115,7 @@
 .navArrowButton:hover {
   opacity: 0.7;
   transform: scale(1.5);
-  background-color: var(--color_accent_blue) !important;
-
+  color: var(--color_accent_blue) !important;
 }
 
 .horizontalScrollContainer{
@@ -152,7 +151,7 @@
 }
 
 .scrollbarThumb:hover {
-  background-color: var(--color_accent_orange);
+  background-color: var(--color_accent_blue);
   transform: translate(-50%, -50%) var(--scale_transform);
 }
 
@@ -201,7 +200,7 @@
 }
 
 .classNameSectionTabs{
-  font-size: var(--font_size_phenotypename)!important;
+  font-size: var(--font_size_mid_phenotype_info)!important;
   height: 30px !important;
   padding: 0px 4px !important;
   border-radius: 10px !important;
