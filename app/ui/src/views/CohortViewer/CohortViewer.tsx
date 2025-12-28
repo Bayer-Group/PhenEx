@@ -14,7 +14,7 @@ import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
-import { Portal } from '../../components/Portal/Portal';
+import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -53,9 +53,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
   const navBarDragHandleRef = useRef<HTMLDivElement>(null);
+  const bottomSectionRef = useRef<HTMLDivElement>(null);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -400,7 +402,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
         {renderSectionTabs()} */}
       </div>
-      <div className={styles.bottomSection}>
+      <div className={styles.bottomSection} ref={bottomSectionRef}>
         {renderTable()}
         <div className={styles.bottomGradient} />
       </div>
@@ -408,26 +410,28 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
-        <Portal>
-          <div style={{
-            position: 'fixed',
-            bottom: '0px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1000
-          }}>
-            <PhenExNavBar
-              onSectionTabChange={onTabChange}
-              dragHandleRef={navBarDragHandleRef}
-              scrollPercentage={scrollPercentage}
-              canScrollLeft={canScrollLeft}
-              canScrollRight={canScrollRight}
-              onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-              onViewNavigationScroll={handleViewNavigationScroll}
-              onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-            />
-          </div>
-        </Portal>
+        <DraggablePositionedPortal
+          triggerRef={bottomSectionRef}
+          position="below"
+          alignment="right"
+          resetToPositioned={resetNavBarToPositioned}
+          onClose={() => {
+            setResetNavBarToPositioned(true);
+            setTimeout(() => setResetNavBarToPositioned(false), 50);
+          }}
+          dragHandleRef={navBarDragHandleRef}
+        >
+          <PhenExNavBar
+            onSectionTabChange={onTabChange}
+            dragHandleRef={navBarDragHandleRef}
+            scrollPercentage={scrollPercentage}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+            onViewNavigationScroll={handleViewNavigationScroll}
+            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+          />
+        </DraggablePositionedPortal>
     </div>
   );
 };
