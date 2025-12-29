@@ -94,7 +94,22 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
       wrapperBorder: false,
       backgroundColor: 'transparent',
     };
+    
+  const calculateRowHeight = (params: any) => {
+    let current_max_height = 12;
+    const minHeight = 12; 
 
+    const nameCol = params.api.getColumnDef('name');
+    console.log("nameCol", nameCol, params.data?.name);
+    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
+    const nameWidth = 300;
+    const nameCharPerLine = Math.floor(nameWidth / 8);
+    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
+    const nameHeight = nameLines * 22; // 14px per line + padding
+    current_max_height = Math.max(current_max_height, nameHeight);
+    return current_max_height;
+  
+  }
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.header}>
@@ -114,7 +129,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           currentlyViewing={'components'}
           tableTheme={default_theme}
           hideHorizontalScrollbar={true}
-
+          customGetRowHeight={calculateRowHeight}
         />
       </div>
     </div>

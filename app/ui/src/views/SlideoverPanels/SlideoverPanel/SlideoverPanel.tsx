@@ -83,11 +83,11 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
     <div className={`${styles.container} ${classNameContainer}`} onClick={onClick}>
       <div className={`${styles.header} ${classNameHeader}`} onClick={clickOnHeader}>
         {showTitle && renderHeader()}
-        <Button
+        {/* <Button
           title="Help"
           onClick={toggleInfobox}
           className={`${styles.infoButton} ${isOpen ? styles.open : styles.closed} ${classNameButton}`}
-        />
+        /> */}
 
         <div
           className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}

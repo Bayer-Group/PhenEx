@@ -37,9 +37,25 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
     borderTopColor: borderColorVar,
     ...(backgroundColor ? { backgroundColor } : {}),
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     height: '100%',
+    paddingTop: '7px',
+    paddingLeft: '10px',
+  };
+
+  const checkmarkCircleStyle: React.CSSProperties = {
+    width: '15px',
+    height: '15px',
+    borderRadius: '50%',
+    backgroundColor: 'var(--color_accent_blue)',
+    border: '1px solid white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontSize: '10px',
+    fontWeight: 'bold',
   };
 
   // Check if the row is selected
@@ -50,7 +66,11 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
       className={styles.container}
       style={containerStyle}
     >
-      {isSelected && <span>✓</span>}
+      {isSelected && (
+        <div style={checkmarkCircleStyle}>
+          ✓
+        </div>
+      )}
     </div>
   );
 };

@@ -117,26 +117,25 @@
 }
 
 .collapseButton {
-  background-color: var(--background-color) !important;
   color: var(--color-accent-bright);
 
-  border: 1px solid var(--line-color);
-  border-right: none !important;
-  border-radius: 12px 0px 0px 12px;
+  border-radius: 12px;
   cursor: pointer;
   z-index: 1;
   background-color: transparent;
-  /* display: flex; */
+  display: flex;
   position: absolute;
-  top: 55px;
-  left: -48px;
-  width: 48px;
-  padding: 0px 0px 0px 20px;
+  top: 5px;
+  right: 20px;
+  /* width: 48px; */
+  padding: 3px 10px 3px 8px;
   font-family: 'SNPro-black'!important;
   box-sizing: border-box;
 
   align-items: center;
-  font-size: 28px !important;
+  justify-content: center;
+  text-align: center;
+  font-size: 24px !important;
   z-index: 1000;
   /* line-height: 30px; */
 
@@ -150,9 +149,10 @@
 .collapseButton:hover {
   transition: transform 0.2s ease;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: var(--color_accent_orange);
+  color: white !important;
   outline: none;
-  border-color: var(--color_accent_orange);
+  background-color: var(--color_accent_blue);
+  border-color: white;
 }
 
 .collapseButton.collapsed {

@@ -48,13 +48,14 @@ interface CohortTableProps {
   headerHeight?: number;
   tableTheme?: any;
   tableGridOptions?: any;
+  customGetRowHeight?: (params: any) => number;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions, customGetRowHeight }, ref) => {
 
     const default_theme = {
-      accentColor: 'var(--accent-color)',
+      accentColor: 'transparent',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
@@ -447,7 +448,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             rowDragManaged={true}
             loadThemeGoogleFonts={true}
             animateRows={true}
-            getRowHeight={params => {
+            getRowHeight={customGetRowHeight || (params => {
               // Calculate height of CODELISTS
               let current_max_height = 24;
               const minHeight = 24; 
@@ -489,7 +490,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
               current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
               
               return current_max_height; // Increased minimum height
-            }}
+            })}
             rowClassRules={
               {
                 // 'rag-dark-outer': (params) => params.data.type === 'entry',
