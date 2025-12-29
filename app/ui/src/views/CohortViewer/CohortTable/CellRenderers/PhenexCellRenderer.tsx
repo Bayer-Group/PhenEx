@@ -114,11 +114,8 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   // Get dynamic background color with hierarchical alpha
   const backgroundColor = shouldColorBackground
-    ? (isMissing && props.data?.effective_type
-      ? `var(--color_${props.data.effective_type})`
-      : getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index))
+    ? getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index)
     : 'transparent';
-  const backgroundColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_color_block_dim`] || '') : '';
   const textColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_text_color`] || '') : '';
 
   // Get the border color CSS variable
@@ -138,7 +135,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const combinedStyle: React.CSSProperties = {
     ...containerStyle,
     ...borderColors,
-    ...(backgroundColor && !isMissing ? { backgroundColor } : {}),
+    ...(backgroundColor ? { backgroundColor } : {}),
   };
 
   const renderButtons = () =>{
@@ -159,7 +156,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <div
-      className={`${styles.containerStyle} ${backgroundColorClass} ${props.node.isSelected() ? styles.selected : ''}`}
+      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''}`}
       onClick={() => {
         if (props.value === 'missing') {
           props.api?.startEditingCell({

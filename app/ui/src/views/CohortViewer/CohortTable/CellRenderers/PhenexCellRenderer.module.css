@@ -87,6 +87,7 @@
   color: white;
   font-family: "IBMPlexSans-bolditalic";
   font-size: 16px;
+  padding-top: var(--item-margin-top);
 }
 
 /* Button styles for cells */

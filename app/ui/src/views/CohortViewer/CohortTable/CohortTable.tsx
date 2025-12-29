@@ -76,7 +76,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // turns OFF row hover, it's on by default
           suppressRowHoverHighlight: false,
           // turns ON column hover, it's off by default
-          columnHoverHighlight: true,
+          // columnHoverHighlight: true,
 
           // other grid options ...
       }
