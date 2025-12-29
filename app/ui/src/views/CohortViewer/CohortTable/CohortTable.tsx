@@ -407,7 +407,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             cellSelection={false}
             rowSelection="multiple"
             onSelectionChanged={() => {
-              // Selection changed - could be used for future functionality
+              // Refresh cells to update selection cell renderer
+              if (ref && typeof ref === 'object' && ref.current?.api) {
+                ref.current.api.refreshCells({ 
+                  force: true,
+                  columns: ['selection']
+                });
+              }
             }}
             onCellEditingStarted={() => {
               // Store the current selection before editing starts

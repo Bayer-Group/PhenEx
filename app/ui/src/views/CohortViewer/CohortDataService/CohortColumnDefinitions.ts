@@ -6,6 +6,7 @@ import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRen
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import type { ICellEditorParams } from 'ag-grid-community';
 import RowDragCellRenderer from '../CohortTable/CellRenderers/RowDragCellRenderer';
+import SelectionCellRenderer from '../CohortTable/CellRenderers/SelectionCellRenderer';
 
 import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
@@ -34,6 +35,16 @@ export const columnNameToApplicablePhenotypeMapping = {
 };
 
 export const componentPhenotypeColumns: any[] = [
+  {
+    field: 'selection',
+    headerName: '',
+    width: 30,
+    pinned: 'left',
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellRenderer: SelectionCellRenderer,
+  },
   {
     field: 'rowDrag',
     headerName: '',
@@ -85,6 +96,16 @@ export const componentPhenotypeColumns: any[] = [
 ];
 
 export const defaultColumns = [
+  {
+    field: 'selection',
+    headerName: '',
+    width: 30,
+    pinned: 'left',
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellRenderer: SelectionCellRenderer,
+  },
   {
     field: 'rowDrag',
     headerName: '',
