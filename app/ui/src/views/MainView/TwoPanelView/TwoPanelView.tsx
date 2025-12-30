@@ -5,6 +5,7 @@ interface TwoPanelViewProps {
   split: 'vertical' | 'horizontal';
   initialSizeLeft: number;
   minSizeLeft: number;
+  maxSizeRight?: number;
   children: React.ReactNode[];
   collapseButtonTheme?: 'light' | 'dark'; // Add this prop
   onRightPanelCollapse?: (isCollapsed: boolean) => void; // Add this prop
@@ -18,7 +19,7 @@ export const TwoPanelView = React.forwardRef<
   },
   TwoPanelViewProps
 >((props, ref) => {
-  const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
+  const { split, initialSizeLeft, minSizeLeft, maxSizeRight, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
   const viewType = props.viewType || 'slideover';
 
   React.useImperativeHandle(ref, () => ({
@@ -59,7 +60,10 @@ export const TwoPanelView = React.forwardRef<
 
     if (split === 'vertical') {
       const mouseX = e.clientX - containerRect.left;
-      const newRightWidth = Math.max(200, container.offsetWidth - Math.max(minSizeLeft, mouseX - 10));
+      let newRightWidth = Math.max(minSizeLeft, container.offsetWidth - Math.max(minSizeLeft, mouseX - 10));
+      if (maxSizeRight) {
+        newRightWidth = Math.min(newRightWidth, maxSizeRight);
+      }
       const newLeftWidth = container.offsetWidth - newRightWidth;
       setLeftWidth(newLeftWidth);
       if (!isRightCollapsed) {
