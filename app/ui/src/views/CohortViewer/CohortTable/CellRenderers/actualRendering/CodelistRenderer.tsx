@@ -27,7 +27,7 @@ export interface CodelistRendererProps {
   value: CodelistValue | CodelistValue[] | null | undefined;
   data?: any;
   onClick?: () => void;
-  onItemClick?: (item: CodelistValue, index: number) => void; // Callback for clicking individual items in an array
+  onItemClick?: (item: CodelistValue, index: number, event?: React.MouseEvent) => void; // Callback for clicking individual items in an array
   selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
   selectedClassName?: string; // Optional className to apply to the selected item
 }

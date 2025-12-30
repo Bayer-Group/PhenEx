@@ -53,7 +53,9 @@ export function LogicalFilterRenderer<T>({
                 className={classes}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onItemClick?.(item, item.index, e);
+                  if (onItemClick) {
+                    onItemClick(item, item.index, e);
+                  }
                 }}
                 style={{ cursor: onItemClick ? 'pointer' : 'default' }}
               >

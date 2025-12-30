@@ -4,7 +4,7 @@ import styles from './ComplexItemRenderer.module.css';
 export interface ComplexItemRendererProps<T> {
   items: T[];
   renderItem: (item: T, index: number) => React.ReactNode;
-  onItemClick?: (item: T, index: number) => void;
+  onItemClick?: (item: T, index: number, event?: React.MouseEvent) => void;
   operator?: string; // Optional operator to display between items (e.g., "AND", "OR", "+")
   emptyPlaceholder?: React.ReactNode;
   itemClassName?: string; // Optional className to apply to each item wrapper
@@ -51,7 +51,7 @@ export function ComplexItemRenderer<T>({
               onClick={(e) => {
                 e.stopPropagation();
                 if (onItemClick) {
-                  onItemClick(item, index);
+                  onItemClick(item, index, e);
                 }
               }}
               style={{ cursor: onItemClick ? 'pointer' : 'default' }}

@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useEffect } from 'react';
 import { FilterType, SingleLogicalExpression } from './logicalExpressionEditor/types';
 import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { SimplifiedSingleLogicalExpressionEditor } from './logicalExpressionEditor/SimplifiedSingleLogicalExpressionEditor';
@@ -14,6 +14,7 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
 export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps>(
   (props, ref) => {
     const initialValue = props.value as FilterType | undefined;
+    const clickedItemIndex = (props as any).clickedItemIndex;
 
     // Type guard to identify leaf nodes (SingleLogicalExpression)
     const isLeafNode = (value: any): value is SingleLogicalExpression => {
@@ -34,6 +35,7 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
       selectedItemIndex,
       editingItem,
       filterTree,
+      flattenedItems,
       handleItemSelect,
       handleOperatorToggle,
       handleAddFilter,
@@ -47,12 +49,29 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
       isLeafNode,
     });
 
-    // Expose AG Grid cell editor interface
+    // Auto-select the clicked filter item when editor opens
+    useEffect(() => {
+      if (!isEditing && flattenedItems.length > 0) {
+        let itemToSelect = null;
+        
+        if (clickedItemIndex !== undefined) {
+          itemToSelect = flattenedItems.find(
+            item => item.type === 'filter' && item.index === clickedItemIndex
+          );
+        }
+        
+        if (!itemToSelect) {
+          itemToSelect = flattenedItems.find(item => item.type === 'filter');
+        }
+        
+        if (itemToSelect) {
+          handleItemSelect(itemToSelect);
+        }
+      }
+    }, []);
+
     useImperativeHandle(ref, () => ({
       getValue: () => filterTree,
-      afterGuiAttached: () => {
-        console.log('LogicalExpressionCellEditor attached');
-      },
     }));
 
     // Extract AG Grid-specific props and exclude our custom props to avoid conflicts
