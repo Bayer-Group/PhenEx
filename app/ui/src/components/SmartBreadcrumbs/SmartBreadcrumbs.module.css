@@ -70,7 +70,8 @@
 
 .separator {
   color: #999;
-  font-size: var(--font_size_breadcrumbs);
+  font-size: 10px;
   padding:0px;
+  font-family:"IBMPlexSans-bold" !important;
   user-select: none;
 }

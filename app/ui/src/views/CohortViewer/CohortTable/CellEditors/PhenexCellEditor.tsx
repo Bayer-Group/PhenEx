@@ -717,7 +717,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           tabIndex={-1}
         >
           <div className={`${styles.composerHeader}`} data-drag-handle="true">
-            <span className={styles.composerTitle}>Edit {titleText}</span>
+            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
           </div>
           <div className={`${styles.composerContent}`}>
             {renderMainContent()}
