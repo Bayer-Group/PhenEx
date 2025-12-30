@@ -99,12 +99,18 @@ export class PhenotypeDataService {
   }
 
   public valueChanged(parameter: string, newValue: any) {
+    console.log("SETTING VALUE changed", parameter, newValue);
     if (this.currentPhenotype) {
+      console.log("entering", this.currentPhenotype[parameter]);
       this.currentPhenotype[parameter] = newValue;
+      console.log("after", this.currentPhenotype[parameter]);
+
       if (parameter === 'class_name'){
         this.updateRowData()
       }
       this.saveChangesToPhenotype(parameter === 'class_name' ? true : false);
+      console.log("after refresh", this.currentPhenotype[parameter]);
+
     }
   }
 

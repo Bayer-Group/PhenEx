@@ -151,7 +151,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
     const handleEditLastItem = async (newValue: string) => {
       setPhenotypeName(newValue);
-      dataService.valueChanged({ parameter: 'name', value: newValue }, newValue);
+      dataService.valueChanged('name', newValue);
     };
 
     return (
@@ -171,7 +171,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const renderDescription = () => {
     const handleDescriptionSave = (newValue: string) => {
       setDescription(newValue);
-      dataService.valueChanged({ parameter: 'description', value: newValue }, newValue);
+      dataService.valueChanged('description', newValue);
     };
 
     return (
