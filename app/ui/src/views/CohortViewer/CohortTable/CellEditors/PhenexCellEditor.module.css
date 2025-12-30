@@ -215,11 +215,13 @@
 
 
 .index {
-  font-size: var(--font_size_phenotype) !important;
+  font-size: var(--font_size_mid_phenotype_info) !important;
   margin-left: 4px;
-  padding-top: 8px;
-  margin-bottom: 0px;
-  line-height: var(--font_size_breadcrumb) !important;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  padding: 0px !important;
+  font-family: "IBMPlexSans-bold" !important;
+  height: var(--font_size_mid_phenotype_info);
 }
 
 .breadcrumbsContainer {
