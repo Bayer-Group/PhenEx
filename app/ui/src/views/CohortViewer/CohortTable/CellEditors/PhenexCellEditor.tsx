@@ -80,47 +80,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
   
-  // After editor renders and item is selected, capture the selected item's position
+  // Read clicked position from node.data (captured in renderer)
   useEffect(() => {
-    if (props.selectedItemIndex !== undefined && showComposer) {
-      // Clear existing position when selection changes
-      setClickedItemPosition(null);
-      
-      // Use longer timeout and retry mechanism to ensure DOM is ready
-      let attempts = 0;
-      const maxAttempts = 5;
-      
-      const tryCapture = () => {
-        const itemElements = document.querySelectorAll('[data-item-index]');
-        console.log(`Attempt ${attempts + 1}: Capturing position for selected item:`, props.selectedItemIndex);
-        console.log('Found elements with data-item-index:', itemElements.length);
-        
-        const selectedElement = Array.from(itemElements).find(
-          (el) => el.getAttribute('data-item-index') === String(props.selectedItemIndex)
-        ) as HTMLElement;
-        
-        if (selectedElement) {
-          const rect = selectedElement.getBoundingClientRect();
-          console.log(`Found selected element at index ${props.selectedItemIndex}, position:`, { x: rect.left, y: rect.top });
-          setClickedItemPosition({ x: rect.left, y: rect.top });
-        } else {
-          console.log(`Could not find element with data-item-index="${props.selectedItemIndex}"`);
-          
-          // Retry if we haven't exceeded max attempts
-          attempts++;
-          if (attempts < maxAttempts) {
-            setTimeout(tryCapture, 100);
-          }
-        }
-      };
-      
-      // Start first attempt after brief delay
-      const timer = setTimeout(tryCapture, 50);
-      
-      return () => clearTimeout(timer);
+    const storedPosition = props.data?._clickedItemPosition;
+    if (storedPosition) {
+      console.log('Using clicked position from renderer:', storedPosition);
+      setClickedItemPosition(storedPosition);
+      // Clean up
+      delete props.data._clickedItemPosition;
     }
-  }, [props.selectedItemIndex, showComposer]);
-
+  }, [props.data]);
+  
   // Update currentValue when props.value changes (for complex item editors managing arrays)
   useEffect(() => {
     console.log('PhenexCellEditor: props.value changed to:', props.value);
