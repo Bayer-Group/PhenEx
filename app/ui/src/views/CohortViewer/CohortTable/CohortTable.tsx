@@ -52,7 +52,7 @@ interface CohortTableProps {
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions, customGetRowHeight }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight }, ref) => {
 
     const default_theme = {
       accentColor: 'transparent',
@@ -69,7 +69,6 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
       wrapperBorderRadius: 0,
-      headerHeight: 10,
     };
     const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);
     
@@ -400,7 +399,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             gridOptions = {gridOptions}
             defaultColDef={{
               sortable: true,
-              // filter: true,
+              filter: true,
               resizable: true,
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,

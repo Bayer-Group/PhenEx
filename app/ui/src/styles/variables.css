@@ -99,17 +99,20 @@
   --button-font-family-hover: 'IBMPlexSans-regular';
 
   --color_inclusion: #1A4225; /*79b239;*/
-  --color_exclusion: #6c0118;
+  /* --color_exclusion: #6c0118; */
+  --color_exclusion: #4c0011;
+
   --color_baseline: #27607c;
   --color_outcome: var(--color-accent-bright);
   --color_entry: #1B384D;
   --color_component: gray;
 
-  --color_inclusion_dim: #1A422533;
-  --color_exclusion_dim: #C22D4E33;
-  --color_baseline_dim: #27607c33;
-  --color_outcome_dim: #41334633;
-  --color_entry_dim: #1B384D33;
+  --color_inclusion_dim: #1A422525;
+  /* --color_exclusion_dim: #C22D4E33; */
+  --color_exclusion_dim: #4c001125;
+  --color_baseline_dim: #27607c25;
+  --color_outcome_dim: #41334625;
+  --color_entry_dim: #1B384D25;
   --color_component_dim: gray;
   --font_size_pagetitle:32px;
   --font_size_breadcrumb:20px;

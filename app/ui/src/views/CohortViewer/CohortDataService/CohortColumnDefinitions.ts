@@ -61,6 +61,8 @@ export const componentPhenotypeColumns: any[] = [
     field: 'type',
     headerName: '',
     width: 50,
+    filter: false,
+    suppressHeaderMenuButton: true,
     resizable: false,
     pinned: 'left',
     editable: params => {
@@ -127,6 +129,8 @@ export const defaultColumns = [
     editable: (params: any) => {
       return params.data.type != 'component';
     },
+    filter: false,
+    suppressHeaderMenuButton: true,
 
     cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {

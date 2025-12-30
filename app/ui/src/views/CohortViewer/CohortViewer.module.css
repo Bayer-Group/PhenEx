@@ -111,10 +111,8 @@
 }
 
 .breadcrumbLastItem{ /* this is the main title */
-  font-size: var(--font_size_pagetitle) !important;
-  font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
-  margin-bottom:5px;
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-regular' !important;
 }
 
 

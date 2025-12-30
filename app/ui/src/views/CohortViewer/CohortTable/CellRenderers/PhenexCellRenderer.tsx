@@ -13,8 +13,8 @@ export const getAlphaForLevel = (hierarchicalIndex: string | undefined): string 
   if (!hierarchicalIndex) return '33'; // Default dim alpha (hex: 33 ≈ 0.2)
   const depth = hierarchicalIndex.split('.').length;
   // Level 1: 33 (0.2), Level 1.1: 20 (0.125), Level 1.1.1: 10 (0.06)
-  if (depth === 1) return '33';
-  if (depth === 2) return '20';
+  if (depth === 1) return '25';
+  if (depth === 2) return '15';
   if (depth === 3) return '10';
   return '08'; // For deeper levels
 };
