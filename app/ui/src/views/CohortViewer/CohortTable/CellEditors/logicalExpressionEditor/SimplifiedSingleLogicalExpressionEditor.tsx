@@ -46,33 +46,6 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
     }
   }, [phenotype, dataService]);
 
-  // After rendering, adjust position so the first dropdown's top-left aligns with clicked item position
-  useEffect(() => {
-    if (selectRef.current && onRequestPositionAdjustment) {
-      // Small delay to ensure layout is complete
-      requestAnimationFrame(() => {
-        if (!selectRef.current) return;
-        
-        // Get the select element's position in viewport
-        const selectRect = selectRef.current.getBoundingClientRect();
-        
-        // Find the composer panel container
-        const composerPanel = selectRef.current.closest('[class*="container"]');
-        
-        if (composerPanel) {
-          const composerRect = composerPanel.getBoundingClientRect();
-          
-          // Calculate how far the select is from the composer's top-left corner
-          const offsetX = selectRect.left - composerRect.left + 10;
-          const offsetY = selectRect.top - composerRect.top + 10;
-
-          // Request negative offset to shift composer UP and LEFT
-          // so select's top-left appears at the clicked position
-          onRequestPositionAdjustment({ x: -offsetX, y: -offsetY });
-        }
-      });
-    }
-  }, [value]); // Re-run when value changes (new item selected)
 
   /**
    * Handle phenotype selection and immediately notify parent
