@@ -27,6 +27,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
   const [bottomContainerHeight, setBottomContainerHeight] = useState(300);
+  const [calculatedTableHeight, setCalculatedTableHeight] = useState(200);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
@@ -35,6 +36,10 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const handleHeightChange = (height: number) => {
     setBottomContainerHeight(height);
+  };
+
+  const handleTableHeightChange = (height: number) => {
+    setCalculatedTableHeight(height);
   };
 
   // Subscribe to data service updates
@@ -200,12 +205,12 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           <PhenotypeViewer data={data} bottomMargin={bottomContainerHeight} />
           <div className={styles.bottomSection}>
             <HeightAdjustableContainer
-              initialHeight={300}
-              minHeight={200}
+              initialHeight={calculatedTableHeight}
+              minHeight={calculatedTableHeight}
               maxHeight={600}
               onHeightChange={handleHeightChange}
             >
-              <PhenotypeComponents data={data} />
+              <PhenotypeComponents data={data} onTableHeightChange={handleTableHeightChange} />
             </HeightAdjustableContainer>
           </div>
         </div>

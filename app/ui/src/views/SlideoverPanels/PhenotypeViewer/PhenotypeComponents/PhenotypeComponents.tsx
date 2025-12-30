@@ -6,9 +6,10 @@ import typeStyles from '../../../../styles/study_types.module.css';
 
 interface PhenotypeComponentsProps {
   data?: string;
+  onTableHeightChange?: (height: number) => void;
 }
 
-export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
+export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data, onTableHeightChange }) => {
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => PhenotypeDataService.getInstance());
   const [tableData, setTableData] = useState(dataService.componentPhenotypeTableData);
@@ -56,6 +57,18 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     setTableData(dataService.componentPhenotypeTableData);
   }, [data]);
 
+  // Calculate and emit total table height when table data changes
+  useEffect(() => {
+    if (onTableHeightChange && tableData.rows) {
+      const headerHeight = 0; // No header based on headerHeight prop
+      const totalRowsHeight = tableData.rows.reduce((total, row) => {
+        return total + calculateRowHeight({ data: row, api: { getColumnDef: () => ({ width: 200 }) } });
+      }, 0);
+      const totalHeight = headerHeight + totalRowsHeight + 65; // Add some padding
+      onTableHeightChange(totalHeight);
+    }
+  }, [tableData, onTableHeightChange]);
+
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
       // Component phenotypes are stored in the cohort data, not phenotype params
@@ -80,8 +93,8 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   };
 
   const default_theme = {
-      accentColor: '#BBB',
-      borderColor: 'var(--line-color-grid)',
+      borderColor: 'transparent',
+      accentColor: 'transparent',
       browserColorScheme: 'light',
       columnBorder: false,
       headerFontSize: 16,
@@ -96,20 +109,21 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     };
     
   const calculateRowHeight = (params: any) => {
-    let current_max_height = 12;
-    const minHeight = 12; 
+    let current_max_height = 20;
+    const minHeight = 20; 
 
     const nameCol = params.api.getColumnDef('name');
     console.log("nameCol", nameCol, params.data?.name);
     if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
-    const nameWidth = 300;
+    const nameWidth = 200;
     const nameCharPerLine = Math.floor(nameWidth / 8);
     const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-    const nameHeight = nameLines * 22; // 14px per line + padding
+    const nameHeight = nameLines * 15 + 8; // 14px per line + padding
     current_max_height = Math.max(current_max_height, nameHeight);
     return current_max_height;
   
   }
+
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.header}>
@@ -120,7 +134,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           Add Component
         </button>
       </div>
-      <div className={styles.tableBox}>
+      <div className={`${styles.tableBox} ${typeStyles[`${data.type}_border_color`]}`}>
         <CohortTable
           data={tableData}
           onCellValueChanged={onCellValueChanged}
@@ -130,6 +144,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           tableTheme={default_theme}
           hideHorizontalScrollbar={true}
           customGetRowHeight={calculateRowHeight}
+          headerHeight={0}
         />
       </div>
     </div>
