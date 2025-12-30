@@ -48,6 +48,7 @@ export function ComplexItemRenderer<T>({
           <React.Fragment key={index}>
             <div
               className={itemClasses}
+              data-item-index={index}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onItemClick) {

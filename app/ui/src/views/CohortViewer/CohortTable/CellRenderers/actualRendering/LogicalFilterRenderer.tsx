@@ -51,6 +51,7 @@ export function LogicalFilterRenderer<T>({
               <div
                 key={`filter-${item.index}`}
                 className={classes}
+                data-item-index={item.index}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (onItemClick) {

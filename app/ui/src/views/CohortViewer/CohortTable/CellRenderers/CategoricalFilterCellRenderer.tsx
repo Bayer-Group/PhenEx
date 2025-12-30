@@ -9,15 +9,15 @@ const CategoricalFilterCellRenderer: React.FC<PhenexCellRendererProps> = props =
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
 
-  const handleItemClick = (item: any, _index?: number) => {
+  const handleItemClick = (item: any) => {
     if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    // Store clicked index in node data temporarily
+    props.node.data._clickedItemIndex = item.index;
     
     props.api?.startEditingCell({
       rowIndex: props.node.rowIndex,
       colKey: props.column.getColId(),
-      cellEditorParams: {
-        clickedItemIndex: item.index,
-      },
     });
   };
 

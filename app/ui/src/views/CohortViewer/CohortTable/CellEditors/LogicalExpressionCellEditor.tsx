@@ -14,7 +14,14 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
 export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps>(
   (props, ref) => {
     const initialValue = props.value as FilterType | undefined;
-    const clickedItemIndex = (props as any).clickedItemIndex;
+    
+    // Read clicked index from node.data (set by renderer)
+    const clickedItemIndex = props.data?._clickedItemIndex;
+    
+    // Clean up after reading
+    if (clickedItemIndex !== undefined && props.data) {
+      delete props.data._clickedItemIndex;
+    }
 
     // Type guard to identify leaf nodes (SingleLogicalExpression)
     const isLeafNode = (value: any): value is SingleLogicalExpression => {
@@ -91,6 +98,7 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
         onItemSelect={handleItemSelect}
         showAddButton={true}
         showComposerPanel={isEditing}
+        clickedItemIndex={clickedItemIndex}
         rendererProps={{
           onOperatorClick: handleOperatorToggle,
         }}

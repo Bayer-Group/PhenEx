@@ -33,6 +33,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
   rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
   onRequestPositionAdjustment?: (offset: { x: number; y: number }) => void; // Callback for children to adjust composer position
+  clickedItemIndex?: number; // Index of item that was clicked to open the editor (used to position composer panel)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -78,6 +79,32 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // After editor renders and item is selected, capture the selected item's position
+  useEffect(() => {
+    if (props.selectedItemIndex !== undefined && showComposer && !clickedItemPosition) {
+      // Use setTimeout to ensure layout is complete
+      const timer = setTimeout(() => {
+        const itemElements = document.querySelectorAll('[data-item-index]');
+        console.log('Capturing position for selected item:', props.selectedItemIndex);
+        console.log('Found elements with data-item-index:', itemElements.length);
+        
+        const selectedElement = Array.from(itemElements).find(
+          (el) => el.getAttribute('data-item-index') === String(props.selectedItemIndex)
+        ) as HTMLElement;
+        
+        if (selectedElement) {
+          const rect = selectedElement.getBoundingClientRect();
+          console.log(`Found selected element at index ${props.selectedItemIndex}, position:`, { x: rect.left, y: rect.top });
+          setClickedItemPosition({ x: rect.left, y: rect.top });
+        } else {
+          console.log(`Could not find element with data-item-index="${props.selectedItemIndex}"`);
+        }
+      }, 50);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [props.selectedItemIndex, showComposer, clickedItemPosition]);
 
   // Update currentValue when props.value changes (for complex item editors managing arrays)
   useEffect(() => {

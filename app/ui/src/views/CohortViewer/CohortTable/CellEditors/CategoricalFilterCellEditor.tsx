@@ -11,10 +11,19 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
  * Integrates with PhenexCellEditor to show SimplifiedSingleCategoricalFilterEditor
  * when a filter item is selected for editing.
  */
-export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps>(
+export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps>(  
   (props, ref) => {
     const initialValue = props.value as FilterType | undefined;
-    const clickedItemIndex = (props as any).clickedItemIndex;
+    
+    // Read clicked index from node.data (set by renderer)
+    const clickedItemIndex = props.data?._clickedItemIndex;
+    
+    // Clean up after reading
+    if (clickedItemIndex !== undefined && props.data) {
+      delete props.data._clickedItemIndex;
+    }
+    
+    console.log('CategoricalFilterCellEditor clickedItemIndex:', clickedItemIndex);
 
     // Type guard to identify leaf nodes (BaseCategoricalFilter)
     const isLeafNode = (value: any): value is BaseCategoricalFilter => {
@@ -90,6 +99,7 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
         onItemSelect={handleItemSelect}
         showAddButton={true}
         showComposerPanel={isEditing}
+        clickedItemIndex={clickedItemIndex}
         rendererProps={{
           onOperatorClick: handleOperatorToggle,
         }}
