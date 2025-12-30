@@ -72,11 +72,7 @@
 }
 
 .composerContainer {
-  /* display: flex;
-  flex-direction: column;
-  width: 350px; */
   width:100%;
-  /* Removed min-height to allow container to hug content */
   background-color: var(--background_color_focus);
   border-radius: 10px;
   position: relative;
@@ -84,8 +80,25 @@
   overflow: hidden;
   animation: fadeIn 0.05s ease-in-out;
   border: none !important;
-  padding: 10px 5px;
+  padding: 0px;
+}
 
+.composerHeader {
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.composerHeader:active {
+  cursor: grabbing;
+}
+
+.composerTitle {
+  opacity: 0.9;
 }
 
 @keyframes fadeIn {
@@ -97,27 +110,11 @@
   }
 }
 
-.composerDragHandle {
-  /* No longer used - entire container is draggable */
-  display: none;
-}
-
-.composerContainer {
-  cursor: grab;
-}
-
-.composerContainer:active {
-  cursor: grabbing;
-}
-
-.testDiv{
-  background-color: purple !important;
-}
-
 .composerContent {
   position: relative;
   display: flex;
   flex-direction: column;
+  padding: 10px 5px;
   padding: 0px !important;
   margin: 0px !important;
   overflow: hidden; /* Prevent outer scrolling */

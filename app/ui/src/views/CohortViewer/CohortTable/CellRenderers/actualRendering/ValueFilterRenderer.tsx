@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../ValueFilterCellRenderer.module.css';
 import { ValueFilter, AndFilter } from '../../CellEditors/valueFilterEditor/types';
-import { ComplexItemRenderer } from './ComplexItemRenderer';
+import { LogicalFilterRenderer, FlattenedItem } from './LogicalFilterRenderer';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 export type ValueFilterValue = ValueFilter | AndFilter | null | undefined;
@@ -72,19 +72,26 @@ export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
     return null;
   }
   const filters = getFilters(value);
+  
+  const flattenedItems: FlattenedItem<ValueFilter>[] = filters.map((filter, index) => ({
+    type: 'filter',
+    filter: filter,
+    index: index,
+    path: [index],
+  }));
+  
   return (
-    <ComplexItemRenderer
-      items={filters}
-      renderItem={(filter) => (
+    <LogicalFilterRenderer
+      flattenedItems={flattenedItems}
+      renderFilter={(filter) => (
         <div className={styles.filtersContainer}>
           {formatValueFilter(filter)}
         </div>
       )}
       onItemClick={onItemClick}
-      itemClassName={borderColorClass}
+      filterClassName={borderColorClass}
       selectedIndex={selectedIndex}
       selectedClassName={selectedClassName}
-      emptyPlaceholder={null}
     />
   );
 };

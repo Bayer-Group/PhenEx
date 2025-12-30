@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './CodelistRenderer.module.css';
-import { ComplexItemRenderer } from './ComplexItemRenderer';
+import { LogicalFilterRenderer, FlattenedItem } from './LogicalFilterRenderer';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 const MAX_CODES_TO_SHOW = 3;
@@ -143,15 +143,21 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
 
   if (Array.isArray(value)) {
     // If the codelist is an array, it's a list of codelists
+    const flattenedItems: FlattenedItem<CodelistValue>[] = value.map((codelist, index) => ({
+      type: 'filter',
+      filter: codelist,
+      index: index,
+      path: [index],
+    }));
+    
     return (
-      <ComplexItemRenderer
-        items={value}
-        renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+      <LogicalFilterRenderer
+        flattenedItems={flattenedItems}
+        renderFilter={(codelist) => renderSingleCodelist(codelist, 0)}
         onItemClick={onItemClick}
-        itemClassName={borderColorClass}
+        filterClassName={borderColorClass}
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName}
-        emptyPlaceholder={<div className={styles.missing}></div>}
       />
     );
   }
@@ -165,15 +171,21 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   }
 
   // Single item - treat as array of one for consistency
+  const flattenedItems: FlattenedItem<CodelistValue>[] = [{
+    type: 'filter',
+    filter: value,
+    index: 0,
+    path: [0],
+  }];
+  
   return (
-    <ComplexItemRenderer
-      items={[value]}
-      renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+    <LogicalFilterRenderer
+      flattenedItems={flattenedItems}
+      renderFilter={(codelist) => renderSingleCodelist(codelist, 0)}
       onItemClick={onItemClick}
-      itemClassName={borderColorClass}
+      filterClassName={borderColorClass}
       selectedIndex={selectedIndex}
       selectedClassName={selectedClassName}
-      emptyPlaceholder={<div className={styles.missing}></div>}
     />
   );
 };

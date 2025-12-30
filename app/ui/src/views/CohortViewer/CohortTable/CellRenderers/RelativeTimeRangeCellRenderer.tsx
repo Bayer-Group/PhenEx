@@ -18,8 +18,11 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     });
   };
 
-  const handleItemClick = (_item: any, _index: number) => {
+  const handleItemClick = (_item: any, index: number) => {
     if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    // Store clicked index in node data temporarily
+    props.node.data._clickedItemIndex = index;
     
     props.api?.startEditingCell({
       rowIndex: props.node.rowIndex,
