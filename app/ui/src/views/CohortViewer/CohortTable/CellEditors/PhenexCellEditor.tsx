@@ -307,7 +307,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       },
       composer: {
         left: `${composerLeft}px`,
-        top: `${composerTop}px`,
+        top: `${composerTop + 25}px`, // pushing composer down below the selecting item TODO composerTop should adjust to height of item selected
         width: `${composerWidth}px`,
         maxHeight: `${composerMaxHeight}px`,
       },
@@ -716,9 +716,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
           tabIndex={-1}
         >
-          <div className={`${styles.composerHeader}`} data-drag-handle="true">
-            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
-          </div>
           <div className={`${styles.composerContent}`}>
             {renderMainContent()}
             {props.onEditingDone && showComposer && (
@@ -736,6 +733,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               </div>
             )}
           </div>
+            <div className={`${styles.composerHeader}`} data-drag-handle="true">
+            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
+          </div>
+
         </div>
       </DraggablePortal>
     );
