@@ -240,7 +240,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const offsetX = 5;
     const offsetY = 10;
     const cellWidth = cellRect.width;
-    const cellHeight = cellRect.height;
+    const cellHeight = cellRect.height+10;
     
     // Current Selection Panel dimensions (with minimum width)
     const minCurrentSelectionWidth = 300;

@@ -214,7 +214,7 @@ export const defaultColumns = [
   {
     field: 'codelist',
     headerName: 'Codelists',
-    width: 350,
+    width: 400,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
@@ -261,7 +261,7 @@ export const defaultColumns = [
   {
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
-    width: 200,
+    width: 300,
     editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
@@ -281,6 +281,7 @@ export const defaultColumns = [
       maxLength: 2000,
     },
   },
+
   // { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
   {
     field: 'value_filter',
@@ -321,11 +322,26 @@ export const defaultColumns = [
   {
     field: 'return_date',
     headerName: 'Return Date',
-    width: 250,
+    width: 150,
     editable: true,
     cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,
     cellRenderer: PhenexCellRenderer,
+  },
+  {
+    field: 'expression',
+    headerName: 'Expression',
+    width: 500,
+    editable: true,
+    valueParser: (params: any) => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
+    cellEditor: LogicalExpressionCellEditor,
+    cellEditorPopup: true,
+    cellRenderer: LogicalExpressionCellRenderer,
   },
   {
     field: 'direction',
@@ -380,21 +396,6 @@ export const defaultColumns = [
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
     cellRenderer: ValueFilterCellRenderer,
-  },
-  {
-    field: 'expression',
-    headerName: 'Expression',
-    width: 250,
-    editable: true,
-    valueParser: (params: any) => {
-      if (params.newValue && typeof params.newValue === 'object') {
-        return params.newValue;
-      }
-      return params.oldValue;
-    },
-    cellEditor: LogicalExpressionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: LogicalExpressionCellRenderer,
   },
   {
     field: 'bins',

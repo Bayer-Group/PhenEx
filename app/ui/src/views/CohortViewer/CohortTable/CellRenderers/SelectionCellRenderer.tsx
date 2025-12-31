@@ -41,7 +41,8 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
     justifyContent: 'center',
     height: '100%',
     paddingTop: '7px',
-    paddingLeft: '10px',
+    paddingLeft: '4px',
+    paddingRight: '2px',
   };
 
   const checkmarkCircleStyle: React.CSSProperties = {
@@ -49,7 +50,7 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
     height: '15px',
     borderRadius: '50%',
     backgroundColor: 'var(--color_accent_blue)',
-    border: '1px solid white',
+    // border: '1px solid white',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

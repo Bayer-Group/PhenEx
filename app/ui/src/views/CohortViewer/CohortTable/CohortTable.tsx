@@ -61,7 +61,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       columnBorder: false,
       headerFontSize: 16,
       // headerFontWeight: 'bold',
-      headerRowBorder: false,
+      headerRowBorder: true,
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'transparent',
       rowBorder: false,
