@@ -10,6 +10,8 @@ export interface LogicalExpressionRendererProps {
   data?: any;
   onItemClick?: (item: FlattenedItem<SingleLogicalExpression>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
+  onArrowClick?: (expression: SingleLogicalExpression, event: React.MouseEvent) => void;
+  showArrow?: boolean;
   selectedIndex?: number;
   selectedClassName?: string;
 }
@@ -32,6 +34,8 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
   data,
   onItemClick,
   onOperatorClick,
+  onArrowClick,
+  showArrow = true,
   selectedIndex,
   selectedClassName,
 }) => {
@@ -103,9 +107,36 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
    * Render a single logical expression item
    */
   const renderFilter = (expression: SingleLogicalExpression): React.ReactNode => {
+    const handleArrowClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onArrowClick?.(expression, e);
+    };
+
     return (
       <div className={`${styles.unit} ${colorTextClass}`}>
-        <div className={styles.top}>{expression.phenotype_name || '(empty)'}</div>
+        <div className={styles.top}>
+          {expression.phenotype_name || '(empty)'}
+          {showArrow && (
+            <svg
+              className={styles.arrowIcon}
+              onClick={handleArrowClick}
+              width="16px"
+              height="16px"
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6.00005 19L19 5.99996M19 5.99996V18.48M19 5.99996H6.52005"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
         <div className={styles.bottom}></div>
       </div>
     );

@@ -99,15 +99,17 @@
   /* No absolute positioning - flows naturally */
   margin-top: 10px;
   margin-left: 0px;
-  font-size: 40px !important;
+  font-size: var(--font_size_breadcrumb) !important;
 }
 .breadcrumbItem{
-  font-size: 20px !important;
+  font-size: var(--font_size_breadcrumb) !important;
   line-height: 10px;
+  font-family: 'IBMPlexSans-regular' !important;
+
 }
 
 .breadcrumbLastItem{
-  font-size: 32px !important;
+  font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
   line-height: 28px;
 }

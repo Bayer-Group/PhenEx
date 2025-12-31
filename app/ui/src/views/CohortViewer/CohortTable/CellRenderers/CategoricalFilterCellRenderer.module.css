@@ -48,6 +48,10 @@
   align-items: center; */
   /* border-radius: var(--item-radius) var(--item-radius) 0 0;
   padding: var(--padding-tb) var(--padding-lr) 0 var(--padding-lr); */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
 }
 
 .bottom {
@@ -66,6 +70,18 @@
 }
 
 .unit:hover {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.arrowIcon {
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.arrowIcon:hover {
+  opacity: 1;
+  /* transform: translateX(2px) translateY(-2px); */
 }

@@ -1,13 +1,14 @@
 import React from 'react';
 import { PhenexCellRenderer, PhenexCellRendererProps } from './PhenexCellRenderer';
 import { FilterType } from '../CellEditors/logicalExpressionEditor/types';
-import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { createEditHandler, createDeleteHandler, createLogicalExpressionEditHandler } from './cellRendererHandlers';
 import { LogicalExpressionRenderer } from './actualRendering/LogicalExpressionRenderer';
 
 const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
+  const handleArrowClick = createLogicalExpressionEditHandler();
 
   const handleItemClick = (item: any, _index?: number, event?: React.MouseEvent) => {
     if (!props.node || !props.column || props.node.rowIndex === null) return;
@@ -35,6 +36,8 @@ const LogicalExpressionCellRenderer: React.FC<PhenexCellRendererProps> = props =
         value={props.value as unknown as FilterType}
         data={props.data}
         onItemClick={handleItemClick}
+        onArrowClick={handleArrowClick}
+        showArrow={true}
       />
     </PhenexCellRenderer>
   );

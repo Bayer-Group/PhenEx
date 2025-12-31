@@ -163,6 +163,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
         classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
         classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
+        compact={true}
       />
       </>
     );
