@@ -68,6 +68,12 @@
   display: block;
 }
 
+.selectedClassName{
+  background-color: var(--color_accent_blue) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
 .composerContainer > * {
 }
 
@@ -114,7 +120,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0px 5px 10px 5px;
+  padding: 5px 5px 0px 5px;
   margin: 0px !important;
   overflow: hidden; /* Prevent outer scrolling */
   /* width: 100%; */

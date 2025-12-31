@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import styles from '../categoricalFilterEditor/SingleCategoricalFilterEditor.module.css';
+import mystyles from './SimplifiedSingleLogicalExpressionEditor.module.css';
+
 import { SingleLogicalExpression } from './types';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 import { TableRow } from '../../../tableTypes';
@@ -92,46 +93,25 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
   /**
    * Render the current selection as an item mirror
    */
-  const renderItemMirror = () => {
-    if (!value.phenotype_name) {
-      return (
-        <div className={styles.itemMirror}>
-          <div className={`${styles.unit} ${colorTextClass}`}>
-            <div className={styles.top}>(empty)</div>
-            <div className={styles.bottom}></div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className={styles.itemMirror}>
-        <div className={`${styles.unit} ${colorTextClass}`}>
-          <div className={styles.top}>{value.phenotype_name}</div>
-          <div className={styles.bottom}></div>
-        </div>
-      </div>
-    );
-  };
-
+ 
   /**
    * Render the phenotype selection list
    */
   const renderPhenotypeList = () => {
     if (componentPhenotypes.length === 0) {
       return (
-        <div className={styles.emptyMessage}>
+        <div className={mystyles.emptyMessage}>
           No component phenotypes available
         </div>
       );
     }
 
     return (
-      <div className={styles.phenotypeList}>
+      <div className={mystyles.phenotypeList}>
         {componentPhenotypes.map(pt => (
           <div
             key={pt.id}
-            className={`${styles.phenotypeItem} ${value.phenotype_id === pt.id ? styles.selected : ''}`}
+            className={`${mystyles.phenotypeItem} ${value.phenotype_id === pt.id ? mystyles.selected : ''}`}
             onClick={() => handlePhenotypeSelect(pt)}
           >
             {pt.name}
@@ -146,10 +126,10 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
    */
   const renderCreateForm = () => {
     return (
-      <div className={styles.createForm}>
+      <div className={mystyles.createForm}>
         <input
           type="text"
-          className={styles.nameInput}
+          className={mystyles.nameInput}
           placeholder="Enter phenotype name..."
           value={newPhenotypeName}
           onChange={(e) => setNewPhenotypeName(e.target.value)}
@@ -160,7 +140,7 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
           }}
         />
         <button
-          className={styles.createButton}
+          className={mystyles.createButton}
           onClick={handleCreateNewPhenotype}
           disabled={!newPhenotypeName.trim()}
         >
@@ -171,19 +151,28 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
   };
 
   return (
-    <div className={`${styles.editorBox} ${colorBlock}`}>
+    <div className={`${mystyles.editorBox} ${colorBlock}`}>
+      
+      <div className={mystyles.contentSection}>
+        {activeTab === 0 ? renderPhenotypeList() : renderCreateForm()}
+      </div>
+
+
       {/* Top: Tabs */}
       <Tabs
         tabs={['Select Phenotype', 'Create New Phenotype']}
         active_tab_index={activeTab}
         onTabChange={setActiveTab}
-        accentColor={`var(--color_${phenotype?.effective_type || 'default'})`}
+        accentColor={`white`}
+          classNameTabs = {mystyles.classNameSectionTabs}
+          classNameTabsContainer={mystyles.classNameTabsContainer}
+          classNameActiveTab={mystyles.classNameActiveTab}
+          classNameHoverTab={mystyles.classNameHoverTab}
+
       />
 
       {/* Central: Content Section */}
-      <div className={styles.contentSection}>
-        {activeTab === 0 ? renderPhenotypeList() : renderCreateForm()}
-      </div>
+
     </div>
   );
 };

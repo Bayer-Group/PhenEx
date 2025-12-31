@@ -1,0 +1,137 @@
+.classNameSectionTabs {
+    background-color: transparent !important;
+    color: white !important;
+
+    color: white !important;
+    padding: 2px 4px !important;
+    /* border: 1px solid var(--line-color); */
+}
+
+.classNameTabsContainer {
+    background-color: transparent !important;
+    color: white !important;
+    border-color: transparent !important;
+}
+
+.classNameActiveTab{
+    border-color: 1px solid white !important;
+}
+
+/* Logical Expression Editor Styles */
+.editorBox {
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 0px;
+  position: relative;
+}
+
+.itemMirror {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.contentSection {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+.phenotypeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.phenotypeItem {
+  padding: 10px 15px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.phenotypeItem:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.phenotypeItem.selected {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.emptyMessage {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-color-inactive);
+  font-style: italic;
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nameInput {
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.nameInput::placeholder {
+  color: var(--text-color-inactive);
+  font-style: italic;
+}
+
+.createButton {
+  padding: 10px 20px;
+  background-color: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.createButton:hover:not(:disabled) {
+  background-color: var(--color-accent-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.createButton:disabled {
+  background-color: var(--text-color-inactive);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.unit {
+  display: inline-block;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.top {
+  font-weight: 500;
+}
+
+.bottom {
+  font-size: 10px;
+  color: var(--text-color-inactive);
+}

@@ -689,7 +689,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       >
         <div
           style={{
-            width: portalPosition.composer.width,
+            width: 'fit-content',
+            minWidth: '200px',
+            maxWidth: '600px',
             maxHeight: portalPosition.composer.maxHeight,
             zIndex: 100000,
           }}

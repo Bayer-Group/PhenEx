@@ -39,6 +39,7 @@ export function LogicalFilterRenderer<T>({
     return <div className={styles.empty}></div>;
   }
 
+  
   return (
     <div className={styles.container}>
       {flattenedItems.map((item) => {

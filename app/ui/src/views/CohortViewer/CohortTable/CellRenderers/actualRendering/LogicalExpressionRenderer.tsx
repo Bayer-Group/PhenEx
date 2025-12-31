@@ -41,7 +41,7 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
 }) => {
   const effectiveType = data?.effective_type;
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
-  const colorBlockClass = typeStyles[`${effectiveType || ''}_color_block`] || '';
+  const colorBlockClass = typeStyles[`color_selected`]// typeStyles[`${effectiveType || ''}_color_block`] || '';
   const colorTextClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
 
   // Flatten the expression tree for rendering
