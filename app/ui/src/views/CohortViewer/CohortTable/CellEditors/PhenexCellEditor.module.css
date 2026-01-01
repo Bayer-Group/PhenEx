@@ -13,7 +13,7 @@
   padding: 0 !important;
   /* border-radius: 0px 0px 0px 0px !important; */
   box-shadow: none !important;
-  transform: translateY(calc(-100% + 40px));
+  /* transform: translateY(calc(-100% + 40px)); */
   overflow: hidden;
 }
 
@@ -120,7 +120,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 5px 5px 0px 5px;
+  padding: 10px 5px 0px 5px;
   margin: 0px !important;
   overflow: hidden; /* Prevent outer scrolling */
   /* width: 100%; */
@@ -176,14 +176,48 @@
   padding-right: 10px;
 }
 
+.doneButtonContainer {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  z-index: 1000;
+}
+
 .doneButton {
   background-color: transparent;
-  color: var(--phenex-red-active);
-  font-size: 14px;
-  position: absolute;
+  color: white;
+  border: none;
+  cursor: pointer;
   font-family: 'IBMPlexSans-bold';
-  top: 4px;
-  right: 4px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+  
+}
+
+.doneButton:hover {
+  color: var(--color_accent_blue);
+  transform: scale(1.8);
+}
+
+.doneButton:focus{
+  outline:none;
+  border:none;
+}
+
+.doneButton svg {
+  width: 12px;
+  height: 8px;
+  fill: white;
+}
+.doneButton:hover svg {
+  width: 12px;
+  height: 8px;
+  fill: var(--color_accent_blue);
 }
 
 .header:hover .doneButton {

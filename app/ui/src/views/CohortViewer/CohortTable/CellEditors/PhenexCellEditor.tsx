@@ -256,7 +256,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const bottomSectionTop = cellRect.top - offsetY;
     
     // Composer Panel dimensions
-    const composerWidth = 250;
+    const composerWidth = 100;
     const composerMaxHeight = viewport.height - 100; // Max height with padding
     
     // Position Composer Panel - use clicked item position if available, otherwise use default logic
@@ -697,7 +697,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         <div
           style={{
             width: 'fit-content',
-            minWidth: '200px',
+            minWidth: '100px',
             maxWidth: '600px',
             maxHeight: portalPosition.composer.maxHeight,
             zIndex: 100000,
@@ -730,14 +730,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             {props.onEditingDone && showComposer && (
               <div className={styles.doneButtonContainer}>
                 <button 
-                  className={`${styles.doneButton} ${typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}`}
+                  className={`${styles.doneButton}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.nativeEvent.stopImmediatePropagation();
                     props.onEditingDone?.();
                   }}
                 >
-                  Done
+                  <svg width="16" height="4" viewBox="0 0 16 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="16" height="4" rx="2"/>
+                  </svg>
+
                 </button>
               </div>
             )}

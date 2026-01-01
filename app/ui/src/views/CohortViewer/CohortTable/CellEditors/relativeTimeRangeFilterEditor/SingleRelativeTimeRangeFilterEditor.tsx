@@ -286,7 +286,7 @@ const DaysRangeSection: React.FC<DaysRangeSectionProps> = ({
       <select
         value={value?.operator || 'not set'}
         onChange={e => onOperatorChange(field, e.target.value)}
-        className={styles.select}
+        className={`${styles.select} ${styles.operatorSelect}`}
       >
         <option value="not set">Not Set</option>
         {operators.map(op => (
