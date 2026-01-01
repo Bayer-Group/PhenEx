@@ -157,6 +157,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     props.api.stopEditing(); // AG Grid will call getValue() which returns currentValueRef.current
   };
 
+  const handleCloseComposer = () => {
+    console.log("=== Closing composer panel only ===");
+    setShowComposer(false);
+  };
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const contentScrollableRef = React.useRef<HTMLDivElement>(null);
 
@@ -521,6 +526,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           ),
           // Pass position adjustment callback to all children
           onRequestPositionAdjustment: handlePositionAdjustment,
+          // Pass close handler so children can close the composer panel only
+          onClose: handleCloseComposer,
         });
       }
       return child;

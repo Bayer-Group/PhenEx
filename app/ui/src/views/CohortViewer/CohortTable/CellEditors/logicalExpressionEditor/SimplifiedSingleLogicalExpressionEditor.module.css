@@ -11,6 +11,18 @@
     background-color: transparent !important;
     color: white !important;
     border-color: transparent !important;
+    margin-left: auto;
+    width: fit-content;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+}
+
+.classNameTabsContainer:hover{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .classNameActiveTab{
@@ -19,11 +31,11 @@
 
 /* Logical Expression Editor Styles */
 .editorBox {
-  background-color: var(--color_translucent);
+  /* background-color: var(--color_translucent);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); */
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); */
   border-radius: 10px;
   padding: 0px;
   position: relative;
@@ -46,28 +58,32 @@
 .phenotypeList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 3px;
 }
 
 .phenotypeItem {
-  padding: 10px 15px;
-  background-color: rgba(255, 255, 255, 0.5);
+  padding: 2px 5px;
+  background-color: transparent;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: var(--item-font-size);
+  font-family: "IBMPlexSans-regular";
+
 }
 
 .phenotypeItem:hover {
-  background-color: rgba(255, 255, 255, 0.8);
-  transform: translateX(4px);
+  background-color: var(--color_accent_blue) !important;
+  color:white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
 }
 
 .phenotypeItem.selected {
-  background-color: rgba(255, 255, 255, 0.9);
-  border-color: var(--color-accent);
-  font-weight: 600;
+  border-color: var(--color_accent_blue);
+  color: white;
+  font-family: "IBMPlexSans-bold";
 }
 
 .emptyMessage {

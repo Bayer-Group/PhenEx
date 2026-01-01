@@ -5,13 +5,14 @@ import { SingleLogicalExpression } from './types';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 import { TableRow } from '../../../tableTypes';
 import typeStyles from '../../../../../styles/study_types.module.css';
-import { Tabs } from '../../../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { ButtonsBar } from '../../../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 
 interface SimplifiedSingleLogicalExpressionEditorProps {
   value: SingleLogicalExpression;
   onValueChange: (value: SingleLogicalExpression) => void;
   phenotype?: any;
   onRequestPositionAdjustment?: (offset: { x: number; y: number }) => void;
+  onClose?: () => void;
 }
 
 /**
@@ -26,9 +27,10 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
   onValueChange,
   phenotype,
   onRequestPositionAdjustment,
+  onClose,
 }) => {
   const [componentPhenotypes, setComponentPhenotypes] = useState<TableRow[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeView, setActiveView] = useState<'select' | 'create'>('select');
   const [newPhenotypeName, setNewPhenotypeName] = useState('');
   const dataService = CohortDataService.getInstance();
   const selectRef = React.useRef<HTMLSelectElement>(null);
@@ -41,16 +43,16 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
       if (descendants && Array.isArray(descendants)) {
         const components = descendants.filter(pt => pt.type === 'component');
         setComponentPhenotypes(components);
-        // Set active tab based on whether components exist
-        setActiveTab(components.length === 0 ? 1 : 0);
+        // Set active view based on whether components exist
+        setActiveView(components.length === 0 ? 'create' : 'select');
       } else {
         console.warn('getAllDescendants returned invalid data:', descendants);
         setComponentPhenotypes([]);
-        setActiveTab(1);
+        setActiveView('create');
       }
     } else {
       setComponentPhenotypes([]);
-      setActiveTab(1);
+      setActiveView('create');
     }
   }, [phenotype, dataService]);
 
@@ -150,28 +152,39 @@ export const SimplifiedSingleLogicalExpressionEditor: React.FC<SimplifiedSingleL
     );
   };
 
+  const handleDelete = () => {
+    // Clear the current selection
+    const emptyValue: SingleLogicalExpression = {
+      ...value,
+      phenotype_name: '',
+      phenotype_id: '',
+      status: 'empty',
+    };
+    onValueChange(emptyValue);
+  };
+
+  const handleClear = () => {
+    // Clear the form inputs
+    setNewPhenotypeName('');
+  };
+
+  const handleClose = () => {
+    onClose?.();
+  };
+
   return (
     <div className={`${mystyles.editorBox} ${colorBlock}`}>
       
       <div className={mystyles.contentSection}>
-        {activeTab === 0 ? renderPhenotypeList() : renderCreateForm()}
+        {activeView === 'select' ? renderPhenotypeList() : renderCreateForm()}
       </div>
 
-
-      {/* Top: Tabs */}
-      <Tabs
-        tabs={['Select Phenotype', 'Create New Phenotype']}
-        active_tab_index={activeTab}
-        onTabChange={setActiveTab}
-        accentColor={`white`}
-          classNameTabs = {mystyles.classNameSectionTabs}
-          classNameTabsContainer={mystyles.classNameTabsContainer}
-          classNameActiveTab={mystyles.classNameActiveTab}
-          classNameHoverTab={mystyles.classNameHoverTab}
-
+      {/* Bottom: Action Buttons */}
+      <ButtonsBar
+        width="100%"
+        buttons={['Delete', 'Clear', 'Close']}
+        actions={[handleDelete, handleClear, handleClose]}
       />
-
-      {/* Central: Content Section */}
 
     </div>
   );
