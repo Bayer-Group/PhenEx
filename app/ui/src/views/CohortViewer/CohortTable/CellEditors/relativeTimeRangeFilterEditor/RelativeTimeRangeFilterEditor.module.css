@@ -11,6 +11,7 @@
   /* overflow-y: auto; */
   height: 100%;
   color: white;
+
 }
 
 .constantsContent {
@@ -25,6 +26,8 @@
   border-radius: 4px;
   width: 100%;
   box-sizing: border-box;
+  font-size: var(--item-font-size);
+
 }
 
 .select {
@@ -35,6 +38,8 @@
   background-color: transparent;
   cursor: pointer;
   color: white;
+  font-size: var(--item-font-size);
+
 }
 
 .select:hover {
@@ -61,12 +66,24 @@
 
 .filterSection {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .filterSection label {
   min-width: 30px;
+}
+
+.fieldLabel {
+  width: 100%;
+  color: rgb(209, 209, 209);
+  font-size: var(--item-font-size);
+}
+
+.fieldInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .addButton {
