@@ -53,6 +53,7 @@ export const TypeSelectorEditor: React.FC<TypeSelectorEditorProps> = props => {
         classNameListItemSelected={
           typeStyles[`${props?.data?.type || ''}_list_item_selected`] || ''
         }
+        showFilter={true}
       />
     </div>
   );

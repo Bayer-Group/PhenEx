@@ -43,7 +43,7 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
           onSelect={handleDomainSelect}
         classNameListItem={styles.listItem}
         classNameListItemSelected={styles.listItemSelected}
-
+        showFilter={true}
         />
       </div>
     </div>

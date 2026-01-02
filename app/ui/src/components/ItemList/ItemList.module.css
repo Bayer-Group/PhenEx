@@ -6,6 +6,65 @@
   margin:0px;
 }
 
+.filterContainer {
+  position: relative;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 6px 30px 6px 8px;
+  border: 1px solid var(--line-color);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-Regular';
+  color: var(--color-accent-bright);
+  background-color: white;
+  outline: none;
+}
+
+.filterInput::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.filterInput:focus {
+  border-color: var(--color_accent_blue);
+}
+
+.clearButton {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.clearButton:hover {
+  background-color: #f0f0f0;
+  color: var(--color-accent-bright);
+}
+
+.itemsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
 .listItem {
   cursor: pointer;
   border-radius: 8px;
@@ -22,6 +81,24 @@
   user-select: none;
   padding: 2px 4px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkmarkCircle {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
+  border-radius: 50%;
+  background-color: var(--color_accent_blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
 }
 
 .listItem:hover {
@@ -39,10 +116,14 @@
 
 .selected {
   color: var(--button-text-color-selected);
-  background-color: var(--button-background-color-selected);
   font-family: var(--button-font-family-selected);
-  border: 1px solid var(--button-border-color-selected);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: transparent;
+  /* border: 1px solid var(--button-border-color-selected); */
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+}
+
+.highlighted {
+  border-color: var(--color_accent_blue);
 }
 
 .itemName {
@@ -66,7 +147,8 @@
 
 
 .listItem.selected {
-  border-color: var(--color_accent_blue);
+  /* border-color:transparent; */
+  /* border-color: var(--color_accent_blue); */
 }
 
 

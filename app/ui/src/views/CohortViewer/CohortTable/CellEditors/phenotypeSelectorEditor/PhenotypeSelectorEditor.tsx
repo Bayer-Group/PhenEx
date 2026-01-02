@@ -126,6 +126,7 @@ export const PhenotypeSelectorEditor: React.FC<PhenotypeSelectorEditorProps> = p
         onSelect={handlePhenotypeSelect}
         classNameListItem={styles.listItem}
         classNameListItemSelected={styles.listItemSelected}
+        showFilter={true}
         // classNameListItem={typeStyles[`${props.data?.effective_type}_list_item`]}
         // classNameListItemSelected={`${typeStyles[`${props.data?.effective_type}_list_item_selected`]}`}
       />
