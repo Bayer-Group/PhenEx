@@ -34,6 +34,7 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
   onRequestPositionAdjustment?: (offset: { x: number; y: number }) => void; // Callback for children to adjust composer position
   clickedItemIndex?: number; // Index of item that was clicked to open the editor (used to position composer panel)
+  onDelete?: () => void; // Callback when delete key is pressed (behavior varies by editor type)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -79,6 +80,38 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Callback for children to update the current value
+  // Used by list-view editors to update value and trigger auto-close
+  const handleValueChange = React.useCallback((value: any) => {
+    console.log('PhenexCellEditor.handleValueChange called with:', value);
+    setCurrentValue(value);
+    console.log('Set currentValue to:', value);
+    
+    // Notify parent if callback provided
+    props.onValueChange?.(value);
+    console.log('Called props.onValueChange with:', value);
+    
+    // Auto-close editor for list-view editors when a value is selected
+    if (props.autoCloseOnChange) {
+      // Small delay to ensure the value is saved before closing
+      setTimeout(() => {
+        props.api.stopEditing();
+      }, 0);
+    }
+  }, [props.onValueChange, props.autoCloseOnChange, props.api]);
+  
+  // Default delete handler for list-view editors - clears the value
+  const handleDeleteDefault = React.useCallback(() => {
+    if (props.autoCloseOnChange) {
+      // For list-view editors, clear the value
+      console.log('=== Delete pressed in list-view editor - clearing value ===');
+      handleValueChange(null);
+    }
+  }, [props.autoCloseOnChange, handleValueChange]);
+  
+  // Use provided onDelete or default behavior
+  const onDeleteHandler = props.onDelete || handleDeleteDefault;
   
   // Read clicked position from node.data (captured in renderer)
   useEffect(() => {
@@ -192,8 +225,18 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           : 0;
 
       (focusableElements[nextIndex] as HTMLElement).focus();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Check if we're not focused in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        e.nativeEvent.stopImmediatePropagation();
+        e.preventDefault();
+        e.stopPropagation();
+        onDeleteHandler();
+        console.log("DELETING")
+      }
     }
-  }, []);
+  }, [onDeleteHandler]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -212,6 +255,27 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       (focusableElements[0] as HTMLElement).focus();
     }
   }, []);
+
+  // Global keyboard listener for delete functionality
+  React.useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      console.log('=== Global key pressed:', e.key);
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Check if we're not focused in an input/textarea
+        const target = e.target as HTMLElement;
+        console.log('Target element:', target.tagName);
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          console.log('=== Calling onDeleteHandler ===');
+          e.preventDefault();
+          e.stopPropagation();
+          onDeleteHandler();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [onDeleteHandler]);
 
   let titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
   if (titleText == 'Name') {
@@ -488,26 +552,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
-  // Callback for children to update the current value
-  // Used by list-view editors to update value and trigger auto-close
-  const handleValueChange = (value: any) => {
-    console.log('PhenexCellEditor.handleValueChange called with:', value);
-    setCurrentValue(value);
-    console.log('Set currentValue to:', value);
-    
-    // Notify parent if callback provided
-    props.onValueChange?.(value);
-    console.log('Called props.onValueChange with:', value);
-    
-    // Auto-close editor for list-view editors when a value is selected
-    if (props.autoCloseOnChange) {
-      // Small delay to ensure the value is saved before closing
-      setTimeout(() => {
-        props.api.stopEditing();
-      }, 0);
-    }
-  };
-
   const renderMainContent = () => {
     // Don't spread all props to avoid passing AG Grid props to DOM elements
     // For list-view editors with autoCloseOnChange, ALWAYS inject handleValueChange
@@ -528,6 +572,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           onRequestPositionAdjustment: handlePositionAdjustment,
           // Pass close handler so children can close the composer panel only
           onClose: handleCloseComposer,
+          // Pass delete handler to children
+          onDelete: props.onDelete,
         });
       }
       return child;
@@ -730,22 +776,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               e.stopPropagation();
               e.nativeEvent.stopImmediatePropagation();
             }}
-          onKeyDown={e => {
-            if (e.key === 'Tab') {
-              e.nativeEvent.stopImmediatePropagation();
-              e.preventDefault();
-              e.stopPropagation();
-              handleKeyDown(e);
-            }
-          }}
-          onKeyDownCapture={e => {
-            if (e.key === 'Tab') {
-              e.nativeEvent.stopImmediatePropagation();
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
-          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
         >
           <div className={`${styles.composerContent}`}>
             {renderMainContent()}
@@ -798,7 +830,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        {renderCurrentSelectionPanel()}
+        <div onKeyDown={handleKeyDown} tabIndex={0}>
+          {renderCurrentSelectionPanel()}
+        </div>
       </DraggablePortal>
       {showComposer && renderComposerPanel()}
     </>

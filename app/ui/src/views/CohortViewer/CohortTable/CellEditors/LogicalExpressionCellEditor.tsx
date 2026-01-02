@@ -48,6 +48,7 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
       handleAddFilter,
       handleItemChange,
       handleEditingDone,
+      handleDelete,
       isEditing,
     } = useLogicalFilterEditor<SingleLogicalExpression>({
       initialValue,
@@ -96,6 +97,7 @@ export const LogicalExpressionCellEditor = forwardRef<any, PhenexCellEditorProps
         onEditingDone={handleEditingDone}
         onAddItem={() => handleAddFilter('AND')}
         onItemSelect={handleItemSelect}
+        onDelete={handleDelete}
         showAddButton={true}
         showComposerPanel={isEditing}
         clickedItemIndex={clickedItemIndex}

@@ -51,6 +51,7 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
       handleAddFilter,
       handleItemChange,
       handleEditingDone,
+      handleDelete,
       isEditing,
     } = useLogicalFilterEditor<BaseCategoricalFilter>({
       initialValue,
@@ -97,6 +98,7 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
         onEditingDone={handleEditingDone}
         onAddItem={() => handleAddFilter('AND')}
         onItemSelect={handleItemSelect}
+        onDelete={handleDelete}
         showAddButton={true}
         showComposerPanel={isEditing}
         clickedItemIndex={clickedItemIndex}
