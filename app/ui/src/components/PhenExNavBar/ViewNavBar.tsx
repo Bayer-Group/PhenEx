@@ -15,10 +15,20 @@ interface ViewNavBarProps {
 }
 
 // Visibility Menu Component
-const VisibilityMenu: React.FC<{ isOpen: boolean; onClose: () => void; anchorElement: HTMLElement | null }> = ({
+const VisibilityMenu: React.FC<{ 
+  isOpen: boolean; 
+  onClose: () => void; 
+  anchorElement: HTMLElement | null;
+  menuRef: React.RefObject<HTMLDivElement>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}> = ({
   isOpen,
   onClose,
   anchorElement,
+  menuRef,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
@@ -30,7 +40,14 @@ const VisibilityMenu: React.FC<{ isOpen: boolean; onClose: () => void; anchorEle
   };
 
   return (
-    <PhenExNavBarMenu isOpen={isOpen} onClose={onClose} anchorElement={anchorElement}>
+    <PhenExNavBarMenu 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      anchorElement={anchorElement}
+      menuRef={menuRef}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>Visibility Options</div>
         
@@ -63,6 +80,7 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   const isDraggingRef = useRef(false);
   const [isVisibilityMenuOpen, setIsVisibilityMenuOpen] = useState(false);
   const eyeButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -150,10 +168,14 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         <button
           ref={eyeButtonRef}
           className={styles.eyeButton}
-          onClick={() => {
-            setIsVisibilityMenuOpen(!isVisibilityMenuOpen);
-            onViewNavigationVisibilityClicked?.();
-            console.log("SHOWING NAVBAR VISIBILITY MENU");
+          onMouseEnter={() => setIsVisibilityMenuOpen(true)}
+          onMouseLeave={() => {
+            // Small delay to allow moving to menu
+            setTimeout(() => {
+              if (!menuRef.current?.matches(':hover')) {
+                setIsVisibilityMenuOpen(false);
+              }
+            }, 100);
           }}
           title="Toggle visibility"
         >
@@ -168,6 +190,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         isOpen={isVisibilityMenuOpen}
         onClose={() => setIsVisibilityMenuOpen(false)}
         anchorElement={eyeButtonRef.current}
+        menuRef={menuRef}
+        onMouseEnter={() => setIsVisibilityMenuOpen(true)}
+        onMouseLeave={() => setIsVisibilityMenuOpen(false)}
       />
     </div>
   );

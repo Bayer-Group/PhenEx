@@ -7,6 +7,9 @@ export interface PhenExNavBarMenuProps {
   onClose: () => void;
   anchorElement?: HTMLElement | null;
   children: React.ReactNode;
+  menuRef?: React.RefObject<HTMLDivElement>;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
@@ -14,8 +17,12 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
   onClose,
   anchorElement,
   children,
+  menuRef: externalMenuRef,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
+  const internalMenuRef = useRef<HTMLDivElement>(null);
+  const menuRef = externalMenuRef || internalMenuRef;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,6 +72,8 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
         ref={menuRef}
         className={styles.menu}
         style={getMenuPosition()}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         {children}
       </div>
