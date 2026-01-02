@@ -257,8 +257,15 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
         if (agGridProps.onCellContextMenu) {
           agGridProps.onCellContextMenu(params);
         } else {
-          // Default menu
+          // Get column name and cell value
+          const columnName = params.column?.getColDef()?.headerName || params.column?.getColId() || 'Unknown';
+          const cellValue = params.value !== undefined && params.value !== null ? String(params.value) : '(empty)';
+          
+          // Default menu with column name and data
           showMenu({ x: event.clientX, y: event.clientY }, [
+            { label: `Column: ${columnName}`, onClick: () => {}, disabled: true },
+            { label: `Value: ${cellValue}`, onClick: () => {}, disabled: true },
+            { divider: true },
             { label: 'Copy', onClick: () => console.log('Copy', params.value) },
             { label: 'Copy Row', onClick: () => console.log('Copy row', params.data) },
             { divider: true },
