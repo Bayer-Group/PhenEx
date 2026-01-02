@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styles from './NavBar.module.css';
+import { PhenExNavBarMenu } from './PhenExNavBarMenu';
+import { SwitchButton } from '../ButtonsAndTabs/SwitchButton/SwitchButton';
 
 interface ViewNavBarProps {
   height: number;
@@ -10,6 +12,36 @@ interface ViewNavBarProps {
   onViewNavigationScroll?: (percentage: number) => void;
   onViewNavigationVisibilityClicked?: () => void;
 }
+
+// Visibility Menu Component
+const VisibilityMenu: React.FC<{ isOpen: boolean; onClose: () => void; anchorElement: HTMLElement | null }> = ({
+  isOpen,
+  onClose,
+  anchorElement,
+}) => {
+  const [showDescriptions, setShowDescriptions] = useState(true);
+  const [showChildren, setShowChildren] = useState(true);
+
+  return (
+    <PhenExNavBarMenu isOpen={isOpen} onClose={onClose} anchorElement={anchorElement}>
+      <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>Visibility Options</div>
+        
+        <SwitchButton
+          label="Show Descriptions"
+          value={showDescriptions}
+          onValueChange={setShowDescriptions}
+        />
+        
+        <SwitchButton
+          label="Show Children"
+          value={showChildren}
+          onValueChange={setShowChildren}
+        />
+      </div>
+    </PhenExNavBarMenu>
+  );
+};
 
 export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   height,
@@ -22,6 +54,8 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
 }) => {
   const scrollBarRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const [isVisibilityMenuOpen, setIsVisibilityMenuOpen] = useState(false);
+  const eyeButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -107,8 +141,13 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         </div>
         
         <button
+          ref={eyeButtonRef}
           className={styles.eyeButton}
-          onClick={() => onViewNavigationVisibilityClicked?.()}
+          onClick={() => {
+            setIsVisibilityMenuOpen(!isVisibilityMenuOpen);
+            onViewNavigationVisibilityClicked?.();
+            console.log("SHOWING NAVBAR VISIBILITY MENU");
+          }}
           title="Toggle visibility"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -117,6 +156,12 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
           </svg>
         </button>
       </div>
+      
+      <VisibilityMenu
+        isOpen={isVisibilityMenuOpen}
+        onClose={() => setIsVisibilityMenuOpen(false)}
+        anchorElement={eyeButtonRef.current}
+      />
     </div>
   );
 };
