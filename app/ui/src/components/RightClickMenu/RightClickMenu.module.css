@@ -1,0 +1,40 @@
+.menu {
+  position: fixed;
+  background-color: var(--background_color_focus);
+  border: 1px solid var(--line-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100000;
+  min-width: 180px;
+  padding: 4px 0;
+  color: white;
+}
+
+.menuItem {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-Regular';
+  transition: background-color 0.1s;
+  user-select: none;
+}
+
+.menuItem:hover {
+  background-color: var(--color_accent_blue);
+  color: white;
+}
+
+.menuItem.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.menuItem.disabled:hover {
+  background-color: transparent;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--line-color);
+  margin: 4px 0;
+}

@@ -1,6 +1,8 @@
 import React, { forwardRef, useRef, useEffect, useState, useImperativeHandle } from 'react';
 import { AgGridReact, AgGridReactProps } from '@ag-grid-community/react';
+import { CellContextMenuEvent } from '@ag-grid-community/core';
 import { AGGridCustomScrollbar } from '../CustomScrollbar/AGGridCustomScrollbar';
+import { RightClickMenuProvider, useRightClickMenu } from '../RightClickMenu';
 import styles from './AgGridWithCustomScrollbars.module.css';
 
 export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
@@ -27,13 +29,13 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
   hideScrollbars?: boolean; // External control to hide all scrollbars
   hideVerticalScrollbar?: boolean; // External control to hide only vertical scrollbar
   hideHorizontalScrollbar?: boolean; // External control to hide only horizontal scrollbar
+  enableRightClickMenu?: boolean; // Enable right-click menu support (default: true)
 }
 
-export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, className, ...agGridProps }, ref) => {
+const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
+  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
-    const agGridRef = useRef<any>(null);
-    const [isPanDragging, setIsPanDragging] = useState(false);
+    const agGridRef = useRef<any>(null);    const { showMenu } = enableRightClickMenu ? useRightClickMenu() : { showMenu: () => {} };    const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
       x: 0, 
       y: 0, 
@@ -243,8 +245,28 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }, [isPanDragging, panDragStart]);
+      };    }, [isPanDragging, panDragStart]);
+
+    // Enhanced onCellContextMenu handler
+    const handleCellContextMenu = React.useCallback((params: CellContextMenuEvent) => {
+      if (enableRightClickMenu && params.event) {
+        const event = params.event as MouseEvent;
+        event.preventDefault();
+        
+        // Call parent's handler if provided
+        if (agGridProps.onCellContextMenu) {
+          agGridProps.onCellContextMenu(params);
+        } else {
+          // Default menu
+          showMenu({ x: event.clientX, y: event.clientY }, [
+            { label: 'Copy', onClick: () => console.log('Copy', params.value) },
+            { label: 'Copy Row', onClick: () => console.log('Copy row', params.data) },
+            { divider: true },
+            { label: 'Export', onClick: () => console.log('Export') },
+          ]);
+        }
+      }
+    }, [agGridProps.onCellContextMenu, enableRightClickMenu, showMenu]);
 
     return (
       <div className={`${styles.gridWrapper} ${className || ''}`}>
@@ -252,11 +274,14 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           ref={gridContainerRef} 
           className={styles.gridContainer}
           onMouseDown={handlePanMouseDown}
+          onContextMenu={(e) => enableRightClickMenu && e.preventDefault()}
           style={{ cursor: isPanDragging ? 'grabbing' : 'grab' }}
         >
           <AgGridReact
             ref={agGridRef}
             {...agGridProps}
+            onCellContextMenu={handleCellContextMenu}
+            suppressContextMenu={enableRightClickMenu}
           />
           
           {/* Custom Vertical Scrollbar */}
@@ -288,6 +313,21 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
         </div>
       </div>
     );
+  }
+);
+
+GridInner.displayName = 'GridInner';
+
+export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
+  (props, ref) => {
+    if (props.enableRightClickMenu !== false) {
+      return (
+        <RightClickMenuProvider>
+          <GridInner {...props} ref={ref} />
+        </RightClickMenuProvider>
+      );
+    }
+    return <GridInner {...props} ref={ref} />;
   }
 );
 
