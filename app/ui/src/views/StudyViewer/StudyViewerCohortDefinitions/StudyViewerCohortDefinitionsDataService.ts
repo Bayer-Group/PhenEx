@@ -1,4 +1,4 @@
-import { TableData } from '../../CohortViewer/tableTypes';
+import { TableData, TableRow } from '../../CohortViewer/tableTypes';
 import { CohortWithTableData, cohortDefinitionColumns } from './StudyViewerCohortDefinitionsTypes';
 
 // Data service for StudyViewerCohortDefinitions
@@ -29,6 +29,8 @@ export class StudyViewerCohortDefinitionsDataService {
     console.log("COHORT DATA", cohort)
     // Filter phenotypes by type (entry, inclusion, exclusion) - similar to tableDataForComponentPhenotype
     let filteredPhenotypes = cohort.cohort_data.phenotypes || [];
+
+    filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes(filteredPhenotypes);
     
     console.log('All phenotypes before filter:', filteredPhenotypes);
     console.log('Phenotype types found:', filteredPhenotypes.map(p => p.type));
@@ -52,6 +54,59 @@ export class StudyViewerCohortDefinitionsDataService {
       rows: phenotypesWithColorSettings,
       columns: cohortDefinitionColumns,
     };
+  }
+
+  //TODO REFACTOR THE FOLLOWING TWO METHODS; THIS IS A DUPLICATION OF CODE FROM COHORTDATASERVICE
+    private getHierarchicallyOrderedPhenotypes(phenotypes: TableRow[]): TableRow[] {
+      const result: TableRow[] = [];
+      
+      // Separate phenotypes by type, maintaining original order for non-components
+      const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
+      const componentPhenotypes = phenotypes.filter(p => p.type === 'component');
+      
+      for (const type of order) {
+        const phenotypesOfType = phenotypes.filter(p => p.type === type);
+        
+        for (const phenotype of phenotypesOfType) {
+          // Add the parent phenotype
+          result.push(phenotype);
+          
+          // Add all its component descendants in hierarchical order
+          const descendants = this.getComponentDescendantsHierarchically(phenotype.id, componentPhenotypes);
+          result.push(...descendants);
+        }
+      }
+      
+      // Add any orphaned components (components without parents in the filtered list)
+      const addedComponentIds = new Set(result.filter(p => p.type === 'component').map(p => p.id));
+      const orphanedComponents = componentPhenotypes.filter(c => !addedComponentIds.has(c.id));
+      result.push(...orphanedComponents);
+      
+      return result;
+    }
+  
+    private getComponentDescendantsHierarchically(parentId: string, componentPhenotypes: TableRow[]): TableRow[] {
+    const result: TableRow[] = [];
+    
+    // Find direct children of this parent
+    const directChildren = componentPhenotypes.filter(
+      (phenotype: TableRow) =>
+        phenotype.parentIds && 
+        Array.isArray(phenotype.parentIds) && 
+        phenotype.parentIds.includes(parentId)
+    );
+    
+    // Sort direct children by their index if available
+    directChildren.sort((a, b) => (a.index || 0) - (b.index || 0));
+    
+    // For each direct child, add it and then recursively add its descendants
+    for (const child of directChildren) {
+      result.push(child);
+      const childDescendants = this.getComponentDescendantsHierarchically(child.id, componentPhenotypes);
+      result.push(...childDescendants);
+    }
+    
+    return result;
   }
 
   /**

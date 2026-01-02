@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import styles from './NavBar.module.css';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { SwitchButton } from '../ButtonsAndTabs/SwitchButton/SwitchButton';
+import { CohortDataService } from '../../views/CohortViewer/CohortDataService/CohortDataService';
 
 interface ViewNavBarProps {
   height: number;
@@ -19,8 +20,14 @@ const VisibilityMenu: React.FC<{ isOpen: boolean; onClose: () => void; anchorEle
   onClose,
   anchorElement,
 }) => {
+  const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
-  const [showChildren, setShowChildren] = useState(true);
+  const [showChildren, setShowChildren] = useState(() => dataService.getShowComponents());
+
+  const handleShowChildrenChange = (value: boolean) => {
+    setShowChildren(value);
+    dataService.toggleComponentPhenotypes(value);
+  };
 
   return (
     <PhenExNavBarMenu isOpen={isOpen} onClose={onClose} anchorElement={anchorElement}>
@@ -36,7 +43,7 @@ const VisibilityMenu: React.FC<{ isOpen: boolean; onClose: () => void; anchorEle
         <SwitchButton
           label="Show Children"
           value={showChildren}
-          onValueChange={setShowChildren}
+          onValueChange={handleShowChildrenChange}
         />
       </div>
     </PhenExNavBarMenu>

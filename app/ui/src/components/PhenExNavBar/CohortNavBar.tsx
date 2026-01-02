@@ -9,7 +9,7 @@ interface CohortNavBarProps {
 }
 
 export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
-  const tabs = ['Definition', 'Characteristics', 'Outcomes', 'All phenotypes'];
+  const tabs = ['Definition', 'Characteristics', 'Outcomes'];
 
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>

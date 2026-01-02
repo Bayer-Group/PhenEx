@@ -3,6 +3,7 @@ import styles from './PhenExNavBar.module.css';
 import { CohortNavBar } from './CohortNavBar';
 import { ActionNavBar } from './ActionNavBar';
 import { ViewNavBar } from './ViewNavBar';
+import { AddButtonNavBar } from './AddButtonNavBar';
 
 interface PhenExNavBarProps {
   onSectionTabChange?: (index: number) => void;
@@ -30,6 +31,7 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   return (
     <div className={styles.phenexNavBar}>
       <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
+      <AddButtonNavBar height={heightNavBar} />
       <ViewNavBar
         height={heightNavBar}
         scrollPercentage={scrollPercentage}

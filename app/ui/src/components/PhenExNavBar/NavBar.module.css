@@ -11,7 +11,7 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 8px solid var(--li);
-  border-radius: 18px;
+  border-radius: 22px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   width: fit-content;
   user-select: none;
@@ -210,8 +210,8 @@
 .classNameSectionTabs{
   font-size: var(--font_size_mid_phenotype_info)!important;
   height: 30px !important;
-  padding: 0px 4px !important;
-  border-radius: 10px !important;
+  padding: 0px 8px !important;
+  border-radius: 14px !important;
 }
 
 .classNameActiveTab {
@@ -230,4 +230,33 @@
     color: var(--color_accent_blue);
     border-color: transparent;
   transition: transform 0.2s !important;
+}
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+  outline: none;
+  color: white;
+  background-color: transparent;
+  background-color: var(--color_accent_blue);
+  border-radius:20px;
+
+}
+
+
+.addButton:hover {
+  color:white;
+  transform: var(--scale_transform);
+
+}
+
+.addButton:focus {
+  outline: none;
 }
