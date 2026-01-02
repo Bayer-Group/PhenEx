@@ -7,6 +7,17 @@
   --border_radius_sharp: 2px;
   --border_radius_currenselection:8px;
 }
+
+.composerBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  background-color: transparent;
+}
+
 :global(.ag-popup-editor) {
   background-color: transparent !important;
   border: none !important;

@@ -635,7 +635,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
       >
 {/* ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''} */}
-        <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
+        <div 
+          className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            if (showComposer) {
+              handleCloseComposer();
+            } else if (props.selectedItemIndex !== undefined) {
+              // Clear selection by calling onItemSelect with null
+              props.onItemSelect?.(null, undefined);
+            }
+          }}
+        >
           {renderCellMirrorContents()}
           {props.showAddButton && (
             <button
@@ -676,38 +688,48 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderComposerPanel = () => {
     return (
-      <DraggablePortal
-        initialPosition={{
-          left: portalPosition.composer.left,
-          top: portalPosition.composer.top,
-        }}
-        dragHandleSelector="[data-drag-handle='true']"
-        onDragStart={() => {
-          setRecentlyDragged(false);
-        }}
-        onDragEnd={wasDragged => {
-          if (wasDragged) {
-            setRecentlyDragged(true);
-            setTimeout(() => {
-              setRecentlyDragged(false);
-            }, 200);
-          }
-        }}
-      >
+      <>
+        {/* Backdrop for clicking outside to close */}
         <div
-          style={{
-            width: 'fit-content',
-            minWidth: '100px',
-            maxWidth: '600px',
-            maxHeight: portalPosition.composer.maxHeight,
-            zIndex: 100000,
-          }}
-          ref={containerRef}
-          className={`${styles.composerContainer}`}
-          onClick={e => {
+          className={styles.composerBackdrop}
+          onClick={(e) => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
+            handleCloseComposer();
           }}
+        />
+        <DraggablePortal
+          initialPosition={{
+            left: portalPosition.composer.left,
+            top: portalPosition.composer.top,
+          }}
+          dragHandleSelector="[data-drag-handle='true']"
+          onDragStart={() => {
+            setRecentlyDragged(false);
+          }}
+          onDragEnd={wasDragged => {
+            if (wasDragged) {
+              setRecentlyDragged(true);
+              setTimeout(() => {
+                setRecentlyDragged(false);
+              }, 200);
+            }
+          }}
+        >
+          <div
+            style={{
+              width: 'fit-content',
+              minWidth: '100px',
+              maxWidth: '600px',
+              maxHeight: portalPosition.composer.maxHeight,
+              zIndex: 100001,
+            }}
+            ref={containerRef}
+            className={`${styles.composerContainer}`}
+            onClick={e => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
           onKeyDown={e => {
             if (e.key === 'Tab') {
               e.nativeEvent.stopImmediatePropagation();
@@ -734,7 +756,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
                   onClick={(e) => {
                     e.stopPropagation();
                     e.nativeEvent.stopImmediatePropagation();
-                    props.onEditingDone?.();
+                    handleCloseComposer();
                   }}
                 >
                   <svg width="16" height="4" viewBox="0 0 16 4" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -751,6 +773,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
         </div>
       </DraggablePortal>
+      </>
     );
 
   }

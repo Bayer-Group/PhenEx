@@ -201,8 +201,13 @@ export function useLogicalFilterEditor<T>({
   /**
    * Select an item for editing (only filters, not operators/parentheses)
    */
-  const handleItemSelect = useCallback((item: FlattenedItem<T>) => {
-    if (item.type === 'filter') {
+  const handleItemSelect = useCallback((item: FlattenedItem<T> | null) => {
+    if (item === null) {
+      // Clear selection
+      console.log('=== Clearing selection ===');
+      setSelectedItemIndex(undefined);
+      setEditingItem(null);
+    } else if (item.type === 'filter') {
       console.log('=== Filter selected for editing ===');
       console.log('Filter:', item.filter);
       console.log('Index:', item.index);
