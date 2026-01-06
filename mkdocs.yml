@@ -59,6 +59,7 @@ nav:
           - Waterfall: api/reporting/waterfall.md
           - InExCounts: api/reporting/counts.md
           - TimeToEvent: api/reporting/time_to_event.md
+          - ReportDrafter: api/reporting/report_drafter.md
       - Util:
           - Pipeline Utilities: api/pipe.md
           - Serialization: api/util/serialization.md
