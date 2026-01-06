@@ -178,6 +178,7 @@ def assertions(obj):
 
 
 def dump_load_assertion(obj):
+    os.makedirs(PATH_ARTIFACTS, exist_ok=True)
     path = os.path.join(PATH_ARTIFACTS, obj.name + ".json")
     with open(path, "w") as f:
         pxjson.dump(obj, f, indent=4)
