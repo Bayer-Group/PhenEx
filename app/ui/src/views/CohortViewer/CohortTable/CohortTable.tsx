@@ -386,6 +386,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             hideScrollbars={hideScrollbars}
             hideVerticalScrollbar={hideVerticalScrollbar}
             hideHorizontalScrollbar={true}
+            bottomPadding={400}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}
             noRowsOverlayComponent={NoRowsOverlayText()}

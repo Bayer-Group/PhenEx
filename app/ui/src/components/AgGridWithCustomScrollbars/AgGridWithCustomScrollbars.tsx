@@ -30,10 +30,11 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
   hideVerticalScrollbar?: boolean; // External control to hide only vertical scrollbar
   hideHorizontalScrollbar?: boolean; // External control to hide only horizontal scrollbar
   enableRightClickMenu?: boolean; // Enable right-click menu support (default: true)
+  bottomPadding?: number; // Bottom padding in pixels (default: 0)
 }
 
 const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, className, ...agGridProps }, ref) => {
+  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, bottomPadding = 0, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const agGridRef = useRef<any>(null);    const { showMenu } = enableRightClickMenu ? useRightClickMenu() : { showMenu: () => {} };    const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
@@ -204,10 +205,32 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       });
     };
 
-    // Debug effect to check scrollbar hiding
+    // Apply bottom padding to create scrollable space at bottom
     useEffect(() => {
-      // Initial setup for hiding AG Grid scrollbars
-    }, [verticalConfig.enabled, horizontalConfig.enabled]);
+      if (bottomPadding <= 0 || !gridContainerRef.current) return;
+
+      // Wait for grid to be ready, then apply padding
+      const applyPadding = () => {
+        const bodyViewport = gridContainerRef.current?.querySelector('.ag-body-viewport') as HTMLElement;
+        if (bodyViewport) {
+          bodyViewport.style.paddingBottom = `${bottomPadding}px`;
+          bodyViewport.style.boxSizing = 'border-box';
+        }
+      };
+
+      // Try immediately and also after a short delay to ensure grid is rendered
+      applyPadding();
+      const timer = setTimeout(applyPadding, 100);
+
+      return () => {
+        clearTimeout(timer);
+        const bodyViewport = gridContainerRef.current?.querySelector('.ag-body-viewport') as HTMLElement;
+        if (bodyViewport) {
+          bodyViewport.style.paddingBottom = '';
+          bodyViewport.style.boxSizing = '';
+        }
+      };
+    }, [bottomPadding]);
 
     // Handle pan dragging
     useEffect(() => {
