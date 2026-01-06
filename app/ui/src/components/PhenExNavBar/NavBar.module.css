@@ -260,3 +260,51 @@
 .addButton:focus {
   outline: none;
 }
+
+.addMenuTabsContainer {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-bottom: 8px;
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_blue) !important;
+  color: white !important;
+  border-color: var(--color_accent_blue) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
+}
+
+.addMenuItem {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.addMenuItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color_accent_blue);
+  color: var(--color_accent_blue);
+  transform: translateX(4px);
+}

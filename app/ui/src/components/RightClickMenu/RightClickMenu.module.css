@@ -2,7 +2,7 @@
   position: fixed;
   background-color: var(--background_color_focus);
   border: 1px solid var(--line-color);
-  border-radius: 4px;
+  border-radius: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 100000;
   min-width: 180px;
