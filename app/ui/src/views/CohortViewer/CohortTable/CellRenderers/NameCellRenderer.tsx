@@ -143,7 +143,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       {...props}
       colorBackground={shouldColorBackground}
       colorBorder={shouldColorBorder}
-      showButtons={true}
+      showButtons={false}
       onEdit={handleEdit}
       onDelete={handleDelete}
     >
