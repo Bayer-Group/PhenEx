@@ -355,7 +355,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             onSelectItems={(itemIds) => {
               // Don't handle selection if it's from expand/collapse or drag action
               if (isExpandCollapseAction.current || isDragging.current) {
-                setSelectedItems(itemIds); // Still update selected items visually
+                // Don't change selection during expand/collapse or drag
                 return;
               }
               
