@@ -149,6 +149,7 @@
 
 .selected {
   font-family: "IBMPlexSans-bold";
+  color: var(--color_accent_blue);
 }
 
 .infotext{
