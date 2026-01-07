@@ -3,9 +3,25 @@ import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import ArrowIcon from '../../../../assets/icons/arrow-up-right.svg';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
+
+/**
+ * Render the expand arrow icon with proper CSS states
+ * States: default, row hovered, self hovered
+ */
+const renderExpandArrow = (onClick?: (e: React.MouseEvent) => void, className?: string) => {
+  return (
+    <img
+      src={ArrowIcon}
+      alt="Expand"
+      className={`${styles.expandArrow} ${className || ''}`}
+      onClick={onClick}
+    />
+  );
+};
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const {
     colorBackground = true,
@@ -83,28 +99,31 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     };
 
     return (
-      <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${fontColor}`} style={getIndentationStyle()}>
-        {props.value}
-        <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-          
-          
-          <ReactMarkdown 
-              components={{
-                p: ({children}) => <p style={{
-                  marginTop: '0px', 
-                  padding: '0px', 
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  maxWidth: '100%'
-                }}>{children}</p>
-              }}
-            >
-              {props.data.description}
-            </ReactMarkdown>
-          
-          
+      <div className={styles.labelContainer} style={getIndentationStyle()}>
+        <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${fontColor}`}>
+          {props.value}
+          <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            <ReactMarkdown 
+                components={{
+                  p: ({children}) => <p style={{
+                    marginTop: '0px', 
+                    padding: '0px', 
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    maxWidth: '100%'
+                  }}>{children}</p>
+                }}
+              >
+                {props.data.description}
+              </ReactMarkdown>
           </span>
+        </div>
+        {renderExpandArrow((e) => {
+          e.stopPropagation();
+          console.log('Arrow clicked for:', props.data);
+          // TODO: Add navigation handler
+        }, isSelected ? styles.selected : undefined)}
       </div>
     );
   }

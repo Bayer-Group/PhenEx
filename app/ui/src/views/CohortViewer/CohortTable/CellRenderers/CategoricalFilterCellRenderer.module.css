@@ -74,14 +74,31 @@
 }
 
 
-.arrowIcon {
+.expandArrow {
   flex-shrink: 0;
   cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  width: 16px;
+  height: 16px;
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  
+  /* Default state */
+  opacity: 0.3;
+  color: var(--text-color-secondary);
 }
 
-.arrowIcon:hover {
-  opacity: 1;
-  /* transform: translateX(2px) translateY(-2px); */
+/* Row hovered state */
+:global(.ag-row:hover) .expandArrow {
+  opacity: 0.5;
+}
+
+/* Arrow self-hovered state */
+.expandArrow:hover {
+  opacity: 1 !important;
+  color: var(--accent-color);
+  transform: scale(1.1);
+}
+
+/* Active/clicked state */
+.expandArrow:active {
+  transform: scale(0.95);
 }

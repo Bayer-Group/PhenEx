@@ -4,6 +4,22 @@ import { FilterType, SingleLogicalExpression } from '../../CellEditors/logicalEx
 import typeStyles from '../../../../../styles/study_types.module.css';
 import { LogicalFilterRenderer } from './LogicalFilterRenderer';
 import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor';
+import ArrowIcon from '../../../../../assets/icons/arrow-up-right.svg';
+
+/**
+ * Render the expand arrow icon with proper CSS states
+ * States: default, row hovered, self hovered
+ */
+const renderExpandArrow = (onClick?: (e: React.MouseEvent) => void, className?: string) => {
+  return (
+    <img
+      src={ArrowIcon}
+      alt="Expand"
+      className={`${styles.expandArrow} ${className || ''}`}
+      onClick={onClick}
+    />
+  );
+};
 
 export interface LogicalExpressionRendererProps {
   value: FilterType | null | undefined;
@@ -116,26 +132,7 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
       <div className={`${styles.unit} ${colorTextClass}`}>
         <div className={styles.top}>
           {expression.phenotype_name || '(empty)'}
-          {showArrow && (
-            <svg
-              className={styles.arrowIcon}
-              onClick={handleArrowClick}
-              width="16px"
-              height="16px"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6.00005 19L19 5.99996M19 5.99996V18.48M19 5.99996H6.52005"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
+          {showArrow && renderExpandArrow(handleArrowClick)}
         </div>
         <div className={styles.bottom}></div>
       </div>
