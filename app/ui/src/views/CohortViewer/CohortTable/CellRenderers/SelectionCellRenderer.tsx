@@ -1,6 +1,6 @@
 import React from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
-import styles from './RowDragCellRenderer.module.css';
+import styles from './SelectionCellRenderer.module.css';
 import { getHierarchicalBackgroundColor } from './PhenexCellRenderer';
 
 interface SelectionCellRendererProps extends ICellRendererParams {
@@ -34,29 +34,8 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
     : 'transparent';
 
   const containerStyle: React.CSSProperties = {
-    borderTopColor: borderColorVar,
+    borderTop: `1px solid ${borderColorVar}`,
     ...(backgroundColor ? { backgroundColor } : {}),
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    height: '100%',
-    paddingTop: '7px',
-    paddingLeft: '4px',
-    paddingRight: '2px',
-  };
-
-  const checkmarkCircleStyle: React.CSSProperties = {
-    width: '15px',
-    height: '15px',
-    borderRadius: '50%',
-    backgroundColor: 'var(--color_accent_blue)',
-    // border: '1px solid white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    fontSize: '10px',
-    fontWeight: 'bold',
   };
 
   // Check if the row is selected
@@ -68,9 +47,7 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
       style={containerStyle}
     >
       {isSelected && (
-        <div style={checkmarkCircleStyle}>
-          ✓
-        </div>
+        <div className={styles.verticalLine} />
       )}
     </div>
   );
