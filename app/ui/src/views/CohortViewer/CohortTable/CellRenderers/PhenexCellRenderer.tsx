@@ -141,11 +141,11 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const renderButtons = () =>{
     return (
         <div className={styles.buttonContainer}>
-          <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
+          {/* <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
             <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
             </svg>
-          </button>
+          </button> */}
           <button className={`${styles.editButton} ${typeStyles[`${props.data.effective_type}_color_block`]}`} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
             Edit
           </button>

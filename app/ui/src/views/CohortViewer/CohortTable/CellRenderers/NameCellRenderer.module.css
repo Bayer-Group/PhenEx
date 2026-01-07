@@ -75,7 +75,7 @@
 }
 
 .expandArrow {
-  margin: var(--item-margin-top) var(--item-margin-horizontal) 0 0;
+  margin: calc(var(--item-margin-top) - 3) var(--item-margin-horizontal) 0 0;
   flex-shrink: 0;
   cursor: pointer;
   width: 28px;

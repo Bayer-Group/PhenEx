@@ -121,8 +121,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
         </div>
         {renderExpandArrow((e) => {
           e.stopPropagation();
-          console.log('Arrow clicked for:', props.data);
-          // TODO: Add navigation handler
+          handleEdit();
         }, isSelected ? styles.selected : undefined)}
       </div>
     );
