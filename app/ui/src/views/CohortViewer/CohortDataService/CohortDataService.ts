@@ -130,7 +130,13 @@ export class CohortDataService {
     if (this._showComponents) {
       // Include component phenotypes in the result with hierarchical ordering
       const allPhenotypes = this._cohort_data.phenotypes || [];
-      const componentPhenotypes = allPhenotypes.filter((row: TableRow) => row.type === 'component');
+      // Only include components whose effective_type matches the current filter
+      // This ensures we don't show components whose root parent is filtered out
+      const componentPhenotypes = allPhenotypes.filter((row: TableRow) => 
+        row.type === 'component' && 
+        row.effective_type && 
+        this._currentFilter.includes(row.effective_type)
+      );
       if (componentPhenotypes.length > 0) {
         filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes([...filteredPhenotypes, ...componentPhenotypes]);
       }
