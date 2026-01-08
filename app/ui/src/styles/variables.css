@@ -59,6 +59,7 @@
 
   /* --color-accent-bright: hsl(24, 90%, 60%); */
   --color_accent_blue: hsl(204, 98%, 50%);
+  --color_accent_dark:  hsl(0, 40%, 5%);
 
   --color_accent_orange: hsl(14, 100%, 63%); /* ff6e42*/
   --color-accent-bright: #413346;

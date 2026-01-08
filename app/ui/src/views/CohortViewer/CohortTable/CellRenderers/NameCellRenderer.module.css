@@ -66,12 +66,23 @@
   flex: 1;
 }
 
+
 .labelContainer {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  position: relative;
+}
+
+.verticalLine {
+  width: 4px;
+  height: 100%;
+  background-color: var(--color_accent_blue);
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .expandArrow {
@@ -104,7 +115,7 @@
 /* Arrow self-hovered state */
 .expandArrow:hover {
   opacity: 1 !important;
-  color: var(--accent-color);
+  color: var(--color_accent_blue);
   transform: scale(1.1);
 }
 
@@ -147,8 +158,8 @@
 
 }
 
-.selected {
-  font-family: "IBMPlexSans-bold";
+.label.selected {
+  font-family: "IBMPlexSans-bold" !important;
   color: var(--color_accent_blue);
 }
 

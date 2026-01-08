@@ -114,7 +114,7 @@
 .navArrowButton:hover {
   opacity: 0.7;
   transform: scale(1.5);
-  color: var(--color_accent_blue) !important;
+  color: var(--color_accent_dark) !important;
 }
 
 .horizontalScrollContainer{
@@ -150,7 +150,7 @@
 }
 
 .scrollbarThumb:hover {
-  background-color: var(--color_accent_blue);
+  background-color: var(--color_accent_dark);
   transform: translate(-50%, -50%) var(--scale_transform);
 }
 
@@ -176,7 +176,7 @@
 }
 
 .eyeButton:hover {
-  color: var(--color_accent_blue) !important;
+  color: var(--color_accent_dark) !important;
   transform: var(--scale_transform) !important;
 
 }
@@ -221,7 +221,7 @@
 }
 
 .classNameActiveTab.classNameActiveTab {
-  background-color: var(--color_accent_blue) !important;
+  background-color: var(--color_accent_dark) !important;
   color:white !important;
   border-color: transparent !important;
 }
@@ -245,7 +245,7 @@
   outline: none;
   color: white;
   background-color: transparent;
-  background-color: var(--color_accent_blue);
+  background-color: var(--color_accent_dark);
   border-radius:20px;
 
 }
@@ -280,14 +280,14 @@
 }
 
 .addMenuActiveTab {
-  background-color: var(--color_accent_blue) !important;
+  background-color: var(--color_accent_dark) !important;
   color: white !important;
-  border-color: var(--color_accent_blue) !important;
+  border-color: var(--color_accent_dark) !important;
 }
 
 .addMenuHoverTab:hover {
-  color: var(--color_accent_blue);
-  border-color: var(--color_accent_blue);
+  color: var(--color_accent_dark);
+  border-color: var(--color_accent_dark);
 }
 
 .addMenuItem {
@@ -304,7 +304,7 @@
 
 .addMenuItem:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--color_accent_blue);
-  color: var(--color_accent_blue);
+  border-color: var(--color_accent_dark);
+  color: var(--color_accent_dark);
   transform: translateX(4px);
 }
