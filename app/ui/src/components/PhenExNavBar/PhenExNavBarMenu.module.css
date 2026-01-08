@@ -12,7 +12,7 @@
 @keyframes menuFadeIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(10px);
+    transform: translateX(-50%) translateY(0px);
   }
   to {
     opacity: 1;
