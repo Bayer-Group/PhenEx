@@ -158,9 +158,12 @@
 
 }
 
-.label.selected {
-  font-family: "IBMPlexSans-bold" !important;
-  color: var(--color_accent_blue);
+.selected {
+  font-family: "IBMPlexSans-bold";
+}
+
+.viewing {
+  color: var(--color_accent_blue) !important;
 }
 
 .infotext{

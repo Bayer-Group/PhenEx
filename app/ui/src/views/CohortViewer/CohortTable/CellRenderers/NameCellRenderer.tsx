@@ -86,6 +86,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
     const isSelected = props.node.isSelected();
+    const isViewing = props.data?.isViewing || false; // TODO: determine viewing state from data service/MainViewService
     
     
     // Calculate indentation for component phenotypes based on their level
@@ -100,7 +101,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
     return (
       <div className={styles.labelContainer} style={getIndentationStyle()}>
-        <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${!isSelected ? fontColor : ''}`}>
+        <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${isViewing ? styles.viewing : (!isSelected ? fontColor : '')}`}>
           {props.value}
           <span className={`${styles.infotext} ${fontColor}`} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             <ReactMarkdown 
