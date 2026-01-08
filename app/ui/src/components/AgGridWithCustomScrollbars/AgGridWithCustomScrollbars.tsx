@@ -1,6 +1,6 @@
 import React, { forwardRef, useRef, useEffect, useState, useImperativeHandle } from 'react';
 import { AgGridReact, AgGridReactProps } from '@ag-grid-community/react';
-import { CellContextMenuEvent } from '@ag-grid-community/core';
+import { CellContextMenuEvent, RowClickedEvent } from '@ag-grid-community/core';
 import { AGGridCustomScrollbar } from '../CustomScrollbar/AGGridCustomScrollbar';
 import { RightClickMenuProvider, useRightClickMenu } from '../RightClickMenu';
 import styles from './AgGridWithCustomScrollbars.module.css';
@@ -43,6 +43,8 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       scrollTop: 0, 
       scrollLeft: 0 
     });
+    const selectedNodesRef = useRef<Set<any>>(new Set());
+    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Default scrollbar settings
     const verticalConfig = {
@@ -269,6 +271,55 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };    }, [isPanDragging, panDragStart]);
+    
+    // Cleanup timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (clickTimeoutRef.current) {
+          clearTimeout(clickTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    // Custom row click handler to toggle selection on already-selected rows
+    const handleRowClicked = React.useCallback((event: RowClickedEvent) => {
+      const node = event.node;
+      
+      // Clear any pending timeout
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      
+      // Check if this node was already selected BEFORE this click
+      const wasAlreadySelected = selectedNodesRef.current.has(node);
+      
+      // Use a small timeout to let AG Grid finish its selection processing
+      clickTimeoutRef.current = setTimeout(() => {
+        if (wasAlreadySelected && node.isSelected()) {
+          // Was selected before and still selected after - toggle it off
+          node.setSelected(false);
+        }
+        
+        // Call parent's handler if provided
+        if (agGridProps.onRowClicked) {
+          agGridProps.onRowClicked(event);
+        }
+      }, 0);
+    }, [agGridProps.onRowClicked]);
+    
+    // Track selection changes to know what's currently selected
+    const handleSelectionChanged = React.useCallback(() => {
+      const api = agGridRef.current?.api;
+      if (!api) return;
+      
+      const selectedNodes = api.getSelectedNodes();
+      selectedNodesRef.current = new Set(selectedNodes);
+      
+      // Call parent's handler if provided
+      if (agGridProps.onSelectionChanged) {
+        agGridProps.onSelectionChanged();
+      }
+    }, [agGridProps.onSelectionChanged]);
 
     // Enhanced onCellContextMenu handler
     const handleCellContextMenu = React.useCallback((params: CellContextMenuEvent) => {
@@ -310,6 +361,8 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
           <AgGridReact
             ref={agGridRef}
             {...agGridProps}
+            onRowClicked={handleRowClicked}
+            onSelectionChanged={handleSelectionChanged}
             onCellContextMenu={handleCellContextMenu}
             suppressContextMenu={enableRightClickMenu}
           />
