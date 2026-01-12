@@ -1,0 +1,131 @@
+:root {
+  --issue_popover_margin: 15px;
+  --issue_popover_radius: 20px;
+  --color_translucent: rgba(248, 249, 250, 0.8);
+}
+
+.customCloseButton {
+  position: absolute;
+  top: 5px;
+  right: -12px;
+  height: 60px;
+  width: 50px !important;
+  background: transparent;
+  border: none;
+  font-size: 40px;
+  font-family: "IBMPlexSans-bold";
+  cursor: pointer;
+  color: var(--color-accent-bright);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  transition: color 0.3s ease;
+}
+
+.customCloseButton:hover {
+  color: var(--color_accent_orange);
+}
+
+.customCloseButton:focus {
+  border: none;
+  outline: none;
+}
+
+.popover {
+  position: absolute;
+  right: var(--issue_popover_margin);
+  bottom: 0px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: var(--border);
+  border-radius: var(--issue_popover_radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2;
+  height: 80vh;
+}
+
+.body {
+  flex: 1;
+  overflow: auto !important;
+  padding: 80px 0px 10px 0px;
+  margin-top: 0px;
+  background-color: transparent;
+}
+
+.headerContent {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 10;
+  border: 1px solid var(--line-color);
+}
+
+.birdIcon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.title {
+  font-size: 18px;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--text-color);
+}
+
+.transparentHeader {
+  position: absolute;
+  top: 0px;
+  height: 100px;
+  background-color: transparent;
+  width: 100%;
+  z-index: 1000;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.transparentHeaderGradient {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(0deg, transparent, white);
+}
+
+.customScrollbarThumb {
+  background-color: var(--color-accent-bright);
+  border-radius: 4px;
+}
+
+.resizablePopover .popover {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  left: auto !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.resizablePopover .body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
