@@ -64,13 +64,14 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     onDelete: onDeleteProp,
   } = props;
 
-  // Default handlers if not provided - using dynamic imports to avoid circular dependencies
-  const handleEdit = onEditProp || (() => {
-    // // Lazy import to avoid circular dependency
-    // import('../../TwoPanelCohortViewer/TwoPanelCohortViewer').then(({ TwoPanelCohortViewerService }) => {
-    //   const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    //   cohortViewer.displayExtraContent('phenotype' as any, props.data);
-    // });
+  // Default handlers if not provided
+  const handleEdit = (() => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   });
 
   const handleDelete = onDeleteProp || (() => {
