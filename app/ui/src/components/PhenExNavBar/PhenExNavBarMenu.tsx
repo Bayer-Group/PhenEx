@@ -62,7 +62,7 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
       position: 'fixed' as const,
       left: `${rect.left + rect.width / 2}px`,
       transform: 'translateX(-50%)',
-      bottom: `${window.innerHeight - rect.top + 20}px`, // 10px gap above the button
+      bottom: `${window.innerHeight - rect.top + 15}px`, // 10px gap above the button
     };
   };
 

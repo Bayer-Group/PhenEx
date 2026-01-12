@@ -266,7 +266,7 @@
   border: none !important;
   padding: 0 !important;
   gap: 8px !important;
-  margin-bottom: 8px;
+  margin-top: 8px;
 }
 
 
@@ -275,7 +275,6 @@
   border: none !important;
   padding: 0 !important;
   gap: 8px !important;
-  margin-bottom: 8px;
 }
 
 .addMenuTab {
@@ -300,12 +299,12 @@
 }
 
 .addMenuItem {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 2px 8px;
   color: white;
-  font-size: 13px;
+  font-size: var(--font_size_items);
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
@@ -313,9 +312,13 @@
 
 .addMenuItem:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--color_accent_dark);
-  color: var(--color_accent_dark);
-  transform: translateX(4px);
+  background: var(--color_accent_blue);
+  color:white;
+  /* transform: translateX(4px); */
+}
+
+.addMenuItem:focus{
+    outline: none;
 }
 
 .optionsButton {
@@ -346,3 +349,9 @@
   outline: none;
 }
 
+
+.itemList{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

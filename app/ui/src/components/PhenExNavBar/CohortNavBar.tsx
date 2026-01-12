@@ -30,7 +30,6 @@ const OptionsMenu: React.FC<{
 
   const handleMenuItemClick = (viewType: string) => {
     viewerService.displayExtraContent(viewType, null);
-    onClose();
   };
 
   const menuItems = [
@@ -49,8 +48,8 @@ const OptionsMenu: React.FC<{
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div style={{ padding: '8px', minWidth: '180px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ padding: '8px 4px', minWidth: '180px' }}>
+        <div className={styles.itemList}>
           {menuItems.map(({ type, label }) => (
             <button
               key={type}

@@ -50,11 +50,11 @@ const AddMenu: React.FC<{
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div style={{ padding: '12px', minWidth: '240px' }}>
+      <div style={{ padding: '8px', minWidth: '240px' }}>
        
         
         {activeTab === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+          <div className={styles.itemList}>
             {phenotypeTypes.map(({ type, label }) => (
               <button
                 key={type}
@@ -78,7 +78,7 @@ const AddMenu: React.FC<{
             Codelist import coming soon
           </div>
         )}
- <Tabs
+        <Tabs
           tabs={['Manual Entry', 'Library', 'Codelist']}
           active_tab_index={activeTab}
           onTabChange={setActiveTab}

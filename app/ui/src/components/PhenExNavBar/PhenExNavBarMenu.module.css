@@ -1,7 +1,7 @@
 .menu {
   background-color: var(--background_color_focus);
   border-radius: 20px;
-  padding: 12px;
+  padding: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 10000;
   
