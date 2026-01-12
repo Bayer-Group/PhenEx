@@ -49,10 +49,11 @@ interface CohortTableProps {
   tableTheme?: any;
   tableGridOptions?: any;
   customGetRowHeight?: (params: any) => number;
+  gridBottomPadding?: number;
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0}, ref) => {
 
     const default_theme = {
       accentColor: 'transparent',
@@ -382,11 +383,11 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
-            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:20}}}
+            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:10, marginTop: 40, marginBottom: 75}}}
             hideScrollbars={hideScrollbars}
             hideVerticalScrollbar={hideVerticalScrollbar}
             hideHorizontalScrollbar={true}
-            bottomPadding={400}
+            bottomPadding={gridBottomPadding}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={ref}
             noRowsOverlayComponent={NoRowsOverlayText()}

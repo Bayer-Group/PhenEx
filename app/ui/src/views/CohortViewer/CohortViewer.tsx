@@ -314,6 +314,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
+        gridBottomPadding={400}
       />
     );
   };

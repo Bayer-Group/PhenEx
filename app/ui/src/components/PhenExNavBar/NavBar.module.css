@@ -359,7 +359,7 @@
 }
 
 .optionsButton:hover {
-  background-color: var(--line-color);
+  color: var(--color_accent_dark);
 
   transform: var(--scale_transform_small);
 }
@@ -370,7 +370,7 @@
 
 .optionsButton.menuShowing,
 .optionsButton:global(.menuShowing) {
-  color: white;
+  color: var(--color_accent_dark);
   background-color: rgba(255, 255, 255, 0.1);
   transform: var(--scale_transform_small);
 }

@@ -14,8 +14,8 @@
 
 .switchTrack {
   position: relative;
-  width: 44px;
-  height: 24px;
+  width: 34px;
+  height: 22px;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -46,7 +46,7 @@
 }
 
 .switchSelected {
-  left: 22px;
+  left: 14px;
 }
 
 .switchTrack:hover {
