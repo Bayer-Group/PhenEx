@@ -368,6 +368,25 @@
   outline: none;
 }
 
+.optionsButton.menuShowing,
+.optionsButton:global(.menuShowing) {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: var(--scale_transform_small);
+}
+
+.addButton.menuShowing,
+.addButton:global(.menuShowing) {
+  color: white;
+  transform: var(--scale_transform);
+}
+
+.eyeButton.menuShowing,
+.eyeButton:global(.menuShowing) {
+  color: var(--color_accent_dark) !important;
+  transform: var(--scale_transform) !important;
+}
+
 
 .itemList{
   display: flex;

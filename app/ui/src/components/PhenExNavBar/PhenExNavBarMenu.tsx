@@ -24,6 +24,21 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
   const internalMenuRef = useRef<HTMLDivElement>(null);
   const menuRef = externalMenuRef || internalMenuRef;
 
+  // Apply 'menuShowing' class to anchor element when menu is open
+  useEffect(() => {
+    if (!anchorElement) return;
+
+    if (isOpen) {
+      anchorElement.classList.add('menuShowing');
+    } else {
+      anchorElement.classList.remove('menuShowing');
+    }
+
+    return () => {
+      anchorElement.classList.remove('menuShowing');
+    };
+  }, [isOpen, anchorElement]);
+
   useEffect(() => {
     if (!isOpen) return;
 
