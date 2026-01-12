@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import styles from './NavBar.module.css';
 import { Tabs } from '../ButtonsAndTabs/Tabs/Tabs';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { TwoPanelCohortViewerService } from '../../views/CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { useNavBarMenu } from './PhenExNavBarMenuContext';
 
 interface CohortNavBarProps {
   height: number;
@@ -76,7 +77,7 @@ const OptionsMenu: React.FC<{
 
 export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
   const tabs = ['Definition', 'Characteristics', 'Outcomes'];
-  const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+  const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('options');
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -97,11 +98,11 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       <button
         ref={optionsButtonRef}
         className={styles.optionsButton}
-        onMouseEnter={() => setIsOptionsMenuOpen(true)}
+        onMouseEnter={openOptionsMenu}
         onMouseLeave={() => {
           setTimeout(() => {
             if (!menuRef.current?.matches(':hover')) {
-              setIsOptionsMenuOpen(false);
+              closeOptionsMenu();
             }
           }, 100);
         }}
@@ -116,11 +117,11 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       
       <OptionsMenu
         isOpen={isOptionsMenuOpen}
-        onClose={() => setIsOptionsMenuOpen(false)}
+        onClose={closeOptionsMenu}
         anchorElement={optionsButtonRef.current}
         menuRef={menuRef}
-        onMouseEnter={() => setIsOptionsMenuOpen(true)}
-        onMouseLeave={() => setIsOptionsMenuOpen(false)}
+        onMouseEnter={openOptionsMenu}
+        onMouseLeave={closeOptionsMenu}
       />
     </div>
   );

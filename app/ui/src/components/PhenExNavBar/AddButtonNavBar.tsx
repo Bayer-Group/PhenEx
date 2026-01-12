@@ -3,6 +3,7 @@ import styles from './NavBar.module.css';
 import { Tabs } from '../ButtonsAndTabs/Tabs/Tabs';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { CohortDataService } from '../../views/CohortViewer/CohortDataService/CohortDataService';
+import { useNavBarMenu } from './PhenExNavBarMenuContext';
 
 interface AddButtonNavBarProps {
   height: number;
@@ -93,7 +94,7 @@ const AddMenu: React.FC<{
 };
 
 export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('add');
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -102,11 +103,11 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSect
       <button
         ref={addButtonRef}
         className={styles.addButton}
-        onMouseEnter={() => setIsAddMenuOpen(true)}
+        onMouseEnter={openAddMenu}
         onMouseLeave={() => {
           setTimeout(() => {
             if (!menuRef.current?.matches(':hover')) {
-              setIsAddMenuOpen(false);
+              closeAddMenu();
             }
           }, 100);
         }}
@@ -120,11 +121,11 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSect
       
       <AddMenu
         isOpen={isAddMenuOpen}
-        onClose={() => setIsAddMenuOpen(false)}
+        onClose={closeAddMenu}
         anchorElement={addButtonRef.current}
         menuRef={menuRef}
-        onMouseEnter={() => setIsAddMenuOpen(true)}
-        onMouseLeave={() => setIsAddMenuOpen(false)}
+        onMouseEnter={openAddMenu}
+        onMouseLeave={closeAddMenu}
       />
     </div>
   );
