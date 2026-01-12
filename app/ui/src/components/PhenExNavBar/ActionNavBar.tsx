@@ -25,6 +25,7 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
 
   const handleChatButtonClick = (event: React.MouseEvent) => {
     event.stopPropagation();
+    setShowChatTooltip(false);
     setShowChatPopover(!showChatPopover);
     if (!showChatPopover && onHideNavBar) {
       onHideNavBar();
@@ -95,7 +96,7 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
         <DraggablePositionedPortal 
           triggerRef={chatButtonRef} 
           position="below" 
-          offsetY={-100} 
+          offsetY={0} 
           alignment="right"
           resetToPositioned={resetPortalToPositioned}
           onClose={closeChatPopover}
