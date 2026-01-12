@@ -27,11 +27,11 @@ export const ListItem: React.FC<ListItemProps> = ({
       tabIndex={0}
       role="button"
     >
-      {selected && (
+      {/* {selected && (
         <div className={styles.checkmarkCircle}>
           ✓
         </div>
-      )}
+      )} */}
       <div className={styles.itemName}>{name}</div>
       {/* <p className={styles.itemInfo}>{info}</p> */}
     </div>

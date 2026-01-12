@@ -281,6 +281,34 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       };
     }, []);
 
+    // Close any open cell editors when clicking outside the grid or on empty space
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const api = agGridRef.current?.api;
+        if (!api || !gridContainerRef.current) return;
+
+        const target = event.target as HTMLElement;
+        
+        // Check if click is outside the grid container
+        if (!gridContainerRef.current.contains(target)) {
+          api.stopEditing();
+          return;
+        }
+        
+        // Check if click is inside grid but not on a row/cell (empty space)
+        const isOnRow = target.closest('.ag-row');
+        const isOnCell = target.closest('.ag-cell');
+        if (!isOnRow && !isOnCell) {
+          api.stopEditing();
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
+
     // Custom row click handler to toggle selection on already-selected rows
     const handleRowClicked = React.useCallback((event: RowClickedEvent) => {
       const node = event.node;

@@ -13,15 +13,14 @@
 }
 
 .filterInput {
-  width: 100%;
   padding: 6px 30px 6px 8px;
   border: 1px solid var(--line-color);
   border-radius: 4px;
   font-size: 14px;
   font-family: 'IBMPlexSans-Regular';
-  color: var(--color-accent-bright);
-  background-color: white;
+  background-color: transparent;
   outline: none;
+  color:white
 }
 
 .filterInput::placeholder {
@@ -30,7 +29,7 @@
 }
 
 .filterInput:focus {
-  border-color: var(--color_accent_blue);
+  border-color: white;
 }
 
 .clearButton {

@@ -8,11 +8,10 @@
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
   --item-color-default: transparent;
-  --item-radius: 8px;
-  --item-font-size: 14px;
-  --item-font-family: "IBMPlexSans-bold";
+  --item-radius: 3px;
+  --item-font-family: "IBMPlexSans-regular";
   --item-font-color: var(--color-accent-bright);
-  --item-border-default: 1px solid var(--line-color);
+  --item-border-default: none !important;
   --item-margin-top: 5px;
   --item-margin-horizontal: 5px;
 
@@ -119,9 +118,11 @@
   --font_size_breadcrumb:20px;
   --font_size_phenotypename:18px;
   --font_size_infotext:12px;
-  --font_size_items:14px;
+  --font_size_items:16px;
   --font_size_mid_phenotype_info:16px;
-  
+
+  --item-font-size: var(--font_size_items);
+
 }
 
 .rag-blue-outer {

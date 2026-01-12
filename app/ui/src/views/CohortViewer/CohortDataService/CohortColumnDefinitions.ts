@@ -101,7 +101,7 @@ export const defaultColumns = [
   {
     field: 'selection',
     headerName: '',
-    width: 30,
+    width: 10,
     pinned: 'left',
     resizable: false,
     filter: false,

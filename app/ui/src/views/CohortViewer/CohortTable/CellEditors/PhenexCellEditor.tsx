@@ -370,7 +370,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     return {
       currentSelection: {
         bottomLeft: `${bottomSectionLeft}px`,
-        bottomTop: `${bottomSectionTop}px`,
+        bottomTop: bottomSectionTop,
         width: `${cellWidth}px`,
         bottomHeight: `${cellHeight}px`,
       },
@@ -810,6 +810,55 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   }
 
+  // List-view editors (autoCloseOnChange) only show composer at cell position
+  if (props.autoCloseOnChange) {
+    return (
+      <DraggablePortal
+        initialPosition={{
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop - 35,
+        }}
+        dragHandleSelector="[data-drag-handle='true']"
+        onDragStart={() => {
+          setRecentlyDragged(false);
+        }}
+        onDragEnd={wasDragged => {
+          if (wasDragged) {
+            setRecentlyDragged(true);
+            setTimeout(() => {
+              setRecentlyDragged(false);
+            }, 200);
+          }
+        }}
+      >
+        <div
+          style={{
+            width: 'fit-content',
+            minWidth: '100px',
+            maxWidth: '600px',
+            maxHeight: portalPosition.composer.maxHeight,
+            zIndex: 100001,
+          }}
+          ref={containerRef}
+          className={`${styles.composerContainer}`}
+          onClick={e => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
+          <div className={`${styles.composerContent}`}>
+            {renderMainContent()}
+          </div>
+          <div className={`${styles.composerHeader}`} data-drag-handle="true">
+          </div>
+        </div>
+      </DraggablePortal>
+    );
+  }
+
+  // Complex item editors show both cell mirror and composer panel
   return (
     <>
       <DraggablePortal
