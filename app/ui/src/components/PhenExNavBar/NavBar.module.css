@@ -20,7 +20,7 @@
 .actionButtons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 0px 10px;
 }
 
@@ -51,8 +51,11 @@
 }
 
 .issuesLabel {
-  font-size: 14px;
+  font-size: var(--font_size_breadcrumbs);
+  font-family: "IBMPlexSans-bold";
   user-select: none;
+  margin-left:15px;
+  margin-right:4px;
 }
 
 .birdIcon {
@@ -64,7 +67,15 @@
 }
 
 .birdIcon:hover {
+  transform: var(--scale_transform_small);
+}
+
+.actionButton{
+    transition: background-color 0.2s, transform 0.2s;
+}
+.actionButton:hover{
   transform: var(--scale_transform);
+
 }
 
 .viewContent {
@@ -107,6 +118,7 @@
   width: 22px;
   border: none;
   outline: none;
+  height:100%;
 }
 .navArrowButton:focus{
   outline:none;

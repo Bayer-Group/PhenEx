@@ -4,6 +4,7 @@ import birdIcon from '../../assets/bird_icon.png';
 import playButton from '../../assets/icons/play_button.svg';
 import { ChatPopover } from './ChatPopover';
 import { DraggablePositionedPortal } from '../Portal/DraggablePositionedPortal';
+import { PhenExNavBarTooltip } from './PhenExNavBarTooltip';
 
 interface ActionNavBarProps {
   height: number;
@@ -14,7 +15,9 @@ interface ActionNavBarProps {
 export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar, onShowNavBar }) => {
   const [showChatPopover, setShowChatPopover] = useState(false);
   const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
+  const [showPlayTooltip, setShowPlayTooltip] = useState(false);
   const chatButtonRef = useRef<HTMLButtonElement>(null);
+  const playButtonRef = useRef<HTMLButtonElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
 
   const handleChatButtonClick = (event: React.MouseEvent) => {
@@ -37,10 +40,16 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>
       <div className={styles.actionButtons}>
-        <button className={styles.actionButton}>
+                <span className={styles.issuesLabel}>27</span>
+
+        <button 
+          ref={playButtonRef}
+          className={styles.actionButton}
+          onMouseEnter={() => setShowPlayTooltip(true)}
+          onMouseLeave={() => setShowPlayTooltip(false)}
+        >
           <img src={playButton} alt="Play" style={{ width: '30px', height: '30px' }} />
         </button>
-        <span className={styles.issuesLabel}>issues</span>
         <button 
           ref={chatButtonRef}
           className={styles.actionButton}
@@ -50,11 +59,17 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
         </button>
       </div>
       
+      <PhenExNavBarTooltip
+        isVisible={showPlayTooltip}
+        anchorElement={playButtonRef.current}
+        label="Execute cohort"
+      />
+      
       {showChatPopover && (
         <DraggablePositionedPortal 
           triggerRef={chatButtonRef} 
           position="below" 
-          offsetY={-10} 
+          offsetY={-100} 
           alignment="right"
           resetToPositioned={resetPortalToPositioned}
           onClose={closeChatPopover}
