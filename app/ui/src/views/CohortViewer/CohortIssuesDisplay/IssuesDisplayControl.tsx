@@ -75,29 +75,30 @@ export const IssuesDisplayControl: React.FC<IssuesDisplayControlProps> = ({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`${styles.container} ${showPopover ? styles.showingPopover : ''} ${
-        issues?.length ? styles.hasIssues : styles.noIssues
-      }`}
-      onClick={handleClick}
-    >
-      {showPopover && (
-        <DraggablePositionedPortal 
-          triggerRef={containerRef} 
-          position="below" 
-          offsetY={5} 
-          alignment="right" // Right edge of trigger = bottom-right anchor point for ResizableContainer
-          resetToPositioned={resetPortalToPositioned}
-          onClose={closePopover}
-          dragHandleRef={dragHandleRef}
-        >
-          <IssuesPopover issues={issues} onClose={closePopover} dragHandleRef={dragHandleRef} />
-        </DraggablePositionedPortal>
-      )}
-      <div className={styles.issuesButton}>
-        <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
-      </div>
-    </div>
+    <>    </>
+    // <div
+    //   ref={containerRef}
+    //   className={`${styles.container} ${showPopover ? styles.showingPopover : ''} ${
+    //     issues?.length ? styles.hasIssues : styles.noIssues
+    //   }`}
+    //   onClick={handleClick}
+    // >
+    //   {showPopover && (
+    //     <DraggablePositionedPortal 
+    //       triggerRef={containerRef} 
+    //       position="below" 
+    //       offsetY={5} 
+    //       alignment="right" // Right edge of trigger = bottom-right anchor point for ResizableContainer
+    //       resetToPositioned={resetPortalToPositioned}
+    //       onClose={closePopover}
+    //       dragHandleRef={dragHandleRef}
+    //     >
+    //       <IssuesPopover issues={issues} onClose={closePopover} dragHandleRef={dragHandleRef} />
+    //     </DraggablePositionedPortal>
+    //   )}
+    //   <div className={styles.issuesButton}>
+    //     <CohortIssuesDisplay issues={issues} selected={showPopover} onClick={closePopover} />
+    //   </div>
+    // </div>
   );
 };

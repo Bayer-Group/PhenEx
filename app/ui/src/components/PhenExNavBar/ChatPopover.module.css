@@ -49,6 +49,12 @@
   overflow: hidden;
   z-index: 2;
   height: 80vh;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.popover.visible {
+  opacity: 1;
 }
 
 .body {

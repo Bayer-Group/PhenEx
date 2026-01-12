@@ -7,9 +7,11 @@ import { DraggablePositionedPortal } from '../Portal/DraggablePositionedPortal';
 
 interface ActionNavBarProps {
   height: number;
+  onHideNavBar?: () => void;
+  onShowNavBar?: () => void;
 }
 
-export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height }) => {
+export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar, onShowNavBar }) => {
   const [showChatPopover, setShowChatPopover] = useState(false);
   const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
   const chatButtonRef = useRef<HTMLButtonElement>(null);
@@ -18,12 +20,18 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height }) => {
   const handleChatButtonClick = (event: React.MouseEvent) => {
     event.stopPropagation();
     setShowChatPopover(!showChatPopover);
+    if (!showChatPopover && onHideNavBar) {
+      onHideNavBar();
+    }
   };
 
   const closeChatPopover = () => {
     setShowChatPopover(false);
     setResetPortalToPositioned(true);
     setTimeout(() => setResetPortalToPositioned(false), 50);
+    if (onShowNavBar) {
+      onShowNavBar();
+    }
   };
 
   return (

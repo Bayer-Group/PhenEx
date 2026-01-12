@@ -8,6 +8,12 @@
   padding: 10px;
   background-color: transparent;
   pointer-events: none;
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+}
+
+.phenexNavBar.allHidden {
+  transform: translateY(calc(100% + 30px));
 }
 
 .phenexNavBar > * {

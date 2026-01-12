@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import styles from './ChatPopover.module.css';
 import { ChatPanel } from '../../views/ChatPanel/ChatPanel';
 import BirdIcon from '../../assets/bird_icon.png';
@@ -12,6 +12,23 @@ interface ChatPopoverProps {
 
 export const ChatPopover: React.FC<ChatPopoverProps> = ({ onClose, dragHandleRef }) => {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger fade in animation
+    requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+  }, []);
+
+  const handleClose = () => {
+    // Trigger fade out animation
+    setIsVisible(false);
+    // Wait for animation to complete before calling onClose
+    setTimeout(() => {
+      if (onClose) onClose();
+    }, 100);
+  };
 
   return (
     <ResizableContainer
@@ -29,12 +46,12 @@ export const ChatPopover: React.FC<ChatPopoverProps> = ({ onClose, dragHandleRef
         left: true,
       }}
     >
-      <div className={styles.popover}>
+      <div className={`${styles.popover} ${isVisible ? styles.visible : ''}`}>
         <div ref={dragHandleRef} className={styles.transparentHeader}>
           <div className={styles.transparentHeaderGradient} />
           <button
             className={styles.customCloseButton}
-            onClick={onClose}
+            onClick={handleClose}
           >
             ×
           </button>

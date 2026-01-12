@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './PhenExNavBar.module.css';
 import { CohortNavBar } from './CohortNavBar';
 import { ActionNavBar } from './ActionNavBar';
@@ -27,9 +27,18 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   onViewNavigationVisibilityClicked,
 }) => {
   const heightNavBar = 44;
+  const [allHidden, setAllHidden] = useState(false);
+
+  const handleHideNavBar = () => {
+    setAllHidden(true);
+  };
+
+  const handleShowNavBar = () => {
+    setAllHidden(false);
+  };
 
   return (
-    <div className={styles.phenexNavBar}>
+    <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
       <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
       <AddButtonNavBar height={heightNavBar} />
       <ViewNavBar
@@ -41,7 +50,11 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
         onViewNavigationScroll={onViewNavigationScroll}
         onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
       />
-      <ActionNavBar height={heightNavBar} />
+      <ActionNavBar 
+        height={heightNavBar}
+        onHideNavBar={handleHideNavBar}
+        onShowNavBar={handleShowNavBar}
+      />
 
     </div>
   );
