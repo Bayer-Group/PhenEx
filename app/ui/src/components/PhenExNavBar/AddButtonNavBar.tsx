@@ -31,7 +31,6 @@ const AddMenu: React.FC<{
 
   const handleAddPhenotype = (type: string) => {
     dataService.addPhenotype(type);
-    onClose();
   };
 
   const phenotypeTypes = [
@@ -52,15 +51,7 @@ const AddMenu: React.FC<{
       onMouseLeave={onMouseLeave}
     >
       <div style={{ padding: '12px', minWidth: '240px' }}>
-        <Tabs
-          tabs={['Manual Entry', 'Library', 'Codelist']}
-          active_tab_index={activeTab}
-          onTabChange={setActiveTab}
-          classNameTabsContainer={styles.addMenuTabsContainer}
-          classNameTabs={styles.addMenuTab}
-          classNameActiveTab={styles.addMenuActiveTab}
-          classNameHoverTab={styles.addMenuHoverTab}
-        />
+       
         
         {activeTab === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
@@ -87,6 +78,15 @@ const AddMenu: React.FC<{
             Codelist import coming soon
           </div>
         )}
+ <Tabs
+          tabs={['Manual Entry', 'Library', 'Codelist']}
+          active_tab_index={activeTab}
+          onTabChange={setActiveTab}
+          classNameTabsContainer={styles.addMenuTabsContainer}
+          classNameTabs={styles.addMenuTab}
+          classNameActiveTab={styles.addMenuActiveTab}
+          classNameHoverTab={styles.addMenuHoverTab}
+        />
       </div>
     </PhenExNavBarMenu>
   );

@@ -269,6 +269,15 @@
   margin-bottom: 8px;
 }
 
+
+.addMenuTabsContainer:hover {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-bottom: 8px;
+}
+
 .addMenuTab {
   font-size: 12px !important;
   height: 28px !important;
