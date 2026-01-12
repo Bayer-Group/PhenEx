@@ -16,8 +16,11 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
   const [showChatPopover, setShowChatPopover] = useState(false);
   const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
   const [showPlayTooltip, setShowPlayTooltip] = useState(false);
+  const [showIssuesToolip, setShowIssuesToolip] = useState(false);
+  const [showChatTooltip, setShowChatTooltip] = useState(false);
   const chatButtonRef = useRef<HTMLButtonElement>(null);
   const playButtonRef = useRef<HTMLButtonElement>(null);
+  const issuesLabelRef = useRef<HTMLSpanElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
 
   const handleChatButtonClick = (event: React.MouseEvent) => {
@@ -40,7 +43,14 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>
       <div className={styles.actionButtons}>
-                <span className={styles.issuesLabel}>27</span>
+                <span 
+          ref={issuesLabelRef}
+          className={styles.issuesLabel}
+          onMouseEnter={() => setShowIssuesToolip(true)}
+          onMouseLeave={() => setShowIssuesToolip(false)}
+        >
+          27
+        </span>
 
         <button 
           ref={playButtonRef}
@@ -54,16 +64,32 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
           ref={chatButtonRef}
           className={styles.actionButton}
           onClick={handleChatButtonClick}
+          onMouseEnter={() => setShowChatTooltip(true)}
+          onMouseLeave={() => setShowChatTooltip(false)}
         >
           <img src={birdIcon} alt="PhenEx" className={styles.birdIcon} />
         </button>
       </div>
       
       <PhenExNavBarTooltip
+        isVisible={showIssuesToolip}
+        anchorElement={issuesLabelRef.current}
+        label="View Issues"
+      />
+      
+      <PhenExNavBarTooltip
         isVisible={showPlayTooltip}
         anchorElement={playButtonRef.current}
         label="Execute cohort"
       />
+      
+      <PhenExNavBarTooltip
+        isVisible={showChatTooltip}
+        anchorElement={chatButtonRef.current}
+        label="Open chat"
+      />
+
+      
       
       {showChatPopover && (
         <DraggablePositionedPortal 
