@@ -34,9 +34,6 @@
 }
 
 .popover {
-  position: absolute;
-  right: var(--issue_popover_margin);
-  bottom: 0px;
   background-color: var(--color_translucent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -123,7 +120,6 @@
   height: 100% !important;
   position: relative !important;
   right: auto !important;
-  bottom: auto !important;
   top: auto !important;
   left: auto !important;
   display: flex;
