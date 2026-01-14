@@ -7,7 +7,8 @@
   color: white;
   white-space: nowrap;
   pointer-events: none;
-  
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
   /* Animation */
   animation: tooltipFadeIn 0.2s ease-out;
 }

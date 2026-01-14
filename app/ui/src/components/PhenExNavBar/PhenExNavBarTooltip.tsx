@@ -26,7 +26,7 @@ export const PhenExNavBarTooltip: React.FC<PhenExNavBarTooltipProps> = ({
       position: 'fixed' as const,
       left: `${rect.left + rect.width / 2}px`,
       transform: 'translateX(-50%)',
-      bottom: `${window.innerHeight - rect.top + 10}px`, // 10px gap above the target
+      bottom: `${window.innerHeight - rect.top + 15}px`, // 10px gap above the target
     };
   };
 

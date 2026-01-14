@@ -96,7 +96,7 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
         <DraggablePositionedPortal 
           triggerRef={chatButtonRef} 
           position="below" 
-          offsetY={0} 
+          offsetY={-100} 
           alignment="right"
           resetToPositioned={resetPortalToPositioned}
           onClose={closeChatPopover}
