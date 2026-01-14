@@ -1123,11 +1123,14 @@ export class CohortDataService {
         this._cohort_data.is_provisional = this._cohort_data.is_provisional === true;
       }
     }
-    
+    console.log('Cohort data updated from chat response:', this._cohort_data);
+    this.ensureEffectiveTypes(); // Ensure AI-generated phenotypes have effective_type for proper coloring
     this.sortPhenotypes();
     // No longer split phenotypes by type - backend expects phenotypes array only
     // this._cohort_data.name = this._cohort_name;
     this._table_data = this.tableDataFromCohortData();
+    console.log('Cohort data updated from chat response: after setting table data', this._table_data);
+
     this.notifyListeners();
   }
 

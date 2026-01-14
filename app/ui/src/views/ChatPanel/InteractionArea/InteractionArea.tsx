@@ -97,9 +97,12 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
 
   // Focus on mount/first render
   useEffect(() => {
-    if (textBoxRef.current) {
-      textBoxRef.current.focus();
-    }
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      if (textBoxRef.current) {
+        textBoxRef.current.focus();
+      }
+    });
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
