@@ -45,6 +45,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
     });
     const selectedNodesRef = useRef<Set<any>>(new Set());
     const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const editingStartedRef = useRef<boolean>(false);
 
     // Default scrollbar settings
     const verticalConfig = {
@@ -309,6 +310,21 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       };
     }, []);
 
+    // Track when cell editing starts to preserve selection
+    const handleCellEditingStarted = React.useCallback((event: any) => {
+      editingStartedRef.current = true;
+      
+      // Reset flag after a short delay
+      setTimeout(() => {
+        editingStartedRef.current = false;
+      }, 100);
+      
+      // Call parent's handler if provided
+      if (agGridProps.onCellEditingStarted) {
+        agGridProps.onCellEditingStarted(event);
+      }
+    }, [agGridProps.onCellEditingStarted]);
+
     // Custom row click handler to toggle selection on already-selected rows
     const handleRowClicked = React.useCallback((event: RowClickedEvent) => {
       const node = event.node;
@@ -323,7 +339,8 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       
       // Use a small timeout to let AG Grid finish its selection processing
       clickTimeoutRef.current = setTimeout(() => {
-        if (wasAlreadySelected && node.isSelected()) {
+        // Don't change selection if cell editing was triggered
+        if (!editingStartedRef.current && wasAlreadySelected && node.isSelected()) {
           // Was selected before and still selected after - toggle it off
           node.setSelected(false);
         }
@@ -392,6 +409,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
             onRowClicked={handleRowClicked}
             onSelectionChanged={handleSelectionChanged}
             onCellContextMenu={handleCellContextMenu}
+            onCellEditingStarted={handleCellEditingStarted}
             suppressContextMenu={enableRightClickMenu}
           />
           
