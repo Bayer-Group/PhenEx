@@ -8,18 +8,20 @@
   --button-color-inactive: #ebebebea;
   --button-color-hover: #d0d0d0ea;
   --item-color-default: transparent;
-  --item-radius: 8px;
-  --item-font-size: 14px;
-  --item-font-family: "IBMPlexSans-bold";
+  --item-radius: 3px;
+  --item-font-family: "IBMPlexSans-regular";
   --item-font-color: var(--color-accent-bright);
-  --item-border-default: 1px solid var(--line-color);
+  --item-border-default: none !important;
   --item-margin-top: 5px;
-  --padding_horizontal_item: 8px;
-  --padding_vertical_item: 4px;
+  --item-margin-horizontal: 5px;
+
+  --padding_horizontal_item: 5px;
+  --padding_vertical_item: 2px;
 
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;/*#faf1e5;*/
+  --background_color_focus: #000000d9;
   --background-color-content: white;
   --border: 1px solid var(--line-color);
   --border-radius: 8px;
@@ -27,7 +29,7 @@
   --table-margin: 0px;
   --background-color-deeper: hsl(0, 0%, 80%);
   --background-color-deeper-text: white;
-  --type-label-indent: 5px;
+  --type-label-indent: 0px;
   /* --phenex-blue: #11b4d9;
   --phenex-green: #babf21;
   --phenex-coral: #f24f13;
@@ -55,6 +57,9 @@
   --color-accent-hover: rgb(240, 240, 240);
 
   /* --color-accent-bright: hsl(24, 90%, 60%); */
+  --color_accent_blue: hsl(204, 98%, 50%);
+  --color_accent_dark:  hsl(0, 40%, 5%);
+
   --color_accent_orange: hsl(14, 100%, 63%); /* ff6e42*/
   --color-accent-bright: #413346;
   --phenex-dark: hsl(0, 40%, 5%);
@@ -94,18 +99,30 @@
   --button-font-family-hover: 'IBMPlexSans-regular';
 
   --color_inclusion: #1A4225; /*79b239;*/
-  --color_exclusion: #C22D4E;
+  /* --color_exclusion: #6c0118; */
+  --color_exclusion: #4c0011;
+
   --color_baseline: #27607c;
   --color_outcome: var(--color-accent-bright);
   --color_entry: #1B384D;
   --color_component: gray;
 
-  --color_inclusion_dim: #1A422533;
-  --color_exclusion_dim: #C22D4E33;
-  --color_baseline_dim: #27607c33;
-  --color_outcome_dim: #41334633;
-  --color_entry_dim: #1B384D33;
+  --color_inclusion_dim: #1A422525;
+  /* --color_exclusion_dim: #C22D4E33; */
+  --color_exclusion_dim: #4c001125;
+  --color_baseline_dim: #27607c25;
+  --color_outcome_dim: #41334625;
+  --color_entry_dim: #1B384D25;
   --color_component_dim: gray;
+  --font_size_pagetitle:32px;
+  --font_size_breadcrumb:20px;
+  --font_size_phenotypename:18px;
+  --font_size_infotext:12px;
+  --font_size_items:16px;
+  --font_size_mid_phenotype_info:16px;
+
+  --item-font-size: var(--font_size_items);
+
 }
 
 .rag-blue-outer {

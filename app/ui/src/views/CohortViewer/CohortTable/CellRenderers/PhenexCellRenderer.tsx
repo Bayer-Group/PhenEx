@@ -13,8 +13,8 @@ export const getAlphaForLevel = (hierarchicalIndex: string | undefined): string 
   if (!hierarchicalIndex) return '33'; // Default dim alpha (hex: 33 ≈ 0.2)
   const depth = hierarchicalIndex.split('.').length;
   // Level 1: 33 (0.2), Level 1.1: 20 (0.125), Level 1.1.1: 10 (0.06)
-  if (depth === 1) return '33';
-  if (depth === 2) return '20';
+  if (depth === 1) return '25';
+  if (depth === 2) return '15';
   if (depth === 3) return '10';
   return '08'; // For deeper levels
 };
@@ -64,13 +64,14 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     onDelete: onDeleteProp,
   } = props;
 
-  // Default handlers if not provided - using dynamic imports to avoid circular dependencies
-  const handleEdit = onEditProp || (() => {
-    // // Lazy import to avoid circular dependency
-    // import('../../TwoPanelCohortViewer/TwoPanelCohortViewer').then(({ TwoPanelCohortViewerService }) => {
-    //   const cohortViewer = TwoPanelCohortViewerService.getInstance();
-    //   cohortViewer.displayExtraContent('phenotype' as any, props.data);
-    // });
+  // Default handlers if not provided
+  const handleEdit = (() => {
+    if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    props.api?.startEditingCell({
+      rowIndex: props.node.rowIndex,
+      colKey: props.column.getColId(),
+    });
   });
 
   const handleDelete = onDeleteProp || (() => {
@@ -114,16 +115,13 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   // Get dynamic background color with hierarchical alpha
   const backgroundColor = shouldColorBackground
-    ? (isMissing && props.data?.effective_type
-      ? `var(--color_${props.data.effective_type})`
-      : getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index))
+    ? getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index)
     : 'transparent';
-  const backgroundColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_color_block_dim`] || '') : '';
   const textColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_text_color`] || '') : '';
 
   // Get the border color CSS variable
   const borderColorVar = shouldColorBorder && props.data?.effective_type 
-    ? `var(--color_${props.data.effective_type})` 
+    ? `var(--color_${props.data.effective_type}_dim)` 
     : 'transparent';
 
   // Build border color object based on which borders are shown
@@ -138,18 +136,18 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const combinedStyle: React.CSSProperties = {
     ...containerStyle,
     ...borderColors,
-    ...(backgroundColor && !isMissing ? { backgroundColor } : {}),
+    ...(backgroundColor ? { backgroundColor } : {}),
   };
 
   const renderButtons = () =>{
     return (
         <div className={styles.buttonContainer}>
-          <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
+          {/* <button className={styles.deleteButton} onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
             <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="currentColor">
               <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
             </svg>
-          </button>
-          <button className={`${styles.editButton} ${typeStyles[`${props.data.effective_type}_color_block`]}`} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
+          </button> */}
+          <button className={`${styles.editButton} ${typeStyles[`${props.data.effective_type}_text_color`]}`} onClick={(e) => { e.stopPropagation(); handleEdit(); }}>
             Edit
           </button>
 
@@ -159,7 +157,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <div
-      className={`${styles.containerStyle} ${backgroundColorClass} ${props.node.isSelected() ? styles.selected : ''}`}
+      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''}`}
       onClick={() => {
         if (props.value === 'missing') {
           props.api?.startEditingCell({

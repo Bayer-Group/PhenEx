@@ -13,9 +13,10 @@ interface SmartBreadcrumbsProps {
   classNameSmartBreadcrumbsContainer?: string;
   classNameBreadcrumbItem?: string;
   classNameBreadcrumbLastItem?: string;
+  compact?: boolean;
 }
 
-export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem, classNameSmartBreadcrumbsContainer, classNameBreadcrumbItem, classNameBreadcrumbLastItem }) => {
+export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastItem, classNameSmartBreadcrumbsContainer, classNameBreadcrumbItem, classNameBreadcrumbLastItem, compact = false }) => {
   const lastItemRef = useRef<HTMLDivElement>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editorPosition, setEditorPosition] = useState({ x: 0, y: 0 });
@@ -96,34 +97,63 @@ export const SmartBreadcrumbs: FC<SmartBreadcrumbsProps> = ({ items, onEditLastI
 
   return (
     <>
-      <div className={`${styles.container} ${classNameSmartBreadcrumbsContainer}`}>
-        {/* Top section: all items except the last */}
-        <div className={styles.topSection}>
-          {allButLast.map((item, index) => (
-            <div key={index} className={styles.itemWrapper}>
-              <div
-                className={`${styles.item} ${styles.regularItem} ${classNameBreadcrumbItem}`}
-                onClick={item.onClick}
-              >
-                {item.displayName}
+      <div className={`${styles.container} ${compact ? styles.compactContainer : ''} ${classNameSmartBreadcrumbsContainer}`}>
+        {compact ? (
+          // Compact mode: single line with all items
+          <div className={styles.compactSection}>
+            {allButLast.map((item, index) => (
+              <div key={index} className={styles.itemWrapper}>
+                <div
+                  className={`${styles.item} ${styles.regularItem} ${classNameBreadcrumbItem}`}
+                  onClick={item.onClick}
+                >
+                  {item.displayName}
+                </div>
+                <div className={styles.separator}>/</div>
               </div>
-              <div className={styles.separator}>/</div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Bottom section: the last item */}
-        <div className={styles.bottomSection}>
-          <div className={styles.itemWrapper}>
-            <div
-              ref={lastItemRef}
-              className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbLastItem}`}
-              onClick={handleLastItemClick}
-            >
-              {lastItem.displayName}
+            ))}
+            <div className={styles.itemWrapper}>
+              <div
+                ref={lastItemRef}
+                className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbLastItem}`}
+                onClick={handleLastItemClick}
+              >
+                {lastItem.displayName}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // Normal mode: split layout
+          <>
+            {/* Top section: all items except the last */}
+            <div className={styles.topSection}>
+              {allButLast.map((item, index) => (
+                <div key={index} className={styles.itemWrapper}>
+                  <div
+                    className={`${styles.item} ${styles.regularItem} ${classNameBreadcrumbItem}`}
+                    onClick={item.onClick}
+                  >
+                    {item.displayName}
+                  </div>
+                  <div className={styles.separator}>/</div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Bottom section: the last item */}
+            <div className={styles.bottomSection}>
+              <div className={styles.itemWrapper}>
+                <div
+                  ref={lastItemRef}
+                  className={`${styles.item} ${styles.lastItem} ${classNameBreadcrumbLastItem}`}
+                  onClick={handleLastItemClick}
+                >
+                  {lastItem.displayName}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
       
       {showEditor && (

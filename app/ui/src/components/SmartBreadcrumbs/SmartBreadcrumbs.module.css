@@ -4,10 +4,22 @@
   width: 100%;
 }
 
-.topSection {
+.compactContainer {
+  flex-direction: row;
+}
+
+.compactSection {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.topSection {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-wrap: wrap;
   width: 100%;
   color: var(--color-accent-bright);
@@ -28,7 +40,7 @@
 }
 
 .item {
-  padding: 4px 8px;
+  padding: 4px 2px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -49,6 +61,7 @@
 .lastItem {
   color: var(--color-accent-bright);
   font-family: "IBMPlexSans-bold";
+  padding-left:4px;
 }
 
 .lastItem:hover {
@@ -57,6 +70,8 @@
 
 .separator {
   color: #999;
-  font-size: 14px;
+  font-size: 10px;
+  padding:0px;
+  font-family:"IBMPlexSans-bold" !important;
   user-select: none;
 }

@@ -103,6 +103,46 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
       dataService.current.selectNode(studyId);
     }
   }, [studyId, cohortId, location.pathname]);
+  
+  // Subscribe to MainViewService to sync selection when navigation happens
+  useEffect(() => {
+    const mainViewService = MainViewService.getInstance();
+    
+    const handleNavigation = (viewInfo: any) => {
+      console.log('📍 Left panel received navigation event:', viewInfo);
+      
+      // Extract the ID from viewInfo.data to determine what should be selected
+      if (viewInfo.data) {
+        let itemIdToSelect: string | null = null;
+        
+        // For cohort views, select the cohort
+        if (viewInfo.viewType === 'sdef' || viewInfo.viewType === 'psdef' || viewInfo.viewType === 'newCohort') {
+          itemIdToSelect = viewInfo.data.cohortId || viewInfo.data.id;
+        }
+        // For study views, select the study
+        else if (viewInfo.viewType === 'studyViewer' || viewInfo.viewType === 'newStudy') {
+          itemIdToSelect = viewInfo.data.studyId || viewInfo.data.id;
+        }
+        
+        if (itemIdToSelect) {
+          console.log('📍 Selecting item in left panel:', itemIdToSelect);
+          setSelectedItems([itemIdToSelect]);
+          setFocusedItem(itemIdToSelect);
+          
+          // Expand parent if needed - use functional update to access current state
+          setExpandedItems(prevExpanded => {
+            if (!prevExpanded.includes(itemIdToSelect)) {
+              return [...prevExpanded, itemIdToSelect];
+            }
+            return prevExpanded;
+          });
+        }
+      }
+    };
+    
+    mainViewService.addListener(handleNavigation);
+    return () => mainViewService.removeListener(handleNavigation);
+  }, []); // Empty deps - listener registered once
 
   const items = useMemo(() => {
     const converted = convertToComplexTree(treeData);
@@ -389,7 +429,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             onSelectItems={(itemIds) => {
               // Don't handle selection if it's from expand/collapse or drag action
               if (isExpandCollapseAction.current || isDragging.current) {
-                setSelectedItems(itemIds); // Still update selected items visually
+                // Don't change selection during expand/collapse or drag
                 return;
               }
               
@@ -445,6 +485,11 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                       console.log("NAVIGATING TO:", node.viewInfo);
                       mainViewService.navigateTo(node.viewInfo);
                     }
+                  }
+                  
+                  // If it's a folder, expand it to show contents
+                  if (item.isFolder && !expandedItems.includes(itemId)) {
+                    setExpandedItems([...expandedItems, itemId]);
                   }
                 }
               }

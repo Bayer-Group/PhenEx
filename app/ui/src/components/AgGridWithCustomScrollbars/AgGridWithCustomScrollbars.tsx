@@ -1,6 +1,8 @@
-import React, { forwardRef, useRef, useEffect, useState } from 'react';
+import React, { forwardRef, useRef, useEffect, useState, useImperativeHandle } from 'react';
 import { AgGridReact, AgGridReactProps } from '@ag-grid-community/react';
+import { CellContextMenuEvent, RowClickedEvent } from '@ag-grid-community/core';
 import { AGGridCustomScrollbar } from '../CustomScrollbar/AGGridCustomScrollbar';
+import { RightClickMenuProvider, useRightClickMenu } from '../RightClickMenu';
 import styles from './AgGridWithCustomScrollbars.module.css';
 
 export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
@@ -27,18 +29,22 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
   hideScrollbars?: boolean; // External control to hide all scrollbars
   hideVerticalScrollbar?: boolean; // External control to hide only vertical scrollbar
   hideHorizontalScrollbar?: boolean; // External control to hide only horizontal scrollbar
+  enableRightClickMenu?: boolean; // Enable right-click menu support (default: true)
+  bottomPadding?: number; // Bottom padding in pixels (default: 0)
 }
 
-export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, className, ...agGridProps }, ref) => {
+const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
+  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, bottomPadding = 0, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
-    const [isPanDragging, setIsPanDragging] = useState(false);
+    const agGridRef = useRef<any>(null);    const { showMenu } = enableRightClickMenu ? useRightClickMenu() : { showMenu: () => {} };    const [isPanDragging, setIsPanDragging] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
       x: 0, 
       y: 0, 
       scrollTop: 0, 
       scrollLeft: 0 
     });
+    const selectedNodesRef = useRef<Set<any>>(new Set());
+    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Default scrollbar settings
     const verticalConfig = {
@@ -75,6 +81,102 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       return viewport as HTMLElement;
     };
 
+    // Expose scroll control methods to parent components
+    useImperativeHandle(ref, () => ({
+      // Pass through AG Grid API with getters to ensure latest values
+      get api() {
+        return agGridRef.current?.api;
+      },
+      get columnApi() {
+        return agGridRef.current?.columnApi;
+      },
+      get eGridDiv() {
+        return gridContainerRef.current;
+      },
+      
+      // Scroll by column (left/right)
+      scrollByColumn: (direction: 'left' | 'right') => {
+        const viewport = getScrollableElement();
+        const api = agGridRef.current?.api;
+        
+        if (!viewport || !api) return;
+        
+        // Get all displayed columns and filter out pinned columns
+        const allColumns = api.getAllDisplayedColumns();
+        if (!allColumns || allColumns.length === 0) return;
+        
+        // Filter to only unpinned (scrollable) columns
+        const columns = allColumns.filter(col => !col.getPinned());
+        if (columns.length === 0) return;
+        
+        // Build array of column positions (cumulative widths)
+        const columnPositions: number[] = [];
+        let cumulativeWidth = 0;
+        
+        columns.forEach((col) => {
+          columnPositions.push(cumulativeWidth);
+          cumulativeWidth += col.getActualWidth();
+        });
+        
+        const currentScroll = viewport.scrollLeft;
+        
+        // Find the leftmost visible column (the one at or just past currentScroll)
+        let targetColumnIndex = 0;
+        for (let i = 0; i < columnPositions.length; i++) {
+          if (columnPositions[i] >= currentScroll) {
+            targetColumnIndex = i;
+            break;
+          }
+          if (i === columnPositions.length - 1) {
+            targetColumnIndex = i;
+          } else if (columnPositions[i] < currentScroll && columnPositions[i + 1] > currentScroll) {
+            targetColumnIndex = i + 1;
+            break;
+          }
+        }
+        
+        // Calculate target scroll position
+        let newScroll;
+        if (direction === 'left') {
+          // Scroll to previous column
+          const prevIndex = Math.max(0, targetColumnIndex - 1);
+          newScroll = columnPositions[prevIndex];
+        } else {
+          // Scroll to next column
+          const nextIndex = Math.min(columns.length - 1, targetColumnIndex + 1);
+          newScroll = columnPositions[nextIndex];
+        }
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        newScroll = Math.max(0, Math.min(maxScroll, newScroll));
+        
+        console.log('Current column index:', targetColumnIndex, 'New scroll:', newScroll);
+        
+        // Direct scroll assignment
+        viewport.scrollLeft = newScroll;
+      },
+      
+      // Scroll to percentage (0-100)
+      scrollToPercentage: (percentage: number) => {
+        const viewport = getScrollableElement();
+        if (!viewport) return;
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        viewport.scrollLeft = (percentage / 100) * maxScroll;
+      },
+      
+      // Get current scroll percentage
+      getScrollPercentage: () => {
+        const viewport = getScrollableElement();
+        if (!viewport) return 0;
+        
+        const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+        if (maxScroll === 0) return 0;
+        
+        return (viewport.scrollLeft / maxScroll) * 100;
+      }
+    }), []);
+
     // Pan drag handlers for the entire viewport
     const handlePanMouseDown = (e: React.MouseEvent) => {
       // Only handle left mouse button
@@ -105,10 +207,32 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       });
     };
 
-    // Debug effect to check scrollbar hiding
+    // Apply bottom padding to create scrollable space at bottom
     useEffect(() => {
-      // Initial setup for hiding AG Grid scrollbars
-    }, [verticalConfig.enabled, horizontalConfig.enabled]);
+      if (bottomPadding <= 0 || !gridContainerRef.current) return;
+
+      // Wait for grid to be ready, then apply padding
+      const applyPadding = () => {
+        const bodyViewport = gridContainerRef.current?.querySelector('.ag-body-viewport') as HTMLElement;
+        if (bodyViewport) {
+          bodyViewport.style.paddingBottom = `${bottomPadding}px`;
+          bodyViewport.style.boxSizing = 'border-box';
+        }
+      };
+
+      // Try immediately and also after a short delay to ensure grid is rendered
+      applyPadding();
+      const timer = setTimeout(applyPadding, 100);
+
+      return () => {
+        clearTimeout(timer);
+        const bodyViewport = gridContainerRef.current?.querySelector('.ag-body-viewport') as HTMLElement;
+        if (bodyViewport) {
+          bodyViewport.style.paddingBottom = '';
+          bodyViewport.style.boxSizing = '';
+        }
+      };
+    }, [bottomPadding]);
 
     // Handle pan dragging
     useEffect(() => {
@@ -146,8 +270,112 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+      };    }, [isPanDragging, panDragStart]);
+    
+    // Cleanup timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (clickTimeoutRef.current) {
+          clearTimeout(clickTimeoutRef.current);
+        }
       };
-    }, [isPanDragging, panDragStart]);
+    }, []);
+
+    // Close any open cell editors when clicking outside the grid or on empty space
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const api = agGridRef.current?.api;
+        if (!api || !gridContainerRef.current) return;
+
+        const target = event.target as HTMLElement;
+        
+        // Check if click is outside the grid container
+        if (!gridContainerRef.current.contains(target)) {
+          api.stopEditing();
+          return;
+        }
+        
+        // Check if click is inside grid but not on a row/cell (empty space)
+        const isOnRow = target.closest('.ag-row');
+        const isOnCell = target.closest('.ag-cell');
+        if (!isOnRow && !isOnCell) {
+          api.stopEditing();
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, []);
+
+    // Custom row click handler to toggle selection on already-selected rows
+    const handleRowClicked = React.useCallback((event: RowClickedEvent) => {
+      const node = event.node;
+      
+      // Clear any pending timeout
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      
+      // Check if this node was already selected BEFORE this click
+      const wasAlreadySelected = selectedNodesRef.current.has(node);
+      
+      // Use a small timeout to let AG Grid finish its selection processing
+      clickTimeoutRef.current = setTimeout(() => {
+        if (wasAlreadySelected && node.isSelected()) {
+          // Was selected before and still selected after - toggle it off
+          node.setSelected(false);
+        }
+        
+        // Call parent's handler if provided
+        if (agGridProps.onRowClicked) {
+          agGridProps.onRowClicked(event);
+        }
+      }, 0);
+    }, [agGridProps.onRowClicked]);
+    
+    // Track selection changes to know what's currently selected
+    const handleSelectionChanged = React.useCallback(() => {
+      const api = agGridRef.current?.api;
+      if (!api) return;
+      
+      const selectedNodes = api.getSelectedNodes();
+      selectedNodesRef.current = new Set(selectedNodes);
+      
+      // Call parent's handler if provided
+      if (agGridProps.onSelectionChanged) {
+        agGridProps.onSelectionChanged();
+      }
+    }, [agGridProps.onSelectionChanged]);
+
+    // Enhanced onCellContextMenu handler
+    const handleCellContextMenu = React.useCallback((params: CellContextMenuEvent) => {
+      if (enableRightClickMenu && params.event) {
+        const event = params.event as MouseEvent;
+        event.preventDefault();
+        
+        // Call parent's handler if provided
+        if (agGridProps.onCellContextMenu) {
+          agGridProps.onCellContextMenu(params);
+        } else {
+          // Get column name and cell value
+          const columnName = params.column?.getColDef()?.headerName || params.column?.getColId() || 'Unknown';
+          const cellValue = params.value !== undefined && params.value !== null ? String(params.value) : '(empty)';
+          
+          // Default menu with column name and data
+          showMenu({ x: event.clientX, y: event.clientY }, [
+            { label: `Column: ${columnName}`, onClick: () => {}, disabled: true },
+            { label: `Value: ${cellValue}`, onClick: () => {}, disabled: true },
+            { divider: true },
+            { label: 'Copy', onClick: () => console.log('Copy', params.value) },
+            { label: 'Copy Row', onClick: () => console.log('Copy row', params.data) },
+            { divider: true },
+            { label: 'Export', onClick: () => console.log('Export') },
+          ]);
+        }
+      }
+    }, [agGridProps.onCellContextMenu, enableRightClickMenu, showMenu]);
 
     return (
       <div className={`${styles.gridWrapper} ${className || ''}`}>
@@ -155,11 +383,16 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
           ref={gridContainerRef} 
           className={styles.gridContainer}
           onMouseDown={handlePanMouseDown}
+          onContextMenu={(e) => enableRightClickMenu && e.preventDefault()}
           style={{ cursor: isPanDragging ? 'grabbing' : 'grab' }}
         >
           <AgGridReact
-            ref={ref}
+            ref={agGridRef}
             {...agGridProps}
+            onRowClicked={handleRowClicked}
+            onSelectionChanged={handleSelectionChanged}
+            onCellContextMenu={handleCellContextMenu}
+            suppressContextMenu={enableRightClickMenu}
           />
           
           {/* Custom Vertical Scrollbar */}
@@ -191,6 +424,21 @@ export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScroll
         </div>
       </div>
     );
+  }
+);
+
+GridInner.displayName = 'GridInner';
+
+export const AgGridWithCustomScrollbars = forwardRef<any, AgGridWithCustomScrollbarsProps>(
+  (props, ref) => {
+    if (props.enableRightClickMenu !== false) {
+      return (
+        <RightClickMenuProvider>
+          <GridInner {...props} ref={ref} />
+        </RightClickMenuProvider>
+      );
+    }
+    return <GridInner {...props} ref={ref} />;
   }
 );
 

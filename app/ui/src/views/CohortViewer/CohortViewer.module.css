@@ -19,7 +19,9 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding-bottom: 20px;
+  padding-bottom: 0px;
+  padding-top:10px;
+  padding-left:20px;
 }
 
 .bottomSection {
@@ -98,18 +100,19 @@
 }
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
-  margin-top: 10px;
+  margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
+  display: flex;
+  align-items: baseline;
 }
 .breadcrumbItem{
   font-size: var(--font_size_breadcrumb) !important;
-  line-height: 10px;
+  line-height: 28px;
 }
 
 .breadcrumbLastItem{ /* this is the main title */
-  font-size: var(--font_size_pagetitle) !important;
-  font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-regular' !important;
 }
 
 

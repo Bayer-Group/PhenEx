@@ -162,7 +162,9 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
       >
-        <img src={LeftPanelIcon} alt="Toggle left panel" className={styles.arrow} />
+        {/* <img src={LeftPanelIcon} alt="Toggle left panel" className={styles.arrow} /> */}
+                {'—'}
+
       </div>
     );
   };

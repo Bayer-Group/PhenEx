@@ -1,7 +1,7 @@
 .manualContent {
-  padding-left: 10px;
+  /* padding-left: 10px;
   padding-right: 10px;
-  padding-top: 10px;
+  padding-top: 10px; */
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -10,6 +10,8 @@
   max-height: 260px; */
   /* overflow-y: auto; */
   height: 100%;
+  color: white;
+
 }
 
 .constantsContent {
@@ -17,20 +19,32 @@
 }
 
 .input {
-  padding: 8px;
-  border: 1px solid #ddd;
+  padding: 4px 8px;
+  border: 1px solid white;
+  color: white;
+  background-color: transparent;
   border-radius: 4px;
-  width: 100%;
+  width: 100px;
   box-sizing: border-box;
-}
+  font-size: var(--item-font-size);
 
+}
+.operatorSelect{
+
+}
 .select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
+  padding: 4px 8px;
+  border: 1px solid white;
   border-radius: 4px;
-  background-color: white;
+  background-color: transparent;
   cursor: pointer;
+  color: white;
+  font-size: var(--item-font-size);
+
+}
+.select:focus{
+  outline: none;
+
 }
 
 .select:hover {
@@ -41,28 +55,39 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
-  border: 2px solid #ddd;
+  padding: 2px;
+  /* border: 2px solid #ddd; */
   border-radius: 12px;
-  background-color: #f9f9f9;
+  background-color: transparent;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
 .timerangefilter:hover {
   /* border-color: var(--color-accent); */
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .filterSection {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .filterSection label {
   min-width: 30px;
+}
+
+.fieldLabel {
+  width: 100%;
+  color: rgb(209, 209, 209);
+  font-size: var(--item-font-size);
+}
+
+.fieldInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .addButton {

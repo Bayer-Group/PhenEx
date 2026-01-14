@@ -256,3 +256,8 @@
   border: 1px solid var(--color_component) !important;
   color:var(--color_component) !important;
 }
+
+.color_selected{
+  background-color: red !important;
+  color: white !important;
+}

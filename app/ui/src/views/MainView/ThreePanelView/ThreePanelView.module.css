@@ -75,6 +75,7 @@
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
+  transform: rotate(90deg);
 }
 
 .arrow {

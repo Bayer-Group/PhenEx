@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useEffect } from 'react';
 import { FilterType, BaseCategoricalFilter } from './categoricalFilterEditor/types';
 import { PhenexCellEditor, PhenexCellEditorProps } from './PhenexCellEditor';
 import { SimplifiedSingleCategoricalFilterEditor } from './categoricalFilterEditor/SimplifiedSingleCategoricalFilterEditor';
@@ -11,9 +11,19 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
  * Integrates with PhenexCellEditor to show SimplifiedSingleCategoricalFilterEditor
  * when a filter item is selected for editing.
  */
-export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps>(
+export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps>(  
   (props, ref) => {
     const initialValue = props.value as FilterType | undefined;
+    
+    // Read clicked index from node.data (set by renderer)
+    const clickedItemIndex = props.data?._clickedItemIndex;
+    
+    // Clean up after reading
+    if (clickedItemIndex !== undefined && props.data) {
+      delete props.data._clickedItemIndex;
+    }
+    
+    console.log('CategoricalFilterCellEditor clickedItemIndex:', clickedItemIndex);
 
     // Type guard to identify leaf nodes (BaseCategoricalFilter)
     const isLeafNode = (value: any): value is BaseCategoricalFilter => {
@@ -35,11 +45,13 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
       selectedItemIndex,
       editingItem,
       filterTree,
+      flattenedItems,
       handleItemSelect,
       handleOperatorToggle,
       handleAddFilter,
       handleItemChange,
       handleEditingDone,
+      handleDelete,
       isEditing,
     } = useLogicalFilterEditor<BaseCategoricalFilter>({
       initialValue,
@@ -48,12 +60,29 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
       isLeafNode,
     });
 
-    // Expose AG Grid cell editor interface
+    // Auto-select the clicked filter item when editor opens
+    useEffect(() => {
+      if (!isEditing && flattenedItems.length > 0) {
+        let itemToSelect = null;
+        
+        if (clickedItemIndex !== undefined) {
+          itemToSelect = flattenedItems.find(
+            item => item.type === 'filter' && item.index === clickedItemIndex
+          );
+        }
+        
+        if (!itemToSelect) {
+          itemToSelect = flattenedItems.find(item => item.type === 'filter');
+        }
+        
+        if (itemToSelect) {
+          handleItemSelect(itemToSelect);
+        }
+      }
+    }, []);
+
     useImperativeHandle(ref, () => ({
       getValue: () => filterTree,
-      afterGuiAttached: () => {
-        console.log('CategoricalFilterCellEditor attached');
-      },
     }));
 
     // Extract AG Grid-specific props and exclude our custom props to avoid conflicts
@@ -69,8 +98,10 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
         onEditingDone={handleEditingDone}
         onAddItem={() => handleAddFilter('AND')}
         onItemSelect={handleItemSelect}
+        onDelete={handleDelete}
         showAddButton={true}
         showComposerPanel={isEditing}
+        clickedItemIndex={clickedItemIndex}
         rendererProps={{
           onOperatorClick: handleOperatorToggle,
         }}

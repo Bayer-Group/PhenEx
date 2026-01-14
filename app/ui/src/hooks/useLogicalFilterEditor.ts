@@ -53,12 +53,13 @@ export interface UseLogicalFilterEditorReturn<T> {
   flattenedItems: FlattenedItem<T>[];
   
   // Actions
-  handleItemSelect: (item: FlattenedItem<T>) => void;
+  handleItemSelect: (item: FlattenedItem<T> | null) => void;
   handleOperatorToggle: (path: number[]) => void;
   handleAddFilter: (logicalOp: 'AND' | 'OR') => void;
   handleItemChange: (newItem: T) => void;
   handleDeleteItem: (path: number[]) => void;
   handleEditingDone: () => void;
+  handleDelete: () => void;
   
   // Computed
   isEditing: boolean;
@@ -201,8 +202,13 @@ export function useLogicalFilterEditor<T>({
   /**
    * Select an item for editing (only filters, not operators/parentheses)
    */
-  const handleItemSelect = useCallback((item: FlattenedItem<T>) => {
-    if (item.type === 'filter') {
+  const handleItemSelect = useCallback((item: FlattenedItem<T> | null) => {
+    if (item === null) {
+      // Clear selection
+      console.log('=== Clearing selection ===');
+      setSelectedItemIndex(undefined);
+      setEditingItem(null);
+    } else if (item.type === 'filter') {
       console.log('=== Filter selected for editing ===');
       console.log('Filter:', item.filter);
       console.log('Index:', item.index);
@@ -448,6 +454,26 @@ export function useLogicalFilterEditor<T>({
     setEditingItem(null);
   }, []);
 
+  /**
+   * Handle delete key press - deletes the currently selected item
+   */
+  const handleDelete = useCallback(() => {
+    if (selectedItemIndex === null) {
+      console.log('=== Delete pressed but no item selected ===');
+      return;
+    }
+
+    // Find the selected item in flattened items
+    const selectedItem = flattenedItems.find(item => item.index === selectedItemIndex);
+    if (!selectedItem || selectedItem.type !== 'filter') {
+      console.log('=== Delete pressed but selected item is not a filter ===');
+      return;
+    }
+
+    console.log('=== Deleting selected filter at path:', selectedItem.path);
+    handleDeleteItem(selectedItem.path);
+  }, [selectedItemIndex, flattenedItems, handleDeleteItem]);
+
   return {
     selectedItemIndex,
     editingItem,
@@ -459,6 +485,7 @@ export function useLogicalFilterEditor<T>({
     handleItemChange,
     handleDeleteItem,
     handleEditingDone,
+    handleDelete,
     isEditing: selectedItemIndex !== null && editingItem !== null,
   };
 }

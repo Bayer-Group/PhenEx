@@ -18,7 +18,6 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   if (props.data.class_name === 'LogicPhenotype') {
-    console.log('Rendering domain cell with LOGIC PHENOTYPE:', props);
   }
 
   if (props.value === undefined || props.value === null || props.value === 'missing') {

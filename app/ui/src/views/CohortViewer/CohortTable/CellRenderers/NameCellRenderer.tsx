@@ -3,9 +3,25 @@ import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import ArrowIcon from '../../../../assets/icons/arrow-up-right.svg';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
+
+/**
+ * Render the expand arrow icon with proper CSS states
+ * States: default, row hovered, self hovered
+ */
+const renderExpandArrow = (onClick?: (e: React.MouseEvent) => void, className?: string) => {
+  return (
+    <img
+      src={ArrowIcon}
+      alt="Expand"
+      className={`${styles.expandArrow} ${className || ''}`}
+      onClick={onClick}
+    />
+  );
+};
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const {
     colorBackground = true,
@@ -70,6 +86,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
     const isSelected = props.node.isSelected();
+    const isViewing = props.data?.isViewing || false; // TODO: determine viewing state from data service/MainViewService
     
     
     // Calculate indentation for component phenotypes based on their level
@@ -83,30 +100,30 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     };
 
     return (
-      <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${fontColor}`} style={getIndentationStyle()}>
-        {props.value}
-
-        <br></br>
-        <span className={styles.infotext} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-          
-          
-          <ReactMarkdown 
-              components={{
-                p: ({children}) => <p style={{
-                  marginTop: '5px', 
-                  padding: '0px', 
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  maxWidth: '100%'
-                }}>{children}</p>
-              }}
-            >
-              {props.data.description}
-            </ReactMarkdown>
-          
-          
+      <div className={styles.labelContainer} style={getIndentationStyle()}>
+        <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${isViewing ? styles.viewing : (!isSelected ? fontColor : '')}`}>
+          {props.value}
+          <span className={`${styles.infotext} ${fontColor}`} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            <ReactMarkdown 
+                components={{
+                  p: ({children}) => <p style={{
+                    marginTop: '0px', 
+                    padding: '0px', 
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    maxWidth: '100%'
+                  }}>{children}</p>
+                }}
+              >
+                {props.data.description}
+              </ReactMarkdown>
           </span>
+        </div>
+        {renderExpandArrow((e) => {
+          e.stopPropagation();
+          handleEdit();
+        }, isSelected ? styles.selected : undefined)}
       </div>
     );
   }
@@ -127,7 +144,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       {...props}
       colorBackground={shouldColorBackground}
       colorBorder={shouldColorBorder}
-      showButtons={true}
+      showButtons={false}
       onEdit={handleEdit}
       onDelete={handleDelete}
     >

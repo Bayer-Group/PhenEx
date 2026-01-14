@@ -5,7 +5,7 @@ import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor'
 export interface LogicalFilterRendererProps<T> {
   flattenedItems: FlattenedItem<T>[];
   renderFilter: (filter: T) => React.ReactNode;
-  onItemClick?: (item: FlattenedItem<T>) => void;
+  onItemClick?: (item: FlattenedItem<T>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
   selectedIndex?: number;
   filterClassName?: string; // CSS class for filter items
@@ -39,6 +39,7 @@ export function LogicalFilterRenderer<T>({
     return <div className={styles.empty}></div>;
   }
 
+  
   return (
     <div className={styles.container}>
       {flattenedItems.map((item) => {
@@ -51,9 +52,12 @@ export function LogicalFilterRenderer<T>({
               <div
                 key={`filter-${item.index}`}
                 className={classes}
+                data-item-index={item.index}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onItemClick?.(item);
+                  if (onItemClick) {
+                    onItemClick(item, item.index, e);
+                  }
                 }}
                 style={{ cursor: onItemClick ? 'pointer' : 'default' }}
               >

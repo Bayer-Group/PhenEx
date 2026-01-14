@@ -115,6 +115,7 @@ export class CohortDataService {
   }
 
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
+  private _showComponents: boolean = true;
 
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
@@ -124,9 +125,20 @@ export class CohortDataService {
       );
     }
 
-    // If components are included in the filter, we need hierarchical sorting
-    if (this._currentFilter.includes('component')) {
-      filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes(filteredPhenotypes);
+    // If _showComponents is true and components exist, include them hierarchically
+    if (this._showComponents) {
+      // Include component phenotypes in the result with hierarchical ordering
+      const allPhenotypes = this._cohort_data.phenotypes || [];
+      // Only include components whose effective_type matches the current filter
+      // This ensures we don't show components whose root parent is filtered out
+      const componentPhenotypes = allPhenotypes.filter((row: TableRow) => 
+        row.type === 'component' && 
+        row.effective_type && 
+        this._currentFilter.includes(row.effective_type)
+      );
+      if (componentPhenotypes.length > 0) {
+        filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes([...filteredPhenotypes, ...componentPhenotypes]);
+      }
     }
 
     // Add colorCellBackground property to enable background colors
@@ -385,6 +397,7 @@ export class CohortDataService {
     
     // Only notify grid listeners if visual refresh is needed
     if (refreshGrid) {
+      console.log("REFRESHING GRID");
       this.notifyListeners();
     }
   }
@@ -1153,6 +1166,16 @@ export class CohortDataService {
     this._currentFilter = Array.isArray(type) ? type : [type];
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
+  }
+
+  public toggleComponentPhenotypes(show: boolean): void {
+    this._showComponents = show;
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners(); // Refresh the grid
+  }
+
+  public getShowComponents(): boolean {
+    return this._showComponents;
   }
 
   public updateColumns(newColumns: ColumnDefinition[]): void {

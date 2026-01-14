@@ -1,0 +1,64 @@
+import React, { useState } from 'react';
+import styles from './PhenExNavBar.module.css';
+import { CohortNavBar } from './CohortNavBar';
+import { ActionNavBar } from './ActionNavBar';
+import { ViewNavBar } from './ViewNavBar';
+import { AddButtonNavBar } from './AddButtonNavBar';
+import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
+
+interface PhenExNavBarProps {
+  onSectionTabChange?: (index: number) => void;
+  dragHandleRef?: React.RefObject<HTMLDivElement>;
+  scrollPercentage?: number;
+  canScrollLeft?: boolean;
+  canScrollRight?: boolean;
+  onViewNavigationArrowClicked?: (direction: 'left' | 'right') => void;
+  onViewNavigationScroll?: (percentage: number) => void;
+  onViewNavigationVisibilityClicked?: () => void;
+}
+
+export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
+  onSectionTabChange,
+  dragHandleRef,
+  scrollPercentage,
+  canScrollLeft,
+  canScrollRight,
+  onViewNavigationArrowClicked,
+  onViewNavigationScroll,
+  onViewNavigationVisibilityClicked,
+}) => {
+  const heightNavBar = 44;
+  const [allHidden, setAllHidden] = useState(false);
+
+  const handleHideNavBar = () => {
+    setAllHidden(true);
+  };
+
+  const handleShowNavBar = () => {
+    setAllHidden(false);
+  };
+
+  return (
+    <NavBarMenuProvider>
+      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
+        <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
+        <AddButtonNavBar height={heightNavBar} />
+        <ViewNavBar
+          height={heightNavBar}
+          scrollPercentage={scrollPercentage}
+          canScrollLeft={canScrollLeft}
+          canScrollRight={canScrollRight}
+          onViewNavigationArrowClicked={onViewNavigationArrowClicked}
+          onViewNavigationScroll={onViewNavigationScroll}
+          onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
+        />
+        <ActionNavBar 
+          height={heightNavBar}
+          onHideNavBar={handleHideNavBar}
+          onShowNavBar={handleShowNavBar}
+        />
+
+      </div>
+    </NavBarMenuProvider>
+  );
+};

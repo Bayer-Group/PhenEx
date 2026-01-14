@@ -6,6 +6,7 @@ import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRen
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import type { ICellEditorParams } from 'ag-grid-community';
 import RowDragCellRenderer from '../CohortTable/CellRenderers/RowDragCellRenderer';
+import SelectionCellRenderer from '../CohortTable/CellRenderers/SelectionCellRenderer';
 
 import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
@@ -35,9 +36,19 @@ export const columnNameToApplicablePhenotypeMapping = {
 
 export const componentPhenotypeColumns: any[] = [
   {
+    field: 'selection',
+    headerName: '',
+    width: 30,
+    pinned: 'left',
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellRenderer: SelectionCellRenderer,
+  },
+  {
     field: 'rowDrag',
     headerName: '',
-    width: 60,
+    width: 30,
     pinned: 'left',
     rowDrag: true,
     resizable: false,
@@ -49,7 +60,9 @@ export const componentPhenotypeColumns: any[] = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 50,
+    filter: false,
+    suppressHeaderMenuButton: true,
     resizable: false,
     pinned: 'left',
     editable: params => {
@@ -86,9 +99,19 @@ export const componentPhenotypeColumns: any[] = [
 
 export const defaultColumns = [
   {
+    field: 'selection',
+    headerName: '',
+    width: 10,
+    pinned: 'left',
+    resizable: false,
+    filter: false,
+    suppressHeaderMenuButton: true,
+    cellRenderer: SelectionCellRenderer,
+  },
+  {
     field: 'rowDrag',
     headerName: '',
-    width: 60,
+    width: 30,
     pinned: 'left',
     rowDrag: true,
     resizable: false,
@@ -100,12 +123,14 @@ export const defaultColumns = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 40,
     resizable: false,
     pinned: 'left',
     editable: (params: any) => {
       return params.data.type != 'component';
     },
+    filter: false,
+    suppressHeaderMenuButton: true,
 
     cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
@@ -189,7 +214,7 @@ export const defaultColumns = [
   {
     field: 'codelist',
     headerName: 'Codelists',
-    width: 200,
+    width: 400,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
@@ -236,7 +261,7 @@ export const defaultColumns = [
   {
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
-    width: 200,
+    width: 300,
     editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
@@ -256,6 +281,7 @@ export const defaultColumns = [
       maxLength: 2000,
     },
   },
+
   // { field: 'date_range', headerName: 'Date range', width: 200, editable: true },
   {
     field: 'value_filter',
@@ -296,11 +322,26 @@ export const defaultColumns = [
   {
     field: 'return_date',
     headerName: 'Return Date',
-    width: 250,
+    width: 150,
     editable: true,
     cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,
     cellRenderer: PhenexCellRenderer,
+  },
+  {
+    field: 'expression',
+    headerName: 'Expression',
+    width: 500,
+    editable: true,
+    valueParser: (params: any) => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
+    cellEditor: LogicalExpressionCellEditor,
+    cellEditorPopup: true,
+    cellRenderer: LogicalExpressionCellRenderer,
   },
   {
     field: 'direction',
@@ -355,21 +396,6 @@ export const defaultColumns = [
     cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
     cellRenderer: ValueFilterCellRenderer,
-  },
-  {
-    field: 'expression',
-    headerName: 'Expression',
-    width: 250,
-    editable: true,
-    valueParser: (params: any) => {
-      if (params.newValue && typeof params.newValue === 'object') {
-        return params.newValue;
-      }
-      return params.oldValue;
-    },
-    cellEditor: LogicalExpressionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: LogicalExpressionCellRenderer,
   },
   {
     field: 'bins',

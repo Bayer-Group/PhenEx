@@ -30,7 +30,7 @@ export const RowDragCellRenderer: React.FC<RowDragCellRendererProps> = (props) =
 
   // Get the border color CSS variable for top border
   const borderColorVar = shouldColorBorder && props.data?.effective_type 
-    ? `var(--color_${props.data.effective_type})` 
+    ? `var(--color_${props.data.effective_type}_dim)` 
     : 'transparent';
 
   const containerStyle: React.CSSProperties = {

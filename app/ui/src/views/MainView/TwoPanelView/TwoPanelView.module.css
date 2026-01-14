@@ -117,26 +117,25 @@
 }
 
 .collapseButton {
-  background-color: var(--background-color) !important;
   color: var(--color-accent-bright);
 
-  border: 1px solid var(--line-color);
-  border-right: none !important;
-  border-radius: 12px 0px 0px 12px;
+  border-radius: 12px;
   cursor: pointer;
   z-index: 1;
   background-color: transparent;
-  /* display: flex; */
+  display: flex;
   position: absolute;
-  top: 55px;
-  left: -48px;
-  width: 48px;
-  padding: 0px 0px 0px 20px;
+  top: 5px;
+  right: 20px;
+  /* width: 48px; */
+  padding: 3px 10px 3px 8px;
   font-family: 'SNPro-black'!important;
   box-sizing: border-box;
 
   align-items: center;
-  font-size: 28px !important;
+  justify-content: center;
+  text-align: center;
+  font-size: 24px !important;
   z-index: 1000;
   /* line-height: 30px; */
 
@@ -150,9 +149,10 @@
 .collapseButton:hover {
   transition: transform 0.2s ease;
   /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: var(--color_accent_orange);
+  color: white !important;
   outline: none;
-  border-color: var(--color_accent_orange);
+  background-color: var(--color_accent_blue);
+  border-color: white;
 }
 
 .collapseButton.collapsed {
@@ -349,4 +349,36 @@
   transform: rotate(-90deg)!important;
     display: inline-block; /* Important for rotation to take effect */
 
+}
+
+/* Popover Styles */
+.popoverOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.popoverContent {
+  width: 80%;
+  height: 90%;
+  background-color: var(--background-color) !important;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.popoverContent > div {
+    height: 100%;
+    width: 100%;
 }

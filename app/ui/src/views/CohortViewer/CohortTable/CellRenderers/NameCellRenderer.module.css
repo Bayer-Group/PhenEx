@@ -60,13 +60,68 @@
 .label {
   text-wrap: wrap;
   line-height: 1 !important;
-  font-size: 18px;
+  font-size: var(--font_size_phenotypename);
   font-family: "IBMPlexSans-regular";
-  /* padding: 4px 0; */
-  /* font-weight: bold; */
-  /* padding:0px;
-  margin:0px;
-  line-height: 1; */
+  padding-top:var(--item-margin-top);
+  flex: 1;
+}
+
+
+.labelContainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+}
+
+.verticalLine {
+  width: 4px;
+  height: 100%;
+  background-color: var(--color_accent_blue);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.expandArrow {
+  margin: calc(var(--item-margin-top) - 3) var(--item-margin-horizontal) 0 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  
+  /* Default state */
+  opacity: 0.3;
+  color: var(--text-color-secondary);
+
+}
+
+/* Row hovered state */
+:global(.ag-row:hover) .expandArrow {
+  opacity: 0.5;
+}
+
+/* Selected state - bold/prominent */
+.expandArrow.selected {
+  opacity: 1;
+  transform: scale(1.2);
+  /* Filter to make the SVG blue (hsl(204, 98%, 50%)) */
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+}
+
+/* Arrow self-hovered state */
+.expandArrow:hover {
+  opacity: 1 !important;
+  color: var(--color_accent_blue);
+  transform: scale(1.1);
+}
+
+/* Active/clicked state */
+.expandArrow:active {
+  transform: scale(0.95);
 }
 
 .container {
@@ -81,6 +136,7 @@
   align-items: flex-start;
   position: relative;
   border-top: 1px solid;
+  background-color: red !important;
 }
 
 .ancestorLabel{
@@ -106,7 +162,11 @@
   font-family: "IBMPlexSans-bold";
 }
 
+.viewing {
+  color: var(--color_accent_blue) !important;
+}
+
 .infotext{
-  font-size: 12px;
+      font-size: var(--font_size_infotext);
   font-family:"IBMPlexSans-regular";
 }

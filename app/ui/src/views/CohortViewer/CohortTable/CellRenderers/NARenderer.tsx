@@ -9,7 +9,7 @@ interface NARendererProps {
 export const NARenderer: React.FC<NARendererProps> = ({ data }) => {
   // Get the border color CSS variable for top border
   const borderColorVar = data?.effective_type 
-    ? `var(--color_${data.effective_type})` 
+    ? `var(--color_${data.effective_type}_dim)` 
     : undefined;
 
   const containerStyle: React.CSSProperties = borderColorVar 

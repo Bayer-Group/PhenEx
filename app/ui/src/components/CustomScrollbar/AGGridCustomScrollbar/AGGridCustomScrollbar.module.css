@@ -130,9 +130,9 @@
   height: 24px !important;
   border-radius: 10px !important;
   transition: none !important;
-  border: 2px solid var(--color-accent-bright);
-  /* backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); */
+  border: 2px solid var(--line-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   padding: 0 20px !important;

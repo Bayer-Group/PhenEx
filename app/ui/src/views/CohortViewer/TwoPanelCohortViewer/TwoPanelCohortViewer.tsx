@@ -175,7 +175,8 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       ref={panelRef} 
       split="vertical" 
       initialSizeLeft={500} 
-      minSizeLeft={100}
+      minSizeLeft={400}
+      maxSizeRight={600}
       collapseButtonTheme={'dark'}
       onRightPanelCollapse={handleRightPanelCollapse}
     >

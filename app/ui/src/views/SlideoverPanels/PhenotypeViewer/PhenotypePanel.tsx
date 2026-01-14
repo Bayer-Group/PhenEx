@@ -26,7 +26,8 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [phenotypeName, setPhenotypeName] = useState('');
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
-  const [bottomContainerHeight, setBottomContainerHeight] = useState(300);
+  const [bottomContainerHeight, setBottomContainerHeight] = useState(0);
+  const [calculatedTableHeight, setCalculatedTableHeight] = useState(0);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
@@ -35,6 +36,10 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const handleHeightChange = (height: number) => {
     setBottomContainerHeight(height);
+  };
+
+  const handleTableHeightChange = (height: number) => {
+    setCalculatedTableHeight(height);
   };
 
   // Subscribe to data service updates
@@ -146,7 +151,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
     const handleEditLastItem = async (newValue: string) => {
       setPhenotypeName(newValue);
-      dataService.valueChanged({ parameter: 'name', value: newValue }, newValue);
+      dataService.valueChanged('name', newValue);
     };
 
     return (
@@ -158,6 +163,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
         classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
         classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
+        compact={true}
       />
       </>
     );
@@ -166,7 +172,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const renderDescription = () => {
     const handleDescriptionSave = (newValue: string) => {
       setDescription(newValue);
-      dataService.valueChanged({ parameter: 'description', value: newValue }, newValue);
+      dataService.valueChanged('description', newValue);
     };
 
     return (
@@ -200,12 +206,12 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           <PhenotypeViewer data={data} bottomMargin={bottomContainerHeight} />
           <div className={styles.bottomSection}>
             <HeightAdjustableContainer
-              initialHeight={300}
-              minHeight={200}
+              initialHeight={calculatedTableHeight}
+              minHeight={calculatedTableHeight}
               maxHeight={600}
               onHeightChange={handleHeightChange}
             >
-              <PhenotypeComponents data={data} />
+              <PhenotypeComponents data={data} onTableHeightChange={handleTableHeightChange} />
             </HeightAdjustableContainer>
           </div>
         </div>

@@ -17,8 +17,19 @@ const CodelistCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     });
   };
 
-  const handleItemClick = (_item: any, _index: number) => {
+  const handleItemClick = (_item: any, _index: number, event?: React.MouseEvent) => {
     if (!props.node || !props.column || props.node.rowIndex === null) return;
+    
+    // Capture click position and store in node data temporarily
+    let clickPosition = null;
+    if (event) {
+      const target = event.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      clickPosition = { x: rect.left, y: rect.top };
+    }
+    
+    props.node.data._clickedItemIndex = _index;
+    props.node.data._clickedItemPosition = clickPosition;
     
     props.api?.startEditingCell({
       rowIndex: props.node.rowIndex,

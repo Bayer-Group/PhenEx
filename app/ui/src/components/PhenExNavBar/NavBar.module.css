@@ -1,0 +1,392 @@
+:root{
+    --scale_transform: scale(1.5);
+    --scale_transform_small: scale(1.1);
+
+}
+.navBar {
+  display: flex;
+  align-items: center;
+  padding: 0px 0px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 8px solid var(--li);
+  border-radius: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: fit-content;
+  user-select: none;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0px 10px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  padding: 0px 0px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: opacity 0.2s;
+  height:100%;
+  width:40px;
+  outline: none;
+  border:none
+}
+
+.actionButton:hover {
+  outline: none;
+  border: none;
+}
+
+.actionButton:focus {
+  outline: none;
+  border: none;
+}
+
+.issuesLabel {
+  font-size: var(--font_size_breadcrumbs);
+  font-family: "IBMPlexSans-bold";
+  user-select: none;
+  margin-left:15px;
+  margin-right:4px;
+  height:100%;
+  transition: transform 0.2s;
+
+}
+
+.issuesLabel:hover {
+  transform: var(--scale_transform);
+}
+
+.birdIcon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.birdIcon:hover {
+  transform: var(--scale_transform_small);
+}
+
+.actionButton{
+    transition: background-color 0.2s, transform 0.2s;
+}
+.actionButton:hover{
+  transform: var(--scale_transform);
+
+}
+
+.viewContent {
+  font-size: 14px;
+  user-select: none;
+}
+
+.viewNavBar{
+  border-radius:15px !important;
+
+}
+
+.viewNavContent {
+  display: flex;
+  align-items: center;
+  padding-left:5px;
+  padding-right:5px;
+  height: 100%;
+}
+
+.navArrowsContainer{
+  display: flex;
+
+  align-items: center;
+    gap: 10px;
+    margin-right:12px;
+    margin-left:12px;
+}
+
+.navArrowButton {
+  background: none;
+  border: none;
+  padding: 0px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: opacity 0.2s, transform 0.2s;
+  width: 22px;
+  border: none;
+  outline: none;
+  height:100%;
+}
+.navArrowButton:focus{
+  outline:none;
+}
+.navArrowButton:hover {
+  opacity: 0.7;
+  transform: scale(1.5);
+  color: var(--color_accent_dark) !important;
+}
+
+.horizontalScrollContainer{
+    padding: 4px 4px;
+    border: var(--line-color) 1px solid;
+    background-color: var(--line-color);
+    border-radius: 10px;
+  /* height: 100%; */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); */
+}
+
+.horizontalScrollbar {
+  position: relative;
+  width: 80px;
+  height: 100%;
+  background-color: transparent;
+  border-radius: 3px;
+  cursor: default;
+    border-radius: 10px !important;
+
+}
+
+.scrollbarThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 24px;
+  background-color:var(--color-accent);
+  border-radius: 9px;
+  cursor: grab;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.scrollbarThumb:hover {
+  background-color: var(--color_accent_dark);
+  transform: translate(-50%, -50%) var(--scale_transform);
+}
+
+.scrollbarThumb:active {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) var(--scale_transform);
+}
+
+.eyeButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: opacity 0.2s;
+  min-width: 24px;
+  margin:0px 10px;
+  transform: var(--scale_transform_small);
+  transition: background-color 0.2s, transform 0.2s !important;
+}
+
+.eyeButton:hover {
+  color: var(--color_accent_dark) !important;
+  transform: var(--scale_transform) !important;
+
+}
+
+.eyeButton:focus {
+  outline: none;
+  border: none;
+}
+
+
+.classNameTabsContainer{
+  background-color: transparent !important;
+  border-color:transparent;
+
+  backdrop-filter: none !important;
+  border: none !important;
+  padding: 0px 0px 0px 10px !important;
+  gap: 12px !important;
+  
+  /* border: 1px solid var(--line-color); */
+
+}
+
+.classNameTabsContainer:hover{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+}
+
+.classNameSectionTabs{
+  font-size: var(--font_size_mid_phenotype_info)!important;
+  height: 30px !important;
+  padding: 0px 8px !important;
+  border-radius: 14px !important;
+}
+
+.classNameActiveTab {
+  /* font-size: 100px !important; */
+  transform: var(--scale_transform_small) !important;
+  font-family:"IBMPlexSans-bold" !important;
+}
+
+.classNameActiveTab.classNameActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color:white !important;
+  border-color: transparent !important;
+}
+
+.classNameHoverTab:hover {
+    color: var(--color_accent_blue);
+    border-color: transparent;
+  transition: transform 0.2s !important;
+}
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+  outline: none;
+  color: white;
+  background-color: transparent;
+  background-color: var(--color_accent_dark);
+  border-radius:20px;
+
+}
+
+
+.addButton:hover {
+  color:white;
+  transform: var(--scale_transform);
+
+}
+
+.addButton:focus {
+  outline: none;
+}
+
+.addMenuTabsContainer {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-top: 8px;
+}
+
+
+.addMenuTabsContainer:hover {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color: white !important;
+  border-color: var(--color_accent_dark) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_dark);
+  border-color: var(--color_accent_dark);
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: var(--font_size_items);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.addMenuItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  background: var(--color_accent_blue);
+  color:white;
+  /* transform: translateX(4px); */
+}
+
+.addMenuItem:focus{
+    outline: none;
+}
+
+.optionsButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  outline: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  margin-left: 6px;
+  margin-right: 6px;
+  /* background-color: var(--line-color); */
+}
+
+.optionsButton:hover {
+  color: var(--color_accent_dark);
+
+  transform: var(--scale_transform_small);
+}
+
+.optionsButton:focus {
+  outline: none;
+}
+
+.optionsButton.menuShowing,
+.optionsButton:global(.menuShowing) {
+  color: var(--color_accent_dark);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.addButton.menuShowing,
+.addButton:global(.menuShowing) {
+  color: white;
+}
+
+.eyeButton.menuShowing,
+.eyeButton:global(.menuShowing) {
+  color: var(--color_accent_dark) !important;
+}
+
+
+.itemList{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

@@ -4,6 +4,7 @@ export interface UseComplexItemEditorOptions<T> {
   initialValue: T | T[] | null | undefined;
   createNewItem: () => T;
   onValueChange?: (value: T[]) => void;
+  clickedItemIndex?: number; // Index of item that was clicked to open editor
 }
 
 export interface UseComplexItemEditorReturn<T> {
@@ -34,6 +35,7 @@ export function useComplexItemEditor<T>({
   initialValue,
   createNewItem,
   onValueChange,
+  clickedItemIndex,
 }: UseComplexItemEditorOptions<T>): UseComplexItemEditorReturn<T> {
   
   // Convert initial value to array
@@ -55,13 +57,19 @@ export function useComplexItemEditor<T>({
   // Hook manages its own items state - this is the source of truth during editing
   const [items, setItems] = useState<T[]>(() => normalizeToArray(initialValue));
   
-  // Auto-select if there's exactly one item (only on mount)
+  // Auto-select based on clickedItemIndex or if there's exactly one item
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(() => {
     const initial = normalizeToArray(initialValue);
+    if (clickedItemIndex !== undefined && clickedItemIndex < initial.length) {
+      return clickedItemIndex;
+    }
     return initial.length === 1 ? 0 : null;
   });
   const [editingItem, setEditingItem] = useState<T | null>(() => {
     const initial = normalizeToArray(initialValue);
+    if (clickedItemIndex !== undefined && clickedItemIndex < initial.length) {
+      return initial[clickedItemIndex];
+    }
     return initial.length === 1 ? initial[0] : null;
   });
 

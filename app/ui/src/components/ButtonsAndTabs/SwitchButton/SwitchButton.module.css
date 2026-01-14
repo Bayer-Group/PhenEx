@@ -1,0 +1,54 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-size: 14px;
+  color: white;
+}
+
+.switchTrack {
+  position: relative;
+  width: 34px;
+  height: 22px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.switchBackground {
+  background-color: transparent;
+  border: 1px solid white;
+}
+
+.switchBackgroundSelected {
+  background-color: var(--color_accent_blue);
+  border: 1px solid var(--color_accent_blue);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.switch {
+  left: 2px;
+}
+
+.switchSelected {
+  left: 14px;
+}
+
+.switchTrack:hover {
+  opacity: 0.8;
+}

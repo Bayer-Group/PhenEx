@@ -281,28 +281,30 @@ const DaysRangeSection: React.FC<DaysRangeSectionProps> = ({
   defaultValue,
 }) => (
   <div className={styles.filterSection}>
-    <label>{label}:</label>
-    <select
-      value={value?.operator || 'not set'}
-      onChange={e => onOperatorChange(field, e.target.value)}
-      className={styles.select}
-    >
-      <option value="not set">Not Set</option>
-      {operators.map(op => (
-        <option key={op} value={op}>
-          {op === '>' ? '>' : op === '>=' ? '≥' : op === '<' ? '<' : '≤'}
-        </option>
-      ))}
-    </select>
-    {value && (
-      <input
-        type="number"
-        value={value.value ?? ''}
-        onChange={e => onValueChange(field, parseIntegerValue(e.target.value))}
-        className={styles.input}
-        placeholder={defaultValue.toString()}
-      />
-    )}
+    <div className={styles.fieldLabel}>{label}:</div>
+    <div className={styles.fieldInputs}>
+      <select
+        value={value?.operator || 'not set'}
+        onChange={e => onOperatorChange(field, e.target.value)}
+        className={`${styles.select} ${styles.operatorSelect}`}
+      >
+        <option value="not set">Not Set</option>
+        {operators.map(op => (
+          <option key={op} value={op}>
+            {op === '>' ? '>' : op === '>=' ? '≥' : op === '<' ? '<' : '≤'}
+          </option>
+        ))}
+      </select>
+      {value && (
+        <input
+          type="number"
+          value={value.value ?? ''}
+          onChange={e => onValueChange(field, parseIntegerValue(e.target.value))}
+          className={styles.input}
+          placeholder={defaultValue.toString()}
+        />
+      )}
+    </div>
   </div>
 );
 
@@ -316,16 +318,18 @@ interface WhenSectionProps {
 
 const WhenSection: React.FC<WhenSectionProps> = ({ filter, onUpdate }) => (
   <div className={styles.filterSection}>
-    <label>When:</label>
-    <select
-      value={filter.when}
-      onChange={e => onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })}
-      className={styles.select}
-    >
-      <option value="before">Before</option>
-      <option value="after">After</option>
-      <option value="range">Range</option>
-    </select>
+    <div className={styles.fieldLabel}>When:</div>
+    <div className={styles.fieldInputs}>
+      <select
+        value={filter.when}
+        onChange={e => onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })}
+        className={styles.select}
+      >
+        <option value="before">Before</option>
+        <option value="after">After</option>
+        <option value="range">Range</option>
+      </select>
+    </div>
   </div>
 );
 

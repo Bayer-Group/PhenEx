@@ -8,6 +8,14 @@ interface CodelistCellEditorProps extends PhenexCellEditorProps {
 }
 
 export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>((props, ref) => {
+  // Read clicked index from node.data (set by renderer)
+  const clickedItemIndex = props.data?._clickedItemIndex;
+  
+  // Clean up after reading
+  if (clickedItemIndex !== undefined && props.data) {
+    delete props.data._clickedItemIndex;
+  }
+  
   // Normalize old flat format codelists to new wrapped format
   const normalizeCodelist = (codelist: any): any => {
     // If already in new format with class_name, return as is
@@ -49,6 +57,7 @@ export const CodelistCellEditor = React.forwardRef<any, CodelistCellEditorProps>
     items,
   } = useComplexItemEditor({
     initialValue: normalizedValue,
+    clickedItemIndex: clickedItemIndex,
     createNewItem: () => ({
       class_name: 'Codelist',
       codelist: {},

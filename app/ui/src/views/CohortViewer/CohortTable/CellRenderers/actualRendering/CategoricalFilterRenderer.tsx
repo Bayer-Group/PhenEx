@@ -8,7 +8,7 @@ import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor'
 export interface CategoricalFilterRendererProps {
   value: FilterType | null | undefined;
   data?: any;
-  onItemClick?: (item: FlattenedItem<BaseCategoricalFilter>) => void;
+  onItemClick?: (item: FlattenedItem<BaseCategoricalFilter>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
   selectedIndex?: number;
   selectedClassName?: string;

@@ -46,6 +46,9 @@ COHORTS_DIR = os.environ.get("COHORTS_DIR", "/data/cohorts")
 sessionmaker = get_sm(config["database"])
 db_manager = DatabaseManager()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Configure OpenAI client for Azure OpenAI
 from openai import AzureOpenAI
 

@@ -14,6 +14,9 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { MainViewService, ViewType } from '../MainView/MainView';
+import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
+import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -52,6 +55,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
+  const navBarDragHandleRef = useRef<HTMLDivElement>(null);
+  const bottomSectionRef = useRef<HTMLDivElement>(null);
+  const [scrollPercentage, setScrollPercentage] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -133,9 +142,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const refreshGrid = () => {
     // With getRowId callback in CohortTable, AG Grid automatically maintains scroll position
     // We just need to update the grid data
+    console.log("Refreshing grid IN THE COHORT VIEWER");
     if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
       const api = gridRef.current.api;
-      
+      console.log("ENTERING THE REFRESH")
       console.log(
         'Setting grid rowData to:',
         dataService.table_data['rows'].map(r => ({
@@ -329,6 +339,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
+        gridBottomPadding={400}
       />
     );
   };
@@ -358,20 +369,72 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       await dataService.saveChangesToCohort();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
-  };  
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={true} />;
+  };
+
+  const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
+    if (gridRef.current?.scrollByColumn) {
+      gridRef.current.scrollByColumn(direction);
+      // Update scroll state after scrolling
+      updateScrollState();
+    }
+  };
+
+  const handleViewNavigationScroll = (percentage: number) => {
+    if (gridRef.current?.scrollToPercentage) {
+      gridRef.current.scrollToPercentage(percentage);
+      setScrollPercentage(percentage);
+      updateScrollState();
+    }
+  };
+
+  const handleViewNavigationVisibilityClicked = () => {
+    console.log('ViewNavigation visibility clicked');
+  };
+
+  const updateScrollState = () => {
+    if (gridRef.current?.getScrollPercentage) {
+      const percentage = gridRef.current.getScrollPercentage();
+      setScrollPercentage(percentage);
+      setCanScrollLeft(percentage > 0);
+      setCanScrollRight(percentage < 100);
+    }
+  };
+
+  // Listen to grid scroll events to update navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      updateScrollState();
+    };
+
+    // Find the grid viewport and attach scroll listener
+    const gridElement = gridRef.current?.eGridDiv;
+    if (gridElement) {
+      const viewport = gridElement.querySelector('.ag-center-cols-viewport');
+      if (viewport) {
+        viewport.addEventListener('scroll', handleScroll);
+        // Initial state update
+        updateScrollState();
+        
+        return () => {
+          viewport.removeEventListener('scroll', handleScroll);
+        };
+      }
+    }
+  }, [dataService.table_data]);
   
   return (
     <div className={styles.cohortTableContainer}>
       <div className={styles.topSection}>
         {renderBreadcrumbs()}
-        <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-        {renderSectionTabs()}
+        {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
+        {renderSectionTabs()} */}
       </div>
-      <div className={styles.newPhenotypeButton}>
+      {/* <div className={styles.newPhenotypeButton}>
         {renderAddNewPhenotypeButton()}
-      </div>
-      <div className={styles.bottomSection}>
+      </div> */}
+      {/* <div className={styles.bottomSection}> */}
+      <div className={styles.bottomSection} ref={bottomSectionRef}>
         {renderTable()}
         <div className={styles.bottomGradient} />
       </div>
@@ -379,6 +442,28 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           showPopover={showIssuesPopover} 
           setShowPopover={setShowIssuesPopover} 
         />
+        <DraggablePositionedPortal
+          triggerRef={bottomSectionRef}
+          position="below"
+          alignment="right"
+          resetToPositioned={resetNavBarToPositioned}
+          onClose={() => {
+            setResetNavBarToPositioned(true);
+            setTimeout(() => setResetNavBarToPositioned(false), 50);
+          }}
+          dragHandleRef={navBarDragHandleRef}
+        >
+          <PhenExNavBar
+            onSectionTabChange={onTabChange}
+            dragHandleRef={navBarDragHandleRef}
+            scrollPercentage={scrollPercentage}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+            onViewNavigationScroll={handleViewNavigationScroll}
+            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+          />
+        </DraggablePositionedPortal>
     </div>
   );
 };

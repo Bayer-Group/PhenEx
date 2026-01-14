@@ -10,6 +10,14 @@ interface RelativeTimeRangeFilterCellEditorProps extends PhenexCellEditorProps {
 }
 
 export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeTimeRangeFilterCellEditorProps>((props, ref) => {
+  // Read clicked index from node.data (set by renderer)
+  const clickedItemIndex = props.data?._clickedItemIndex;
+  
+  // Clean up after reading
+  if (clickedItemIndex !== undefined && props.data) {
+    delete props.data._clickedItemIndex;
+  }
+  
   // Use the shared complex item editor hook
   const {
     selectedItemIndex,
@@ -22,6 +30,7 @@ export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeT
     items,
   } = useComplexItemEditor({
     initialValue: props.value,
+    clickedItemIndex: clickedItemIndex,
     createNewItem: (): TimeRangeFilter => ({
       class_name: 'RelativeTimeRangeFilter' as const,
       min_days: { class_name: 'Value' as const, operator: '>' as const, value: 0 },

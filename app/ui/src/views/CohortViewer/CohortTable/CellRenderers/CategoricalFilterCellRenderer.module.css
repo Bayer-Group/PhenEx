@@ -5,10 +5,10 @@
 }
 
 .fullText {
-  /* display: flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  line-height: 10px; */
+  line-height: 10px;
 }
 
 .punctuation {
@@ -48,6 +48,10 @@
   align-items: center; */
   /* border-radius: var(--item-radius) var(--item-radius) 0 0;
   padding: var(--padding-tb) var(--padding-lr) 0 var(--padding-lr); */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
 }
 
 .bottom {
@@ -66,6 +70,35 @@
 }
 
 .unit:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+}
+
+
+.expandArrow {
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  
+  /* Default state */
+  opacity: 0.3;
+  color: var(--text-color-secondary);
+}
+
+/* Row hovered state */
+:global(.ag-row:hover) .expandArrow {
+  opacity: 0.5;
+}
+
+/* Arrow self-hovered state */
+.expandArrow:hover {
+  opacity: 1 !important;
+  color: var(--accent-color);
+  transform: scale(1.1);
+}
+
+/* Active/clicked state */
+.expandArrow:active {
+  transform: scale(0.95);
 }

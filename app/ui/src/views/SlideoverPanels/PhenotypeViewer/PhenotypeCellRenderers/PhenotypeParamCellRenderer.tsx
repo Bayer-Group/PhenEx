@@ -100,12 +100,12 @@ const getFullParameterDescription = (parameter: string): string => {
   return (
     <div className={styles.container}>
       <span className={`${styles.label} ${textColorClass}`}>{formatValue()}</span>
-      <br></br>
+      {/* <br></br>
       <span className={`${styles.infotext} ${textColorClass}`}>
         <ReactMarkdown>
           {description}
         </ReactMarkdown>
-      </span>
+      </span> */}
       <button 
         ref={infoButtonRef}
         className={styles.infoButton} 
