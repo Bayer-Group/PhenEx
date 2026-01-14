@@ -70,6 +70,7 @@ export const ChatPopover: React.FC<ChatPopoverProps> = ({ onClose, dragHandleRef
           orientation="vertical"
           marginTop={100}
           marginBottom={20}
+          marginToEnd={20}
           classNameThumb={styles.customScrollbarThumb}
         />
       </div>

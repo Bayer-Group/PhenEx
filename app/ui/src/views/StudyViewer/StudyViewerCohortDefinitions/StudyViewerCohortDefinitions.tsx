@@ -17,8 +17,12 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
+  const [viewState, setViewState] = useState({ x: 0, y: 0, scale: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const menuRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,6 +132,91 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     setDeleteConfirmCohort(null);
   };
 
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    const isShift = e.shiftKey;
+    const isCommand = e.metaKey || e.ctrlKey;
+    
+    // Detect trackpad pinch-to-zoom: ctrlKey is set automatically by browser
+    // Also check for precise deltaY values that indicate pinch gestures
+    const isPinchZoom = isCommand || (Math.abs(e.deltaY) > 0 && e.ctrlKey);
+
+    if (isPinchZoom) {
+      // Zoom in/out (works with Command+scroll and trackpad pinch)
+      const zoomSpeed = 0.01; // Increased for better trackpad pinch sensitivity
+      const delta = -e.deltaY * zoomSpeed;
+      const newScale = Math.max(0.1, Math.min(5, viewState.scale * (1 + delta)));
+
+      // Zoom towards cursor position
+      if (viewportRef.current) {
+        const rect = viewportRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Calculate the point in the content that the mouse is over
+        const pointX = (mouseX - viewState.x) / viewState.scale;
+        const pointY = (mouseY - viewState.y) / viewState.scale;
+
+        // Calculate new pan position to keep that point under the cursor
+        const newX = mouseX - pointX * newScale;
+        const newY = mouseY - pointY * newScale;
+
+        setViewState({ x: newX, y: newY, scale: newScale });
+      }
+    } else {
+      // Handle horizontal scroll (trackpad side scroll or horizontal mouse wheel)
+      if (Math.abs(e.deltaX) > 0) {
+        setViewState(prev => ({
+          ...prev,
+          x: prev.x - e.deltaX
+        }));
+      }
+      
+      // Handle vertical scroll
+      if (Math.abs(e.deltaY) > 0) {
+        if (isShift) {
+          // Shift + vertical scroll = horizontal pan
+          setViewState(prev => ({
+            ...prev,
+            x: prev.x - e.deltaY
+          }));
+        } else {
+          // Normal vertical scroll = vertical pan
+          setViewState(prev => ({
+            ...prev,
+            y: prev.y - e.deltaY
+          }));
+        }
+      }
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // With pointer-events:none on transform container, clicks on background reach here
+    // Cards have pointer-events:auto so they won't trigger this
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - viewState.x, y: e.clientY - viewState.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      setViewState(prev => ({
+        ...prev,
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      }));
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
   // Show loading state or empty state when data is not ready
   if (!cohortDefinitions || cohortDefinitions.length === 0) {
     if (cohortDefinitions === null) {
@@ -185,10 +274,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         key={cohortKey} 
         className={styles.cohortCard} 
         onClick={() => clickedOnCohort(cohortDef)}
-        onWheel={(e) => {
-          // When mouse is over the card, stop propagation to allow card container scrolling
-          e.stopPropagation();
-        }}
+        style={{ cursor: 'pointer', pointerEvents: 'auto' }}
       >
         <div className={styles.cohortHeader}>
           <div className={styles.cohortHeaderContent}>
@@ -269,23 +355,23 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     if (!tableContainerRefs.current.has(cohortKey)) {
       tableContainerRefs.current.set(cohortKey, React.createRef<HTMLDivElement>());
     }
-    const cardContainerRef = tableContainerRefs.current.get(cohortKey)!;
+    // const cardContainerRef = tableContainerRefs.current.get(cohortKey)!;
 
     return (
       <div key={cohortKey} className={styles.verticalCardContainer}>
         <div 
-          ref={cardContainerRef}
-          className={`${styles.verticalCardContainerForScrolling} ${scrollbarStyles.hideScrollbars}`}
+          // ref={cardContainerRef}
+          // className={`${styles.verticalCardContainerForScrolling} ${scrollbarStyles.hideScrollbars}`}
         >
           {renderCohortCard(cohortDef, index)}
         </div>
-        <SimpleCustomScrollbar
+        {/* <SimpleCustomScrollbar
           targetRef={cardContainerRef}
           orientation="vertical"
           marginTop={200}
           marginBottom={600}
           marginToEnd={0}
-        />
+        /> */}
       </div>
     );
   }
@@ -293,17 +379,32 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   return (
     <>
       <div 
+        ref={viewportRef}
         className={styles.content}
-        onWheel={(e) => {
-          // Translate vertical scroll to horizontal scroll on the container
-          const container = e.currentTarget;
-          if (container && Math.abs(e.deltaY) > 0) {
-            e.preventDefault();
-            container.scrollLeft += e.deltaY;
-          }
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ 
+          overflow: 'hidden',
+          cursor: isDragging ? 'grabbing' : 'grab'
         }}
       >
-        {cohortDefinitions.map((cohortDef, index) => renderCohortCardContainer(cohortDef, index))}
+        <div
+          style={{
+            transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})`,
+            transformOrigin: '0 0',
+            transition: 'none',
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '20px',
+            padding: '20px',
+            pointerEvents: 'none'
+          }}
+        >
+          {cohortDefinitions.map((cohortDef, index) => renderCohortCardContainer(cohortDef, index))}
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
