@@ -26,8 +26,8 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [phenotypeName, setPhenotypeName] = useState('');
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
-  const [bottomContainerHeight, setBottomContainerHeight] = useState(300);
-  const [calculatedTableHeight, setCalculatedTableHeight] = useState(200);
+  const [bottomContainerHeight, setBottomContainerHeight] = useState(0);
+  const [calculatedTableHeight, setCalculatedTableHeight] = useState(0);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters

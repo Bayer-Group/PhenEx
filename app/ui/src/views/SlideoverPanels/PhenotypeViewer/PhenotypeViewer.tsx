@@ -111,10 +111,11 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
           onCellValueChanged={onCellValueChanged}
           scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
           animateRows={false}
+          bottomPadding={0}
           
           getRowHeight={params => {
             // Calculate height of CODELISTS
-            let current_max_height = 100;
+            let current_max_height = 34;
 
             if (params.data?.parameter == 'codelist' && params.data.codelist?.codelist) {
               const numEntries = Object.keys(params.data.codelist.codelist).length;
