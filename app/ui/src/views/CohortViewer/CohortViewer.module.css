@@ -101,9 +101,10 @@
   /* No absolute positioning - flows naturally */
   margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
-  display: flex;
-  align-items: baseline;
-  height: 20px;
+  line-height: 20px;
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
 }
 .breadcrumbItem{
   font-size: var(--font_size_breadcrumb) !important;
@@ -112,7 +113,7 @@
 
 .breadcrumbLastItem{ /* this is the main title */
   font-size: var(--font_size_breadcrumb) !important;
-  font-family: 'IBMPlexSans-regular' !important;
+  font-family: 'IBMPlexSans-bold' !important;
 }
 
 

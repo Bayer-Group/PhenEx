@@ -361,8 +361,8 @@
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  /* justify-content: center; */
+  /* align-items: center; */
   /* backdrop-filter: blur(10px); */
 }
 
@@ -373,9 +373,11 @@
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  position: relative;
+  position: absolute;
   display: flex;
   flex-direction: column;
+  right: 10%;
+  top: 10%;
 }
 
 .popoverContent > div {
