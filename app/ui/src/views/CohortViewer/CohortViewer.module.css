@@ -40,10 +40,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 200px;
-  background: linear-gradient(to top, #ffffff, #ffffff00);
+  height: 50px;
+  background: linear-gradient(to top, var(--background-color), #ffffff00);
   pointer-events: none;
-  z-index: -100;
 }
 
 .visible {

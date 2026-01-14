@@ -369,7 +369,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       await dataService.saveChangesToCohort();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={true} />;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false} />;
   };
 
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
@@ -438,32 +438,16 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         {renderTable()}
         <div className={styles.bottomGradient} />
       </div>
-        <IssuesDisplayControl 
-          showPopover={showIssuesPopover} 
-          setShowPopover={setShowIssuesPopover} 
-        />
-        <DraggablePositionedPortal
-          triggerRef={bottomSectionRef}
-          position="below"
-          alignment="right"
-          resetToPositioned={resetNavBarToPositioned}
-          onClose={() => {
-            setResetNavBarToPositioned(true);
-            setTimeout(() => setResetNavBarToPositioned(false), 50);
-          }}
-          dragHandleRef={navBarDragHandleRef}
-        >
-          <PhenExNavBar
-            onSectionTabChange={onTabChange}
-            dragHandleRef={navBarDragHandleRef}
-            scrollPercentage={scrollPercentage}
-            canScrollLeft={canScrollLeft}
-            canScrollRight={canScrollRight}
-            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-            onViewNavigationScroll={handleViewNavigationScroll}
-            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-          />
-        </DraggablePositionedPortal>
+      <PhenExNavBar
+        onSectionTabChange={onTabChange}
+        dragHandleRef={navBarDragHandleRef}
+        scrollPercentage={scrollPercentage}
+        canScrollLeft={canScrollLeft}
+        canScrollRight={canScrollRight}
+        onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+        onViewNavigationScroll={handleViewNavigationScroll}
+        onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+      />
     </div>
   );
 };

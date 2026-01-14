@@ -182,8 +182,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
     >
       <>
         <CohortViewer data={service.getData()} />
-        <RightPanelHistory />
-
       </>
       {renderRightPanel()}
     </TwoPanelView>

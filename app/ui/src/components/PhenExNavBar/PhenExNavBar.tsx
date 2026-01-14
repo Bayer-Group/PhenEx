@@ -5,6 +5,7 @@ import { ActionNavBar } from './ActionNavBar';
 import { ViewNavBar } from './ViewNavBar';
 import { AddButtonNavBar } from './AddButtonNavBar';
 import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
+import { Portal } from '../Portal/Portal';
 
 interface PhenExNavBarProps {
   onSectionTabChange?: (index: number) => void;
@@ -40,8 +41,10 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
 
   return (
     <NavBarMenuProvider>
-      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
+      <div className={styles.topRight}>
         <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
+      </div>
+      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
         <AddButtonNavBar height={heightNavBar} />
         <ViewNavBar
           height={heightNavBar}
@@ -52,12 +55,14 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
           onViewNavigationScroll={onViewNavigationScroll}
           onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
         />
+
+      </div>
+      <div className={styles.bottomRight}>
         <ActionNavBar 
           height={heightNavBar}
           onHideNavBar={handleHideNavBar}
           onShowNavBar={handleShowNavBar}
         />
-
       </div>
     </NavBarMenuProvider>
   );
