@@ -165,14 +165,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         setViewState({ x: newX, y: newY, scale: newScale });
       }
     } else {
-      // Handle horizontal scroll (trackpad side scroll or horizontal mouse wheel)
-      if (Math.abs(e.deltaX) > 0) {
-        setViewState(prev => ({
-          ...prev,
-          x: prev.x - e.deltaX
-        }));
-      }
-      
       // Handle vertical scroll
       if (Math.abs(e.deltaY) > 0) {
         if (isShift) {

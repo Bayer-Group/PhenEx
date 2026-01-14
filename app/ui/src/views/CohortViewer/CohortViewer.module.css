@@ -103,10 +103,11 @@
   margin-left: var(--centerPanelLeftMargin);
   display: flex;
   align-items: baseline;
+  height: 20px;
 }
 .breadcrumbItem{
   font-size: var(--font_size_breadcrumb) !important;
-  line-height: 28px;
+  line-height: 10px;
 }
 
 .breadcrumbLastItem{ /* this is the main title */

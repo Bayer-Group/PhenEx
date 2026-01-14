@@ -42,10 +42,6 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   return (
     <NavBarMenuProvider>
       <div className={styles.topRight}>
-        <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
-      </div>
-      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
-        <AddButtonNavBar height={heightNavBar} />
         <ViewNavBar
           height={heightNavBar}
           scrollPercentage={scrollPercentage}
@@ -55,9 +51,14 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
           onViewNavigationScroll={onViewNavigationScroll}
           onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
         />
+      </div>
+      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
 
       </div>
       <div className={styles.bottomRight}>
+               <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
+        <AddButtonNavBar height={heightNavBar} />
+
         <ActionNavBar 
           height={heightNavBar}
           onHideNavBar={handleHideNavBar}

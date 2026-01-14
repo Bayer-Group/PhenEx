@@ -86,15 +86,6 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
         {/* ⋮⋮ */}
       </div>
-      <Tabs
-        tabs={tabs}
-        onTabChange={onSectionTabChange || (() => {})}
-        active_tab_index={0}
-        classNameTabs = {styles.classNameSectionTabs}
-        classNameTabsContainer={styles.classNameTabsContainer}
-        classNameActiveTab={styles.classNameActiveTab}
-        classNameHoverTab={styles.classNameHoverTab}
-      />
       <button
         ref={optionsButtonRef}
         className={styles.optionsButton}
@@ -106,7 +97,6 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
             }
           }, 100);
         }}
-        title="Options"
       >
         <svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="4" r="2" />
@@ -114,6 +104,16 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
           <circle cx="12" cy="20" r="2" />
         </svg>
       </button>
+      <Tabs
+        tabs={tabs}
+        onTabChange={onSectionTabChange || (() => {})}
+        active_tab_index={0}
+        classNameTabs = {styles.classNameSectionTabs}
+        classNameTabsContainer={styles.classNameTabsContainer}
+        classNameActiveTab={styles.classNameActiveTab}
+        classNameHoverTab={styles.classNameHoverTab}
+      />
+
       
       <OptionsMenu
         isOpen={isOptionsMenuOpen}
