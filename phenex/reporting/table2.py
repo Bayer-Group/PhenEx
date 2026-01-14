@@ -111,9 +111,6 @@ class Table2(Reporter):
         else:
             self.df = pd.DataFrame()
 
-        if self.pretty_display and not self.df.empty:
-            self.create_pretty_display()
-
         logger.info("Completed Table2 analysis")
         return self.df
 
@@ -402,9 +399,9 @@ class Table2(Reporter):
 
         return result
 
-    def create_pretty_display(self):
+    def get_pretty_display(self) -> pd.DataFrame:
         """
-        Create formatted display version of results.
+        Return a formatted version of the Table2 results for display.
 
         Expected input columns (from self.df):
         - Outcome: Name of outcome variable
@@ -420,9 +417,15 @@ class Table2(Reporter):
 
         Final column order:
         - Outcome, Time_Point, N_Events, N_Censored, N_Total, Time_Under_Risk, Incidence_Rate
+
+        Returns:
+            pd.DataFrame: Formatted copy of the results
         """
         if self.df.empty:
-            return
+            return self.df.copy()
+
+        # Create a copy to avoid modifying the original
+        pretty_df = self.df.copy()
 
         # Round numeric columns
         numeric_columns = [
@@ -430,8 +433,8 @@ class Table2(Reporter):
             "Time_Under_Risk",
         ]
         for col in numeric_columns:
-            if col in self.df.columns:
-                self.df[col] = self.df[col].round(self.decimal_places)
+            if col in pretty_df.columns:
+                pretty_df[col] = pretty_df[col].round(self.decimal_places)
 
         # Reorder columns for display
         display_columns = [
@@ -445,5 +448,7 @@ class Table2(Reporter):
         ]
 
         # Only include columns that exist
-        display_columns = [col for col in display_columns if col in self.df.columns]
-        self.df = self.df[display_columns]
+        display_columns = [col for col in display_columns if col in pretty_df.columns]
+        pretty_df = pretty_df[display_columns]
+
+        return pretty_df

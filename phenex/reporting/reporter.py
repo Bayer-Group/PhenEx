@@ -19,7 +19,7 @@ class Reporter:
         - to_html(filename): Export to HTML format
         - to_markdown(filename): Export to Markdown format
         - to_word(filename): Export to Word document format
-        - create_pretty_display(): Format results for display (modifies self.df or similar)
+        - get_pretty_display(): Format results for display (returns formatted copy of self.df)
 
     Default implementations for each of these methods are defined if execute() returns self.df as a pandas DataFrame.
 
@@ -43,8 +43,10 @@ class Reporter:
         This is the main entry point for all reporters. Subclasses should:
         1. Store the cohort: `self.cohort = cohort`
         2. Perform analysis and store results in `self.df` (or `self.report` for Dict-based reporters)
-        3. Apply formatting if `self.pretty_display` is True
-        4. Return the primary result (DataFrame or Dict)
+        3. Return the primary result (DataFrame or Dict)
+
+        Note: self.df should always contain the raw, unformatted data. Use get_pretty_display()
+        to get a formatted version for display or export.
 
         Args:
             cohort: The cohort to analyze
@@ -57,15 +59,18 @@ class Reporter:
         """
         raise NotImplementedError("Subclasses must implement execute()")
 
-    def create_pretty_display(self) -> None:
+    def get_pretty_display(self) -> pd.DataFrame:
         """
-        Format the reporter's results for display.
+        Return a formatted version of the reporter's results for display.
 
-        Default implementation modifies self.df to:
-        - Round numeric values to decimal_places
-        - Replace NaN values with empty strings for cleaner display
+        Default implementation returns a copy of self.df with:
+        - Numeric values rounded to decimal_places
+        - NaN values replaced with empty strings for cleaner display
 
         Subclasses can override this method for custom formatting (e.g., phenotype display names).
+
+        Returns:
+            pd.DataFrame: Formatted copy of the results
 
         Raises:
             AttributeError: If self.df is not defined
@@ -73,22 +78,29 @@ class Reporter:
         if not hasattr(self, "df"):
             raise AttributeError(
                 f"{self.__class__.__name__} does not have a 'df' attribute. "
-                "Call execute() first or implement a custom create_pretty_display() method."
+                "Call execute() first or implement a custom get_pretty_display() method."
             )
 
+        # Create a copy to avoid modifying the original
+        pretty_df = self.df.copy()
+
         # Round numeric columns to decimal_places
-        numeric_columns = self.df.select_dtypes(include=["number"]).columns
-        self.df[numeric_columns] = self.df[numeric_columns].round(self.decimal_places)
+        numeric_columns = pretty_df.select_dtypes(include=["number"]).columns
+        pretty_df[numeric_columns] = pretty_df[numeric_columns].round(
+            self.decimal_places
+        )
 
         # Replace NaN with empty strings for cleaner display
-        self.df = self.df.fillna("")
+        pretty_df = pretty_df.fillna("")
+
+        return pretty_df
 
     def to_excel(self, filename: str) -> str:
         """
         Export reporter results to Excel format.
 
         Default implementation exports self.df if it exists. Subclasses can override for custom behavior.
-        If pretty_display=True and create_pretty_display() is implemented, formats the DataFrame before export.
+        If pretty_display=True, formats the DataFrame before export using get_pretty_display().
 
         Args:
             filename: Path to the output file (relative or absolute, with or without .xlsx extension)
@@ -115,15 +127,7 @@ class Reporter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # Apply pretty display if requested
-        df_to_export = self.df
-        if self.pretty_display:
-            # Create a copy to avoid modifying the original
-            temp_df = self.df.copy()
-            original_df = self.df
-            self.df = temp_df
-            self.create_pretty_display()
-            df_to_export = self.df
-            self.df = original_df  # Restore original
+        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
 
         # Export to Excel
         df_to_export.to_excel(filepath, index=False)
@@ -160,15 +164,7 @@ class Reporter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # Apply pretty display if requested
-        df_to_export = self.df
-        if self.pretty_display:
-            # Create a copy to avoid modifying the original
-            temp_df = self.df.copy()
-            original_df = self.df
-            self.df = temp_df
-            self.create_pretty_display()
-            df_to_export = self.df
-            self.df = original_df  # Restore original
+        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
 
         # Export to CSV
         df_to_export.to_csv(filepath, index=False)
@@ -205,15 +201,7 @@ class Reporter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # Apply pretty display if requested
-        df_to_export = self.df
-        if self.pretty_display:
-            # Create a copy to avoid modifying the original
-            temp_df = self.df.copy()
-            original_df = self.df
-            self.df = temp_df
-            self.create_pretty_display()
-            df_to_export = self.df
-            self.df = original_df  # Restore original
+        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
 
         # Export to HTML
         df_to_export.to_html(filepath, index=False)
@@ -251,15 +239,7 @@ class Reporter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # Apply pretty display if requested
-        df_to_export = self.df
-        if self.pretty_display:
-            # Create a copy to avoid modifying the original
-            temp_df = self.df.copy()
-            original_df = self.df
-            self.df = temp_df
-            self.create_pretty_display()
-            df_to_export = self.df
-            self.df = original_df  # Restore original
+        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
 
         # Export to Markdown (requires tabulate package)
         try:
@@ -278,7 +258,7 @@ class Reporter:
 
         Default implementation exports self.df as a simple table if it exists.
         Subclasses can override for custom formatting (headers, styling, etc).
-        If pretty_display=True and create_pretty_display() is implemented, formats the DataFrame before export.
+        If pretty_display=True, formats the DataFrame before export using get_pretty_display().
 
         Args:
             filename: Path to the output file (relative or absolute, with or without .docx extension)
@@ -312,15 +292,7 @@ class Reporter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
         # Apply pretty display if requested
-        df_to_export = self.df
-        if self.pretty_display:
-            # Create a copy to avoid modifying the original
-            temp_df = self.df.copy()
-            original_df = self.df
-            self.df = temp_df
-            self.create_pretty_display()
-            df_to_export = self.df
-            self.df = original_df  # Restore original
+        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
 
         # Create Word document with table
         doc = Document()

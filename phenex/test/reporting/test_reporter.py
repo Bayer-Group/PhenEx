@@ -24,30 +24,32 @@ class SimpleReporter(Reporter):
                 "Score": [10.5, 20.3, 30.7, 40.1, 50.9],
             }
         )
-        if self.pretty_display:
-            self.create_pretty_display()
         return self.df
 
 
 class TestReporterDefaultMethods:
     """Test the default implementations in Reporter base class."""
 
-    def test_create_pretty_display_rounds_numeric_columns(self):
-        """Test that create_pretty_display rounds numeric columns to decimal_places."""
+    def test_get_pretty_display_rounds_numeric_columns(self):
+        """Test that get_pretty_display rounds numeric columns to decimal_places."""
         reporter = SimpleReporter(decimal_places=1, pretty_display=False)
         reporter.execute()
 
-        # Apply pretty display manually
-        reporter.create_pretty_display()
+        # Get pretty display
+        pretty_df = reporter.get_pretty_display()
 
-        # Check that numeric columns are rounded
-        assert reporter.df["Value"].iloc[0] == 1.2
-        assert reporter.df["Value"].iloc[1] == 2.6
-        assert reporter.df["Score"].iloc[0] == 10.5
-        assert reporter.df["Score"].iloc[1] == 20.3
+        # Check that numeric columns are rounded in the returned df
+        assert pretty_df["Value"].iloc[0] == 1.2
+        assert pretty_df["Value"].iloc[1] == 2.6
+        assert pretty_df["Score"].iloc[0] == 10.5
+        assert pretty_df["Score"].iloc[1] == 20.3
 
-    def test_create_pretty_display_replaces_nan_with_empty_string(self):
-        """Test that create_pretty_display replaces NaN with empty strings."""
+        # Check that original df is unchanged
+        assert reporter.df["Value"].iloc[0] == 1.234
+        assert reporter.df["Value"].iloc[1] == 2.567
+
+    def test_get_pretty_display_replaces_nan_with_empty_string(self):
+        """Test that get_pretty_display replaces NaN with empty strings."""
         reporter = SimpleReporter(decimal_places=1, pretty_display=False)
         reporter.execute()
 
@@ -55,28 +57,32 @@ class TestReporterDefaultMethods:
         reporter.df.loc[0, "Value"] = pd.NA
         reporter.df.loc[1, "Category"] = pd.NA
 
-        # Apply pretty display
-        reporter.create_pretty_display()
+        # Get pretty display
+        pretty_df = reporter.get_pretty_display()
 
-        # Check that NaN values are replaced with empty strings
-        assert reporter.df["Value"].iloc[0] == ""
-        assert reporter.df["Category"].iloc[1] == ""
+        # Check that NaN values are replaced with empty strings in the returned df
+        assert pretty_df["Value"].iloc[0] == ""
+        assert pretty_df["Category"].iloc[1] == ""
 
-    def test_create_pretty_display_without_df_raises_error(self):
-        """Test that create_pretty_display raises AttributeError if df is not set."""
+        # Check that original df still has NaN values
+        assert pd.isna(reporter.df["Value"].iloc[0])
+        assert pd.isna(reporter.df["Category"].iloc[1])
+
+    def test_get_pretty_display_without_df_raises_error(self):
+        """Test that get_pretty_display raises AttributeError if df is not set."""
         reporter = SimpleReporter(decimal_places=1, pretty_display=False)
         # Don't call execute()
 
         with pytest.raises(AttributeError, match="does not have a 'df' attribute"):
-            reporter.create_pretty_display()
+            reporter.get_pretty_display()
 
-    def test_execute_with_pretty_display_applies_formatting(self):
-        """Test that execute() with pretty_display=True applies formatting."""
+    def test_execute_returns_raw_df(self):
+        """Test that execute() returns raw, unformatted data."""
         reporter = SimpleReporter(decimal_places=1, pretty_display=True)
         df = reporter.execute()
 
-        # Check that values are rounded
-        assert df["Value"].iloc[0] == 1.2
+        # Check that values are NOT rounded (raw data)
+        assert df["Value"].iloc[0] == 1.234
         assert df["Score"].iloc[0] == 10.5
 
     def test_to_excel_creates_file(self):
@@ -282,15 +288,17 @@ class TestReporterDefaultMethods:
         """Test that different decimal_places settings work correctly."""
         # Test with 0 decimal places
         reporter = SimpleReporter(decimal_places=0, pretty_display=True)
-        df = reporter.execute()
-        assert df["Value"].iloc[0] == 1.0
-        assert df["Score"].iloc[0] == 10.0
+        reporter.execute()
+        pretty_df = reporter.get_pretty_display()
+        assert pretty_df["Value"].iloc[0] == 1.0
+        assert pretty_df["Score"].iloc[0] == 10.0
 
         # Test with 2 decimal places
         reporter = SimpleReporter(decimal_places=2, pretty_display=True)
-        df = reporter.execute()
-        assert df["Value"].iloc[0] == 1.23
-        assert df["Score"].iloc[0] == 10.5
+        reporter.execute()
+        pretty_df = reporter.get_pretty_display()
+        assert pretty_df["Value"].iloc[0] == 1.23
+        assert pretty_df["Score"].iloc[0] == 10.5
 
     def test_returns_absolute_path(self):
         """Test that export methods return absolute paths."""
