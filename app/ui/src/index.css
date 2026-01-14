@@ -32,6 +32,9 @@ body {
   /* WebKit-specific (Safari) */
   -webkit-overflow-scrolling: auto;
 
+  /* Prevent browser zoom */
+  touch-action: pan-x pan-y;
+
   /* Additional properties to ensure consistent behavior */
   overflow: auto;
   height: 100%;

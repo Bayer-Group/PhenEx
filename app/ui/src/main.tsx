@@ -6,7 +6,12 @@ import App from './App.tsx';
 import { AuthProvider } from './auth/AuthProvider.tsx';
 import { FontLoaderProvider } from './contexts/FontLoaderContext';
 import { BrowserRouter } from 'react-router-dom';
-
+// Prevent browser zoom with trackpad pinch
+document.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+  }
+}, { passive: false });
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>
   <FontLoaderProvider>

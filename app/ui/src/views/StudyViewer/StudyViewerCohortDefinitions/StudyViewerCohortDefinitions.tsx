@@ -132,6 +132,34 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     setDeleteConfirmCohort(null);
   };
 
+  const clampViewState = (x: number, y: number, scale: number) => {
+    if (!viewportRef.current || !cohortDefinitions) return { x, y };
+    
+    const viewportWidth = viewportRef.current.clientWidth;
+    const viewportHeight = viewportRef.current.clientHeight;
+    
+    // Calculate content dimensions - use much larger minimums for scrollable area
+    const contentWidth = Math.max(cohortDefinitions.length * 420 + 40, 5000); // Minimum 5000px width
+    const contentHeight = Math.max(1000, 3000); // Minimum 3000px height
+    
+    const scaledWidth = contentWidth * scale;
+    const scaledHeight = contentHeight * scale;
+    
+    const padding = 200; // Increased padding for more freedom
+    
+    // Clamp X: keep content visible
+    const minX = Math.min(viewportWidth - scaledWidth - padding, padding);
+    const maxX = padding;
+    const clampedX = Math.max(minX, Math.min(maxX, x));
+    
+    // Clamp Y: keep content visible
+    const minY = Math.min(viewportHeight - scaledHeight - padding, padding);
+    const maxY = padding;
+    const clampedY = Math.max(minY, Math.min(maxY, y));
+    
+    return { x: clampedX, y: clampedY };
+  };
+
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
 
@@ -139,14 +167,13 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const isCommand = e.metaKey || e.ctrlKey;
     
     // Detect trackpad pinch-to-zoom: ctrlKey is set automatically by browser
-    // Also check for precise deltaY values that indicate pinch gestures
-    const isPinchZoom = isCommand || (Math.abs(e.deltaY) > 0 && e.ctrlKey);
+    const isPinchZoom = isCommand;
 
     if (isPinchZoom) {
       // Zoom in/out (works with Command+scroll and trackpad pinch)
-      const zoomSpeed = 0.01; // Increased for better trackpad pinch sensitivity
+      const zoomSpeed = 0.01;
       const delta = -e.deltaY * zoomSpeed;
-      const newScale = Math.max(0.1, Math.min(5, viewState.scale * (1 + delta)));
+      const newScale = Math.max(0.5, Math.min(2, viewState.scale * (1 + delta)));
 
       // Zoom towards cursor position
       if (viewportRef.current) {
@@ -162,23 +189,26 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         const newX = mouseX - pointX * newScale;
         const newY = mouseY - pointY * newScale;
 
-        setViewState({ x: newX, y: newY, scale: newScale });
+        const clamped = clampViewState(newX, newY, newScale);
+        setViewState({ x: clamped.x, y: clamped.y, scale: newScale });
       }
     } else {
       // Handle vertical scroll
       if (Math.abs(e.deltaY) > 0) {
         if (isShift) {
           // Shift + vertical scroll = horizontal pan
-          setViewState(prev => ({
-            ...prev,
-            x: prev.x - e.deltaY
-          }));
+          setViewState(prev => {
+            const newX = prev.x - e.deltaY;
+            const clamped = clampViewState(newX, prev.y, prev.scale);
+            return { ...prev, x: clamped.x };
+          });
         } else {
           // Normal vertical scroll = vertical pan
-          setViewState(prev => ({
-            ...prev,
-            y: prev.y - e.deltaY
-          }));
+          setViewState(prev => {
+            const newY = prev.y - e.deltaY;
+            const clamped = clampViewState(prev.x, newY, prev.scale);
+            return { ...prev, y: clamped.y };
+          });
         }
       }
     }
@@ -193,10 +223,13 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging) {
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      const clamped = clampViewState(newX, newY, viewState.scale);
       setViewState(prev => ({
         ...prev,
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
+        x: clamped.x,
+        y: clamped.y
       }));
     }
   };
@@ -380,7 +413,8 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         onMouseLeave={handleMouseLeave}
         style={{ 
           overflow: 'hidden',
-          cursor: isDragging ? 'grabbing' : 'grab'
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
         }}
       >
         <div
