@@ -158,18 +158,17 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   return (
     <div
       className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''}`}
-      onClick={() => {
-        if (props.value === 'missing') {
+
+      style={combinedStyle}
+    >
+      {isMissing ? (
+        <span className={`${styles.missingLabel} ${textColorClass}`}       
+        onClick={() => {
           props.api?.startEditingCell({
             rowIndex: props.node?.rowIndex ?? 0,
             colKey: props.column?.getColId() ?? '',
           });
-        }
-      }}
-      style={combinedStyle}
-    >
-      {isMissing ? (
-        <span className={`${styles.missingLabel} ${textColorClass}`}>required</span>
+      }}>required</span>
       ) : (
         props.children ? props.children : props.value
       )}

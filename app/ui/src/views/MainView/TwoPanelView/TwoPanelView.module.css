@@ -363,12 +363,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
 }
 
 .popoverContent {
-  width: 80%;
-  height: 90%;
+  width: 600px;
+  height: 600px;
   background-color: var(--background-color) !important;
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);

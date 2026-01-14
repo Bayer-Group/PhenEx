@@ -86,8 +86,14 @@
 .missingLabel {
   color: white;
   font-family: "IBMPlexSans-bolditalic";
-  font-size: 16px;
-  padding-top: var(--item-margin-top);
+  font-size: var(--font_size_items);
+  margin-top: var(--item-margin-top);
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  border-radius: var(--item-radius);
+}
+
+.missingLabel:hover{
+  background-color: white;
 }
 
 /* Button styles for cells */

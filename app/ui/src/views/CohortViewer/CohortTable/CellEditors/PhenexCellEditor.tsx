@@ -78,7 +78,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
-  const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
+  const [showComposer, setShowComposer] = useState(false); // Always start hidden - only show on explicit user interaction
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
   
   // Callback for children to update the current value
@@ -129,13 +129,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     console.log('PhenexCellEditor: props.value changed to:', props.value);
     setCurrentValue(props.value);
   }, [props.value]);
-
-  // Update showComposer when prop changes
-  useEffect(() => {
-    if (props.showComposerPanel !== undefined) {
-      setShowComposer(props.showComposerPanel);
-    }
-  }, [props.showComposerPanel]);
 
   useEffect(() => {
     // Listen for storage changes from other tabs/windows
