@@ -147,4 +147,5 @@
 .gridWrapperAutoHeight :global(.ag-center-cols-container) {
   height: auto !important;
   min-height: 0 !important;
+  border: none !important;
 }

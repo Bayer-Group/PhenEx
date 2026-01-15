@@ -127,6 +127,7 @@ const CohortList = React.memo(({
                     </div>
                   </div>
                 </div>
+                  <div className={styles.topFiller} />
                 <div className={styles.tableContainer}>
                   {cohortDef.table_data.rows.length > 0 ? (
                     <CohortTable

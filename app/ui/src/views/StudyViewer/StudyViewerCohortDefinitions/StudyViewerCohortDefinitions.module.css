@@ -60,7 +60,7 @@
 }
 
 .cohortHeader {
-  padding: 1rem;
+  padding: 10px 0px;
   background-color: var(--header-background);
   font-family: "IBMPlexSans-bold";
 }
@@ -135,7 +135,19 @@
   overflow: visible;
   margin: 0px;
   padding: 0px;
-  margin-top: -3px;
+  margin-top: -1px;
+  z-index: 1;
+  border:none;
+}
+
+.topFiller{
+  border:none;
+  background-color: var(--color_entry_dim);
+  width:100%;
+  height:20px;
+  top: 0;
+  left: 0;
+  z-index: 100;
 }
 
 
