@@ -80,7 +80,7 @@
   margin-left: 8px;
 }
 
-.menuButton {
+.expandButton {
   background: none;
   border: none;
   color: var(--text-color-secondary);
@@ -91,44 +91,18 @@
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s ease;
+  height:10px;
 }
 
-.menuButton:hover {
+.expandButton:hover {
   background: var(--hover-background, #f0f0f0);
   color: var(--text-color);
 }
 
-.menuDropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  background: var(--card-background, #ffffff);
-  border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  min-width: 150px;
+.expandArrow{
+
 }
 
-.menuItem {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  border: none;
-  background: none;
-  color: var(--text-color);
-  text-align: left;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s ease;
-  border-radius: 6px;
-}
-
-.menuItem:hover {
-  background: var(--hover-background, #f0f0f0);
-  color: #d32f2f;
-}
 
 .tableContainer {
   width: 100%;

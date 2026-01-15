@@ -9,6 +9,8 @@ import { SimpleCustomScrollbar } from '@/components/CustomScrollbar/SimpleCustom
 import scrollbarStyles from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.module.css';
 import { deleteCohort } from '@/api/text_to_cohort/route';
 
+import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
+
 interface StudyViewerCohortDefinitionsProps {
   studyDataService: StudyDataService;
 }
@@ -101,30 +103,18 @@ const CohortList = React.memo(({
                     <div className={styles.cohortHeaderTitle}>
                       {cohortDef.cohort.name || 'Unnamed Cohort'}
                     </div>
-                    <div className={styles.menuContainer} ref={isMenuOpen ? menuRef : null}>
                       <button
-                        className={styles.menuButton}
+                        className={styles.expandButton}
                         onClick={(e) => onMenuClick(e, cohortId)}
                         aria-label="Cohort options"
                         style={{ fontSize: 'var(--dynamic-font-size)' }}
                       >
-                        <svg width="1em" height="1em" viewBox="0 0 20 20" fill="currentColor">
-                          <circle cx="10" cy="4" r="1.5" />
-                          <circle cx="10" cy="10" r="1.5" />
-                          <circle cx="10" cy="16" r="1.5" />
-                        </svg>
+                         <img
+                          src={ArrowIcon}
+                          alt="Expand"
+                          className={styles.expandArrow}
+                        />
                       </button>
-                      {isMenuOpen && (
-                        <div className={styles.menuDropdown} style={{ fontSize: 'var(--dynamic-font-size)' }}>
-                          <button
-                            className={styles.menuItem}
-                            onClick={(e) => onDeleteClick(e, cohortDef)}
-                          >
-                            Delete Cohort
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
                   <div className={styles.topFiller} />
