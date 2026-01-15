@@ -84,13 +84,13 @@ const CohortList = React.memo(({
             <div>
               <div 
                 className={styles.cohortCard} 
-                onClick={() => onCardClick(cohortDef)}
+                // onClick={() => onCardClick(cohortDef)}
                 style={{ 
                   cursor: 'pointer', 
                   pointerEvents: 'auto',
                   '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
                   '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
-                  '--dynamic-arrow-size': 'min(80px, calc(40px / var(--zoom-scale)))'
+                  '--dynamic-arrow-size': 'min(75px, calc(40px / var(--zoom-scale)))'
                 } as React.CSSProperties}
               >
                 <div className={styles.cohortHeader} style={{ 
@@ -106,8 +106,11 @@ const CohortList = React.memo(({
                     </div>
                       <button
                         className={styles.expandButton}
-                        onClick={(e) => onMenuClick(e, cohortId)}
-                        aria-label="Cohort options"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCardClick(cohortDef);
+                        }}
+                        aria-label="Open cohort"
                         style={{ fontSize: 'var(--dynamic-font-size)' }}
                       >
                          <img
