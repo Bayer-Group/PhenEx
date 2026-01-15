@@ -13,6 +13,147 @@ interface StudyViewerCohortDefinitionsProps {
   studyDataService: StudyDataService;
 }
 
+const TABLE_THEME = {
+  accentColor: 'transparent',
+  borderColor: 'transparent',
+  rowHoverColor: 'transparent',
+  wrapperBorder: false,
+  headerRowBorder: false,
+  columnBorder: false,
+  headerFontSize: 14,
+  headerFontWeight: 'bold',
+  cellHorizontalPadding: 10,
+  headerBackgroundColor: 'transparent',
+  rowBorder: false,
+  spacing: 8,
+  backgroundColor: 'transparent',
+  wrapperBorderRadius: 0
+};
+
+const TABLE_GRID_OPTIONS = {
+  suppressRowHoverHighlight: true,
+  columnHoverHighlight: false,
+};
+
+const NO_OP = () => {};
+
+// Memoized list component to prevent re-renders during zoom/pan
+const CohortList = React.memo(({ 
+  cohortDefinitions, 
+  openMenuId, 
+  onMenuClick, 
+  onDeleteClick, 
+  onCardClick, 
+  calculateRowHeight, 
+  tableContainerRefs, 
+  menuRef 
+}: {
+  cohortDefinitions: CohortWithTableData[];
+  openMenuId: string | null;
+  onMenuClick: (e: React.MouseEvent, cohortId: string) => void;
+  onDeleteClick: (e: React.MouseEvent, cohortDef: CohortWithTableData) => void;
+  onCardClick: (cohortDef: CohortWithTableData) => void;
+  calculateRowHeight: (params: any) => number;
+  tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
+  menuRef: React.RefObject<HTMLDivElement>;
+}) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '40px',
+        padding: '20px',
+        pointerEvents: 'none'
+      }}
+    >
+      {cohortDefinitions.map((cohortDef, index) => {
+        const cohortKey = cohortDef.cohort.id || index;
+        const cohortId = cohortDef.cohort.id || String(index);
+        const isMenuOpen = openMenuId === cohortId;
+        
+        // Get or create ref for this cohort's card container
+        if (!tableContainerRefs.current.has(cohortKey)) {
+          tableContainerRefs.current.set(cohortKey, React.createRef<HTMLDivElement>());
+        }
+
+        return (
+          <div key={cohortKey} className={styles.verticalCardContainer}>
+            <div>
+              <div 
+                className={styles.cohortCard} 
+                onClick={() => onCardClick(cohortDef)}
+                style={{ 
+                  cursor: 'pointer', 
+                  pointerEvents: 'auto',
+                  '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
+                  '--dynamic-font-size': 'calc(16px / var(--zoom-scale))'
+                } as React.CSSProperties}
+              >
+                <div className={styles.cohortHeader} style={{ 
+                  position: 'absolute', 
+                  bottom: '100%', 
+                  left: '0', 
+                  right: '0',
+                  fontSize: 'var(--dynamic-font-size)'
+                }}>
+                  <div className={styles.cohortHeaderContent}>
+                    <div className={styles.cohortHeaderTitle}>
+                      {cohortDef.cohort.name || 'Unnamed Cohort'}
+                    </div>
+                    <div className={styles.menuContainer} ref={isMenuOpen ? menuRef : null}>
+                      <button
+                        className={styles.menuButton}
+                        onClick={(e) => onMenuClick(e, cohortId)}
+                        aria-label="Cohort options"
+                        style={{ fontSize: 'var(--dynamic-font-size)' }}
+                      >
+                        <svg width="1em" height="1em" viewBox="0 0 20 20" fill="currentColor">
+                          <circle cx="10" cy="4" r="1.5" />
+                          <circle cx="10" cy="10" r="1.5" />
+                          <circle cx="10" cy="16" r="1.5" />
+                        </svg>
+                      </button>
+                      {isMenuOpen && (
+                        <div className={styles.menuDropdown} style={{ fontSize: 'var(--dynamic-font-size)' }}>
+                          <button
+                            className={styles.menuItem}
+                            onClick={(e) => onDeleteClick(e, cohortDef)}
+                          >
+                            Delete Cohort
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.tableContainer}>
+                  {cohortDef.table_data.rows.length > 0 ? (
+                    <CohortTable
+                      data={cohortDef.table_data}
+                      onCellValueChanged={NO_OP}
+                      currentlyViewing="cohort-definitions"
+                      domLayout="autoHeight"
+                      headerHeight={0}
+                      customGetRowHeight={calculateRowHeight}
+                      tableTheme={TABLE_THEME}
+                      tableGridOptions={TABLE_GRID_OPTIONS}
+                    />
+                  ) : (
+                    <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
+                      No phenotypes found for this cohort
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
 export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitionsProps> = ({ studyDataService }) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -104,6 +245,10 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
     console.log('Attaching wheel listener to:', element);
 
+    // Cache dimensions once to avoid layout reads during scroll
+    const centerX = element.clientWidth / 2;
+    const centerY = element.clientHeight / 2;
+
     const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
 
@@ -111,18 +256,15 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       const isCommand = e.metaKey || e.ctrlKey;
 
       if (isCommand) {
-        // Zoom
+        // Zoom to cached center point (no layout reads)
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
         setViewState(prev => {
           const newScale = Math.max(0.3, Math.min(1, prev.scale * (1 + delta)));
-          const rect = element.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const mouseY = e.clientY - rect.top;
-          const pointX = (mouseX - prev.x) / prev.scale;
-          const pointY = (mouseY - prev.y) / prev.scale;
-          const newX = mouseX - pointX * newScale;
-          const newY = mouseY - pointY * newScale;
+          const pointX = (centerX - prev.x) / prev.scale;
+          const pointY = (centerY - prev.y) / prev.scale;
+          const newX = centerX - pointX * newScale;
+          const newY = centerY - pointY * newScale;
           return { x: newX, y: newY, scale: newScale };
         });
       } else if (isShift) {
@@ -167,16 +309,31 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     }
   };
 
-  const handleMenuClick = (e: React.MouseEvent, cohortId: string) => {
-    e.stopPropagation(); // Prevent card click
-    setOpenMenuId(openMenuId === cohortId ? null : cohortId);
-  };
+  const clickedOnCohort = React.useCallback((cohortDef: CohortWithTableData) => {
+    console.log('Clicked on cohort:', cohortDef);
+    
+    // Get study ID from the cohort or from studyDataService
+    const studyId = cohortDef.cohort.study_id || studyDataService.study_data?.id;
+    const cohortId = cohortDef.cohort.id;
+    
+    if (studyId && cohortId) {
+      // Navigate using URL
+      navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+    } else {
+      console.error('Missing study_id or cohort_id for navigation');
+    }
+  }, [studyDataService.study_data?.id, navigate]);
 
-  const handleDeleteClick = (e: React.MouseEvent, cohortDef: CohortWithTableData) => {
+  const handleMenuClick = React.useCallback((e: React.MouseEvent, cohortId: string) => {
+    e.stopPropagation(); // Prevent card click
+    setOpenMenuId(prev => prev === cohortId ? null : cohortId);
+  }, []);
+
+  const handleDeleteClick = React.useCallback((e: React.MouseEvent, cohortDef: CohortWithTableData) => {
     e.stopPropagation(); // Prevent card click
     setDeleteConfirmCohort(cohortDef);
     setOpenMenuId(null);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (!deleteConfirmCohort) return;
@@ -222,6 +379,30 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const handleCancelDelete = () => {
     setDeleteConfirmCohort(null);
   };
+
+  const calculateRowHeight = React.useCallback((params: any) => {
+    let current_max_height = 20;
+    const minHeight = 20; 
+
+    const nameCol = params.api.getColumnDef('name');
+    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
+    const nameWidth = (nameCol.width) || 200;
+    const nameCharPerLine = Math.floor(nameWidth / 8);
+    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
+    const nameHeight = nameLines * 22 + 10; // 14px per line + padding
+    if (!params.data?.description) {
+      return Math.max(current_max_height, nameHeight); // Increased minimum height
+    }
+    const descriptionLines = params.data.description.split('\n').length;
+    if (descriptionLines.length === 1) {
+      return Math.max(current_max_height, nameHeight); // Increased minimum height
+    }
+    const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
+    current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
+    
+    return current_max_height; // Increased minimum height
+  
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // With pointer-events:none on transform container, clicks on background reach here
@@ -283,174 +464,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       </div>
     );
   }
-  const clickedOnCohort = (cohortDef: CohortWithTableData) => {
-    console.log('Clicked on cohort:', cohortDef);
-    
-    // Get study ID from the cohort or from studyDataService
-    const studyId = cohortDef.cohort.study_id || studyDataService.study_data?.id;
-    const cohortId = cohortDef.cohort.id;
-    
-    if (studyId && cohortId) {
-      // Navigate using URL
-      navigate(`/studies/${studyId}/cohorts/${cohortId}`);
-    } else {
-      console.error('Missing study_id or cohort_id for navigation');
-    }
-  };
-
-  const calculateRowHeight = (params: any) => {
-    let current_max_height = 20;
-    const minHeight = 20; 
-
-    const nameCol = params.api.getColumnDef('name');
-    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
-    const nameWidth = (nameCol.width) || 200;
-    const nameCharPerLine = Math.floor(nameWidth / 8);
-    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-    const nameHeight = nameLines * 22 + 10; // 14px per line + padding
-    if (!params.data?.description) {
-      return Math.max(current_max_height, nameHeight); // Increased minimum height
-    }
-    const descriptionLines = params.data.description.split('\n').length;
-    if (descriptionLines.length === 1) {
-      return Math.max(current_max_height, nameHeight); // Increased minimum height
-    }
-    const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
-    current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
-    
-    return current_max_height; // Increased minimum height
-  
-  }
-
-  const renderCohortCard = (cohortDef: CohortWithTableData, index: number) => {
-    const cohortKey = cohortDef.cohort.id || index;
-    const cohortId = cohortDef.cohort.id || String(index);
-    const isMenuOpen = openMenuId === cohortId;
-
-    // Calculate outline width to maintain visual 3px regardless of scale
-    const desiredVisualOutlineWidth = 3;
-    const actualOutlineWidth = desiredVisualOutlineWidth / viewState.scale;
-
-    // Calculate font size to maintain visual 16px regardless of scale
-    const desiredVisualFontSize = 16;
-    const actualFontSize = desiredVisualFontSize / viewState.scale;
-
-    return (
-      <div 
-        key={cohortKey} 
-        className={styles.cohortCard} 
-        onClick={() => clickedOnCohort(cohortDef)}
-        style={{ 
-          cursor: 'pointer', 
-          pointerEvents: 'auto',
-          '--dynamic-outline-width': `${actualOutlineWidth}px`,
-          '--dynamic-font-size': `${actualFontSize}px`
-        } as React.CSSProperties & { '--dynamic-outline-width': string; '--dynamic-font-size': string }}
-      >
-        <div className={styles.cohortHeader} style={{ 
-          position: 'absolute', 
-          bottom: '100%', 
-          left: '0', 
-          right: '0',
-          fontSize: `${actualFontSize}px`
-        }}>
-          <div className={styles.cohortHeaderContent}>
-            <div className={styles.cohortHeaderTitle}>
-              {cohortDef.cohort.name || 'Unnamed Cohort'}
-            </div>
-            <div className={styles.menuContainer} ref={isMenuOpen ? menuRef : null}>
-              <button
-                className={styles.menuButton}
-                onClick={(e) => handleMenuClick(e, cohortId)}
-                aria-label="Cohort options"
-                style={{ fontSize: `${actualFontSize}px` }}
-              >
-                <svg width={actualFontSize} height={actualFontSize} viewBox="0 0 20 20" fill="currentColor">
-                  <circle cx="10" cy="4" r="1.5" />
-                  <circle cx="10" cy="10" r="1.5" />
-                  <circle cx="10" cy="16" r="1.5" />
-                </svg>
-              </button>
-              {isMenuOpen && (
-                <div className={styles.menuDropdown} style={{ fontSize: `${actualFontSize}px` }}>
-                  <button
-                    className={styles.menuItem}
-                    onClick={(e) => handleDeleteClick(e, cohortDef)}
-                  >
-                    Delete Cohort
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className={styles.tableContainer}>
-          {cohortDef.table_data.rows.length > 0 ? (
-            <CohortTable
-              data={cohortDef.table_data}
-              onCellValueChanged={() => {}}
-              currentlyViewing="cohort-definitions"
-              domLayout="autoHeight"
-              headerHeight={0}
-              customGetRowHeight={calculateRowHeight}
-              tableTheme={{
-                accentColor: 'transparent',
-                borderColor: 'transparent',
-                rowHoverColor: 'transparent',
-                wrapperBorder: false,
-                headerRowBorder: false,
-                columnBorder: false,
-                headerFontSize: 14,
-                headerFontWeight: 'bold',
-                cellHorizontalPadding: 10,
-                headerBackgroundColor: 'transparent',
-                rowBorder: false,
-                spacing: 8,
-                backgroundColor: 'transparent',
-                wrapperBorderRadius: 0
-              }}
-              tableGridOptions={{
-                suppressRowHoverHighlight: true,
-                columnHoverHighlight: false,
-              }}
-            />
-          ) : (
-            <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
-              No phenotypes found for this cohort
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const renderCohortCardContainer = (cohortDef: CohortWithTableData, index: number) => {
-    const cohortKey = cohortDef.cohort.id || index;
-    
-    // Get or create ref for this cohort's card container
-    if (!tableContainerRefs.current.has(cohortKey)) {
-      tableContainerRefs.current.set(cohortKey, React.createRef<HTMLDivElement>());
-    }
-    // const cardContainerRef = tableContainerRefs.current.get(cohortKey)!;
-
-    return (
-      <div key={cohortKey} className={styles.verticalCardContainer}>
-        <div 
-          // ref={cardContainerRef}
-          // className={`${styles.verticalCardContainerForScrolling} ${scrollbarStyles.hideScrollbars}`}
-        >
-          {renderCohortCard(cohortDef, index)}
-        </div>
-        {/* <SimpleCustomScrollbar
-          targetRef={cardContainerRef}
-          orientation="vertical"
-          marginTop={200}
-          marginBottom={600}
-          marginToEnd={0}
-        /> */}
-      </div>
-    );
-  }
 
   return (
     <>
@@ -472,14 +485,20 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})`,
             transformOrigin: '0 0',
             transition: 'none',
-            display: 'flex',
-            flexDirection: 'row',
-            gap: '40px',
-            padding: '20px',
-            pointerEvents: 'none'
+            // @ts-ignore
+            '--zoom-scale': viewState.scale
           }}
         >
-          {cohortDefinitions.map((cohortDef, index) => renderCohortCardContainer(cohortDef, index))}
+          <CohortList 
+            cohortDefinitions={cohortDefinitions}
+            openMenuId={openMenuId}
+            onMenuClick={handleMenuClick}
+            onDeleteClick={handleDeleteClick}
+            onCardClick={clickedOnCohort}
+            calculateRowHeight={calculateRowHeight}
+            tableContainerRefs={tableContainerRefs}
+            menuRef={menuRef}
+          />
         </div>
       </div>
 
