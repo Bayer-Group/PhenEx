@@ -89,7 +89,8 @@ const CohortList = React.memo(({
                   cursor: 'pointer', 
                   pointerEvents: 'auto',
                   '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
-                  '--dynamic-font-size': 'calc(16px / var(--zoom-scale))'
+                  '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
+                  '--dynamic-arrow-size': 'min(80px, calc(40px / var(--zoom-scale)))'
                 } as React.CSSProperties}
               >
                 <div className={styles.cohortHeader} style={{ 

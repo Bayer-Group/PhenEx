@@ -52,6 +52,10 @@
   color: var(--color_accent_blue);
 }
 
+.cohortCard:hover .expandArrow{
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+}
+
 .cohortCard:hover{
   background-color: white;
   box-shadow: var(--box_shadow_hover);
@@ -66,13 +70,19 @@
 }
 
 .cohortHeaderContent {
+  position: relative;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
+  min-height: var(--dynamic-arrow-size, 40px);
+  gap: 8px;
 }
 
 .cohortHeaderTitle {
   flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .menuContainer {
@@ -85,13 +95,13 @@
   border: none;
   color: var(--text-color-secondary);
   cursor: pointer;
-  padding: 4px;
+  padding: 0px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s ease;
-  height:10px;
+  flex-shrink: 0;
 }
 
 .expandButton:hover {
@@ -99,8 +109,10 @@
   color: var(--text-color);
 }
 
-.expandArrow{
-
+.expandArrow {
+  width: var(--dynamic-arrow-size, 40px);
+  height: var(--dynamic-arrow-size, 40px);
+  display: block;
 }
 
 
