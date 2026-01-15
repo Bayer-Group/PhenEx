@@ -6,6 +6,8 @@
   overflow-y: hidden;
   height: 100vh; /* Full viewport height */
   padding-left:20px;
+  padding-top: 100px;
+  user-select: none;
 }
 
 .verticalCardContainer {
@@ -34,7 +36,7 @@
   width: 100%;
   background-color: var(--background-color);
   border: 1px solid var(--line-color);
-  border-radius: 15px;
+  border-radius: 8px;
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -44,6 +46,10 @@
   cursor: pointer;
   margin-bottom: 300px;
   overflow:hidden;
+}
+
+.cohortCard:hover .cohortHeader{
+  color: var(--color_accent_blue);
 }
 
 .cohortCard:hover{
@@ -56,7 +62,7 @@
 .cohortHeader {
   padding: 1rem;
   background-color: var(--header-background);
-  font-weight: bold;
+  font-family: "IBMPlexSans-bold";
 }
 
 .cohortHeaderContent {

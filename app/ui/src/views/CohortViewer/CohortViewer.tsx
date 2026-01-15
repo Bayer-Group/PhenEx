@@ -15,7 +15,7 @@ import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { MainViewService, ViewType } from '../MainView/MainView';
-import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExNavBar';
+import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 
 enum CohortDefinitionViewType {

@@ -8,6 +8,8 @@ import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/Stu
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
+import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
+
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
@@ -234,6 +236,9 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
         + New Cohort
       </button>
       <div className={styles.bottomSection}>{renderContent()}</div>
+      <PhenExNavBar
+        onSectionTabChange={onTabChange}
+      />
     </div>
   );
 };

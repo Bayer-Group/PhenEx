@@ -321,6 +321,10 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const desiredVisualOutlineWidth = 3;
     const actualOutlineWidth = desiredVisualOutlineWidth / viewState.scale;
 
+    // Calculate font size to maintain visual 16px regardless of scale
+    const desiredVisualFontSize = 16;
+    const actualFontSize = desiredVisualFontSize / viewState.scale;
+
     return (
       <div 
         key={cohortKey} 
@@ -329,10 +333,17 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         style={{ 
           cursor: 'pointer', 
           pointerEvents: 'auto',
-          '--dynamic-outline-width': `${actualOutlineWidth}px`
-        } as React.CSSProperties & { '--dynamic-outline-width': string }}
+          '--dynamic-outline-width': `${actualOutlineWidth}px`,
+          '--dynamic-font-size': `${actualFontSize}px`
+        } as React.CSSProperties & { '--dynamic-outline-width': string; '--dynamic-font-size': string }}
       >
-        <div className={styles.cohortHeader} style={{ position: 'absolute', bottom: '100%', left: '0', right: '0' }}>
+        <div className={styles.cohortHeader} style={{ 
+          position: 'absolute', 
+          bottom: '100%', 
+          left: '0', 
+          right: '0',
+          fontSize: `${actualFontSize}px`
+        }}>
           <div className={styles.cohortHeaderContent}>
             <div className={styles.cohortHeaderTitle}>
               {cohortDef.cohort.name || 'Unnamed Cohort'}
@@ -342,15 +353,16 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
                 className={styles.menuButton}
                 onClick={(e) => handleMenuClick(e, cohortId)}
                 aria-label="Cohort options"
+                style={{ fontSize: `${actualFontSize}px` }}
               >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <svg width={actualFontSize} height={actualFontSize} viewBox="0 0 20 20" fill="currentColor">
                   <circle cx="10" cy="4" r="1.5" />
                   <circle cx="10" cy="10" r="1.5" />
                   <circle cx="10" cy="16" r="1.5" />
                 </svg>
               </button>
               {isMenuOpen && (
-                <div className={styles.menuDropdown}>
+                <div className={styles.menuDropdown} style={{ fontSize: `${actualFontSize}px` }}>
                   <button
                     className={styles.menuItem}
                     onClick={(e) => handleDeleteClick(e, cohortDef)}
@@ -453,7 +465,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             transition: 'none',
             display: 'flex',
             flexDirection: 'row',
-            gap: '20px',
+            gap: '40px',
             padding: '20px',
             pointerEvents: 'none'
           }}
