@@ -67,7 +67,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     
     // Calculate content dimensions - use much larger minimums for scrollable area
     const contentWidth = Math.max(cohortDefinitions.length * 420 + 40, 5000); // Minimum 5000px width
-    const contentHeight = Math.max(1000, 3000); // Minimum 3000px height
+    const contentHeight = Math.max(3000, 3000); // Minimum 3000px height
     
     const scaledWidth = contentWidth * scale;
     const scaledHeight = contentHeight * scale;
