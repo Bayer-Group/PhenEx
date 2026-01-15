@@ -23,7 +23,13 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const menuRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
+
+  // Update ref when cohortDefinitions changes
+  useEffect(() => {
+    cohortDefinitionsRef.current = cohortDefinitions;
+  }, [cohortDefinitions]);
 
   useEffect(() => {
     // Function to update cohort definitions when study data changes
@@ -60,13 +66,14 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   }, [openMenuId]);
 
   const clampViewState = (x: number, y: number, scale: number) => {
-    if (!viewportRef.current || !cohortDefinitions) return { x, y };
+    const definitions = cohortDefinitionsRef.current;
+    if (!viewportRef.current || !definitions) return { x, y };
     
     const viewportWidth = viewportRef.current.clientWidth;
     const viewportHeight = viewportRef.current.clientHeight;
     
     // Calculate content dimensions - use much larger minimums for scrollable area
-    const contentWidth = Math.max(cohortDefinitions.length * 420 + 40, 5000); // Minimum 5000px width
+    const contentWidth = Math.max(definitions.length * 420 + 40, 5000); // Minimum 5000px width
     const contentHeight = Math.max(3000, 3000); // Minimum 3000px height
     
     const scaledWidth = contentWidth * scale;
@@ -90,7 +97,12 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   // Attach wheel listener with passive: false to allow preventDefault
   useEffect(() => {
     const element = viewportRef.current;
-    if (!element) return;
+    if (!element) {
+      console.log('viewportRef not ready');
+      return;
+    }
+
+    console.log('Attaching wheel listener to:', element);
 
     const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
@@ -111,29 +123,32 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
           const pointY = (mouseY - prev.y) / prev.scale;
           const newX = mouseX - pointX * newScale;
           const newY = mouseY - pointY * newScale;
-          const clamped = clampViewState(newX, newY, newScale);
-          return { x: clamped.x, y: clamped.y, scale: newScale };
+          return { x: newX, y: newY, scale: newScale };
         });
       } else if (isShift) {
         // Horizontal pan
-        setViewState(prev => {
-          const newX = prev.x - e.deltaY;
-          const clamped = clampViewState(newX, prev.y, prev.scale);
-          return { ...prev, x: clamped.x };
-        });
+        setViewState(prev => ({
+          x: prev.x - e.deltaY,
+          y: prev.y,
+          scale: prev.scale
+        }));
       } else {
         // Vertical pan
-        setViewState(prev => {
-          const newY = prev.y - e.deltaY;
-          const clamped = clampViewState(prev.x, newY, prev.scale);
-          return { ...prev, y: clamped.y };
-        });
+        setViewState(prev => ({
+          x: prev.x,
+          y: prev.y - e.deltaY,
+          scale: prev.scale
+        }));
       }
     };
 
     element.addEventListener('wheel', wheelHandler, { passive: false });
-    return () => element.removeEventListener('wheel', wheelHandler);
-  }, [cohortDefinitions]);
+    console.log('Wheel listener attached');
+    return () => {
+      console.log('Removing wheel listener');
+      element.removeEventListener('wheel', wheelHandler);
+    };
+  }, [cohortDefinitions]); // Re-run when cohortDefinitions loads (so viewport is rendered)
 
   const handleCreateFirstCohort = async () => {
     try {
