@@ -295,8 +295,10 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         });
       } else if (isShift) {
         // Horizontal pan
+        // Use deltaX if available (browser handled shift), fallback to deltaY
+        const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
         setViewState(prev => ({
-          x: prev.x - e.deltaY,
+          x: prev.x - delta,
           y: prev.y,
           scale: prev.scale
         }));

@@ -9,6 +9,9 @@ import { MainViewService, ViewType } from '../MainView/MainView';
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
+import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
+import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { useFadeIn } from '../../hooks/useFadeIn';
 
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
@@ -35,6 +38,8 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   const [currentView, setCurrentView] = useState<StudyDefinitionViewType>(
     StudyDefinitionViewType.Cohort
   );
+  
+  const fadeInStyle = useFadeIn();
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -224,10 +229,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   };
 
   return (
-    <div className={styles.cohortTableContainer}>
+        <NavBarMenuProvider>
+    
+    <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.topSection}>
         {renderBreadcrumbs()}
-        {/* {renderSectionTabs()} */}
+          <CohortNavBar height={36} onSectionTabChange={onTabChange} shadow={true} />
       </div>
       <button 
         className={styles.newCohortButton}
@@ -240,5 +247,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
         onSectionTabChange={onTabChange}
       />
     </div>
+        </NavBarMenuProvider>
+    
   );
 };

@@ -9,6 +9,7 @@ interface CohortNavBarProps {
   height: number;
   onSectionTabChange?: (index: number) => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
+  shadow: boolean;
 }
 
 // Options Menu Component
@@ -76,14 +77,14 @@ const OptionsMenu: React.FC<{
   );
 };
 
-export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
+export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef, shadow = false }) => {
   const tabs = ['Definition', 'Characteristics', 'Outcomes'];
   const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('options');
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className={`${styles.navBar} ${styles.noshadow}`} style={{ height: `${height}px` }}>
+    <div className={`${styles.navBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px` }}>
       <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
         {/* ⋮⋮ */}
       </div>

@@ -19,6 +19,7 @@ import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { useFadeIn } from '../../hooks/useFadeIn';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -63,6 +64,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
+  
+  const fadeInStyle = useFadeIn();
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
@@ -437,7 +440,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   
   return (
     <NavBarMenuProvider>
-      <div className={styles.cohortTableContainer}>
+      <div className={styles.cohortTableContainer} style={fadeInStyle}>
         <div className={styles.topSection}>
           {renderBreadcrumbs()}
           <CohortNavBar height={36} onSectionTabChange={onTabChange} />
