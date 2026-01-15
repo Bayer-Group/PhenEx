@@ -38,14 +38,15 @@
   border: 1px solid var(--line-color);
   border-radius: 8px;
   overflow: visible;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
+  /* display: flex;
+  flex-direction: column; */
+  /* height: fit-content; */
   box-shadow: var(--box_shadow);
   transition: all .3s ease;
   cursor: pointer;
   margin-bottom: 300px;
   overflow:hidden;
+  min-height:50px;
 }
 
 .cohortCard:hover .cohortHeader{

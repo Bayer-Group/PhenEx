@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import styles from './PhenExNavBar.module.css';
-import { CohortNavBar } from './CohortNavBar';
 import { ActionNavBar } from './ActionNavBar';
 import { ViewNavBar } from './ViewNavBar';
 import { AddButtonNavBar } from './AddButtonNavBar';
 import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
-import { Portal } from '../Portal/Portal';
 
 interface PhenExNavBarProps {
   onSectionTabChange?: (index: number) => void;
@@ -56,7 +54,6 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
 
       </div>
       <div className={styles.bottomRight}>
-               <CohortNavBar height={heightNavBar} onSectionTabChange={onSectionTabChange} dragHandleRef={dragHandleRef} />
         <AddButtonNavBar height={heightNavBar} />
 
         <ActionNavBar 

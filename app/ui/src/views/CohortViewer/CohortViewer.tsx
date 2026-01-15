@@ -17,6 +17,8 @@ import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCoho
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
+import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
+import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -434,30 +436,29 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [dataService.table_data]);
   
   return (
-    <div className={styles.cohortTableContainer}>
-      <div className={styles.topSection}>
-        {renderBreadcrumbs()}
-        {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-        {renderSectionTabs()} */}
+    <NavBarMenuProvider>
+      <div className={styles.cohortTableContainer}>
+        <div className={styles.topSection}>
+          {renderBreadcrumbs()}
+          <CohortNavBar height={36} onSectionTabChange={onTabChange} />
+          {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
+          {renderSectionTabs()} */}
+        </div>
+        <div className={styles.bottomSection} ref={bottomSectionRef}>
+          {renderTable()}
+          <div className={styles.bottomGradient} />
+        </div>
+        <PhenExNavBar
+          onSectionTabChange={onTabChange}
+          dragHandleRef={navBarDragHandleRef}
+          scrollPercentage={scrollPercentage}
+          canScrollLeft={canScrollLeft}
+          canScrollRight={canScrollRight}
+          onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+          onViewNavigationScroll={handleViewNavigationScroll}
+          onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+        />
       </div>
-      {/* <div className={styles.newPhenotypeButton}>
-        {renderAddNewPhenotypeButton()}
-      </div> */}
-      {/* <div className={styles.bottomSection}> */}
-      <div className={styles.bottomSection} ref={bottomSectionRef}>
-        {renderTable()}
-        <div className={styles.bottomGradient} />
-      </div>
-      <PhenExNavBar
-        onSectionTabChange={onTabChange}
-        dragHandleRef={navBarDragHandleRef}
-        scrollPercentage={scrollPercentage}
-        canScrollLeft={canScrollLeft}
-        canScrollRight={canScrollRight}
-        onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-        onViewNavigationScroll={handleViewNavigationScroll}
-        onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-      />
-    </div>
+    </NavBarMenuProvider>
   );
 };

@@ -48,6 +48,7 @@ const OptionsMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      verticalPosition='below'
     >
       <div style={{ padding: '8px 4px', minWidth: '180px' }}>
         <div className={styles.itemList}>
@@ -82,7 +83,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
   const menuRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className={styles.navBar} style={{ height: `${height}px` }}>
+    <div className={`${styles.navBar} ${styles.noshadow}`} style={{ height: `${height}px` }}>
       <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
         {/* ⋮⋮ */}
       </div>

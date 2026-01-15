@@ -15,12 +15,13 @@
 
 .topSection {
   /* Height hugs content */
-  width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 40px;
   flex-shrink: 0;
-  padding-bottom: 0px;
-  padding-top:10px;
+  padding-bottom: 10px;
+  padding-top: 5px;
   padding-left:20px;
 }
 
@@ -99,6 +100,7 @@
 }
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
+  width: fit-content;
   margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
   line-height: 20px;
