@@ -8,16 +8,16 @@
 }
 
 .topSection {
-  position: absolute;
-  z-index: 10;
-  pointer-events: none;
-  padding: 20px 20px;
-  background-color: var(--color_translucent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* Height hugs content */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding-bottom: 0px;
+  padding-top:10px;
+  padding-left:20px;
 }
+
 
 .topSection > * {
   pointer-events: auto;
@@ -86,20 +86,21 @@
 
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
-  margin-top: 10px;
-  margin-left: 30px;
-  font-size: 40px !important;
+  margin-top: 0px;
+  margin-left: var(--centerPanelLeftMargin);
+  line-height: 20px;
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
 }
-
 .breadcrumbItem{
-  font-size: 20px !important;
+  font-size: var(--font_size_breadcrumb) !important;
   line-height: 10px;
 }
 
-.breadcrumbLastItem{
-  font-size: 32px !important;
+.breadcrumbLastItem{ /* this is the main title */
+  font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
 }
 
 .studyNameInput {

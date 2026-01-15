@@ -173,7 +173,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       // Zoom in/out (works with Command+scroll and trackpad pinch)
       const zoomSpeed = 0.01;
       const delta = -e.deltaY * zoomSpeed;
-      const newScale = Math.max(0.5, Math.min(2, viewState.scale * (1 + delta)));
+      const newScale = Math.max(0.3, Math.min(1, viewState.scale * (1 + delta)));
 
       // Zoom towards cursor position
       if (viewportRef.current) {
@@ -289,6 +289,30 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     }
   };
 
+  const calculateRowHeight = (params: any) => {
+    let current_max_height = 20;
+    const minHeight = 20; 
+
+    const nameCol = params.api.getColumnDef('name');
+    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
+    const nameWidth = (nameCol.width) || 200;
+    const nameCharPerLine = Math.floor(nameWidth / 8);
+    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
+    const nameHeight = nameLines * 22 + 10; // 14px per line + padding
+    if (!params.data?.description) {
+      return Math.max(current_max_height, nameHeight); // Increased minimum height
+    }
+    const descriptionLines = params.data.description.split('\n').length;
+    if (descriptionLines.length === 1) {
+      return Math.max(current_max_height, nameHeight); // Increased minimum height
+    }
+    const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
+    current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
+    
+    return current_max_height; // Increased minimum height
+  
+  }
+
   const renderCohortCard = (cohortDef: CohortWithTableData, index: number) => {
     const cohortKey = cohortDef.cohort.id || index;
     const cohortId = cohortDef.cohort.id || String(index);
@@ -301,13 +325,10 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         onClick={() => clickedOnCohort(cohortDef)}
         style={{ cursor: 'pointer', pointerEvents: 'auto' }}
       >
-        <div className={styles.cohortHeader}>
+        <div className={styles.cohortHeader} style={{ position: 'absolute', bottom: '100%', left: '0', right: '0' }}>
           <div className={styles.cohortHeaderContent}>
             <div className={styles.cohortHeaderTitle}>
               {cohortDef.cohort.name || 'Unnamed Cohort'}
-              <div style={{ fontSize: '12px', color: '#666' }}>
-                ({cohortDef.table_data.rows.length} rows)
-              </div>
             </div>
             <div className={styles.menuContainer} ref={isMenuOpen ? menuRef : null}>
               <button
@@ -342,6 +363,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
               currentlyViewing="cohort-definitions"
               domLayout="autoHeight"
               headerHeight={0}
+              customGetRowHeight={calculateRowHeight}
               tableTheme={{
                 accentColor: 'transparent',
                 borderColor: 'transparent',

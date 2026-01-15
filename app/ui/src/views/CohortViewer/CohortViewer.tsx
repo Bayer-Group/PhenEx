@@ -344,6 +344,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     );
   };
 
+  const navigateToMyStudies = () => {
+    // Navigate back to studies page
+    window.location.href = '/studies';
+  };
+
+
   const navigateToStudyViewer = () => {
     const studyId = dataService.cohort_data?.study_id;
     if (studyId) {
@@ -353,6 +359,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
 
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
+      {
+        displayName: 'My Studies',// TODO; cohorts need to know if they're public or not
+        onClick: navigateToMyStudies,
+      },
       {
         displayName: studyName || 'Study',
         onClick: navigateToStudyViewer,
