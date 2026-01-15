@@ -158,7 +158,33 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
-  const [viewState, setViewState] = useState({ x: 0, y: 0, scale: 1 });
+  
+  // Initialize view state from local storage if available
+  const [viewState, setViewState] = useState(() => {
+    const studyId = studyDataService.study_data?.id;
+    if (studyId) {
+      try {
+        const saved = localStorage.getItem(`cohort-view-state-${studyId}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved view state', e);
+      }
+    }
+    return { x: 0, y: 0, scale: 1 };
+  });
+
+  // Persist view state changes to local storage (debounced)
+  useEffect(() => {
+    const studyId = studyDataService.study_data?.id;
+    if (!studyId) return;
+
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(`cohort-view-state-${studyId}`, JSON.stringify(viewState));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [viewState, studyDataService.study_data?.id]);
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
