@@ -161,7 +161,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
 
     const isShift = e.shiftKey;
     const isCommand = e.metaKey || e.ctrlKey;
