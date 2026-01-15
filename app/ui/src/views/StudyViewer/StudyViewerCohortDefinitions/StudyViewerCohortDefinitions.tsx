@@ -59,6 +59,82 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     }
   }, [openMenuId]);
 
+  const clampViewState = (x: number, y: number, scale: number) => {
+    if (!viewportRef.current || !cohortDefinitions) return { x, y };
+    
+    const viewportWidth = viewportRef.current.clientWidth;
+    const viewportHeight = viewportRef.current.clientHeight;
+    
+    // Calculate content dimensions - use much larger minimums for scrollable area
+    const contentWidth = Math.max(cohortDefinitions.length * 420 + 40, 5000); // Minimum 5000px width
+    const contentHeight = Math.max(1000, 3000); // Minimum 3000px height
+    
+    const scaledWidth = contentWidth * scale;
+    const scaledHeight = contentHeight * scale;
+    
+    const padding = 200; // Increased padding for more freedom
+    
+    // Clamp X: keep content visible
+    const minX = Math.min(viewportWidth - scaledWidth - padding, padding);
+    const maxX = padding;
+    const clampedX = Math.max(minX, Math.min(maxX, x));
+    
+    // Clamp Y: keep content visible
+    const minY = Math.min(viewportHeight - scaledHeight - padding, padding);
+    const maxY = padding;
+    const clampedY = Math.max(minY, Math.min(maxY, y));
+    
+    return { x: clampedX, y: clampedY };
+  };
+
+  // Attach wheel listener with passive: false to allow preventDefault
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+
+    const wheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+
+      const isShift = e.shiftKey;
+      const isCommand = e.metaKey || e.ctrlKey;
+
+      if (isCommand) {
+        // Zoom
+        const zoomSpeed = 0.01;
+        const delta = -e.deltaY * zoomSpeed;
+        setViewState(prev => {
+          const newScale = Math.max(0.3, Math.min(1, prev.scale * (1 + delta)));
+          const rect = element.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const pointX = (mouseX - prev.x) / prev.scale;
+          const pointY = (mouseY - prev.y) / prev.scale;
+          const newX = mouseX - pointX * newScale;
+          const newY = mouseY - pointY * newScale;
+          const clamped = clampViewState(newX, newY, newScale);
+          return { x: clamped.x, y: clamped.y, scale: newScale };
+        });
+      } else if (isShift) {
+        // Horizontal pan
+        setViewState(prev => {
+          const newX = prev.x - e.deltaY;
+          const clamped = clampViewState(newX, prev.y, prev.scale);
+          return { ...prev, x: clamped.x };
+        });
+      } else {
+        // Vertical pan
+        setViewState(prev => {
+          const newY = prev.y - e.deltaY;
+          const clamped = clampViewState(prev.x, newY, prev.scale);
+          return { ...prev, y: clamped.y };
+        });
+      }
+    };
+
+    element.addEventListener('wheel', wheelHandler, { passive: false });
+    return () => element.removeEventListener('wheel', wheelHandler);
+  }, [cohortDefinitions]);
+
   const handleCreateFirstCohort = async () => {
     try {
       const studyId = studyDataService.study_data?.id;
@@ -130,87 +206,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
   const handleCancelDelete = () => {
     setDeleteConfirmCohort(null);
-  };
-
-  const clampViewState = (x: number, y: number, scale: number) => {
-    if (!viewportRef.current || !cohortDefinitions) return { x, y };
-    
-    const viewportWidth = viewportRef.current.clientWidth;
-    const viewportHeight = viewportRef.current.clientHeight;
-    
-    // Calculate content dimensions - use much larger minimums for scrollable area
-    const contentWidth = Math.max(cohortDefinitions.length * 420 + 40, 5000); // Minimum 5000px width
-    const contentHeight = Math.max(1000, 3000); // Minimum 3000px height
-    
-    const scaledWidth = contentWidth * scale;
-    const scaledHeight = contentHeight * scale;
-    
-    const padding = 200; // Increased padding for more freedom
-    
-    // Clamp X: keep content visible
-    const minX = Math.min(viewportWidth - scaledWidth - padding, padding);
-    const maxX = padding;
-    const clampedX = Math.max(minX, Math.min(maxX, x));
-    
-    // Clamp Y: keep content visible
-    const minY = Math.min(viewportHeight - scaledHeight - padding, padding);
-    const maxY = padding;
-    const clampedY = Math.max(minY, Math.min(maxY, y));
-    
-    return { x: clampedX, y: clampedY };
-  };
-
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-
-    const isShift = e.shiftKey;
-    const isCommand = e.metaKey || e.ctrlKey;
-    
-    // Detect trackpad pinch-to-zoom: ctrlKey is set automatically by browser
-    const isPinchZoom = isCommand;
-
-    if (isPinchZoom) {
-      // Zoom in/out (works with Command+scroll and trackpad pinch)
-      const zoomSpeed = 0.01;
-      const delta = -e.deltaY * zoomSpeed;
-      const newScale = Math.max(0.3, Math.min(1, viewState.scale * (1 + delta)));
-
-      // Zoom towards cursor position
-      if (viewportRef.current) {
-        const rect = viewportRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        // Calculate the point in the content that the mouse is over
-        const pointX = (mouseX - viewState.x) / viewState.scale;
-        const pointY = (mouseY - viewState.y) / viewState.scale;
-
-        // Calculate new pan position to keep that point under the cursor
-        const newX = mouseX - pointX * newScale;
-        const newY = mouseY - pointY * newScale;
-
-        const clamped = clampViewState(newX, newY, newScale);
-        setViewState({ x: clamped.x, y: clamped.y, scale: newScale });
-      }
-    } else {
-      // Handle vertical scroll
-      if (Math.abs(e.deltaY) > 0) {
-        if (isShift) {
-          // Shift + vertical scroll = horizontal pan
-          setViewState(prev => {
-            const newX = prev.x - e.deltaY;
-            const clamped = clampViewState(newX, prev.y, prev.scale);
-            return { ...prev, x: clamped.x };
-          });
-        } else {
-          // Normal vertical scroll = vertical pan
-          setViewState(prev => {
-            const newY = prev.y - e.deltaY;
-            const clamped = clampViewState(prev.x, newY, prev.scale);
-            return { ...prev, y: clamped.y };
-          });
-        }
-      }
-    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -447,7 +442,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       <div 
         ref={viewportRef}
         className={styles.content}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
