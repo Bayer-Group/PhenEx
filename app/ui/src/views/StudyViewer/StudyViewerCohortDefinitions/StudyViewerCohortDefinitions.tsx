@@ -25,7 +25,7 @@ const TABLE_THEME = {
   cellHorizontalPadding: 10,
   headerBackgroundColor: 'transparent',
   rowBorder: false,
-  spacing: 8,
+  spacing: 0,
   backgroundColor: 'transparent',
   wrapperBorderRadius: 0
 };

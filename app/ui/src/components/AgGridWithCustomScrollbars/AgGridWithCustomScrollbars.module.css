@@ -12,17 +12,25 @@
 
 /* Hide AG Grid's default scrollbars for this wrapper */
 .gridWrapper :global(.ag-body-viewport),
+.gridWrapperAutoHeight :global(.ag-body-viewport),
 .gridWrapper :global(.ag-center-cols-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport),
 .gridWrapper :global(.ag-body-horizontal-scroll),
-.gridWrapper :global(.ag-body-vertical-scroll) {
+.gridWrapperAutoHeight :global(.ag-body-horizontal-scroll),
+.gridWrapper :global(.ag-body-vertical-scroll),
+.gridWrapperAutoHeight :global(.ag-body-vertical-scroll) {
   scrollbar-width: none !important; /* Firefox */
   -ms-overflow-style: none !important; /* IE and Edge */
 }
 
 .gridWrapper :global(.ag-body-viewport::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-body-viewport::-webkit-scrollbar),
 .gridWrapper :global(.ag-center-cols-viewport::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport::-webkit-scrollbar),
 .gridWrapper :global(.ag-body-horizontal-scroll::-webkit-scrollbar),
-.gridWrapper :global(.ag-body-vertical-scroll::-webkit-scrollbar) {
+.gridWrapperAutoHeight :global(.ag-body-horizontal-scroll::-webkit-scrollbar),
+.gridWrapper :global(.ag-body-vertical-scroll::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-body-vertical-scroll::-webkit-scrollbar) {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -119,7 +127,8 @@
 }
 
 /* Nuclear option - hide all scrollbars within the grid wrapper */
-.gridWrapper * {
+.gridWrapper *,
+.gridWrapperAutoHeight * {
   &::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
@@ -127,4 +136,15 @@
   }
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+}
+
+/* Override AG Grid internal height constraints for autoHeight layout */
+.gridWrapperAutoHeight :global(.ag-root),
+.gridWrapperAutoHeight :global(.ag-root-wrapper),
+.gridWrapperAutoHeight :global(.ag-body-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-clipper),
+.gridWrapperAutoHeight :global(.ag-center-cols-container) {
+  height: auto !important;
+  min-height: 0 !important;
 }

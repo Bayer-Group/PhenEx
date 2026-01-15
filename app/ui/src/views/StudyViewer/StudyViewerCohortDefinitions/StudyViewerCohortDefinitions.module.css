@@ -46,7 +46,6 @@
   cursor: pointer;
   margin-bottom: 300px;
   overflow:hidden;
-  min-height:50px;
 }
 
 .cohortCard:hover .cohortHeader{
@@ -133,7 +132,6 @@
 
 .tableContainer {
   width: 100%;
-  /* height: fit-content; */
   overflow: visible;
   margin: 0px;
   padding: 0px;

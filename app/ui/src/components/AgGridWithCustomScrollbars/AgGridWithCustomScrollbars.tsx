@@ -394,11 +394,13 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       }
     }, [agGridProps.onCellContextMenu, enableRightClickMenu, showMenu]);
 
+    const isAutoHeight = agGridProps.domLayout === 'autoHeight';
+    
     return (
-      <div className={`${styles.gridWrapper} ${className || ''}`}>
+      <div className={`${isAutoHeight ? styles.gridWrapperAutoHeight : styles.gridWrapper} ${className || ''}`}>
         <div 
           ref={gridContainerRef} 
-          className={styles.gridContainer}
+          className={isAutoHeight ? styles.gridContainerAutoHeight : styles.gridContainer}
           onMouseDown={handlePanMouseDown}
           onContextMenu={(e) => enableRightClickMenu && e.preventDefault()}
           style={{ cursor: isPanDragging ? 'grabbing' : 'grab' }}
