@@ -318,12 +318,20 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const cohortId = cohortDef.cohort.id || String(index);
     const isMenuOpen = openMenuId === cohortId;
 
+    // Calculate outline width to maintain visual 3px regardless of scale
+    const desiredVisualOutlineWidth = 3;
+    const actualOutlineWidth = desiredVisualOutlineWidth / viewState.scale;
+
     return (
       <div 
         key={cohortKey} 
         className={styles.cohortCard} 
         onClick={() => clickedOnCohort(cohortDef)}
-        style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+        style={{ 
+          cursor: 'pointer', 
+          pointerEvents: 'auto',
+          '--dynamic-outline-width': `${actualOutlineWidth}px`
+        } as React.CSSProperties & { '--dynamic-outline-width': string }}
       >
         <div className={styles.cohortHeader} style={{ position: 'absolute', bottom: '100%', left: '0', right: '0' }}>
           <div className={styles.cohortHeaderContent}>

@@ -49,8 +49,8 @@
 .cohortCard:hover{
   background-color: white;
   box-shadow: var(--box_shadow_hover);
-  outline: 3px solid var(--color_accent_blue);
-  outline-offset: -3px;
+  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
+  outline-offset: calc(var(--dynamic-outline-width, 3px) * -1);
 }
 
 .cohortHeader {
