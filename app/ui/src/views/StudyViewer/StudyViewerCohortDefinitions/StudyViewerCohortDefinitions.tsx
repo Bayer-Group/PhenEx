@@ -259,12 +259,18 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       }
     };
 
-    console.log('[StudyViewer] Adding data change listener');
+    console.log('[StudyViewer] Adding data change listener to CohortDataService');
     cohortDataService.addDataChangeListener(handleCohortDataChange);
+    
+    // Also listen to cohort_definitions_service for model changes
+    console.log('[StudyViewer] Adding listener to cohort_definitions_service');
+    studyDataService.cohort_definitions_service.addListener(handleCohortDataChange);
 
     return () => {
-      console.log('[StudyViewer] Removing data change listener');
+      console.log('[StudyViewer] Removing data change listener from CohortDataService');
       cohortDataService.removeDataChangeListener(handleCohortDataChange);
+      console.log('[StudyViewer] Removing listener from cohort_definitions_service');
+      studyDataService.cohort_definitions_service.removeListener(handleCohortDataChange);
     };
   }, [studyDataService]);
 

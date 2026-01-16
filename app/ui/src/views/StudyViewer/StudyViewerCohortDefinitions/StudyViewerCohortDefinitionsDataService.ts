@@ -9,6 +9,7 @@ export class StudyViewerCohortDefinitionsDataService {
   private _studyDataService: any;
   private _cohortModels: Map<string, CohortModel> = new Map(); // Store CohortModel instances by cohort ID
   private _activeCohortId: string | null = null; // Track which cohort is currently active
+  private _listeners: Array<() => void> = []; // Listeners for when cohort data changes
 
   constructor() {
     this._study_data = {};
@@ -34,6 +35,13 @@ export class StudyViewerCohortDefinitionsDataService {
       model = new CohortModel();
       model.loadCohortData(cohort);
       this._cohortModels.set(cohort.id, model);
+      
+      // Subscribe to model changes to notify StudyViewer
+      const modelListener = () => {
+        console.log('[StudyViewer] CohortModel changed for cohort:', cohort.id);
+        this.notifyListeners();
+      };
+      model.addListener(modelListener);
     }
     
     const tableData = model.table_data;
@@ -129,5 +137,26 @@ export class StudyViewerCohortDefinitionsDataService {
         columns: cohortDefinitionColumns
       }
     };
+  }
+
+  /**
+   * Add a listener to be notified when cohort data changes
+   */
+  public addListener(listener: () => void): void {
+    this._listeners.push(listener);
+  }
+
+  /**
+   * Remove a listener
+   */
+  public removeListener(listener: () => void): void {
+    this._listeners = this._listeners.filter(l => l !== listener);
+  }
+
+  /**
+   * Notify all listeners that cohort data has changed
+   */
+  private notifyListeners(): void {
+    this._listeners.forEach(listener => listener());
   }
 }
