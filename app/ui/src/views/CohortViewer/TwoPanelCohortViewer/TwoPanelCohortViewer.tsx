@@ -12,9 +12,13 @@ import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
 import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
 import { RightPanelHistory } from './RightPanelHistory';
+import { StudyViewerCohortDefinitions } from '../../StudyViewer/StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
+  contentMode?: 'cohort' | 'study';
+  studyDataService?: StudyDataService;
 }
 
 export class TwoPanelCohortViewerService {
@@ -104,7 +108,7 @@ export class TwoPanelCohortViewerService {
   }
 }
 
-export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) => {
+export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, contentMode = 'cohort', studyDataService }) => {
   const service = TwoPanelCohortViewerService.getInstance();
   const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>(null);
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
@@ -170,6 +174,13 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
     }
   };
 
+  const renderLeftPanel = () => {
+    if (contentMode === 'study' && studyDataService) {
+      return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
+    }
+    return <CohortViewer data={service.getData()} />;
+  };
+
   return (
     <TwoPanelView 
       ref={panelRef} 
@@ -181,7 +192,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       onRightPanelCollapse={handleRightPanelCollapse}
     >
       <>
-        <CohortViewer data={service.getData()} />
+        {renderLeftPanel()}
       </>
       {renderRightPanel()}
     </TwoPanelView>

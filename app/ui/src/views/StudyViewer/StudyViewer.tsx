@@ -12,6 +12,7 @@ import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { useFadeIn } from '../../hooks/useFadeIn';
+import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
@@ -216,18 +217,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
     );
   };
 
-  const renderContent = () => {
-    switch (currentView) {
-      case StudyDefinitionViewType.Cohort:
-        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
-      case StudyDefinitionViewType.Baseline:
-      case StudyDefinitionViewType.Outcomes:
-        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
-      default:
-        return <div />;
-    }
-  };
-
   return (
         <NavBarMenuProvider>
     
@@ -242,7 +231,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
       >
         + New Cohort
       </button>
-      <div className={styles.bottomSection}>{renderContent()}</div>
+      <div className={styles.bottomSection}>
+        <TwoPanelCohortViewer 
+          contentMode="study" 
+          studyDataService={studyDataService}
+        />
+      </div>
       <PhenExNavBar
         onSectionTabChange={onTabChange}
       />
