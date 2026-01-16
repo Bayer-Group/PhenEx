@@ -215,7 +215,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   
   service.setData(data);
   
-  const updateBreadcrumbs = () => {
+  const updateBreadcrumbs = React.useCallback(() => {
     if (contentMode === 'cohort') {
       const cohortService = CohortDataService.getInstance();
       const items = [
@@ -253,7 +253,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
       setBreadcrumbItems(items);
       setEditableName(studyService.study_name || 'Unnamed Study');
     }
-  };
+  }, [contentMode, navigate]);
   
   const handleEditLastItem = async (newValue: string) => {
     if (contentMode === 'cohort') {
@@ -311,14 +311,15 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     <NavBarMenuProvider>
       <div className={styles.container}>
         <div className={styles.topSection}>
-          <SmartBreadcrumbs 
-            items={breadcrumbItems} 
-            onEditLastItem={handleEditLastItem}
-            classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
-            classNameBreadcrumbItem={styles.breadcrumbItem}
-            classNameBreadcrumbLastItem={styles.breadcrumbLastItem}
-            compact={false}
-          />
+          <div className={styles.breadcrumbsContainer}>
+            <SmartBreadcrumbs 
+              items={breadcrumbItems} 
+              onEditLastItem={handleEditLastItem}
+              classNameBreadcrumbItem={styles.breadcrumbItem}
+              classNameBreadcrumbLastItem={styles.breadcrumbLastItem}
+              compact={false}
+            />
+          </div>
           <TabsAndAddButton height={44} onSectionTabChange={handleTabChange} shadow={true} />
         </div>
         <div className={styles.contentSection}>
