@@ -37,6 +37,7 @@ export const TwoPanelView = React.forwardRef<
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isBottomCollapsed, setIsBottomCollapsed] = useState(false); // Start with bottom panel visible
   const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -184,11 +185,15 @@ export const TwoPanelView = React.forwardRef<
           ) : (
             !isRightCollapsed && (
               <Portal>
-                <div className={styles.popoverOverlay} onClick={() => {
-                    setIsRightCollapsed(true);
-                    onRightPanelCollapse?.(true);
+                <div className={`${styles.popoverOverlay} ${isClosing ? styles.closing : ''}`} onClick={() => {
+                    setIsClosing(true);
+                    setTimeout(() => {
+                      setIsRightCollapsed(true);
+                      setIsClosing(false);
+                      onRightPanelCollapse?.(true);
+                    }, 100);
                 }}>
-                  <div className={styles.popoverContent} onClick={(e) => e.stopPropagation()}>
+                  <div className={`${styles.popoverContent} ${isClosing ? styles.closing : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.rightPanelContent}>
                         {children[1]}
                     </div>

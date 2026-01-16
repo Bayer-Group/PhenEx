@@ -112,7 +112,6 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSect
             }
           }, 100);
         }}
-        title="Add new item"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
           <line x1="12" y1="5" x2="12" y2="19" />
