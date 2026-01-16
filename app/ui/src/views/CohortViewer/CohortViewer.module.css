@@ -110,7 +110,8 @@
 }
 .breadcrumbItem{
   font-size: var(--font_size_infotext) !important;
-  line-height: 10px;
+  line-height: var(--font_size_infotext) !important;
+
 }
 
 .breadcrumbLastItem{ /* this is the main title */

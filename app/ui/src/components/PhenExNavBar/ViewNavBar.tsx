@@ -48,7 +48,7 @@ const VisibilityMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      verticalPosition='below'
+      verticalPosition='above'
       horizontalAlignment='right'
     >
       <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -212,7 +212,7 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
       <PhenExNavBarTooltip
         isVisible={showLeftArrowTooltip && canScrollLeft}
         anchorElement={leftArrowRef.current}
-        verticalPosition='below'
+        verticalPosition='above'
         label="Go to Previous Parameter"
       />
       
@@ -220,14 +220,14 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         isVisible={showRightArrowTooltip && canScrollRight}
         anchorElement={rightArrowRef.current}
         label="Go to Next Parameter"
-        verticalPosition='below'
+        verticalPosition='above'
       />
       
       <PhenExNavBarTooltip
         isVisible={showThumbTooltip}
         anchorElement={scrollThumbRef.current}
         label="Scroll Through Parameters"
-        verticalPosition='below'
+        verticalPosition='above'
       />
       
       <VisibilityMenu

@@ -277,7 +277,7 @@
 
 .addButton:hover {
   color:white;
-  transform: var(--scale_transform);
+  transform: scale(1.35);
 
 }
 

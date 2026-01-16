@@ -18,6 +18,7 @@ import { MainViewService, ViewType } from '../MainView/MainView';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
 import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
+import { TabsAndAddButton } from '../../components/PhenExNavBar/TabsAndAddButton';
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { useFadeIn } from '../../hooks/useFadeIn';
 
@@ -443,7 +444,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       <div className={styles.cohortTableContainer} style={fadeInStyle}>
         <div className={styles.topSection}>
           {renderBreadcrumbs()}
-          <CohortNavBar height={44} onSectionTabChange={onTabChange} shadow={true} />
+        <TabsAndAddButton height={44} onSectionTabChange={onTabChange} shadow={true} />
           {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
           {renderSectionTabs()} */}
         </div>

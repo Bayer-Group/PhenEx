@@ -9,7 +9,7 @@ import { MainViewService, ViewType } from '../MainView/MainView';
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
-import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
+import { TabsAndAddButton } from '../../components/PhenExNavBar/TabsAndAddButton';
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { useFadeIn } from '../../hooks/useFadeIn';
 import { getStudy } from '../../api/text_to_cohort/route';
@@ -242,7 +242,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.topSection}>
         {renderBreadcrumbs()}
-          <CohortNavBar height={44} onSectionTabChange={onTabChange} shadow={true} />
+          <TabsAndAddButton height={44} onSectionTabChange={onTabChange} shadow={true} />
       </div>
       <button 
         className={styles.newCohortButton}
