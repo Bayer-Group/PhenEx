@@ -24,8 +24,8 @@
 
 .topRight{
   position: absolute;
-  bottom: 80px;
-  right: 5px;
+  bottom: 10px;
+  left: 100px;
   display: flex;
   flex-direction: row;
   gap: 10px;
@@ -34,7 +34,7 @@
 .bottomRight{
   position: absolute;
   bottom: 10px;
-  right: 5px;
+  right: 20px;
   display: flex;
   flex-direction: row;
   gap: 10px;
