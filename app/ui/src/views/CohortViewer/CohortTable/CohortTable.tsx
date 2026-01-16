@@ -50,10 +50,11 @@ interface CohortTableProps {
   tableGridOptions?: any;
   customGetRowHeight?: (params: any) => number;
   gridBottomPadding?: number;
+  components?: any; // AG Grid components map for custom cell renderers
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0}, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0, components}, ref) => {
 
     const default_theme = {
       accentColor: 'transparent',
@@ -396,6 +397,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             columnDefs={data.columns.length > 0 ? data.columns : []}
             domLayout={domLayout}
             gridOptions = {gridOptions}
+            components={components} // Pass registered components for cell renderers
             defaultColDef={{
               sortable: true,
               filter: true,

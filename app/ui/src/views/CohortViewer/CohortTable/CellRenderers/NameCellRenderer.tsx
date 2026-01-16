@@ -1,7 +1,6 @@
 import React from 'react';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
-import { CohortDataService } from '../../CohortDataService/CohortDataService';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 import ArrowIcon from '../../../../assets/icons/arrow-up-right.svg';
 
@@ -28,34 +27,10 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     colorBorder = true,
   } = props;
   
-  const dataService = CohortDataService.getInstance();
   
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
-
-  const renderComponentPhenotypeName = () => {
-    const ancestors = dataService.getAllAncestors(props.data);
-    return (
-      <div className={styles.componentPhenotypeLabel}>
-        <div className={styles.ancestorsLabel}>
-          {ancestors.map((ancestor, index) => (
-            <React.Fragment key={ancestor.id}>
-              <span className={`${styles.ancestorLabel} ${typeStyles[`${ancestor.type || ''}_text_color`] || ''}`}>
-                {ancestor.name || ancestor.id}
-              </span>
-              {index < ancestors.length - 1 && (
-                <span className={styles.ancestorDivider}>{'|'}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        <div className={styles.componentPhenotypeName}>
-          {props.value}
-        </div>
-      </div>
-    );
-  };
 
   const renderName = () => {
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;

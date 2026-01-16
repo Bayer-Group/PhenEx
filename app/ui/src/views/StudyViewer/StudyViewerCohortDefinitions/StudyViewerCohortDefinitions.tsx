@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
-import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
+import { CohortWithTableData, getStudyViewerCellRenderers } from './StudyViewerCohortDefinitionsTypes';
 import { MainViewService, ViewType } from '@/views/MainView/MainView';
 import { SimpleCustomScrollbar } from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import scrollbarStyles from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.module.css';
@@ -48,7 +48,8 @@ const CohortList = React.memo(({
   onCardClick, 
   calculateRowHeight, 
   tableContainerRefs, 
-  menuRef 
+  menuRef,
+  cellRenderers
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -58,6 +59,7 @@ const CohortList = React.memo(({
   calculateRowHeight: (params: any) => number;
   tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
   menuRef: React.RefObject<HTMLDivElement>;
+  cellRenderers: any;
 }) => {
   return (
     <div
@@ -133,6 +135,7 @@ const CohortList = React.memo(({
                       customGetRowHeight={calculateRowHeight}
                       tableTheme={TABLE_THEME}
                       tableGridOptions={TABLE_GRID_OPTIONS}
+                      components={cellRenderers}
                     />
                   ) : (
                     <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
@@ -153,6 +156,9 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
+  
+  // Get cell renderers once - function call defers access until after module initialization
+  const cellRenderers = useMemo(() => getStudyViewerCellRenderers(), []);
   
   // Initialize view state from local storage if available
   const [viewState, setViewState] = useState(() => {
@@ -521,6 +527,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             calculateRowHeight={calculateRowHeight}
             tableContainerRefs={tableContainerRefs}
             menuRef={menuRef}
+            cellRenderers={cellRenderers}
           />
         </div>
       </div>

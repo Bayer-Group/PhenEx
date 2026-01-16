@@ -3,6 +3,7 @@ import { StudyViewer } from './StudyViewer';
 import { UnauthorizedPage } from '../ErrorPages/UnauthorizedPage';
 import { NotFoundPage } from '../ErrorPages/NotFoundPage';
 import { getStudy } from '@/api/text_to_cohort/route';
+import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 interface StudyViewerWrapperProps {
   data?: string;
@@ -63,5 +64,5 @@ export const StudyViewerWrapper: FC<StudyViewerWrapperProps> = ({ data }) => {
     return <NotFoundPage />;
   }
 
-  return <StudyViewer data={data} />;
+  return <TwoPanelCohortViewer data={data} contentMode="study" />;
 };
