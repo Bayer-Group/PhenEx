@@ -18,7 +18,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 40px;
+  gap: 20px;
   flex-shrink: 0;
   padding-bottom: 10px;
   padding-top: 5px;
@@ -103,13 +103,13 @@
   width: fit-content;
   margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
-  line-height: 20px;
+  line-height: 10px;
   /* display: flex;
   align-items: baseline; */
   /* height: 20px; */
 }
 .breadcrumbItem{
-  font-size: var(--font_size_breadcrumb) !important;
+  font-size: var(--font_size_infotext) !important;
   line-height: 10px;
 }
 

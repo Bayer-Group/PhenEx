@@ -186,7 +186,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
       await studyDataService.saveChangesToStudy();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={true}/>;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false}/>;
   };
 
   const clickedOnAddNewCohort = async () => {
@@ -242,7 +242,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.topSection}>
         {renderBreadcrumbs()}
-          <CohortNavBar height={36} onSectionTabChange={onTabChange} shadow={true} />
+          <CohortNavBar height={44} onSectionTabChange={onTabChange} shadow={true} />
       </div>
       <button 
         className={styles.newCohortButton}

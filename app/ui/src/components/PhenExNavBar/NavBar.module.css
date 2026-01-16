@@ -228,7 +228,7 @@
 
 .classNameSectionTabs{
   font-size: var(--font_size_mid_phenotype_info)!important;
-  height: 24px !important;
+  /* height: 30px !important; */
   padding: 0px 8px !important;
   border-radius: 14px !important;
 }

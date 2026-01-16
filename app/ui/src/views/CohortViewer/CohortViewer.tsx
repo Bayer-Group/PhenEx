@@ -384,7 +384,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       await dataService.saveChangesToCohort();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={true} />;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false} />;
   };
 
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
@@ -443,7 +443,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       <div className={styles.cohortTableContainer} style={fadeInStyle}>
         <div className={styles.topSection}>
           {renderBreadcrumbs()}
-          <CohortNavBar height={36} onSectionTabChange={onTabChange} />
+          <CohortNavBar height={44} onSectionTabChange={onTabChange} shadow={true} />
           {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
           {renderSectionTabs()} */}
         </div>

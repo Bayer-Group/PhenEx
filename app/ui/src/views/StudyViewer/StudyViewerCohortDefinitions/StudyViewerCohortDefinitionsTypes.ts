@@ -54,9 +54,10 @@ export const cohortDefinitionColumns: ColumnDefinition[] = [
     field: 'name',
     headerName: 'Name',
     flex: 1,
-    editable: false,
+    editable: true,
     resizable: false,
     filter: false,
     cellRenderer: 'nameCellRenderer',
+    cellEditor: 'agTextCellEditor',
   }
 ];

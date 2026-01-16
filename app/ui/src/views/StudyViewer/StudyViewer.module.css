@@ -99,7 +99,7 @@
   /* No absolute positioning - flows naturally */
   margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
-  line-height: 20px;
+  line-height: 10px;
 
   background-color: var(--color_translucent);
   backdrop-filter: blur(8px);
@@ -112,11 +112,12 @@
   /* height: 20px; */
 }
 .breadcrumbItem{
-  font-size: var(--font_size_breadcrumb) !important;
-  line-height: 10px;
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
 }
 
 .breadcrumbLastItem{ /* this is the main title */
+
   font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
 }
