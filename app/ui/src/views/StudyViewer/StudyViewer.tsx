@@ -12,6 +12,7 @@ import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
 import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { useFadeIn } from '../../hooks/useFadeIn';
+import { getStudy } from '../../api/text_to_cohort/route';
 
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
@@ -60,13 +61,19 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
             let studyData = allStudies.find(s => s.id === data);
             
             if (!studyData) {
-              console.error('📚 Study not found in cache, attempting direct fetch');
-              // TODO: Add API call to fetch single study by ID if needed
-              return;
+              console.log('📚 Study not found in cache, fetching directly from API');
+              // Fetch study directly from API
+              try {
+                studyData = await getStudy(data);
+                console.log('📚 Successfully fetched study from API:', studyData);
+              } catch (error) {
+                console.error('📚 Failed to fetch study from API:', error);
+                return;
+              }
             }
             
             // Check if this is a public study
-            const isPublic = publicStudies.some(s => s.id === data);
+            const isPublic = publicStudies.some(s => s.id === data) || studyData.is_public;
             setIsPublicStudy(isPublic);
             
             // Fetch cohorts for this study
