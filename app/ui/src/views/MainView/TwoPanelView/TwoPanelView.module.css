@@ -365,7 +365,7 @@
   animation: fadeIn 0.2s ease-in forwards;
   /* justify-content: center; */
   /* align-items: center; */
-  /* backdrop-filter: blur(10px); */
+  backdrop-filter: blur(2px);
 }
 
 @keyframes fadeIn {
