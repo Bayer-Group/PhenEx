@@ -37,6 +37,7 @@ export interface ViewInfo {
 export class MainViewService {
   private static instance: MainViewService | null = null;
   private listeners: Array<(viewInfo: ViewInfo) => void> = [];
+  private currentView: ViewInfo | null = null;
 
   private constructor() {}
 
@@ -49,6 +50,7 @@ export class MainViewService {
 
   public navigateTo = (viewInfo: ViewInfo) => {
     console.log('NAVIGATING ?TO', viewInfo);
+    this.currentView = viewInfo;
     this.notifyListeners(viewInfo);
   };
 
@@ -62,6 +64,14 @@ export class MainViewService {
 
   public removeListener(listener: (viewInfo: ViewInfo) => void) {
     this.listeners = this.listeners.filter(l => l !== listener);
+  }
+
+  public getCurrentView(): ViewInfo | null {
+    return this.currentView;
+  }
+
+  public setCurrentView(viewInfo: ViewInfo) {
+    this.currentView = viewInfo;
   }
 }
 
@@ -81,23 +91,29 @@ export const MainView = () => {
     const searchParams = new URLSearchParams(location.search);
     const showOnboarding = searchParams.get('onboarding') === 'true';
     
+    let newView: ViewInfo;
     if (pathname === '/' || pathname === '') {
-      setCurrentView({ viewType: ViewType.Empty, data: undefined });
+      newView = { viewType: ViewType.Empty, data: undefined };
     } else if (pathname === '/studies') {
       // Show studies grid view
-      setCurrentView({ viewType: ViewType.StudiesGrid, data: undefined });
+      newView = { viewType: ViewType.StudiesGrid, data: undefined };
     } else if (cohortId && studyId) {
       // We have both study ID and cohort ID - show cohort view
       // If onboarding=true query param is present, show the wizard
       if (showOnboarding) {
-        setCurrentView({ viewType: ViewType.NewCohort, data: cohortId });
+        newView = { viewType: ViewType.NewCohort, data: cohortId };
       } else {
-        setCurrentView({ viewType: ViewType.CohortDefinition, data: cohortId });
+        newView = { viewType: ViewType.CohortDefinition, data: cohortId };
       }
     } else if (studyId) {
       // We have a study ID - show study view
-      setCurrentView({ viewType: ViewType.StudyViewer, data: studyId });
+      newView = { viewType: ViewType.StudyViewer, data: studyId };
+    } else {
+      newView = { viewType: ViewType.Empty, data: undefined };
     }
+    
+    setCurrentView(newView);
+    MainViewService.getInstance().setCurrentView(newView);
   }, [location.pathname, location.search, studyId, cohortId]);
 
   // Also listen to MainViewService for programmatic navigation

@@ -9,9 +9,12 @@ import { CohortExecutionService } from './CohortExecutionService';
 export class CohortDataService {
   private static instance: CohortDataService;
   private _activeCohort: CohortModel;
+  private _serviceListeners: Array<() => void> = []; // Service-level listeners
+  private _modelListenerBridge?: () => void; // Bridge from model to service listeners
 
   private constructor() {
     this._activeCohort = new CohortModel();
+    this.setupModelListenerBridge();
   }
 
   public static getInstance(): CohortDataService {
@@ -21,9 +24,28 @@ export class CohortDataService {
     return CohortDataService.instance;
   }
 
+  // Set up a bridge that forwards model notifications to service listeners
+  private setupModelListenerBridge() {
+    // Remove old bridge if exists
+    if (this._modelListenerBridge) {
+      this._activeCohort.removeDataChangeListener(this._modelListenerBridge);
+    }
+    
+    // Create new bridge
+    this._modelListenerBridge = () => {
+      console.log('[CohortDataService] Model data changed, notifying service listeners:', this._serviceListeners.length);
+      this._serviceListeners.forEach(listener => listener());
+    };
+    
+    // Attach bridge to current model
+    this._activeCohort.addDataChangeListener(this._modelListenerBridge);
+  }
+
   // Allow replacing the backing model if needed (or just updating data)
   public setActiveCohortModel(model: CohortModel) {
+      console.log('[CohortDataService] setActiveCohortModel called, switching from', this._activeCohort.cohort_data?.id, 'to', model.cohort_data?.id);
       this._activeCohort = model;
+      this.setupModelListenerBridge(); // Re-bridge to new model
   }
   
   public get activeCohort(): CohortModel {
@@ -68,8 +90,17 @@ export class CohortDataService {
   
   public addListener(listener: () => void) { return this._activeCohort.addListener(listener); }
   public removeListener(listener: () => void) { return this._activeCohort.removeListener(listener); }
-  public addDataChangeListener(listener: () => void) { return this._activeCohort.addDataChangeListener(listener); }
-  public removeDataChangeListener(listener: () => void) { return this._activeCohort.removeDataChangeListener(listener); }
+  
+  // Service-level data change listeners that work across model switches
+  public addDataChangeListener(listener: () => void) {
+    console.log('[CohortDataService] addDataChangeListener called, total:', this._serviceListeners.length + 1);
+    this._serviceListeners.push(listener);
+  }
+  
+  public removeDataChangeListener(listener: () => void) {
+    console.log('[CohortDataService] removeDataChangeListener called');
+    this._serviceListeners = this._serviceListeners.filter(l => l !== listener);
+  }
   public addExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) { return this._activeCohort.addExecutionProgressListener(listener); }
   public removeExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) { return this._activeCohort.removeExecutionProgressListener(listener); }
   public addNameChangeListener(listener: () => void) { return this._activeCohort.addNameChangeListener(listener); }

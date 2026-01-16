@@ -7,6 +7,8 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 export class StudyViewerCohortDefinitionsDataService {
   private _study_data: Record<string, any> = {};
   private _studyDataService: any;
+  private _cohortModels: Map<string, CohortModel> = new Map(); // Store CohortModel instances by cohort ID
+  private _activeCohortId: string | null = null; // Track which cohort is currently active
 
   constructor() {
     this._study_data = {};
@@ -26,25 +28,15 @@ export class StudyViewerCohortDefinitionsDataService {
    * @returns TableData object with rows containing entry, inclusion, and exclusion phenotypes
    */
   private prepareCohortTableData(cohort: Record<string, any>): TableData {
-    const model = new CohortModel();
-
-  
-    
-    model.loadCohortData(cohort);
-    
-    // Check if we need to customize column definitions (StudyViewer used cohortDefinitionColumns)
-    // The previous implementation returned: columns: cohortDefinitionColumns
-    // CohortModel uses: columns: defaultColumns (from ./CohortColumnDefinitions)
-    // We might need to override the columns on the result if they differ.
-    // The import 'cohortDefinitionColumns' was used.
-    // I should check if I need to preserve 'cohortDefinitionColumns'.
-    // The user said "factor out all the things about the cohortdataservice... providing all functionality".
-    // If I use the model's table_data, I get the model's columns.
-    // If StudyViewer needs specialized columns, I should overwrite them.
+    // Reuse existing model or create new one
+    let model = this._cohortModels.get(cohort.id);
+    if (!model) {
+      model = new CohortModel();
+      model.loadCohortData(cohort);
+      this._cohortModels.set(cohort.id, model);
+    }
     
     const tableData = model.table_data;
-    // Overwrite columns to match the specific view requirements if needed
-    // The previous code imported cohortDefinitionColumns. Let's keep using them for consistency in this view.
     
     return {
       rows: tableData.rows,
@@ -69,27 +61,69 @@ export class StudyViewerCohortDefinitionsDataService {
   }
 
   /**
-   * Refreshes a single cohort's data by re-fetching from the singleton CohortDataService
+   * Sets the active cohort model in the singleton CohortDataService
+   * Call this before editing a phenotype to ensure edits are saved to the correct cohort
+   * @param cohortId The ID of the cohort to set as active
+   */
+  public setActiveCohort(cohortId: string): void {
+    console.log('[StudyViewer] setActiveCohort called with:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (model) {
+      this._activeCohortId = cohortId;
+      console.log('[StudyViewer] Setting cohort as active, model found:', model.cohort_data?.id);
+      const cohortDataService = CohortDataService.getInstance();
+      cohortDataService.setActiveCohortModel(model);
+    } else {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+    }
+  }
+
+  /**
+   * Gets the ID of the currently active cohort
+   * @returns The active cohort ID or null if none is set
+   */
+  public getActiveCohortId(): string | null {
+    console.log('[StudyViewer] getActiveCohortId returning:', this._activeCohortId);
+    return this._activeCohortId;
+  }
+
+  /**
+   * Gets the cohort ID that a phenotype belongs to
+   * @param phenotypeId The ID of the phenotype
+   * @returns The cohort ID or null if not found
+   */
+  public getCohortIdForPhenotype(phenotypeId: string): string | null {
+    for (const [cohortId, model] of this._cohortModels.entries()) {
+      const phenotype = model.getPhenotypeById(phenotypeId);
+      if (phenotype) {
+        return cohortId;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Refreshes a single cohort's data by getting from the stored model
    * @param cohortId The ID of the cohort to refresh
    * @returns Updated CohortWithTableData or null if cohort not found
    */
   public refreshSingleCohort(cohortId: string): CohortWithTableData | null {
-    const cohortDataService = CohortDataService.getInstance();
-    
-    // Get the updated cohort data from the singleton
-    const updatedCohort = cohortDataService.cohort_data;
-    
-    // Verify this is the cohort we want to refresh
-    if (updatedCohort.id !== cohortId) {
+    console.log('[StudyViewer] refreshSingleCohort called for:', cohortId);
+    // Get the model from our Map (it's the same instance that's active in the singleton)
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] refreshSingleCohort: No model found for:', cohortId);
       return null;
     }
 
-    // Get table data directly from the singleton's active model (already loaded and up-to-date)
-    const tableData = cohortDataService.table_data;
+    // Get the updated data directly from the model
+    const cohortData = model.cohort_data;
+    const tableData = model.table_data;
+    console.log('[StudyViewer] refreshSingleCohort: Got data, rows:', tableData.rows.length);
     
     // Use only the columns we need for study viewer
     return {
-      cohort: updatedCohort,
+      cohort: cohortData,
       table_data: {
         rows: tableData.rows,
         columns: cohortDefinitionColumns

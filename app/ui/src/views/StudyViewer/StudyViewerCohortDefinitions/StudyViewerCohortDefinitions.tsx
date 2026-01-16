@@ -225,32 +225,48 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const cohortDataService = CohortDataService.getInstance();
 
     const handleCohortDataChange = () => {
-      // When a cohort is edited, refresh just that cohort in the study viewer
-      const editedCohortId = cohortDataService.cohort_data?.id;
-      if (!editedCohortId || !cohortDefinitions) return;
+      console.log('[StudyViewer] handleCohortDataChange triggered');
+      // Get which cohort was edited from the StudyDataService
+      const editedCohortId = studyDataService.cohort_definitions_service.getActiveCohortId();
+      // Use ref to get latest cohort definitions
+      const currentDefinitions = cohortDefinitionsRef.current;
+      console.log('[StudyViewer] editedCohortId:', editedCohortId, 'cohortDefinitions:', currentDefinitions?.length);
+      if (!editedCohortId || !currentDefinitions) {
+        console.log('[StudyViewer] Early return - no editedCohortId or cohortDefinitions');
+        return;
+      }
 
       // Check if the edited cohort is one we're displaying
-      const cohortIndex = cohortDefinitions.findIndex(def => def.cohort.id === editedCohortId);
-      if (cohortIndex === -1) return;
+      const cohortIndex = currentDefinitions.findIndex(def => def.cohort.id === editedCohortId);
+      console.log('[StudyViewer] cohortIndex:', cohortIndex);
+      if (cohortIndex === -1) {
+        console.log('[StudyViewer] Cohort not found in definitions');
+        return;
+      }
 
-      console.log('Cohort edited, refreshing card for:', editedCohortId);
+      console.log('[StudyViewer] Cohort edited, refreshing card for:', editedCohortId);
 
       // Refresh this specific cohort's data
-      const updatedDefinitions = [...cohortDefinitions];
+      const updatedDefinitions = [...currentDefinitions];
       const refreshedData = studyDataService.cohort_definitions_service.refreshSingleCohort(editedCohortId);
       
       if (refreshedData) {
+        console.log('[StudyViewer] Got refreshed data, updating state');
         updatedDefinitions[cohortIndex] = refreshedData;
         setCohortDefinitions(updatedDefinitions);
+      } else {
+        console.warn('[StudyViewer] No refreshed data returned');
       }
     };
 
+    console.log('[StudyViewer] Adding data change listener');
     cohortDataService.addDataChangeListener(handleCohortDataChange);
 
     return () => {
+      console.log('[StudyViewer] Removing data change listener');
       cohortDataService.removeDataChangeListener(handleCohortDataChange);
     };
-  }, [studyDataService, cohortDefinitions]);
+  }, [studyDataService]);
 
   // Close menu when clicking outside
   useEffect(() => {

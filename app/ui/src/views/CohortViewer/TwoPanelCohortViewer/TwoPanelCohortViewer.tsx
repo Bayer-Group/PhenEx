@@ -13,6 +13,8 @@ import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypeP
 import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
 import { RightPanelHistory } from './RightPanelHistory';
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
+import { MainViewService, ViewType } from '../../MainView/MainView';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -49,8 +51,13 @@ export class TwoPanelCohortViewerService {
     this.panelRef = ref;
   }
 
-  public displayExtraContent = (viewType: any, data: any) => {
+  displayExtraContent = (viewType: any, data: any) => {
     console.log(`Displaying extra content for view type: ${viewType}`);
+    
+    // If opening phenotype panel in StudyViewer, set the correct cohort as active
+    if (viewType === 'phenotype' && data?.id) {
+      this.ensureCorrectCohortIsActive(data.id);
+    }
     
     // Add to history
     const historyService = RightPanelHistoryDataService.getInstance();
@@ -63,7 +70,35 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
-  public setCurrentViewAndData = (viewType: any, data: any) => {
+  private ensureCorrectCohortIsActive(phenotypeId: string) {
+    try {
+      console.log('[TwoPanelCohortViewer] ensureCorrectCohortIsActive called for phenotype:', phenotypeId);
+      // Check if we're in StudyViewer context
+      const mainViewService = MainViewService.getInstance();
+      const currentView = mainViewService.getCurrentView();
+      console.log('[TwoPanelCohortViewer] currentView:', currentView?.viewType);
+      
+      if (currentView?.viewType === ViewType.StudyViewer) {
+        console.log('[TwoPanelCohortViewer] In StudyViewer context');
+        // We're in StudyViewer - need to set the correct cohort as active
+        const studyDataService = StudyDataService.getInstance();
+        if (studyDataService?.cohort_definitions_service) {
+          const cohortId = studyDataService.cohort_definitions_service.getCohortIdForPhenotype(phenotypeId);
+          console.log('[TwoPanelCohortViewer] Found cohortId:', cohortId, 'for phenotype:', phenotypeId);
+          if (cohortId) {
+            console.log(`[TwoPanelCohortViewer] Setting cohort ${cohortId} as active for phenotype ${phenotypeId}`);
+            studyDataService.cohort_definitions_service.setActiveCohort(cohortId);
+          }
+        }
+      } else {
+        console.log('[TwoPanelCohortViewer] Not in StudyViewer context');
+      }
+    } catch (error) {
+      console.warn('[TwoPanelCohortViewer] Could not ensure correct cohort is active:', error);
+    }
+  }
+
+  setCurrentViewAndData = (viewType: any, data: any) => {
     console.log(`Setting current view and data without adding to history: ${viewType}`);
     
     this.currentViewType = viewType;
@@ -73,7 +108,7 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
-  public hideExtraContent = () => {
+  hideExtraContent = () => {
     // Add to history if it was a phenotype before closing
     if (this.currentViewType === 'phenotype') {
       const historyService = RightPanelHistoryDataService.getInstance();
