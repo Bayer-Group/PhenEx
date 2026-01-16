@@ -309,7 +309,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
   return (
     <NavBarMenuProvider>
-      <div className={styles.container}>
+      <div className={`${styles.container} ${contentMode === 'study' ? styles.studyMode : ''}`}>
         <div className={styles.topSection}>
           <div className={styles.breadcrumbsContainer}>
             <SmartBreadcrumbs 
