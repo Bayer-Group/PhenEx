@@ -1,4 +1,5 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
@@ -15,6 +16,11 @@ import { RightPanelHistory } from './RightPanelHistory';
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
+import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
+import { TabsAndAddButton } from '../../../components/PhenExNavBar/TabsAndAddButton';
+import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
+import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
@@ -142,10 +148,18 @@ export class TwoPanelCohortViewerService {
 }
 
 export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, contentMode = 'cohort' }) => {
+  const navigate = useNavigate();
   const service = TwoPanelCohortViewerService.getInstance();
   const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>(null);
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
+  
+  // Breadcrumb state
+  const [breadcrumbItems, setBreadcrumbItems] = useState<Array<{displayName: string; onClick: () => void}>>([]);
+  const [editableName, setEditableName] = useState('');
+  
+  // Tab state
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
   React.useEffect(() => {
     service.setPanelRef(panelRef);
@@ -180,8 +194,87 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     
     return () => service.removeListener(updateState);
   }, [service]);
+
+  // Update breadcrumbs when content mode or data changes
+  useEffect(() => {
+    updateBreadcrumbs();
+    
+    // Subscribe to data service changes
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      const listener = updateBreadcrumbs;
+      cohortService.addListener(listener);
+      return () => cohortService.removeListener(listener);
+    } else {
+      const studyService = StudyDataService.getInstance();
+      const listener = updateBreadcrumbs;
+      studyService.addStudyDataServiceListener(listener);
+      return () => studyService.removeStudyDataServiceListener(listener);
+    }
+  }, [contentMode, data]);
   
   service.setData(data);
+  
+  const updateBreadcrumbs = () => {
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      const items = [
+        {
+          displayName: 'My Studies',
+          onClick: () => { window.location.href = '/studies'; },
+        },
+        {
+          displayName: cohortService.getStudyNameForCohort() || 'Study',
+          onClick: () => {
+            const studyId = cohortService.cohort_data?.study_id;
+            if (studyId) navigate(`/studies/${studyId}`);
+          },
+        },
+        {
+          displayName: cohortService.cohort_name || 'Unnamed Cohort',
+          onClick: () => {},
+        },
+      ];
+      setBreadcrumbItems(items);
+      setEditableName(cohortService.cohort_name || 'Unnamed Cohort');
+    } else {
+      const studyService = StudyDataService.getInstance();
+      const isPublic = studyService.study_data?.is_public || false;
+      const items = [
+        {
+          displayName: isPublic ? 'Public Studies' : 'My Studies',
+          onClick: () => { window.location.href = '/studies'; },
+        },
+        {
+          displayName: studyService.study_name || 'Unnamed Study',
+          onClick: () => {},
+        },
+      ];
+      setBreadcrumbItems(items);
+      setEditableName(studyService.study_name || 'Unnamed Study');
+    }
+  };
+  
+  const handleEditLastItem = async (newValue: string) => {
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      cohortService.cohort_name = newValue;
+      cohortService.cohort_data.name = newValue;
+      await cohortService.saveChangesToCohort(true, false);
+      setEditableName(newValue);
+    } else {
+      const studyService = StudyDataService.getInstance();
+      studyService._study_name = newValue;
+      await studyService.saveChangesToStudy();
+      setEditableName(newValue);
+    }
+  };
+  
+  const handleTabChange = (index: number) => {
+    setCurrentTabIndex(index);
+    // Notify the active viewer component
+    // This will be handled by the viewer components listening to a callback
+  };
 
   const renderRightPanel = () => {
     // Add to history when rendering a panel
@@ -209,25 +302,42 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
   const renderLeftPanel = () => {
     if (contentMode === 'study') {
-      return <StudyViewer data={data} embeddedMode={true} />;
+      return <StudyViewer data={data} embeddedMode={true} onTabChange={handleTabChange} />;
     }
-    return <CohortViewer data={service.getData()} />;
+    return <CohortViewer data={service.getData()} onTabChange={handleTabChange} />;
   };
 
   return (
-    <TwoPanelView 
-      ref={panelRef} 
-      split="vertical" 
-      initialSizeLeft={500} 
-      minSizeLeft={400}
-      maxSizeRight={600}
-      collapseButtonTheme={'dark'}
-      onRightPanelCollapse={handleRightPanelCollapse}
-    >
-      <>
-        {renderLeftPanel()}
-      </>
-      {renderRightPanel()}
-    </TwoPanelView>
+    <NavBarMenuProvider>
+      <div className={styles.container}>
+        <div className={styles.topSection}>
+          <SmartBreadcrumbs 
+            items={breadcrumbItems} 
+            onEditLastItem={handleEditLastItem}
+            classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
+            classNameBreadcrumbItem={styles.breadcrumbItem}
+            classNameBreadcrumbLastItem={styles.breadcrumbLastItem}
+            compact={false}
+          />
+          <TabsAndAddButton height={44} onSectionTabChange={handleTabChange} shadow={true} />
+        </div>
+        <div className={styles.contentSection}>
+          <TwoPanelView 
+            ref={panelRef} 
+            split="vertical" 
+            initialSizeLeft={500} 
+            minSizeLeft={400}
+            maxSizeRight={600}
+            collapseButtonTheme={'dark'}
+            onRightPanelCollapse={handleRightPanelCollapse}
+          >
+            <>
+              {renderLeftPanel()}
+            </>
+            {renderRightPanel()}
+          </TwoPanelView>
+        </div>
+      </div>
+    </NavBarMenuProvider>
   );
 };

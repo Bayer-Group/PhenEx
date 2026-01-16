@@ -39,6 +39,7 @@ const sectionDisplayNames = {
 interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
+  onTabChange?: (index: number) => void;
 }
 
 export enum CohortViewType {
@@ -47,7 +48,7 @@ export enum CohortViewType {
   Report = 'report',
 }
 
-export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
+export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, onTabChange: externalOnTabChange }) => {
   const navigate = useNavigate();
   const [cohortName, setCohortName] = useState('');
   const [studyName, setStudyName] = useState('');
@@ -264,6 +265,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     // Then update the view and refresh grid
     setCurrentView(newView);
     refreshGrid();
+    
+    // Call external handler if provided
+    if (externalOnTabChange) {
+      externalOnTabChange(index);
+    }
   };
 
   const determineTabIndex = (): number => {
@@ -439,14 +445,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   }, [dataService.table_data]);
   
   return (
-    <NavBarMenuProvider>
       <div className={styles.cohortTableContainer} style={fadeInStyle}>
-        <div className={styles.topSection}>
-          {renderBreadcrumbs()}
-        <TabsAndAddButton height={44} onSectionTabChange={onTabChange} shadow={true} />
-          {/* <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-          {renderSectionTabs()} */}
-        </div>
         <div className={styles.bottomSection} ref={bottomSectionRef}>
           {renderTable()}
           <div className={styles.bottomGradient} />
@@ -462,6 +461,5 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
         />
       </div>
-    </NavBarMenuProvider>
   );
 };

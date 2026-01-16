@@ -29,9 +29,10 @@ const sectionDisplayNames = {
 interface StudyViewerProps {
   data?: string;
   embeddedMode?: boolean;
+  onTabChange?: (index: number) => void;
 }
 
-export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }) => {
+export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, onTabChange: externalOnTabChange }) => {
   const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
   const [isPublicStudy, setIsPublicStudy] = useState(false);
@@ -138,6 +139,11 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
     // // Then update the view and refresh grid
     setCurrentView(newView);
     // refreshGrid();
+    
+    // Call external handler if provided
+    if (externalOnTabChange) {
+      externalOnTabChange(index);
+    }
   };
 
   const determineTabIndex = (): number => {
@@ -237,13 +243,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
   };
 
   return (
-        <NavBarMenuProvider>
-    
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
-      <div className={styles.topSection}>
-        {renderBreadcrumbs()}
-          <TabsAndAddButton height={44} onSectionTabChange={onTabChange} shadow={true} />
-      </div>
       <button 
         className={styles.newCohortButton}
         onClick={clickedOnAddNewCohort}
@@ -257,7 +257,5 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false }
         />
       )}
     </div>
-        </NavBarMenuProvider>
-    
   );
 };
