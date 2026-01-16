@@ -1,6 +1,7 @@
 import { TableData, TableRow } from '../../CohortViewer/tableTypes';
 import { CohortWithTableData, cohortDefinitionColumns } from './StudyViewerCohortDefinitionsTypes';
 import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 
 // Data service for StudyViewerCohortDefinitions
 export class StudyViewerCohortDefinitionsDataService {
@@ -65,5 +66,34 @@ export class StudyViewerCohortDefinitionsDataService {
 
   public getCohorts(): any[] {
     return this._study_data.cohorts || [];
+  }
+
+  /**
+   * Refreshes a single cohort's data by re-fetching from the singleton CohortDataService
+   * @param cohortId The ID of the cohort to refresh
+   * @returns Updated CohortWithTableData or null if cohort not found
+   */
+  public refreshSingleCohort(cohortId: string): CohortWithTableData | null {
+    const cohortDataService = CohortDataService.getInstance();
+    
+    // Get the updated cohort data from the singleton
+    const updatedCohort = cohortDataService.cohort_data;
+    
+    // Verify this is the cohort we want to refresh
+    if (updatedCohort.id !== cohortId) {
+      return null;
+    }
+
+    // Get table data directly from the singleton's active model (already loaded and up-to-date)
+    const tableData = cohortDataService.table_data;
+    
+    // Use only the columns we need for study viewer
+    return {
+      cohort: updatedCohort,
+      table_data: {
+        rows: tableData.rows,
+        columns: cohortDefinitionColumns
+      }
+    };
   }
 }

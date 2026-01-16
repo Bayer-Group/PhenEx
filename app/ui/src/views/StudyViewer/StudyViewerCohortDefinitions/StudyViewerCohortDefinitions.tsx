@@ -4,6 +4,7 @@ import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
 import { CohortWithTableData, getStudyViewerCellRenderers } from './StudyViewerCohortDefinitionsTypes';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { MainViewService, ViewType } from '@/views/MainView/MainView';
 import { SimpleCustomScrollbar } from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import scrollbarStyles from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.module.css';
@@ -218,6 +219,38 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       studyDataService.removeStudyDataServiceListener(updateCohortDefinitions);
     };
   }, [studyDataService]);
+
+  // Listen to singleton CohortDataService for real-time updates when editing cohorts
+  useEffect(() => {
+    const cohortDataService = CohortDataService.getInstance();
+
+    const handleCohortDataChange = () => {
+      // When a cohort is edited, refresh just that cohort in the study viewer
+      const editedCohortId = cohortDataService.cohort_data?.id;
+      if (!editedCohortId || !cohortDefinitions) return;
+
+      // Check if the edited cohort is one we're displaying
+      const cohortIndex = cohortDefinitions.findIndex(def => def.cohort.id === editedCohortId);
+      if (cohortIndex === -1) return;
+
+      console.log('Cohort edited, refreshing card for:', editedCohortId);
+
+      // Refresh this specific cohort's data
+      const updatedDefinitions = [...cohortDefinitions];
+      const refreshedData = studyDataService.cohort_definitions_service.refreshSingleCohort(editedCohortId);
+      
+      if (refreshedData) {
+        updatedDefinitions[cohortIndex] = refreshedData;
+        setCohortDefinitions(updatedDefinitions);
+      }
+    };
+
+    cohortDataService.addDataChangeListener(handleCohortDataChange);
+
+    return () => {
+      cohortDataService.removeDataChangeListener(handleCohortDataChange);
+    };
+  }, [studyDataService, cohortDefinitions]);
 
   // Close menu when clicking outside
   useEffect(() => {
