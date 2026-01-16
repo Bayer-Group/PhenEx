@@ -131,10 +131,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   useEffect(() => {
     // Update cohort name and study name when data service changes
     const updateCohortData = () => {
-      if (dataService.cohort_data?.name) {
-        setCohortName(dataService._cohort_name);
-        setStudyName(dataService.getStudyNameForCohort());
-      }
+      setCohortName(dataService._cohort_name);
+      setStudyName(dataService.getStudyNameForCohort());
     };
 
     updateCohortData();
@@ -380,9 +378,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     ];
 
     const handleEditLastItem = async (newValue: string) => {
-      setCohortName(newValue);
       dataService.cohort_name = newValue;
-      await dataService.saveChangesToCohort();
+      dataService.cohort_data.name = newValue; // Also update the cohort_data directly
+      await dataService.saveChangesToCohort(true, false); // Save without refreshing grid
+      setCohortName(newValue); // Update local state after save completes
     };
 
     return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false} />;
