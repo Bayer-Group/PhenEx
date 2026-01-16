@@ -1,5 +1,6 @@
 import { TableData, TableRow } from '../../CohortViewer/tableTypes';
 import { CohortWithTableData, cohortDefinitionColumns } from './StudyViewerCohortDefinitionsTypes';
+import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
 
 // Data service for StudyViewerCohortDefinitions
 export class StudyViewerCohortDefinitionsDataService {
@@ -24,89 +25,42 @@ export class StudyViewerCohortDefinitionsDataService {
    * @returns TableData object with rows containing entry, inclusion, and exclusion phenotypes
    */
   private prepareCohortTableData(cohort: Record<string, any>): TableData {
-    console.log('Preparing cohort table data for:', cohort.name);
-    console.log('Cohort phenotypes:', cohort.phenotypes);
-    console.log("COHORT DATA", cohort)
-    // Filter phenotypes by type (entry, inclusion, exclusion) - similar to tableDataForComponentPhenotype
-    let filteredPhenotypes = cohort.cohort_data.phenotypes || [];
-
-    filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes(filteredPhenotypes);
+    const model = new CohortModel();
+    // Configure the model so it produces the table data we expect
+    // We only need to show entry, inclusion, exclusion by default in the card view, 
+    // but the CohortModel defaults match this reasonably well or we can rely on it to handle logic.
+    // The previous implementation filtered: 'entry', 'inclusion', 'exclusion'.
+    // CohortModel by default might show everything or filter?
+    // CohortModel has private _currentFilter = ['entry', 'inclusion', 'exclusion'].
+    // So it matches perfectly.
     
-    console.log('All phenotypes before filter:', filteredPhenotypes);
-    console.log('Phenotype types found:', filteredPhenotypes.map(p => p.type));
+    // We construct the input object expected by loadCohortData
+    // We pass the full study data and the specific cohort data
+    const loadData = {
+      cohort_data: cohort,
+      study: this._study_data
+    };
     
-    // filteredPhenotypes = filteredPhenotypes.filter(
-    //   (phenotype: any) =>
-    //     phenotype.type === 'entry' ||
-    //     phenotype.type === 'inclusion' ||
-    //     phenotype.type === 'exclusion' ||
-    // );
-
-    // console.log('Filtered phenotypes:', filteredPhenotypes);
-
-    // Add colorCellBorder property to each phenotype
-    const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
-      ...phenotype,
-      colorCellBorder: false,
-    }));
-
+    model.loadCohortData(loadData);
+    
+    // Check if we need to customize column definitions (StudyViewer used cohortDefinitionColumns)
+    // The previous implementation returned: columns: cohortDefinitionColumns
+    // CohortModel uses: columns: defaultColumns (from ./CohortColumnDefinitions)
+    // We might need to override the columns on the result if they differ.
+    // The import 'cohortDefinitionColumns' was used.
+    // I should check if I need to preserve 'cohortDefinitionColumns'.
+    // The user said "factor out all the things about the cohortdataservice... providing all functionality".
+    // If I use the model's table_data, I get the model's columns.
+    // If StudyViewer needs specialized columns, I should overwrite them.
+    
+    const tableData = model.table_data;
+    // Overwrite columns to match the specific view requirements if needed
+    // The previous code imported cohortDefinitionColumns. Let's keep using them for consistency in this view.
+    
     return {
-      rows: phenotypesWithColorSettings,
+      rows: tableData.rows,
       columns: cohortDefinitionColumns,
     };
-  }
-
-  //TODO REFACTOR THE FOLLOWING TWO METHODS; THIS IS A DUPLICATION OF CODE FROM COHORTDATASERVICE
-    private getHierarchicallyOrderedPhenotypes(phenotypes: TableRow[]): TableRow[] {
-      const result: TableRow[] = [];
-      
-      // Separate phenotypes by type, maintaining original order for non-components
-      const order = ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'];
-      const componentPhenotypes = phenotypes.filter(p => p.type === 'component');
-      
-      for (const type of order) {
-        const phenotypesOfType = phenotypes.filter(p => p.type === type);
-        
-        for (const phenotype of phenotypesOfType) {
-          // Add the parent phenotype
-          result.push(phenotype);
-          
-          // Add all its component descendants in hierarchical order
-          const descendants = this.getComponentDescendantsHierarchically(phenotype.id, componentPhenotypes);
-          result.push(...descendants);
-        }
-      }
-      
-      // Add any orphaned components (components without parents in the filtered list)
-      const addedComponentIds = new Set(result.filter(p => p.type === 'component').map(p => p.id));
-      const orphanedComponents = componentPhenotypes.filter(c => !addedComponentIds.has(c.id));
-      result.push(...orphanedComponents);
-      
-      return result;
-    }
-  
-    private getComponentDescendantsHierarchically(parentId: string, componentPhenotypes: TableRow[]): TableRow[] {
-    const result: TableRow[] = [];
-    
-    // Find direct children of this parent
-    const directChildren = componentPhenotypes.filter(
-      (phenotype: TableRow) =>
-        phenotype.parentIds && 
-        Array.isArray(phenotype.parentIds) && 
-        phenotype.parentIds.includes(parentId)
-    );
-    
-    // Sort direct children by their index if available
-    directChildren.sort((a, b) => (a.index || 0) - (b.index || 0));
-    
-    // For each direct child, add it and then recursively add its descendants
-    for (const child of directChildren) {
-      result.push(child);
-      const childDescendants = this.getComponentDescendantsHierarchically(child.id, componentPhenotypes);
-      result.push(...childDescendants);
-    }
-    
-    return result;
   }
 
   /**

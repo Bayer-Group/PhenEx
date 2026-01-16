@@ -1,4 +1,4 @@
-import { CohortDataService } from '../CohortDataService/CohortDataService';
+import { CohortModel } from '../CohortDataService/CohortModel';
 
 interface IssueEntry {
   id: string;
@@ -7,7 +7,7 @@ interface IssueEntry {
 
 export class CohortIssuesService {
   private static instance: CohortIssuesService;
-  private dataService: CohortDataService;
+  private dataService: CohortModel;
   private issueCount: number = 0;
   private issues: IssueEntry[] = [];
   private classDefinitions: Record<string, any>;
@@ -17,7 +17,7 @@ export class CohortIssuesService {
 
   // }
 
-  public setDataService(dataService: CohortDataService) {
+  public setDataService(dataService: CohortModel) {
     this.dataService = dataService;
     this.dataService.addListener(() => {
       this.validateCohort();

@@ -6,7 +6,7 @@ import {
   updateCodelistFileColumnMapping,
 } from '../../../api/codelists/route';
 import { createID } from '../../../types/createID';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
 
 interface CodelistFile {
   filename: string;
@@ -48,7 +48,7 @@ interface CodelistCache {
 
 export class CodelistDataService {
   public activeFile: CodelistFile | null = null;
-  private cohortDataService!: CohortDataService;
+  private cohortDataService!: CohortModel;
   public _filenames: string[] | null = null;
   private listeners: (() => void)[] = [];
   public files: CodelistFile[] = [];
@@ -225,7 +225,7 @@ export class CodelistDataService {
     this.listeners.forEach(listener => listener());
   }
 
-  public async setCohortDataService(dataService: CohortDataService) {
+  public async setCohortDataService(dataService: CohortModel) {
     this.cohortDataService = dataService;
     this.cohortDataService.addListener(() => {
       this.setFilenamesForCohort();
