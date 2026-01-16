@@ -11,11 +11,10 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 
-  height: calc(100vh - 40px) !important;
-  border-radius: 20px;
-  margin-top: 20px;
+  height: calc(100vh - 2px) !important;
+  margin-top: 0px;
   box-shadow: var(--box_shadow) !important;
-    border: var(--border);
+  border-right: var(--border);
 }
 
 .portalContent {

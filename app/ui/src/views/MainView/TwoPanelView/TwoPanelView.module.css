@@ -358,14 +358,14 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.711);
   z-index: 9999;
   display: flex;
   opacity: 0;
   animation: fadeIn 0.2s ease-in forwards;
   /* justify-content: center; */
   /* align-items: center; */
-  backdrop-filter: blur(2px);
+  /* backdrop-filter: blur(1px); */
 }
 
 @keyframes fadeIn {
