@@ -44,14 +44,14 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
   return (
     <div className={styles.navBar} style={{ height: `${height}px` }}>
       <div className={styles.actionButtons}>
-                <span 
+                {/* <span 
           ref={issuesLabelRef}
           className={styles.issuesLabel}
           onMouseEnter={() => setShowIssuesToolip(true)}
           onMouseLeave={() => setShowIssuesToolip(false)}
         >
           27
-        </span>
+        </span> */}
 
         <button 
           ref={playButtonRef}
@@ -72,11 +72,11 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar
         </button>
       </div>
       
-      <PhenExNavBarTooltip
+      {/* <PhenExNavBarTooltip
         isVisible={showIssuesToolip}
         anchorElement={issuesLabelRef.current}
         label="View Issues"
-      />
+      /> */}
       
       <PhenExNavBarTooltip
         isVisible={showPlayTooltip}

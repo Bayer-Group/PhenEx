@@ -49,7 +49,7 @@ const VisibilityMenu: React.FC<{
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       verticalPosition='above'
-      horizontalAlignment='right'
+      horizontalAlignment='center'
     >
       <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>Visibility Options</div>
