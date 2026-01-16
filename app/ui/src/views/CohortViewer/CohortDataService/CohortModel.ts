@@ -155,6 +155,7 @@ export class CohortModel {
       //   }
       // } 
       cohortResponse = cohortData.cohort_data;
+      console.log("LOADING COHORT DATA INTO MODEL", cohortResponse);
 
       this._study_data = cohortData.study
       this._cohort_data = cohortResponse;
@@ -214,6 +215,7 @@ export class CohortModel {
 
   public createEmptyCohortDefaultPhenotypes = () => {
     if (this._cohort_data.phenotypes.length == 0){
+      console.log("CREATIG DEFAULT PHENOTYPES FOR EMPTY COHORT", this._cohort_data);
       const entry = {
         id: createID(),
         name: 'Entry Criterion',

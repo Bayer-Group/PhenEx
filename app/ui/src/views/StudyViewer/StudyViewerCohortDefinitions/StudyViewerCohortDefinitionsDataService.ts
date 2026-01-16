@@ -26,22 +26,10 @@ export class StudyViewerCohortDefinitionsDataService {
    */
   private prepareCohortTableData(cohort: Record<string, any>): TableData {
     const model = new CohortModel();
-    // Configure the model so it produces the table data we expect
-    // We only need to show entry, inclusion, exclusion by default in the card view, 
-    // but the CohortModel defaults match this reasonably well or we can rely on it to handle logic.
-    // The previous implementation filtered: 'entry', 'inclusion', 'exclusion'.
-    // CohortModel by default might show everything or filter?
-    // CohortModel has private _currentFilter = ['entry', 'inclusion', 'exclusion'].
-    // So it matches perfectly.
+
+  
     
-    // We construct the input object expected by loadCohortData
-    // We pass the full study data and the specific cohort data
-    const loadData = {
-      cohort_data: cohort,
-      study: this._study_data
-    };
-    
-    model.loadCohortData(loadData);
+    model.loadCohortData(cohort);
     
     // Check if we need to customize column definitions (StudyViewer used cohortDefinitionColumns)
     // The previous implementation returned: columns: cohortDefinitionColumns
