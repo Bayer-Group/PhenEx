@@ -29,10 +29,10 @@ const sectionDisplayNames = {
 interface StudyViewerProps {
   data?: string;
   embeddedMode?: boolean;
-  onTabChange?: (index: number) => void;
+  activeTabIndex?: number;
 }
 
-export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, onTabChange: externalOnTabChange }) => {
+export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, activeTabIndex }) => {
   const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
   const [isPublicStudy, setIsPublicStudy] = useState(false);
@@ -115,6 +115,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     };
   }, [studyDataService]);
 
+  useEffect(() => {
+    if (activeTabIndex !== undefined) {
+      onTabChange(activeTabIndex);
+    }
+  }, [activeTabIndex]);
+
   const tabs = Object.values(StudyDefinitionViewType).map(value => {
     return sectionDisplayNames[value];
   });
@@ -139,11 +145,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     // // Then update the view and refresh grid
     setCurrentView(newView);
     // refreshGrid();
-    
-    // Call external handler if provided
-    if (externalOnTabChange) {
-      externalOnTabChange(index);
-    }
   };
 
   const determineTabIndex = (): number => {

@@ -272,8 +272,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   
   const handleTabChange = (index: number) => {
     setCurrentTabIndex(index);
-    // Notify the active viewer component
-    // This will be handled by the viewer components listening to a callback
   };
 
   const renderRightPanel = () => {
@@ -302,9 +300,9 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
   const renderLeftPanel = () => {
     if (contentMode === 'study') {
-      return <StudyViewer data={data} embeddedMode={true} onTabChange={handleTabChange} />;
+      return <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />;
     }
-    return <CohortViewer data={service.getData()} onTabChange={handleTabChange} />;
+    return <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />;
   };
 
   return (

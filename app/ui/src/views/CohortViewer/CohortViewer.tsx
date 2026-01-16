@@ -39,7 +39,7 @@ const sectionDisplayNames = {
 interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
-  onTabChange?: (index: number) => void;
+  activeTabIndex?: number;
 }
 
 export enum CohortViewType {
@@ -48,7 +48,7 @@ export enum CohortViewType {
   Report = 'report',
 }
 
-export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, onTabChange: externalOnTabChange }) => {
+export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, activeTabIndex }) => {
   const navigate = useNavigate();
   const [cohortName, setCohortName] = useState('');
   const [studyName, setStudyName] = useState('');
@@ -187,6 +187,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, onTa
     }
   }, [currentView]);
 
+  useEffect(() => {
+    if (activeTabIndex !== undefined) {
+      onTabChange(activeTabIndex);
+    }
+  }, [activeTabIndex]);
+
   const onCellValueChanged = async (event: any, selectedRows?: any[]) => {
     if (event.newValue !== event.oldValue) {
       dataService.onCellValueChanged(event, selectedRows);
@@ -265,11 +271,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, onTa
     // Then update the view and refresh grid
     setCurrentView(newView);
     refreshGrid();
-    
-    // Call external handler if provided
-    if (externalOnTabChange) {
-      externalOnTabChange(index);
-    }
   };
 
   const determineTabIndex = (): number => {
