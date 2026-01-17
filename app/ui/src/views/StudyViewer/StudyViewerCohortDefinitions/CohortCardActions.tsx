@@ -75,7 +75,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor" 
-            strokeWidth="3" 
+            strokeWidth="2" 
             strokeLinecap="round"
           >
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -83,7 +83,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           </svg>
         </button>
 
-        <button
+        {/* <button
           ref={optionsButtonRef}
           className={`${styles.actionButton}`}
           onMouseEnter={openOptionsMenu}
@@ -110,7 +110,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             <circle cx="12" cy="12" r="2" />
             <circle cx="12" cy="18" r="2" />
           </svg>
-        </button>
+        </button> */}
 
         {/* Transparent bridge to prevent losing hover state */}
         {isAddMenuOpen && (

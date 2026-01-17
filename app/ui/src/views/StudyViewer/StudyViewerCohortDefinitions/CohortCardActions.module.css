@@ -32,8 +32,9 @@
 }
 
 .actionButton:hover {
-  background: var(--color_accent_blue, #0066cc);
-  border-color: var(--color_accent_blue, #0066cc);
+  background: var(--color_accent_dark, #0066cc);
+  border-color: var(--color_accent_dark, #0066cc);
+  color:white;
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
