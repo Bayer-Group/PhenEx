@@ -1,7 +1,8 @@
-import React from 'react';
-import styles from './StudyViewerCohortDefinitions.module.css';
+import React, { useState, useRef } from 'react';
+import styles from './CohortCard.module.css';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
+import { CohortCardActions } from './CohortCardActions';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 
 interface CohortCardProps {
@@ -27,11 +28,35 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   tableTheme,
   tableGridOptions,
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [mouseY, setMouseY] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+      setMouseY(relativeY);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
     <div className={styles.verticalCardContainer}>
       <div>
         <div 
-          className={styles.cohortCard} 
+          ref={cardRef}
+          className={styles.cohortCard}
+          onMouseMove={handleMouseMove}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           style={{ 
             cursor: 'pointer', 
             pointerEvents: 'auto',
@@ -89,6 +114,16 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
               </div>
             )}
           </div>
+          
+          {/* Actions Container */}
+          {isHovered && (
+            <CohortCardActions
+              cohortId={cohortId}
+              mouseY={mouseY}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,0 +1,27 @@
+.cohortCardActionsContainer {
+  z-index: 1000;
+}
+
+.actionButton {
+  background: var(--background-color, white);
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.actionButton:hover {
+  background: var(--color_accent_blue, #0066cc);
+  border-color: var(--color_accent_blue, #0066cc);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
