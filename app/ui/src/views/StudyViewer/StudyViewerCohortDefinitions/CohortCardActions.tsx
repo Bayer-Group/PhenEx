@@ -169,6 +169,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             }
           }}
           verticalPosition={'below'}
+          horizontalAlignment='left'
         >
           <div style={{ padding: '8px', minWidth: '240px' }}>
             {activeTab === 0 && (

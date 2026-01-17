@@ -49,6 +49,7 @@ const CohortList = React.memo(({
   tableTheme,
   tableGridOptions,
   isDragging,
+  isScrolling,
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -64,6 +65,7 @@ const CohortList = React.memo(({
   tableTheme: any;
   tableGridOptions: any;
   isDragging: boolean;
+  isScrolling: boolean;
 }) => {
   return (
     <div
@@ -91,6 +93,7 @@ const CohortList = React.memo(({
             cohortId={cohortId}
             onCardClick={onCardClick}
             isDragging={isDragging}
+            isScrolling={isScrolling}
             onCellValueChanged={onCellValueChanged}
             onRowDragEnd={onRowDragEnd}
             calculateRowHeight={calculateRowHeight}
@@ -139,7 +142,9 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   }, [viewState, studyDataService.study_data?.id]);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const menuRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -310,6 +315,15 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
 
+      // Mark as scrolling to prevent hover
+      setIsScrolling(true);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+
       const current = currentTransform.current;
       const isShift = e.shiftKey;
       const isCommand = e.metaKey || e.ctrlKey;
@@ -338,6 +352,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     return () => {
       element.removeEventListener('wheel', wheelHandler);
       if (persistTimeout.current) clearTimeout(persistTimeout.current);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
   }, [cohortDefinitions]);
 
@@ -550,6 +565,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             tableTheme={TABLE_THEME}
             tableGridOptions={TABLE_GRID_OPTIONS}
             isDragging={isDragging}
+            isScrolling={isScrolling}
           />
         </div>
       </div>

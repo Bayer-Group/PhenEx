@@ -16,6 +16,7 @@ interface CohortCardProps {
   tableTheme: any;
   tableGridOptions: any;
   isDragging: boolean;
+  isScrolling: boolean;
 }
 
 export const CohortCard: React.FC<CohortCardProps> = React.memo(({
@@ -29,6 +30,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   tableTheme,
   tableGridOptions,
   isDragging,
+  isScrolling,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveringActions, setIsHoveringActions] = useState(false);
@@ -37,8 +39,8 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   const initialPositionSetRef = useRef(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't update position when dragging or hovering over actions
-    if (isDragging || isHoveringActions) return;
+    // Don't update position when dragging, scrolling, or hovering over actions
+    if (isDragging || isScrolling || isHoveringActions) return;
     
     if (cardRef.current && actionsRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
@@ -73,7 +75,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   };
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging) return;
+    if (isDragging || isScrolling) return;
     setIsHovered(true);
     initialPositionSetRef.current = false;
     // Trigger initial position set
