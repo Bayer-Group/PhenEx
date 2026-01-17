@@ -74,6 +74,7 @@ export class HierarchicalLeftPanelDataService {
 
     // Listen for auth user changes to rebuild tree if needed
     onUserChange(() => {
+      console.log('🔔 HierarchicalLeftPanelDataService: User changed, updating tree...');
       this.updateTreeData();
     });
   }
@@ -158,36 +159,13 @@ export class HierarchicalLeftPanelDataService {
       this.cachedPublicStudies = await this.dataService.getPublicStudies();
       console.log('🔄 HierarchicalLeftPanelDataService: Fetched studies, user:', this.cachedUserStudies.length, 'public:', this.cachedPublicStudies.length);
     } catch (error) {
-      console.warn('🚨 Failed to load workspace, likely auth not ready:', error);
-      // Set empty arrays and return early if auth not ready
+      console.warn('🚨 Failed to load workspace:', error);
+      // Set empty arrays if loading fails
       this.cachedUserStudies = [];
       this.cachedPublicStudies = [];
       
-      // Build minimal tree structure without data
-      const createEmptyRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
-        id,
-        displayName,
-        level: 0,
-        children: [],
-        viewInfo: { viewType: ViewType.CohortDefinition, data: null },
-        height: 60,
-        fontSize: 18,
-        fontFamily: 'IBMPlexSans-bold',
-        collapsed: false,
-        selected: id === currentlySelectedNodeId,
-        hasButton: id === 'mystudies' ? true : false,
-        buttonTitle: 'New',
-        buttonOnClick: this.addNewStudy.bind(this),
-      });
-      
-      this.treeData = [];
-      if (!getCurrentUser()?.isAnonymous) {
-        this.treeData.push(createEmptyRootNode('mystudies', 'My Studies'));
-      }
-      this.treeData.push(createEmptyRootNode('publicstudies', 'Public Studies'));
-      
-      this.notifyListeners();
-      return;
+      // Build minimal tree structure without data - don't return, continue to build tree
+      // This allows the UI to show the loading state rather than an error
     }
 
     const createUserStudies = async () => {
