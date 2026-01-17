@@ -85,7 +85,8 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
             pointerEvents: 'auto',
             '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
             '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
-            '--dynamic-arrow-size': 'min(75px, calc(30px / var(--zoom-scale)))'
+            '--dynamic-arrow-size': 'min(75px, calc(30px / var(--zoom-scale)))',
+            '--dynamic-button-size': 'min(75px, calc(25px / var(--zoom-scale)))'
           } as React.CSSProperties}
         >
           <div className={styles.cohortHeader} style={{ 

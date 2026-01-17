@@ -64,8 +64,8 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             }, 100);
           }}
           style={{
-            width: 'var(--dynamic-arrow-size)',
-            height: 'var(--dynamic-arrow-size)',
+            width: 'var(--dynamic-button-size)',
+            height: 'var(--dynamic-button-size)',
             fontSize: 'var(--dynamic-font-size)',
           }}
         >
@@ -95,8 +95,8 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             }, 100);
           }}
           style={{
-            width: 'var(--dynamic-arrow-size)',
-            height: 'var(--dynamic-arrow-size)',
+            width: 'var(--dynamic-button-size)',
+            height: 'var(--dynamic-button-size)',
             fontSize: 'var(--dynamic-font-size)',
           }}
         >
