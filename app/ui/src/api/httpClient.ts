@@ -4,9 +4,9 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 // This decouples HTTP layer from any specific auth implementation or framework hooks.
 type TokenProvider = () => string | null | undefined;
 let tokenProvider: TokenProvider = () => {
-  throw new Error(
-    'Token provider not registered. Call registerTokenProvider() early in app startup.'
-  );
+  // Return null instead of throwing error - allows unauthenticated requests during initialization
+  console.debug('Token provider called before registration - returning null');
+  return null;
 };
 export function registerTokenProvider(provider: TokenProvider) {
   tokenProvider = provider;

@@ -182,4 +182,26 @@ export class StudyViewerCohortDefinitionsDataService {
     // Delegate to the model's onCellValueChanged handler
     await cohortDataService.onCellValueChanged(event, selectedRows);
   }
+
+  /**
+   * Handle row drag end for a specific cohort
+   * @param cohortId The ID of the cohort whose rows were reordered
+   * @param newRowData The new row order after dragging
+   */
+  public async onRowDragEnd(cohortId: string, newRowData: any[]): Promise<void> {
+    console.log('[StudyViewer] onRowDragEnd for cohort:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Set this cohort as active before making changes
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
+    // Delegate to the model's updateRowOrder handler
+    await cohortDataService.updateRowOrder(newRowData);
+  }
 }

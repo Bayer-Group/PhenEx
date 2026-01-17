@@ -49,7 +49,8 @@ const CohortList = React.memo(({
   tableContainerRefs, 
   menuRef,
   cellRenderers,
-  onCellValueChanged
+  onCellValueChanged,
+  onRowDragEnd
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -61,6 +62,7 @@ const CohortList = React.memo(({
   menuRef: React.RefObject<HTMLDivElement>;
   cellRenderers: any;
   onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
+  onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
 }) => {
   return (
     <div
@@ -130,6 +132,7 @@ const CohortList = React.memo(({
                     <CohortTable
                       data={cohortDef.table_data}
                       onCellValueChanged={(event, selectedRows) => onCellValueChanged(cohortId, event, selectedRows)}
+                      onRowDragEnd={(newRowData) => onRowDragEnd(cohortId, newRowData)}
                       currentlyViewing="cohort-definitions"
                       domLayout="autoHeight"
                       headerHeight={0}
@@ -291,6 +294,11 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const handleCellValueChanged = async (cohortId: string, event: any, selectedRows?: any[]) => {
     console.log('[StudyViewer] handleCellValueChanged called for cohort:', cohortId);
     await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event, selectedRows);
+  };
+
+  const handleRowDragEnd = async (cohortId: string, newRowData: any[]) => {
+    console.log('[StudyViewer] handleRowDragEnd called for cohort:', cohortId);
+    await studyDataService.cohort_definitions_service.onRowDragEnd(cohortId, newRowData);
   };
 
   const clampViewState = (x: number, y: number, scale: number) => {
@@ -589,6 +597,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             menuRef={menuRef}
             cellRenderers={cellRenderers}
             onCellValueChanged={handleCellValueChanged}
+            onRowDragEnd={handleRowDragEnd}
           />
         </div>
       </div>
