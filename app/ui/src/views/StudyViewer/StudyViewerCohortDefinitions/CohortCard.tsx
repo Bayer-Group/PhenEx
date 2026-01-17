@@ -76,7 +76,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
       <div>
         <div 
           ref={cardRef}
-          className={styles.cohortCard}
+          className={`${styles.cohortCard} ${isHoveringActions ? styles.forceHover : ''}`}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}

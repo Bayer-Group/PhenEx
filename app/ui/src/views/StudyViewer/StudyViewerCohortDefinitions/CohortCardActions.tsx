@@ -16,6 +16,8 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
     const addButtonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null!);
     const [activeTab, setActiveTab] = useState(0);
+    const [isMenuHovered, setIsMenuHovered] = useState(false);
+    const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const dataService = CohortDataService.getInstance();
 
     const handleAddPhenotype = (type: string) => {
@@ -36,10 +38,17 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
         ref={ref}
         className={styles.cohortCardActionsContainer}
         onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseLeave={() => {
+          // Only trigger parent leave if we're definitely not hovering menu
+          setTimeout(() => {
+            if (!isMenuHovered) {
+              onMouseLeave();
+            }
+          }, 50);
+        }}
         style={{
           position: 'absolute',
-          right: 'calc(-60px / var(--zoom-scale))',
+          right: 'calc(-44px / var(--zoom-scale))',
           top: '0px',
           transform: 'translateY(-50%)',
           transition: 'top 0.15s ease-out',
@@ -48,7 +57,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           gap: 'calc(8px / var(--zoom-scale))',
           pointerEvents: 'auto',
           paddingLeft: 'calc(20px / var(--zoom-scale))',
-          marginLeft: 'calc(-20px / var(--zoom-scale))',
+          marginLeft: 'calc(-2px / var(--zoom-scale))',
           background: 'transparent',
         }}
       >
@@ -85,16 +94,19 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
 
         {/* Transparent bridge to prevent losing hover state */}
         {isAddMenuOpen && (
-          <div style={{
-            position: 'absolute',
-            left: '50%',
-            top: '100%',
-            transform: 'translateX(-50%)',
-            width: 'calc(var(--dynamic-arrow-size) * 3)',
-            height: 'calc(10px / var(--zoom-scale))',
-            background: 'transparent',
-            pointerEvents: 'auto',
-          }} />
+          <div 
+            onMouseEnter={onMouseEnter}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '100%',
+              transform: 'translateX(-50%)',
+              width: 'calc(var(--dynamic-arrow-size) * 3)',
+              height: 'calc(10px / var(--zoom-scale))',
+              background: 'transparent',
+              pointerEvents: 'auto',
+            }} 
+          />
         )}
 
         <PhenExNavBarMenu 
@@ -103,10 +115,28 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           anchorElement={addButtonRef.current}
           menuRef={menuRef}
           onMouseEnter={() => {
+            setIsMenuHovered(true);
             openAddMenu();
-            onMouseEnter(); // Keep card in hover state
+            onMouseEnter(); // Initial call to keep card in hover state
+            
+            // Keep calling onMouseEnter periodically to maintain hover state
+            if (keepAliveIntervalRef.current) {
+              clearInterval(keepAliveIntervalRef.current);
+            }
+            keepAliveIntervalRef.current = setInterval(() => {
+              onMouseEnter();
+            }, 100);
           }}
-          onMouseLeave={closeAddMenu} // Only close menu, don't trigger card leave
+          onMouseLeave={() => {
+            setIsMenuHovered(false);
+            closeAddMenu();
+            
+            // Stop keep-alive
+            if (keepAliveIntervalRef.current) {
+              clearInterval(keepAliveIntervalRef.current);
+              keepAliveIntervalRef.current = null;
+            }
+          }}
           verticalPosition={'below'}
         >
           <div style={{ padding: '8px', minWidth: '240px' }}>
