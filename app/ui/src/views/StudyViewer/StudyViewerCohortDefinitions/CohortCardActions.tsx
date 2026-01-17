@@ -46,20 +46,6 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             }
           }, 50);
         }}
-        style={{
-          position: 'absolute',
-          right: 'calc(-44px / var(--zoom-scale))',
-          top: '0px',
-          transform: 'translateY(-50%)',
-          transition: 'top 0.15s ease-out',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'calc(8px / var(--zoom-scale))',
-          pointerEvents: 'auto',
-          paddingLeft: 'calc(20px / var(--zoom-scale))',
-          marginLeft: 'calc(-2px / var(--zoom-scale))',
-          background: 'transparent',
-        }}
       >
         <button
           ref={addButtonRef}
@@ -101,8 +87,8 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
               left: '50%',
               top: '100%',
               transform: 'translateX(-50%)',
-              width: 'calc(var(--dynamic-arrow-size) * 3)',
-              height: 'calc(10px / var(--zoom-scale))',
+              width: 'calc(260px / var(--zoom-scale))', // Match menu width + margin
+              height: 'calc(20px / var(--zoom-scale))', // Bridge the gap
               background: 'transparent',
               pointerEvents: 'auto',
             }} 

@@ -1,11 +1,22 @@
 .cohortCardActionsContainer {
   z-index: 1000;
+    position: absolute;
+    right: calc(-1 * var(--dynamic-arrow-size) - 5px);
+    top: 0px;
+    transform: translateY(-50%);
+    transition: top 0.15s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: calc(8px / var(--zoom-scale));
+    margin-left: 0px;
+    background: red;
+    height: calc(var(--dynamic-arrow-size) * 3 + 8px);
 }
 
 .actionButton {
  background: none;
   border: none;
-  padding: 8px;
+  padding: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -15,7 +26,7 @@
   outline: none;
   color: white;
   background-color: transparent;
-  background-color: var(--color_accent_dark);
+  background-color: var(--line-color);
   border-radius:50%;
 }
 
@@ -36,6 +47,8 @@
   padding: 0 !important;
   gap: 8px !important;
   margin-top: 8px;
+  background-color: red;
+
 }
 
 .addButton {
