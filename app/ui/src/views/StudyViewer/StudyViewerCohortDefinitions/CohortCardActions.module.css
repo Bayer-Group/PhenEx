@@ -3,16 +3,20 @@
 }
 
 .actionButton {
-  background: var(--background-color, white);
-  border: 1px solid var(--line-color, #e0e0e0);
-  border-radius: 4px;
+ background: none;
+  border: none;
+  padding: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
-  padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: white;
+  transition: all 0.2s;
+  outline: none;
+  color: white;
+  background-color: transparent;
+  background-color: var(--color_accent_dark);
+  border-radius:50%;
 }
 
 .actionButton:hover {
@@ -24,4 +28,79 @@
 
 .actionButton:active {
   transform: scale(0.95);
+}
+
+.addMenuTabsContainer {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-top: 8px;
+}
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+  outline: none;
+  color: white;
+  background-color: transparent;
+  background-color: var(--color_accent_dark);
+  border-radius:20px;
+
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color: white !important;
+  border-color: var(--color_accent_dark) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_dark);
+  border-color: var(--color_accent_dark);
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.addMenuItem:hover {
+  background: var(--color_accent_blue);
+  color: white;
+}
+
+.addMenuItem:focus {
+  outline: none;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }

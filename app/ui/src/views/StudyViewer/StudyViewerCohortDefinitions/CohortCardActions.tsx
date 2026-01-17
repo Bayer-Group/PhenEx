@@ -1,14 +1,36 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState, useRef } from 'react';
 import styles from './CohortCardActions.module.css';
+import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { PhenExNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenu';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { useNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 
 interface CohortCardActionsProps {
-  cohortId: string;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
 
 export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsProps>(
-  ({ cohortId, onMouseEnter, onMouseLeave }, ref) => {
+  ({ onMouseEnter, onMouseLeave }, ref) => {
+    const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('cohort-card-add');
+    const addButtonRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null!);
+    const [activeTab, setActiveTab] = useState(0);
+    const dataService = CohortDataService.getInstance();
+
+    const handleAddPhenotype = (type: string) => {
+      dataService.addPhenotype(type);
+      closeAddMenu();
+    };
+
+    const phenotypeTypes = [
+      { type: 'entry', label: 'Entry' },
+      { type: 'inclusion', label: 'Inclusion' },
+      { type: 'exclusion', label: 'Exclusion' },
+      { type: 'baseline', label: 'Baseline Characteristic' },
+      { type: 'outcome', label: 'Outcome' },
+    ];
+
     return (
       <div
         ref={ref}
@@ -30,56 +52,103 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           background: 'transparent',
         }}
       >
-      <button
-        className={styles.actionButton}
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Duplicate cohort:', cohortId);
-        }}
-        aria-label="Duplicate cohort"
-        title="Duplicate cohort"
-        style={{ 
-          fontSize: 'var(--dynamic-font-size)',
-          width: 'var(--dynamic-arrow-size)',
-          height: 'var(--dynamic-arrow-size)',
-        }}
-      >
-        📋
-      </button>
-      <button
-        className={styles.actionButton}
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Delete cohort:', cohortId);
-        }}
-        aria-label="Delete cohort"
-        title="Delete cohort"
-        style={{ 
-          fontSize: 'var(--dynamic-font-size)',
-          width: 'var(--dynamic-arrow-size)',
-          height: 'var(--dynamic-arrow-size)',
-        }}
-      >
-        🗑️
-      </button>
-      <button
-        className={styles.actionButton}
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Settings for cohort:', cohortId);
-        }}
-        aria-label="Cohort settings"
-        title="Cohort settings"
-        style={{ 
-          fontSize: 'var(--dynamic-font-size)',
-          width: 'var(--dynamic-arrow-size)',
-          height: 'var(--dynamic-arrow-size)',
-        }}
-      >
-        ⚙️
-      </button>
-    </div>
-  );
-});
+        <button
+          ref={addButtonRef}
+          className={`${styles.actionButton}`}
+          onMouseEnter={openAddMenu}
+          onMouseLeave={() => {
+            setTimeout(() => {
+              if (!menuRef.current?.matches(':hover')) {
+                closeAddMenu();
+              }
+            }, 100);
+          }}
+          style={{
+            width: 'var(--dynamic-arrow-size)',
+            height: 'var(--dynamic-arrow-size)',
+            fontSize: 'var(--dynamic-font-size)',
+          }}
+        >
+          <svg 
+            width="100%" 
+            height="100%" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="3" 
+            strokeLinecap="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+
+        {/* Transparent bridge to prevent losing hover state */}
+        {isAddMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: '100%',
+            transform: 'translateX(-50%)',
+            width: 'calc(var(--dynamic-arrow-size) * 3)',
+            height: 'calc(10px / var(--zoom-scale))',
+            background: 'transparent',
+            pointerEvents: 'auto',
+          }} />
+        )}
+
+        <PhenExNavBarMenu 
+          isOpen={isAddMenuOpen} 
+          onClose={closeAddMenu} 
+          anchorElement={addButtonRef.current}
+          menuRef={menuRef}
+          onMouseEnter={() => {
+            openAddMenu();
+            onMouseEnter(); // Keep card in hover state
+          }}
+          onMouseLeave={closeAddMenu} // Only close menu, don't trigger card leave
+          verticalPosition={'below'}
+        >
+          <div style={{ padding: '8px', minWidth: '240px' }}>
+            {activeTab === 0 && (
+              <div className={styles.itemList}>
+                {phenotypeTypes.map(({ type, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => handleAddPhenotype(type)}
+                    className={styles.addMenuItem}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {activeTab === 1 && (
+              <div style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                Library coming soon
+              </div>
+            )}
+            
+            {activeTab === 2 && (
+              <div style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                Codelist import coming soon
+              </div>
+            )}
+            <Tabs
+              tabs={['Manual Entry', 'Library', 'Codelist']}
+              active_tab_index={activeTab}
+              onTabChange={setActiveTab}
+              classNameTabsContainer={styles.addMenuTabsContainer}
+              classNameTabs={styles.addMenuTab}
+              classNameActiveTab={styles.addMenuActiveTab}
+              classNameHoverTab={styles.addMenuHoverTab}
+            />
+          </div>
+        </PhenExNavBarMenu>
+      </div>
+    );
+  }
+);
 
 CohortCardActions.displayName = 'CohortCardActions';

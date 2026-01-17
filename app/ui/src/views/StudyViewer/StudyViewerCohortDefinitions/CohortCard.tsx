@@ -40,8 +40,16 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
     if (cardRef.current && actionsRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       const relativeY = e.clientY - rect.top;
+      
+      // Get the current zoom scale from CSS variable
+      const computedStyle = getComputedStyle(cardRef.current);
+      const zoomScale = parseFloat(computedStyle.getPropertyValue('--zoom-scale')) || 1;
+      
+      // Adjust for zoom scale - divide by scale to compensate for transform
+      const adjustedY = relativeY / zoomScale;
+      
       // Direct DOM manipulation - no React re-render
-      actionsRef.current.style.top = `${relativeY}px`;
+      actionsRef.current.style.top = `${adjustedY}px`;
     }
   };
 
@@ -134,7 +142,6 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
           {isHovered && (
             <CohortCardActions
               ref={actionsRef}
-              cohortId={cohortId}
               onMouseEnter={handleActionsMouseEnter}
               onMouseLeave={handleActionsMouseLeave}
             />
