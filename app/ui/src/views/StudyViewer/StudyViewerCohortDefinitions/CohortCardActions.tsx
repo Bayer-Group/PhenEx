@@ -13,11 +13,16 @@ interface CohortCardActionsProps {
 export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsProps>(
   ({ onMouseEnter, onMouseLeave }, ref) => {
     const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('cohort-card-add');
+    const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('cohort-card-options');
     const addButtonRef = useRef<HTMLButtonElement>(null);
+    const optionsButtonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null!);
+    const optionsMenuRef = useRef<HTMLDivElement>(null!);
     const [activeTab, setActiveTab] = useState(0);
     const [isMenuHovered, setIsMenuHovered] = useState(false);
+    const [isOptionsMenuHovered, setIsOptionsMenuHovered] = useState(false);
     const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const optionsKeepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const dataService = CohortDataService.getInstance();
 
     const handleAddPhenotype = (type: string) => {
@@ -39,9 +44,9 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
         className={styles.cohortCardActionsContainer}
         onMouseEnter={onMouseEnter}
         onMouseLeave={() => {
-          // Only trigger parent leave if we're definitely not hovering menu
+          // Only trigger parent leave if we're definitely not hovering any menu
           setTimeout(() => {
-            if (!isMenuHovered) {
+            if (!isMenuHovered && !isOptionsMenuHovered) {
               onMouseLeave();
             }
           }, 50);
@@ -75,6 +80,35 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+
+        <button
+          ref={optionsButtonRef}
+          className={`${styles.actionButton}`}
+          onMouseEnter={openOptionsMenu}
+          onMouseLeave={() => {
+            setTimeout(() => {
+              if (!optionsMenuRef.current?.matches(':hover')) {
+                closeOptionsMenu();
+              }
+            }, 100);
+          }}
+          style={{
+            width: 'var(--dynamic-arrow-size)',
+            height: 'var(--dynamic-arrow-size)',
+            fontSize: 'var(--dynamic-font-size)',
+          }}
+        >
+          <svg 
+            width="100%" 
+            height="100%" 
+            viewBox="0 0 24 24" 
+            fill="currentColor"
+          >
+            <circle cx="12" cy="6" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="12" cy="18" r="2" />
           </svg>
         </button>
 
@@ -160,6 +194,52 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
               classNameActiveTab={styles.addMenuActiveTab}
               classNameHoverTab={styles.addMenuHoverTab}
             />
+          </div>
+        </PhenExNavBarMenu>
+
+        <PhenExNavBarMenu 
+          isOpen={isOptionsMenuOpen} 
+          onClose={closeOptionsMenu} 
+          anchorElement={optionsButtonRef.current}
+          menuRef={optionsMenuRef}
+          onMouseEnter={() => {
+            setIsOptionsMenuHovered(true);
+            openOptionsMenu();
+            onMouseEnter();
+            
+            if (optionsKeepAliveIntervalRef.current) {
+              clearInterval(optionsKeepAliveIntervalRef.current);
+            }
+            optionsKeepAliveIntervalRef.current = setInterval(() => {
+              onMouseEnter();
+            }, 100);
+          }}
+          onMouseLeave={() => {
+            setIsOptionsMenuHovered(false);
+            closeOptionsMenu();
+            
+            if (optionsKeepAliveIntervalRef.current) {
+              clearInterval(optionsKeepAliveIntervalRef.current);
+              optionsKeepAliveIntervalRef.current = null;
+            }
+          }}
+          verticalPosition={'below'}
+        >
+          <div style={{ padding: '8px', minWidth: '180px' }}>
+            <div className={styles.itemList}>
+              <button className={styles.addMenuItem}>
+                Duplicate
+              </button>
+              <button className={styles.addMenuItem}>
+                Rename
+              </button>
+              <button className={styles.addMenuItem}>
+                Export
+              </button>
+              <button className={styles.addMenuItem} style={{ color: '#ff4444' }}>
+                Delete
+              </button>
+            </div>
           </div>
         </PhenExNavBarMenu>
       </div>

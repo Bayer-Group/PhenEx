@@ -1,7 +1,7 @@
 .cohortCardActionsContainer {
   z-index: 1000;
     position: absolute;
-    right: calc(-1 * var(--dynamic-arrow-size) - 5px);
+    right: calc(-1 * var(--dynamic-arrow-size) - 2px);
     top: 0px;
     transform: translateY(-50%);
     transition: top 0.15s ease-out;
