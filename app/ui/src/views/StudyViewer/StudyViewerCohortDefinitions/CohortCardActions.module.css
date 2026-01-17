@@ -31,7 +31,8 @@
   border-radius:50%;
 }
 
-.actionButton:hover {
+.actionButton:hover,
+.actionButton.menuOpen {
   background: var(--color_accent_dark, #0066cc);
   border-color: var(--color_accent_dark, #0066cc);
   color:white;

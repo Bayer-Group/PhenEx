@@ -55,7 +55,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
       >
         <button
           ref={addButtonRef}
-          className={`${styles.actionButton}`}
+          className={`${styles.actionButton} ${isAddMenuOpen ? styles.menuOpen : ''}`}
           onMouseEnter={() => {
             // Add slight delay before opening menu
             addMenuDelayRef.current = setTimeout(() => {
