@@ -29,14 +29,19 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   tableGridOptions,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [mouseY, setMouseY] = useState(0);
+  const [isHoveringActions, setIsHoveringActions] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (cardRef.current) {
+    // Don't update position when hovering over actions
+    if (isHoveringActions) return;
+    
+    if (cardRef.current && actionsRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       const relativeY = e.clientY - rect.top;
-      setMouseY(relativeY);
+      // Direct DOM manipulation - no React re-render
+      actionsRef.current.style.top = `${relativeY}px`;
     }
   };
 
@@ -46,6 +51,16 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+    setIsHoveringActions(false);
+  };
+
+  const handleActionsMouseEnter = () => {
+    setIsHoveringActions(true);
+    setIsHovered(true);
+  };
+
+  const handleActionsMouseLeave = () => {
+    setIsHoveringActions(false);
   };
 
   return (
@@ -118,10 +133,10 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
           {/* Actions Container */}
           {isHovered && (
             <CohortCardActions
+              ref={actionsRef}
               cohortId={cohortId}
-              mouseY={mouseY}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={handleActionsMouseEnter}
+              onMouseLeave={handleActionsMouseLeave}
             />
           )}
         </div>

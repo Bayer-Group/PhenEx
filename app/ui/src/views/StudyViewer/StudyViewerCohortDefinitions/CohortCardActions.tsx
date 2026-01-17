@@ -1,36 +1,35 @@
-import React from 'react';
+import { forwardRef } from 'react';
 import styles from './CohortCardActions.module.css';
 
 interface CohortCardActionsProps {
   cohortId: string;
-  mouseY: number;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
 
-export const CohortCardActions: React.FC<CohortCardActionsProps> = ({
-  cohortId,
-  mouseY,
-  onMouseEnter,
-  onMouseLeave,
-}) => {
-  return (
-    <div
-      className={styles.cohortCardActionsContainer}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      style={{
-        position: 'absolute',
-        right: 'calc(-60px / var(--zoom-scale))',
-        top: `${mouseY}px`,
-        transform: 'translateY(-50%)',
-        transition: 'top 0.15s ease-out',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'calc(8px / var(--zoom-scale))',
-        pointerEvents: 'auto',
-      }}
-    >
+export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsProps>(
+  ({ cohortId, onMouseEnter, onMouseLeave }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={styles.cohortCardActionsContainer}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        style={{
+          position: 'absolute',
+          right: 'calc(-60px / var(--zoom-scale))',
+          top: '0px',
+          transform: 'translateY(-50%)',
+          transition: 'top 0.15s ease-out',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'calc(8px / var(--zoom-scale))',
+          pointerEvents: 'auto',
+          paddingLeft: 'calc(20px / var(--zoom-scale))',
+          marginLeft: 'calc(-20px / var(--zoom-scale))',
+          background: 'transparent',
+        }}
+      >
       <button
         className={styles.actionButton}
         onClick={(e) => {
@@ -81,4 +80,6 @@ export const CohortCardActions: React.FC<CohortCardActionsProps> = ({
       </button>
     </div>
   );
-};
+});
+
+CohortCardActions.displayName = 'CohortCardActions';
