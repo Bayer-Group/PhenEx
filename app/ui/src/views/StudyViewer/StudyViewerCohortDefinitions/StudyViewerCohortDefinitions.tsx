@@ -48,6 +48,7 @@ const CohortList = React.memo(({
   onRowDragEnd,
   tableTheme,
   tableGridOptions,
+  isDragging,
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -62,6 +63,7 @@ const CohortList = React.memo(({
   onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
   tableTheme: any;
   tableGridOptions: any;
+  isDragging: boolean;
 }) => {
   return (
     <div
@@ -88,6 +90,7 @@ const CohortList = React.memo(({
             cohortDef={cohortDef}
             cohortId={cohortId}
             onCardClick={onCardClick}
+            isDragging={isDragging}
             onCellValueChanged={onCellValueChanged}
             onRowDragEnd={onRowDragEnd}
             calculateRowHeight={calculateRowHeight}
@@ -546,6 +549,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             onRowDragEnd={handleRowDragEnd}
             tableTheme={TABLE_THEME}
             tableGridOptions={TABLE_GRID_OPTIONS}
+            isDragging={isDragging}
           />
         </div>
       </div>

@@ -23,6 +23,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
     const [isOptionsMenuHovered, setIsOptionsMenuHovered] = useState(false);
     const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const optionsKeepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const addMenuDelayRef = useRef<NodeJS.Timeout | null>(null);
     const dataService = CohortDataService.getInstance();
 
     const handleAddPhenotype = (type: string) => {
@@ -55,8 +56,18 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
         <button
           ref={addButtonRef}
           className={`${styles.actionButton}`}
-          onMouseEnter={openAddMenu}
+          onMouseEnter={() => {
+            // Add slight delay before opening menu
+            addMenuDelayRef.current = setTimeout(() => {
+              openAddMenu();
+            }, 200);
+          }}
           onMouseLeave={() => {
+            // Clear delay if mouse leaves before menu opens
+            if (addMenuDelayRef.current) {
+              clearTimeout(addMenuDelayRef.current);
+              addMenuDelayRef.current = null;
+            }
             setTimeout(() => {
               if (!menuRef.current?.matches(':hover')) {
                 closeAddMenu();
