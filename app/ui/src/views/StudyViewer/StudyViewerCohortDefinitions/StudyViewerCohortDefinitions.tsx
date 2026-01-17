@@ -377,12 +377,15 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         const newY = centerY - pointY * newScale;
         applyTransform(newX, newY, newScale);
       } else if (isShift) {
-        // Horizontal pan
-        const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
-        applyTransform(current.x - delta, current.y, current.scale);
+        // Horizontal pan - use deltaX primarily, fallback to deltaY for mouse wheel
+        // On trackpads, deltaX is properly set for horizontal gestures
+        const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        applyTransform(current.x - deltaX, current.y, current.scale);
       } else {
-        // Vertical pan
-        applyTransform(current.x, current.y - e.deltaY, current.scale);
+        // Vertical pan - on trackpads, handle both axes for smooth diagonal scrolling
+        const deltaX = e.deltaX;
+        const deltaY = e.deltaY;
+        applyTransform(current.x - deltaX, current.y - deltaY, current.scale);
       }
     };
 
