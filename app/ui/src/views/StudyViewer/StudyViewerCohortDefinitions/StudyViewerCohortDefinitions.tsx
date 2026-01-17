@@ -195,13 +195,34 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const menuRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
+  
+  // Current transform values (ref to avoid re-renders)
+  const currentTransform = useRef(viewState);
+  const persistTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Update ref when cohortDefinitions changes
   useEffect(() => {
     cohortDefinitionsRef.current = cohortDefinitions;
   }, [cohortDefinitions]);
+  
+  // Helper to update transform directly on DOM
+  const applyTransform = (x: number, y: number, scale: number) => {
+    if (transformRef.current) {
+      transformRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      // @ts-ignore
+      transformRef.current.style.setProperty('--zoom-scale', scale.toString());
+    }
+    currentTransform.current = { x, y, scale };
+    
+    // Debounce persist to localStorage
+    if (persistTimeout.current) clearTimeout(persistTimeout.current);
+    persistTimeout.current = setTimeout(() => {
+      setViewState({ x, y, scale });
+    }, 500);
+  };
 
   useEffect(() => {
     // Function to update cohort definitions when study data changes
@@ -330,64 +351,47 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     return { x: clampedX, y: clampedY };
   };
 
-  // Attach wheel listener with passive: false to allow preventDefault
+  // Attach wheel listener - directly manipulate DOM, no React re-renders
   useEffect(() => {
     const element = viewportRef.current;
-    if (!element) {
-      console.log('viewportRef not ready');
-      return;
-    }
+    if (!element) return;
 
-    console.log('Attaching wheel listener to:', element);
-
-    // Cache dimensions once to avoid layout reads during scroll
     const centerX = element.clientWidth / 2;
     const centerY = element.clientHeight / 2;
 
     const wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
 
+      const current = currentTransform.current;
       const isShift = e.shiftKey;
       const isCommand = e.metaKey || e.ctrlKey;
 
       if (isCommand) {
-        // Zoom to cached center point (no layout reads)
+        // Zoom
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
-        setViewState(prev => {
-          const newScale = Math.max(0.3, Math.min(1, prev.scale * (1 + delta)));
-          const pointX = (centerX - prev.x) / prev.scale;
-          const pointY = (centerY - prev.y) / prev.scale;
-          const newX = centerX - pointX * newScale;
-          const newY = centerY - pointY * newScale;
-          return { x: newX, y: newY, scale: newScale };
-        });
+        const newScale = Math.max(0.3, Math.min(1, current.scale * (1 + delta)));
+        const pointX = (centerX - current.x) / current.scale;
+        const pointY = (centerY - current.y) / current.scale;
+        const newX = centerX - pointX * newScale;
+        const newY = centerY - pointY * newScale;
+        applyTransform(newX, newY, newScale);
       } else if (isShift) {
         // Horizontal pan
-        // Use deltaX if available (browser handled shift), fallback to deltaY
         const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
-        setViewState(prev => ({
-          x: prev.x - delta,
-          y: prev.y,
-          scale: prev.scale
-        }));
+        applyTransform(current.x - delta, current.y, current.scale);
       } else {
         // Vertical pan
-        setViewState(prev => ({
-          x: prev.x,
-          y: prev.y - e.deltaY,
-          scale: prev.scale
-        }));
+        applyTransform(current.x, current.y - e.deltaY, current.scale);
       }
     };
 
     element.addEventListener('wheel', wheelHandler, { passive: false });
-    console.log('Wheel listener attached');
     return () => {
-      console.log('Removing wheel listener');
       element.removeEventListener('wheel', wheelHandler);
+      if (persistTimeout.current) clearTimeout(persistTimeout.current);
     };
-  }, [cohortDefinitions]); // Re-run when cohortDefinitions loads (so viewport is rendered)
+  }, [cohortDefinitions]);
 
   const handleCreateFirstCohort = async () => {
     try {
@@ -512,12 +516,8 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     if (isDragging) {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
-      const clamped = clampViewState(newX, newY, viewState.scale);
-      setViewState(prev => ({
-        ...prev,
-        x: clamped.x,
-        y: clamped.y
-      }));
+      const clamped = clampViewState(newX, newY, currentTransform.current.scale);
+      applyTransform(clamped.x, clamped.y, currentTransform.current.scale);
     }
   };
 
@@ -578,6 +578,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         }}
       >
         <div
+          ref={transformRef}
           style={{
             transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})`,
             transformOrigin: '0 0',
