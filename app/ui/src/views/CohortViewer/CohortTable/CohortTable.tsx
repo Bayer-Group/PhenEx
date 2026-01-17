@@ -86,15 +86,22 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedNodesBeforeEdit = useRef<any[]>([]);
+  
+  // Internal ref as fallback when parent doesn't provide one
+  const internalRef = useRef<any>(null);
+  const gridRef = ref || internalRef;
 
     const onGridReady = () => {
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.resetRowHeights();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.resetRowHeights();
       }
     };
 
     const handleRowDragEnd = () => {
       console.log("=== CohortTable handleRowDragEnd START ===");
+      console.log("gridRef:", gridRef);
+      console.log("gridRef.current:", gridRef && typeof gridRef === 'object' ? gridRef.current : 'N/A');
+      console.log("gridRef.current?.api:", gridRef && typeof gridRef === 'object' && gridRef.current ? gridRef.current.api : 'N/A');
       
       if (!onRowDragEnd) {
         console.log("❌ No onRowDragEnd callback provided");
@@ -103,11 +110,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
       // Get the current order from the grid and update indices
       const newRowData: any[] = [];
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.forEachNode((node: any) => {
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.forEachNode((node: any) => {
           newRowData.push(node.data);
         });
       }
+      
+      console.log("newRowData length:", newRowData.length);
       
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
@@ -149,8 +158,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     const handleCellValueChanged = (event: any) => {
       // Get currently selected rows
       let selectedRows: any[] = [];
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        selectedRows = ref.current.api.getSelectedRows();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        selectedRows = gridRef.current.api.getSelectedRows();
       }
 
       // Call the parent callback with the event and selected rows
@@ -225,8 +234,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     useEffect(() => {
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.resetRowHeights();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.resetRowHeights();
       }
     }, [data]);
 
@@ -387,7 +396,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             hideHorizontalScrollbar={true}
             bottomPadding={gridBottomPadding}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
-            ref={ref}
+            ref={gridRef}
             noRowsOverlayComponent={NoRowsOverlayText()}
             rowData={data.rows}
             getRowId={(params) => params.data.id}
