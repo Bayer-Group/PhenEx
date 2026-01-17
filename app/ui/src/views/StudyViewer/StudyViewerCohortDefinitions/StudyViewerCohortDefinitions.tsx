@@ -153,6 +153,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const [isCommandPressed, setIsCommandPressed] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const horizontalScrollAccumulator = useRef<number>(0);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const menuRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -360,6 +361,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       }
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
+        horizontalScrollAccumulator.current = 0; // Reset friction accumulator
       }, 150);
 
       const current = currentTransform.current;
@@ -382,10 +384,9 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
         applyTransform(current.x - deltaX, current.y, current.scale);
       } else {
-        // Vertical pan - on trackpads, handle both axes for smooth diagonal scrolling
-        const deltaX = e.deltaX;
+        // Vertical pan ONLY - no horizontal movement without shift
         const deltaY = e.deltaY;
-        applyTransform(current.x - deltaX, current.y - deltaY, current.scale);
+        applyTransform(current.x, current.y - deltaY, current.scale);
       }
     };
 
