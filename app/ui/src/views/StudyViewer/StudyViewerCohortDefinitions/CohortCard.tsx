@@ -32,6 +32,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   const [isHoveringActions, setIsHoveringActions] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
+  const initialPositionSetRef = useRef(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't update position when hovering over actions
@@ -48,18 +49,38 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
       // Adjust for zoom scale - divide by scale to compensate for transform
       const adjustedY = relativeY / zoomScale;
       
+      // Set initial position immediately without transition on first hover
+      if (!initialPositionSetRef.current) {
+        actionsRef.current.style.transition = 'none';
+        actionsRef.current.style.top = `${adjustedY}px`;
+        actionsRef.current.style.opacity = '0';
+        // Fade in after position is set
+        requestAnimationFrame(() => {
+          if (actionsRef.current) {
+            actionsRef.current.style.transition = 'opacity 0.2s ease-out';
+            actionsRef.current.style.opacity = '1';
+          }
+        });
+        initialPositionSetRef.current = true;
+        return;
+      }
+      
       // Direct DOM manipulation - no React re-render
       actionsRef.current.style.top = `${adjustedY}px`;
     }
   };
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsHovered(true);
+    initialPositionSetRef.current = false;
+    // Trigger initial position set
+    handleMouseMove(e);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
     setIsHoveringActions(false);
+    initialPositionSetRef.current = false;
   };
 
   const handleActionsMouseEnter = () => {
@@ -86,7 +107,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
             '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
             '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
             '--dynamic-arrow-size': 'min(75px, calc(30px / var(--zoom-scale)))',
-            '--dynamic-button-size': 'min(75px, calc(25px / var(--zoom-scale)))'
+            '--dynamic-button-size': 'min(75px, calc(30px / var(--zoom-scale)))'
           } as React.CSSProperties}
         >
           <div className={styles.cohortHeader} style={{ 

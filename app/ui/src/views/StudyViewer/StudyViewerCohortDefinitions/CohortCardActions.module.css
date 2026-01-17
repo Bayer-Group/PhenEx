@@ -25,7 +25,7 @@
   color: white;
   transition: all 0.2s;
   outline: none;
-  color: var(--color_accent_dark);
+  color: var(--color_accent_blue);
   background-color: transparent;
   /* background-color: var(--line-color); */
   border-radius:50%;
