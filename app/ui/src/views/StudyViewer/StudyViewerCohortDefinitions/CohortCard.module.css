@@ -27,6 +27,12 @@
   outline-offset: calc(var(--dynamic-outline-width, 3px) * -1);
 }
 
+.cohortCard.noHover:hover {
+  background-color: var(--background-color);
+  box-shadow: var(--box_shadow);
+  outline: none;
+}
+
 .cohortCard.forceHover {
   background-color: white;
   box-shadow: var(--box_shadow_hover);
@@ -37,6 +43,10 @@
 .cohortCard:hover .cohortHeader,
 .cohortCard.forceHover .cohortHeader {
   color: var(--color_accent_blue);
+}
+
+.cohortCard.noHover:hover .cohortHeader {
+  color: inherit;
 }
 
 .cohortCard:hover .expandArrow,

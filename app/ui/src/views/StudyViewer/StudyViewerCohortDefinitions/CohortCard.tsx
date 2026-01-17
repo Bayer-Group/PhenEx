@@ -17,6 +17,8 @@ interface CohortCardProps {
   tableGridOptions: any;
   isDragging: boolean;
   isScrolling: boolean;
+  isShiftPressed: boolean;
+  isCommandPressed: boolean;
 }
 
 export const CohortCard: React.FC<CohortCardProps> = React.memo(({
@@ -31,6 +33,8 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   tableGridOptions,
   isDragging,
   isScrolling,
+  isShiftPressed,
+  isCommandPressed,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveringActions, setIsHoveringActions] = useState(false);
@@ -39,8 +43,8 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   const initialPositionSetRef = useRef(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't update position when dragging, scrolling, or hovering over actions
-    if (isDragging || isScrolling || isHoveringActions) return;
+    // Don't update position when dragging, scrolling, shift/command pressed, or hovering over actions
+    if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
     
     if (cardRef.current && actionsRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
@@ -75,7 +79,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   };
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging || isScrolling) return;
+    if (isDragging || isScrolling || isShiftPressed || isCommandPressed) return;
     setIsHovered(true);
     initialPositionSetRef.current = false;
     // Trigger initial position set
@@ -102,7 +106,7 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
       <div>
         <div 
           ref={cardRef}
-          className={`${styles.cohortCard} ${isHoveringActions ? styles.forceHover : ''}`}
+          className={`${styles.cohortCard} ${isHoveringActions ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}

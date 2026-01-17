@@ -50,6 +50,8 @@ const CohortList = React.memo(({
   tableGridOptions,
   isDragging,
   isScrolling,
+  isShiftPressed,
+  isCommandPressed,
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -66,6 +68,8 @@ const CohortList = React.memo(({
   tableGridOptions: any;
   isDragging: boolean;
   isScrolling: boolean;
+  isShiftPressed: boolean;
+  isCommandPressed: boolean;
 }) => {
   return (
     <div
@@ -94,6 +98,8 @@ const CohortList = React.memo(({
             onCardClick={onCardClick}
             isDragging={isDragging}
             isScrolling={isScrolling}
+            isShiftPressed={isShiftPressed}
+            isCommandPressed={isCommandPressed}
             onCellValueChanged={onCellValueChanged}
             onRowDragEnd={onRowDragEnd}
             calculateRowHeight={calculateRowHeight}
@@ -143,6 +149,8 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
   const [isDragging, setIsDragging] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [isCommandPressed, setIsCommandPressed] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
@@ -154,6 +162,35 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   
   // Current transform values (ref to avoid re-renders)
   const currentTransform = useRef(viewState);
+
+  // Track shift key state globally
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
+      if (e.key === 'Meta' || e.key === 'Control') {
+        setIsCommandPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+      if (e.key === 'Meta' || e.key === 'Control') {
+        setIsCommandPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
   const persistTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Update ref when cohortDefinitions changes
@@ -317,6 +354,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
       // Mark as scrolling to prevent hover
       setIsScrolling(true);
+      
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -566,6 +604,8 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             tableGridOptions={TABLE_GRID_OPTIONS}
             isDragging={isDragging}
             isScrolling={isScrolling}
+            isShiftPressed={isShiftPressed}
+            isCommandPressed={isCommandPressed}
           />
         </div>
       </div>
