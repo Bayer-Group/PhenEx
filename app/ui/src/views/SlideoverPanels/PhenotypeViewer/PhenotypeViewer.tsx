@@ -112,6 +112,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
           scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
           animateRows={false}
           bottomPadding={0}
+          headerHeight={0}
           
           getRowHeight={params => {
             // Calculate height of CODELISTS

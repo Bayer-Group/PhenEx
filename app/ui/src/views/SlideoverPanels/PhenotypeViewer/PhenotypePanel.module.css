@@ -91,19 +91,22 @@
 
 
 .index{
-  font-size: 32px !important;
-  margin-left:10px;
+  font-size: var(--font_size_breadcrumb) !important;
+  margin-left:5px;
+  margin-top:5px;
+  font-family: "IBMPlexSans-regular" !important;
+  line-height: var(--font_size_breadcrumb) !important;
 }
 
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
-  margin-top: 10px;
-  margin-left: 0px;
+  margin-top: 5px;
+  margin-left: 5px;
   font-size: var(--font_size_breadcrumb) !important;
 }
 .breadcrumbItem{
-  font-size: var(--font_size_breadcrumb) !important;
-  line-height: 10px;
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
   font-family: 'IBMPlexSans-regular' !important;
 
 }
@@ -111,7 +114,8 @@
 .breadcrumbLastItem{
   font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
+  line-height: var(--font_size_breadcrumb) !important;
+  margin-left:-2px;
 }
 
 .description{

@@ -126,19 +126,35 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       ? dataService.cohortDataService.getAllAncestors(data)
       : [];
     
-    // Get cohort name only if this is a component phenotype
-    const cohortName = data.type != 'component' ? dataService.getCohortName() : null;
+    // Get cohort and study names
+    const cohortName = dataService.getCohortName();
+    const studyName = dataService.cohortDataService.getStudyNameForCohort();
     
-    // Build breadcrumb items: cohort first (if component), then ancestors, then current phenotype
+    // Build breadcrumb items: My Studies, Study, Cohort, ancestors, then current phenotype
     const breadcrumbItems = [
-      ...(cohortName ? [{
+      {
+        displayName: 'My Studies',
+        onClick: () => {
+          window.location.href = '/studies';
+        },
+      },
+      ...(studyName ? [{
+        displayName: studyName,
+        onClick: () => {
+          const studyId = dataService.cohortDataService.cohort_data?.study_id;
+          if (studyId) {
+            window.location.href = `/studies/${studyId}`;
+          }
+        },
+      }] : []),
+      {
         displayName: cohortName || 'Unnamed Cohort',
         onClick: () => {
           // Close the phenotype panel to return to cohort view
           const cohortViewer = TwoPanelCohortViewerService.getInstance();
           cohortViewer.hideExtraContent();
         },
-      }] : []),
+      },
       ...ancestors.map(ancestor => ({
         displayName: ancestor.name || ancestor.id || 'Unnamed',
         onClick: () => onClickAncestor(ancestor as Phenotype),
@@ -163,7 +179,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
         classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
         classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
-        compact={true}
+        compact={false}
       />
       </>
     );

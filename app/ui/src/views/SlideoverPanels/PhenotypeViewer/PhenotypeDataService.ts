@@ -195,7 +195,7 @@ export class PhenotypeDataService {
   }
 
   public getCohortName() {
-    return this.cohortDataService._cohort_name;
+    return this.cohortDataService.cohort_name;
   }
 
   public updateComponentPhenotypeData() {
