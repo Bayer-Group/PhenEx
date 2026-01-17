@@ -159,4 +159,27 @@ export class StudyViewerCohortDefinitionsDataService {
   private notifyListeners(): void {
     this._listeners.forEach(listener => listener());
   }
+
+  /**
+   * Handle cell value changes for a specific cohort
+   * @param cohortId The ID of the cohort whose cell was changed
+   * @param event The cell change event from AG Grid
+   * @param selectedRows Optional array of selected rows
+   */
+  public async onCellValueChanged(cohortId: string, event: any, selectedRows?: any[]): Promise<void> {
+    console.log('[StudyViewer] onCellValueChanged for cohort:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Set this cohort as active before making changes
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
+    // Delegate to the model's onCellValueChanged handler
+    await cohortDataService.onCellValueChanged(event, selectedRows);
+  }
 }

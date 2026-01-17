@@ -38,8 +38,6 @@ const TABLE_GRID_OPTIONS = {
   columnHoverHighlight: false,
 };
 
-const NO_OP = () => {};
-
 // Memoized list component to prevent re-renders during zoom/pan
 const CohortList = React.memo(({ 
   cohortDefinitions, 
@@ -50,7 +48,8 @@ const CohortList = React.memo(({
   calculateRowHeight, 
   tableContainerRefs, 
   menuRef,
-  cellRenderers
+  cellRenderers,
+  onCellValueChanged
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -61,6 +60,7 @@ const CohortList = React.memo(({
   tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
   menuRef: React.RefObject<HTMLDivElement>;
   cellRenderers: any;
+  onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
 }) => {
   return (
     <div
@@ -129,7 +129,7 @@ const CohortList = React.memo(({
                   {cohortDef.table_data.rows.length > 0 ? (
                     <CohortTable
                       data={cohortDef.table_data}
-                      onCellValueChanged={NO_OP}
+                      onCellValueChanged={(event, selectedRows) => onCellValueChanged(cohortId, event, selectedRows)}
                       currentlyViewing="cohort-definitions"
                       domLayout="autoHeight"
                       headerHeight={0}
@@ -287,6 +287,11 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [openMenuId]);
+
+  const handleCellValueChanged = async (cohortId: string, event: any, selectedRows?: any[]) => {
+    console.log('[StudyViewer] handleCellValueChanged called for cohort:', cohortId);
+    await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event, selectedRows);
+  };
 
   const clampViewState = (x: number, y: number, scale: number) => {
     const definitions = cohortDefinitionsRef.current;
@@ -583,6 +588,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             tableContainerRefs={tableContainerRefs}
             menuRef={menuRef}
             cellRenderers={cellRenderers}
+            onCellValueChanged={handleCellValueChanged}
           />
         </div>
       </div>
