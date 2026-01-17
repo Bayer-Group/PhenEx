@@ -1,0 +1,98 @@
+import React from 'react';
+import styles from './StudyViewerCohortDefinitions.module.css';
+import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
+import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
+import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
+
+interface CohortCardProps {
+  cohortDef: CohortWithTableData;
+  cohortId: string;
+  onCardClick: (cohortDef: CohortWithTableData) => void;
+  onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
+  onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
+  calculateRowHeight: (params: any) => number;
+  cellRenderers: any;
+  tableTheme: any;
+  tableGridOptions: any;
+}
+
+export const CohortCard: React.FC<CohortCardProps> = React.memo(({
+  cohortDef,
+  cohortId,
+  onCardClick,
+  onCellValueChanged,
+  onRowDragEnd,
+  calculateRowHeight,
+  cellRenderers,
+  tableTheme,
+  tableGridOptions,
+}) => {
+  return (
+    <div className={styles.verticalCardContainer}>
+      <div>
+        <div 
+          className={styles.cohortCard} 
+          style={{ 
+            cursor: 'pointer', 
+            pointerEvents: 'auto',
+            '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
+            '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
+            '--dynamic-arrow-size': 'min(75px, calc(40px / var(--zoom-scale)))'
+          } as React.CSSProperties}
+        >
+          <div className={styles.cohortHeader} style={{ 
+            position: 'absolute', 
+            bottom: '100%', 
+            left: '0', 
+            right: '0',
+            fontSize: 'var(--dynamic-font-size)'
+          }}>
+            <div className={styles.cohortHeaderContent}>
+              <div className={styles.cohortHeaderTitle}>
+                {cohortDef.cohort.name || 'Unnamed Cohort'}
+              </div>
+              <button
+                className={styles.expandButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCardClick(cohortDef);
+                }}
+                aria-label="Open cohort"
+                style={{ fontSize: 'var(--dynamic-font-size)' }}
+              >
+                <img
+                  src={ArrowIcon}
+                  alt="Expand"
+                  className={styles.expandArrow}
+                />
+              </button>
+            </div>
+          </div>
+          <div className={styles.topFiller} />
+          <div className={styles.tableContainer}>
+            {cohortDef.table_data.rows.length > 0 ? (
+              <CohortTable
+                data={cohortDef.table_data}
+                onCellValueChanged={(event, selectedRows) => onCellValueChanged(cohortId, event, selectedRows)}
+                onRowDragEnd={(newRowData) => onRowDragEnd(cohortId, newRowData)}
+                currentlyViewing="cohort-definitions"
+                domLayout="autoHeight"
+                headerHeight={0}
+                customGetRowHeight={calculateRowHeight}
+                tableTheme={tableTheme}
+                tableGridOptions={tableGridOptions}
+                components={cellRenderers}
+              />
+            ) : (
+              <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
+                No phenotypes found for this cohort
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+CohortCard.displayName = 'CohortCard';

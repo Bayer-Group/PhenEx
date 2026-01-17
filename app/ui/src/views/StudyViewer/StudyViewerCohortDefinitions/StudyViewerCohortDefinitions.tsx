@@ -2,15 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
-import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
 import { CohortWithTableData, getStudyViewerCellRenderers } from './StudyViewerCohortDefinitionsTypes';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-import { MainViewService, ViewType } from '@/views/MainView/MainView';
-import { SimpleCustomScrollbar } from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import scrollbarStyles from '@/components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.module.css';
 import { deleteCohort } from '@/api/text_to_cohort/route';
-
-import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
+import { CohortCard } from './CohortCard';
 
 interface StudyViewerCohortDefinitionsProps {
   studyDataService: StudyDataService;
@@ -50,7 +45,9 @@ const CohortList = React.memo(({
   menuRef,
   cellRenderers,
   onCellValueChanged,
-  onRowDragEnd
+  onRowDragEnd,
+  tableTheme,
+  tableGridOptions,
 }: {
   cohortDefinitions: CohortWithTableData[];
   openMenuId: string | null;
@@ -63,6 +60,8 @@ const CohortList = React.memo(({
   cellRenderers: any;
   onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
   onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
+  tableTheme: any;
+  tableGridOptions: any;
 }) => {
   return (
     <div
@@ -77,7 +76,6 @@ const CohortList = React.memo(({
       {cohortDefinitions.map((cohortDef, index) => {
         const cohortKey = cohortDef.cohort.id || index;
         const cohortId = cohortDef.cohort.id || String(index);
-        const isMenuOpen = openMenuId === cohortId;
         
         // Get or create ref for this cohort's card container
         if (!tableContainerRefs.current.has(cohortKey)) {
@@ -85,71 +83,18 @@ const CohortList = React.memo(({
         }
 
         return (
-          <div key={cohortKey} className={styles.verticalCardContainer}>
-            <div>
-              <div 
-                className={styles.cohortCard} 
-                // onClick={() => onCardClick(cohortDef)}
-                style={{ 
-                  cursor: 'pointer', 
-                  pointerEvents: 'auto',
-                  '--dynamic-outline-width': 'calc(3px / var(--zoom-scale))',
-                  '--dynamic-font-size': 'calc(16px / var(--zoom-scale))',
-                  '--dynamic-arrow-size': 'min(75px, calc(40px / var(--zoom-scale)))'
-                } as React.CSSProperties}
-              >
-                <div className={styles.cohortHeader} style={{ 
-                  position: 'absolute', 
-                  bottom: '100%', 
-                  left: '0', 
-                  right: '0',
-                  fontSize: 'var(--dynamic-font-size)'
-                }}>
-                  <div className={styles.cohortHeaderContent}>
-                    <div className={styles.cohortHeaderTitle}>
-                      {cohortDef.cohort.name || 'Unnamed Cohort'}
-                    </div>
-                      <button
-                        className={styles.expandButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCardClick(cohortDef);
-                        }}
-                        aria-label="Open cohort"
-                        style={{ fontSize: 'var(--dynamic-font-size)' }}
-                      >
-                         <img
-                          src={ArrowIcon}
-                          alt="Expand"
-                          className={styles.expandArrow}
-                        />
-                      </button>
-                  </div>
-                </div>
-                  <div className={styles.topFiller} />
-                <div className={styles.tableContainer}>
-                  {cohortDef.table_data.rows.length > 0 ? (
-                    <CohortTable
-                      data={cohortDef.table_data}
-                      onCellValueChanged={(event, selectedRows) => onCellValueChanged(cohortId, event, selectedRows)}
-                      onRowDragEnd={(newRowData) => onRowDragEnd(cohortId, newRowData)}
-                      currentlyViewing="cohort-definitions"
-                      domLayout="autoHeight"
-                      headerHeight={0}
-                      customGetRowHeight={calculateRowHeight}
-                      tableTheme={TABLE_THEME}
-                      tableGridOptions={TABLE_GRID_OPTIONS}
-                      components={cellRenderers}
-                    />
-                  ) : (
-                    <div style={{ padding: '1rem', color: '#666', fontStyle: 'italic' }}>
-                      No phenotypes found for this cohort
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <CohortCard
+            key={cohortKey}
+            cohortDef={cohortDef}
+            cohortId={cohortId}
+            onCardClick={onCardClick}
+            onCellValueChanged={onCellValueChanged}
+            onRowDragEnd={onRowDragEnd}
+            calculateRowHeight={calculateRowHeight}
+            cellRenderers={cellRenderers}
+            tableTheme={tableTheme}
+            tableGridOptions={tableGridOptions}
+          />
         );
       })}
     </div>
@@ -599,6 +544,8 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             cellRenderers={cellRenderers}
             onCellValueChanged={handleCellValueChanged}
             onRowDragEnd={handleRowDragEnd}
+            tableTheme={TABLE_THEME}
+            tableGridOptions={TABLE_GRID_OPTIONS}
           />
         </div>
       </div>

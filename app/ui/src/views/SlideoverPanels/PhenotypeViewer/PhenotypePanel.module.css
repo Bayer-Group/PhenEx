@@ -102,11 +102,11 @@
   /* No absolute positioning - flows naturally */
   margin-top: 5px;
   margin-left: 5px;
-  font-size: var(--font_size_breadcrumb) !important;
+  font-size: 5px !important;
 }
 .breadcrumbItem{
   font-size: var(--font_size_infotext) !important;
-  line-height: var(--font_size_infotext) !important;
+  line-height: 5px !important;
   font-family: 'IBMPlexSans-regular' !important;
 
 }
