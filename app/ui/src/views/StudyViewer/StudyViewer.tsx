@@ -252,11 +252,9 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
         + New Cohort
       </button>
       <div className={styles.bottomSection}>{renderContent()}</div>
-      {!embeddedMode && (
         <PhenExNavBar
           onSectionTabChange={onTabChange}
         />
-      )}
     </div>
   );
 };

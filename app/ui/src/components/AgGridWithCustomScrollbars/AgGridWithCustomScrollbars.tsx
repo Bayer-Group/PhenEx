@@ -37,6 +37,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
   ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, bottomPadding = 0, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const agGridRef = useRef<any>(null);    const { showMenu } = enableRightClickMenu ? useRightClickMenu() : { showMenu: () => {} };    const [isPanDragging, setIsPanDragging] = useState(false);
+    const [isShiftPressed, setIsShiftPressed] = useState(false);
     const [panDragStart, setPanDragStart] = useState({ 
       x: 0, 
       y: 0, 
@@ -46,6 +47,54 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
     const selectedNodesRef = useRef<Set<any>>(new Set());
     const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const editingStartedRef = useRef<boolean>(false);
+
+    // Track shift key state globally
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Shift') {
+          setIsShiftPressed(true);
+        }
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Shift') {
+          setIsShiftPressed(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+      };
+    }, []);
+
+    // Handle wheel events for trackpad scrolling
+    useEffect(() => {
+      const element = gridContainerRef.current;
+      if (!element) return;
+
+      const wheelHandler = (e: WheelEvent) => {
+        const scrollableElement = getScrollableElement();
+        if (!scrollableElement) return;
+
+        // Check if shift is pressed
+        if (e.shiftKey || isShiftPressed) {
+          // Shift pressed: only horizontal scrolling
+          e.preventDefault();
+          const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+          scrollableElement.scrollLeft += deltaX;
+        }
+        // When shift is not pressed, let AG Grid handle vertical scrolling naturally
+      };
+
+      element.addEventListener('wheel', wheelHandler, { passive: false });
+      return () => {
+        element.removeEventListener('wheel', wheelHandler);
+      };
+    }, [isShiftPressed]);
 
     // Default scrollbar settings
     const verticalConfig = {
@@ -247,18 +296,22 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
         const deltaX = e.clientX - panDragStart.x;
         const deltaY = e.clientY - panDragStart.y;
         
-        // Invert the delta for natural pan behavior (drag right to scroll left)
-        const newScrollLeft = Math.max(0, Math.min(
-          scrollableElement.scrollWidth - scrollableElement.clientWidth,
-          panDragStart.scrollLeft - deltaX
-        ));
-        const newScrollTop = Math.max(0, Math.min(
-          scrollableElement.scrollHeight - scrollableElement.clientHeight,
-          panDragStart.scrollTop - deltaY
-        ));
-        
-        scrollableElement.scrollLeft = newScrollLeft;
-        scrollableElement.scrollTop = newScrollTop;
+        // Conditional scrolling based on shift key
+        if (isShiftPressed) {
+          // Shift pressed: only horizontal scrolling
+          const newScrollLeft = Math.max(0, Math.min(
+            scrollableElement.scrollWidth - scrollableElement.clientWidth,
+            panDragStart.scrollLeft - deltaX
+          ));
+          scrollableElement.scrollLeft = newScrollLeft;
+        } else {
+          // Shift not pressed: only vertical scrolling
+          const newScrollTop = Math.max(0, Math.min(
+            scrollableElement.scrollHeight - scrollableElement.clientHeight,
+            panDragStart.scrollTop - deltaY
+          ));
+          scrollableElement.scrollTop = newScrollTop;
+        }
       };
 
       const handleMouseUp = () => {
@@ -271,7 +324,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-      };    }, [isPanDragging, panDragStart]);
+      };    }, [isPanDragging, panDragStart, isShiftPressed]);
     
     // Cleanup timeout on unmount
     useEffect(() => {
