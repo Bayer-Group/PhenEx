@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: center;
   color: white;
-  transition: all 0.2s;
+  transition: all 0.2s 0.2s;
   outline: none;
   color: var(--color_accent_blue);
   background-color: transparent;
@@ -37,6 +37,7 @@
   color:white;
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition-delay: 0.2s;
 }
 
 .actionButton:active {
