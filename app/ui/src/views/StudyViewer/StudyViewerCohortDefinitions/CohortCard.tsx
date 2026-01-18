@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './CohortCard.module.css';
 import { CohortTable } from '../../CohortViewer/CohortTable/CohortTable';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
@@ -43,6 +43,17 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   const cardRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const initialPositionSetRef = useRef(false);
+  const rowCountRef = useRef(cohortDef.table_data.rows.length);
+
+  // Preserve hover state when data changes (phenotype added)
+  useEffect(() => {
+    const newRowCount = cohortDef.table_data.rows.length;
+    if (newRowCount !== rowCountRef.current) {
+      rowCountRef.current = newRowCount;
+      // Don't reset initialPositionSetRef if we're still hovering
+      // This preserves the actions position during data updates
+    }
+  }, [cohortDef.table_data.rows.length]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't update position when dragging, scrolling, shift/command pressed, or hovering over actions

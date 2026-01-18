@@ -29,7 +29,7 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
 
     const handleAddPhenotype = (type: string) => {
       studyDataService.cohort_definitions_service.addPhenotype(cohortId, type);
-      closeAddMenu();
+      // Keep menu open after adding phenotype
     };
 
     const phenotypeTypes = [
