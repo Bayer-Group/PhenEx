@@ -7,7 +7,9 @@ import { useNavBarMenu } from './PhenExNavBarMenuContext';
 
 interface AddButtonNavBarProps {
   height: number;
+  mode?: 'cohortviewer' | 'studyviewer';
   onSectionTabChange?: (index: number) => void;
+  onButtonClick?: () => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
 }
 
@@ -94,23 +96,49 @@ const AddMenu: React.FC<{
   );
 };
 
-export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSectionTabChange, dragHandleRef }) => {
+export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ 
+  height, 
+  mode = 'cohortviewer',
+  onSectionTabChange, 
+  onButtonClick,
+  dragHandleRef 
+}) => {
   const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('add');
+  const { isOpen: isTooltipOpen, open: openTooltip, close: closeTooltip } = useNavBarMenu('add-tooltip');
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const isCohortViewer = mode === 'cohortviewer';
+  const isStudyViewer = mode === 'studyviewer';
 
   return (
     <div className={`${styles.navBar} ${styles.navBarAddButton}`} style={{ height: `${height}px` , width: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <button
         ref={addButtonRef}
         className={styles.addButton}
-        onMouseEnter={openAddMenu}
+        onMouseEnter={() => {
+          if (isCohortViewer) {
+            openAddMenu();
+          } else if (isStudyViewer) {
+            openTooltip();
+          }
+        }}
         onMouseLeave={() => {
-          setTimeout(() => {
-            if (!menuRef.current?.matches(':hover')) {
-              closeAddMenu();
-            }
-          }, 100);
+          if (isCohortViewer) {
+            setTimeout(() => {
+              if (!menuRef.current?.matches(':hover')) {
+                closeAddMenu();
+              }
+            }, 100);
+          } else if (isStudyViewer) {
+            closeTooltip();
+          }
+        }}
+        onClick={() => {
+          if (isStudyViewer && onButtonClick) {
+            onButtonClick();
+          }
         }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -119,14 +147,30 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({ height, onSect
         </svg>
       </button>
       
-      <AddMenu
-        isOpen={isAddMenuOpen}
-        onClose={closeAddMenu}
-        anchorElement={addButtonRef.current}
-        menuRef={menuRef}
-        onMouseEnter={openAddMenu}
-        onMouseLeave={closeAddMenu}
-      />
+      {isCohortViewer && (
+        <AddMenu
+          isOpen={isAddMenuOpen}
+          onClose={closeAddMenu}
+          anchorElement={addButtonRef.current}
+          menuRef={menuRef}
+          onMouseEnter={openAddMenu}
+          onMouseLeave={closeAddMenu}
+        />
+      )}
+      
+      {isStudyViewer && (
+        <PhenExNavBarMenu
+          isOpen={isTooltipOpen}
+          onClose={closeTooltip}
+          anchorElement={addButtonRef.current}
+          menuRef={tooltipRef}
+          verticalPosition={'below'}
+        >
+          <div style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', color: 'white' }}>
+            Add a cohort
+          </div>
+        </PhenExNavBarMenu>
+      )}
     </div>
   );
 };

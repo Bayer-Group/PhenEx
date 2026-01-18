@@ -5,14 +5,18 @@ import { AddButtonNavBar } from './AddButtonNavBar';
 
 interface TabsAndAddButtonProps {
   height: number;
+  mode?: 'cohortviewer' | 'studyviewer';
   onSectionTabChange?: (index: number) => void;
+  onButtonClick?: () => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
   shadow?: boolean;
 }
 
 export const TabsAndAddButton: React.FC<TabsAndAddButtonProps> = ({ 
-  height, 
-  onSectionTabChange, 
+  height,
+  mode = 'cohortviewer',
+  onSectionTabChange,
+  onButtonClick,
   dragHandleRef,
   shadow = false 
 }) => {
@@ -25,8 +29,10 @@ export const TabsAndAddButton: React.FC<TabsAndAddButtonProps> = ({
         shadow={shadow}
       />
       <AddButtonNavBar 
-        height={height} 
+        height={height}
+        mode={mode}
         onSectionTabChange={onSectionTabChange}
+        onButtonClick={onButtonClick}
         dragHandleRef={dragHandleRef}
       />
     </div>

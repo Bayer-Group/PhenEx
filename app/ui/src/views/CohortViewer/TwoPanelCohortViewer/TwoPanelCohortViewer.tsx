@@ -12,7 +12,6 @@ import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/Visibilit
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
 import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
-import { RightPanelHistory } from './RightPanelHistory';
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
@@ -274,6 +273,25 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     setCurrentTabIndex(index);
   };
 
+  const handleAddNewCohort = async () => {
+    if (contentMode === 'study') {
+      // Get the study ID from the data prop
+      let studyId = data;
+      if (typeof data !== 'string') {
+        studyId = data?.id;
+      }
+      
+      if (!studyId) {
+        console.error('No study ID found');
+        return;
+      }
+
+      // Use centralized helper to ensure consistent behavior
+      const { createAndNavigateToNewCohort } = await import('../../LeftPanel/studyNavigationHelpers');
+      await createAndNavigateToNewCohort(studyId, navigate);
+    }
+  };
+
   const renderRightPanel = () => {
     // Add to history when rendering a panel
     const historyService = RightPanelHistoryDataService.getInstance();
@@ -318,7 +336,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               compact={false}
             />
           </div>
-          <TabsAndAddButton height={44} onSectionTabChange={handleTabChange} shadow={true} />
+          <TabsAndAddButton height={44} mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} onSectionTabChange={handleTabChange} onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} shadow={true} />
         </div>
         <div className={styles.contentSection}>
           <TwoPanelView 
