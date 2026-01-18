@@ -53,11 +53,11 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
 
       </div>
       <div className={styles.bottomRight}>
-        <ActionNavBar 
+        {/* <ActionNavBar 
           height={heightNavBar}
           onHideNavBar={handleHideNavBar}
           onShowNavBar={handleShowNavBar}
-        />
+        /> */}
       </div>
     </NavBarMenuProvider>
   );

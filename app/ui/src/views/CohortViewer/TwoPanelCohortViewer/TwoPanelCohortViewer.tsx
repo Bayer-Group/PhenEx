@@ -38,6 +38,7 @@ export class TwoPanelCohortViewerService {
 
   private constructor() {}
 
+
   public static getInstance(): TwoPanelCohortViewerService {
     if (!TwoPanelCohortViewerService.instance) {
       TwoPanelCohortViewerService.instance = new TwoPanelCohortViewerService();

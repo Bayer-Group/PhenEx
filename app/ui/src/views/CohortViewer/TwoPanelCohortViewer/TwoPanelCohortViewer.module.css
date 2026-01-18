@@ -67,3 +67,10 @@
     line-height: 20px;
   /* Add any specific last breadcrumb item styling */
 }
+
+.bottomRight{
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100000;
+}

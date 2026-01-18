@@ -9,6 +9,7 @@ import { SplashPage } from './SplashPage/SplashPage';
 import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { NewCohortWizard } from '../CohortViewer/NewCohortWizard';
 import { StudiesGridView } from './StudiesGridView/StudiesGridView';
+import { ActionNavBar } from '../../components/PhenExNavBar/ActionNavBar';
 
 import styles from './MainView.module.css';
 import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
@@ -204,7 +205,12 @@ export const MainView = () => {
         minSizeRight={300}
       >
         <HierarchicalLeftPanel isVisible={true} />
-        <RightPanel>{renderView()}</RightPanel>
+        <RightPanel>
+          {renderView()}
+          <div style={{ position: 'absolute', bottom: '25px', right: '25px', zIndex: 100 }}>
+            <ActionNavBar height={44} />
+          </div>
+        </RightPanel>
         <ChatPanel
           onTextEnter={text => {
             // Handle the text input here

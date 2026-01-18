@@ -10,10 +10,30 @@ interface ActionNavBarProps {
   height: number;
   onHideNavBar?: () => void;
   onShowNavBar?: () => void;
+  isChatOpen?: boolean;
+  onChatToggle?: (isOpen: boolean) => void;
 }
 
-export const ActionNavBar: React.FC<ActionNavBarProps> = ({ height, onHideNavBar, onShowNavBar }) => {
-  const [showChatPopover, setShowChatPopover] = useState(false);
+export const ActionNavBar: React.FC<ActionNavBarProps> = ({ 
+  height, 
+  onHideNavBar, 
+  onShowNavBar,
+  isChatOpen: controlledIsChatOpen,
+  onChatToggle: controlledOnChatToggle
+}) => {
+  const [internalShowChatPopover, setInternalShowChatPopover] = useState(false);
+  
+  const isControlled = controlledIsChatOpen !== undefined;
+  const showChatPopover = isControlled ? controlledIsChatOpen : internalShowChatPopover;
+  
+  const setShowChatPopover = (value: boolean) => {
+    if (isControlled && controlledOnChatToggle) {
+      controlledOnChatToggle(value);
+    } else {
+      setInternalShowChatPopover(value);
+    }
+  };
+
   const [resetPortalToPositioned, setResetPortalToPositioned] = useState(false);
   const [showPlayTooltip, setShowPlayTooltip] = useState(false);
   const [showIssuesToolip, setShowIssuesToolip] = useState(false);
