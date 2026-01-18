@@ -11,6 +11,7 @@ import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPa
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
+import { NewCohortWizardPanel } from '../../SlideoverPanels/NewCohortWizardPanel/NewCohortWizardPanel';
 import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
@@ -286,9 +287,12 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         return;
       }
 
-      // Use centralized helper to ensure consistent behavior
-      const { createAndNavigateToNewCohort } = await import('../../LeftPanel/studyNavigationHelpers');
-      await createAndNavigateToNewCohort(studyId, navigate);
+      // Create a new cohort via API
+      const { createCohort } = await import('../../LeftPanel/studyNavigationHelpers');
+      const newCohortData = await createCohort(studyId);
+      
+      // Display wizard in right panel with the new cohort data
+      service.displayExtraContent('newcohort', newCohortData);
     }
   };
 
@@ -313,6 +317,8 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
       return <InfoPanel />;
     } else if (viewType === 'codelists') {
       return <CodelistsViewer />;
+    } else if (viewType === 'newcohort') {
+      return <NewCohortWizardPanel data={extraData} />;
     }
   };
 

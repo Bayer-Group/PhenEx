@@ -245,12 +245,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
 
   return (
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
-      <button 
-        className={styles.newCohortButton}
-        onClick={clickedOnAddNewCohort}
-      >
-        + New Cohort
-      </button>
       <div className={styles.bottomSection}>{renderContent()}</div>
         <PhenExNavBar
           onSectionTabChange={onTabChange}

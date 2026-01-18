@@ -76,3 +76,39 @@ export async function createAndNavigateToNewCohort(
     throw error;
   }
 }
+
+/**
+ * Creates a new cohort for a study without navigation (for use in StudyViewer panel).
+ * Returns the cohort data for display in a right panel wizard.
+ * 
+ * @param studyId - The ID of the study to create the cohort in
+ * @returns The newly created cohort data
+ */
+export async function createCohort(studyId: string): Promise<any> {
+  console.log('🆕 Creating new cohort for study:', studyId);
+  const cohortsDataService = CohortsDataService.getInstance();
+  
+  try {
+    // Get the study data
+    const userStudies = await cohortsDataService.getUserStudies();
+    const publicStudies = await cohortsDataService.getPublicStudies();
+    const allStudies = [...userStudies, ...publicStudies];
+    const study = allStudies.find(s => s.id === studyId);
+    
+    if (!study) {
+      console.error('❌ Study not found:', studyId);
+      throw new Error(`Study ${studyId} not found`);
+    }
+    
+    // Create the new cohort
+    const newCohortData = await cohortsDataService.createNewCohort(study);
+    
+    if (newCohortData) {
+      console.log('✅ Cohort created:', newCohortData.id);
+      return newCohortData;
+    }
+  } catch (error) {
+    console.error('❌ Failed to create cohort:', error);
+    throw error;
+  }
+}
