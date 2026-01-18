@@ -204,4 +204,22 @@ export class StudyViewerCohortDefinitionsDataService {
     // Delegate to the model's updateRowOrder handler
     await cohortDataService.updateRowOrder(newRowData);
   }
+
+  /**
+   * Add a phenotype to a specific cohort
+   * @param cohortId The ID of the cohort to add the phenotype to
+   * @param type The type of phenotype to add
+   * @param parentPhenotypeId Optional parent phenotype ID for nested phenotypes
+   */
+  public addPhenotype(cohortId: string, type: string = 'NA', parentPhenotypeId: string | null = null): void {
+    console.log('[StudyViewer] addPhenotype for cohort:', cohortId, 'type:', type);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Call addPhenotype directly on the model instance
+    model.addPhenotype(type, parentPhenotypeId);
+  }
 }

@@ -6,12 +6,14 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { useNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 
 interface CohortCardActionsProps {
+  cohortId: string;
+  studyDataService: any;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
 
 export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsProps>(
-  ({ onMouseEnter, onMouseLeave }, ref) => {
+  ({ cohortId, studyDataService, onMouseEnter, onMouseLeave }, ref) => {
     const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('cohort-card-add');
     const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('cohort-card-options');
     const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -24,10 +26,9 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
     const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const optionsKeepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const addMenuDelayRef = useRef<NodeJS.Timeout | null>(null);
-    const dataService = CohortDataService.getInstance();
 
     const handleAddPhenotype = (type: string) => {
-      dataService.addPhenotype(type);
+      studyDataService.cohort_definitions_service.addPhenotype(cohortId, type);
       closeAddMenu();
     };
 

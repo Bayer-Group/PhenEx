@@ -48,6 +48,7 @@ const CohortList = React.memo(({
   onRowDragEnd,
   tableTheme,
   tableGridOptions,
+  studyDataService,
   isDragging,
   isScrolling,
   isShiftPressed,
@@ -66,6 +67,7 @@ const CohortList = React.memo(({
   onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
   tableTheme: any;
   tableGridOptions: any;
+  studyDataService: any;
   isDragging: boolean;
   isScrolling: boolean;
   isShiftPressed: boolean;
@@ -95,6 +97,7 @@ const CohortList = React.memo(({
             key={cohortKey}
             cohortDef={cohortDef}
             cohortId={cohortId}
+            studyDataService={studyDataService}
             onCardClick={onCardClick}
             isDragging={isDragging}
             isScrolling={isScrolling}
@@ -605,8 +608,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
             onCellValueChanged={handleCellValueChanged}
             onRowDragEnd={handleRowDragEnd}
             tableTheme={TABLE_THEME}
-            tableGridOptions={TABLE_GRID_OPTIONS}
-            isDragging={isDragging}
+            tableGridOptions={TABLE_GRID_OPTIONS}            studyDataService={studyDataService}            isDragging={isDragging}
             isScrolling={isScrolling}
             isShiftPressed={isShiftPressed}
             isCommandPressed={isCommandPressed}

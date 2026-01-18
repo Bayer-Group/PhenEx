@@ -8,6 +8,7 @@ import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 interface CohortCardProps {
   cohortDef: CohortWithTableData;
   cohortId: string;
+  studyDataService: any;
   onCardClick: (cohortDef: CohortWithTableData) => void;
   onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
   onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
@@ -24,6 +25,7 @@ interface CohortCardProps {
 export const CohortCard: React.FC<CohortCardProps> = React.memo(({
   cohortDef,
   cohortId,
+  studyDataService,
   onCardClick,
   onCellValueChanged,
   onRowDragEnd,
@@ -173,6 +175,8 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
           {isHovered && (
             <CohortCardActions
               ref={actionsRef}
+              cohortId={cohortId}
+              studyDataService={studyDataService}
               onMouseEnter={handleActionsMouseEnter}
               onMouseLeave={handleActionsMouseLeave}
             />
