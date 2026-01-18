@@ -219,6 +219,11 @@ export class StudyViewerCohortDefinitionsDataService {
       return;
     }
 
+    // Set this cohort as active before adding phenotype (so listeners know which cohort changed)
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
     // Call addPhenotype directly on the model instance
     model.addPhenotype(type, parentPhenotypeId);
   }
