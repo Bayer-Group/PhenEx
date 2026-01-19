@@ -263,11 +263,13 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
       cohortService.cohort_data.name = newValue;
       await cohortService.saveChangesToCohort(true, false);
       setEditableName(newValue);
+      updateBreadcrumbs(); // Explicitly update breadcrumbs after save
     } else {
       const studyService = StudyDataService.getInstance();
       studyService._study_name = newValue;
       await studyService.saveChangesToStudy();
       setEditableName(newValue);
+      updateBreadcrumbs(); // Explicitly update breadcrumbs after save
     }
   };
   
