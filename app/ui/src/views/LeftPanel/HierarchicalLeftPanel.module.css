@@ -187,9 +187,7 @@
 /* Target the list item by data-rct-item-id, then select its title container child */
 .treeContainer :global(.rct-tree-item-li[data-rct-item-id="mystudies"] > .rct-tree-item-title-container),
 .treeContainer :global(.rct-tree-item-li[data-rct-item-id="publicstudies"] > .rct-tree-item-title-container) {
-  font-size: 22px;
-  font-weight: 600;
-  min-height: 30px;
+  font-size: var(--font_size_infotext);
   font-family: "IBMPlexSans-regular";
 }
 
@@ -215,7 +213,7 @@
 }
 
 .treeContainer :global(.rct-tree-item-title-container-selected) {
-  /* background-color: rgba(0, 120, 212, 0.15) !important; */
+  font-family: "IBMPlexSans-bold" !important;
 }
 
 .treeContainer :global(.rct-tree-item-arrow) {

@@ -284,6 +284,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             renderItemTitle={({ title, item }) => {
               const node = item.data;
               const hasButton = node?.hasButton && node?.buttonTitle && node?.buttonOnClick;
+              const isSelected = selectedItems.includes(item.index);
               
               // Determine the level of this item
               let level = 0;
@@ -314,6 +315,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               return (
                 <div 
                   className={`${styles.itemTitle} ${styles[levelClass]}`}
+                  style={{ fontFamily: isSelected ? '"IBMPlexSans-bold"' : undefined }}
                 >
                   <span>{title}</span>
                   {hasButton && (
