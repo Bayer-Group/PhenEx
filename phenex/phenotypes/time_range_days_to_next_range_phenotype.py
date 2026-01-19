@@ -45,7 +45,7 @@ class TimeRangeDaysToNextRange(Phenotype):
         table = tables[self.domain]
         anchor_phenotype = None
         when = "after"
-        
+
         if self.relative_time_range:
             anchor_phenotype = self.relative_time_range.anchor_phenotype
             if self.relative_time_range.when:
@@ -85,7 +85,7 @@ class TimeRangeDaysToNextRange(Phenotype):
             VALUE = joined.START_DATE.delta(joined.NEIGHBOR_END_DATE, "day")
             EVENT_DATE = joined.NEIGHBOR_END_DATE
             group_key = "START_DATE"
-        else: # when == 'after'
+        else:  # when == 'after'
             # Looking for range AFTER anchored range
             # neighbor_start > current_end
             joined = joined.filter(joined.NEIGHBOR_START_DATE > joined.END_DATE)
@@ -99,7 +99,7 @@ class TimeRangeDaysToNextRange(Phenotype):
         # We find the min VALUE for each anchor range
         joined = joined.group_by(["PERSON_ID", group_key]).mutate(min_val=_.VALUE.min())
         joined = joined.filter(joined.VALUE == joined.min_val).drop("min_val")
-        
+
         # 5. Apply Value Filter
         if self.value_filter is not None:
             joined = self.value_filter.filter(joined)
