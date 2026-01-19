@@ -54,8 +54,8 @@
 }
 
 .regularItem:hover {
-  color: #333;
-  background-color: #f0f0f0;
+  color: var(--color_accent_blue);
+  background-color: transparent;
 }
 
 .lastItem {
@@ -65,7 +65,9 @@
 }
 
 .lastItem:hover {
-  background-color: #d2e3fc;
+  background-color: transparent;
+  color: var(--color_accent_blue);
+
 }
 
 .separator {

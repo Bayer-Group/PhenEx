@@ -128,17 +128,19 @@
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* When collapsed - hide completely off-screen, accounting for left margin */
 .portalContainer.collapsed {
   transform: translateX(calc(-100% - var(--margin-left)));
+  opacity: 0;
   pointer-events: none;
 }
 
 /* When hover animating - override collapsed state and slide in */
 .portalContainer.hoverAnimating {
   transform: translateX(0) !important;
+  opacity: 1 !important;
   pointer-events: auto !important;
 }

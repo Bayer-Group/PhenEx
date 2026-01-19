@@ -163,7 +163,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onClick={toggleLeftPanel}
       >
         <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </div>
     );
@@ -201,7 +201,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       className={styles.container}
       style={
         {
-          '--initial-left-width': `${leftWidth}px`,
+          '--initial-left-width': isLeftCollapsed ? '0px' : `${leftWidth}px`,
           '--initial-right-width': `${rightWidth}px`,
         } as React.CSSProperties
       }

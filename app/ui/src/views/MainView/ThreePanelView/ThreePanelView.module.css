@@ -106,8 +106,7 @@
 
 
 .collapseButton.left:hover {
-  color: var(--color_accent_orange);
-  background-color: var(--color-accent-hover);
+  color: var(--color_accent_blue);
 }
 
 .collapseButton.left.collapsed {

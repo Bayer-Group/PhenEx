@@ -133,7 +133,7 @@
 .navArrowButton:hover {
   opacity: 0.7;
   transform: scale(1.5);
-  color: var(--color_accent_dark) !important;
+  color: var(--color_accent_blue) !important;
 }
 
 .horizontalScrollContainer{
@@ -195,7 +195,7 @@
 }
 
 .eyeButton:hover {
-  color: var(--color_accent_dark) !important;
+  color: var(--color_accent_blue) !important;
   transform: var(--scale_transform) !important;
 
 }
@@ -277,7 +277,8 @@
 
 .addButton:hover {
   color:white;
-  transform: scale(1.35);
+  transform: scale(1.15);
+  background-color: var(--color_accent_blue) !important;
 
 }
 
@@ -318,8 +319,8 @@
 }
 
 .addMenuHoverTab:hover {
-  color: var(--color_accent_dark);
-  border-color: var(--color_accent_dark);
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
 }
 
 .addMenuItem {
@@ -364,7 +365,7 @@
 }
 
 .optionsButton:hover {
-  color: var(--color_accent_dark);
+  color: var(--color_accent_blue);
 
   transform: var(--scale_transform_small);
 }
@@ -375,7 +376,7 @@
 
 .optionsButton.menuShowing,
 .optionsButton:global(.menuShowing) {
-  color: var(--color_accent_dark);
+  color: var(--color_accent_blue);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -386,7 +387,7 @@
 
 .eyeButton.menuShowing,
 .eyeButton:global(.menuShowing) {
-  color: var(--color_accent_dark) !important;
+  color: var(--color_accent_blue) !important;
 }
 
 
