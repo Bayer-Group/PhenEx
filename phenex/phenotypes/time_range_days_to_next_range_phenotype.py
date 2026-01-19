@@ -24,7 +24,7 @@ class TimeRangeDaysToNextRange(TimeRangePhenotype):
         table = tables[self.domain]
         # 1. Identify anchored range
         anchored_table, reference_column = attach_anchor_and_get_reference_date(
-            table, self.relative_time_range.anchor_phenotype
+            table, self.relative_time_range
         )
 
         # Filter for ranges containing the anchor
@@ -55,15 +55,8 @@ class TimeRangeDaysToNextRange(TimeRangePhenotype):
         joined = joined.mutate(VALUE=VALUE)
 
         # 5. Remove all time_ranges except that next consecutive time_range (min value/gap)
-        # Group by keys that identify the anchored event instance
-        group_keys = ["PERSON_ID", "START_DATE", "END_DATE"]
-        if "EVENT_DATE" in joined.columns:
-            group_keys.append("EVENT_DATE")
-        elif "INDEX_DATE" in joined.columns:
-            group_keys.append("INDEX_DATE")
-
-        # We find the min VALUE per group (closest next range)
-        joined = joined.group_by(group_keys).mutate(min_val=_.VALUE.min())
+        # We find the min VALUE for each anchor range (identified by PERSON_ID and END_DATE)
+        joined = joined.group_by(["PERSON_ID", "END_DATE"]).mutate(min_val=_.VALUE.min())
         joined = joined.filter(joined.VALUE == joined.min_val).drop("min_val")
 
         # Set EVENT_DATE to start of next range
