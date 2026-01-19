@@ -108,7 +108,7 @@ class Table1(Reporter):
             if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
         ]
         return default_value_phenotypes + user_defined_value_phenotypes
-    
+
     def _get_categorical_characteristics(self):
         return [
             x
