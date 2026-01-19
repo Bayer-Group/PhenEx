@@ -166,7 +166,7 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({
           menuRef={tooltipRef}
           verticalPosition={'below'}
         >
-          <div style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap', color: 'white' }}>
+          <div style={{ padding: '8px 12px', fontSize: 'var(--font_size_items)', whiteSpace: 'nowrap', color: 'white' }}>
             Add a cohort
           </div>
         </PhenExNavBarMenu>

@@ -209,11 +209,21 @@
 }
 
 .treeContainer :global(.rct-tree-item-title-container:hover) {
-  /* background-color: rgba(0, 0, 0, 0.05); */
+  color: var(--color_accent_blue);
+  background-color: transparent !important;
+}
+
+.treeContainer :global(.rct-tree-item-button:hover) {
+  background-color: transparent !important;
+}
+
+.treeContainer :global(.rct-tree-item-li:hover > .rct-tree-item-button) {
+  background-color: transparent !important;
 }
 
 .treeContainer :global(.rct-tree-item-title-container-selected) {
   font-family: "IBMPlexSans-bold" !important;
+
 }
 
 .treeContainer :global(.rct-tree-item-arrow) {

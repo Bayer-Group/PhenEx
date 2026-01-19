@@ -7,13 +7,13 @@
   overflow: hidden;
   
   /* Add shadow casting */
-  background-color: var(--color_translucent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: var(--background-color);
+  /*backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); */
 
   height: calc(100vh - 2px) !important;
   margin-top: 0px;
-  box-shadow: var(--box_shadow) !important;
+  /* box-shadow: var(--box_shadow) !important; */
   border-right: var(--border);
 }
 
@@ -97,7 +97,7 @@
 /* High DPI displays */
 @media (min-resolution: 2dppx) {
   .portalContainer {
-    box-shadow: var(--box_shadow_hover);
+    /* box-shadow: var(--box_shadow_hover); */
   }
 }
 
