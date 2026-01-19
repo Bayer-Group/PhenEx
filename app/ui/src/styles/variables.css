@@ -23,6 +23,8 @@
   --background-color: #f8f9fa;/*#faf1e5;*/
   --background_color_focus: #000000d9;
   --background-color-content: white;
+  --color_inactive: lightgray;
+
   --border: 1px solid var(--line-color);
   --border-radius: 8px;
   --height-table-header: 100px;
@@ -114,6 +116,7 @@
   --color_outcome_dim: #41334625;
   --color_entry_dim: #1B384D25;
   --color_component_dim: gray;
+
   --font_size_pagetitle:32px;
   --font_size_breadcrumb:20px;
   --font_size_phenotypename:18px;

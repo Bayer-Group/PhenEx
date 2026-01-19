@@ -162,9 +162,9 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
       >
-        {/* <img src={LeftPanelIcon} alt="Toggle left panel" className={styles.arrow} /> */}
-                {'—'}
-
+        <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
+          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+        </svg>
       </div>
     );
   };
@@ -223,7 +223,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onWidthChange={setLeftWidth}
         minWidth={minSizeLeft}
         marginLeft={0}
-        isHoverAnimating={isHoverAnimating}
+        // isHoverAnimating={isHoverAnimating}
         onHoverEnter={handleHoverTriggerEnter}
         onHoverLeave={handleHoverTriggerLeave}
         debug={false}
@@ -231,12 +231,13 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         <div className={styles.leftPanelWidthAdjustablePortal}>
         {children[0]}
 
-        {renderLeftCollapseButton()}
 
         </div>
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
+                {renderLeftCollapseButton()}
+
         {/* Hover trigger area for animating portal when collapsed */}
         {isLeftCollapsed && (
           <div 
