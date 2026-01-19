@@ -89,7 +89,7 @@ class Table1(Reporter):
         ]
 
     def _get_value_characteristics(self):
-        return [
+        default_value_phenotypes = [
             x
             for x in self.cohort.characteristics
             if type(x).__name__
@@ -102,6 +102,13 @@ class Table1(Reporter):
             ]
         ]
 
+        user_defined_value_phenotypes = [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
+        ]
+        return default_value_phenotypes + user_defined_value_phenotypes
+    
     def _get_categorical_characteristics(self):
         return [
             x

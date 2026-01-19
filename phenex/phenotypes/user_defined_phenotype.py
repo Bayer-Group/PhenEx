@@ -18,6 +18,7 @@ logger = create_logger(__name__)
 def UserDefinedPhenotype(
     name: str,
     function: Callable[[Dict[str, "PhenexTable"]], "PhenexTable"],
+    returns_value: bool = False,
 ):
     """
     UserDefinedPhenotype allows users of PhenEx to implement custom functionality within a single phenotype. To use, the user must pass a function that returns an ibis table. This means that the function must
@@ -61,8 +62,10 @@ def UserDefinedPhenotype(
     class _UserDefinedPhenotype(Phenotype):
         def __init__(
             self,
+            returns_value,
             **kwargs,
         ):
+            self.returns_value = returns_value
             super(_UserDefinedPhenotype, self).__init__(**kwargs)
 
         def _execute(self, tables) -> PhenotypeTable:
@@ -80,4 +83,4 @@ def UserDefinedPhenotype(
 
             return table
 
-    return _UserDefinedPhenotype(name=name)
+    return _UserDefinedPhenotype(name=name, returns_value=returns_value)
