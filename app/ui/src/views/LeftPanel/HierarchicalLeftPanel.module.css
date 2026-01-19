@@ -8,6 +8,11 @@
   position: relative; /* For absolute positioning of custom scrollbar */
   display: flex;
   flex-direction: column;
+  
+  /* Override react-complex-tree modern style variables */
+  --rct-bar-color: var(--color_accent_blue);
+  --rct-radius: 0px;
+  --rct-bar-width: 4px;
 }
 
 /* Hide default scrollbars on the scroll container */
@@ -223,7 +228,6 @@
 
 .treeContainer :global(.rct-tree-item-title-container-selected) {
   font-family: "IBMPlexSans-bold" !important;
-
 }
 
 .treeContainer :global(.rct-tree-item-arrow) {
