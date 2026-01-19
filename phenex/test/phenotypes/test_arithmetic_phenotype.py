@@ -314,7 +314,6 @@ class ArithmeticPhenotypeIntegerArithmeticTestGenerator(PhenotypeTestGenerator):
             "phenotype": ArithmeticPhenotype(expression=(c1 * 10)),
         }
 
-
         # 30 / (c1 + 2) -> P1: 30/(0+2)=15, P2: 30/(3+2)=6
         integer_div = {
             "name": "integer_div",
@@ -323,7 +322,15 @@ class ArithmeticPhenotypeIntegerArithmeticTestGenerator(PhenotypeTestGenerator):
             "phenotype": ArithmeticPhenotype(expression=(30 / (c1 + 2))),
         }
 
-        test_infos = [integer_add, integer_add_2, integer_sub, integer_sub_2, integer_mul, integer_mul_2, integer_div]
+        test_infos = [
+            integer_add,
+            integer_add_2,
+            integer_sub,
+            integer_sub_2,
+            integer_mul,
+            integer_mul_2,
+            integer_div,
+        ]
         for test_info in test_infos:
             test_info["phenotype"].name = test_info["name"]
 
