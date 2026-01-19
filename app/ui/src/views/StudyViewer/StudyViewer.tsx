@@ -5,7 +5,10 @@ import { EditableTextField } from '../../components/EditableTextField/EditableTe
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { StudyDataService } from './StudyDataService';
 import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
+import { StudyViewerCohortDefinitionsD3 } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsD3';
+
 import { MainViewService, ViewType } from '../MainView/MainView';
+
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';

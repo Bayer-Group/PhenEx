@@ -62,15 +62,17 @@
   align-items: center;
   width: 100%;
   padding: 0px 4px;
-  overflow: hidden;
+  padding-right: 32px;
+  overflow: visible;
 }
 
 .itemTitle > span:first-child {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  flex: 1;
   display: block;
+  min-width: 0;
 }
 
 /* Level-based styling */
@@ -153,6 +155,11 @@
 
 .nodeButton:hover {
   background: rgba(0, 120, 212, 0.1);
+}
+
+/* Show TreeNodeAddButton on row hover */
+.treeContainer :global(.rct-tree-item-title-container:hover) .itemTitle > div {
+  opacity: 1;
 }
 
 /* Override react-complex-tree default styles */

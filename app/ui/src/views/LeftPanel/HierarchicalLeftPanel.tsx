@@ -8,6 +8,7 @@ import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataSer
 import { MainViewService, ViewType } from '../MainView/MainView';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { TreeNodeAddButton } from '../../components/ButtonsAndTabs/TreeNodeAddButton/TreeNodeAddButton.tsx';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -283,7 +284,6 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             }}
             renderItemTitle={({ title, item }) => {
               const node = item.data;
-              const hasButton = node?.hasButton && node?.buttonTitle && node?.buttonOnClick;
               const isSelected = selectedItems.includes(item.index);
               
               // Determine the level of this item
@@ -312,42 +312,40 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               
               const levelClass = `level${level}`;
               
+              // Use hasButton from node data
+              const showButton = node?.hasButton === true;
+              
+              // Debug logging
+              if (node?.id === 'mystudies' || level === 1) {
+                console.log(`🔘 Button for ${item.index}:`, { hasButton: node?.hasButton, showButton, level });
+              }
+              
+              // Determine tooltip text and handler based on level
+              let tooltipText = '';
+              let handleClick = () => {};
+              
+              if (level === 0 && item.index === 'mystudies') {
+                tooltipText = 'Add study';
+                handleClick = handleAddNewStudy;
+              } else if (level === 1) {
+                tooltipText = 'Add cohort';
+                // If it's a study node, handle adding cohort with navigation
+                if (node?.id) {
+                  handleClick = () => handleAddNewCohortToStudy(node.id);
+                }
+              }
+              
               return (
                 <div 
                   className={`${styles.itemTitle} ${styles[levelClass]}`}
                   style={{ fontFamily: isSelected ? '"IBMPlexSans-bold"' : undefined }}
                 >
                   <span>{title}</span>
-                  {hasButton && (
-                    <span
-                      className={styles.nodeButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // If it's a study node, handle adding cohort with navigation
-                        if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
-                          handleAddNewCohortToStudy(node.id);
-                        } else {
-                          node.buttonOnClick?.();
-                        }
-                      }}
-                      title={node.buttonTitle}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // If it's a study node, handle adding cohort with navigation
-                          if (node.viewInfo?.viewType === ViewType.StudyViewer && node.id) {
-                            handleAddNewCohortToStudy(node.id);
-                          } else {
-                            node.buttonOnClick?.();
-                          }
-                        }
-                      }}
-                    >
-                      {node.buttonTitle}
-                    </span>
+                  {showButton && (
+                    <TreeNodeAddButton
+                      tooltipText={tooltipText}
+                      onClick={handleClick}
+                    />
                   )}
                 </div>
               );
