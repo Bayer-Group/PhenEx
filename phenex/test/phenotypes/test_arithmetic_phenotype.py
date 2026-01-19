@@ -236,6 +236,112 @@ class ArithmeticPhenotypeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
+class ArithmeticPhenotypeIntegerArithmeticTestGenerator(PhenotypeTestGenerator):
+    name_space = "arpt_integer"
+
+    def define_input_tables(self):
+        df, tt = sdf_and_tt_dummycodes_3variables(
+            code_columnname="CODE",
+            patientid_columnname="PERSON_ID",
+            code_type_columnname="CODE_TYPE",
+            event_date_columnname="EVENT_DATE",
+        )
+        df["VALUE"] = range(df.shape[0])
+
+        df_person = pd.DataFrame()
+        df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+
+        return [
+            {"name": "measurement", "df": df},
+            {"name": "PERSON", "df": df_person},
+        ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        c1 = MeasurementPhenotype(
+            codelist=codelist_factory.get_codelist("c1"),
+            domain="measurement",
+            value_aggregation=Mean(),
+        )
+
+        # c1 values: P1=0, P2=3
+
+        # 10 + c1 -> P1: 10, P2: 13
+        integer_add = {
+            "name": "integer_add",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [10, 13, 15, 17],
+            "phenotype": ArithmeticPhenotype(expression=(10 + c1)),
+        }
+
+        integer_add_2 = {
+            "name": "integer_add_2",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [10, 13, 15, 17],
+            "phenotype": ArithmeticPhenotype(expression=(c1 + 10)),
+        }
+
+        # 10 - c1 -> P1: 10, P2: 7
+        integer_sub = {
+            "name": "integer_sub",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [10, 7, 5, 3],
+            "phenotype": ArithmeticPhenotype(expression=(10 - c1)),
+        }
+
+        integer_sub_2 = {
+            "name": "integer_sub_2",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [-10, -2, -5, -3],
+            "phenotype": ArithmeticPhenotype(expression=(c1 - 10)),
+        }
+        # 10 * c1 -> P1: 0, P2: 30
+        integer_mul = {
+            "name": "integer_mul",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [0, 30, 50, 70],
+            "phenotype": ArithmeticPhenotype(expression=(10 * c1)),
+        }
+
+        # 10 * c1 -> P1: 0, P2: 30
+        integer_mul_2 = {
+            "name": "integer_mul_2",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [0, 30, 50, 70],
+            "phenotype": ArithmeticPhenotype(expression=(c1 * 10)),
+        }
+
+        # 30 / (c1 + 2) -> P1: 30/(0+2)=15, P2: 30/(3+2)=6
+        integer_div = {
+            "name": "integer_div",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "values": [15, 6, 6, 6],
+            "phenotype": ArithmeticPhenotype(expression=(30 / (c1 + 2))),
+        }
+
+        test_infos = [
+            integer_add,
+            integer_add_2,
+            integer_sub,
+            integer_sub_2,
+            integer_mul,
+            integer_mul_2,
+            integer_div,
+        ]
+        for test_info in test_infos:
+            test_info["phenotype"].name = test_info["name"]
+
+        return test_infos
+
+
+def test_integer_arithmetic():
+    spg = ArithmeticPhenotypeIntegerArithmeticTestGenerator()
+    spg.run_tests()
+
+
 def test_arithmetic():
     spg = ArithmeticPhenotypeArithmeticPhenotypeTestGenerator()
     spg.run_tests()
@@ -247,5 +353,6 @@ def test_arithmetic():
 
 
 if __name__ == "__main__":
+    test_integer_arithmetic()
     test_arithmetic()
     # test_count_phenotype_arithmetic()
