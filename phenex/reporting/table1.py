@@ -105,8 +105,9 @@ class Table1(Reporter):
         user_defined_value_phenotypes = [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
+            if type(x).__name__ == "_UserDefinedPhenotype" and x.returns_value
         ]
+        print("THES ARE THE VALUE PHEOTYPES")
         return default_value_phenotypes + user_defined_value_phenotypes
 
     def _get_categorical_characteristics(self):
