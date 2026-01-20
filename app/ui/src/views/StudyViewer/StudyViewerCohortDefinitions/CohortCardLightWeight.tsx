@@ -6,77 +6,8 @@ import { CohortCardPhenotypeRow } from './CohortCardPhenotypeRow';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
-import { PhenExNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenu';
-import { useNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
-import navBarStyles from '../../../components/PhenExNavBar/NavBar.module.css';
 import { RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
 import { ScaledRightClickMenu } from '../../../components/RightClickMenu/ScaledRightClickMenu';
-
-// Options Menu Component
-const OptionsMenu: React.FC<{ 
-  isOpen: boolean; 
-  onClose: () => void; 
-  anchorElement: HTMLElement | null;
-  menuRef: React.RefObject<HTMLDivElement>;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}> = ({
-  isOpen,
-  onClose,
-  anchorElement,
-  menuRef,
-  onMouseEnter,
-  onMouseLeave,
-}) => {
-  const viewerService = TwoPanelCohortViewerService.getInstance();
-
-  const handleMenuItemClick = (viewType: string) => {
-    viewerService.displayExtraContent(viewType, null);
-  };
-
-  const menuItems = [
-    { type: 'info', label: 'Info' },
-    { type: 'database', label: 'Database' },
-    { type: 'codelists', label: 'Codelists' },
-    { type: 'constants', label: 'Constants' },
-  ];
-
-  return (
-    <PhenExNavBarMenu 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      anchorElement={anchorElement}
-      menuRef={menuRef}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      verticalPosition='below'
-      horizontalAlignment='right'
-    >
-      <div style={{ padding: '8px 4px', minWidth: '180px' }}>
-        <div className={navBarStyles.itemList}>
-          {menuItems.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => handleMenuItemClick(type)}
-              className={navBarStyles.addMenuItem}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                gap: '12px'
-              }}
-            >
-              <span>{label}</span>
-              <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
-              </svg>
-            </button>
-          ))}
-        </div>
-      </div>
-    </PhenExNavBarMenu>
-  );
-};
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -115,9 +46,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const cardRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const initialPositionSetRef = useRef(false);
-  const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu(`options-${cohortId}`);
-  const optionsButtonRef = useRef<HTMLButtonElement>(null);
-  const optionsMenuRef = useRef<HTMLDivElement>(null);
   const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
@@ -360,28 +288,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             fontSize: 'var(--dynamic-font-size)'
           }}>
             <div className={styles.cohortHeaderContent}>
-              <button
-                ref={optionsButtonRef}
-                className={styles.optionsButton}
-                onMouseEnter={openOptionsMenu}
-                onMouseLeave={() => {
-                  setTimeout(() => {
-                    if (!optionsMenuRef.current?.matches(':hover')) {
-                      closeOptionsMenu();
-                    }
-                  }, 100);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ 
-                  // width: 'calc(var(--dynamic-arrow-size, 25px) - 10px)', 
-                  // height: 'calc(var(--dynamic-arrow-size, 25px) - 10px)'
-                }}>
-                  <circle cx="12" cy="4" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="12" cy="20" r="2" />
-                </svg>
-              </button>
               {isEditingTitle ? (
                 <input
                   ref={titleInputRef}
@@ -471,16 +377,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             />
           )}
         </div>
-        
-        {/* Options Menu */}
-        <OptionsMenu
-          isOpen={isOptionsMenuOpen}
-          onClose={closeOptionsMenu}
-          anchorElement={optionsButtonRef.current}
-          menuRef={optionsMenuRef}
-          onMouseEnter={openOptionsMenu}
-          onMouseLeave={closeOptionsMenu}
-        />
         
         {/* Right Click Menu */}
         {rightClickMenu && (
