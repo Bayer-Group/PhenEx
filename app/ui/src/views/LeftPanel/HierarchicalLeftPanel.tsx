@@ -325,10 +325,10 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               let handleClick = () => {};
               
               if (level === 0 && item.index === 'mystudies') {
-                tooltipText = 'Add study';
+                tooltipText = 'Create a new study';
                 handleClick = handleAddNewStudy;
               } else if (level === 1) {
-                tooltipText = 'Add cohort';
+                tooltipText = 'Create a new cohort';
                 // If it's a study node, handle adding cohort with navigation
                 if (node?.id) {
                   handleClick = () => handleAddNewCohortToStudy(node.id);

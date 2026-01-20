@@ -57,12 +57,10 @@
 
 /* Custom item title styling */
 .itemTitle {
-  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 0px 4px;
-  padding-right: 32px;
   overflow: visible;
 }
 
@@ -73,6 +71,7 @@
   flex: 1;
   display: block;
   min-width: 0;
+  padding-right: 32px;
 }
 
 /* Level-based styling */

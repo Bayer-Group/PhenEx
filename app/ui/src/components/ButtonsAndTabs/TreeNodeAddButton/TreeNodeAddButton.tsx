@@ -25,7 +25,6 @@ export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({
           e.stopPropagation();
           onClick();
         }}
-        title={tooltipText}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -47,7 +46,7 @@ export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({
         anchorElement={buttonRef.current}
         label={tooltipText}
         verticalPosition="below"
-        horizontalAlignment="center"
+        horizontalAlignment="left"
         gap={6}
       />
     </div>
