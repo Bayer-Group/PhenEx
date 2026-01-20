@@ -4,8 +4,6 @@ import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { StudyDataService } from './StudyDataService';
-import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
-import { StudyViewerCohortDefinitionsD3 } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsD3';
 
 import { MainViewService, ViewType } from '../MainView/MainView';
 
@@ -241,7 +239,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
         return <StudyViewerCohortDefinitionsLightWeight studyDataService={studyDataService} />;
       case StudyDefinitionViewType.Baseline:
       case StudyDefinitionViewType.Outcomes:
-        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
+        return <StudyViewerCohortDefinitionsLightWeight studyDataService={studyDataService} />;
       default:
         return <div />;
     }
