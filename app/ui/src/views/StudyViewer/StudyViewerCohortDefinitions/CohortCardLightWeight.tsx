@@ -326,7 +326,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
       <div>
         <div 
           ref={cardRef}
-          className={`${styles.cohortCard} ${isHoveringActions ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
+          className={`${styles.cohortCard} ${(isHoveringActions || rightClickMenu !== null) ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -428,7 +428,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           </div>
           
           {/* Actions Container */}
-          {isHovered && (
+          {(isHovered || rightClickMenu !== null) && (
             <CohortCardActions
               ref={actionsRef}
               cohortId={cohortId}
