@@ -208,6 +208,9 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                       e.stopPropagation();
                       handleRowEdit(row);
                     }}
+                    onCellValueChanged={async (rowIndex, field, value) => {
+                      await onCellValueChanged(cohortId, rowIndex, field, value);
+                    }}
                   />
                 ))}
               </div>

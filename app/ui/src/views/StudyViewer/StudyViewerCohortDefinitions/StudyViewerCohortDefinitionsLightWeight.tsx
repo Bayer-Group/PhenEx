@@ -228,8 +228,33 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
   }, [studyDataService]);
 
   const handleCellValueChanged = async (cohortId: string, rowIndex: number, field: string, value: any) => {
-    // Handle cell value changes - could implement inline editing here
     console.log(`Cell changed: cohort=${cohortId}, row=${rowIndex}, field=${field}, value=${value}`);
+    
+    // Get the cohort definition
+    const cohortDef = cohortDefinitionsRef.current?.find(def => def.cohort.id === cohortId);
+    if (!cohortDef) {
+      console.warn('Cohort not found:', cohortId);
+      return;
+    }
+
+    // Get the row data
+    const rowData = cohortDef.table_data.rows[rowIndex];
+    if (!rowData) {
+      console.warn('Row not found:', rowIndex);
+      return;
+    }
+
+    // Create an AG Grid-like event object
+    const event = {
+      data: rowData,
+      newValue: value,
+      oldValue: rowData[field],
+      colDef: { field },
+      node: { rowIndex }
+    };
+
+    // Call the service to update the model
+    await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event);
   };
 
   const handleRowDragStart = (rowIndex: number) => {

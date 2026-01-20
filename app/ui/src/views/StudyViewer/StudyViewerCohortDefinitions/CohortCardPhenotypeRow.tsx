@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './CohortCardPhenotypeRow.module.css';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
@@ -13,6 +13,7 @@ interface CohortCardPhenotypeRowProps {
   onDrop: (e: React.DragEvent) => void;
   onClick: (e: React.MouseEvent, row: any, rowIndex: number) => void;
   onExpandClick: (e: React.MouseEvent) => void;
+  onCellValueChanged?: (rowIndex: number, field: string, value: any) => Promise<void>;
 }
 
 
@@ -26,7 +27,46 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   onDrop,
   onClick,
   onExpandClick,
+  onCellValueChanged,
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditValue(row.name || '');
+    setIsEditing(true);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsEditing(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (onCellValueChanged && editValue.trim() !== row.name) {
+      await onCellValueChanged(index, 'name', editValue.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleBlur = () => {
+    saveEdit();
+  };
+
   // Get background color with hierarchical alpha
   const backgroundColor = getHierarchicalBackgroundColor(
     row.effective_type,
@@ -70,10 +110,23 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
       </div>
       
       {/* Phenotype content */}
-      <div className={styles.phenotypeContent}>
-        <div className={styles.phenotypeName}>
-          {row.name || 'Unnamed Phenotype'}
-        </div>
+      <div className={styles.phenotypeContent} onDoubleClick={handleDoubleClick}>
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            className={styles.phenotypeNameInput}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <div className={styles.phenotypeName}>
+            {row.name || 'Unnamed Phenotype'}
+          </div>
+        )}
         {row.description && (
           <div className={styles.phenotypeDescription}>
             {row.description}
