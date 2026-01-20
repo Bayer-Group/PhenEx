@@ -385,7 +385,8 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
-    setDragStart({ x: e.clientX - viewState.x, y: e.clientY - viewState.y });
+    const current = currentTransform.current;
+    setDragStart({ x: e.clientX - current.x, y: e.clientY - current.y });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
