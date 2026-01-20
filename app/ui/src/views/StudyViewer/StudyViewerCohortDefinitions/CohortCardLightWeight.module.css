@@ -12,10 +12,6 @@
 
 /* Cohort Card */
 .cohortCard {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s ease-out, outline 0.2s ease-out;
   outline: 2px solid transparent;
   outline-offset: 0;
   position: relative;
@@ -25,18 +21,27 @@
 }
 
 .cohortCard:hover:not(.noHover) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
 }
 
 .cohortCard.forceHover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
 }
 
 .cohortCard.noHover:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  outline: 2px solid transparent;
+}
+
+/* Header color changes on hover */
+.cohortCard:hover:not(.noHover) .cohortHeaderTitle,
+.cohortCard.forceHover .cohortHeaderTitle {
+  color: var(--color_accent_blue);
+}
+
+.cohortCard:hover:not(.noHover) .expandArrow,
+.cohortCard.forceHover .expandArrow {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+}
+
+.cohortCard.noHover:hover .cohortHeaderTitle {
+  color: #1a1a1a;
 }
 
 /* Header */
@@ -50,26 +55,73 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: var(--dynamic-arrow-size, 40px);
 }
 
 .cohortHeaderTitle {
   font-weight: 600;
-  font-size: 16px;
+  font-size: var(--dynamic-font-size, 16px);
   color: #1a1a1a;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.3;
+}
+/* Cohort header expand button */
+.cohortHeaderContent .expandButton {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  opacity: 1;
 }
 
+.cohortHeaderContent .expandButton:hover {
+  background: var(--hover-background, #f0f0f0);
+}
+
+.cohortHeaderContent .expandArrow {
+  width: var(--dynamic-arrow-size, 40px);
+  height: var(--dynamic-arrow-size, 40px);
+  display: block;
+}
 .topFiller {
-  height: 0;
+  height: 20px;
+  background-color: var(--color_entry_dim);
 }
 
 /* Table Container */
 .tableContainer {
-  padding: 0 0 8px 0;
+  padding: 0 0 0px 0;
   min-height: 60px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-out, outline 0.2s ease-out;
+  outline: 2px solid transparent;
+  outline-offset: 0;
+}
+
+.cohortCard:hover:not(.noHover) .tableContainer {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
+}
+
+.cohortCard.forceHover .tableContainer {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
+}
+
+.cohortCard.noHover:hover .tableContainer {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  outline: 2px solid transparent;
 }
 
 /* Phenotype List */

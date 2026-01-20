@@ -1,0 +1,166 @@
+/* Phenotype Row */
+.phenotypeRow {
+  display: grid;
+  grid-template-columns: 4px 24px 40px 1fr 32px;
+  align-items: start;
+  gap: 8px;
+  padding: var(--item-margin-top) 12px;
+  min-height: 24px;
+  background: white;
+  border-top: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  position: relative;
+  background-color: red;
+}
+
+.phenotypeRow:hover {
+  background-color: #f8f9fa;
+}
+
+.phenotypeRow.selected {
+  background-color: #e3f2fd;
+}
+
+.phenotypeRow.dragging {
+  opacity: 0.5;
+}
+
+.phenotypeRow:last-child {
+  border-bottom: none;
+}
+
+/* Selection Indicator */
+.selectionIndicator {
+  width: 4px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selectionMark {
+  width: 4px;
+  height: 100%;
+  background-color: var(--color_accent_blue);
+  border-radius: 2px;
+}
+
+/* Drag Handle */
+.dragHandle {
+  color: #999;
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  font-size: 16px;
+}
+
+.phenotypeRow:hover .dragHandle {
+  opacity: 1;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* Row Number */
+.rowNumber {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  text-align: center;
+  padding-right:4px;
+}
+
+/* Level-based font sizes */
+.level_0 {
+  font-size: var(--font_size_phenotypename);
+}
+
+.level_1 {
+  font-size: var(--font_size_mid_phenotype_info);
+}
+
+.level_2 {
+  font-size: var(--font_size_infotext);
+}
+
+.level_3 {
+  font-size: 10px;
+}
+
+.level_4 {
+  font-size: 10px;
+}
+
+/* Phenotype Content */
+.phenotypeContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phenotypeName {
+  font-size: var(--font_size_phenotypename);
+  font-weight: 500;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.phenotypeDescription {
+  font-size: var(--font_size_infotext);
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+
+/* Expand Button */
+.expandButton {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  opacity: .4;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  width: 35px;
+  height: 35px;
+  margin-top:-8px;
+  flex-shrink: 0;
+}
+
+.phenotypeRow:hover .expandButton {
+  opacity: 1;
+  color: var(--color_accent_blue);
+
+}
+
+.expandButton:hover {
+  transform: scale(1.1);
+}
+
+.expandButton:active, .expandButton:focus {
+  border: none;
+  outline: none;
+}
+
+
+.expandArrow {
+  width: 100%;
+  height: 100%;
+  /* filter: brightness(0) saturate(100%) invert(45%) sepia(98%) saturate(2476%) hue-rotate(195deg) brightness(94%) contrast(101%); */
+}
+

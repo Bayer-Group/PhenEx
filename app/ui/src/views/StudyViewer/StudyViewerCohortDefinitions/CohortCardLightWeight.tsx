@@ -188,9 +188,9 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             </div>
           </div>
           
-          <div className={styles.topFiller} />
           
           <div className={styles.tableContainer}>
+          <div className={styles.topFiller} />
             {rows.length > 0 ? (
               <div className={styles.phenotypeList}>
                 {rows.map((row, index) => (
