@@ -40,6 +40,15 @@
   color: white;
 }
 
+.menuItem.hasSubmenu {
+  padding-right: 8px;
+}
+
+.menuItem.active {
+  background-color: var(--color_accent_blue);
+  color: white;
+}
+
 .menuItem.disabled {
   opacity: 0.4;
   cursor: not-allowed;

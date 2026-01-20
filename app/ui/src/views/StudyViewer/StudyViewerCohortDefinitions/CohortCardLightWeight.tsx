@@ -231,6 +231,10 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     }
   };
 
+  const handleAddPhenotype = (type: string) => {
+    studyDataService.cohort_definitions_service.addPhenotype(cohortId, type);
+  };
+
   const getRightClickMenuItems = (): RightClickMenuItem[] => {
     if (rightClickMenu?.rowIndex !== null && rightClickMenu?.rowIndex !== undefined) {
       // Row-specific menu items
@@ -276,9 +280,31 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
         },
         {
           label: 'Add Phenotype',
-          onClick: () => console.log('Add phenotype'),
-          disabled: true,
-          divider: true
+          onClick: () => {}, // No-op, submenu handles clicks
+          disabled: false,
+          divider: true,
+          submenu: [
+            {
+              label: 'Entry',
+              onClick: () => handleAddPhenotype('entry')
+            },
+            {
+              label: 'Inclusion',
+              onClick: () => handleAddPhenotype('inclusion')
+            },
+            {
+              label: 'Exclusion',
+              onClick: () => handleAddPhenotype('exclusion')
+            },
+            {
+              label: 'Baseline Characteristic',
+              onClick: () => handleAddPhenotype('baseline')
+            },
+            {
+              label: 'Outcome',
+              onClick: () => handleAddPhenotype('outcome')
+            }
+          ]
         },
         {
           label: 'Info',
