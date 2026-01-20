@@ -8,6 +8,7 @@ export interface RightClickMenuItem {
   divider?: boolean; // If true, render a divider line after this item
   icon?: React.ReactNode; // Optional icon to display with the item
   submenu?: RightClickMenuItem[]; // Optional submenu items
+  keepOpenOnClick?: boolean; // If true, menu stays open after clicking this item
 }
 
 export interface RightClickMenuProps {
@@ -73,7 +74,9 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
   const handleItemClick = (item: RightClickMenuItem) => {
     if (!item.disabled && !item.submenu) {
       item.onClick();
-      onClose();
+      if (!item.keepOpenOnClick) {
+        onClose();
+      }
     }
   };
 

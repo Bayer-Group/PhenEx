@@ -286,23 +286,28 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           submenu: [
             {
               label: 'Entry',
-              onClick: () => handleAddPhenotype('entry')
+              onClick: () => handleAddPhenotype('entry'),
+              keepOpenOnClick: true
             },
             {
               label: 'Inclusion',
-              onClick: () => handleAddPhenotype('inclusion')
+              onClick: () => handleAddPhenotype('inclusion'),
+              keepOpenOnClick: true
             },
             {
               label: 'Exclusion',
-              onClick: () => handleAddPhenotype('exclusion')
+              onClick: () => handleAddPhenotype('exclusion'),
+              keepOpenOnClick: true
             },
             {
               label: 'Baseline Characteristic',
-              onClick: () => handleAddPhenotype('baseline')
+              onClick: () => handleAddPhenotype('baseline'),
+              keepOpenOnClick: true
             },
             {
               label: 'Outcome',
-              onClick: () => handleAddPhenotype('outcome')
+              onClick: () => handleAddPhenotype('outcome'),
+              keepOpenOnClick: true
             }
           ]
         },
