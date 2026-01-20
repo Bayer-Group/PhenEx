@@ -3,7 +3,7 @@
 }
 
 .cohortGroupView{
-    border: var(--dynamic-outline-width, 3px) solid #ddd;
+    border: var(--dynamic-outline-width, 3px) solid transparent;
     border-radius: 12px;
     padding: calc(80px / var(--zoom-scale, 1)) calc(80px / var(--zoom-scale, 1));
     display: flex;
