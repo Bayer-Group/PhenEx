@@ -3,6 +3,8 @@ import styles from './CohortCardLightWeight.module.css';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortCardActions } from './CohortCardActions';
 import { CohortCardPhenotypeRow } from './CohortCardPhenotypeRow';
+import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { CohortViewType } from '../../CohortViewer/CohortViewer';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 
 interface CohortCardLightWeightProps {
@@ -132,6 +134,11 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     toggleRowSelection(rowIndex);
   };
 
+  const handleRowEdit = (row: any) => {
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('phenotype' as CohortViewType, row);
+  };
+
   const rows = cohortDef.table_data.rows;
 
   return (
@@ -199,7 +206,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                     onClick={handleRowClick}
                     onExpandClick={(e) => {
                       e.stopPropagation();
-                      onCardClick(cohortDef);
+                      handleRowEdit(row);
                     }}
                   />
                 ))}
