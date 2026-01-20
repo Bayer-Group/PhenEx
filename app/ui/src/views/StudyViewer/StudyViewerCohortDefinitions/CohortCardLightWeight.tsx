@@ -3,6 +3,7 @@ import styles from './CohortCardLightWeight.module.css';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortCardActions } from './CohortCardActions';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
+import typeStyles from '../../../styles/study_types.module.css';
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -185,10 +186,17 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           <div className={styles.tableContainer}>
             {rows.length > 0 ? (
               <div className={styles.phenotypeList}>
-                {rows.map((row, index) => (
+                {rows.map((row, index) => {
+                  // Get background color class based on effective_type
+                  const backgroundColorClass = row.effective_type
+                    ? typeStyles[`${row.effective_type}_color_block_dim`]
+                    : '';
+                console.log('Rendering row:', row, 'with background class:', backgroundColorClass);
+                  
+                  return (
                   <div
                     key={row.id || index}
-                    className={`${styles.phenotypeRow} ${selectedRows.has(index) ? styles.selected : ''} ${draggedRowIndex === index ? styles.dragging : ''}`}
+                    className={`${styles.phenotypeRow} ${backgroundColorClass} ${selectedRows.has(index) ? styles.selected : ''} ${draggedRowIndex === index ? styles.dragging : ''}`}
                     draggable
                     onDragStart={(e) => handleRowDragStart(e, index)}
                     onDragOver={(e) => handleRowDragOver(e, index)}
@@ -248,7 +256,8 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                       />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className={styles.emptyState}>
