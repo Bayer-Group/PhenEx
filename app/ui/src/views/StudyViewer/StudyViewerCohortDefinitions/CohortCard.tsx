@@ -140,6 +140,24 @@ export const CohortCard: React.FC<CohortCardProps> = React.memo(({
             fontSize: 'var(--dynamic-font-size)'
           }}>
             <div className={styles.cohortHeaderContent}>
+                    {/* <button
+        ref={optionsButtonRef}
+        className={styles.optionsButton}
+        onMouseEnter={openOptionsMenu}
+        onMouseLeave={() => {
+          setTimeout(() => {
+            if (!menuRef.current?.matches(':hover')) {
+              closeOptionsMenu();
+            }
+          }, 100);
+        }}
+      >
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="4" r="2" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="12" cy="20" r="2" />
+        </svg>
+      </button> */}
               <div className={styles.cohortHeaderTitle}>
                 {cohortDef.cohort.name || 'Unnamed Cohort'}
               </div>

@@ -1,49 +1,25 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
-import { CohortWithTableData, getStudyViewerCellRenderers } from './StudyViewerCohortDefinitionsTypes';
+import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { deleteCohort } from '@/api/text_to_cohort/route';
-import { CohortCard } from './CohortCard';
+import { CohortCardLightWeight } from './CohortCardLightWeight';
 
-interface StudyViewerCohortDefinitionsProps {
+interface StudyViewerCohortDefinitionsLightWeightProps {
   studyDataService: StudyDataService;
 }
 
-const TABLE_THEME = {
-  accentColor: 'transparent',
-  borderColor: 'transparent',
-  rowHoverColor: 'transparent',
-  wrapperBorder: false,
-  headerRowBorder: false,
-  columnBorder: false,
-  headerFontSize: 14,
-  headerFontWeight: 'bold',
-  cellHorizontalPadding: 10,
-  headerBackgroundColor: 'transparent',
-  rowBorder: false,
-  spacing: 0,
-  backgroundColor: 'transparent',
-  wrapperBorderRadius: 0
-};
-
-const TABLE_GRID_OPTIONS = {
-  suppressRowHoverHighlight: true,
-  columnHoverHighlight: false,
-};
-
 // Memoized list component to prevent re-renders during zoom/pan
-const CohortList = React.memo(({ 
-  cohortDefinitions, 
+const CohortList = React.memo(({
+  cohortDefinitions,
   onCardClick,
-  calculateRowHeight,
   tableContainerRefs,
-  cellRenderers,
   onCellValueChanged,
-  onRowDragEnd,
-  tableTheme,
-  tableGridOptions,
+  onRowDragStart,
+  onRowDragOver,
+  onRowDrop,
   studyDataService,
   isDragging,
   isScrolling,
@@ -52,13 +28,11 @@ const CohortList = React.memo(({
 }: {
   cohortDefinitions: CohortWithTableData[];
   onCardClick: (cohortDef: CohortWithTableData) => void;
-  calculateRowHeight: (params: any) => number;
   tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
-  cellRenderers: any;
-  onCellValueChanged: (cohortId: string, event: any, selectedRows?: any[]) => Promise<void>;
-  onRowDragEnd: (cohortId: string, newRowData: any[]) => Promise<void>;
-  tableTheme: any;
-  tableGridOptions: any;
+  onCellValueChanged: (cohortId: string, rowIndex: number, field: string, value: any) => Promise<void>;
+  onRowDragStart: (rowIndex: number) => void;
+  onRowDragOver: (rowIndex: number) => void;
+  onRowDrop: (cohortId: string) => Promise<void>;
   studyDataService: any;
   isDragging: boolean;
   isScrolling: boolean;
@@ -85,22 +59,20 @@ const CohortList = React.memo(({
         }
 
         return (
-          <CohortCard
+          <CohortCardLightWeight
             key={cohortKey}
             cohortDef={cohortDef}
             cohortId={cohortId}
             studyDataService={studyDataService}
             onCardClick={onCardClick}
+            onCellValueChanged={onCellValueChanged}
+            onRowDragStart={onRowDragStart}
+            onRowDragOver={onRowDragOver}
+            onRowDrop={onRowDrop}
             isDragging={isDragging}
             isScrolling={isScrolling}
             isShiftPressed={isShiftPressed}
             isCommandPressed={isCommandPressed}
-            onCellValueChanged={onCellValueChanged}
-            onRowDragEnd={onRowDragEnd}
-            calculateRowHeight={calculateRowHeight}
-            cellRenderers={cellRenderers}
-            tableTheme={tableTheme}
-            tableGridOptions={tableGridOptions}
           />
         );
       })}
@@ -108,13 +80,9 @@ const CohortList = React.memo(({
   );
 });
 
-export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitionsProps> = ({ studyDataService }) => {
+export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohortDefinitionsLightWeightProps> = ({ studyDataService }) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
-  
-  // Get cell renderers once - function call defers access until after module initialization
-  const cellRenderers = useMemo(() => getStudyViewerCellRenderers(), []);
   
   // Initialize view state from local storage if available
   const [viewState, setViewState] = useState(() => {
@@ -147,10 +115,10 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [isCommandPressed, setIsCommandPressed] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [draggedRow, setDraggedRow] = useState<number | null>(null);
+  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const horizontalScrollAccumulator = useRef<number>(0);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
-  const menuRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
@@ -158,6 +126,12 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   
   // Current transform values (ref to avoid re-renders)
   const currentTransform = useRef(viewState);
+  const persistTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Update ref when cohortDefinitions changes
+  useEffect(() => {
+    cohortDefinitionsRef.current = cohortDefinitions;
+  }, [cohortDefinitions]);
 
   // Track shift key state globally
   useEffect(() => {
@@ -187,12 +161,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
-  const persistTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  // Update ref when cohortDefinitions changes
-  useEffect(() => {
-    cohortDefinitionsRef.current = cohortDefinitions;
-  }, [cohortDefinitions]);
   
   // Helper to update transform directly on DOM
   const applyTransform = (x: number, y: number, scale: number) => {
@@ -215,7 +183,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const updateCohortDefinitions = () => {
       const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
       setCohortDefinitions(definitions);
-      console.log('Updated cohort definitions', definitions);
     };
 
     // Initial load
@@ -235,106 +202,79 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     const cohortDataService = CohortDataService.getInstance();
 
     const handleCohortDataChange = () => {
-      console.log('[StudyViewer] handleCohortDataChange triggered');
-      // Get which cohort was edited from the StudyDataService
       const editedCohortId = studyDataService.cohort_definitions_service.getActiveCohortId();
-      // Use ref to get latest cohort definitions
       const currentDefinitions = cohortDefinitionsRef.current;
-      console.log('[StudyViewer] editedCohortId:', editedCohortId, 'cohortDefinitions:', currentDefinitions?.length);
-      if (!editedCohortId || !currentDefinitions) {
-        console.log('[StudyViewer] Early return - no editedCohortId or cohortDefinitions');
-        return;
-      }
+      if (!editedCohortId || !currentDefinitions) return;
 
-      // Check if the edited cohort is one we're displaying
       const cohortIndex = currentDefinitions.findIndex(def => def.cohort.id === editedCohortId);
-      console.log('[StudyViewer] cohortIndex:', cohortIndex);
-      if (cohortIndex === -1) {
-        console.log('[StudyViewer] Cohort not found in definitions');
-        return;
-      }
+      if (cohortIndex === -1) return;
 
-      console.log('[StudyViewer] Cohort edited, refreshing card for:', editedCohortId);
-
-      // Refresh this specific cohort's data
       const updatedDefinitions = [...currentDefinitions];
       const refreshedData = studyDataService.cohort_definitions_service.refreshSingleCohort(editedCohortId);
       
       if (refreshedData) {
-        console.log('[StudyViewer] Got refreshed data, updating state');
         updatedDefinitions[cohortIndex] = refreshedData;
         setCohortDefinitions(updatedDefinitions);
-      } else {
-        console.warn('[StudyViewer] No refreshed data returned');
       }
     };
 
-    console.log('[StudyViewer] Adding data change listener to CohortDataService');
     cohortDataService.addDataChangeListener(handleCohortDataChange);
-    
-    // Also listen to cohort_definitions_service for model changes
-    console.log('[StudyViewer] Adding listener to cohort_definitions_service');
     studyDataService.cohort_definitions_service.addListener(handleCohortDataChange);
 
     return () => {
-      console.log('[StudyViewer] Removing data change listener from CohortDataService');
       cohortDataService.removeDataChangeListener(handleCohortDataChange);
-      console.log('[StudyViewer] Removing listener from cohort_definitions_service');
       studyDataService.cohort_definitions_service.removeListener(handleCohortDataChange);
     };
   }, [studyDataService]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
+  const handleCellValueChanged = async (cohortId: string, rowIndex: number, field: string, value: any) => {
+    // Handle cell value changes - could implement inline editing here
+    console.log(`Cell changed: cohort=${cohortId}, row=${rowIndex}, field=${field}, value=${value}`);
+  };
+
+  const handleRowDragStart = (rowIndex: number) => {
+    setDraggedRow(rowIndex);
+  };
+
+  const handleRowDragOver = (rowIndex: number) => {
+    setDragOverRow(rowIndex);
+  };
+
+  const handleRowDrop = async (cohortId: string) => {
+    if (draggedRow === null || dragOverRow === null || draggedRow === dragOverRow) {
+      setDraggedRow(null);
+      setDragOverRow(null);
+      return;
+    }
+
+    // Reorder rows
+    const currentDefinitions = cohortDefinitionsRef.current;
+    if (!currentDefinitions) return;
+
+    const cohortIndex = currentDefinitions.findIndex(def => def.cohort.id === cohortId);
+    if (cohortIndex === -1) return;
+
+    const cohortDef = currentDefinitions[cohortIndex];
+    const newRows = [...cohortDef.table_data.rows];
+    const [removed] = newRows.splice(draggedRow, 1);
+    newRows.splice(dragOverRow, 0, removed);
+
+    // Update state
+    const updatedDefinitions = [...currentDefinitions];
+    updatedDefinitions[cohortIndex] = {
+      ...cohortDef,
+      table_data: {
+        ...cohortDef.table_data,
+        rows: newRows
       }
     };
+    setCohortDefinitions(updatedDefinitions);
 
-    if (openMenuId) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [openMenuId]);
+    // Call service to persist
+    await studyDataService.cohort_definitions_service.onRowDragEnd(cohortId, newRows);
 
-  const handleCellValueChanged = async (cohortId: string, event: any, selectedRows?: any[]) => {
-    console.log('[StudyViewer] handleCellValueChanged called for cohort:', cohortId);
-    await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event, selectedRows);
-  };
-
-  const handleRowDragEnd = async (cohortId: string, newRowData: any[]) => {
-    console.log('[StudyViewer] handleRowDragEnd called for cohort:', cohortId);
-    await studyDataService.cohort_definitions_service.onRowDragEnd(cohortId, newRowData);
-  };
-
-  const clampViewState = (x: number, y: number, scale: number) => {
-    const definitions = cohortDefinitionsRef.current;
-    if (!viewportRef.current || !definitions) return { x, y };
-    
-    const viewportWidth = viewportRef.current.clientWidth;
-    const viewportHeight = viewportRef.current.clientHeight;
-    
-    // Calculate content dimensions - use much larger minimums for scrollable area
-    const contentWidth = Math.max(definitions.length * 420 + 40, 5000); // Minimum 5000px width
-    const contentHeight = Math.max(3000, 3000); // Minimum 3000px height
-    
-    const scaledWidth = contentWidth * scale;
-    const scaledHeight = contentHeight * scale;
-    
-    const padding = 200; // Increased padding for more freedom
-    
-    // Clamp X: keep content visible
-    const minX = Math.min(viewportWidth - scaledWidth - padding, padding);
-    const maxX = padding;
-    const clampedX = Math.max(minX, Math.min(maxX, x));
-    
-    // Clamp Y: keep content visible
-    const minY = Math.min(viewportHeight - scaledHeight - padding, padding);
-    const maxY = padding;
-    const clampedY = Math.max(minY, Math.min(maxY, y));
-    
-    return { x: clampedX, y: clampedY };
+    setDraggedRow(null);
+    setDragOverRow(null);
   };
 
   // Attach wheel listener - directly manipulate DOM, no React re-renders
@@ -356,7 +296,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
       }
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
-        horizontalScrollAccumulator.current = 0; // Reset friction accumulator
       }, 150);
 
       const current = currentTransform.current;
@@ -374,12 +313,11 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         const newY = centerY - pointY * newScale;
         applyTransform(newX, newY, newScale);
       } else if (isShift) {
-        // Horizontal pan - use deltaX primarily, fallback to deltaY for mouse wheel
-        // On trackpads, deltaX is properly set for horizontal gestures
+        // Horizontal pan
         const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
         applyTransform(current.x - deltaX, current.y, current.scale);
       } else {
-        // Vertical pan ONLY - no horizontal movement without shift
+        // Vertical pan
         const deltaY = e.deltaY;
         applyTransform(current.x, current.y - deltaY, current.scale);
       }
@@ -402,7 +340,6 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
         return;
       }
 
-      // Use centralized helper to ensure consistent behavior
       const { createAndNavigateToNewCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
       await createAndNavigateToNewCohort(studyId, navigate);
     } catch (error) {
@@ -411,103 +348,17 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
   };
 
   const clickedOnCohort = React.useCallback((cohortDef: CohortWithTableData) => {
-    console.log('Clicked on cohort:', cohortDef);
-    
-    // Get study ID from the cohort or from studyDataService
     const studyId = cohortDef.cohort.study_id || studyDataService.study_data?.id;
     const cohortId = cohortDef.cohort.id;
     
     if (studyId && cohortId) {
-      // Navigate using URL
       navigate(`/studies/${studyId}/cohorts/${cohortId}`);
     } else {
       console.error('Missing study_id or cohort_id for navigation');
     }
   }, [studyDataService.study_data?.id, navigate]);
 
-  const handleMenuClick = React.useCallback((e: React.MouseEvent, cohortId: string) => {
-    e.stopPropagation(); // Prevent card click
-    setOpenMenuId(prev => prev === cohortId ? null : cohortId);
-  }, []);
-
-  const handleDeleteClick = React.useCallback((e: React.MouseEvent, cohortDef: CohortWithTableData) => {
-    e.stopPropagation(); // Prevent card click
-    setDeleteConfirmCohort(cohortDef);
-    setOpenMenuId(null);
-  }, []);
-
-  const handleConfirmDelete = async () => {
-    if (!deleteConfirmCohort) return;
-    
-    try {
-      await deleteCohort(deleteConfirmCohort.cohort.id);
-      
-      console.log('🗑️ Cohort deleted, clearing cache and notifying listeners');
-      
-      // Refresh cohort definitions by reloading study data
-      const studyId = studyDataService.study_data?.id;
-      if (studyId) {
-        const CohortsDataService = (await import('@/views/LeftPanel/CohortsDataService')).CohortsDataService;
-        const cohortsDataService = CohortsDataService.getInstance();
-        
-        // Force cache refresh - clear all relevant caches
-        // @ts-ignore
-        cohortsDataService._userStudies = null;
-        // @ts-ignore
-        cohortsDataService._publicStudies = null;
-        // @ts-ignore - Clear the study cohorts cache for this specific study
-        if (cohortsDataService._studyCohortsCache) {
-          // @ts-ignore
-          cohortsDataService._studyCohortsCache.delete(studyId);
-        }
-        
-        // Notify listeners to trigger left panel update
-        // @ts-ignore - accessing private method to force notification
-        cohortsDataService.notifyListeners();
-        
-        const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
-        const studyData = { ...studyDataService.study_data, cohorts };
-        studyDataService.loadStudyData(studyData);
-      }
-      
-      setDeleteConfirmCohort(null);
-    } catch (error) {
-      console.error('Failed to delete cohort:', error);
-      alert('Failed to delete cohort. Please try again.');
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteConfirmCohort(null);
-  };
-
-  const calculateRowHeight = React.useCallback((params: any) => {
-    let current_max_height = 20;
-    const minHeight = 20; 
-
-    const nameCol = params.api.getColumnDef('name');
-    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
-    const nameWidth = (nameCol.width) || 200;
-    const nameCharPerLine = Math.floor(nameWidth / 8);
-    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-    const nameHeight = nameLines * 22 + 10; // 14px per line + padding
-    if (!params.data?.description) {
-      return Math.max(current_max_height, nameHeight); // Increased minimum height
-    }
-    const descriptionLines = params.data.description.split('\n').length;
-    if (descriptionLines.length === 1) {
-      return Math.max(current_max_height, nameHeight); // Increased minimum height
-    }
-    const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
-    current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
-    
-    return current_max_height; // Increased minimum height
-  
-  }, []);
-
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // With pointer-events:none on transform container, clicks on background reach here
-    // Cards have pointer-events:auto so they won't trigger this
     setIsDragging(true);
     setDragStart({ x: e.clientX - viewState.x, y: e.clientY - viewState.y });
   };
@@ -516,8 +367,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
     if (isDragging) {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
-      const clamped = clampViewState(newX, newY, currentTransform.current.scale);
-      applyTransform(clamped.x, clamped.y, currentTransform.current.scale);
+      applyTransform(newX, newY, currentTransform.current.scale);
     }
   };
 
@@ -590,13 +440,11 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
           <CohortList 
             cohortDefinitions={cohortDefinitions}
             onCardClick={clickedOnCohort}
-            calculateRowHeight={calculateRowHeight}
             tableContainerRefs={tableContainerRefs}
-            cellRenderers={cellRenderers}
             onCellValueChanged={handleCellValueChanged}
-            onRowDragEnd={handleRowDragEnd}
-            tableTheme={TABLE_THEME}
-            tableGridOptions={TABLE_GRID_OPTIONS}
+            onRowDragStart={handleRowDragStart}
+            onRowDragOver={handleRowDragOver}
+            onRowDrop={handleRowDrop}
             studyDataService={studyDataService}
             isDragging={isDragging}
             isScrolling={isScrolling}
@@ -608,7 +456,7 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirmCohort && (
-        <div className={styles.modalOverlay} onClick={handleCancelDelete}>
+        <div className={styles.modalOverlay} onClick={() => setDeleteConfirmCohort(null)}>
           <div className={styles.alertModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.alertIcon}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -625,10 +473,15 @@ export const StudyViewerCohortDefinitions: React.FC<StudyViewerCohortDefinitions
               This action cannot be undone. All cohort definitions and criteria will be permanently deleted.
             </p>
             <div className={styles.alertActions}>
-              <button className={styles.alertCancelButton} onClick={handleCancelDelete}>
+              <button className={styles.alertCancelButton} onClick={() => setDeleteConfirmCohort(null)}>
                 Cancel
               </button>
-              <button className={styles.alertDeleteButton} onClick={handleConfirmDelete}>
+              <button className={styles.alertDeleteButton} onClick={async () => {
+                if (deleteConfirmCohort) {
+                  await deleteCohort(deleteConfirmCohort.cohort.id);
+                  setDeleteConfirmCohort(null);
+                }
+              }}>
                 Delete Cohort
               </button>
             </div>

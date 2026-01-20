@@ -16,6 +16,7 @@ import { TabsAndAddButton } from '../../components/PhenExNavBar/TabsAndAddButton
 import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { useFadeIn } from '../../hooks/useFadeIn';
 import { getStudy } from '../../api/text_to_cohort/route';
+import { StudyViewerCohortDefinitionsLightWeight } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsLightWeight';
 
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
@@ -237,7 +238,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
   const renderContent = () => {
     switch (currentView) {
       case StudyDefinitionViewType.Cohort:
-        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
+        return <StudyViewerCohortDefinitionsLightWeight studyDataService={studyDataService} />;
       case StudyDefinitionViewType.Baseline:
       case StudyDefinitionViewType.Outcomes:
         return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
