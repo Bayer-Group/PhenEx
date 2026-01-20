@@ -53,17 +53,41 @@
 .cohortHeaderContent {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   min-height: var(--dynamic-arrow-size, 40px);
+}
+
+/* Options button */
+.optionsButton {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+  opacity: 0.7; 
+  margin-top:10px;
+  margin-left:-10px;
+}
+
+.optionsButton:hover {
+  opacity: 1;
+  background: var(--hover-background, #f0f0f0);
 }
 
 .cohortHeaderTitle {
   font-weight: 600;
   font-size: var(--dynamic-font-size, 16px);
   color: #1a1a1a;
-  flex: 0 1 auto;
-  max-width: calc(100% - var(--dynamic-arrow-size, 40px) - 16px);
+  flex: 1;
+  min-width: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
   word-break: break-word;
