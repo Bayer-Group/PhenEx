@@ -131,7 +131,6 @@ export const MainView = () => {
   }, []);
 
   const renderView = () => {
-    console.log("RENDERING MAIN VIEW", currentView, "URL:", location.pathname)
     
     switch (currentView.viewType) {
       case ViewType.Empty:
@@ -141,12 +140,10 @@ export const MainView = () => {
       case ViewType.StudyViewer:
         return <StudyViewerWrapper data={currentView.data} />;
       case ViewType.CohortDefinition:
-        console.log("DISPLAYING COHORT IN MAINVIEW", currentView)
         return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.PublicCohortDefinition:
           return <TwoPanelCohortViewer data={currentView.data} />;
       case ViewType.NewCohort:
-        console.log("DISPLAYING NEW COHORT IN MAINVIEW", currentView)
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />

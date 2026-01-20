@@ -155,7 +155,6 @@ export class CohortModel {
       //   }
       // } 
       cohortResponse = cohortData.cohort_data;
-      console.log("LOADING COHORT DATA INTO MODEL", cohortResponse);
 
       this._study_data = cohortData.study
       this._cohort_data = cohortResponse;
@@ -215,7 +214,6 @@ export class CohortModel {
 
   public createEmptyCohortDefaultPhenotypes = () => {
     if (this._cohort_data.phenotypes.length == 0){
-      console.log("CREATIG DEFAULT PHENOTYPES FOR EMPTY COHORT", this._cohort_data);
       const entry = {
         id: createID(),
         name: 'Entry Criterion',
@@ -304,10 +302,7 @@ export class CohortModel {
     
     // Determine which rows to update
     const rowsToUpdate = this.determineRowsToUpdate(event, selectedRows);
-    
-    if (rowsToUpdate.length > 1) {
-      console.log(`Updating ${rowsToUpdate.length} rows: field '${fieldEdited}' → '${newValue}'`);
-    }
+
     
     // Apply changes to all target rows
     const changedRows = this.applyFieldChangesToRows(fieldEdited, newValue, rowsToUpdate);
@@ -720,7 +715,6 @@ export class CohortModel {
 
   // Reorder component phenotypes within a specific parent
   public async updateComponentOrder(parentId: string, reorderedComponents: TableRow[]) {
-    console.log(`Reordering ${reorderedComponents.length} components under parent: ${parentId}`);
 
     const allPhenotypes = [...this._cohort_data.phenotypes];
     const reorderedIds = new Set(reorderedComponents.map(c => c.id));
@@ -767,7 +761,6 @@ export class CohortModel {
   }
 
   public async updateRowOrder(newRowData: TableRow[]) {
-    console.log(`Reordering ${newRowData.length} phenotypes...`);
 
     // Get all phenotypes (including those not currently visible due to filter)
     const allPhenotypes = [...this._cohort_data.phenotypes];

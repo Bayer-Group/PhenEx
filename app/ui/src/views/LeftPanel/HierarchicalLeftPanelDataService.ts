@@ -229,7 +229,6 @@ export class HierarchicalLeftPanelDataService {
   }
 
   private notifyListeners() {
-    console.log('📢 HierarchicalLeftPanelDataService: Notifying listeners');
     this.changeListeners.forEach(listener => listener());
   }
 
@@ -334,7 +333,6 @@ export class HierarchicalLeftPanelDataService {
     // when dataService.notifyListeners() is called from createNewStudy
     
     if (newStudyData) {
-      console.log('✅ Created new study:', newStudyData);
       // Navigate to the study viewer (don't create a cohort yet)
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ 
@@ -363,7 +361,6 @@ export class HierarchicalLeftPanelDataService {
     // when dataService.notifyListeners() is called from createNewCohort
     
     if (newCohortData) {
-      console.log('CREATING NEW COHORT FOR STUDY:', study_data.id, newCohortData);
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
     }
@@ -433,9 +430,7 @@ export class HierarchicalLeftPanelDataService {
    * @param cohortId The ID of the cohort being moved
    * @param newIndex The target index position
    */
-  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {
-    console.log(`🔄 reorderCohort: Moving cohort ${cohortId} to index ${newIndex} in study ${studyId}`);
-    
+  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {    
     try {
       // Clear and reload cohorts to ensure we have fresh data
       this.dataService.clearStudyCohortsCache(studyId);
@@ -487,13 +482,10 @@ export class HierarchicalLeftPanelDataService {
    * @param studyId The ID of the study to rename
    * @param newName The new name for the study
    */
-  public async updateStudyName(studyId: string, newName: string) {
-    console.log(`✏️ updateStudyName: Renaming study ${studyId} to "${newName}"`);
-    
+  public async updateStudyName(studyId: string, newName: string) {    
     try {
       // Update the study name via the data service
       await this.dataService.updateStudyData(studyId, { name: newName });
-      console.log('✅ Study name updated successfully');
       
       // Update cached studies
       const userStudy = this.cachedUserStudies.find(s => s.id === studyId);
@@ -520,7 +512,6 @@ export class HierarchicalLeftPanelDataService {
    * @param newName The new name for the cohort
    */
   public async updateCohortName(cohortId: string, newName: string) {
-    console.log(`✏️ updateCohortName: Renaming cohort ${cohortId} to "${newName}"`);
     
     try {
       // Load the cohort data using CohortDataService
@@ -545,9 +536,7 @@ export class HierarchicalLeftPanelDataService {
       await cohortDataService.loadCohortData(cohortId);
       cohortDataService.cohort_name = newName;
       await cohortDataService.saveChangesToCohort();
-      
-      console.log('✅ Cohort name updated successfully');
-      
+            
       // Clear cache and update tree data
       this.dataService.clearStudyCohortsCache(studyId);
       await this.updateTreeData();
