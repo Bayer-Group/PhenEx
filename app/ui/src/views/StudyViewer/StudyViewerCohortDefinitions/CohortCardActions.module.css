@@ -12,6 +12,7 @@
     /* background: red; */
     padding: 5px 5px 5px 5px;
     /* height: calc(var(--dynamic-arrow-size) * 2 + 8px); */
+    background-color: transparent;
 }
 
 .actionButton {

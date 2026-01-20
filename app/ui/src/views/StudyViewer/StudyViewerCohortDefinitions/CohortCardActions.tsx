@@ -54,6 +54,21 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
           }, 50);
         }}
       >
+        {/* Large invisible bridge to catch mouse movement */}
+        <div 
+          onMouseEnter={onMouseEnter}
+          style={{
+            position: 'absolute',
+            right: '100%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 'calc(100px / var(--zoom-scale, 1))',
+            height: 'calc(200px / var(--zoom-scale, 1))',
+            background: 'transparent',
+            pointerEvents: 'auto',
+            zIndex: -1,
+          }} 
+        />
         <button
           ref={addButtonRef}
           className={`${styles.actionButton} ${isAddMenuOpen ? styles.menuOpen : ''}`}

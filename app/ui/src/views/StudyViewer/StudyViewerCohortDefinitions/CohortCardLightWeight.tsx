@@ -213,6 +213,24 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     }
   };
 
+  const handleDeleteCohort = async () => {
+    if (!window.confirm(`Are you sure you want to delete "${cohortDef.cohort.name || 'Unnamed Cohort'}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const cohortModel = studyDataService.cohort_definitions_service._cohortModels.get(cohortId);
+      if (cohortModel) {
+        await cohortModel.deleteCohort();
+        // Refresh the study data to update the UI
+        await studyDataService.refreshStudyData();
+      }
+    } catch (error) {
+      console.error('Failed to delete cohort:', error);
+      alert('Failed to delete cohort. Please try again.');
+    }
+  };
+
   const getRightClickMenuItems = (): RightClickMenuItem[] => {
     if (rightClickMenu?.rowIndex !== null && rightClickMenu?.rowIndex !== undefined) {
       // Row-specific menu items
@@ -318,8 +336,8 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
         },
         {
           label: 'Delete Cohort',
-          onClick: () => console.log('Delete cohort'),
-          disabled: true
+          onClick: handleDeleteCohort,
+          disabled: false
         }
       ];
     }
