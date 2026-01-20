@@ -13,7 +13,12 @@
   position: relative;
   background-color: red;
 }
-
+/* Drop indicator */
+.dropIndicator {
+  height: 3px;
+  background-color: var(--color_accent_blue);
+  margin: 0px 0px;
+}
 .phenotypeRow:hover {
   background-color: #f8f9fa;
 }
@@ -23,7 +28,7 @@
 }
 
 .phenotypeRow.dragging {
-  opacity: 0.5;
+  opacity: .1;
 }
 
 .phenotypeRow:last-child {
@@ -55,6 +60,8 @@
   opacity: 1;
   transition: opacity 0.15s ease;
   font-size: 16px;
+  transform: rotate(90);
+  font-family: "IBMPlexSans-bold";
 }
 
 .phenotypeRow:hover .dragHandle {

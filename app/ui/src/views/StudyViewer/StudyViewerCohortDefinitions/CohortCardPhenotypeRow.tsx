@@ -8,6 +8,7 @@ interface CohortCardPhenotypeRowProps {
   index: number;
   isSelected: boolean;
   isDragging: boolean;
+  isDragOver: boolean;
   onDragStart: (e: React.DragEvent, rowIndex: number) => void;
   onDragOver: (e: React.DragEvent, rowIndex: number) => void;
   onDrop: (e: React.DragEvent) => void;
@@ -22,6 +23,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   index,
   isSelected,
   isDragging,
+  isDragOver,
   onDragStart,
   onDragOver,
   onDrop,
@@ -32,6 +34,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragHandleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -85,24 +88,46 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   };
 
   return (
-    <div
-      className={`${styles.phenotypeRow} ${isSelected ? styles.selected : ''} ${isDragging ? styles.dragging : ''}`}
-      style={rowStyle}
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
-      onDragOver={(e) => onDragOver(e, index)}
-      onDrop={onDrop}
-      onClick={(e) => onClick(e, row, index)}
-    >
-      {/* Selection indicator */}
-      <div className={styles.selectionIndicator}>
-        {isSelected && <div className={styles.selectionMark} />}
-      </div>
+    <>
+      {/* Drop indicator line */}
+      {isDragOver && (
+        <div className={styles.dropIndicator} />
+      )}
       
-      {/* Drag handle */}
-      <div className={styles.dragHandle}>
-        ⋮⋮
-      </div>
+      <div
+        className={`${styles.phenotypeRow} ${isSelected ? styles.selected : ''} ${isDragging ? styles.dragging : ''}`}
+        style={rowStyle}
+        onClick={(e) => onClick(e, row, index)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDragOver(e, index);
+        }}
+        onDrop={(e) => {
+          e.stopPropagation();
+          onDrop(e);
+        }}
+      >
+        {/* Selection indicator */}
+        <div className={styles.selectionIndicator}>
+          {isSelected && <div className={styles.selectionMark} />}
+        </div>
+        
+        {/* Drag handle */}
+        <div 
+          ref={dragHandleRef}
+          className={styles.dragHandle}
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            onDragStart(e, index);
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          ⋮⋮
+        </div>
       
       {/* Row number */}
       <div className={`${styles.rowNumber} ${styles[`level_${row.level || 0}`]}`}>
@@ -147,6 +172,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
         />
       </button>
     </div>
+    </>
   );
 });
 

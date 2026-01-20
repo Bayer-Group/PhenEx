@@ -39,6 +39,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveringActions, setIsHoveringActions] = useState(false);
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
+  const [dragOverRowIndex, setDragOverRowIndex] = useState<number | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const cardRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
@@ -104,12 +105,14 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const handleRowDragOver = (e: React.DragEvent, rowIndex: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDragOverRowIndex(rowIndex);
     onRowDragOver(rowIndex);
   };
 
   const handleRowDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDraggedRowIndex(null);
+    setDragOverRowIndex(null);
     await onRowDrop(cohortId);
   };
 
@@ -200,6 +203,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                     index={index}
                     isSelected={selectedRows.has(index)}
                     isDragging={draggedRowIndex === index}
+                    isDragOver={dragOverRowIndex === index}
                     onDragStart={handleRowDragStart}
                     onDragOver={handleRowDragOver}
                     onDrop={handleRowDrop}
