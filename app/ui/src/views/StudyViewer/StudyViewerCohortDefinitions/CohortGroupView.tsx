@@ -13,6 +13,7 @@ interface CohortGroupViewProps {
   isScrolling: boolean;
   isShiftPressed: boolean;
   isCommandPressed: boolean;
+  zoomScale: number;
 }
 
 // Memoized view component to prevent re-renders during zoom/pan
@@ -26,17 +27,16 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
   isScrolling,
   isShiftPressed,
   isCommandPressed,
+  zoomScale,
 }) => {
   return (
     <div
         className={styles.cohortGroupView}
       style={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '40px',
-        padding: '20px',
-        pointerEvents: 'none'
-      }}
+        pointerEvents: 'none',
+        '--dynamic-outline-width': `calc(1px / ${zoomScale})`,
+        '--zoom-scale': zoomScale
+      } as React.CSSProperties}
     >
       {cohortDefinitions.map((cohortDef, index) => {
         const cohortKey = cohortDef.cohort.id || index;

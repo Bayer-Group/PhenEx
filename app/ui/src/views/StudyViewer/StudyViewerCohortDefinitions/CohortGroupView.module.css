@@ -3,12 +3,13 @@
 }
 
 .cohortGroupView{
-    border: 3px solid var(--line-color);
+    border: var(--dynamic-outline-width, 3px) solid #ddd;
     border-radius: 12px;
-    padding: 100px;
+    padding: calc(80px / var(--zoom-scale, 1)) calc(80px / var(--zoom-scale, 1));
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
 }
 .cohortGroupView:hover{
-    border: 3px solid var(--color_accent_blue);
-    border-radius: 12px;
-    padding: 100px;
+    border-radius: 30px;
 }

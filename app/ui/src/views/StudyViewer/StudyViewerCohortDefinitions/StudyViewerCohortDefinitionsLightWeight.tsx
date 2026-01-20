@@ -357,6 +357,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
             isScrolling={isScrolling}
             isShiftPressed={isShiftPressed}
             isCommandPressed={isCommandPressed}
+            zoomScale={currentTransform.current.scale}
           />
         </div>
       </div>
