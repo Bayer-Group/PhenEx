@@ -350,6 +350,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                       isSelected={selectedRows.has(index)}
                       isDragging={draggedRowIndex === index}
                       isDragOver={dragOverRowIndex === index}
+                      isViewportDragging={isDragging}
                       onDragStart={handleRowDragStart}
                       onDragOver={handleRowDragOver}
                       onDrop={handleRowDrop}

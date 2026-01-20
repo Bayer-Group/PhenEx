@@ -9,6 +9,7 @@ interface CohortCardPhenotypeRowProps {
   isSelected: boolean;
   isDragging: boolean;
   isDragOver: boolean;
+  isViewportDragging: boolean;
   onDragStart: (e: React.DragEvent, rowIndex: number) => void;
   onDragOver: (e: React.DragEvent, rowIndex: number) => void;
   onDrop: (e: React.DragEvent) => void;
@@ -24,6 +25,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   isSelected,
   isDragging,
   isDragOver,
+  isViewportDragging,
   onDragStart,
   onDragOver,
   onDrop,
@@ -35,6 +37,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
+  const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -97,7 +100,26 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
       <div
         className={`${styles.phenotypeRow} ${isSelected ? styles.selected : ''} ${isDragging ? styles.dragging : ''}`}
         style={rowStyle}
-        onClick={(e) => onClick(e, row, index)}
+        onMouseDown={(e) => {
+          mouseDownPos.current = { x: e.clientX, y: e.clientY };
+        }}
+        onClick={(e) => {
+          // Prevent selection if viewport is being dragged or if mouse moved significantly
+          if (isViewportDragging) return;
+          
+          if (mouseDownPos.current) {
+            const deltaX = Math.abs(e.clientX - mouseDownPos.current.x);
+            const deltaY = Math.abs(e.clientY - mouseDownPos.current.y);
+            // If mouse moved more than 5 pixels, it's a drag, not a click
+            if (deltaX > 5 || deltaY > 5) {
+              mouseDownPos.current = null;
+              return;
+            }
+          }
+          
+          mouseDownPos.current = null;
+          onClick(e, row, index);
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           e.stopPropagation();
