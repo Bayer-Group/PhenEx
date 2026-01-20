@@ -161,6 +161,36 @@ export class StudyDataService {
     }
   }
 
+  public async refreshStudyData() {
+    if (!this._study_data.id) {
+      console.warn('No study ID to refresh');
+      return;
+    }
+
+    try {
+      const studyId = this._study_data.id;
+      console.log('🔄 Refreshing study data for study:', studyId);
+      
+      // Fetch fresh study data from API
+      const studyData = await getStudy(studyId);
+      
+      // Fetch cohorts for this study
+      const { CohortsDataService } = await import('../LeftPanel/CohortsDataService');
+      const cohortsDataService = CohortsDataService.getInstance();
+      const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
+      
+      // Add cohorts to study data
+      const updatedStudyData = { ...studyData, cohorts };
+      
+      // Reload the data which will notify all listeners
+      this.loadStudyData(updatedStudyData);
+      
+      console.log('✅ Study data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Failed to refresh study data:', error);
+    }
+  }
+
 
   public getCohortById(id: string): TableRow | undefined {
     return this._study_data.phenotypes.find(

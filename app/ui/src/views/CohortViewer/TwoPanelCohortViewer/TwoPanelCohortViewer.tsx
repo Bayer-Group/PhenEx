@@ -292,10 +292,11 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
       // Create a new cohort via API
       const { createCohort } = await import('../../LeftPanel/studyNavigationHelpers');
-      const newCohortData = await createCohort(studyId);
+      await createCohort(studyId);
       
-      // Display wizard in right panel with the new cohort data
-      service.displayExtraContent('newcohort', newCohortData);
+      // Refresh the study data to show the new cohort
+      const studyDataService = StudyDataService.getInstance();
+      await studyDataService.refreshStudyData();
     }
   };
 
