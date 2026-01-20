@@ -1,6 +1,7 @@
 from typing import Union, Optional, List
 import math
 import os
+import pandas as pd
 from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 
@@ -16,59 +17,86 @@ logger = create_logger(__name__)
 
 class TimeToEvent(Reporter):
     """
-    Perform a time to event analysis.
+    Perform a time to event analysis using Kaplan-Meier estimation.
 
-    The time_to_event table is first generated, after which, by default, a Kaplan Meier plot is generated. The time_to_event table contains one row per patient and then multiple columns containing
+    This reporter generates:
+    1. A private patient-level time-to-event table (_tte_table) for intermediate processing
+    2. Aggregated survival/risk data in self.df combining results from all outcomes
+    3. Kaplan-Meier survival curves
 
-    ### Dates
-    1. the index date for each patient
-    2. the dates of all outcomes or NULL if they did not occur
-    3. the dates of all right censoring events or NULL if they did not occur
-    4. the date of the end of the study, if provided
-    5. the days from index to the dates provided above
-    6. the
+    The patient-level table (_tte_table) contains one row per patient with:
+    - Index date for each patient
+    - Event dates for all outcomes (NULL if did not occur)
+    - Event dates for all right censoring events (NULL if did not occur)
+    - End of study period date (if provided)
+    - Days from index to each event
+    - Indicator variables for whether the first event was the outcome of interest
 
-    | Column | Description |
-    | --- | --- |
-    | `date` columns | The EVENT_DATE of every 1. cohort outcome phenotype and 2. the right censoring phenotypes, if provided. The column name for the respective EVENT_DATE is the name of the phenotype. 3. Additionally, the date of the end of study period is present, if provided. |
-    | `days_to_event` columns | For each `date` column, the number of days from index_date to the `date` column. These columns begin with “DAYS_TO_” and the name of the `date` column. |
-    | `date_first_event` columns | For each outcome phenotype, the `date_first_event` column is added titled “DATE_FIRST_EVENT_{name of outcome phenotype}”. This is the first date that occurs post index, whether that outcome, a right censoring event, or the end of study period. |
-    | `days_to_first_event` columns | For each outcome phenotype, the `days_to_first_event` column is added titled “DAYS_FIRST_EVENT_{name of outcome phenotype}”. This is the days from index_date to the `date_first_event` column. |
-    | `indicator` columns | For each outcome phenotype, the `indicator` column is added titled “INDICATOR_{name of outcome phenotype}”. This has a value of 1 if the first event was the outcome phenotype, or a 0 if the first event was a right censoring event or the end of study period. |
+    The aggregated output (self.df) contains survival function estimates and event counts
+    for each outcome, suitable for reporting and visualization.
 
     Parameters:
-        right_censor_phenotypes: A list of phenotypes that should be used as right censoring events. Suggested are death and end of followup.
+        right_censor_phenotypes: A list of phenotypes that should be used as right censoring events.
+            Suggested are death and end of followup.
         end_of_study_period: A datetime defining the end of study period.
+        decimal_places: Number of decimal places for rounding survival probabilities. Default: 4
+        pretty_display: If True, format output for display. Default: True
     """
 
     def __init__(
         self,
         right_censor_phenotypes: Optional[List["Phenotype"]] = None,
         end_of_study_period: Optional["datetime"] = None,
+        decimal_places: int = 4,
+        pretty_display: bool = True,
     ):
+        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
         self.right_censor_phenotypes = right_censor_phenotypes
         self.end_of_study_period = end_of_study_period
         self._date_column_names = None
+        self._tte_table = None  # Private: patient-level time-to-event data
 
-    def execute(self, cohort: "Cohort"):
+    def execute(self, cohort: "Cohort") -> pd.DataFrame:
         """
-        Execute the time to event analysis for a provided cohort. This will generate a table with all necessary cohort outcome event dates and right censoring event dates. Following execution, a Kaplan Meier curve will be generated.
+        Execute the time to event analysis for a provided cohort.
+
+        This generates:
+        1. Patient-level time-to-event table (stored in self._tte_table)
+        2. Aggregated survival/risk data from Kaplan-Meier fits (stored in self.df)
+        3. Kaplan-Meier plots
 
         Parameters:
             cohort: The cohort for which the time to event analysis should be performed.
+
+        Returns:
+            DataFrame with aggregated survival function estimates and event counts for all outcomes.
+
+            Schema:
+                - Outcome (str): Name of the outcome phenotype
+                - Timeline (float): Time point in days from index
+                - Survival_Probability (float): Kaplan-Meier survival estimate at this time point
+                - At_Risk (int): Number of patients at risk at this time point
+                - Events (int): Number of outcome events observed at this time point
+                - Censored (int): Number of patients censored at this time point
         """
         self.cohort = cohort
         self._execute_right_censoring_phenotypes(self.cohort)
 
+        # Build patient-level time-to-event table
         table = cohort.index_table.mutate(
             INDEX_DATE=self.cohort.index_table.EVENT_DATE
         ).select(["PERSON_ID", "INDEX_DATE"])
         table = self._append_date_events(table)
         table = self._append_days_to_event(table)
         table = self._append_date_and_days_to_first_event(table)
-        self.table = table
+        self._tte_table = table.execute()  # Convert to pandas DataFrame
+
+        # Build aggregated survival/risk data from KM fits
+        self.df = self._build_aggregated_risk_table()
+
         logger.info("time to event finished execution")
         self.plot_multiple_kaplan_meier()
+        return self.df
 
     def _execute_right_censoring_phenotypes(self, cohort):
         for phenotype in self.right_censor_phenotypes:
@@ -250,10 +278,76 @@ class TimeToEvent(Reporter):
         plt.show()
 
     def fit_kaplan_meier_for_phenotype(self, phenotype):
+        """
+        Fit a Kaplan-Meier model for a specific phenotype outcome.
+
+        Parameters:
+            phenotype: The outcome phenotype to analyze
+
+        Returns:
+            KaplanMeierFitter: Fitted KM model
+        """
         indicator = f"INDICATOR_{phenotype.name.upper()}"
         durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-        _sdf = self.table.select([indicator, durations])
-        _df = _sdf.to_pandas()
+        _sdf = self._tte_table[[indicator, durations]]
+        _df = _sdf
         kmf = KaplanMeierFitter(label=phenotype.name)
         kmf.fit(durations=_df[durations], event_observed=_df[indicator])
         return kmf
+
+    def _build_aggregated_risk_table(self) -> pd.DataFrame:
+        """
+        Build aggregated survival/risk data from Kaplan-Meier fits for all outcomes.
+
+        Combines survival function estimates and event tables from all outcomes into a single
+        DataFrame suitable for reporting.
+
+        Returns:
+            DataFrame with columns: Outcome, Timeline, Survival_Probability, At_Risk, Events, Censored
+        """
+        all_outcomes_data = []
+
+        for phenotype in self.cohort.outcomes:
+            kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+
+            # Get survival function
+            survival_df = kmf.survival_function_.reset_index()
+            survival_df.columns = ["Timeline", "Survival_Probability"]
+
+            # Get event table
+            event_df = kmf.event_table.reset_index()
+            event_df = event_df.rename(columns={"event_at": "Timeline"})
+
+            # Merge survival and event data
+            outcome_df = pd.merge(survival_df, event_df, on="Timeline", how="left")
+
+            # Add outcome name
+            outcome_df.insert(0, "Outcome", phenotype.name)
+
+            # Select and rename key columns
+            outcome_df = outcome_df[
+                [
+                    "Outcome",
+                    "Timeline",
+                    "Survival_Probability",
+                    "at_risk",
+                    "observed",
+                    "censored",
+                ]
+            ].rename(
+                columns={
+                    "at_risk": "At_Risk",
+                    "observed": "Events",
+                    "censored": "Censored",
+                }
+            )
+
+            all_outcomes_data.append(outcome_df)
+
+        # Combine all outcomes
+        if all_outcomes_data:
+            result = pd.concat(all_outcomes_data, ignore_index=True)
+        else:
+            result = pd.DataFrame()
+
+        return result
