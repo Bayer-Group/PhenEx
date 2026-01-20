@@ -9,6 +9,8 @@ import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 import { PhenExNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenu';
 import { useNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import navBarStyles from '../../../components/PhenExNavBar/NavBar.module.css';
+import { RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
+import { ScaledRightClickMenu } from '../../../components/RightClickMenu/ScaledRightClickMenu';
 
 // Options Menu Component
 const OptionsMenu: React.FC<{ 
@@ -116,6 +118,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu(`options-${cohortId}`);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
+  const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
@@ -214,6 +217,76 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     cohortViewer.displayExtraContent('phenotype' as CohortViewType, row);
   };
 
+  const handleContextMenu = (e: React.MouseEvent, rowIndex: number | null = null) => {
+    e.preventDefault();
+    setRightClickMenu({
+      position: { x: e.clientX, y: e.clientY },
+      rowIndex
+    });
+  };
+
+  const handleCloseRightClickMenu = () => {
+    setRightClickMenu(null);
+  };
+
+  const getRightClickMenuItems = (): RightClickMenuItem[] => {
+    if (rightClickMenu?.rowIndex !== null && rightClickMenu?.rowIndex !== undefined) {
+      // Row-specific menu items
+      const row = rows[rightClickMenu.rowIndex];
+      return [
+        {
+          label: 'Edit Phenotype',
+          onClick: () => handleRowEdit(row)
+        },
+        {
+          label: 'Duplicate Row',
+          onClick: () => console.log('Duplicate row', rightClickMenu.rowIndex),
+          disabled: true
+        },
+        {
+          label: 'Delete Row',
+          onClick: () => console.log('Delete row', rightClickMenu.rowIndex),
+          disabled: true,
+          divider: true
+        },
+        {
+          label: 'Move Up',
+          onClick: () => console.log('Move up', rightClickMenu.rowIndex),
+          disabled: rightClickMenu.rowIndex === 0
+        },
+        {
+          label: 'Move Down',
+          onClick: () => console.log('Move down', rightClickMenu.rowIndex),
+          disabled: rightClickMenu.rowIndex === rows.length - 1
+        }
+      ];
+    } else {
+      // Card-level menu items
+      return [
+        {
+          label: 'Open Cohort',
+          onClick: () => onCardClick(cohortDef)
+        },
+        {
+          label: 'Add Phenotype',
+          onClick: () => console.log('Add phenotype'),
+          disabled: true,
+          divider: true
+        },
+        {
+          label: 'Duplicate Cohort',
+          onClick: () => console.log('Duplicate cohort'),
+          disabled: true
+        },
+        {
+          label: 'Delete Cohort',
+          onClick: () => console.log('Delete cohort'),
+          disabled: true
+        }
+      ];
+    }
+  };
+
   const rows = cohortDef.table_data.rows;
 
   return (
@@ -225,6 +298,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onContextMenu={(e) => handleContextMenu(e, null)}
           style={{ 
             cursor: 'pointer', 
             pointerEvents: 'auto',
@@ -291,25 +365,29 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             {rows.length > 0 ? (
               <div className={styles.phenotypeList}>
                 {rows.map((row, index) => (
-                  <CohortCardPhenotypeRow
+                  <div
                     key={row.id || index}
-                    row={row}
-                    index={index}
-                    isSelected={selectedRows.has(index)}
-                    isDragging={draggedRowIndex === index}
-                    isDragOver={dragOverRowIndex === index}
-                    onDragStart={handleRowDragStart}
-                    onDragOver={handleRowDragOver}
-                    onDrop={handleRowDrop}
-                    onClick={handleRowClick}
-                    onExpandClick={(e) => {
-                      e.stopPropagation();
-                      handleRowEdit(row);
-                    }}
-                    onCellValueChanged={async (rowIndex, field, value) => {
-                      await onCellValueChanged(cohortId, rowIndex, field, value);
-                    }}
-                  />
+                    onContextMenu={(e) => handleContextMenu(e, index)}
+                  >
+                    <CohortCardPhenotypeRow
+                      row={row}
+                      index={index}
+                      isSelected={selectedRows.has(index)}
+                      isDragging={draggedRowIndex === index}
+                      isDragOver={dragOverRowIndex === index}
+                      onDragStart={handleRowDragStart}
+                      onDragOver={handleRowDragOver}
+                      onDrop={handleRowDrop}
+                      onClick={handleRowClick}
+                      onExpandClick={(e) => {
+                        e.stopPropagation();
+                        handleRowEdit(row);
+                      }}
+                      onCellValueChanged={async (rowIndex, field, value) => {
+                        await onCellValueChanged(cohortId, rowIndex, field, value);
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -340,6 +418,16 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           onMouseEnter={openOptionsMenu}
           onMouseLeave={closeOptionsMenu}
         />
+        
+        {/* Right Click Menu */}
+        {rightClickMenu && (
+          <ScaledRightClickMenu
+            items={getRightClickMenuItems()}
+            position={rightClickMenu.position}
+            onClose={handleCloseRightClickMenu}
+            zoomScale={parseFloat(getComputedStyle(cardRef.current || document.body).getPropertyValue('--zoom-scale')) || 1}
+          />
+        )}
       </div>
     </div>
   );

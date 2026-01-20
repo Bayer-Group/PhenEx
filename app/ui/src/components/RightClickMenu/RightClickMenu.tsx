@@ -28,25 +28,6 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    // Small delay to avoid closing immediately after opening
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
-
   // Close menu on ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -90,25 +71,32 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
   };
 
   return (
-    <div
-      ref={menuRef}
-      className={styles.menu}
-      style={{
-        left: `${adjustedPosition.x}px`,
-        top: `${adjustedPosition.y}px`,
-      }}
-    >
-      {items.map((item, index) => (
-        <React.Fragment key={index}>
-          <div
-            className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
-            onClick={() => handleItemClick(item)}
-          >
-            {item.label}
-          </div>
-          {item.divider && <div className={styles.divider} />}
-        </React.Fragment>
-      ))}
-    </div>
+    <>
+      {/* Transparent backdrop to capture clicks outside */}
+      <div 
+        className={styles.backdrop}
+        onClick={onClose}
+      />
+      <div
+        ref={menuRef}
+        className={styles.menu}
+        style={{
+          left: `${adjustedPosition.x}px`,
+          top: `${adjustedPosition.y}px`,
+        }}
+      >
+        {items.map((item, index) => (
+          <React.Fragment key={index}>
+            <div
+              className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
+              onClick={() => handleItemClick(item)}
+            >
+              {item.label}
+            </div>
+            {item.divider && <div className={styles.divider} />}
+          </React.Fragment>
+        ))}
+      </div>
+    </>
   );
 };
