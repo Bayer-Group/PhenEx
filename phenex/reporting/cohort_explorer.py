@@ -12,7 +12,7 @@ Usage:
     result = explorer.execute(cohort)
     explorer.show()  # Display in notebook
     # OR
-    explorer.export_to_html("dashboard.html")  # Export to HTML
+    explorer.to_html("output/dashboard.html")  # Export to HTML
 """
 
 import numpy as np
@@ -124,7 +124,7 @@ class CohortExplorer(Reporter):
             "accent": "#00A9E0",  # Cyan - accent color
         }
 
-    def execute(self, cohort) -> "CohortExplorer":
+    def execute(self, cohort) -> pd.DataFrame:
         """
         Execute the interactive cohort exploration for the provided cohort.
 
@@ -132,7 +132,7 @@ class CohortExplorer(Reporter):
             cohort: PhenEx Cohort object with executed phenotypes
 
         Returns:
-            Self for method chaining
+            DataFrame with summary of all phenotypes analyzed
         """
         logger.info(f"Creating interactive cohort explorer for cohort '{cohort.name}'")
 
@@ -142,7 +142,7 @@ class CohortExplorer(Reporter):
         if not cohort.phenotypes or len(cohort.phenotypes) == 0:
             logger.warning("No phenotypes found in cohort - explorer will be empty")
             self._create_empty_dashboard()
-            return self
+            return pd.DataFrame()
 
         # Generate visualization data for phenotype explorer (if enabled)
         if self.show_phenotype_explorer:
@@ -176,7 +176,7 @@ class CohortExplorer(Reporter):
         logger.info(
             f"Interactive cohort explorer ready with {enabled_sections} enabled sections"
         )
-        return self
+        return self.get_phenotype_summary()
 
     def _generate_phenotype_data(self):
         """Generate visualization data from cohort.phenotypes using the VALUE column."""
@@ -1774,16 +1774,34 @@ class CohortExplorer(Reporter):
         else:
             logger.error("Dashboard not built yet. Call execute() first.")
 
-    def export_to_html(self, filename: str = "cohort_explorer.html") -> str:
-        """Export the dashboard to an HTML file."""
+    def to_html(self, filename: str) -> str:
+        """
+        Export the dashboard to an HTML file.
+
+        Args:
+            filename: Path to the output file (relative or absolute, with or without .html extension)
+
+        Returns:
+            str: Full path to the created file
+        """
+        from pathlib import Path
+
         if not hasattr(self, "dashboard_layout") or self.dashboard_layout is None:
             raise RuntimeError("Dashboard not built yet. Call execute() first.")
 
-        output_file(filename)
+        # Convert to Path object and ensure .html extension
+        filename = Path(filename)
+        if not filename.suffix == ".html":
+            filename = filename.with_suffix(".html")
+
+        # Create parent directories if needed
+        filename.parent.mkdir(parents=True, exist_ok=True)
+
+        output_file(str(filename))
         save(self.dashboard_layout)
 
         logger.info(f"Interactive cohort explorer exported to {filename}")
-        return filename
+        return str(filename)
 
     def get_phenotype_summary(self) -> pd.DataFrame:
         """Get a summary table of all phenotype data processed."""

@@ -243,7 +243,7 @@ class ReportDrafter(Reporter):
             self._initialize_ai_client()
 
         # Report sections storage
-        self.report_sections = {}
+        self.report = {}
         self.figures = {}
 
     def _check_openai_config(self) -> bool:
@@ -519,11 +519,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
         context_parts.append("\n=== GENERATED TABLE DATA ===")
 
         # Waterfall table data
-        if (
-            hasattr(self, "report_sections")
-            and "waterfall_table" in self.report_sections
-        ):
-            waterfall_df = self.report_sections["waterfall_table"]
+        if hasattr(self, "report_sections") and "waterfall_table" in self.report:
+            waterfall_df = self.report["waterfall_table"]
             # Extract DataFrame from Styler if needed
             if hasattr(waterfall_df, "data"):
                 waterfall_df = waterfall_df.data
@@ -535,8 +532,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
                 context_parts.append(waterfall_df.to_string())
 
         # Table 1 (baseline characteristics) data
-        if hasattr(self, "report_sections") and "table1" in self.report_sections:
-            table1_df = self.report_sections["table1"]
+        if hasattr(self, "report_sections") and "table1" in self.report:
+            table1_df = self.report["table1"]
             if not table1_df.empty:
                 context_parts.append(
                     f"\nTABLE 1 - BASELINE CHARACTERISTICS ({len(table1_df)} rows):"
@@ -547,8 +544,8 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
                 context_parts.append(table1_df.to_string())
 
         # Table 2 (outcomes) data
-        if hasattr(self, "report_sections") and "table2" in self.report_sections:
-            table2_df = self.report_sections["table2"]
+        if hasattr(self, "report_sections") and "table2" in self.report:
+            table2_df = self.report["table2"]
             if not table2_df.empty:
                 context_parts.append(
                     f"\nTABLE 2 - OUTCOMES SUMMARY ({len(table2_df)} rows):"
@@ -673,7 +670,7 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             return self._generate_ai_text(prompt)
         else:
             # Fallback summary when AI is not available
-            stats = self.report_sections.get("summary_stats", {})
+            stats = self.report.get("summary_stats", {})
             cohort_name = getattr(self, "cohort_name", "the study cohort")
 
             return f"""## Abstract
@@ -842,7 +839,7 @@ STUDY TYPE: Comprehensive medical research study analyzing patient outcomes and 
             return self._generate_ai_text(prompt)
         else:
             # Fallback data analysis description when AI is not available
-            stats = self.report_sections.get("summary_stats", {})
+            stats = self.report.get("summary_stats", {})
             cohort_name = getattr(self, "cohort_name", "the study cohort")
 
             return f"""## Analytical Approach
@@ -1207,7 +1204,7 @@ The outcomes analysis contributes to our understanding of disease progression an
         if not waterfall_df.empty and len(waterfall_df) > 0:
             waterfall_df = waterfall_df.iloc[1:].reset_index(drop=True)
 
-        self.report_sections["waterfall_table"] = waterfall_df
+        self.report["waterfall_table"] = waterfall_df
 
         # Generate Table 1 (Baseline Characteristics)
         if cohort.characteristics:
@@ -1223,7 +1220,7 @@ The outcomes analysis contributes to our understanding of disease progression an
                 logger.info("Using default Table1 reporter")
             try:
                 table1_df = table1_reporter.execute(cohort)
-                self.report_sections["table1"] = table1_df
+                self.report["table1"] = table1_df
                 logger.info(
                     f"Table1 generated successfully with {len(table1_df)} rows and columns: {list(table1_df.columns)}"
                 )
@@ -1238,7 +1235,7 @@ The outcomes analysis contributes to our understanding of disease progression an
                 )
         else:
             logger.info("No characteristics defined. Skipping Table 1.")
-            self.report_sections["table1"] = pd.DataFrame()
+            self.report["table1"] = pd.DataFrame()
 
         # 8. Generate Table 2 (Outcomes) if outcomes exist
         if cohort.outcomes:
@@ -1259,7 +1256,7 @@ The outcomes analysis contributes to our understanding of disease progression an
 
             try:
                 table2_df = table2_reporter.execute(cohort)
-                self.report_sections["table2"] = table2_df
+                self.report["table2"] = table2_df
                 logger.info(
                     f"Table2 generated successfully with {len(table2_df)} rows and columns: {list(table2_df.columns)}"
                 )
@@ -1273,7 +1270,7 @@ The outcomes analysis contributes to our understanding of disease progression an
                 )
         else:
             logger.info("No outcomes defined. Skipping Table 2.")
-            self.report_sections["table2"] = pd.DataFrame()
+            self.report["table2"] = pd.DataFrame()
 
         # Generate summary statistics
         n_patients = (
@@ -1283,7 +1280,7 @@ The outcomes analysis contributes to our understanding of disease progression an
             .count()
             .execute()
         )
-        self.report_sections["summary_stats"] = {
+        self.report["summary_stats"] = {
             "total_patients": n_patients,
             "n_characteristics": len(cohort.characteristics or []),
             "n_outcomes": len(cohort.outcomes or []),
@@ -1300,39 +1297,31 @@ The outcomes analysis contributes to our understanding of disease progression an
 
         # Generate AI text sections using global context class variable
         logger.info("Generating AI executive summary...")
-        self.report_sections["executive_summary"] = self._create_executive_summary()
+        self.report["executive_summary"] = self._create_executive_summary()
 
         logger.info("Generating cohort definition description...")
-        self.report_sections["cohort_definition"] = self._create_cohort_description(
-            cohort
-        )
+        self.report["cohort_definition"] = self._create_cohort_description(cohort)
 
         logger.info("Generating data analysis description...")
-        self.report_sections["data_analysis"] = self._create_data_analysis_description(
-            cohort
-        )
+        self.report["data_analysis"] = self._create_data_analysis_description(cohort)
 
         logger.info("Generating study variables description...")
-        self.report_sections["study_variables"] = self._create_variables_description(
-            cohort
-        )
+        self.report["study_variables"] = self._create_variables_description(cohort)
 
         # Generate commentary for tables and figures (AI-powered if available, fallback otherwise)
         logger.info("Generating commentary for waterfall table...")
-        self.report_sections["waterfall_commentary"] = (
-            self._generate_waterfall_commentary(
-                self.report_sections.get("waterfall_table")
-            )
+        self.report["waterfall_commentary"] = self._generate_waterfall_commentary(
+            self.report.get("waterfall_table")
         )
 
         logger.info("Generating commentary for Table 1...")
-        self.report_sections["table1_commentary"] = self._generate_table1_commentary(
-            self.report_sections.get("table1")
+        self.report["table1_commentary"] = self._generate_table1_commentary(
+            self.report.get("table1")
         )
 
         logger.info("Generating commentary for Table 2...")
-        self.report_sections["table2_commentary"] = self._generate_table2_commentary(
-            self.report_sections.get("table2")
+        self.report["table2_commentary"] = self._generate_table2_commentary(
+            self.report.get("table2")
         )
 
         # Generate plots if requested (with AI captions that now have full context)
@@ -1358,7 +1347,7 @@ The outcomes analysis contributes to our understanding of disease progression an
             )
 
         logger.info("Report generation completed successfully")
-        return self.report_sections
+        return self.report
 
     def _add_markdown_content_to_doc(self, doc, content: str):
         """
@@ -1417,31 +1406,34 @@ The outcomes analysis contributes to our understanding of disease progression an
                 # Regular text
                 paragraph.add_run(part)
 
-    def to_markdown(self, filename: str, output_dir: str = ".") -> str:
+    def to_markdown(self, filename: str) -> str:
         """
         Generate a clean Markdown report file.
 
         Args:
-            filename: Name of the Markdown file to create
-            output_dir: Base directory to save the report in
+            filename: Path to the Markdown file (relative or absolute, with or without .md extension)
 
         Returns:
             Path to the generated Markdown file
         """
-        if not self.report_sections:
+        if not self.report:
             raise ValueError("No report data available. Call execute() first.")
 
-        # Create a dedicated directory for this cohort's report
+        # Convert to Path object and ensure .md extension
+        output_path = Path(filename)
+        if not output_path.suffix == ".md":
+            output_path = output_path.with_suffix(".md")
+
+        # Create a dedicated directory for this cohort's report assets (figures)
         cohort_name = getattr(self, "cohort_name", "report")
         cohort_name = (
             cohort_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
         )  # Clean filename
-        cohort_dir = Path(output_dir) / cohort_name
+        cohort_dir = output_path.parent / f"{output_path.stem}_files"
         cohort_dir.mkdir(parents=True, exist_ok=True)
 
-        output_path = cohort_dir / filename
-        if not output_path.suffix:
-            output_path = output_path.with_suffix(".md")
+        # Also ensure parent directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Generating Markdown report: {output_path}")
 
@@ -1476,11 +1468,11 @@ The outcomes analysis contributes to our understanding of disease progression an
 
         # Executive Summary
         md_content += "## Executive Summary\n\n"
-        if "executive_summary" in self.report_sections:
-            md_content += self.report_sections["executive_summary"] + "\n\n"
+        if "executive_summary" in self.report:
+            md_content += self.report["executive_summary"] + "\n\n"
         else:
             # Fallback summary
-            stats = self.report_sections.get("summary_stats", {})
+            stats = self.report.get("summary_stats", {})
             md_content += f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
 The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
 Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria.\n\n"""
@@ -1490,30 +1482,30 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
         section_number = 1
 
         # 1. Cohort Definition
-        if "cohort_definition" in self.report_sections:
+        if "cohort_definition" in self.report:
             md_content += f"## {section_number}. Cohort Definition\n\n"
-            md_content += self.report_sections["cohort_definition"] + "\n\n"
+            md_content += self.report["cohort_definition"] + "\n\n"
             section_number += 1
 
         # 2. Data Analysis
-        if "data_analysis" in self.report_sections:
+        if "data_analysis" in self.report:
             md_content += f"## {section_number}. Data Analysis\n\n"
-            md_content += self.report_sections["data_analysis"] + "\n\n"
+            md_content += self.report["data_analysis"] + "\n\n"
             section_number += 1
 
         # 3. Study Variables
-        if "study_variables" in self.report_sections:
+        if "study_variables" in self.report:
             md_content += f"## {section_number}. Study Variables\n\n"
-            md_content += self.report_sections["study_variables"] + "\n\n"
+            md_content += self.report["study_variables"] + "\n\n"
             section_number += 1
 
         # 4. Patient Attrition (Waterfall Table)
-        waterfall_check = self.report_sections.get("waterfall_table")
+        waterfall_check = self.report.get("waterfall_table")
         # Extract DataFrame from Styler if needed for the check
         if hasattr(waterfall_check, "data"):
             waterfall_check = waterfall_check.data
         if (
-            "waterfall_table" in self.report_sections
+            "waterfall_table" in self.report
             and waterfall_check is not None
             and not waterfall_check.empty
         ):
@@ -1532,38 +1524,32 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                     md_content += f"*Figure {section_number}.1: {self.figures['waterfall']['caption']}*\n\n"
 
             # Add waterfall table
-            waterfall_df = self.report_sections["waterfall_table"]
+            waterfall_df = self.report["waterfall_table"]
             # Extract DataFrame from Styler if needed
             if hasattr(waterfall_df, "data"):
                 waterfall_df = waterfall_df.data
             md_content += self._dataframe_to_markdown_table(waterfall_df) + "\n\n"
 
-            if "waterfall_commentary" in self.report_sections:
-                md_content += self.report_sections["waterfall_commentary"] + "\n\n"
+            if "waterfall_commentary" in self.report:
+                md_content += self.report["waterfall_commentary"] + "\n\n"
             section_number += 1
 
         # 5. Baseline Characteristics (Table 1)
-        if (
-            "table1" in self.report_sections
-            and not self.report_sections["table1"].empty
-        ):
+        if "table1" in self.report and not self.report["table1"].empty:
             md_content += f"## {section_number}. Baseline Characteristics\n\n"
-            table1_df = self.report_sections["table1"]
+            table1_df = self.report["table1"]
             md_content += self._dataframe_to_markdown_table(table1_df) + "\n\n"
-            if "table1_commentary" in self.report_sections:
-                md_content += self.report_sections["table1_commentary"] + "\n\n"
+            if "table1_commentary" in self.report:
+                md_content += self.report["table1_commentary"] + "\n\n"
             section_number += 1
 
         # 6. Outcomes Summary (Table 2)
-        if (
-            "table2" in self.report_sections
-            and not self.report_sections["table2"].empty
-        ):
+        if "table2" in self.report and not self.report["table2"].empty:
             md_content += f"## {section_number}. Outcomes Summary\n\n"
-            table2_df = self.report_sections["table2"]
+            table2_df = self.report["table2"]
             md_content += self._dataframe_to_markdown_table(table2_df) + "\n\n"
-            if "table2_commentary" in self.report_sections:
-                md_content += self.report_sections["table2_commentary"] + "\n\n"
+            if "table2_commentary" in self.report:
+                md_content += self.report["table2_commentary"] + "\n\n"
             section_number += 1
 
         return md_content
@@ -1596,27 +1582,23 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         return "\n".join([header_row, separator_row] + data_rows)
 
-    def to_word(self, filename: str, output_dir: str = ".") -> str:
+    def to_word(self, filename: str) -> str:
         """Generate Word document report."""
         if not DOCX_AVAILABLE:
             raise ImportError(
                 "python-docx is required for Word document generation. Install with: pip install python-docx"
             )
 
-        if not self.report_sections:
+        if not self.report:
             raise ValueError("No report data available. Call execute() first.")
 
-        # Create a dedicated directory for this cohort's report (same as to_markdown)
-        cohort_name = getattr(self, "cohort_name", "report")
-        cohort_name = (
-            cohort_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
-        )  # Clean filename
-        cohort_dir = Path(output_dir) / cohort_name
-        cohort_dir.mkdir(parents=True, exist_ok=True)
-
-        output_path = cohort_dir / filename
-        if not output_path.suffix:
+        # Convert to Path object and ensure .docx extension
+        output_path = Path(filename)
+        if not output_path.suffix == ".docx":
             output_path = output_path.with_suffix(".docx")
+
+        # Ensure parent directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Generating Word document: {output_path}")
 
@@ -1635,13 +1617,13 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         # Executive Summary - Use AI-generated content if available
         doc.add_heading("Executive Summary", level=1)
-        if "executive_summary" in self.report_sections:
+        if "executive_summary" in self.report:
             # Add AI-generated executive summary with markdown formatting
-            exec_summary = self.report_sections["executive_summary"]
+            exec_summary = self.report["executive_summary"]
             self._add_markdown_content_to_doc(doc, exec_summary)
         else:
             # Fallback to basic summary if AI summary not available
-            stats = self.report_sections.get("summary_stats", {})
+            stats = self.report.get("summary_stats", {})
             summary_text = f"""This report presents the analysis of {stats.get('total_patients', 'N/A')} patients in the study cohort. 
 The analysis includes {stats.get('n_characteristics', 0)} baseline characteristics and {stats.get('n_outcomes', 0)} outcome measures.
 Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and {stats.get('n_exclusions', 0)} exclusion criteria."""
@@ -1649,27 +1631,21 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         # Cohort Definition
         doc.add_heading("1. Cohort Definition", level=1)
-        cohort_def = self.report_sections.get(
-            "cohort_definition", "No description available."
-        )
+        cohort_def = self.report.get("cohort_definition", "No description available.")
         self._add_markdown_content_to_doc(doc, cohort_def)
 
         # Data Analysis
         doc.add_heading("2. Data Analysis", level=1)
-        data_analysis = self.report_sections.get(
-            "data_analysis", "No description available."
-        )
+        data_analysis = self.report.get("data_analysis", "No description available.")
         self._add_markdown_content_to_doc(doc, data_analysis)
 
         # Study Variables
         doc.add_heading("3. Study Variables", level=1)
-        study_vars = self.report_sections.get(
-            "study_variables", "No description available."
-        )
+        study_vars = self.report.get("study_variables", "No description available.")
         self._add_markdown_content_to_doc(doc, study_vars)
 
         # Waterfall Table
-        waterfall_df = self.report_sections.get("waterfall_table")
+        waterfall_df = self.report.get("waterfall_table")
         # Extract DataFrame from Styler if needed
         if hasattr(waterfall_df, "data"):
             waterfall_df = waterfall_df.data
@@ -1697,7 +1673,7 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                 doc.add_paragraph("Figure 1: Patient Attrition Waterfall")
 
                 # Save plot temporarily for inclusion
-                temp_plot_path = Path(output_dir) / "temp_waterfall.png"
+                temp_plot_path = output_path.parent / "temp_waterfall.png"
                 # Ensure directory exists
                 temp_plot_path.parent.mkdir(parents=True, exist_ok=True)
                 self.figures["waterfall"]["figure"].savefig(
@@ -1707,14 +1683,14 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                 doc.add_paragraph(self.figures["waterfall"]["caption"])
 
             # Add AI commentary if available
-            if "waterfall_commentary" in self.report_sections:
+            if "waterfall_commentary" in self.report:
                 doc.add_heading("Clinical Commentary", level=2)
                 self._add_markdown_content_to_doc(
-                    doc, self.report_sections["waterfall_commentary"]
+                    doc, self.report["waterfall_commentary"]
                 )
 
         # Table 1
-        table1_df = self.report_sections.get("table1")
+        table1_df = self.report.get("table1")
         if table1_df is not None and not table1_df.empty:
             doc.add_heading("5. Baseline Characteristics (Table 1)", level=1)
 
@@ -1734,14 +1710,12 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                     row_cells[i].text = str(value)
 
             # Add AI commentary if available
-            if "table1_commentary" in self.report_sections:
+            if "table1_commentary" in self.report:
                 doc.add_heading("Clinical Commentary", level=2)
-                self._add_markdown_content_to_doc(
-                    doc, self.report_sections["table1_commentary"]
-                )
+                self._add_markdown_content_to_doc(doc, self.report["table1_commentary"])
 
         # Table 2 (Outcomes)
-        table2_df = self.report_sections.get("table2")
+        table2_df = self.report.get("table2")
         if table2_df is not None and not table2_df.empty:
             doc.add_heading("6. Outcomes Summary (Table 2)", level=1)
 
@@ -1761,17 +1735,15 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
                     row_cells[i].text = str(value)
 
             # Add AI commentary if available
-            if "table2_commentary" in self.report_sections:
+            if "table2_commentary" in self.report:
                 doc.add_heading("Clinical Commentary", level=2)
-                self._add_markdown_content_to_doc(
-                    doc, self.report_sections["table2_commentary"]
-                )
+                self._add_markdown_content_to_doc(doc, self.report["table2_commentary"])
 
         # Save document
         doc.save(str(output_path))
 
         # Clean up temporary plot file if it exists
-        temp_plot_path = Path(output_dir) / "temp_waterfall.png"
+        temp_plot_path = output_path.parent / "temp_waterfall.png"
         if temp_plot_path.exists():
             try:
                 temp_plot_path.unlink()
@@ -1780,10 +1752,11 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
 
         logger.info(f"Word document generated: {output_path}")
         return str(output_path)
+        return str(output_path)
 
     def get_report_summary(self) -> Dict[str, Any]:
         """Get a summary of the generated report."""
-        if not self.report_sections:
+        if not self.report:
             return {"error": "No report data available. Call execute() first."}
 
         summary = {
@@ -1792,13 +1765,13 @@ Cohort definition involved {stats.get('n_inclusions', 0)} inclusion criteria and
             "institution": self.institution,
             "generation_date": datetime.now().isoformat(),
             "ai_enabled": self.use_ai,
-            "sections_generated": list(self.report_sections.keys()),
+            "sections_generated": list(self.report.keys()),
             "figures_generated": list(self.figures.keys()),
-            "summary_statistics": self.report_sections.get("summary_stats", {}),
+            "summary_statistics": self.report.get("summary_stats", {}),
         }
 
         # Add table shapes
-        for section_name, section_data in self.report_sections.items():
+        for section_name, section_data in self.report.items():
             if isinstance(section_data, pd.DataFrame):
                 summary[f"{section_name}_shape"] = section_data.shape
 

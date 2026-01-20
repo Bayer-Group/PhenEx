@@ -98,6 +98,11 @@ class Phenotype(Node):
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "-")
 
+    def __rsub__(
+        self, other: Union["Phenotype", "ComputationGraph", int, float]
+    ) -> "ComputationGraph":
+        return ComputationGraph(other, self, "-")
+
     def __mul__(
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
@@ -112,6 +117,11 @@ class Phenotype(Node):
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "/")
+
+    def __rtruediv__(
+        self, other: Union["Phenotype", "ComputationGraph", int, float]
+    ) -> "ComputationGraph":
+        return ComputationGraph(other, self, "/")
 
     def __pow__(self, other: int) -> "ComputationGraph":
         return ComputationGraph(self, other, "**")
@@ -164,7 +174,7 @@ class ComputationGraph:
 
     def __init__(
         self,
-        left: Union["Phenotype", "ComputationGraph"],
+        left: Union["Phenotype", "ComputationGraph", int, float],
         right: Union["Phenotype", "ComputationGraph", int, float, None],
         operator: str,
     ):
@@ -193,6 +203,11 @@ class ComputationGraph:
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "-")
 
+    def __rsub__(
+        self, other: Union["Phenotype", "ComputationGraph", int, float]
+    ) -> "ComputationGraph":
+        return ComputationGraph(other, self, "-")
+
     def __mul__(
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
@@ -207,6 +222,11 @@ class ComputationGraph:
         self, other: Union["Phenotype", "ComputationGraph"]
     ) -> "ComputationGraph":
         return ComputationGraph(self, other, "/")
+
+    def __rtruediv__(
+        self, other: Union["Phenotype", "ComputationGraph", int, float]
+    ) -> "ComputationGraph":
+        return ComputationGraph(other, self, "/")
 
     def __pow__(self, other: int) -> "ComputationGraph":
         return ComputationGraph(self, other, "**")
