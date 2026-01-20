@@ -103,6 +103,8 @@ export class CohortsDataService {
     if (!this._studyCohortsCache.has(study_id)) {
       try {
         const cohorts = await getCohortsForStudy(study_id);
+        console.log('🔍 Raw cohorts from backend for study', study_id, ':', cohorts);
+        console.log('🔍 Cohort display_orders:', cohorts.map((c: any) => ({ id: c.id, name: c.name, display_order: c.display_order })));
 
         // Find the study data from cache
         const study = 
@@ -117,6 +119,7 @@ export class CohortsDataService {
 
         // Assign display_order if missing and sort
         const sortedCohorts = this.ensureDisplayOrder<CohortData>(cohortsWithStudy);
+        console.log('✅ After sorting by display_order:', sortedCohorts.map(c => ({ id: c.id, name: c.name, display_order: c.display_order })));
         this._studyCohortsCache.set(study_id, sortedCohorts);
       } catch (error) {
         console.warn('🚨 Failed to fetch cohorts for study:', study_id, error);
@@ -132,6 +135,25 @@ export class CohortsDataService {
    * If display_order is missing, assign sequential values
    */
   private ensureDisplayOrder<T extends { id: string; display_order?: number }>(items: T[]): T[] {
+    // Count how many items have each display_order value
+    const orderCounts = new Map<number, number>();
+    items.forEach(item => {
+      const order = item.display_order ?? 0;
+      orderCounts.set(order, (orderCounts.get(order) || 0) + 1);
+    });
+    
+    // If multiple items have the same display_order (like all having 0),
+    // that means display_order was never properly set. Reassign sequential values.
+    const hasDuplicates = Array.from(orderCounts.values()).some(count => count > 1);
+    
+    if (hasDuplicates) {
+      console.warn('⚠️ Multiple items have duplicate display_order, reassigning sequential values');
+      items.forEach((item, index) => {
+        item.display_order = index;
+      });
+      return items; // Return in original order with new sequential display_order
+    }
+    
     // Assign display_order to items that don't have it
     items.forEach((item, index) => {
       if (item.display_order === undefined || item.display_order === null) {
