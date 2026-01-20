@@ -1062,6 +1062,7 @@ export class CohortModel {
   }
 
   private notifyDataChangeListeners() {
+    console.log("Notifying data change listeners", this.dataChangeListeners);
     this.dataChangeListeners.forEach(listener => listener());
   }
 

@@ -119,6 +119,9 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
   const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
@@ -227,6 +230,47 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
 
   const handleCloseRightClickMenu = () => {
     setRightClickMenu(null);
+  };
+
+  const handleTitleDoubleClick = () => {
+    setIsEditingTitle(true);
+    setEditedTitle(cohortDef.cohort.name || '');
+    // Focus input after state update
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }, 0);
+  };
+
+  const handleTitleSave = async () => {
+    if (editedTitle.trim() && editedTitle !== cohortDef.cohort.name) {
+      try {
+        // Set this cohort as the active one first
+        studyDataService.cohort_definitions_service.setActiveCohort(cohortId);
+        console.log("Updating cohort name to:", studyDataService.cohort_definitions_service);
+        // Get the CohortModel instance and update the name
+        const cohortModel = studyDataService.cohort_definitions_service._cohortModels.get(cohortId);
+        if (cohortModel) {
+          cohortModel.cohort_name = editedTitle.trim();
+          cohortModel.cohort_data.name = editedTitle.trim(); // Also update the cohort_data directly
+          // Save changes - this updates backend and notifies all listeners
+          await cohortModel.saveChangesToCohort(true, false); // Save without refreshing grid
+        }
+      } catch (error) {
+        console.error('Failed to update cohort name:', error);
+      }
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false);
+      setEditedTitle(cohortDef.cohort.name || '');
+    }
   };
 
   const getRightClickMenuItems = (): RightClickMenuItem[] => {
@@ -338,9 +382,28 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                   <circle cx="12" cy="20" r="2" />
                 </svg>
               </button>
-              <div className={styles.cohortHeaderTitle}>
-                {cohortDef.cohort.name || 'Unnamed Cohort'}
-              </div>
+              {isEditingTitle ? (
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={handleTitleSave}
+                  className={styles.cohortHeaderTitleInput}
+                  style={{
+                    fontSize: 'var(--dynamic-font-size, 16px)'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <div 
+                  className={styles.cohortHeaderTitle}
+                  onDoubleClick={handleTitleDoubleClick}
+                >
+                  {cohortDef.cohort.name || 'Unnamed Cohort'}
+                </div>
+              )}
               <button
                 className={styles.expandButton}
                 onClick={(e) => {
