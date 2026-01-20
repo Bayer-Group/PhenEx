@@ -43,7 +43,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
@@ -171,8 +171,13 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     setEditedTitle(cohortDef.cohort.name || '');
     // Focus input after state update
     setTimeout(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+        titleInputRef.current.select();
+        // Set initial height
+        titleInputRef.current.style.height = 'auto';
+        titleInputRef.current.style.height = titleInputRef.current.scrollHeight + 'px';
+      }
     }, 0);
   };
 
@@ -197,11 +202,12 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     setIsEditingTitle(false);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleTitleSave();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       setIsEditingTitle(false);
       setEditedTitle(cohortDef.cohort.name || '');
     }
@@ -349,18 +355,29 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           }}>
             <div className={styles.cohortHeaderContent}>
               {isEditingTitle ? (
-                <input
+                <textarea
                   ref={titleInputRef}
-                  type="text"
                   value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onChange={(e) => {
+                    setEditedTitle(e.target.value);
+                    // Auto-adjust height
+                    if (titleInputRef.current) {
+                      titleInputRef.current.style.height = 'auto';
+                      titleInputRef.current.style.height = titleInputRef.current.scrollHeight + 'px';
+                    }
+                  }}
                   onKeyDown={handleTitleKeyDown}
                   onBlur={handleTitleSave}
                   className={styles.cohortHeaderTitleInput}
                   style={{
-                    fontSize: 'var(--dynamic-font-size, 16px)'
+                    fontSize: 'var(--dynamic-font-size, 16px)',
+                    height: 'auto',
+                    minHeight: 'auto',
+                    resize: 'none',
+                    overflow: 'hidden'
                   }}
                   onClick={(e) => e.stopPropagation()}
+                  rows={1}
                 />
               ) : (
                 <div 
