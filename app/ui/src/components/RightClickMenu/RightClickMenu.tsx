@@ -6,6 +6,7 @@ export interface RightClickMenuItem {
   onClick: () => void;
   disabled?: boolean;
   divider?: boolean; // If true, render a divider line after this item
+  icon?: React.ReactNode; // Optional icon to display with the item
 }
 
 export interface RightClickMenuProps {
@@ -90,8 +91,15 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
             <div
               className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
               onClick={() => handleItemClick(item)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.icon && <span className={styles.menuItemIcon}>{item.icon}</span>}
             </div>
             {item.divider && <div className={styles.divider} />}
           </React.Fragment>

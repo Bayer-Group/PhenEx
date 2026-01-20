@@ -243,12 +243,66 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
       return [
         {
           label: 'Open Cohort',
-          onClick: () => onCardClick(cohortDef)
+          onClick: () => onCardClick(cohortDef),
+          icon: (
+            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            </svg>
+          )
         },
         {
           label: 'Add Phenotype',
           onClick: () => console.log('Add phenotype'),
           disabled: true,
+          divider: true
+        },
+        {
+          label: 'Info',
+          onClick: () => {
+            const cohortViewer = TwoPanelCohortViewerService.getInstance();
+            cohortViewer.displayExtraContent('info', null);
+          },
+          icon: (
+            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            </svg>
+          )
+        },
+        {
+          label: 'Database',
+          onClick: () => {
+            const cohortViewer = TwoPanelCohortViewerService.getInstance();
+            cohortViewer.displayExtraContent('database', null);
+          },
+          icon: (
+            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            </svg>
+          )
+        },
+        {
+          label: 'Codelists',
+          onClick: () => {
+            const cohortViewer = TwoPanelCohortViewerService.getInstance();
+            cohortViewer.displayExtraContent('codelists', null);
+          },
+          icon: (
+            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            </svg>
+          )
+        },
+        {
+          label: 'Constants',
+          onClick: () => {
+            const cohortViewer = TwoPanelCohortViewerService.getInstance();
+            cohortViewer.displayExtraContent('constants', null);
+          },
+          icon: (
+            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+              <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            </svg>
+          ),
           divider: true
         },
         {
