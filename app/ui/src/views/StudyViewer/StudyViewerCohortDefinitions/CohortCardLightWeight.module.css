@@ -87,7 +87,7 @@
   padding: 8px 12px;
   min-height: 40px;
   background: white;
-  border-bottom: 1px solid #f0f0f0;
+  border-top: 1px solid #f0f0f0;
   cursor: pointer;
   transition: background-color 0.15s ease;
   position: relative;

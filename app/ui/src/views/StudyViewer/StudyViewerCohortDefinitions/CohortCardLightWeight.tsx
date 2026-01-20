@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import styles from './CohortCardLightWeight.module.css';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortCardActions } from './CohortCardActions';
+import { CohortCardPhenotypeRow } from './CohortCardPhenotypeRow';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
-import typeStyles from '../../../styles/study_types.module.css';
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -186,78 +186,23 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           <div className={styles.tableContainer}>
             {rows.length > 0 ? (
               <div className={styles.phenotypeList}>
-                {rows.map((row, index) => {
-                  // Get background color class based on effective_type
-                  const backgroundColorClass = row.effective_type
-                    ? typeStyles[`${row.effective_type}_color_block_dim`]
-                    : '';
-                console.log('Rendering row:', row, 'with background class:', backgroundColorClass);
-                  
-                  return (
-                  <div
+                {rows.map((row, index) => (
+                  <CohortCardPhenotypeRow
                     key={row.id || index}
-                    className={`${styles.phenotypeRow} ${backgroundColorClass} ${selectedRows.has(index) ? styles.selected : ''} ${draggedRowIndex === index ? styles.dragging : ''}`}
-                    draggable
-                    onDragStart={(e) => handleRowDragStart(e, index)}
-                    onDragOver={(e) => handleRowDragOver(e, index)}
+                    row={row}
+                    index={index}
+                    isSelected={selectedRows.has(index)}
+                    isDragging={draggedRowIndex === index}
+                    onDragStart={handleRowDragStart}
+                    onDragOver={handleRowDragOver}
                     onDrop={handleRowDrop}
-                    onClick={(e) => handleRowClick(e, row, index)}
-                  >
-                    {/* Selection indicator */}
-                    <div className={styles.selectionIndicator}>
-                      {selectedRows.has(index) && <div className={styles.selectionMark} />}
-                    </div>
-                    
-                    {/* Drag handle */}
-                    <div className={styles.dragHandle}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                        <circle cx="4" cy="3" r="1.5" />
-                        <circle cx="4" cy="8" r="1.5" />
-                        <circle cx="4" cy="13" r="1.5" />
-                        <circle cx="8" cy="3" r="1.5" />
-                        <circle cx="8" cy="8" r="1.5" />
-                        <circle cx="8" cy="13" r="1.5" />
-                        <circle cx="12" cy="3" r="1.5" />
-                        <circle cx="12" cy="8" r="1.5" />
-                        <circle cx="12" cy="13" r="1.5" />
-                      </svg>
-                    </div>
-                    
-                    {/* Row number */}
-                    <div className={styles.rowNumber}>
-                      {row.sequence_number || index + 1}
-                    </div>
-                    
-                    {/* Phenotype content */}
-                    <div className={styles.phenotypeContent}>
-                      <div className={styles.phenotypeName}>
-                        {row.name || 'Unnamed Phenotype'}
-                      </div>
-                      {row.description && (
-                        <div className={styles.phenotypeDescription}>
-                          {row.description}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Expand button */}
-                    <button
-                      className={styles.expandButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCardClick(cohortDef);
-                      }}
-                      aria-label="Expand phenotype"
-                    >
-                      <img
-                        src={ArrowIcon}
-                        alt="Expand"
-                        className={styles.expandArrow}
-                      />
-                    </button>
-                  </div>
-                  );
-                })}
+                    onClick={handleRowClick}
+                    onExpandClick={(e) => {
+                      e.stopPropagation();
+                      onCardClick(cohortDef);
+                    }}
+                  />
+                ))}
               </div>
             ) : (
               <div className={styles.emptyState}>
