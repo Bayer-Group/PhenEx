@@ -140,7 +140,7 @@ export const NewCohortWizardPanel: FC<NewCohortWizardPanelProps> = ({ data: _dat
     return (
       <div>
         <h3 className={styles.stepTitle}>
-          Enter a text description of your cohort.
+          Enter a text description of your cohort. AI can use this to help create your cohort!
         </h3>
         <CohortTextArea />
       </div>

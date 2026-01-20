@@ -39,6 +39,7 @@ export class MainViewService {
   private static instance: MainViewService | null = null;
   private listeners: Array<(viewInfo: ViewInfo) => void> = [];
   private currentView: ViewInfo | null = null;
+  
 
   private constructor() {}
 
@@ -80,6 +81,7 @@ export const MainView = () => {
   const { studyId, cohortId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [inReportView, setInReportView] = useState(false);
   
   const [currentView, setCurrentView] = useState<ViewInfo>({
     viewType: ViewType.Empty,
@@ -195,6 +197,7 @@ export const MainView = () => {
     },
     grabberSize: '1rem',
   };
+
   return (
     <div className={styles.mainView}>
       <ThreePanelView
@@ -207,8 +210,8 @@ export const MainView = () => {
         <HierarchicalLeftPanel isVisible={true} />
         <RightPanel>
           {renderView()}
-          <div style={{ position: 'absolute', bottom: '25px', right: '25px', zIndex: 100 }}>
-            <ActionNavBar height={44} />
+          <div style={{ position: 'absolute', bottom: '10px', right: '25px', zIndex: 100, display: 'flex', flexDirection: 'row', gap: '20px' }}>
+            <ActionNavBar height={44} showReport={inReportView} onShowReportChange={setInReportView} onExecute={() => { /* Add your execute logic here */ }} />
           </div>
         </RightPanel>
         <ChatPanel

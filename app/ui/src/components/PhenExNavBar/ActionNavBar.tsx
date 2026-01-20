@@ -5,6 +5,7 @@ import playButton from '../../assets/icons/play_button.svg';
 import { ChatPopover } from './ChatPopover';
 import { DraggablePositionedPortal } from '../Portal/DraggablePositionedPortal';
 import { PhenExNavBarTooltip } from './PhenExNavBarTooltip';
+import { SwitchButton } from '../ButtonsAndTabs/SwitchButton/SwitchButton';
 
 interface ActionNavBarProps {
   height: number;
@@ -12,6 +13,10 @@ interface ActionNavBarProps {
   onShowNavBar?: () => void;
   isChatOpen?: boolean;
   onChatToggle?: (isOpen: boolean) => void;
+  showReport?: boolean;
+  onShowReportChange?: (value: boolean) => void;
+  onExecute?: () => void;
+
 }
 
 export const ActionNavBar: React.FC<ActionNavBarProps> = ({ 
@@ -19,7 +24,11 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({
   onHideNavBar, 
   onShowNavBar,
   isChatOpen: controlledIsChatOpen,
-  onChatToggle: controlledOnChatToggle
+  onChatToggle: controlledOnChatToggle,
+  showReport = false,
+  onShowReportChange,
+  onExecute
+
 }) => {
   const [internalShowChatPopover, setInternalShowChatPopover] = useState(false);
   
@@ -62,24 +71,27 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({
   };
 
   return (
-    <div className={styles.navBar} style={{ height: `${height}px` }}>
+    <div className={styles.navBar} style={{ height: `${height}px`,width: `auto`, gap:`20px` }}>
       <div className={styles.actionButtons}>
-                {/* <span 
-          ref={issuesLabelRef}
-          className={styles.issuesLabel}
-          onMouseEnter={() => setShowIssuesToolip(true)}
-          onMouseLeave={() => setShowIssuesToolip(false)}
-        >
-          27
-        </span> */}
-
+        <SwitchButton
+          tooltip="Show report"
+          value={showReport}
+          onValueChange={onShowReportChange}
+          classNameSwitchContainer={styles.switchContainer}
+          classNameSwitchBackground={styles.switchBackground}
+          classNameSwitchBackgroundSelected={styles.switchBackgroundSelected}
+          classNameSwitch={styles.switch}
+          classNameSwitchSelected={styles.switchSelected}
+        />
+        
         <button 
           ref={playButtonRef}
           className={styles.actionButton}
           onMouseEnter={() => setShowPlayTooltip(true)}
           onMouseLeave={() => setShowPlayTooltip(false)}
+          onClick={onExecute}
         >
-          <img src={playButton} alt="Play" style={{ width: '30px', height: '30px' }} />
+          <img src={playButton} alt="Execute" style={{ width: '30px', height: '30px' }} />
         </button>
         <button 
           ref={chatButtonRef}
@@ -92,18 +104,11 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({
         </button>
       </div>
       
-      {/* <PhenExNavBarTooltip
-        isVisible={showIssuesToolip}
-        anchorElement={issuesLabelRef.current}
-        label="View Issues"
-      /> */}
-      
       <PhenExNavBarTooltip
         isVisible={showPlayTooltip}
         anchorElement={playButtonRef.current}
         label="Execute cohort"
       />
-      
       <PhenExNavBarTooltip
         isVisible={showChatTooltip}
         anchorElement={chatButtonRef.current}

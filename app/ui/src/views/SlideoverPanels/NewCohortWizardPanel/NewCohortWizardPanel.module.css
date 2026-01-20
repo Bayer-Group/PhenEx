@@ -19,7 +19,7 @@
 .stepTitle {
   font-size: 16px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-color-normal);
   margin-bottom: 20px;
 }
 
@@ -41,7 +41,6 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
   background: var(--color-background-default);
-  background-color: red;
   width: 300px;
 }
 
