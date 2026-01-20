@@ -1,4 +1,14 @@
 .cohortCardContainer{
-    background-color: red;
 
+}
+
+.cohortGroupView{
+    border: 3px solid var(--line-color);
+    border-radius: 12px;
+    padding: 100px;
+}
+.cohortGroupView:hover{
+    border: 3px solid var(--color_accent_blue);
+    border-radius: 12px;
+    padding: 100px;
 }

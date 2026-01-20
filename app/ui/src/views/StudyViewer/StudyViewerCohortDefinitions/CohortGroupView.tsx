@@ -8,9 +8,6 @@ interface CohortGroupViewProps {
   onCardClick: (cohortDef: CohortWithTableData) => void;
   tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
   onCellValueChanged: (cohortId: string, rowIndex: number, field: string, value: any) => Promise<void>;
-  onRowDragStart: (rowIndex: number) => void;
-  onRowDragOver: (rowIndex: number) => void;
-  onRowDrop: (cohortId: string) => Promise<void>;
   studyDataService: any;
   isDragging: boolean;
   isScrolling: boolean;
@@ -24,9 +21,6 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
   onCardClick,
   tableContainerRefs,
   onCellValueChanged,
-  onRowDragStart,
-  onRowDragOver,
-  onRowDrop,
   studyDataService,
   isDragging,
   isScrolling,
@@ -35,6 +29,7 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
 }) => {
   return (
     <div
+        className={styles.cohortGroupView}
       style={{
         display: 'flex',
         flexDirection: 'row',
@@ -61,9 +56,6 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
                 studyDataService={studyDataService}
                 onCardClick={onCardClick}
                 onCellValueChanged={onCellValueChanged}
-                onRowDragStart={onRowDragStart}
-                onRowDragOver={onRowDragOver}
-                onRowDrop={onRowDrop}
                 isDragging={isDragging}
                 isScrolling={isScrolling}
                 isShiftPressed={isShiftPressed}

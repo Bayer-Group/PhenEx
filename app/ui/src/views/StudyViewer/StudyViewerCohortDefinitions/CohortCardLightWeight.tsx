@@ -15,9 +15,6 @@ interface CohortCardLightWeightProps {
   studyDataService: any;
   onCardClick: (cohortDef: CohortWithTableData) => void;
   onCellValueChanged: (cohortId: string, rowIndex: number, field: string, value: any) => Promise<void>;
-  onRowDragStart: (rowIndex: number) => void;
-  onRowDragOver: (rowIndex: number) => void;
-  onRowDrop: (cohortId: string) => Promise<void>;
   isDragging: boolean;
   isScrolling: boolean;
   isShiftPressed: boolean;
@@ -30,9 +27,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   studyDataService,
   onCardClick,
   onCellValueChanged,
-  onRowDragStart,
-  onRowDragOver,
-  onRowDrop,
   isDragging,
   isScrolling,
   isShiftPressed,
@@ -105,21 +99,33 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const handleRowDragStart = (e: React.DragEvent, rowIndex: number) => {
     e.dataTransfer.effectAllowed = 'move';
     setDraggedRowIndex(rowIndex);
-    onRowDragStart(rowIndex);
   };
 
   const handleRowDragOver = (e: React.DragEvent, rowIndex: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverRowIndex(rowIndex);
-    onRowDragOver(rowIndex);
   };
 
   const handleRowDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    
+    if (draggedRowIndex === null || dragOverRowIndex === null || draggedRowIndex === dragOverRowIndex) {
+      setDraggedRowIndex(null);
+      setDragOverRowIndex(null);
+      return;
+    }
+
+    // Reorder rows within this cohort
+    const newRows = [...cohortDef.table_data.rows];
+    const [removed] = newRows.splice(draggedRowIndex, 1);
+    newRows.splice(dragOverRowIndex, 0, removed);
+
+    // Persist to backend
+    await studyDataService.cohort_definitions_service.onRowDragEnd(cohortId, newRows);
+
     setDraggedRowIndex(null);
     setDragOverRowIndex(null);
-    await onRowDrop(cohortId);
   };
 
   const toggleRowSelection = (rowIndex: number) => {

@@ -46,8 +46,6 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [isCommandPressed, setIsCommandPressed] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [draggedRow, setDraggedRow] = useState<number | null>(null);
-  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -186,51 +184,6 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
     // Call the service to update the model
     await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event);
-  };
-
-  const handleRowDragStart = (rowIndex: number) => {
-    setDraggedRow(rowIndex);
-  };
-
-  const handleRowDragOver = (rowIndex: number) => {
-    setDragOverRow(rowIndex);
-  };
-
-  const handleRowDrop = async (cohortId: string) => {
-    if (draggedRow === null || dragOverRow === null || draggedRow === dragOverRow) {
-      setDraggedRow(null);
-      setDragOverRow(null);
-      return;
-    }
-
-    // Reorder rows
-    const currentDefinitions = cohortDefinitionsRef.current;
-    if (!currentDefinitions) return;
-
-    const cohortIndex = currentDefinitions.findIndex(def => def.cohort.id === cohortId);
-    if (cohortIndex === -1) return;
-
-    const cohortDef = currentDefinitions[cohortIndex];
-    const newRows = [...cohortDef.table_data.rows];
-    const [removed] = newRows.splice(draggedRow, 1);
-    newRows.splice(dragOverRow, 0, removed);
-
-    // Update state
-    const updatedDefinitions = [...currentDefinitions];
-    updatedDefinitions[cohortIndex] = {
-      ...cohortDef,
-      table_data: {
-        ...cohortDef.table_data,
-        rows: newRows
-      }
-    };
-    setCohortDefinitions(updatedDefinitions);
-
-    // Call service to persist
-    await studyDataService.cohort_definitions_service.onRowDragEnd(cohortId, newRows);
-
-    setDraggedRow(null);
-    setDragOverRow(null);
   };
 
   // Attach wheel listener - directly manipulate DOM, no React re-renders
@@ -399,9 +352,6 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
             onCardClick={clickedOnCohort}
             tableContainerRefs={tableContainerRefs}
             onCellValueChanged={handleCellValueChanged}
-            onRowDragStart={handleRowDragStart}
-            onRowDragOver={handleRowDragOver}
-            onRowDrop={handleRowDrop}
             studyDataService={studyDataService}
             isDragging={isDragging}
             isScrolling={isScrolling}
