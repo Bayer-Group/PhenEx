@@ -5,80 +5,11 @@ import { StudyDataService } from '../StudyDataService';
 import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { deleteCohort } from '@/api/text_to_cohort/route';
-import { CohortCardLightWeight } from './CohortCardLightWeight';
+import { CohortGroupView } from './CohortGroupView';
 
 interface StudyViewerCohortDefinitionsLightWeightProps {
   studyDataService: StudyDataService;
 }
-
-// Memoized list component to prevent re-renders during zoom/pan
-const CohortList = React.memo(({
-  cohortDefinitions,
-  onCardClick,
-  tableContainerRefs,
-  onCellValueChanged,
-  onRowDragStart,
-  onRowDragOver,
-  onRowDrop,
-  studyDataService,
-  isDragging,
-  isScrolling,
-  isShiftPressed,
-  isCommandPressed,
-}: {
-  cohortDefinitions: CohortWithTableData[];
-  onCardClick: (cohortDef: CohortWithTableData) => void;
-  tableContainerRefs: React.MutableRefObject<Map<string | number, React.RefObject<HTMLDivElement | null>>>;
-  onCellValueChanged: (cohortId: string, rowIndex: number, field: string, value: any) => Promise<void>;
-  onRowDragStart: (rowIndex: number) => void;
-  onRowDragOver: (rowIndex: number) => void;
-  onRowDrop: (cohortId: string) => Promise<void>;
-  studyDataService: any;
-  isDragging: boolean;
-  isScrolling: boolean;
-  isShiftPressed: boolean;
-  isCommandPressed: boolean;
-}) => {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '40px',
-        padding: '20px',
-        pointerEvents: 'none'
-      }}
-    >
-      {cohortDefinitions.map((cohortDef, index) => {
-        const cohortKey = cohortDef.cohort.id || index;
-        const cohortId = cohortDef.cohort.id || String(index);
-        
-        // Get or create ref for this cohort's card container
-        if (!tableContainerRefs.current.has(cohortKey)) {
-          tableContainerRefs.current.set(cohortKey, React.createRef<HTMLDivElement>());
-        }
-
-        return (
-          <CohortCardLightWeight
-            key={cohortKey}
-            cohortDef={cohortDef}
-            cohortId={cohortId}
-            studyDataService={studyDataService}
-            onCardClick={onCardClick}
-            onCellValueChanged={onCellValueChanged}
-            onRowDragStart={onRowDragStart}
-            onRowDragOver={onRowDragOver}
-            onRowDrop={onRowDrop}
-            isDragging={isDragging}
-            isScrolling={isScrolling}
-            isShiftPressed={isShiftPressed}
-            isCommandPressed={isCommandPressed}
-          />
-        );
-      })}
-    </div>
-  );
-});
 
 export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohortDefinitionsLightWeightProps> = ({ studyDataService }) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
@@ -463,7 +394,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
             '--zoom-scale': viewState.scale
           }}
         >
-          <CohortList 
+          <CohortGroupView 
             cohortDefinitions={cohortDefinitions}
             onCardClick={clickedOnCohort}
             tableContainerRefs={tableContainerRefs}
