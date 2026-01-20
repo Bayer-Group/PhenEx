@@ -71,7 +71,7 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        return [
+        default_boolean_phenotypes = [
             x
             for x in self.cohort.characteristics
             if type(x).__name__
@@ -79,6 +79,7 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
+                "TimeRangeDaysToNextRange",
                 "ScorePhenotype",
                 "CategoricalPhenotype",
                 "SexPhenotype",
@@ -86,6 +87,16 @@ class Table1(Reporter):
                 "EventCountPhenotype",
                 "BinPhenotype",
             ]
+        ]
+        user_defined_value_phenotypes = [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ == "_UserDefinedPhenotype" and x.returns_value
+        ]
+        return [
+            x
+            for x in default_boolean_phenotypes
+            if x not in user_defined_value_phenotypes
         ]
 
     def _get_value_characteristics(self):
@@ -97,6 +108,7 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
+                "TimeRangeDaysToNextRange",
                 "ArithmeticPhenotype",
                 "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
             ]

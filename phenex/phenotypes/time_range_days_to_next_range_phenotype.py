@@ -22,6 +22,19 @@ class TimeRangeDaysToNextRange(Phenotype):
         Finds the previous consecutive time range.
         VALUE: Days difference between the start of the anchored time range and the end of the previous time range.
         EVENT_DATE: The end date of the previous consecutive time range.
+
+
+    Example: Count number days to next hospitalization after index date hospitalization
+        ```python
+        from phenex.phenotypes import TimeRangeDaysToNextRange
+        from phenex.filters import RelativeTimeRangeFilter
+        # the hospitalization domain contains START_DATE and END_DATE columns for hospital admission and hospital discharge dates
+        ttnh = TimeRangeDaysToNextRange(
+            name="time_to_next_readmission",
+            domain="HOSPITALIZATION",
+            relative_time_range = RelativeTimeRangeFilter(when='after') # uses index date as anchor by default; must be used as in a cohort
+        )
+        ```
     """
 
     def __init__(
