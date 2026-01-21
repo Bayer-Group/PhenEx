@@ -186,6 +186,7 @@ export const CohortCardPhenotypeRow: React.FC<CohortCardPhenotypeRowProps> = Rea
         className={styles.expandButton}
         onClick={onExpandClick}
         aria-label="Expand phenotype"
+        style={{zIndex:1000}}
       >
         <img
           src={ArrowIcon}
