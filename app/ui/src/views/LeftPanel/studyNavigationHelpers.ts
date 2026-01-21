@@ -59,12 +59,11 @@ export async function createAndNavigateToNewCohort(
     const study = allStudies.find(s => s.id === studyId);
     
     if (!study) {
-      console.error('❌ Study not found:', studyId);
-      throw new Error(`Study ${studyId} not found`);
+      console.warn('⚠️ Study not found in loaded list:', studyId, 'proceeding with ID');
     }
     
-    // Create the new cohort
-    const newCohortData = await cohortsDataService.createNewCohort(study);
+    // Create the new cohort - pass study object if found, otherwise studyId string
+    const newCohortData = await cohortsDataService.createNewCohort(study || studyId);
     
     if (newCohortData) {
       console.log('✅ Cohort created, navigating to:', newCohortData.id);
@@ -96,12 +95,11 @@ export async function createCohort(studyId: string): Promise<any> {
     const study = allStudies.find(s => s.id === studyId);
     
     if (!study) {
-      console.error('❌ Study not found:', studyId);
-      throw new Error(`Study ${studyId} not found`);
+      console.warn('⚠️ Study not found in loaded list:', studyId, 'proceeding with ID');
     }
     
-    // Create the new cohort
-    const newCohortData = await cohortsDataService.createNewCohort(study);
+    // Create the new cohort - pass study object if found, otherwise studyId string
+    const newCohortData = await cohortsDataService.createNewCohort(study || studyId);
     
     if (newCohortData) {
       console.log('✅ Cohort created:', newCohortData.id);
