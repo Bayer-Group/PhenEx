@@ -1,77 +1,27 @@
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
 import logging
+
+from .medconb import router as medconb_router
+from .models import (
+    CodelistMetadata,
+    CodelistFile,
+    ColumnMapping,
+    StatusResponse,
+    ColumnMappingUpdateResponse,
+)
+from ..database import db_manager
+from ..utils.auth import get_authenticated_user_id
 
 # Create routers for codelist endpoints
 # list_router: for /codelists endpoint (no prefix)
 # router: for /codelist operations (with /codelist prefix)
 list_router = APIRouter()
 router = APIRouter()
+router.include_router(medconb_router, prefix="/medconb")
 
 # Setup logger
 logger = logging.getLogger(__name__)
-
-# Import database manager and authentication utilities
-from ..database import db_manager
-from ..utils.auth import get_authenticated_user_id
-
-
-# -- PYDANTIC MODELS --
-
-
-class CodelistMetadata(BaseModel):
-    """Metadata for a codelist file without full contents."""
-
-    id: str
-    filename: str
-    codelists: list[str]
-    code_column: Optional[str] = None
-    code_type_column: Optional[str] = None
-    codelist_column: Optional[str] = None
-
-
-class CodelistContents(BaseModel):
-    """Contents of a codelist file."""
-
-    data: dict[str, list]
-    headers: list[str]
-
-
-class CodelistFile(BaseModel):
-    """Complete codelist file with all data and metadata."""
-
-    id: str
-    filename: str
-    code_column: str
-    code_type_column: str
-    codelist_column: str
-    contents: CodelistContents
-    codelists: list[str]
-    version: Optional[int] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-
-
-class ColumnMapping(BaseModel):
-    """Column mapping configuration for a codelist."""
-
-    code_column: str
-    code_type_column: str
-    codelist_column: str
-
-
-class StatusResponse(BaseModel):
-    """Standard status response."""
-
-    status: str
-    message: str
-
-
-class ColumnMappingUpdateResponse(StatusResponse):
-    """Response for column mapping update including recalculated codelists."""
-
-    codelists: list[str]
 
 
 # -- CODELIST API ENDPOINTS --
