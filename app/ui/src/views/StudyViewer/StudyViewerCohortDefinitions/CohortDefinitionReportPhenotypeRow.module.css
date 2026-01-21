@@ -7,12 +7,14 @@
   align-items: flex-start; /* Vertically align items to top, don't stretch */
 }
 
+.boxContent{}
+
 .phenotypeBox {
   position: relative;
   background: white;
   border: 1px solid var(--border-color, #333);
   padding: 8px 12px;
-  min-width: 150px;
+  min-width: 300px;
   max-width: 300px; /* Cap width so arrow has space */
   width: fit-content;
   z-index: 2;
