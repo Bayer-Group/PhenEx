@@ -8,6 +8,9 @@ import { CohortViewType } from '../../CohortViewer/CohortViewer';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 import { RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
 import { ScaledRightClickMenu } from '../../../components/RightClickMenu/ScaledRightClickMenu';
+import { useReportMode } from '../../../contexts/ReportModeContext';
+import { CohortDefinition } from './CohortDefinition';
+import { CohortDefinitionReport } from './CohortDefinitionReport';
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -32,6 +35,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   isShiftPressed,
   isCommandPressed,
 }) => {
+  const isReportMode = useReportMode();
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveringActions, setIsHoveringActions] = useState(false);
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
@@ -458,35 +462,24 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           
           <div className={styles.tableContainer}>
           <div className={styles.topFiller} />
-            {rows.length > 0 ? (
-              <div className={styles.phenotypeList}>
-                {rows.map((row, index) => (
-                  <div
-                    key={row.id || index}
-                    onContextMenu={(e) => handleContextMenu(e, index)}
-                  >
-                    <CohortCardPhenotypeRow
-                      row={row}
-                      index={index}
-                      isSelected={selectedRows.has(index)}
-                      isDragging={draggedRowIndex === index}
-                      isDragOver={dragOverRowIndex === index}
-                      isViewportDragging={isDragging}
-                      onDragStart={handleRowDragStart}
-                      onDragOver={handleRowDragOver}
-                      onDrop={handleRowDrop}
-                      onClick={handleRowClick}
-                      onExpandClick={(e) => {
-                        e.stopPropagation();
-                        handleRowEdit(row);
-                      }}
-                      onCellValueChanged={async (rowIndex, field, value) => {
-                        await onCellValueChanged(cohortId, rowIndex, field, value);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+            {isReportMode ? (
+              <CohortDefinitionReport cohortDef={cohortDef} />
+            ) : rows.length > 0 ? (
+              <CohortDefinition
+                rows={rows}
+                cohortId={cohortId}
+                selectedRows={selectedRows}
+                draggedRowIndex={draggedRowIndex}
+                dragOverRowIndex={dragOverRowIndex}
+                isViewportDragging={isDragging}
+                onRowDragStart={handleRowDragStart}
+                onRowDragOver={handleRowDragOver}
+                onRowDrop={handleRowDrop}
+                onRowClick={handleRowClick}
+                onRowEdit={handleRowEdit}
+                onContextMenu={handleContextMenu}
+                onCellValueChanged={onCellValueChanged}
+              />
             ) : (
               <div className={styles.emptyState}>
                 No phenotypes found for this cohort
