@@ -2,14 +2,21 @@ import React, { useRef } from 'react';
 import styles from './NavBar.module.css';
 import { Tabs } from '../ButtonsAndTabs/Tabs/Tabs';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
-import { TwoPanelCohortViewerService } from '../../views/CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { useNavBarMenu } from './PhenExNavBarMenuContext';
+
+export interface MenuItem {
+  type: string;
+  label: string;
+  divider?: boolean;
+  onClick?: () => void;
+}
 
 interface CohortNavBarProps {
   height: number;
   onSectionTabChange?: (index: number) => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
   shadow: boolean;
+  menuItems?: MenuItem[];
 }
 
 // Options Menu Component
@@ -20,6 +27,7 @@ const OptionsMenu: React.FC<{
   menuRef: React.RefObject<HTMLDivElement>;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  menuItems: MenuItem[];
 }> = ({
   isOpen,
   onClose,
@@ -27,20 +35,14 @@ const OptionsMenu: React.FC<{
   menuRef,
   onMouseEnter,
   onMouseLeave,
+  menuItems,
 }) => {
-  const viewerService = TwoPanelCohortViewerService.getInstance();
 
-  const handleMenuItemClick = (viewType: string) => {
-    viewerService.displayExtraContent(viewType, null);
+  const handleMenuItemClick = (item: MenuItem) => {
+    if (item.onClick) {
+      item.onClick();
+    }
   };
-
-  const menuItems = [
-    { type: 'info', label: 'Info' },
-    { type: 'database', label: 'Database' },
-    { type: 'codelists', label: 'Codelists' },
-    { type: 'constants', label: 'Constants' },
-    { type: 'export', label: 'Export', divider: true },
-  ];
 
   return (
     <PhenExNavBarMenu 
@@ -54,13 +56,13 @@ const OptionsMenu: React.FC<{
     >
       <div style={{ padding: '8px 4px', minWidth: '180px' }}>
         <div className={styles.itemList}>
-          {menuItems.map(({ type, label, divider }) => (
-            <React.Fragment key={type}>
-              {divider && (
+          {menuItems.map((item) => (
+            <React.Fragment key={item.type}>
+              {item.divider && (
                 <div style={{ height: '1px', backgroundColor: '#e0e0e0', margin: '4px 0', width: '100%' }} />
               )}
               <button
-                onClick={() => handleMenuItemClick(type)}
+                onClick={() => handleMenuItemClick(item)}
                 className={styles.addMenuItem}
                 style={{ 
                   display: 'flex', 
@@ -69,7 +71,7 @@ const OptionsMenu: React.FC<{
                   gap: '12px'
                 }}
               >
-                <span>{label}</span>
+                <span>{item.label}</span>
                 <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
                   <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
                 </svg>
@@ -82,7 +84,7 @@ const OptionsMenu: React.FC<{
   );
 };
 
-export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef, shadow = false }) => {
+export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef, shadow = false, menuItems = [] }) => {
   const tabs = ['Definition', 'Characteristics', 'Outcomes'];
   const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('options');
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
@@ -142,6 +144,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
         menuRef={menuRef}
         onMouseEnter={openOptionsMenu}
         onMouseLeave={closeOptionsMenu}
+        menuItems={menuItems}
       />
     </div>
   );

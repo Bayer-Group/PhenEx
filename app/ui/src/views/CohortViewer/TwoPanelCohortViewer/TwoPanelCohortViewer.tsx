@@ -300,6 +300,10 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     }
   };
 
+  const handleMenuClick = (viewType: string) => {
+    service.displayExtraContent(viewType, null);
+  };
+
   const renderRightPanel = () => {
     // Add to history when rendering a panel
     const historyService = RightPanelHistoryDataService.getInstance();
@@ -346,7 +350,26 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               compact={false}
             />
           </div>
-          <TabsAndAddButton height={44} mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} onSectionTabChange={handleTabChange} onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} shadow={true} />
+          <TabsAndAddButton 
+            height={44} 
+            mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
+            onSectionTabChange={handleTabChange} 
+            onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
+            shadow={true} 
+            menuItems={contentMode === 'study' ? 
+              [
+                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
+                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+              ] : 
+              [
+                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
+                { type: 'database', label: 'Database', onClick: () => handleMenuClick('database') },
+                { type: 'codelists', label: 'Codelists', onClick: () => handleMenuClick('codelists') },
+                { type: 'constants', label: 'Constants', onClick: () => handleMenuClick('constants') },
+                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+              ]
+            }
+          />
         </div>
         <div className={styles.contentSection}>
           <TwoPanelView 

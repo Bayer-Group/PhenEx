@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './NavBar.module.css';
-import { CohortNavBar } from './CohortNavBar';
+import { CohortNavBar, MenuItem } from './CohortNavBar';
 import { AddButtonNavBar } from './AddButtonNavBar';
 
 interface TabsAndAddButtonProps {
@@ -10,6 +10,7 @@ interface TabsAndAddButtonProps {
   onButtonClick?: () => void;
   dragHandleRef?: React.RefObject<HTMLDivElement>;
   shadow?: boolean;
+  menuItems?: MenuItem[];
 }
 
 export const TabsAndAddButton: React.FC<TabsAndAddButtonProps> = ({ 
@@ -18,7 +19,8 @@ export const TabsAndAddButton: React.FC<TabsAndAddButtonProps> = ({
   onSectionTabChange,
   onButtonClick,
   dragHandleRef,
-  shadow = false 
+  shadow = false,
+  menuItems 
 }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'row', gap: '15px' }}>
@@ -27,6 +29,7 @@ export const TabsAndAddButton: React.FC<TabsAndAddButtonProps> = ({
         onSectionTabChange={onSectionTabChange} 
         dragHandleRef={dragHandleRef}
         shadow={shadow}
+        menuItems={menuItems}
       />
       <AddButtonNavBar 
         height={height}
