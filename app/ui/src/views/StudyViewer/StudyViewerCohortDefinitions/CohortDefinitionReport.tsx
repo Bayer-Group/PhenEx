@@ -39,13 +39,14 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
         <defs>
           <marker
             id="reportArrowhead"
-            markerWidth="10"
-            markerHeight="7"
-            refX="9"
-            refY="3.5"
+            markerWidth="16"
+            markerHeight="16"
+            refX="7"
+            refY="7"
             orient="auto"
+            markerUnits="userSpaceOnUse"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+            <polyline points="1 1, 7 7, 1 13" fill="none" stroke="#555" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
           </marker>
         </defs>
       </svg>
@@ -89,9 +90,9 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
                      x1="10" 
                      y1="0" 
                      x2="10" 
-                     y2="33" 
+                     y2="35" 
                      stroke="#555" 
-                     strokeWidth="1.5"
+                     strokeWidth="1"
                      markerEnd="url(#reportArrowhead)"
                    />
                 </svg>

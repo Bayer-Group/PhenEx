@@ -2,7 +2,7 @@ import React, { useRef,  useEffect } from 'react';
 import styles from './CohortDefinitionReportPhenotypeRow.module.css';
 import { CohortCardPhenotypeRowProps } from './CohortCardPhenotypeRow';
 import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
-
+// The arrow between phenotypes is drawn by the parent component based on layout needs.
 export interface CohortDefinitionReportPhenotypeRowProps extends CohortCardPhenotypeRowProps {
   alignment?: 'center' | 'left' | 'right';
   centerLineMarginLeft?: string;
@@ -23,7 +23,7 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
   onClick,
   onExpandClick,
   alignment = 'center',
-  centerLineMarginLeft = '50%',
+  centerLineMarginLeft = '80%',
 }) => {
   const boxRef = useRef<HTMLDivElement>(null);
 
