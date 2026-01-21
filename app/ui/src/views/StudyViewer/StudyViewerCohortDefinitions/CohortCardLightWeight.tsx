@@ -463,7 +463,21 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           <div className={styles.tableContainer}>
           <div className={styles.topFiller} />
             {isReportMode ? (
-              <CohortDefinitionReport cohortDef={cohortDef} />
+              <CohortDefinitionReport
+                rows={rows}
+                cohortId={cohortId}
+                selectedRows={selectedRows}
+                draggedRowIndex={draggedRowIndex}
+                dragOverRowIndex={dragOverRowIndex}
+                isViewportDragging={isDragging}
+                onRowDragStart={handleRowDragStart}
+                onRowDragOver={handleRowDragOver}
+                onRowDrop={handleRowDrop}
+                onRowClick={handleRowClick}
+                onRowEdit={handleRowEdit}
+                onContextMenu={handleContextMenu}
+                onCellValueChanged={onCellValueChanged}
+              />
             ) : rows.length > 0 ? (
               <CohortDefinition
                 rows={rows}
