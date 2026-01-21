@@ -39,6 +39,7 @@ const OptionsMenu: React.FC<{
     { type: 'database', label: 'Database' },
     { type: 'codelists', label: 'Codelists' },
     { type: 'constants', label: 'Constants' },
+    { type: 'export', label: 'Export', divider: true },
   ];
 
   return (
@@ -53,23 +54,27 @@ const OptionsMenu: React.FC<{
     >
       <div style={{ padding: '8px 4px', minWidth: '180px' }}>
         <div className={styles.itemList}>
-          {menuItems.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => handleMenuItemClick(type)}
-              className={styles.addMenuItem}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                gap: '12px'
-              }}
-            >
-              <span>{label}</span>
-              <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
-              </svg>
-            </button>
+          {menuItems.map(({ type, label, divider }) => (
+            <React.Fragment key={type}>
+              {divider && (
+                <div style={{ height: '1px', backgroundColor: '#e0e0e0', margin: '4px 0', width: '100%' }} />
+              )}
+              <button
+                onClick={() => handleMenuItemClick(type)}
+                className={styles.addMenuItem}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}
+              >
+                <span>{label}</span>
+                <svg width="14" height="14" viewBox="0 0 48 48" fill="none" style={{ flexShrink: 0 }}>
+                  <path d="M14 34L34 14M34 14H14M34 14V34" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+                </svg>
+              </button>
+            </React.Fragment>
           ))}
         </div>
       </div>

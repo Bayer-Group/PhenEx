@@ -52,6 +52,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
   const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
+  const lastZoomTime = useRef(0);
   
   // Current transform values (ref to avoid re-renders)
   const currentTransform = useRef(viewState);
@@ -213,6 +214,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
       if (isCommand) {
         // Zoom
+        lastZoomTime.current = Date.now();
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
         const newScale = Math.max(0.3, Math.min(1, current.scale * (1 + delta)));
@@ -221,7 +223,13 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
         const newX = centerX - pointX * newScale;
         const newY = centerY - pointY * newScale;
         applyTransform(newX, newY, newScale);
-      } else if (isShift) {
+      } else {
+        // Prevent inertia pan immediately after zoom
+        if (Date.now() - lastZoomTime.current < 200) {
+          return;
+        }
+
+        if (isShift) {
         // Horizontal pan
         const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
         applyTransform(current.x - deltaX, current.y, current.scale);
@@ -230,6 +238,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
         const deltaY = e.deltaY;
         applyTransform(current.x, current.y - deltaY, current.scale);
       }
+    }
     };
 
     element.addEventListener('wheel', wheelHandler, { passive: false });
