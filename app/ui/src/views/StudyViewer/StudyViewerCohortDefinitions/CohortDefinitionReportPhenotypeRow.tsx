@@ -23,7 +23,7 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
   onClick,
   onExpandClick,
   alignment = 'center',
-  centerLineMarginLeft = '80%',
+  centerLineMarginLeft = '0',
 }) => {
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -48,36 +48,29 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
 
   if (alignment === 'center') {
     // If centered, we want the center of the box to be at centerLineMarginLeft
+    // For now, if we switched CSS to flex-row for "left" alignment logic, 
+    // we should make sure 'center' still works if we ever use it.
+    // But since CSS .rowContainer is now `flex-direction: row`, "center" logic might be broken because
+    // it expected `flex-direction: column` wrapper with absolute positioning tricks.
+    // However, keeping consistent with the User's "make all left" request, we primarily serve 'left'.
+    // If we wanted to keep 'center' support with the new Flex layout, we'd need conditionals in CSS
+    // or style overrides.
+    // Given the request "make all... aligned to the left", we assume 'left' is the new standard.
+    // But let's keeping the style clean:
     containerStyle = {
-      position: 'relative',
+      // Override flex row to mimic old center behavior if needed, OR 
+      // just ignore center logic since we are moving to left.
+      // Let's assume this component is now primarily left-aligned flex row.
     };
     positionStyle = {
         ...positionStyle,
-        position: 'relative',
-        left: centerLineMarginLeft,
-        transform: 'translateX(-50%)',
-        marginLeft: 0, // Reset any auto margins
+        // Reset absolute positioning logic
     };
   } else if (alignment === 'left') {
-    // Align right side of the box to the center line? Or just standard left align?
-    // Based on flowchart images, typically "Main path" is center. "Exclusions" are to the right.
-    // If alignment is "left", maybe it means left of the center line? 
-    // Let's assume absolute positioning relative to that line for flexibility or just use the line as anchor.
-    // For now, simple implementation:
-    containerStyle = {
-        display: 'flex',
-        justifyContent: 'flex-start',
-        paddingLeft: '20px'
-    }
-  } else if (alignment === 'right') {
-     // Used for exclusions off the main path
-     // Box should be to the right of the center line.
-     positionStyle = {
-         ...positionStyle,
-         position: 'relative',
-         left: `calc(${centerLineMarginLeft} + 40px)`, // Offset from center line
-         // No translate, so it starts after the offset
-     };
+     // Default flex layout handles this.
+     // Maybe add specific margin if requested.
+     containerStyle = {
+     }
   }
 
   return (
@@ -100,6 +93,29 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
             </div>
             )}
         </div>
+      </div>
+      
+      {/* Horizontal Arrow */}
+      <div className={styles.horizontalArrow}>
+         <svg width="100%" height="100%" style={{overflow: 'visible'}}>
+             <line 
+                x1="0" 
+                y1="0%" 
+                x2="100%" 
+                y2="0%" 
+                stroke="#555" 
+                strokeWidth="1"
+                markerEnd="url(#reportArrowhead)"
+             />
+         </svg>
+      </div>
+
+      {/* Excluded Box */}
+      <div className={styles.excludedBox}>
+          <div>Excluded</div>
+          <div style={{fontWeight: 'normal'}}>
+             {`n=${row.excluded_count !== undefined ? row.excluded_count : (row.n_excluded !== undefined ? row.n_excluded : 0)}`}
+          </div>
       </div>
     </div>
   );

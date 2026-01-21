@@ -18,9 +18,10 @@
 
 .rowsContainer {
   position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
+  align-items: stretch; /* Ensure full width for children so flex rows work */
+  z-index: 2;
   gap: 0px; /* Space for arrows */
 }
 

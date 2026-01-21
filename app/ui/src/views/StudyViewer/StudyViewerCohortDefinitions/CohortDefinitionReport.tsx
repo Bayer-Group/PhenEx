@@ -72,14 +72,15 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
                 onCellValueChanged={async (rowIndex, field, value) => {
                   await onCellValueChanged(cohortId, rowIndex, field, value);
                 }}
-                alignment="center"
-                centerLineMarginLeft="50%"
+                alignment="left"
+                centerLineMarginLeft="50%" // Ignored for alignment=left with new flex implementation
               />
             </div>
             {index < rows.length - 1 && (
               <div style={{ 
                 display: 'flex', 
-                justifyContent: 'center', 
+                justifyContent: 'flex-start',
+                paddingLeft: '60px', /* Approximate center of the left-aligned boxes */
                 height: '40px', 
                 alignItems: 'center',
                 position: 'relative'
