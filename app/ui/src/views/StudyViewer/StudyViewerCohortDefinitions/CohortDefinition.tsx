@@ -34,7 +34,11 @@ export const CohortDefinition: React.FC<CohortDefinitionProps> = ({
   onCellValueChanged,
 }) => {
   return (
+    <>
+              <div className={styles.topFiller} />
+
     <div className={styles.phenotypeList}>
+
       {rows.map((row, index) => (
         <div
           key={row.id || index}
@@ -62,5 +66,6 @@ export const CohortDefinition: React.FC<CohortDefinitionProps> = ({
         </div>
       ))}
     </div>
+    </>
   );
 };

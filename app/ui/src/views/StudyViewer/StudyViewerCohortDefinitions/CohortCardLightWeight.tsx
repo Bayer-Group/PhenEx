@@ -461,7 +461,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           
           
           <div className={styles.tableContainer}>
-          <div className={styles.topFiller} />
             {isReportMode ? (
               <CohortDefinitionReport
                 rows={rows}

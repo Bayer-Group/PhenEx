@@ -21,7 +21,7 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 30px; /* Space for arrows */
+  gap: 0px; /* Space for arrows */
 }
 
 .arrow {
