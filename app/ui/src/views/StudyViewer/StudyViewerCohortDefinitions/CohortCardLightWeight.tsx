@@ -381,11 +381,11 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const rows = cohortDef.table_data.rows;
 
   return (
-    <div className={styles.verticalCardContainer}>
+    <div className={`${styles.verticalCardContainer} ${isReportMode ? styles.verticalCardContainerReport : ''}`}>
       <div>
         <div 
           ref={cardRef}
-          className={`${styles.cohortCard} ${(isHoveringActions || rightClickMenu !== null) ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
+          className={`${styles.cohortCard} ${isReportMode ? styles.cohortCardReport : ''} ${(isHoveringActions || rightClickMenu !== null) ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
