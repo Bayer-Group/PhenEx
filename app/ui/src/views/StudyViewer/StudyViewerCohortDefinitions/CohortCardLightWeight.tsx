@@ -440,6 +440,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 className={styles.expandButton}
                 onClick={(e) => {
                   e.stopPropagation();
+                  console.log("Cohort card clicked");
                   onCardClick(cohortDef);
                 }}
                 aria-label="Open cohort"

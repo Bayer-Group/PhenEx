@@ -91,7 +91,20 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       <button
         ref={optionsButtonRef}
         className={styles.optionsButton}
-        onMouseEnter={openOptionsMenu}
+        onMouseEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isOptionsMenuOpen) {
+            openOptionsMenu();
+          }
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isOptionsMenuOpen) {
+            openOptionsMenu();
+          }
+        }}
         onMouseLeave={() => {
           setTimeout(() => {
             if (!menuRef.current?.matches(':hover')) {
