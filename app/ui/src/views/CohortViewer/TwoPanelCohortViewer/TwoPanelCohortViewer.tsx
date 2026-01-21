@@ -304,6 +304,18 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     service.displayExtraContent(viewType, null);
   };
 
+  const handleDelete = async () => {
+    if (contentMode === 'study') {
+      const studyService = StudyDataService.getInstance();
+      await studyService.deleteStudy();
+      navigate('/');
+    } else {
+      const cohortService = CohortDataService.getInstance();
+      await cohortService.deleteCohort();
+      navigate('/');
+    }
+  };
+
   const renderRightPanel = () => {
     // Add to history when rendering a panel
     const historyService = RightPanelHistoryDataService.getInstance();
@@ -360,6 +372,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               [
                 { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
                 { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
               ] : 
               [
                 { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
@@ -367,6 +380,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
                 { type: 'codelists', label: 'Codelists', onClick: () => handleMenuClick('codelists') },
                 { type: 'constants', label: 'Constants', onClick: () => handleMenuClick('constants') },
                 { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
               ]
             }
           />

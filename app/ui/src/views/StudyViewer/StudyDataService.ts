@@ -8,6 +8,7 @@ import {
   getPublicCohort,
   updateCohort,
   deleteCohort,
+  deleteStudy,
   getStudy,
   updateStudy
 } from '../../api/text_to_cohort/route';
@@ -287,7 +288,7 @@ export class StudyDataService {
   
   async deleteStudy() {
     if (this._study_data.id) {
-      await deleteCohort(this._study_data.id);
+      await deleteStudy(this._study_data.id);
       this._study_data = {};
       this._study_name = '';
       this.notifyStudyDataServiceListener();
