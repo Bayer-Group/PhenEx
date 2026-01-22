@@ -43,6 +43,7 @@
   margin-left: 0;
   overflow: hidden; /* Ensure inner div respects border radius */
   padding:0px;
+  border: 1px solid;
 }
 
 /* Inner color layer that shows the transparent hierarchical color */

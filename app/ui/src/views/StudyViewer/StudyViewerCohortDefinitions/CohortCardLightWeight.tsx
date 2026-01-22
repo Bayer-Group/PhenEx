@@ -448,7 +448,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                   onCardClick(cohortDef);
                 }}
                 aria-label="Open cohort"
-                style={{ fontSize: 'var(--dynamic-font-size)' , zIndex: 10000}}
+                style={{ fontSize: 'var(--dynamic-font-size)', zIndex: 10000, opacity: isReportMode ? 0 : 1 }}
               >
                 <img
                   src={ArrowIcon}

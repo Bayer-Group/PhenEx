@@ -89,7 +89,7 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
         <div 
           ref={boxRef}
           className={`${styles.phenotypeBox} ${isSelected ? styles.selected : ''}`}
-          style={{ borderColor: borderColorVar }}
+          style={{ borderColor: textColorVar }}
           onClick={(e) => onClick(e, row, index)}
           draggable={false}
         >
