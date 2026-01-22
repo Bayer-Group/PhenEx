@@ -213,16 +213,37 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
 
     // Pre-calculate box heights for each row
     const boxHeights = allRows.map(row => {
-      // Calculate width based on MAX of title and description
-      const nameLength = (row.name || 'Unnamed').length;
-      const descLength = (row.description && !row.isSynthetic) ? row.description.length : 0;
-      const maxContentLength = Math.max(nameLength, descLength);
-      const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
-      const maxTextWidth = boxWidth - 16;
+      // Calculate width based on actual rendered text width, not character count
+      const tempSvg = d3.select(svgRef.current);
+      
+      // Measure title width
+      const tempTitleText = tempSvg.append('text')
+        .style('font-size', '14px')
+        .style('font-weight', '500')
+        .style('visibility', 'hidden')
+        .text(row.name || 'Unnamed');
+      const titleWidth = (tempTitleText.node() as SVGTextElement).getComputedTextLength();
+      tempTitleText.remove();
+      
+      // Measure description width if exists
+      let descWidth = 0;
+      if (row.description && !row.isSynthetic) {
+        const tempDescText = tempSvg.append('text')
+          .style('font-size', '12px')
+          .style('visibility', 'hidden')
+          .text(row.description);
+        descWidth = (tempDescText.node() as SVGTextElement).getComputedTextLength();
+        tempDescText.remove();
+      }
+      
+      // Box width is the max of title and description, plus padding
+      const maxTextWidth = Math.max(titleWidth, descWidth);
+      const boxWidth = Math.min(Math.max(maxTextWidth + 16, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
+      const wrapWidth = boxWidth - 16;
       
       let height = 60;
-      const titleLines = calculateWrappedLines(row.name || 'Unnamed', maxTextWidth);
-      const descLines = (row.description && !row.isSynthetic) ? calculateWrappedLines(row.description, maxTextWidth) : 0;
+      const titleLines = calculateWrappedLines(row.name || 'Unnamed', wrapWidth);
+      const descLines = (row.description && !row.isSynthetic) ? calculateWrappedLines(row.description, wrapWidth) : 0;
       
       // Base height + title extra lines + description lines
       height = 50 + Math.max(0, titleLines - 1) * 16 + (descLines > 0 ? descLines * 14 + 4 : 0);
@@ -277,11 +298,29 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       .attr('class', 'vertical-arrow')
       .attr('transform', (d, i) => {
         const y = cumulativeY[i] + boxHeights[i];
-        // Calculate box center based on actual box width (max of title and description)
-        const nameLength = (d.name || 'Unnamed').length;
-        const descLength = (d.description && !d.isSynthetic) ? d.description.length : 0;
-        const maxContentLength = Math.max(nameLength, descLength);
-        const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
+        // Calculate box width based on actual rendered text width
+        const tempSvg = d3.select(svgRef.current);
+        
+        const tempTitleText = tempSvg.append('text')
+          .style('font-size', '14px')
+          .style('font-weight', '500')
+          .style('visibility', 'hidden')
+          .text(d.name || 'Unnamed');
+        const titleWidth = (tempTitleText.node() as SVGTextElement).getComputedTextLength();
+        tempTitleText.remove();
+        
+        let descWidth = 0;
+        if (d.description && !d.isSynthetic) {
+          const tempDescText = tempSvg.append('text')
+            .style('font-size', '12px')
+            .style('visibility', 'hidden')
+            .text(d.description);
+          descWidth = (tempDescText.node() as SVGTextElement).getComputedTextLength();
+          tempDescText.remove();
+        }
+        
+        const maxTextWidth = Math.max(titleWidth, descWidth);
+        const boxWidth = Math.min(Math.max(maxTextWidth + 16, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
         const boxX = BOX_CENTER_X - boxWidth / 2;
         const boxCenterX = boxX + boxWidth / 2;
         return `translate(${boxCenterX - 10}, ${y})`;
@@ -329,14 +368,33 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       // Compute border color from CSS variable
       const borderColor = getComputedColor(borderColorVar, '#333');
 
-      // Compute box width based on MAX of title and description content
-      const nameLength = (d.name || 'Unnamed').length;
-      const descLength = (d.description && !d.isSynthetic) ? d.description.length : 0;
-      const maxContentLength = Math.max(nameLength, descLength);
-      const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
+      // Compute box width based on actual rendered text width
+      // Measure title width
+      const tempTitleText = group.append('text')
+        .style('font-size', '14px')
+        .style('font-weight', '500')
+        .style('visibility', 'hidden')
+        .text(d.name || 'Unnamed');
+      const titleWidth = (tempTitleText.node() as SVGTextElement).getComputedTextLength();
+      tempTitleText.remove();
+      
+      // Measure description width if exists
+      let descWidth = 0;
+      if (d.description && !d.isSynthetic) {
+        const tempDescText = group.append('text')
+          .style('font-size', '12px')
+          .style('visibility', 'hidden')
+          .text(d.description);
+        descWidth = (tempDescText.node() as SVGTextElement).getComputedTextLength();
+        tempDescText.remove();
+      }
+      
+      // Box width is max of title and description, plus padding
+      const maxTextWidth = Math.max(titleWidth, descWidth);
+      const boxWidth = Math.min(Math.max(maxTextWidth + 16, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
       const boxX = BOX_CENTER_X - boxWidth / 2;
       
-      const maxTextWidth = boxWidth - 16; // 8px padding on each side
+      const wrapTextWidth = boxWidth - 16; // 8px padding on each side
       
       // Helper to wrap text and calculate required lines
       const wrapText = (text: string, maxWidth: number, fontSize: number): string[] => {
@@ -370,9 +428,9 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       };
       
       // Calculate wrapped lines for both title and description
-      const titleLines = wrapText(d.name || 'Unnamed Phenotype', maxTextWidth, 14);
+      const titleLines = wrapText(d.name || 'Unnamed Phenotype', wrapTextWidth, 14);
       const descriptionLines = d.description && !d.isSynthetic 
-        ? wrapText(d.description, maxTextWidth, 12)
+        ? wrapText(d.description, wrapTextWidth, 12)
         : [];
       
       // Calculate box height
