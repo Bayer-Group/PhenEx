@@ -25,9 +25,9 @@
 
 .phenotypeBox {
   position: relative;
-  /* Background color applied via inline style from getHierarchicalBackgroundColor */
+  background: white; /* Opaque white to block arrow */
   border: 1px solid var(--border-color, #333);
-  padding: 8px 12px;
+  padding: 0; /* Remove padding, will go on inner div */
   min-width: 100px;
   max-width: 300px; 
   width: fit-content;
@@ -40,19 +40,18 @@
   box-sizing: border-box;
   border-radius: 8px;
   margin-left: 0;
+  overflow: hidden; /* Ensure inner div respects border radius */
 }
 
-/* Opaque white background layer behind the semi-transparent color to hide arrow */
-.phenotypeBox::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white; 
-  border-radius: 8px;
-  z-index: -2; /* Behind the box itself but still blocks arrow due to parent z-index:100 */
+/* Inner color layer that shows the transparent hierarchical color */
+.phenotypeBoxColorLayer {
+  width: 100%;
+  height: 100%;
+  padding: 8px 12px; /* Padding moved here */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* Background color applied via inline style */
 }
 
 /*... existing ...*/

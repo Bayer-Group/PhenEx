@@ -82,20 +82,22 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
         <div 
           ref={boxRef}
           className={`${styles.phenotypeBox} ${isSelected ? styles.selected : ''}`}
-          style={positionStyle}
+          style={{ borderColor: borderColorVar }}
           onClick={(e) => onClick(e, row, index)}
-          draggable={false} // Disable drag for report items usually
+          draggable={false}
         >
-          <div className={styles.boxContent}>
-              <div className={styles.phenotypeName}>
-                  {row.name || 'Unnamed Phenotype'}
-                  {row.count !== undefined && <span style={{fontWeight: 'normal'}}> (n={row.count})</span>}
-              </div>
-              {row.description && (
-              <div className={styles.phenotypeDescription}>
-                  {row.description}
-              </div>
-              )}
+          <div className={styles.phenotypeBoxColorLayer} style={{ backgroundColor: backgroundColor || 'white' }}>
+            <div className={styles.boxContent}>
+                <div className={styles.phenotypeName}>
+                    {row.name || 'Unnamed Phenotype'}
+                    {row.count !== undefined && <span style={{fontWeight: 'normal'}}> (n={row.count})</span>}
+                </div>
+                {row.description && (
+                <div className={styles.phenotypeDescription}>
+                    {row.description}
+                </div>
+                )}
+            </div>
           </div>
         </div>
                 {/* Horizontal Arrow - placed BEFORE leftWrapper in DOM so it renders behind */}
