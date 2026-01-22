@@ -149,16 +149,16 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     d3.select(svgRef.current).selectAll('*').remove();
 
     // Constants - sized to fit within 500px container
-    const LEFT_WRAPPER_WIDTH = 320;
+    const LEFT_WRAPPER_WIDTH = 300; // Reduced from 320
     const BOX_CENTER_X = LEFT_WRAPPER_WIDTH / 2;
-    const BOX_MAX_WIDTH = 310; // Max box width with padding
+    const BOX_MAX_WIDTH = 290; // Reduced from 310
     const BOX_MIN_WIDTH = 100;
     const ROW_HEIGHT = 80;
     const ARROW_HEIGHT = 40;
-    const EXCLUDED_BOX_WIDTH = 100;
-    const EXCLUDED_BOX_OFFSET = 340;
-    const SVG_PADDING = 5; // Reduced padding for tighter layout
-    const TOTAL_MAX_WIDTH =500; // Fit within 500px container
+    const EXCLUDED_BOX_WIDTH = 95; // Reduced from 100
+    const EXCLUDED_BOX_OFFSET = 310; // Reduced from 340
+    const SVG_PADDING = 0; // Padding for clean edges
+    const TOTAL_MAX_WIDTH = 415; // Fits within 500px container: offset (310) + excluded box (95) + margin (10)
     
     // Prepare data: synthetic first row + actual rows + synthetic last row
     const allRows = [
@@ -280,8 +280,8 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
 
     const svg = d3.select(svgRef.current)
       .attr('width', totalWidth)
-      .attr('height', totalHeight)
-    //   .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
+      .attr('height', totalHeight+20)
+      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
       .attr('data-cohort-flowchart', cohortId)
       .attr('data-cohort-name', allRows[1]?.name || 'Cohort') // Store cohort name for filename
       .style('border', '2px solid red'); // DEBUG: SVG boundary
@@ -356,8 +356,8 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         .attr('stroke-dasharray', '2,2');
       
       mainGroup.append('text')
-        .attr('x', totalWidth - SVG_PADDING * 2 - 80)
-        .attr('y', y - 2)
+        .attr('x', 5)
+        .attr('y', y + 10)
         .attr('fill', 'magenta')
         .attr('font-size', '9px')
         .text(`Row${idx} Y:${y} H:${boxHeights[idx]}`);
@@ -660,7 +660,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
   return (
     <div style={{ 
       width: '100%', 
-      maxWidth: '480px', 
+      maxWidth: '500px', 
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
@@ -669,7 +669,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       margin: 0,
       padding: 0
     }}>
-      <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%', margin: 0, padding: 0 }} />
+      <svg ref={svgRef} style={{ display: 'block', width: '100%', height: 'auto', margin: 0, padding: 0 }} />
     </div>
   );
 });
