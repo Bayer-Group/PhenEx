@@ -218,7 +218,12 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       .attr('class', 'vertical-arrow')
       .attr('transform', (d, i) => {
         const y = i * (ROW_HEIGHT + ARROW_HEIGHT) + ROW_HEIGHT;
-        return `translate(${BOX_CENTER_X - 10}, ${y})`;
+        // Calculate box center based on actual box width
+        const nameLength = (d.name || 'Unnamed').length;
+        const boxWidth = Math.min(Math.max(nameLength * 8, 100), 300);
+        const boxX = BOX_CENTER_X - boxWidth / 2;
+        const boxCenterX = boxX + boxWidth / 2;
+        return `translate(${boxCenterX - 10}, ${y})`;
       });
 
     verticalArrows.append('line')
@@ -337,7 +342,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
 
       // Horizontal arrow (if not hiding exclusion)
       if (!d.hideExclusion) {
-        const arrowStartX = boxX + boxWidth / 2;
+        const arrowStartX = boxX + boxWidth;
         const arrowEndX = EXCLUDED_BOX_OFFSET - 5;
 
         group.append('line')
