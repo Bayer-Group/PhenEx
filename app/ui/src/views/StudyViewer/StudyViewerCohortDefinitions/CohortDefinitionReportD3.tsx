@@ -149,15 +149,15 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     d3.select(svgRef.current).selectAll('*').remove();
 
     // Constants - sized to fit within 500px container
-    const LEFT_WRAPPER_WIDTH = 300; // Reduced from 320
+    const LEFT_WRAPPER_WIDTH = 280; // Reduced from 320
     const BOX_CENTER_X = LEFT_WRAPPER_WIDTH / 2;
-    const BOX_MAX_WIDTH = 290; // Reduced from 310
+    const BOX_MAX_WIDTH = 280; // Reduced from 310
     const BOX_MIN_WIDTH = 100;
     const ROW_HEIGHT = 80;
     const ARROW_HEIGHT = 40;
-    const EXCLUDED_BOX_WIDTH = 95; // Reduced from 100
+    const EXCLUDED_BOX_WIDTH = 80; // Reduced from 100
     const EXCLUDED_BOX_OFFSET = 310; // Reduced from 340
-    const SVG_PADDING = 0; // Padding for clean edges
+    const SVG_PADDING = 5; // Padding for clean edges
     const TOTAL_MAX_WIDTH = 415; // Fits within 500px container: offset (310) + excluded box (95) + margin (10)
     
     // Prepare data: synthetic first row + actual rows + synthetic last row
@@ -257,56 +257,21 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     for (let i = 0; i < allRows.length - 1; i++) {
       cumulativeY.push(cumulativeY[i] + boxHeights[i] + ARROW_HEIGHT);
     }
-    
-    // DEBUG: Log the calculations
-    console.log('=== LAYOUT DEBUG ===');
-    console.log('allRows.length:', allRows.length);
-    console.log('boxHeights:', boxHeights);
-    console.log('cumulativeY:', cumulativeY);
-    console.log('ARROW_HEIGHT:', ARROW_HEIGHT);
 
-    // Calculate total height: last row Y position + last row height + padding
+    // Calculate total height: top padding (20px) + last row Y position + last row height + bottom padding (20px)
     const lastRowIndex = cumulativeY.length - 1;
-    const totalHeight = cumulativeY[lastRowIndex] + boxHeights[lastRowIndex] + (SVG_PADDING * 2);
+    const totalHeight = 20 + cumulativeY[lastRowIndex] + boxHeights[lastRowIndex] + 20;
     const totalWidth = TOTAL_MAX_WIDTH;
-    
-    console.log('lastRowIndex:', lastRowIndex);
-    console.log('totalHeight:', totalHeight);
-    console.log('SVG_PADDING:', SVG_PADDING);
-    console.log('==================');
     
     // Remove all temporary measurement elements before rendering
     tempMeasurementGroup.remove();
 
     const svg = d3.select(svgRef.current)
-      .attr('width', totalWidth)
-      .attr('height', totalHeight+20)
+      .attr('width', totalWidth + 20) // DEFINES LEFT RIGHT PADDING
+      .attr('height', totalHeight) // DEFINES TOP BOTTOM PADDING
       .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
       .attr('data-cohort-flowchart', cohortId)
-      .attr('data-cohort-name', allRows[1]?.name || 'Cohort') // Store cohort name for filename
-      .style('border', '2px solid red'); // DEBUG: SVG boundary
-    
-    // DEBUG: Add background to see SVG area
-    svg.append('rect')
-      .attr('width', totalWidth)
-      .attr('height', totalHeight)
-      .attr('fill', 'rgba(255, 255, 0, 0.1)') // Yellow tint
-      .attr('stroke', 'blue')
-      .attr('stroke-width', 1);
-    
-    // DEBUG: Mark origin (0,0)
-    svg.append('circle')
-      .attr('cx', 0)
-      .attr('cy', 0)
-      .attr('r', 5)
-      .attr('fill', 'red');
-    
-    svg.append('text')
-      .attr('x', 10)
-      .attr('y', 10)
-      .attr('fill', 'red')
-      .attr('font-size', '10px')
-      .text(`SVG(0,0) - totalHeight:${totalHeight}`);
+      .attr('data-cohort-name', allRows[1]?.name || 'Cohort'); // Store cohort name for filename
 
     // Define arrow marker
     svg.append('defs')
@@ -326,42 +291,9 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       .attr('stroke-linecap', 'round')
       .attr('stroke-linejoin', 'round');
 
-    // Create main group
+    // Create main group // SET Y PADDING TOP HERE
     const mainGroup = svg.append('g')
-      .attr('transform', `translate(${SVG_PADDING}, ${SVG_PADDING})`);
-    
-    // DEBUG: Mark main group origin
-    mainGroup.append('circle')
-      .attr('cx', 0)
-      .attr('cy', 0)
-      .attr('r', 5)
-      .attr('fill', 'green');
-    
-    mainGroup.append('text')
-      .attr('x', 10)
-      .attr('y', 20)
-      .attr('fill', 'green')
-      .attr('font-size', '10px')
-      .text(`MainGroup(${SVG_PADDING},${SVG_PADDING})`);
-    
-    // DEBUG: Show cumulative Y positions
-    cumulativeY.forEach((y, idx) => {
-      mainGroup.append('line')
-        .attr('x1', 0)
-        .attr('y1', y)
-        .attr('x2', totalWidth - SVG_PADDING * 2)
-        .attr('y2', y)
-        .attr('stroke', 'rgba(255, 0, 255, 0.3)')
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', '2,2');
-      
-      mainGroup.append('text')
-        .attr('x', 5)
-        .attr('y', y + 10)
-        .attr('fill', 'magenta')
-        .attr('font-size', '9px')
-        .text(`Row${idx} Y:${y} H:${boxHeights[idx]}`);
-    });
+      .attr('transform', `translate(${SVG_PADDING}, ${20})`);
 
     // Draw vertical arrows
     const verticalArrows = mainGroup.selectAll('.vertical-arrow')
