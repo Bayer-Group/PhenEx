@@ -11,6 +11,7 @@ import { ScaledRightClickMenu } from '../../../components/RightClickMenu/ScaledR
 import { useReportMode } from '../../../contexts/ReportModeContext';
 import { CohortDefinition } from './CohortDefinition';
 import { CohortDefinitionReport } from './CohortDefinitionReport';
+import { CohortDefinitionReportD3 } from './CohortDefinitionReportD3';
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -462,20 +463,10 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           
           <div className={`${styles.tableContainer} ${isReportMode ? styles.reportMode : ''}`}>
             {isReportMode ? (
-              <CohortDefinitionReport
+              <CohortDefinitionReportD3
                 rows={rows}
                 cohortId={cohortId}
-                selectedRows={selectedRows}
-                draggedRowIndex={draggedRowIndex}
-                dragOverRowIndex={dragOverRowIndex}
-                isViewportDragging={isDragging}
-                onRowDragStart={handleRowDragStart}
-                onRowDragOver={handleRowDragOver}
-                onRowDrop={handleRowDrop}
-                onRowClick={handleRowClick}
-                onRowEdit={handleRowEdit}
-                onContextMenu={handleContextMenu}
-                onCellValueChanged={onCellValueChanged}
+                onRowClick={(row, index) => handleRowClick({} as React.MouseEvent, row, index)}
               />
             ) : rows.length > 0 ? (
               <CohortDefinition
