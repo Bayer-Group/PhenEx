@@ -14,9 +14,8 @@ import phenex.util.serialization.json as pxjson
 from phenex.util.serialization.from_dict import from_dict
 import datetime
 
-PATH_ARTIFACTS = "phenex/test/serialization/artifacts"
-if not os.path.exists(PATH_ARTIFACTS):
-    os.mkdir(PATH_ARTIFACTS)
+# Use absolute path based on the location of this test file
+PATH_ARTIFACTS = os.path.join(os.path.dirname(__file__), "artifacts")
 
 
 def test_CodelistPhenotype():
@@ -178,6 +177,7 @@ def assertions(obj):
 
 
 def dump_load_assertion(obj):
+    os.makedirs(PATH_ARTIFACTS, exist_ok=True)
     path = os.path.join(PATH_ARTIFACTS, obj.name + ".json")
     with open(path, "w") as f:
         pxjson.dump(obj, f, indent=4)
