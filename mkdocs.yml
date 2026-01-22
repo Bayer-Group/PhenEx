@@ -71,6 +71,9 @@ repo_url: https://github.com/bayer-group/PhenEx
 edit_uri: edit/main/docs/
 
 plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]'
   - mkdocstrings:
       handlers:
         python:
@@ -87,6 +90,9 @@ theme:
   features:
     - content.code.copy
     - content.action.edit
+    - search.suggest
+    - search.highlight
+    - search.share
   favicon: assets/bird_icon.png
   logo: assets/bird_icon_white.png
 markdown_extensions:
