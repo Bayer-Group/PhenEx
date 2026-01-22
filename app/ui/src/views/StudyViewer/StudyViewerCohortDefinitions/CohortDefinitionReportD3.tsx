@@ -303,42 +303,51 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         .attr('fill', backgroundColor || 'transparent')
         .style('pointer-events', 'none');
 
-      // Text content using foreignObject for better formatting
-      const foreignObject = boxGroup.append('foreignObject')
-        .attr('width', boxWidth)
-        .attr('height', 60)
+      // Text content using native SVG text elements
+      const textGroup = boxGroup.append('g')
+        .attr('class', 'text-content')
         .style('pointer-events', 'none');
 
-      const div = foreignObject.append('xhtml:div')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'flex')
-        .style('flex-direction', 'column')
-        .style('justify-content', 'center')
-        .style('padding', '8px 12px')
-        .style('box-sizing', 'border-box')
-        .style('color', textColor);
+      let currentY = 16;
 
       // Name
-      div.append('div')
+      textGroup.append('text')
+        .attr('x', boxWidth / 2)
+        .attr('y', currentY)
+        .attr('text-anchor', 'middle')
+        .attr('fill', textColor)
         .style('font-size', '14px')
         .style('font-weight', '500')
-        .style('margin-bottom', d.description ? '4px' : '0')
         .text(d.name || 'Unnamed Phenotype');
+
+      currentY += d.description && !d.isSynthetic ? 16 : 20;
 
       // Description (if exists)
       if (d.description && !d.isSynthetic) {
-        div.append('div')
+        textGroup.append('text')
+          .attr('x', boxWidth / 2)
+          .attr('y', currentY)
+          .attr('text-anchor', 'middle')
+          .attr('fill', textColor)
           .style('font-size', '12px')
-          .style('margin-bottom', '4px')
           .text(d.description);
+        currentY += 16;
       }
 
-      // Count
-      div.append('div')
-        .style('font-size', '14px')
-        .style('text-align', 'center')
-        .html(`<span style="font-family: IBMPlexSans-bolditalic; margin-right: 5px;">n =</span>${d.count !== undefined ? d.count : '?'}`);
+      // Count (n = value)
+      const countGroup = textGroup.append('text')
+        .attr('x', boxWidth / 2)
+        .attr('y', currentY)
+        .attr('text-anchor', 'middle')
+        .attr('fill', textColor)
+        .style('font-size', '14px');
+
+      countGroup.append('tspan')
+        .style('font-family', 'IBMPlexSans-bolditalic')
+        .text('n = ');
+
+      countGroup.append('tspan')
+        .text(d.count !== undefined ? d.count : '?');
 
       // Horizontal arrow (if not hiding exclusion)
       if (!d.hideExclusion) {
@@ -369,23 +378,31 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
           .attr('stroke', borderColor)
           .attr('stroke-width', 1);
 
-        const excludedText = excludedBox.append('foreignObject')
-          .attr('width', EXCLUDED_BOX_WIDTH)
-          .attr('height', 40);
+        // Excluded text using native SVG
+        const excludedTextGroup = excludedBox.append('g')
+          .attr('class', 'excluded-text');
 
-        const excludedDiv = excludedText.append('xhtml:div')
-          .style('width', '100%')
-          .style('height', '100%')
-          .style('display', 'flex')
-          .style('flex-direction', 'column')
-          .style('justify-content', 'center')
-          .style('padding', '4px 8px')
+        excludedTextGroup.append('text')
+          .attr('x', EXCLUDED_BOX_WIDTH / 2)
+          .attr('y', 15)
+          .attr('text-anchor', 'middle')
+          .attr('fill', textColor)
           .style('font-size', '10px')
-          .style('color', textColor);
+          .text('Excluded');
 
-        excludedDiv.append('div').text('Excluded');
-        excludedDiv.append('div')
-          .html(`<span style="font-family: IBMPlexSans-bolditalic; margin-right: 3px;">n =</span>${d.excluded_count !== undefined ? d.excluded_count : (d.n_excluded !== undefined ? d.n_excluded : '34,872')}`);
+        const excludedCountText = excludedTextGroup.append('text')
+          .attr('x', EXCLUDED_BOX_WIDTH / 2)
+          .attr('y', 28)
+          .attr('text-anchor', 'middle')
+          .attr('fill', textColor)
+          .style('font-size', '10px');
+
+        excludedCountText.append('tspan')
+          .style('font-family', 'IBMPlexSans-bolditalic')
+          .text('n = ');
+
+        excludedCountText.append('tspan')
+          .text(d.excluded_count !== undefined ? d.excluded_count : (d.n_excluded !== undefined ? d.n_excluded : '34,872'));
       }
     });
 
