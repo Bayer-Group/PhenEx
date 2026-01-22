@@ -6,6 +6,7 @@ import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable
 export interface CohortDefinitionReportPhenotypeRowProps extends CohortCardPhenotypeRowProps {
   alignment?: 'center' | 'left' | 'right';
   centerLineMarginLeft?: string;
+  hideExclusion?: boolean;
 }
 
 export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReportPhenotypeRowProps> = React.memo(({
@@ -24,6 +25,7 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
   onExpandClick,
   alignment = 'center',
   centerLineMarginLeft = '0',
+  hideExclusion = false,
 }) => {
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +37,10 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
 
   const borderColorVar = row.effective_type 
     ? `var(--color_${row.effective_type}_dim)` 
+    : '#333';
+
+  const textColorVar = row.effective_type 
+    ? `var(--color_${row.effective_type})` 
     : '#333';
 
 
@@ -86,44 +92,50 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
           onClick={(e) => onClick(e, row, index)}
           draggable={false}
         >
-          <div className={styles.phenotypeBoxColorLayer} style={{ backgroundColor: backgroundColor || 'white' }}>
+          <div className={styles.phenotypeBoxColorLayer} style={{ backgroundColor: backgroundColor || 'white' , color: textColorVar || 'black' , borderColor: borderColorVar || `var(--line-color, '#333')`}}>
             <div className={styles.boxContent}>
+              <div className = {styles.nameAndDescription}>
                 <div className={styles.phenotypeName}>
-                    {row.name || 'Unnamed Phenotype'}
-                    {row.count !== undefined && <span style={{fontWeight: 'normal'}}> (n={row.count})</span>}
+                    {row.name || 'Unnamed Phenotype'}<br></br>
                 </div>
                 {row.description && (
                 <div className={styles.phenotypeDescription}>
                     {row.description}
                 </div>
                 )}
+              </div>
+              <div className={styles.count}> <span className={styles.countConstants}>n =</span>{row.count !== undefined ? row.count : '?'}</div>
+
             </div>
           </div>
         </div>
-        {/* Horizontal Arrow - placed BEFORE leftWrapper in DOM so it renders behind */}
-      <div className={styles.horizontalArrow}>
-         <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1}}>
-             <line 
+        {/* Horizontal Arrow - only render if not hiding exclusion */}
+        {!hideExclusion && (
+          <div className={styles.horizontalArrow}>
+            <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1}}>
+              <line 
                 x1="50%" 
                 y1="0%" 
                 x2="calc(100% - 5px)" 
                 y2="0%" 
-                stroke="#555" 
+                stroke="var(--color_accent_dark)" 
                 strokeWidth="1"
                 markerEnd="url(#reportArrowhead)"
-             />
-         </svg>
-      </div>
+              />
+            </svg>
+          </div>
+        )}
       </div>
 
-
-      {/* Excluded Box */}
-      <div className={styles.excludedBox}>
+      {/* Excluded Box - only render if not hiding exclusion */}
+      {!hideExclusion && (
+        <div className={styles.excludedBox}>
           <div>Excluded</div>
           <div style={{fontWeight: 'normal'}}>
-             {`n=${row.excluded_count !== undefined ? row.excluded_count : (row.n_excluded !== undefined ? row.n_excluded : 0)}`}
+            <span className={styles.countConstants}>n =</span>{`${row.excluded_count !== undefined ? row.excluded_count : (row.n_excluded !== undefined ? row.n_excluded : '?')}`}
           </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 });

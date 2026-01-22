@@ -21,12 +21,14 @@
 
 .boxContent{
     z-index: 100;
+    width:100%;
+    padding:0px;
 }
 
 .phenotypeBox {
   position: relative;
   background: white; /* Opaque white to block arrow */
-  border: 1px solid var(--border-color, #333);
+  border: 1px solid var(--line-color, #333);
   padding: 0; /* Remove padding, will go on inner div */
   min-width: 100px;
   max-width: 300px; 
@@ -41,6 +43,7 @@
   border-radius: 8px;
   margin-left: 0;
   overflow: hidden; /* Ensure inner div respects border radius */
+  padding:0px;
 }
 
 /* Inner color layer that shows the transparent hierarchical color */
@@ -62,7 +65,7 @@
     right: 0px; /* Connect to excluded box sitting at the very right */
     top: 0px; 
     height: 10px;
-    margin-top: 10px; /* offset half height */
+    margin-top: 20px; /* offset half height */
     z-index: 1; /* Lower than leftWrapper's z-index */
     overflow: visible;
     pointer-events: none;
@@ -77,8 +80,8 @@
     background: #fcfcfc;
     border: 1px solid #ccc;
     border-radius: 4px;
-    padding: 3px 8px;
-    font-size: 11px;
+    padding: 0px 8px;
+    font-size: var(--font_size_infotext, 10px);
     text-align: left;
     color: #555;
     z-index: 2;
@@ -90,7 +93,26 @@
 }
 
 /* We still want to support selection visual if needed, though usually reports are read-only */
-.selected {
+/* .selected {
     border-color: var(--color_accent_blue);
     background-color: #e3f2fd;
+} */
+
+.phenotypeName{
+  padding: 5px 10px;
+  font-size: var(--font_size_phenotypename, 14px);
+}
+
+.count{
+  text-align: center;
+}
+
+.phenotypeBoxColorLayer{
+  padding: 0px;
+}
+
+.countConstants{
+  font-family: "IBMPlexSans-bolditalic";
+  font-size: var(--font_size_infotext, 14px);
+  margin-right: 5px;
 }

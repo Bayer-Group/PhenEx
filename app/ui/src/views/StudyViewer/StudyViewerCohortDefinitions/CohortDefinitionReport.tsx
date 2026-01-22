@@ -51,6 +51,48 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
         </defs>
       </svg>
       <div className={styles.rowsContainer}>
+        {/* First row: Total database size */}
+        <React.Fragment key="first-row">
+          <div>
+            <CohortDefinitionReportPhenotypeRow
+              row={{ name: 'Total Database Size', count: rows[0]?.count, effective_type: 'database', hierarchical_index: 0 }}
+              index={-1}
+              isSelected={false}
+              isDragging={false}
+              isDragOver={false}
+              isViewportDragging={false}
+              onDragStart={() => {}}
+              onDragOver={() => {}}
+              onDrop={async () => {}}
+              onClick={() => {}}
+              onExpandClick={() => {}}
+              alignment="left"
+              centerLineMarginLeft="50%"
+              hideExclusion={true}
+            />
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-start',
+            paddingLeft: '140px',
+            height: '40px', 
+            alignItems: 'center',
+            position: 'relative'
+          }}>
+            <svg width="20" height="40" style={{overflow:'visible'}}>
+              <line 
+                x1="10" 
+                y1="0" 
+                x2="10" 
+                y2="35" 
+                stroke="#555" 
+                strokeWidth="1"
+                markerEnd="url(#reportArrowhead)"
+              />
+            </svg>
+          </div>
+        </React.Fragment>
+
         {rows.map((row, index) => (
           <React.Fragment key={row.id || index}>
             <div onContextMenu={(e) => onContextMenu(e, index)}>
@@ -92,7 +134,7 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
                      y1="0" 
                      x2="10" 
                      y2="35" 
-                     stroke="#555" 
+                      stroke={row.effective_type ? `var(--color_${row.effective_type})` : '#333'}
                      strokeWidth="1"
                      markerEnd="url(#reportArrowhead)"
                    />
@@ -101,6 +143,50 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
             )}
           </React.Fragment>
         ))}
+
+        {/* Last row: Final cohort size */}
+        {rows.length > 0 && (
+          <React.Fragment key="last-row">
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'flex-start',
+              paddingLeft: '140px',
+              height: '40px', 
+              alignItems: 'center',
+              position: 'relative'
+            }}>
+              <svg width="20" height="40" style={{overflow:'visible'}}>
+                <line 
+                  x1="10" 
+                  y1="0" 
+                  x2="10" 
+                  y2="35" 
+                  stroke="#555" 
+                  strokeWidth="1"
+                  markerEnd="url(#reportArrowhead)"
+                />
+              </svg>
+            </div>
+            <div>
+              <CohortDefinitionReportPhenotypeRow
+                row={{ name: 'Final Cohort Size', count: rows[rows.length - 1]?.count, effective_type: 'cohort', hierarchical_index: 0 }}
+                index={rows.length}
+                isSelected={false}
+                isDragging={false}
+                isDragOver={false}
+                isViewportDragging={false}
+                onDragStart={() => {}}
+                onDragOver={() => {}}
+                onDrop={async () => {}}
+                onClick={() => {}}
+                onExpandClick={() => {}}
+                alignment="left"
+                centerLineMarginLeft="50%"
+                hideExclusion={true}
+              />
+            </div>
+          </React.Fragment>
+        )}
       </div>
     </div>
   );
