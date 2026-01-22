@@ -75,23 +75,26 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
 
   return (
     <div className={styles.rowContainer} style={containerStyle}>
-      <div 
-        ref={boxRef}
-        className={`${styles.phenotypeBox} ${isSelected ? styles.selected : ''}`}
-        style={positionStyle}
-        onClick={(e) => onClick(e, row, index)}
-        draggable={false} // Disable drag for report items usually
-      >
-        <div className={styles.boxContent}>
-            <div className={styles.phenotypeName}>
-                {row.name || 'Unnamed Phenotype'}
-                {row.count !== undefined && <span style={{fontWeight: 'normal'}}> (n={row.count})</span>}
-            </div>
-            {row.description && (
-            <div className={styles.phenotypeDescription}>
-                {row.description}
-            </div>
-            )}
+      {/* Wrapper to center the box on the 150px line */}
+      <div className={styles.leftWrapper}>
+        <div 
+          ref={boxRef}
+          className={`${styles.phenotypeBox} ${isSelected ? styles.selected : ''}`}
+          style={positionStyle}
+          onClick={(e) => onClick(e, row, index)}
+          draggable={false} // Disable drag for report items usually
+        >
+          <div className={styles.boxContent}>
+              <div className={styles.phenotypeName}>
+                  {row.name || 'Unnamed Phenotype'}
+                  {row.count !== undefined && <span style={{fontWeight: 'normal'}}> (n={row.count})</span>}
+              </div>
+              {row.description && (
+              <div className={styles.phenotypeDescription}>
+                  {row.description}
+              </div>
+              )}
+          </div>
         </div>
       </div>
       
@@ -100,9 +103,9 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
          <svg width="100%" height="100%" style={{overflow: 'visible'}}>
              <line 
                 x1="0" 
-                y1="0%" 
+                y1="50%" 
                 x2="100%" 
-                y2="0%" 
+                y2="50%" 
                 stroke="#555" 
                 strokeWidth="1"
                 markerEnd="url(#reportArrowhead)"

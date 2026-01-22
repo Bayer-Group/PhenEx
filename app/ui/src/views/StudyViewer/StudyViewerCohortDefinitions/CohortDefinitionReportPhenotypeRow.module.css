@@ -4,7 +4,18 @@
   padding: 0px 0;
   display: flex;
   flex-direction: row; /* Horizontal layout */
-  align-items: flex-start; /* Vertically align items to top, don't stretch */
+  align-items: center; /* Center Vertically so arrow aligns */
+  justify-content: flex-start;
+}
+
+/* Wrapper to hold the phenotype box centered around the 150px mark */
+.leftWrapper {
+  width: 300px;
+  display: flex;
+  justify-content: center; /* Center the box within this 300px area */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2; /* Ensure box stays on top of arrow */
 }
 
 .boxContent{}
@@ -14,10 +25,10 @@
   background: white;
   border: 1px solid var(--border-color, #333);
   padding: 8px 12px;
-  min-width: 300px;
-  max-width: 300px; /* Cap width so arrow has space */
+  min-width: 100px;
+  max-width: 300px; 
   width: fit-content;
-  z-index: 2;
+  z-index: 100;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
@@ -25,31 +36,29 @@
   text-align: left;
   box-sizing: border-box;
   border-radius: 8px;
-  /* Remove absolute positioning logic properties if any */
   margin-left: 0; 
 }
 
 /*... existing ...*/
 
 .horizontalArrow {
-    position: relative; /* Sit in flow */
-    flex-grow: 1;       /* Take up remaining space */
+    position: absolute; /* Take out of flow to sit behind box */
+    left: 150px; /* Start at the center line */
+    right: 90px; /* Connect to excluded box sitting at the very right */
+    top: 50%; 
     height: 10px;
-    margin: 10px 5px 0 0;     /* Spacing around arrow */
-    z-index: 1;
+    margin-top: -5px; /* offset half height */
+    z-index: 0; /* Behind box (wrapper is z-index 2) */
     overflow: visible;
     pointer-events: none;
-    /* Reset absolute positioning */
-    top: auto; left: auto; right: auto; transform: none; 
 }
 
 .excludedBox {
+    margin-left: auto; /* Push to right */
     position: relative; /* Sit in flow */
     width: 80px;
-    margin-top: 5px;
+    /* margin-top: 5px; REMOVED margin top to align better */
     height: fit-content;
-    /* height:40px; */
-    /* ... rest of styles ... */
     background: #fcfcfc;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -63,8 +72,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    /* line-height: 1.3; */
-
 }
 
 /* We still want to support selection visual if needed, though usually reports are read-only */

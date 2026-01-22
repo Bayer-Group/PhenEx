@@ -80,7 +80,7 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'flex-start',
-                paddingLeft: '60px', /* Approximate center of the left-aligned boxes */
+                paddingLeft: '140px', /* Centered at 150px, -10px for half arrow width */
                 height: '40px', 
                 alignItems: 'center',
                 position: 'relative'
