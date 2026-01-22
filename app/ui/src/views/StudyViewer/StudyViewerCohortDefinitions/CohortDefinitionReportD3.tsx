@@ -67,6 +67,7 @@ interface CohortDefinitionReportD3Props {
   rows: any[];
   cohortId: string;
   onRowClick?: (row: any, index: number) => void;
+  onExpandClick?: (row: any, index: number) => void;
 }
 
 export interface CohortDefinitionReportD3Ref {
@@ -79,6 +80,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     rows,
     cohortId,
     onRowClick,
+    onExpandClick,
   },
   ref
 ) => {
@@ -455,9 +457,28 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         .attr('stroke', textColor)
         .attr('stroke-width', 1)
         .style('cursor', d.isSynthetic ? 'default' : 'pointer')
+        .on('mouseenter', function() {
+          if (!d.isSynthetic) {
+            d3.select(this)
+              .attr('stroke', 'var(--color_accent_blue)')
+              .attr('stroke-width', 3);
+          }
+        })
+        .on('mouseleave', function() {
+          if (!d.isSynthetic) {
+            d3.select(this)
+              .attr('stroke', textColor)
+              .attr('stroke-width', 1);
+          }
+        })
         .on('click', () => {
-          if (!d.isSynthetic && onRowClick) {
-            onRowClick(d, i - 1); // Adjust index for synthetic first row
+          if (!d.isSynthetic) {
+            if (onRowClick) {
+              onRowClick(d, i - 1); // Adjust index for synthetic first row
+            }
+            if (onExpandClick) {
+              onExpandClick(d, i - 1);
+            }
           }
         });
 

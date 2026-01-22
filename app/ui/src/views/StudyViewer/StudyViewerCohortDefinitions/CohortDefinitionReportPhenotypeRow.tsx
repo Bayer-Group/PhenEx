@@ -90,7 +90,12 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
           ref={boxRef}
           className={`${styles.phenotypeBox} ${isSelected ? styles.selected : ''}`}
           style={{ borderColor: textColorVar }}
-          onClick={(e) => onClick(e, row, index)}
+          onClick={(e) => {
+            onClick(e, row, index);
+            if (onExpandClick) {
+              onExpandClick(row, index);
+            }
+          }}
           draggable={false}
         >
           <div className={styles.phenotypeBoxColorLayer} style={{ backgroundColor: backgroundColor || 'white' , color: textColorVar || 'black' , borderColor: borderColorVar || `var(--line-color, '#333')`}}>
