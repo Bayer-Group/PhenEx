@@ -1,5 +1,6 @@
 .rowContainer {
   position: relative;
+  z-index: 0; /* Create stacking context */
   width: 100%;
   padding: 0px 0;
   display: flex;
@@ -15,14 +16,16 @@
   justify-content: center; /* Center the box within this 300px area */
   flex-shrink: 0;
   position: relative;
-  z-index: 2; /* Ensure box stays on top of arrow */
+  z-index: 100; /* Ensure box stays on top of arrow */
 }
 
-.boxContent{}
+.boxContent{
+    z-index: 100;
+}
 
 .phenotypeBox {
   position: relative;
-  background: white;
+  /* Background color applied via inline style from getHierarchicalBackgroundColor */
   border: 1px solid var(--border-color, #333);
   padding: 8px 12px;
   min-width: 100px;
@@ -36,19 +39,32 @@
   text-align: left;
   box-sizing: border-box;
   border-radius: 8px;
-  margin-left: 0; 
+  margin-left: 0;
+}
+
+/* Opaque white background layer behind the semi-transparent color to hide arrow */
+.phenotypeBox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white; 
+  border-radius: 8px;
+  z-index: -2; /* Behind the box itself but still blocks arrow due to parent z-index:100 */
 }
 
 /*... existing ...*/
 
 .horizontalArrow {
-    position: absolute; /* Take out of flow to sit behind box */
-    left: 150px; /* Start at the center line */
-    right: 90px; /* Connect to excluded box sitting at the very right */
-    top: 50%; 
+    position: absolute; /* Take out of flow */
+    left: 0px; /* Start at the end of leftWrapper (which is 300px wide) */
+    right: 0px; /* Connect to excluded box sitting at the very right */
+    top: 20px; 
     height: 10px;
     margin-top: -5px; /* offset half height */
-    z-index: 0; /* Behind box (wrapper is z-index 2) */
+    z-index: 1; /* Lower than leftWrapper's z-index */
     overflow: visible;
     pointer-events: none;
 }

@@ -75,6 +75,8 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
 
   return (
     <div className={styles.rowContainer} style={containerStyle}>
+ 
+
       {/* Wrapper to center the box on the 150px line */}
       <div className={styles.leftWrapper}>
         <div 
@@ -96,13 +98,11 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
               )}
           </div>
         </div>
-      </div>
-      
-      {/* Horizontal Arrow */}
+                {/* Horizontal Arrow - placed BEFORE leftWrapper in DOM so it renders behind */}
       <div className={styles.horizontalArrow}>
-         <svg width="100%" height="100%" style={{overflow: 'visible'}}>
+         <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1}}>
              <line 
-                x1="0" 
+                x1="50%" 
                 y1="50%" 
                 x2="100%" 
                 y2="50%" 
@@ -112,6 +112,8 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
              />
          </svg>
       </div>
+      </div>
+
 
       {/* Excluded Box */}
       <div className={styles.excludedBox}>
