@@ -1,6 +1,67 @@
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as d3 from 'd3';
-import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+import { getHierarchicalBackgroundColor, getAlphaForLevel } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+
+// D3-specific helper to compute actual RGBA colors from CSS variables
+const getD3HierarchicalBackgroundColor = (
+  effectiveType: string | undefined,
+  hierarchicalIndex: string | undefined
+): string => {
+  if (!effectiveType) return 'transparent';
+  
+  // Get the alpha percentage (hex string like '25', '15', etc)
+  const alphaHex = getAlphaForLevel(hierarchicalIndex);
+  const alphaPercent = parseInt(alphaHex, 16) / 255 * 100;
+  
+  // Get the actual color value from CSS variable
+  const cssVarName = `--color_${effectiveType}`;
+  const computedColor = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+  
+  if (!computedColor) return 'transparent';
+  
+  // Parse RGB from computed color (handles rgb(), rgba(), hex, etc)
+  const tempDiv = document.createElement('div');
+  tempDiv.style.color = computedColor;
+  document.body.appendChild(tempDiv);
+  const rgbColor = getComputedStyle(tempDiv).color;
+  document.body.removeChild(tempDiv);
+  
+  // Extract RGB values from rgb(r, g, b) format
+  const match = rgbColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!match) return 'transparent';
+  
+  const [_, r, g, b] = match;
+  const alpha = alphaPercent / 100;
+  
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// Helper to get computed color from CSS variable
+const getComputedColorFromVar = (varName: string, fallback: string = '#333'): string => {
+  const cssVarName = varName.replace('var(', '').replace(')', '').trim();
+  const computedValue = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+  return computedValue || fallback;
+};
+
+// D3-specific helper to get text color (full color, no alpha adjustment)
+const getD3HierarchicalTextColor = (effectiveType: string | undefined): string => {
+  if (!effectiveType) return '#333';
+  
+  // Get the actual color value from CSS variable
+  const cssVarName = `--color_${effectiveType}`;
+  const computedColor = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+  
+  if (!computedColor) return '#333';
+  
+  // Parse to RGB format
+  const tempDiv = document.createElement('div');
+  tempDiv.style.color = computedColor;
+  document.body.appendChild(tempDiv);
+  const rgbColor = getComputedStyle(tempDiv).color;
+  document.body.removeChild(tempDiv);
+  
+  return rgbColor; // Returns rgb(r, g, b) format
+};
 
 interface CohortDefinitionReportD3Props {
   rows: any[];
@@ -188,22 +249,20 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     // Helper function to compute actual CSS color values
     const getComputedColor = (varName: string, fallback: string = '#333'): string => {
       if (!varName.startsWith('var(')) return varName;
-      const cssVarName = varName.slice(4, -1).trim();
-      const computedValue = getComputedStyle(document.documentElement).getPropertyValue(cssVarName);
-      return computedValue || fallback;
+      return getComputedColorFromVar(varName, fallback);
     };
 
     // Draw phenotype boxes
     rowGroups.each(function(d: any, i) {
       const group = d3.select(this);
       
-      const backgroundColor = getHierarchicalBackgroundColor(d.effective_type, d.hierarchical_index);
+      // Use D3-specific functions that return actual RGB/RGBA colors
+      const backgroundColor = getD3HierarchicalBackgroundColor(d.effective_type, d.hierarchical_index);
+      const textColor = getD3HierarchicalTextColor(d.effective_type);
       const borderColorVar = d.effective_type ? `var(--color_${d.effective_type}_dim)` : '#333';
-      const textColorVar = d.effective_type ? `var(--color_${d.effective_type})` : '#333';
       
-      // Compute actual colors from CSS variables
+      // Compute border color from CSS variable
       const borderColor = getComputedColor(borderColorVar, '#333');
-      const textColor = getComputedColor(textColorVar, '#333');
 
       // Compute box width based on content (simplified - could be more sophisticated)
       const nameLength = (d.name || 'Unnamed').length;
@@ -236,8 +295,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         .attr('height', 60)
         .attr('rx', 8)
         .attr('ry', 8)
-        .attr('fill', backgroundColor || 'white')
-        .attr('fill-opacity', 0.6)
+        .attr('fill', backgroundColor || 'transparent')
         .style('pointer-events', 'none');
 
       // Text content using foreignObject for better formatting
@@ -302,8 +360,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
           .attr('height', 40)
           .attr('rx', 4)
           .attr('ry', 4)
-          .attr('fill', backgroundColor || 'white')
-          .attr('fill-opacity', 0.3)
+          .attr('fill', backgroundColor || 'transparent')
           .attr('stroke', borderColor)
           .attr('stroke-width', 1);
 

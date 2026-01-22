@@ -128,26 +128,82 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
       console.log(`Found ${svgElements.length} cohort flowcharts to export`);
 
-      // Export each SVG as SVG file - colors are already computed!
+      // Ask user which format
+      const format = confirm('Export as PNG? (Click OK for PNG, Cancel for SVG)') ? 'png' : 'svg';
+
+      // Export each flowchart
       for (let i = 0; i < svgElements.length; i++) {
         const svgElement = svgElements[i] as SVGSVGElement;
         const cohortId = svgElement.getAttribute('data-cohort-flowchart') || `cohort_${i}`;
         const cohortName = svgElement.getAttribute('data-cohort-name') || `Cohort ${i + 1}`;
-        
-        // Serialize SVG directly - no need to resolve CSS variables, they're already computed!
-        const svgData = new XMLSerializer().serializeToString(svgElement);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-        
-        // Download SVG file
-        const link = document.createElement('a');
         const studyName = studyDataService.study_name || 'study';
         const timestamp = new Date().toISOString().split('T')[0];
         const sanitizedCohortName = cohortName.replace(/[^a-z0-9]/gi, '_');
-        link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.svg`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
+        
+        if (format === 'svg') {
+          // Export SVG directly
+          const svgData = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          
+          const link = document.createElement('a');
+          link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.svg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        } else {
+          // Export as PNG - use data URL to avoid CORS issues
+          await new Promise<void>((resolve) => {
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              console.error('Could not get canvas context');
+              resolve();
+              return;
+            }
+            
+            const img = new Image();
+            // Use data URL instead of blob URL to avoid cross-origin issues
+            const encodedSvg = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            
+            img.onload = () => {
+              try {
+                canvas.width = img.width * 2; // 2x resolution
+                canvas.height = img.height * 2;
+                ctx.scale(2, 2);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const pngUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.png`;
+                    link.href = pngUrl;
+                    link.click();
+                    URL.revokeObjectURL(pngUrl);
+                  }
+                  resolve();
+                }, 'image/png');
+              } catch (error) {
+                console.error('PNG export failed (likely due to foreignObject/HTML content):', error);
+                alert('PNG export failed. The SVG contains HTML elements that cannot be converted to PNG.\n\nPlease use SVG export instead.');
+                resolve();
+              }
+            };
+            
+            img.onerror = (error) => {
+              console.error('Failed to load SVG for PNG conversion:', error);
+              alert('Failed to load SVG image for PNG conversion');
+              resolve();
+            };
+            
+            img.src = encodedSvg;
+          });
+        }
         
         // Small delay between downloads
         if (i < svgElements.length - 1) {
@@ -155,7 +211,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
         }
       }
       
-      console.log(`Exported ${svgElements.length} cohort flowcharts as SVG`);
+      console.log(`Exported ${svgElements.length} cohort flowcharts as ${format.toUpperCase()}`);
     };
 
     // Initial load
