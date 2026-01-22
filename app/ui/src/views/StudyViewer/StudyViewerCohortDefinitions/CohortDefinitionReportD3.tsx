@@ -148,13 +148,17 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     // Clear previous render
     d3.select(svgRef.current).selectAll('*').remove();
 
-    // Constants
+    // Constants - sized to fit within 500px container
     const LEFT_WRAPPER_WIDTH = 240;
     const BOX_CENTER_X = LEFT_WRAPPER_WIDTH / 2;
+    const BOX_MAX_WIDTH = 230; // Max box width with padding
+    const BOX_MIN_WIDTH = 100;
     const ROW_HEIGHT = 80;
     const ARROW_HEIGHT = 40;
     const EXCLUDED_BOX_WIDTH = 80;
     const EXCLUDED_BOX_OFFSET = 260;
+    const SVG_PADDING = 20;
+    const TOTAL_MAX_WIDTH = 480; // Fit within 500px container
     
     // Prepare data: synthetic first row + actual rows + synthetic last row
     const allRows = [
@@ -209,17 +213,20 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
 
     // Pre-calculate box heights for each row
     const boxHeights = allRows.map(row => {
+      // Calculate width based on MAX of title and description
       const nameLength = (row.name || 'Unnamed').length;
-      const boxWidth = Math.min(Math.max(nameLength * 8, 100), 300);
+      const descLength = (row.description && !row.isSynthetic) ? row.description.length : 0;
+      const maxContentLength = Math.max(nameLength, descLength);
+      const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
       const maxTextWidth = boxWidth - 16;
       
       let height = 60;
-      if (row.description && !row.isSynthetic) {
-        const descLines = calculateWrappedLines(row.description, maxTextWidth);
-        if (descLines > 0) {
-          height = 60 + (descLines - 1) * 14;
-        }
-      }
+      const titleLines = calculateWrappedLines(row.name || 'Unnamed', maxTextWidth);
+      const descLines = (row.description && !row.isSynthetic) ? calculateWrappedLines(row.description, maxTextWidth) : 0;
+      
+      // Base height + title extra lines + description lines
+      height = 50 + Math.max(0, titleLines - 1) * 16 + (descLines > 0 ? descLines * 14 + 4 : 0);
+      
       return height;
     });
 
@@ -230,8 +237,8 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     }
 
     // Calculate total height
-    const totalHeight = cumulativeY[cumulativeY.length - 1] + boxHeights[boxHeights.length - 1] + 40;
-    const totalWidth = LEFT_WRAPPER_WIDTH + EXCLUDED_BOX_OFFSET + EXCLUDED_BOX_WIDTH + 40;
+    const totalHeight = cumulativeY[cumulativeY.length - 1] + boxHeights[boxHeights.length - 1] + (SVG_PADDING * 2);
+    const totalWidth = TOTAL_MAX_WIDTH;
 
     const svg = d3.select(svgRef.current)
       .attr('width', totalWidth)
@@ -260,7 +267,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
 
     // Create main group
     const mainGroup = svg.append('g')
-      .attr('transform', 'translate(20, 20)');
+      .attr('transform', `translate(${SVG_PADDING}, ${SVG_PADDING})`);
 
     // Draw vertical arrows
     const verticalArrows = mainGroup.selectAll('.vertical-arrow')
@@ -270,9 +277,11 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       .attr('class', 'vertical-arrow')
       .attr('transform', (d, i) => {
         const y = cumulativeY[i] + boxHeights[i];
-        // Calculate box center based on actual box width
+        // Calculate box center based on actual box width (max of title and description)
         const nameLength = (d.name || 'Unnamed').length;
-        const boxWidth = Math.min(Math.max(nameLength * 8, 100), 300);
+        const descLength = (d.description && !d.isSynthetic) ? d.description.length : 0;
+        const maxContentLength = Math.max(nameLength, descLength);
+        const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
         const boxX = BOX_CENTER_X - boxWidth / 2;
         const boxCenterX = boxX + boxWidth / 2;
         return `translate(${boxCenterX - 10}, ${y})`;
@@ -320,13 +329,13 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       // Compute border color from CSS variable
       const borderColor = getComputedColor(borderColorVar, '#333');
 
-      // Compute box width based on content
+      // Compute box width based on MAX of title and description content
       const nameLength = (d.name || 'Unnamed').length;
-      const boxWidth = Math.min(Math.max(nameLength * 8, 100), 300);
+      const descLength = (d.description && !d.isSynthetic) ? d.description.length : 0;
+      const maxContentLength = Math.max(nameLength, descLength);
+      const boxWidth = Math.min(Math.max(maxContentLength * 6, BOX_MIN_WIDTH), BOX_MAX_WIDTH);
       const boxX = BOX_CENTER_X - boxWidth / 2;
       
-      // Calculate box height based on content
-      let boxHeight = 60;
       const maxTextWidth = boxWidth - 16; // 8px padding on each side
       
       // Helper to wrap text and calculate required lines
@@ -339,6 +348,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         // Create temporary text element to measure
         const tempText = group.append('text')
           .style('font-size', `${fontSize}px`)
+          .style('font-weight', fontSize === 14 ? '500' : 'normal')
           .style('visibility', 'hidden');
         
         for (const word of words) {
@@ -359,15 +369,14 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         return lines;
       };
       
-      // Calculate wrapped description lines if exists
+      // Calculate wrapped lines for both title and description
+      const titleLines = wrapText(d.name || 'Unnamed Phenotype', maxTextWidth, 14);
       const descriptionLines = d.description && !d.isSynthetic 
         ? wrapText(d.description, maxTextWidth, 12)
         : [];
       
-      // Adjust box height for description
-      if (descriptionLines.length > 0) {
-        boxHeight = 60 + (descriptionLines.length - 1) * 14; // 14px per extra line
-      }
+      // Calculate box height
+      const boxHeight = 50 + Math.max(0, titleLines.length - 1) * 16 + (descriptionLines.length > 0 ? descriptionLines.length * 14 + 4 : 0);
 
       // White background box
       const boxGroup = group.append('g')
@@ -406,17 +415,23 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       let currentY = 16;
       const leftPadding = 8;
 
-      // Name (left-aligned)
-      textGroup.append('text')
+      // Name (left-aligned, with wrapping)
+      const titleText = textGroup.append('text')
         .attr('x', leftPadding)
         .attr('y', currentY)
         .attr('text-anchor', 'start')
         .attr('fill', textColor)
         .style('font-size', '14px')
-        .style('font-weight', '500')
-        .text(d.name || 'Unnamed Phenotype');
+        .style('font-weight', '500');
+      
+      titleLines.forEach((line, idx) => {
+        titleText.append('tspan')
+          .attr('x', leftPadding)
+          .attr('dy', idx === 0 ? 0 : 16)
+          .text(line);
+      });
 
-      currentY += descriptionLines.length > 0 ? 16 : 20;
+      currentY += titleLines.length * 16 + (descriptionLines.length > 0 ? 4 : 8);
 
       // Description (if exists) - with wrapping (left-aligned)
       if (descriptionLines.length > 0) {
@@ -512,8 +527,8 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
   }, [rows, cohortId, onRowClick]);
 
   return (
-    <div style={{ width: '100%', overflow: 'auto', padding: '20px' }}>
-      <svg ref={svgRef} style={{ display: 'block' }} />
+    <div style={{ width: '100%', maxWidth: '500px', overflow: 'hidden' }}>
+      <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%' }} />
     </div>
   );
 });

@@ -316,7 +316,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
         lastZoomTime.current = Date.now();
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
-        const newScale = Math.max(0.3, Math.min(1, current.scale * (1 + delta)));
+        const newScale = Math.max(0.3, Math.min(1.5, current.scale * (1 + delta)));
         const pointX = (centerX - current.x) / current.scale;
         const pointY = (centerY - current.y) / current.scale;
         const newX = centerX - pointX * newScale;
