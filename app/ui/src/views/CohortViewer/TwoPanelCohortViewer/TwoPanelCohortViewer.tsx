@@ -301,7 +301,13 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   };
 
   const handleMenuClick = (viewType: string) => {
-    service.displayExtraContent(viewType, null);
+    if (viewType === 'export' && contentMode === 'study') {
+      // Trigger export for study view
+      const studyService = StudyDataService.getInstance();
+      studyService.exportStudyCallback?.();
+    } else {
+      service.displayExtraContent(viewType, null);
+    }
   };
 
   const handleDelete = async () => {

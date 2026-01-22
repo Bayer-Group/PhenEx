@@ -115,6 +115,49 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
       setCohortDefinitions(definitions);
     };
 
+    // Set up export callback
+    studyDataService.exportStudyCallback = async () => {
+      // Find all D3 flowchart SVG elements
+      const svgElements = document.querySelectorAll('svg[data-cohort-flowchart]');
+      
+      if (svgElements.length === 0) {
+        console.warn('No cohort flowchart SVG elements found to export');
+        alert('Please switch to Report view to export flowcharts');
+        return;
+      }
+
+      console.log(`Found ${svgElements.length} cohort flowcharts to export`);
+
+      // Export each SVG as SVG file - colors are already computed!
+      for (let i = 0; i < svgElements.length; i++) {
+        const svgElement = svgElements[i] as SVGSVGElement;
+        const cohortId = svgElement.getAttribute('data-cohort-flowchart') || `cohort_${i}`;
+        const cohortName = svgElement.getAttribute('data-cohort-name') || `Cohort ${i + 1}`;
+        
+        // Serialize SVG directly - no need to resolve CSS variables, they're already computed!
+        const svgData = new XMLSerializer().serializeToString(svgElement);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        // Download SVG file
+        const link = document.createElement('a');
+        const studyName = studyDataService.study_name || 'study';
+        const timestamp = new Date().toISOString().split('T')[0];
+        const sanitizedCohortName = cohortName.replace(/[^a-z0-9]/gi, '_');
+        link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.svg`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        // Small delay between downloads
+        if (i < svgElements.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      console.log(`Exported ${svgElements.length} cohort flowcharts as SVG`);
+    };
+
     // Initial load
     updateCohortDefinitions();
 

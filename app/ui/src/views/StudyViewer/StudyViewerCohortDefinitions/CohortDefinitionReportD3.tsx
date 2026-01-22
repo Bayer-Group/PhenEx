@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as d3 from 'd3';
 import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 
@@ -8,12 +8,78 @@ interface CohortDefinitionReportD3Props {
   onRowClick?: (row: any, index: number) => void;
 }
 
-export const CohortDefinitionReportD3: React.FC<CohortDefinitionReportD3Props> = ({
-  rows,
-  cohortId,
-  onRowClick,
-}) => {
+export interface CohortDefinitionReportD3Ref {
+  exportToSVG: () => void;
+  exportToPNG: () => Promise<void>;
+}
+
+export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, CohortDefinitionReportD3Props>((
+  {
+    rows,
+    cohortId,
+    onRowClick,
+  },
+  ref
+) => {
   const svgRef = useRef<SVGSVGElement>(null);
+
+  const exportToSVG = () => {
+    if (!svgRef.current) return;
+    
+    const svgElement = svgRef.current;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const link = document.createElement('a');
+    link.download = `cohort_${cohortId}_flowchart.svg`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToPNG = async () => {
+    if (!svgRef.current) return;
+    
+    const svgElement = svgRef.current;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    
+    return new Promise<void>((resolve) => {
+      img.onload = () => {
+        canvas.width = img.width * 2; // 2x resolution
+        canvas.height = img.height * 2;
+        ctx.scale(2, 2);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `cohort_${cohortId}_flowchart.png`;
+            link.href = pngUrl;
+            link.click();
+            URL.revokeObjectURL(pngUrl);
+          }
+          URL.revokeObjectURL(url);
+          resolve();
+        }, 'image/png');
+      };
+      img.src = url;
+    });
+  };
+
+  useImperativeHandle(ref, () => ({
+    exportToSVG,
+    exportToPNG,
+  }));
 
   useEffect(() => {
     if (!svgRef.current || !rows || rows.length === 0) return;
@@ -57,7 +123,9 @@ export const CohortDefinitionReportD3: React.FC<CohortDefinitionReportD3Props> =
     const svg = d3.select(svgRef.current)
       .attr('width', totalWidth)
       .attr('height', totalHeight)
-      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`);
+      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
+      .attr('data-cohort-flowchart', cohortId)
+      .attr('data-cohort-name', allRows[1]?.name || 'Cohort'); // Store cohort name for filename
 
     // Define arrow marker
     svg.append('defs')
@@ -99,7 +167,9 @@ export const CohortDefinitionReportD3: React.FC<CohortDefinitionReportD3Props> =
       .attr('y2', 35)
       .attr('stroke', (d: any) => {
         if (d.isSynthetic) return '#555';
-        return d.effective_type ? `var(--color_${d.effective_type})` : '#555';
+        const colorVar = d.effective_type ? `var(--color_${d.effective_type})` : '#555';
+        const computed = getComputedStyle(document.documentElement).getPropertyValue(`--color_${d.effective_type}`);
+        return computed || '#555';
       })
       .attr('stroke-width', 1)
       .attr('marker-end', 'url(#reportArrowhead)');
@@ -115,13 +185,25 @@ export const CohortDefinitionReportD3: React.FC<CohortDefinitionReportD3Props> =
         return `translate(0, ${y})`;
       });
 
+    // Helper function to compute actual CSS color values
+    const getComputedColor = (varName: string, fallback: string = '#333'): string => {
+      if (!varName.startsWith('var(')) return varName;
+      const cssVarName = varName.slice(4, -1).trim();
+      const computedValue = getComputedStyle(document.documentElement).getPropertyValue(cssVarName);
+      return computedValue || fallback;
+    };
+
     // Draw phenotype boxes
     rowGroups.each(function(d: any, i) {
       const group = d3.select(this);
       
       const backgroundColor = getHierarchicalBackgroundColor(d.effective_type, d.hierarchical_index);
-      const borderColor = d.effective_type ? `var(--color_${d.effective_type}_dim)` : '#333';
-      const textColor = d.effective_type ? `var(--color_${d.effective_type})` : '#333';
+      const borderColorVar = d.effective_type ? `var(--color_${d.effective_type}_dim)` : '#333';
+      const textColorVar = d.effective_type ? `var(--color_${d.effective_type})` : '#333';
+      
+      // Compute actual colors from CSS variables
+      const borderColor = getComputedColor(borderColorVar, '#333');
+      const textColor = getComputedColor(textColorVar, '#333');
 
       // Compute box width based on content (simplified - could be more sophisticated)
       const nameLength = (d.name || 'Unnamed').length;
@@ -252,4 +334,6 @@ export const CohortDefinitionReportD3: React.FC<CohortDefinitionReportD3Props> =
       <svg ref={svgRef} style={{ display: 'block' }} />
     </div>
   );
-};
+});
+
+CohortDefinitionReportD3.displayName = 'CohortDefinitionReportD3';

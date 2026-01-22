@@ -22,6 +22,7 @@ export class StudyDataService {
   private _study_data: Record<string, any> = {};
   private _cohortDataService: CohortDataService | null = null;
   private _cohort_definitions_service: StudyViewerCohortDefinitionsDataService;
+  public exportStudyCallback: (() => Promise<void>) | null = null;
   
   private constructor() {
     this._cohort_definitions_service = new StudyViewerCohortDefinitionsDataService();
