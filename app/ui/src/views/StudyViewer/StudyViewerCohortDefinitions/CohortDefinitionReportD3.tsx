@@ -157,8 +157,8 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     const ARROW_HEIGHT = 40;
     const EXCLUDED_BOX_WIDTH = 100;
     const EXCLUDED_BOX_OFFSET = 340;
-    const SVG_PADDING = 10;
-    const TOTAL_MAX_WIDTH = 460; // Fit within 500px container
+    const SVG_PADDING = 5; // Reduced padding for tighter layout
+    const TOTAL_MAX_WIDTH =500; // Fit within 500px container
     
     // Prepare data: synthetic first row + actual rows + synthetic last row
     const allRows = [
@@ -181,6 +181,9 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       }
     ];
 
+    // Create temporary group for all measurements (will be removed before rendering)
+    const tempMeasurementGroup = d3.select(svgRef.current).append('g').attr('class', 'temp-measurements');
+    
     // Helper to wrap text and calculate required lines (used for height calculation)
     const calculateWrappedLines = (text: string, maxWidth: number): number => {
       if (!text) return 0;
@@ -188,8 +191,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       const lines: string[] = [];
       let currentLine = '';
       
-      const tempSvg = d3.select(svgRef.current);
-      const tempText = tempSvg.append('text')
+      const tempText = tempMeasurementGroup.append('text')
         .style('font-size', '12px')
         .style('visibility', 'hidden');
       
@@ -214,10 +216,9 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     // Pre-calculate box heights for each row
     const boxHeights = allRows.map(row => {
       // Calculate width based on actual rendered text width, not character count
-      const tempSvg = d3.select(svgRef.current);
       
       // Measure title width
-      const tempTitleText = tempSvg.append('text')
+      const tempTitleText = tempMeasurementGroup.append('text')
         .style('font-size', '14px')
         .style('font-weight', '500')
         .style('visibility', 'hidden')
@@ -228,7 +229,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       // Measure description width if exists
       let descWidth = 0;
       if (row.description && !row.isSynthetic) {
-        const tempDescText = tempSvg.append('text')
+        const tempDescText = tempMeasurementGroup.append('text')
           .style('font-size', '12px')
           .style('visibility', 'hidden')
           .text(row.description);
@@ -251,22 +252,61 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       return height;
     });
 
-    // Calculate cumulative Y positions
+    // Calculate cumulative Y positions (one for each row)
     const cumulativeY: number[] = [0];
     for (let i = 0; i < allRows.length - 1; i++) {
       cumulativeY.push(cumulativeY[i] + boxHeights[i] + ARROW_HEIGHT);
     }
+    
+    // DEBUG: Log the calculations
+    console.log('=== LAYOUT DEBUG ===');
+    console.log('allRows.length:', allRows.length);
+    console.log('boxHeights:', boxHeights);
+    console.log('cumulativeY:', cumulativeY);
+    console.log('ARROW_HEIGHT:', ARROW_HEIGHT);
 
-    // Calculate total height
-    const totalHeight = cumulativeY[cumulativeY.length - 1] + boxHeights[boxHeights.length - 1] + (SVG_PADDING * 2);
+    // Calculate total height: last row Y position + last row height + padding
+    const lastRowIndex = cumulativeY.length - 1;
+    const totalHeight = cumulativeY[lastRowIndex] + boxHeights[lastRowIndex] + (SVG_PADDING * 2);
     const totalWidth = TOTAL_MAX_WIDTH;
+    
+    console.log('lastRowIndex:', lastRowIndex);
+    console.log('totalHeight:', totalHeight);
+    console.log('SVG_PADDING:', SVG_PADDING);
+    console.log('==================');
+    
+    // Remove all temporary measurement elements before rendering
+    tempMeasurementGroup.remove();
 
     const svg = d3.select(svgRef.current)
       .attr('width', totalWidth)
       .attr('height', totalHeight)
-      .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
+    //   .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`)
       .attr('data-cohort-flowchart', cohortId)
-      .attr('data-cohort-name', allRows[1]?.name || 'Cohort'); // Store cohort name for filename
+      .attr('data-cohort-name', allRows[1]?.name || 'Cohort') // Store cohort name for filename
+      .style('border', '2px solid red'); // DEBUG: SVG boundary
+    
+    // DEBUG: Add background to see SVG area
+    svg.append('rect')
+      .attr('width', totalWidth)
+      .attr('height', totalHeight)
+      .attr('fill', 'rgba(255, 255, 0, 0.1)') // Yellow tint
+      .attr('stroke', 'blue')
+      .attr('stroke-width', 1);
+    
+    // DEBUG: Mark origin (0,0)
+    svg.append('circle')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', 5)
+      .attr('fill', 'red');
+    
+    svg.append('text')
+      .attr('x', 10)
+      .attr('y', 10)
+      .attr('fill', 'red')
+      .attr('font-size', '10px')
+      .text(`SVG(0,0) - totalHeight:${totalHeight}`);
 
     // Define arrow marker
     svg.append('defs')
@@ -289,6 +329,39 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     // Create main group
     const mainGroup = svg.append('g')
       .attr('transform', `translate(${SVG_PADDING}, ${SVG_PADDING})`);
+    
+    // DEBUG: Mark main group origin
+    mainGroup.append('circle')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', 5)
+      .attr('fill', 'green');
+    
+    mainGroup.append('text')
+      .attr('x', 10)
+      .attr('y', 20)
+      .attr('fill', 'green')
+      .attr('font-size', '10px')
+      .text(`MainGroup(${SVG_PADDING},${SVG_PADDING})`);
+    
+    // DEBUG: Show cumulative Y positions
+    cumulativeY.forEach((y, idx) => {
+      mainGroup.append('line')
+        .attr('x1', 0)
+        .attr('y1', y)
+        .attr('x2', totalWidth - SVG_PADDING * 2)
+        .attr('y2', y)
+        .attr('stroke', 'rgba(255, 0, 255, 0.3)')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '2,2');
+      
+      mainGroup.append('text')
+        .attr('x', totalWidth - SVG_PADDING * 2 - 80)
+        .attr('y', y - 2)
+        .attr('fill', 'magenta')
+        .attr('font-size', '9px')
+        .text(`Row${idx} Y:${y} H:${boxHeights[idx]}`);
+    });
 
     // Draw vertical arrows
     const verticalArrows = mainGroup.selectAll('.vertical-arrow')
@@ -585,8 +658,18 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
   }, [rows, cohortId, onRowClick]);
 
   return (
-    <div style={{ width: '100%', maxWidth: '500px', overflow: 'hidden' }}>
-      <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%' }} />
+    <div style={{ 
+      width: '100%', 
+      maxWidth: '480px', 
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      justifyContent: 'flex-start',
+      margin: 0,
+      padding: 0
+    }}>
+      <svg ref={svgRef} style={{ display: 'block', maxWidth: '100%', margin: 0, padding: 0 }} />
     </div>
   );
 });
