@@ -4,7 +4,7 @@
   flex-direction: column;
   padding: 20px 0;
   min-height: 200px;
-
+  width: 100%;
 }
 
 .svgLayer {
@@ -24,8 +24,8 @@
   align-items: stretch; /* Ensure full width for children so flex rows work */
   z-index: 2;
   gap: 0px; /* Space for arrows */
-  width: calc(100% - 30px);
-  padding: 0px 20px 0px 10px;
+  width: calc(100% - 20px) !important;
+  padding: 0px 10px 0px 10px;
 }
 
 .arrow {

@@ -11,7 +11,7 @@
 
 /* Wrapper to hold the phenotype box centered around the 150px mark */
 .leftWrapper {
-  width: 300px;
+  width: 240px;
   display: flex;
   justify-content: center; /* Center the box within this 300px area */
   flex-shrink: 0;
@@ -28,7 +28,6 @@
 .phenotypeBox {
   position: relative;
   background: white; /* Opaque white to block arrow */
-  border: 1px solid var(--line-color, #333);
   padding: 0; /* Remove padding, will go on inner div */
   min-width: 100px;
   max-width: 300px; 
@@ -62,10 +61,10 @@
 .horizontalArrow {
     position: absolute; /* Take out of flow */
     left: 0px; /* Start at the end of leftWrapper (which is 300px wide) */
-    right: 0px; /* Connect to excluded box sitting at the very right */
+    right: -22px; /* Connect to excluded box sitting at the very right */
     top: 0px; 
     height: 10px;
-    margin-top: 20px; /* offset half height */
+    margin-top: 5px; /* offset half height */
     z-index: 1; /* Lower than leftWrapper's z-index */
     overflow: visible;
     pointer-events: none;
@@ -90,6 +89,8 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
+    align-self: flex-start; /* Override parent's center alignment */
+    top:7px;
 }
 
 /* We still want to support selection visual if needed, though usually reports are read-only */
@@ -99,8 +100,16 @@
 } */
 
 .phenotypeName{
-  padding: 5px 10px;
+  padding: 0px 10px;
+  margin-top:5px;
   font-size: var(--font_size_phenotypename, 14px);
+  line-height: var(--font_size_phenotypename, 14px);
+}
+
+.phenotypeDescription{
+  font-size: var(--font_size_infotext, 12px);
+  padding: 0px 10px;
+
 }
 
 .count{

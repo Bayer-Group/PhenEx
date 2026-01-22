@@ -45,8 +45,9 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
             refY="7"
             orient="auto"
             markerUnits="userSpaceOnUse"
+            stroke="currentColor"
           >
-            <polyline points="1 1, 7 7, 1 13" fill="none" stroke="#555" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <polyline points="1 1, 7 7, 1 13" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
           </marker>
         </defs>
       </svg>
@@ -74,18 +75,18 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
           <div style={{ 
             display: 'flex', 
             justifyContent: 'flex-start',
-            paddingLeft: '140px',
+            paddingLeft: '110px', /* Centered at 120px, -10px for half arrow width */
             height: '40px', 
             alignItems: 'center',
             position: 'relative'
           }}>
-            <svg width="20" height="40" style={{overflow:'visible'}}>
+            <svg width="20" height="40" style={{overflow:'visible', color: '#555'}}>
               <line 
                 x1="10" 
                 y1="0" 
                 x2="10" 
                 y2="35" 
-                stroke="#555" 
+                stroke="currentColor" 
                 strokeWidth="1"
                 markerEnd="url(#reportArrowhead)"
               />
@@ -122,19 +123,19 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'flex-start',
-                paddingLeft: '140px', /* Centered at 150px, -10px for half arrow width */
+                paddingLeft: '110px', /* Centered at 120px, -10px for half arrow width */
                 height: '40px', 
                 alignItems: 'center',
                 position: 'relative'
               }}>
                 {/* Vertical arrow */}
-                <svg width="20" height="40" style={{overflow:'visible'}}>
+                <svg width="20" height="40" style={{overflow:'visible', color: row.effective_type ? `var(--color_${row.effective_type})` : '#555'}}>
                    <line 
                      x1="10" 
                      y1="0" 
                      x2="10" 
                      y2="35" 
-                      stroke={row.effective_type ? `var(--color_${row.effective_type})` : '#333'}
+                     stroke="currentColor"
                      strokeWidth="1"
                      markerEnd="url(#reportArrowhead)"
                    />
@@ -150,18 +151,18 @@ export const CohortDefinitionReport: React.FC<CohortDefinitionReportProps> = ({
             <div style={{ 
               display: 'flex', 
               justifyContent: 'flex-start',
-              paddingLeft: '140px',
+              paddingLeft: '110px', /* Centered at 120px, -10px for half arrow width */
               height: '40px', 
               alignItems: 'center',
               position: 'relative'
             }}>
-              <svg width="20" height="40" style={{overflow:'visible'}}>
+              <svg width="20" height="40" style={{overflow:'visible', color: '#555'}}>
                 <line 
                   x1="10" 
                   y1="0" 
                   x2="10" 
                   y2="35" 
-                  stroke="#555" 
+                  stroke="currentColor" 
                   strokeWidth="1"
                   markerEnd="url(#reportArrowhead)"
                 />

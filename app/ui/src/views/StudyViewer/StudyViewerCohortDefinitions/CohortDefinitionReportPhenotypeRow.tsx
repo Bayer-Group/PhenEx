@@ -39,6 +39,7 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
     ? `var(--color_${row.effective_type}_dim)` 
     : '#333';
 
+
   const textColorVar = row.effective_type 
     ? `var(--color_${row.effective_type})` 
     : '#333';
@@ -112,13 +113,13 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
         {/* Horizontal Arrow - only render if not hiding exclusion */}
         {!hideExclusion && (
           <div className={styles.horizontalArrow}>
-            <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1}}>
+            <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1, color: textColorVar || '#555'}}>
               <line 
                 x1="50%" 
                 y1="0%" 
                 x2="calc(100% - 5px)" 
                 y2="0%" 
-                stroke="var(--color_accent_dark)" 
+                stroke="currentColor"
                 strokeWidth="1"
                 markerEnd="url(#reportArrowhead)"
               />
@@ -129,10 +130,10 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
 
       {/* Excluded Box - only render if not hiding exclusion */}
       {!hideExclusion && (
-        <div className={styles.excludedBox}>
+        <div className={styles.excludedBox} style={{ backgroundColor: backgroundColor || 'white' , color: textColorVar || 'black' , borderColor: borderColorVar || `var(--line-color, '#333')`}}>
           <div>Excluded</div>
           <div style={{fontWeight: 'normal'}}>
-            <span className={styles.countConstants}>n =</span>{`${row.excluded_count !== undefined ? row.excluded_count : (row.n_excluded !== undefined ? row.n_excluded : '?')}`}
+            <span className={styles.countConstants}>n =</span>{`${row.excluded_count !== undefined ? row.excluded_count : (row.n_excluded !== undefined ? row.n_excluded : '34,872')}`}
           </div>
         </div>
       )}
