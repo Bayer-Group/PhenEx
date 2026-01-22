@@ -100,14 +100,14 @@ export const CohortDefinitionReportPhenotypeRow: React.FC<CohortDefinitionReport
             </div>
           </div>
         </div>
-                {/* Horizontal Arrow - placed BEFORE leftWrapper in DOM so it renders behind */}
+        {/* Horizontal Arrow - placed BEFORE leftWrapper in DOM so it renders behind */}
       <div className={styles.horizontalArrow}>
          <svg width="100%" height="100%" style={{overflow: 'visible', zIndex: -1}}>
              <line 
                 x1="50%" 
-                y1="50%" 
-                x2="100%" 
-                y2="50%" 
+                y1="0%" 
+                x2="calc(100% - 5px)" 
+                y2="0%" 
                 stroke="#555" 
                 strokeWidth="1"
                 markerEnd="url(#reportArrowhead)"

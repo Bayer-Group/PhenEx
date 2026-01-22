@@ -60,9 +60,9 @@
     position: absolute; /* Take out of flow */
     left: 0px; /* Start at the end of leftWrapper (which is 300px wide) */
     right: 0px; /* Connect to excluded box sitting at the very right */
-    top: 20px; 
+    top: 0px; 
     height: 10px;
-    margin-top: -5px; /* offset half height */
+    margin-top: 10px; /* offset half height */
     z-index: 1; /* Lower than leftWrapper's z-index */
     overflow: visible;
     pointer-events: none;
