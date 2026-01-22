@@ -149,16 +149,16 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     d3.select(svgRef.current).selectAll('*').remove();
 
     // Constants - sized to fit within 500px container
-    const LEFT_WRAPPER_WIDTH = 240;
+    const LEFT_WRAPPER_WIDTH = 320;
     const BOX_CENTER_X = LEFT_WRAPPER_WIDTH / 2;
-    const BOX_MAX_WIDTH = 230; // Max box width with padding
+    const BOX_MAX_WIDTH = 310; // Max box width with padding
     const BOX_MIN_WIDTH = 100;
     const ROW_HEIGHT = 80;
     const ARROW_HEIGHT = 40;
-    const EXCLUDED_BOX_WIDTH = 80;
-    const EXCLUDED_BOX_OFFSET = 260;
-    const SVG_PADDING = 20;
-    const TOTAL_MAX_WIDTH = 480; // Fit within 500px container
+    const EXCLUDED_BOX_WIDTH = 100;
+    const EXCLUDED_BOX_OFFSET = 340;
+    const SVG_PADDING = 10;
+    const TOTAL_MAX_WIDTH = 460; // Fit within 500px container
     
     // Prepare data: synthetic first row + actual rows + synthetic last row
     const allRows = [
