@@ -469,6 +469,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 rows={rows}
                 cohortId={cohortId}
                 onRowClick={(row, index) => handleRowClick({} as React.MouseEvent, row, index)}
+                onExpandClick={handleRowEdit}
               />
             ) : rows.length > 0 ? (
               <CohortDefinition

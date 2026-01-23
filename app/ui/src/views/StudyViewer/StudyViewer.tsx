@@ -198,24 +198,24 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false}/>;
   };
 
-  const clickedOnAddNewCohort = async () => {
-    // Get the study ID from the data prop or the service
-    let studyId = studyDataService.study_data?.id;
-    if (!studyId && typeof data === 'string') {
-      studyId = data;
-    } else if (!studyId && data && typeof data === 'object') {
-      studyId = (data as any).id;
-    }
+  // const clickedOnAddNewCohort = async () => {
+  //   // Get the study ID from the data prop or the service
+  //   let studyId = studyDataService.study_data?.id;
+  //   if (!studyId && typeof data === 'string') {
+  //     studyId = data;
+  //   } else if (!studyId && data && typeof data === 'object') {
+  //     studyId = (data as any).id;
+  //   }
     
-    if (!studyId) {
-      console.error('No study ID found');
-      return;
-    }
+  //   if (!studyId) {
+  //     console.error('No study ID found');
+  //     return;
+  //   }
 
-    // Use centralized helper to ensure consistent behavior
-    const { createAndNavigateToNewCohort } = await import('../LeftPanel/studyNavigationHelpers');
-    await createAndNavigateToNewCohort(studyId, navigate);
-  };
+  //   // Use centralized helper to ensure consistent behavior
+  //   const { createAndNavigateToNewCohort } = await import('../LeftPanel/studyNavigationHelpers');
+  //   await createAndNavigateToNewCohort(studyId, navigate);
+  // };
 
 
   const renderSectionTabs = () => {

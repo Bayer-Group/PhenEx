@@ -366,7 +366,6 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     // Draw phenotype boxes
     rowGroups.each(function(d: any, i) {
       const group = d3.select(this);
-      
       // Use D3-specific functions that return actual RGB/RGBA colors
       const backgroundColor = getD3HierarchicalBackgroundColor(d.effective_type, d.hierarchical_index);
       const textColor = getD3HierarchicalTextColor(d.effective_type);
@@ -446,9 +445,11 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
       // White background box
       const boxGroup = group.append('g')
         .attr('class', 'phenotype-box')
-        .attr('transform', `translate(${boxX}, 0)`);
+        .attr('transform', `translate(${boxX}, 0)`)
+        .style('cursor', d.isSynthetic ? 'default' : 'pointer');
 
-      boxGroup.append('rect')
+      // White background box (attach click handler here)
+      const backgroundRect = boxGroup.append('rect')
         .attr('width', boxWidth)
         .attr('height', boxHeight)
         .attr('rx', 8)
@@ -457,30 +458,41 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
         .attr('stroke', textColor)
         .attr('stroke-width', 1)
         .style('cursor', d.isSynthetic ? 'default' : 'pointer')
-        .on('mouseenter', function() {
+        .on('click', function() {
+          console.log('Phenotype box clicked!', { 
+            name: d.name, 
+            isSynthetic: d.isSynthetic,
+            index: i,
+            hasOnExpandClick: !!onExpandClick,
+            hasOnRowClick: !!onRowClick
+          });
           if (!d.isSynthetic) {
-            d3.select(this)
-              .attr('stroke', 'var(--color_accent_blue)')
-              .attr('stroke-width', 3);
-          }
-        })
-        .on('mouseleave', function() {
-          if (!d.isSynthetic) {
-            d3.select(this)
-              .attr('stroke', textColor)
-              .attr('stroke-width', 1);
-          }
-        })
-        .on('click', () => {
-          if (!d.isSynthetic) {
+            // Get the original row from the rows array (i-1 because of synthetic first row)
+            const originalRow = rows[i - 1];
+            console.log('Calling handlers with original row:', originalRow);
             if (onRowClick) {
-              onRowClick(d, i - 1); // Adjust index for synthetic first row
+              onRowClick(originalRow, i - 1);
             }
             if (onExpandClick) {
-              onExpandClick(d, i - 1);
+              onExpandClick(originalRow, i - 1);
             }
           }
         });
+      
+      // Hover effects on the background rect
+      if (!d.isSynthetic) {
+        boxGroup
+          .on('mouseenter', function() {
+            backgroundRect
+              .attr('stroke', 'var(--color_accent_blue)')
+              .attr('stroke-width', 3);
+          })
+          .on('mouseleave', function() {
+            backgroundRect
+              .attr('stroke', textColor)
+              .attr('stroke-width', 1);
+          });
+      }
 
       // Colored layer
       boxGroup.append('rect')

@@ -351,7 +351,6 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
   const handleCreateFirstCohort = async () => {
     try {
       const studyId = studyDataService.study_data?.id;
-      
       if (!studyId) {
         console.error('No study ID found');
         return;
@@ -359,6 +358,10 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
       const { createAndNavigateToNewCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
       await createAndNavigateToNewCohort(studyId, navigate);
+
+      // Explicitly refresh cohort definitions in this view
+      const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
+      setCohortDefinitions(definitions);
     } catch (error) {
       console.error('Failed to create cohort:', error);
     }

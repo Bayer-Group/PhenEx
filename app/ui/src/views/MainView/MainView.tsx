@@ -148,22 +148,22 @@ export const MainView = () => {
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />
-            <NewCohortWizard
+            {/* <NewCohortWizard
               isVisible={true}
               onClose={closeNewCohortWizard}
               data={currentView.data}
-            />
+            /> */}
           </>
         );
       case ViewType.NewStudy:
         return (
           <>
             <StudyViewerWrapper data={currentView.data} />
-            <NewCohortWizard
+            {/* <NewCohortWizard
               isVisible={true}
               onClose={closeNewCohortWizard}
               data={currentView.data}
-            />
+            /> */}
           </>
         );
   
