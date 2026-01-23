@@ -48,7 +48,7 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
         }
 
         return (
-            <div className={styles.cohortCardContainer} key={cohortKey} ref={tableContainerRefs.current.get(cohortKey)}>
+            <div className={styles.cohortCardContainer} key={cohortKey} ref={tableContainerRefs.current.get(cohortKey)} data-cohort-card={cohortId}>
             <CohortCardLightWeight
                 key={cohortKey}
                 cohortDef={cohortDef}

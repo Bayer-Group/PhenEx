@@ -1,20 +1,20 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import { FC, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { StudyDataService } from './StudyDataService';
 
-import { MainViewService, ViewType } from '../MainView/MainView';
-
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
-import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
-import { TabsAndAddButton } from '../../components/PhenExNavBar/TabsAndAddButton';
-import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { ViewNavBar } from '../../components/PhenExNavBar/CohortViewNavigationBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { useFadeIn } from '../../hooks/useFadeIn';
 import { getStudy } from '../../api/text_to_cohort/route';
-import { StudyViewerCohortDefinitionsLightWeight } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsLightWeight';
+import { 
+  StudyViewerCohortDefinitionsLightWeight,
+  StudyViewerCohortDefinitionsHandle 
+} from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsLightWeight';
 
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
@@ -43,6 +43,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
   const [currentView, setCurrentView] = useState<StudyDefinitionViewType>(
     StudyDefinitionViewType.Cohort
   );
+  
+  // Navigation bar state
+  const cohortViewRef = useRef<StudyViewerCohortDefinitionsHandle>(null);
+  const [zoomPercentage, setZoomPercentage] = useState(58.3); // Default scale 1.0 maps to ~58.3%
+  const [canNavigateLeft, setCanNavigateLeft] = useState(false);
+  const [canNavigateRight, setCanNavigateRight] = useState(false);
   
   const fadeInStyle = useFadeIn();
 
@@ -198,25 +204,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false}/>;
   };
 
-  // const clickedOnAddNewCohort = async () => {
-  //   // Get the study ID from the data prop or the service
-  //   let studyId = studyDataService.study_data?.id;
-  //   if (!studyId && typeof data === 'string') {
-  //     studyId = data;
-  //   } else if (!studyId && data && typeof data === 'object') {
-  //     studyId = (data as any).id;
-  //   }
-    
-  //   if (!studyId) {
-  //     console.error('No study ID found');
-  //     return;
-  //   }
-
-  //   // Use centralized helper to ensure consistent behavior
-  //   const { createAndNavigateToNewCohort } = await import('../LeftPanel/studyNavigationHelpers');
-  //   await createAndNavigateToNewCohort(studyId, navigate);
-  // };
-
 
   const renderSectionTabs = () => {
     return (
@@ -233,24 +220,54 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     );
   };
 
-  const renderContent = () => {
-    switch (currentView) {
-      case StudyDefinitionViewType.Cohort:
-        return <StudyViewerCohortDefinitionsLightWeight studyDataService={studyDataService} />;
-      case StudyDefinitionViewType.Baseline:
-      case StudyDefinitionViewType.Outcomes:
-        return <StudyViewerCohortDefinitionsLightWeight studyDataService={studyDataService} />;
-      default:
-        return <div />;
+  // Navigation bar handlers
+  const handleZoomChange = useCallback((percentage: number) => {
+    setZoomPercentage(percentage);
+    // Update navigation state
+    if (cohortViewRef.current) {
+      setCanNavigateLeft(cohortViewRef.current.canNavigateLeft());
+      setCanNavigateRight(cohortViewRef.current.canNavigateRight());
     }
+  }, []);
+
+  const handleNavigationArrowClicked = useCallback((direction: 'left' | 'right') => {
+    cohortViewRef.current?.navigateCohort(direction);
+    // Update navigation state after navigation
+    setTimeout(() => {
+      if (cohortViewRef.current) {
+        setCanNavigateLeft(cohortViewRef.current.canNavigateLeft());
+        setCanNavigateRight(cohortViewRef.current.canNavigateRight());
+      }
+    }, 0);
+  }, []);
+
+  const handleNavigationScroll = useCallback((percentage: number) => {
+    cohortViewRef.current?.setZoomPercentage(percentage);
+  }, []);
+
+  const renderContent = () => {
+    return (
+      <StudyViewerCohortDefinitionsLightWeight 
+        ref={cohortViewRef}
+        studyDataService={studyDataService}
+        onZoomChange={handleZoomChange}
+      />
+    );
   };
 
   return (
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.bottomSection}>{renderContent()}</div>
-        <PhenExNavBar
-          onSectionTabChange={onTabChange}
+      <div className={navBarStyles.topRight}>
+        <ViewNavBar
+          height={44}
+          scrollPercentage={zoomPercentage}
+          canScrollLeft={canNavigateLeft}
+          canScrollRight={canNavigateRight}
+          onViewNavigationArrowClicked={handleNavigationArrowClicked}
+          onViewNavigationScroll={handleNavigationScroll}
         />
+      </div>
     </div>
   );
 };

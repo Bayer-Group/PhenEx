@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
@@ -7,11 +7,37 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { deleteCohort } from '@/api/text_to_cohort/route';
 import { CohortGroupView } from './CohortGroupView';
 
-interface StudyViewerCohortDefinitionsLightWeightProps {
-  studyDataService: StudyDataService;
+// Scale range constants
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 1.5;
+
+// Convert scale (0.3-1.5) to percentage (0-100)
+const scaleToPercentage = (scale: number): number => {
+  return ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100;
+};
+
+// Convert percentage (0-100) to scale (0.3-1.5)
+const percentageToScale = (percentage: number): number => {
+  return MIN_SCALE + (percentage / 100) * (MAX_SCALE - MIN_SCALE);
+};
+
+export interface StudyViewerCohortDefinitionsHandle {
+  navigateCohort: (direction: 'left' | 'right') => void;
+  setZoomPercentage: (percentage: number) => void;
+  getZoomPercentage: () => number;
+  canNavigateLeft: () => boolean;
+  canNavigateRight: () => boolean;
 }
 
-export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohortDefinitionsLightWeightProps> = ({ studyDataService }) => {
+interface StudyViewerCohortDefinitionsLightWeightProps {
+  studyDataService: StudyDataService;
+  onZoomChange?: (percentage: number) => void;
+}
+
+export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
+  StudyViewerCohortDefinitionsHandle,
+  StudyViewerCohortDefinitionsLightWeightProps
+>(({ studyDataService, onZoomChange }, ref) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
   
@@ -92,8 +118,11 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
     };
   }, []);
   
+  // Track current focused cohort index for navigation
+  const [focusedCohortIndex, setFocusedCohortIndex] = useState(0);
+
   // Helper to update transform directly on DOM
-  const applyTransform = (x: number, y: number, scale: number) => {
+  const applyTransform = useCallback((x: number, y: number, scale: number) => {
     if (transformRef.current) {
       transformRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
       // @ts-ignore
@@ -101,12 +130,91 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
     }
     currentTransform.current = { x, y, scale };
     
+    // Notify parent of zoom change
+    onZoomChange?.(scaleToPercentage(scale));
+    
     // Debounce persist to localStorage
     if (persistTimeout.current) clearTimeout(persistTimeout.current);
     persistTimeout.current = setTimeout(() => {
       setViewState({ x, y, scale });
     }, 500);
-  };
+  }, [onZoomChange]);
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    navigateCohort: (direction: 'left' | 'right') => {
+      if (!cohortDefinitionsRef.current || cohortDefinitionsRef.current.length === 0) return;
+      
+      const maxIndex = cohortDefinitionsRef.current.length - 1;
+      let newIndex = focusedCohortIndex;
+      
+      if (direction === 'left') {
+        newIndex = Math.max(0, focusedCohortIndex - 1);
+      } else {
+        newIndex = Math.min(maxIndex, focusedCohortIndex + 1);
+      }
+      
+      if (newIndex !== focusedCohortIndex) {
+        setFocusedCohortIndex(newIndex);
+        
+        // Scroll to the cohort card - find its position and center it
+        const cohortCards = document.querySelectorAll('[data-cohort-card]');
+        const targetCard = cohortCards[newIndex] as HTMLElement;
+        
+        if (targetCard && viewportRef.current) {
+          const viewportRect = viewportRef.current.getBoundingClientRect();
+          const current = currentTransform.current;
+          
+          // Calculate offset to center the card
+          const cardCenterX = (targetCard.offsetLeft + targetCard.offsetWidth / 2) * current.scale;
+          const cardCenterY = (targetCard.offsetTop + targetCard.offsetHeight / 2) * current.scale;
+          const viewportCenterX = viewportRect.width / 2;
+          const viewportCenterY = viewportRect.height / 2;
+          
+          const newX = viewportCenterX - cardCenterX;
+          const newY = viewportCenterY - cardCenterY;
+          
+          applyTransform(newX, newY, current.scale);
+        }
+      }
+    },
+    
+    setZoomPercentage: (percentage: number) => {
+      const newScale = percentageToScale(Math.max(0, Math.min(100, percentage)));
+      const current = currentTransform.current;
+      
+      // Zoom towards center of viewport
+      if (viewportRef.current) {
+        const centerX = viewportRef.current.clientWidth / 2;
+        const centerY = viewportRef.current.clientHeight / 2;
+        const pointX = (centerX - current.x) / current.scale;
+        const pointY = (centerY - current.y) / current.scale;
+        const newX = centerX - pointX * newScale;
+        const newY = centerY - pointY * newScale;
+        applyTransform(newX, newY, newScale);
+      } else {
+        applyTransform(current.x, current.y, newScale);
+      }
+    },
+    
+    getZoomPercentage: () => {
+      return scaleToPercentage(currentTransform.current.scale);
+    },
+    
+    canNavigateLeft: () => {
+      return focusedCohortIndex > 0;
+    },
+    
+    canNavigateRight: () => {
+      if (!cohortDefinitionsRef.current) return false;
+      return focusedCohortIndex < cohortDefinitionsRef.current.length - 1;
+    }
+  }), [focusedCohortIndex, applyTransform]);
+
+  // Notify parent of initial zoom state on mount
+  useEffect(() => {
+    onZoomChange?.(scaleToPercentage(viewState.scale));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Function to update cohort definitions when study data changes
@@ -516,4 +624,4 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
       )}
     </>
   );
-};
+});

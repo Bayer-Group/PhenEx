@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './PhenExNavBar.module.css';
 import { ActionNavBar } from './ActionNavBar';
-import { ViewNavBar } from './ViewNavBar';
+import { ViewNavBar } from './CohortViewNavigationBar';
 import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
 
 interface PhenExNavBarProps {
@@ -48,16 +48,6 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
           onViewNavigationScroll={onViewNavigationScroll}
           onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
         />
-      </div>
-      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
-
-      </div>
-      <div className={styles.bottomRight}>
-        {/* <ActionNavBar 
-          height={heightNavBar}
-          onHideNavBar={handleHideNavBar}
-          onShowNavBar={handleShowNavBar}
-        /> */}
       </div>
     </NavBarMenuProvider>
   );
