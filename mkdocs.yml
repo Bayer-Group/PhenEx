@@ -21,6 +21,7 @@ nav:
           - DeathPhenotype: api/phenotypes/death_phenotype.md
           - TimeRangePhenotype: api/phenotypes/time_range_phenotype.md
           - TimeRangeCountPhenotype: api/phenotypes/time_range_count_phenotype.md
+          - TimeRangeDaysToNextRange: api/phenotypes/time_range_days_to_next_range_phenotype.md
           - TimeShiftPhenotype: api/phenotypes/time_shift_phenotype.md
           - EventCountPhenotype: api/phenotypes/event_count_phenotype.md
           - WithinSameEncounterPhenotype: api/phenotypes/within_same_encounter_phenotype.md
@@ -59,6 +60,7 @@ nav:
           - Waterfall: api/reporting/waterfall.md
           - InExCounts: api/reporting/counts.md
           - TimeToEvent: api/reporting/time_to_event.md
+          - ReportDrafter: api/reporting/report_drafter.md
       - Util:
           - Pipeline Utilities: api/pipe.md
           - Serialization: api/util/serialization.md
@@ -69,6 +71,9 @@ repo_url: https://github.com/bayer-group/PhenEx
 edit_uri: edit/main/docs/
 
 plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]'
   - mkdocstrings:
       handlers:
         python:
@@ -85,6 +90,9 @@ theme:
   features:
     - content.code.copy
     - content.action.edit
+    - search.suggest
+    - search.highlight
+    - search.share
   favicon: assets/bird_icon.png
   logo: assets/bird_icon_white.png
 markdown_extensions:

@@ -22,6 +22,15 @@ class Waterfall(Reporter):
 
     """
 
+    def __init__(
+        self,
+        decimal_places: int = 1,
+        pretty_display: bool = True,
+        include_component_phenotypes_level=None,
+    ):
+        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        self.include_component_phenotypes_level = include_component_phenotypes_level
+
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
         logger.debug(f"Beginning execution of waterfall. Calculating N patents")
@@ -130,9 +139,6 @@ class Waterfall(Reporter):
             [np.nan, entry_pct] + [np.nan] * (self.df.shape[0] - 3) + [final_pct]
         )
 
-        if self.pretty_display:
-            self.create_pretty_display()
-
         # Do final column selection (keep _color if it exists for styling)
         columns_to_select = [
             "Type",
@@ -216,19 +222,45 @@ class Waterfall(Reporter):
         )
         return table.select("PERSON_ID")
 
-    def create_pretty_display(self):
-        """Format dataframe for display and apply color styling"""
-        # Add colors before any transformations
-        self._add_row_colors()
+    def get_pretty_display(self) -> pd.DataFrame:
+        """
+        Return a formatted version of the waterfall results for display.
 
-        # Format numeric columns as strings
-        self._format_numeric_columns()
+        Formatting includes:
+        - Adding row colors based on type and level
+        - Formatting numeric columns as strings with thousand separators
+        - Replacing NAs with empty strings
+        - Creating sparse type column
 
-        # Replace NAs and None values with empty strings
-        self.df = self.df.replace("<NA>", "")
+        Returns:
+            pd.DataFrame: Formatted copy of the results
+        """
+        # Create a copy to avoid modifying the original
+        pretty_df = self.df.copy()
 
-        # Create sparse type column (show type only once per section)
-        self._create_sparse_type_column()
+        # Temporarily swap self.df so helper methods work
+        original_df = self.df
+        self.df = pretty_df
+
+        try:
+            # Add colors before any transformations
+            self._add_row_colors()
+
+            # Format numeric columns as strings
+            self._format_numeric_columns()
+
+            # Replace NAs and None values with empty strings
+            self.df = self.df.replace("<NA>", "")
+
+            # Create sparse type column (show type only once per section)
+            self._create_sparse_type_column()
+
+            result = self.df
+        finally:
+            # Restore original df
+            self.df = original_df
+
+        return result
 
     def _add_row_colors(self):
         """Add HSL colors to each row based on type and level"""
@@ -289,15 +321,20 @@ class Waterfall(Reporter):
 
         return styled_df
 
-    def to_excel(self, filepath, sheet_name="Waterfall"):
+    def to_excel(self, filename: str, sheet_name: str = "Waterfall") -> str:
         """
         Export waterfall report to Excel with color styling.
         All cells are formatted as text to prevent Excel auto-formatting.
 
         Args:
-            filepath: Path to save the Excel file
+            filename: Path to the output file (relative or absolute, with or without .xlsx extension)
             sheet_name: Name of the Excel sheet (default: 'Waterfall')
+
+        Returns:
+            str: Full path to the created file
         """
+        from pathlib import Path
+
         try:
             from openpyxl import Workbook
             from openpyxl.styles import PatternFill, Font, Alignment
@@ -306,6 +343,14 @@ class Waterfall(Reporter):
             raise ImportError(
                 "openpyxl is required for Excel export. Install with: pip install openpyxl"
             )
+
+        # Convert to Path object and ensure .xlsx extension
+        filename = Path(filename)
+        if not filename.suffix == ".xlsx":
+            filename = filename.with_suffix(".xlsx")
+
+        # Create parent directories if needed
+        filename.parent.mkdir(parents=True, exist_ok=True)
 
         # Get dataframe without _color column for export
         if "_color" in self.df.columns:
@@ -372,8 +417,9 @@ class Waterfall(Reporter):
             ws.column_dimensions[column_letter].width = adjusted_width
 
         # Save workbook
-        wb.save(filepath)
-        logger.info(f"Waterfall report exported to {filepath}")
+        wb.save(str(filename))
+        logger.info(f"Waterfall report exported to {filename}")
+        return str(filename)
 
     def _hsl_to_hex(self, hsl_string):
         """Convert HSL color string to hex for Excel"""

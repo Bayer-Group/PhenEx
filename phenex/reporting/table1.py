@@ -61,9 +61,6 @@ class Table1(Reporter):
         self.df = self.df.reset_index()
         self.df.columns = ["Name"] + list(self.df.columns[1:])
 
-        if self.pretty_display:
-            self.create_pretty_display()
-
         self.df = self.df.sort_values(by=["inex_order", "Name"])
         self.df = self.df.reset_index()[
             [x for x in self.df.columns if x not in ["index", "inex_order"]]
@@ -71,7 +68,7 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        return [
+        default_boolean_phenotypes = [
             x
             for x in self.cohort.characteristics
             if type(x).__name__
@@ -79,6 +76,7 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
+                "TimeRangeDaysToNextRange",
                 "ScorePhenotype",
                 "CategoricalPhenotype",
                 "SexPhenotype",
@@ -87,9 +85,19 @@ class Table1(Reporter):
                 "BinPhenotype",
             ]
         ]
+        user_defined_value_phenotypes = [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ == "_UserDefinedPhenotype" and x.returns_value
+        ]
+        return [
+            x
+            for x in default_boolean_phenotypes
+            if x not in user_defined_value_phenotypes
+        ]
 
     def _get_value_characteristics(self):
-        return [
+        default_value_phenotypes = [
             x
             for x in self.cohort.characteristics
             if type(x).__name__
@@ -97,10 +105,18 @@ class Table1(Reporter):
                 "MeasurementPhenotype",
                 "AgePhenotype",
                 "TimeRangePhenotype",
+                "TimeRangeDaysToNextRange",
                 "ArithmeticPhenotype",
                 "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
             ]
         ]
+
+        user_defined_value_phenotypes = [
+            x
+            for x in self.cohort.characteristics
+            if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
+        ]
+        return default_value_phenotypes + user_defined_value_phenotypes
 
     def _get_categorical_characteristics(self):
         return [
@@ -218,11 +234,22 @@ class Table1(Reporter):
         df.index = names
         return df
 
-    def create_pretty_display(self):
-        # cast counts to integer and to str, so that we can display without 'NaNs'
-        self.df["N"] = self.df["N"].astype("Int64").astype(str)
+    def get_pretty_display(self) -> pd.DataFrame:
+        """
+        Return a formatted version of the Table1 results for display.
 
-        self.df = self.df.round(self.decimal_places)
+        Formats numeric columns and converts counts to strings to avoid NaN display.
+
+        Returns:
+            pd.DataFrame: Formatted copy of the results
+        """
+        # Create a copy to avoid modifying the original
+        pretty_df = self.df.copy()
+
+        # cast counts to integer and to str, so that we can display without 'NaNs'
+        pretty_df["N"] = pretty_df["N"].astype("Int64").astype(str)
+
+        pretty_df = pretty_df.round(self.decimal_places)
 
         to_prettify = [
             "%",
@@ -237,7 +264,9 @@ class Table1(Reporter):
             "Max",
         ]
         for column in to_prettify:
-            if column in self.df.columns:
-                self.df[column] = self.df[column].astype(str)
+            if column in pretty_df.columns:
+                pretty_df[column] = pretty_df[column].astype(str)
 
-        self.df = self.df.replace("<NA>", "").replace("nan", "")
+        pretty_df = pretty_df.replace("<NA>", "").replace("nan", "")
+
+        return pretty_df
