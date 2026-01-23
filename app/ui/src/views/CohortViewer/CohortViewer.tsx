@@ -10,7 +10,7 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ViewNavBar } from '../../components/PhenExNavBar/CohortViewNavigationBar';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
 import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 
 import { useFadeIn } from '../../hooks/useFadeIn';

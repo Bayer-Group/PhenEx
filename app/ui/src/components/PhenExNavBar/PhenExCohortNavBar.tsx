@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './PhenExNavBar.module.css';
 import { ActionNavBar } from './ActionNavBar';
-import { ViewNavBar } from './CohortViewNavigationBar';
+import { ViewNavBar } from './ViewNavBar';
 import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
 
 interface PhenExNavBarProps {

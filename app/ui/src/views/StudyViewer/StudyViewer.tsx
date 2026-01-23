@@ -7,7 +7,7 @@ import { StudyDataService } from './StudyDataService';
 
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
-import { ViewNavBar } from '../../components/PhenExNavBar/CohortViewNavigationBar';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
 import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { useFadeIn } from '../../hooks/useFadeIn';
 import { getStudy } from '../../api/text_to_cohort/route';
