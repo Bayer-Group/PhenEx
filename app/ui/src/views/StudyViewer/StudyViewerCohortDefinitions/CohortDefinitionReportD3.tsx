@@ -616,7 +616,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
           .text('n = ');
 
         excludedCountText.append('tspan')
-          .text(d.excluded_count !== undefined ? d.excluded_count : (d.n_excluded !== undefined ? d.n_excluded : '34,872'));
+          .text(d.excluded_count !== undefined ? d.excluded_count : (d.n_excluded !== undefined ? d.n_excluded : '?'));
       }
     });
 

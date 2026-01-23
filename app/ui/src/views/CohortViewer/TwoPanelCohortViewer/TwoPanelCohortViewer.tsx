@@ -303,6 +303,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   const handleMenuClick = (viewType: string) => {
     if (viewType === 'export' && contentMode === 'study') {
       // Trigger export for study view
+      console.log("EXPORT STUDY");
       const studyService = StudyDataService.getInstance();
       studyService.exportStudyCallback?.();
     } else {

@@ -220,9 +220,16 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
     // Listen for study data service changes
     studyDataService.addStudyDataServiceListener(updateCohortDefinitions);
 
+    // Listen for global cohort-added event
+    const handleCohortAdded = (e: Event) => {
+      updateCohortDefinitions();
+    };
+    window.addEventListener('cohort-added', handleCohortAdded);
+
     // Cleanup listener on unmount
     return () => {
       studyDataService.removeStudyDataServiceListener(updateCohortDefinitions);
+      window.removeEventListener('cohort-added', handleCohortAdded);
     };
   }, [studyDataService]);
 
