@@ -201,33 +201,28 @@ export class ConstantsDataService {
     });
   }
 
-  public valueChanged(rowData: any, newValue: any) {
-    // Find the constant in the cohort data and update it
-    const constantIndex = this.cohortDataService._cohort_data.constants.findIndex(
-      (constant: any) => constant.name === rowData.name
-    );
+  public valueChanged(rowIndex: number, field: string, newValue: any) {
+    // Use row index to directly update the constant
+    const constants = this.cohortDataService._cohort_data.constants;
     
-    if (constantIndex !== -1) {
-      // Update the specific field that changed
-      const fieldName = rowData.parameter || 'value'; // Fallback to 'value' if parameter is not set
-      if (fieldName === 'value') {
+    if (rowIndex >= 0 && rowIndex < constants.length) {
+      if (field === 'value') {
         // Try to parse JSON if it's a string, otherwise use as-is
         try {
-          this.cohortDataService._cohort_data.constants[constantIndex].value = 
-            typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+          constants[rowIndex].value = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
         } catch {
-          this.cohortDataService._cohort_data.constants[constantIndex].value = newValue;
+          constants[rowIndex].value = newValue;
         }
       } else {
-        this.cohortDataService._cohort_data.constants[constantIndex][fieldName] = newValue;
+        constants[rowIndex][field] = newValue;
       }
+      
+      this.saveChangesToConstants();
     }
-    
-    this.saveChangesToConstants();
   }
 
   public saveChangesToConstants() {
-    this.cohortDataService.saveChangesToCohort(false, false);
-    this.refreshConstants(); // Refresh to update the table data
+    this.refreshConstants(); // Update table data first
+    this.cohortDataService.saveChangesToCohort(false, true); // true to notify listeners and refresh grid
   }
 }

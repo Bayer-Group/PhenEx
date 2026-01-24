@@ -38,7 +38,9 @@ export const ConstantsTable: React.FC = () => {
 
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
-      dataService.valueChanged(event.data, event.newValue);
+      const field = event.colDef.field;
+      const rowIndex = event.rowIndex;
+      dataService.constants_service.valueChanged(rowIndex, field, event.newValue);
     }
   };
 
@@ -56,6 +58,7 @@ export const ConstantsTable: React.FC = () => {
           columnDefs={dataService.constants_service.tableData.columns}
           ref={gridRef}
           theme={dataService.constants_service.getTheme()}
+          onCellValueChanged={onCellValueChanged}
           animateRows={true}
           defaultColDef={{
             flex: 1,
