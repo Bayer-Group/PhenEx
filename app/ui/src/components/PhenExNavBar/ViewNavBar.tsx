@@ -13,6 +13,9 @@ interface ViewNavBarProps {
   onViewNavigationArrowClicked?: (direction: 'left' | 'right') => void;
   onViewNavigationScroll?: (percentage: number) => void;
   onViewNavigationVisibilityClicked?: () => void;
+  scrollbarTooltipLabel?: string; // Custom tooltip for scrollbar thumb
+  leftArrowTooltipLabel?: string; // Custom tooltip for left arrow
+  rightArrowTooltipLabel?: string; // Custom tooltip for right arrow
 }
 
 // Visibility Menu Component
@@ -78,6 +81,9 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   onViewNavigationArrowClicked,
   onViewNavigationScroll,
   onViewNavigationVisibilityClicked,
+  scrollbarTooltipLabel = "Scroll Through Parameters",
+  leftArrowTooltipLabel = "Go to Previous Parameter",
+  rightArrowTooltipLabel = "Go to Next Parameter",
 }) => {
   const scrollBarRef = useRef<HTMLDivElement>(null);
   const scrollThumbRef = useRef<HTMLDivElement>(null);
@@ -212,20 +218,20 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         isVisible={showLeftArrowTooltip && canScrollLeft}
         anchorElement={leftArrowRef.current}
         verticalPosition='above'
-        label="Go to Previous Parameter"
+        label={leftArrowTooltipLabel}
       />
       
       <PhenExNavBarTooltip
         isVisible={showRightArrowTooltip && canScrollRight}
         anchorElement={rightArrowRef.current}
-        label="Go to Next Parameter"
+        label={rightArrowTooltipLabel}
         verticalPosition='above'
       />
       
       <PhenExNavBarTooltip
         isVisible={showThumbTooltip}
         anchorElement={scrollThumbRef.current}
-        label="Scroll Through Parameters"
+        label={scrollbarTooltipLabel}
         verticalPosition='above'
       />
       

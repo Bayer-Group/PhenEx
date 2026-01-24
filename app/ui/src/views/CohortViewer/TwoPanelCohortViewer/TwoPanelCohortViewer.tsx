@@ -374,7 +374,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
             mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
             onSectionTabChange={handleTabChange} 
             onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
-            shadow={true} 
+            shadow={contentMode === 'study' ? true : false} 
             menuItems={contentMode === 'study' ? 
               [
                 { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },

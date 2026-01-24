@@ -25,7 +25,8 @@
 .topRight{
   position: absolute;
   bottom: 50px;
-  left: 100px;
+  left: 40%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: row;
   gap: 10px;

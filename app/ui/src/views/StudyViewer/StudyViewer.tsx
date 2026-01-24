@@ -266,6 +266,9 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
           canScrollRight={canNavigateRight}
           onViewNavigationArrowClicked={handleNavigationArrowClicked}
           onViewNavigationScroll={handleNavigationScroll}
+          scrollbarTooltipLabel="Zoom In and Out"
+          leftArrowTooltipLabel="Pan Left"
+          rightArrowTooltipLabel="Pan Right"
         />
       </div>
     </div>
