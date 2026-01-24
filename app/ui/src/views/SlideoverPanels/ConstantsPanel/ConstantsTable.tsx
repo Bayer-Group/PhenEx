@@ -12,7 +12,7 @@ export const ConstantsTable: React.FC = () => {
       const firstRow = api.getFirstDisplayedRow();
       const lastRow = api.getLastDisplayedRow();
 
-      api.setGridOption('rowData', dataService.constants_service.tableData);
+      api.setGridOption('rowData', dataService.constants_service.tableData.rows);
 
       requestAnimationFrame(() => {
         api.ensureIndexVisible(firstRow, 'top');

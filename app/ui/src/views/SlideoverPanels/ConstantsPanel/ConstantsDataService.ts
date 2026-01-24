@@ -117,8 +117,9 @@ export class ConstantsDataService {
   }
 
   public refreshConstants() {
-    // this.createDefaultConstants();
-    // this.tableData = this.tableDataFromConstants();
+    if (this.cohortDataService?._cohort_data?.constants) {
+      this.tableData = this.tableDataFromConstants();
+    }
   }
 
   private createDefaultConstants() {
@@ -134,16 +135,18 @@ export class ConstantsDataService {
   }
 
   public addConstant() {
-      console.log(this.cohortDataService._cohort_data.constants, "IN ADD")
-
     this.cohortDataService._cohort_data.constants.push({
       name: '',
-      description:'',
+      description: '',
       type: '',
-      value:'',
+      value: '',
     });
 
-    this.cohortDataService.saveChangesToCohort(false, false);
+    // Update tableData so the grid can refresh
+    this.tableData = this.tableDataFromConstants();
+    
+    // Save and notify listeners
+    this.cohortDataService.saveChangesToCohort(false, true);
   }
 
   public deleteConstant(name: string) {
