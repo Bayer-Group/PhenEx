@@ -13,6 +13,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const gridRef = useRef<any>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [typeColor, setTypeColor] = useState('green');
+  const [typeColorDim, setTypeColorDim] = useState('green');
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -82,10 +83,8 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     // Set type color based on phenotype type
     if (data?.effective_type && typeStyles[`${data.effective_type}_color_block`]) {
       setTypeColor(typeStyles[`${data.effective_type}_color_block`]);
-      console.log("SETTING TYPE COLOR TO:", typeStyles[`${data.effective_type}_color_block`]);
+      setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
     } else {
-            console.log("NOT SETTING COLOR TO:", typeStyles[`${data.effective_type}_color_block`]);
-
       setTypeColor('blue'); // default color
     }
 
@@ -104,7 +103,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div className={styles.gridContainer} style={{ backgroundColor: typeColor }}>
+      <div className={`${styles.gridContainer} ${typeColorDim}`}>
         <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
