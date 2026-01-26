@@ -10,7 +10,6 @@ import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
 import { SmartTextField } from '../../../components/SmartTextField';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
-import { HeightAdjustableContainer } from '@/components/HeightAdjustableContainer/HeightAdjustableContainer';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -26,21 +25,11 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [phenotypeName, setPhenotypeName] = useState('');
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
-  const [bottomContainerHeight, setBottomContainerHeight] = useState(0);
-  const [calculatedTableHeight, setCalculatedTableHeight] = useState(0);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
   );
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
-
-  const handleHeightChange = (height: number) => {
-    setBottomContainerHeight(height);
-  };
-
-  const handleTableHeightChange = (height: number) => {
-    setCalculatedTableHeight(height);
-  };
 
   // Subscribe to data service updates
   useEffect(() => {
@@ -207,9 +196,9 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     <SlideoverPanel
       title=""
       info={infoContent()}
-      classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
-      classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
-      classNameContainer={typeStyles[`${data.effective_type}_border_color`]}
+      // classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
+      // classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
+      // classNameContainer={styles.slideoverContainer}
     >
       {/* <div className={`${styles.wrapper}`}>
         <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}> */}
@@ -218,17 +207,12 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
           {renderBreadcrumbs()}
           {renderDescription()}
         </div>
-        <div className={styles.mainContainer} style={{ position: 'relative', height: '100%', width: '100%' }}>
-          <PhenotypeViewer data={data} bottomMargin={bottomContainerHeight} />
-          <div className={styles.bottomSection}>
-            <HeightAdjustableContainer
-              initialHeight={calculatedTableHeight}
-              minHeight={calculatedTableHeight}
-              maxHeight={600}
-              onHeightChange={handleHeightChange}
-            >
-              <PhenotypeComponents data={data} onTableHeightChange={handleTableHeightChange} />
-            </HeightAdjustableContainer>
+        <div className={styles.mainContainer}>
+          <div className={styles.viewerSection}>
+            <PhenotypeViewer data={data} />
+          </div>
+          <div className={styles.componentsSection}>
+            <PhenotypeComponents data={data} />
           </div>
         </div>
       </div>

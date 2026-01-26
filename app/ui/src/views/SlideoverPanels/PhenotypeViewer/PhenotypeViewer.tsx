@@ -6,14 +6,13 @@ import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustom
 import typeStyles from '../../../styles/study_types.module.css';
 interface PhenotypeViewerProps {
   data?: Phenotype;
-  bottomMargin?: number;
 }
 
-export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMargin = 0 }) => {
+export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const [typeColor, setTypeColor] = useState('red');
+  const [typeColor, setTypeColor] = useState('green');
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -83,8 +82,11 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
     // Set type color based on phenotype type
     if (data?.effective_type && typeStyles[`${data.effective_type}_color_block`]) {
       setTypeColor(typeStyles[`${data.effective_type}_color_block`]);
+      console.log("SETTING TYPE COLOR TO:", typeStyles[`${data.effective_type}_color_block`]);
     } else {
-      setTypeColor('red'); // default color
+            console.log("NOT SETTING COLOR TO:", typeStyles[`${data.effective_type}_color_block`]);
+
+      setTypeColor('blue'); // default color
     }
 
     return () => {
@@ -102,7 +104,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div className={styles.gridContainer} style={{ marginBottom: `${bottomMargin}px` }}>
+      <div className={styles.gridContainer} style={{ backgroundColor: typeColor }}>
         <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
@@ -113,6 +115,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
           animateRows={false}
           bottomPadding={0}
           headerHeight={0}
+          domLayout="autoHeight"
           
           getRowHeight={params => {
             // Calculate height of CODELISTS

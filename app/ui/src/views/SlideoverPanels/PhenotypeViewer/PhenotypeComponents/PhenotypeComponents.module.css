@@ -1,21 +1,17 @@
 .phenotypeContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
   min-width: 0;
-  border: 20px;
 }
 
 .tableBox {
-  flex: 1;
   background-color: transparent;
   border-radius:20px;
-  height: calc(100% - 20px);
   width: calc(100% - 40px);
   margin-left: 20px;
   margin-bottom: 10px;
-  overflow: hidden;
+  min-height: 100px;
 }
 
 .header {

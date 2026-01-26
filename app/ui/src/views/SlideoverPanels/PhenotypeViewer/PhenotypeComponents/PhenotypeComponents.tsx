@@ -6,10 +6,9 @@ import typeStyles from '../../../../styles/study_types.module.css';
 
 interface PhenotypeComponentsProps {
   data?: string;
-  onTableHeightChange?: (height: number) => void;
 }
 
-export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data, onTableHeightChange }) => {
+export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const gridRef = useRef<any>(null);
   const [dataService] = useState(() => PhenotypeDataService.getInstance());
   const [tableData, setTableData] = useState(dataService.componentPhenotypeTableData);
@@ -57,18 +56,6 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data, onTabl
     setTableData(dataService.componentPhenotypeTableData);
   }, [data]);
 
-  // Calculate and emit total table height when table data changes
-  useEffect(() => {
-    if (onTableHeightChange && tableData.rows) {
-      const headerHeight = 0; // No header based on headerHeight prop
-      const totalRowsHeight = tableData.rows.reduce((total, row) => {
-        return total + calculateRowHeight({ data: row, api: { getColumnDef: () => ({ width: 200 }) } });
-      }, 0);
-      const totalHeight = headerHeight + totalRowsHeight + 65; // Add some padding
-      onTableHeightChange(totalHeight);
-    }
-  }, [tableData, onTableHeightChange]);
-
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
       // Component phenotypes are stored in the cohort data, not phenotype params
@@ -113,7 +100,6 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data, onTabl
     const minHeight = 20; 
 
     const nameCol = params.api.getColumnDef('name');
-    console.log("nameCol", nameCol, params.data?.name);
     if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
     const nameWidth = 200;
     const nameCharPerLine = Math.floor(nameWidth / 8);
@@ -145,6 +131,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data, onTabl
           hideHorizontalScrollbar={true}
           customGetRowHeight={calculateRowHeight}
           headerHeight={0}
+          domLayout="autoHeight"
         />
       </div>
     </div>

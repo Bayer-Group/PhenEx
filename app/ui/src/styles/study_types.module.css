@@ -61,7 +61,7 @@
 
 .exclusion_color_block {
   background-color: var(--color_exclusion) !important;
-  color: white;
+  color: white !important;
 }
 
 .outcome_color_block {
