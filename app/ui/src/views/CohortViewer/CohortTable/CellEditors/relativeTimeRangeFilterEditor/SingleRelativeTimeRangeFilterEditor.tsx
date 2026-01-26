@@ -29,30 +29,35 @@ const parseIntegerValue = (stringValue: string): number | null => {
 /**
  * Normalizes a filter by ensuring all required properties are present with defaults
  */
-const normalizeFilter = (filter: TimeRangeFilter): TimeRangeFilter => ({
-  class_name: 'RelativeTimeRangeFilter',
-  min_days:
-    filter.min_days === null
-      ? null
-      : {
-          class_name: 'Value',
-          operator: filter.min_days?.operator || DEFAULT_MIN_OPERATOR,
-          value: filter.min_days?.value ?? DEFAULT_MIN_DAYS,
-        },
-  max_days:
-    filter.max_days === null
-      ? null
-      : {
-          class_name: 'Value',
-          operator: filter.max_days?.operator || DEFAULT_MAX_OPERATOR,
-          value: filter.max_days?.value ?? DEFAULT_MAX_DAYS,
-        },
-  when: filter.when || DEFAULT_WHEN,
-  useConstant: filter.useConstant ?? false,
-  useIndexDate: filter.useIndexDate ?? true,
-  anchor_phenotype: filter.anchor_phenotype ?? null,
-  constant: filter.constant,
-});
+const normalizeFilter = (filter: TimeRangeFilter): TimeRangeFilter => {
+  console.log('normalizeFilter called with:', filter);
+  const normalized = {
+    class_name: 'RelativeTimeRangeFilter',
+    min_days:
+      filter.min_days === null
+        ? null
+        : {
+            class_name: 'Value',
+            operator: filter.min_days?.operator || DEFAULT_MIN_OPERATOR,
+            value: filter.min_days?.value ?? DEFAULT_MIN_DAYS,
+          },
+    max_days:
+      filter.max_days === null
+        ? null
+        : {
+            class_name: 'Value',
+            operator: filter.max_days?.operator || DEFAULT_MAX_OPERATOR,
+            value: filter.max_days?.value ?? DEFAULT_MAX_DAYS,
+          },
+    when: filter.when || DEFAULT_WHEN,
+    useConstant: filter.useConstant ?? false,
+    useIndexDate: filter.useIndexDate ?? true,
+    anchor_phenotype: filter.anchor_phenotype ?? null,
+    constant: filter.constant,
+  };
+  console.log('normalizeFilter returning:', normalized);
+  return normalized;
+};
 
 /**
  * Creates a Value object for min/max days or returns null when operator is 'not set'
@@ -76,7 +81,12 @@ export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRan
   value,
   onValueChange,
 }) => {
-  const [filter, setFilter] = useState<TimeRangeFilter>(() => normalizeFilter(value));
+  console.log('SingleRelativeTimeRangeFilterEditor initialized with value:', value);
+  const [filter, setFilter] = useState<TimeRangeFilter>(() => {
+    const normalized = normalizeFilter(value);
+    console.log('SingleRelativeTimeRangeFilterEditor: initial state set to:', normalized);
+    return normalized;
+  });
 
   // Notify parent component when filter changes
   useEffect(() => {

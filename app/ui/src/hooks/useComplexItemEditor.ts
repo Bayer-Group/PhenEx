@@ -55,11 +55,24 @@ export function useComplexItemEditor<T>({
   };
 
   // Hook manages its own items state - this is the source of truth during editing
-  const [items, setItems] = useState<T[]>(() => normalizeToArray(initialValue));
+  const [items, setItems] = useState<T[]>(() => {
+    const normalized = normalizeToArray(initialValue);
+    console.log('useComplexItemEditor: initializing items state', {
+      initialValue,
+      normalized,
+      normalizedLength: normalized.length,
+    });
+    return normalized;
+  });
   
   // Auto-select based on clickedItemIndex or if there's exactly one item
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(() => {
     const initial = normalizeToArray(initialValue);
+    console.log('useComplexItemEditor: initializing selectedItemIndex', {
+      clickedItemIndex,
+      initialLength: initial.length,
+      willAutoSelect: initial.length === 1,
+    });
     if (clickedItemIndex !== undefined && clickedItemIndex < initial.length) {
       return clickedItemIndex;
     }
@@ -67,10 +80,15 @@ export function useComplexItemEditor<T>({
   });
   const [editingItem, setEditingItem] = useState<T | null>(() => {
     const initial = normalizeToArray(initialValue);
-    if (clickedItemIndex !== undefined && clickedItemIndex < initial.length) {
-      return initial[clickedItemIndex];
-    }
-    return initial.length === 1 ? initial[0] : null;
+    const item = clickedItemIndex !== undefined && clickedItemIndex < initial.length
+      ? initial[clickedItemIndex]
+      : initial.length === 1 ? initial[0] : null;
+    console.log('useComplexItemEditor: initializing editingItem', {
+      item,
+      fromClickedIndex: clickedItemIndex !== undefined && clickedItemIndex < initial.length,
+      autoSelected: initial.length === 1,
+    });
+    return item;
   });
 
   const handleItemSelect = useCallback((item: T, index?: number) => {
@@ -78,8 +96,14 @@ export function useComplexItemEditor<T>({
     console.log('=== Complex item selected ===');
     console.log('Item:', item);
     console.log('Index:', actualIndex);
+    
+    // Unwrap flattened item structure if needed (from LogicalFilterRenderer)
+    // @ts-ignore - checking for flattened item structure
+    const actualItem = item?.filter ? item.filter : item;
+    console.log('Unwrapped item:', actualItem);
+    
     setSelectedItemIndex(actualIndex);
-    setEditingItem(item);
+    setEditingItem(actualItem);
   }, []);
 
   const handleAddItem = useCallback(() => {

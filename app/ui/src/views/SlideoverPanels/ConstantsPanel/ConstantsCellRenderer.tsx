@@ -39,6 +39,7 @@ export const ConstantsCellRenderer: React.FC<ConstantsCellRendererProps> = props
     }
     
     console.log('Using renderer for type:', props.data?.type, 'with parsed value:', parsedValue);
+    // Pass all props through (including node, api, column) so child renderer can handle clicks properly
     return <Renderer {...props} value={parsedValue} fontSize={'12px'} />;
   }
   console.log('No renderer found, displaying raw value:', props.data?.value);
