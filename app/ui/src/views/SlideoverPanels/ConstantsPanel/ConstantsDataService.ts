@@ -3,6 +3,7 @@ import { themeQuartz } from 'ag-grid-community';
 
 import { ConstantsCellRenderer } from './ConstantsCellRenderer';
 import { ConstantsCellEditorSelector } from './ConstantsCellEditorSelector';
+import { ConstantTypeSelectorCellEditor } from './ConstantTypeSelectorCellEditor';
 
 const defaultColumns: ColumnDefinition[] = [
   {
@@ -24,7 +25,9 @@ const defaultColumns: ColumnDefinition[] = [
     headerName: 'Type',
     editable: true,
     wrapText: false,
-    width: 20,
+    width: 180,
+    cellEditorPopup: true,
+    cellEditor: ConstantTypeSelectorCellEditor,
   },
   {
     field: 'value',
