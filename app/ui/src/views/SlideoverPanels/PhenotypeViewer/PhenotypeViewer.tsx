@@ -103,8 +103,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
   const renderPhenotypeEditorTable = () => {
     return (
+      <div className={`${styles.gridWrapper}`}>
       <div className={`${styles.gridContainer} ${typeColorDim}`}>
-        <AgGridWithCustomScrollbars
+          <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
           ref={gridRef}
@@ -163,6 +164,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
             return current_max_height;
           }}
         />
+        </div>
       </div>
     );
   };

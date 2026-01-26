@@ -104,6 +104,11 @@
   line-height: var(--font_size_breadcrumb) !important;
 }
 
+.slideoverContainer {
+  background-color: transparent !important;
+  border: none !important;
+}
+
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
   margin-top: 5px;
@@ -127,8 +132,4 @@
 .description{
   font-family: "IBMPlexSans-regular";
   font-size: 16px;
-}
-
-.slideoverContainer {
-  background-color: transparent !important;
 }

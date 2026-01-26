@@ -76,7 +76,9 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
     return (
       <div className={styles.labelContainer} style={getIndentationStyle()}>
-        <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${isViewing ? styles.viewing : (!isSelected ? fontColor : '')}`}>
+        {/* <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${isViewing ? styles.viewing : (!isSelected ? fontColor : '')}`}> */}
+        <div className={`${styles.label}`}>
+
           {props.value}
           <span className={`${styles.infotext} ${fontColor}`} style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
             <ReactMarkdown 

@@ -198,11 +198,10 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       info={infoContent()}
       // classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
       // classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
-      // classNameContainer={styles.slideoverContainer}
+      classNameContainer={styles.slideoverContainer}
     >
-      {/* <div className={`${styles.wrapper}`}>
-        <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}> */}
-        <div className={`${styles.wrapper} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}>
+  
+        <div className={`${styles.wrapper}`}>
         <div className={`${styles.header}`}>
           {renderBreadcrumbs()}
           {renderDescription()}
