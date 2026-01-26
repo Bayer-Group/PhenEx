@@ -481,15 +481,13 @@
 
 .addButton {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
+  bottom: calc(100% + 8px);
+  right: 0px;
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: 14px;
   border: 2px solid;
   background-color: var(--background-color);
-  color: var(--text-color-normal);
-  font-size: 20px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -500,9 +498,20 @@
   font-weight: bold;
 }
 
+.addButton svg {
+  stroke: var(--color_accent_dark);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.addButton:hover svg {
+  stroke: white;
+}
+
+
 .addButton:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: scale(1.4);
+  background-color: var(--color_accent_blue);
 }
 
 .addButton:active {
