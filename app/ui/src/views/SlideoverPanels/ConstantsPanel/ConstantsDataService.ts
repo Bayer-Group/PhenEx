@@ -159,6 +159,13 @@ export class ConstantsDataService {
 
   public getConstantsOfType(type: string): Record<string, any> {
     const result: Record<string, any> = {};
+    console.log('Getting constants of type:', type, this.cohortDataService);
+    
+    // Safety check: ensure constants array exists
+    if (!this.cohortDataService?._cohort_data?.constants) {
+      return result;
+    }
+    
     this.cohortDataService._cohort_data.constants.forEach(
       (constant: any) => {
         if (constant.type === type) {
