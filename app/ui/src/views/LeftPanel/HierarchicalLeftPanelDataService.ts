@@ -223,8 +223,6 @@ export class HierarchicalLeftPanelDataService {
       this.treeData.push(await createRootNode('mystudies', 'My Studies'));
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
-
-    console.log('🔄 HierarchicalLeftPanelDataService: Tree rebuilt, notifying', this.changeListeners.length, 'listeners');
     this.notifyListeners();
   }
 

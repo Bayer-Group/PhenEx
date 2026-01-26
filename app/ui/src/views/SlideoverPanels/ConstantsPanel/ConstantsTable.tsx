@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import styles from './ConstantsPanel.module.css'
@@ -37,6 +37,15 @@ export const ConstantsTable: React.FC = () => {
   }, [dataService]);
 
   const onCellValueChanged = async (event: any) => {
+    console.log('onCellValueChanged event:', {
+      field: event.colDef.field,
+      rowIndex: event.rowIndex,
+      oldValue: event.oldValue,
+      newValue: event.newValue,
+      newValueType: typeof event.newValue,
+      data: event.data
+    });
+    
     if (event.newValue !== event.oldValue) {
       const field = event.colDef.field;
       const rowIndex = event.rowIndex;
