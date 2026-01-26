@@ -10,22 +10,11 @@ interface RelativeTimeRangeFilterCellEditorProps extends PhenexCellEditorProps {
 }
 
 export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeTimeRangeFilterCellEditorProps>((props, ref) => {
-  console.log('RelativeTimeRangeFilterCellEditor opened with:', {
-    propsValue: props.value,
-    valueType: typeof props.value,
-    valueIsArray: Array.isArray(props.value),
-    valueLength: Array.isArray(props.value) ? props.value.length : 'N/A',
-    propsData: props.data,
-    _clickedItemIndex: props.data?._clickedItemIndex,
-  });
-  
   // Read clicked index from node.data (set by renderer)
   const clickedItemIndex = props.data?._clickedItemIndex;
-  console.log('Clicked item index from props.data:', clickedItemIndex);
   
   // Clean up after reading
   if (clickedItemIndex !== undefined && props.data) {
-    console.log('Cleaning up _clickedItemIndex from node.data');
     delete props.data._clickedItemIndex;
   }
   
@@ -51,23 +40,6 @@ export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeT
       useIndexDate: true,
       anchor_phenotype: null,
     }),
-  });
-  
-  console.log('useComplexItemEditor returned:', {
-    selectedItemIndex,
-    editingItem,
-    editingItemDetails: editingItem ? {
-      min_days: editingItem.min_days,
-      max_days: editingItem.max_days,
-      when: editingItem.when,
-    } : null,
-    items,
-    itemsLength: items.length,
-    firstItemDetails: items[0] ? {
-      min_days: items[0].min_days,
-      max_days: items[0].max_days,
-      when: items[0].when,
-    } : null,
   });
 
   // Sync items to PhenexCellEditor whenever they change

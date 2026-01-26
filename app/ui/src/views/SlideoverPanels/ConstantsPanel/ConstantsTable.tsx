@@ -37,15 +37,6 @@ export const ConstantsTable: React.FC = () => {
   }, [dataService]);
 
   const onCellValueChanged = async (event: any) => {
-    console.log('onCellValueChanged event:', {
-      field: event.colDef.field,
-      rowIndex: event.rowIndex,
-      oldValue: event.oldValue,
-      newValue: event.newValue,
-      newValueType: typeof event.newValue,
-      data: event.data
-    });
-    
     if (event.newValue !== event.oldValue) {
       const field = event.colDef.field;
       const rowIndex = event.rowIndex;
@@ -54,9 +45,7 @@ export const ConstantsTable: React.FC = () => {
   };
 
   return (
-    console.log('CONSTANTS DATA', dataService.constants_service.tableData),
-    (
-      <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <div className={styles.controls}>
         <button onClick={addConstant} className={styles.addButton}>
           Add Constant
@@ -76,6 +65,5 @@ export const ConstantsTable: React.FC = () => {
           }}
         />
       </div>
-    )
   );
 };

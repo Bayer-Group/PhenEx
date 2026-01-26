@@ -171,19 +171,14 @@ export class ConstantsDataService {
 
   public tableDataFromConstants(): TableData {
     const rows = this.cohortDataService._cohort_data.constants.map(
-      (constant: any) => {
-        const row = {
-          name: constant.name,
-          description: constant.description,
-          type: constant.type,
-          value: JSON.stringify(constant.value),
-        };
-        console.log('tableDataFromConstants - constant:', constant, '-> row:', row);
-        return row;
-      }
+      (constant: any) => ({
+        name: constant.name,
+        description: constant.description,
+        type: constant.type,
+        value: JSON.stringify(constant.value),
+      })
     );
 
-    console.log('tableDataFromConstants - final rows:', rows);
     return {
       rows: rows,
       columns: this.columns,
@@ -210,27 +205,19 @@ export class ConstantsDataService {
 
   public valueChanged(rowIndex: number, field: string, newValue: any) {
     const constants = this.cohortDataService._cohort_data.constants;
-    console.log('valueChanged called:', { rowIndex, field, newValue, newValueType: typeof newValue });
     
     if (rowIndex >= 0 && rowIndex < constants.length) {
-      console.log('Before change - constant[' + rowIndex + ']:', constants[rowIndex]);
-      
       if (field === 'value') {
         // Try to parse JSON if it's a string, otherwise use as-is
         try {
-          const parsed = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
-          constants[rowIndex].value = parsed;
-          console.log('After parsing - constant[' + rowIndex + '].value:', parsed);
-        } catch (e) {
+          constants[rowIndex].value = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+        } catch {
           constants[rowIndex].value = newValue;
-          console.log('Parse failed, using raw value:', newValue, 'Error:', e);
         }
       } else {
         constants[rowIndex][field] = newValue;
-        console.log('After change - constant[' + rowIndex + '][' + field + ']:', newValue);
       }
       
-      console.log('All constants after change:', constants);
       this.saveChangesToConstants();
     }
   }
