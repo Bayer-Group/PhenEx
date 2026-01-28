@@ -14,13 +14,24 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["medconb", "codelist"])
 
-# MedConB Azure AD configuration
+# MedConB Azure AD configuration (optional)
 # MedConB needs to be under the same tenant as PhenEx for OBO to work
-MEDCONB_ENDPOINT = config["medconb"]["api_url"].get(str)
-MEDCONB_CLIENT_ID = config["medconb"]["azure_client_id"].get(str)
-PHENEX_TENANT = config["auth"]["ad"]["tenant"].get(str)
-PHENEX_CLIENT_ID = config["auth"]["ad"]["aud"].get(str)
-PHENEX_CLIENT_SECRET = config["auth"]["ad"]["client_secret"].get(str)
+try:
+    MEDCONB_ENDPOINT = config["medconb"]["api_url"].get(str)
+    MEDCONB_CLIENT_ID = config["medconb"]["azure_client_id"].get(str)
+    PHENEX_TENANT = config["auth"]["ad"]["tenant"].get(str)
+    PHENEX_CLIENT_ID = config["auth"]["ad"]["aud"].get(str)
+    PHENEX_CLIENT_SECRET = config["auth"]["ad"]["client_secret"].get(str)
+    MEDCONB_ENABLED = True
+    logger.info("MedConB integration enabled")
+except Exception as e:
+    MEDCONB_ENDPOINT = None
+    MEDCONB_CLIENT_ID = None
+    PHENEX_TENANT = None
+    PHENEX_CLIENT_ID = None
+    PHENEX_CLIENT_SECRET = None
+    MEDCONB_ENABLED = False
+    logger.warning(f"MedConB integration disabled - configuration not found: {e}")
 
 
 # @router.get("/codelist", tags=["codelist"], response_model=CodelistFile)
@@ -97,6 +108,11 @@ def must_get_medconb_token(request: Request) -> str:
 
 
 def assert_medconb_configured():
+    if not MEDCONB_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="MedConB integration is not configured or disabled",
+        )
     if not all(
         [PHENEX_TENANT, PHENEX_CLIENT_ID, PHENEX_CLIENT_SECRET, MEDCONB_CLIENT_ID]
     ):

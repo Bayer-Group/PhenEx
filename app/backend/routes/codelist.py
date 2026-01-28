@@ -2,7 +2,12 @@ from typing import Optional
 from fastapi import APIRouter, Request, HTTPException
 import logging
 
-from .medconb import router as medconb_router
+try:
+    from .medconb import router as medconb_router, MEDCONB_ENABLED
+except Exception as e:
+    medconb_router = None
+    MEDCONB_ENABLED = False
+    
 from .models import (
     CodelistMetadata,
     CodelistFile,
@@ -18,7 +23,13 @@ from ..utils.auth import get_authenticated_user_id
 # router: for /codelist operations (with /codelist prefix)
 list_router = APIRouter()
 router = APIRouter()
-router.include_router(medconb_router, prefix="/medconb")
+
+# Only include medconb router if it's enabled and available
+if MEDCONB_ENABLED and medconb_router is not None:
+    router.include_router(medconb_router, prefix="/medconb")
+    logging.getLogger(__name__).info("MedConB router registered at /codelist/medconb")
+else:
+    logging.getLogger(__name__).warning("MedConB router not registered - integration disabled")
 
 # Setup logger
 logger = logging.getLogger(__name__)
