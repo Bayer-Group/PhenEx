@@ -75,59 +75,45 @@ export function useComplexItemEditor<T>({
 
   const handleItemSelect = useCallback((item: T, index?: number) => {
     const actualIndex = index ?? 0;
-    console.log('=== Complex item selected ===');
-    console.log('Item:', item);
-    console.log('Index:', actualIndex);
+    
+    // Unwrap flattened item structure if needed (from LogicalFilterRenderer)
+    // @ts-ignore - checking for flattened item structure
+    const actualItem = item?.filter ? item.filter : item;
+    
     setSelectedItemIndex(actualIndex);
-    setEditingItem(item);
+    setEditingItem(actualItem);
   }, []);
 
   const handleAddItem = useCallback(() => {
-    console.log('=== Add complex item clicked ===');
     const newItem = createNewItem();
-    console.log('Created new item:', newItem);
     const currentItems = items;
-    console.log('Current items before add:', currentItems);
     const newIndex = currentItems.length;
-    console.log('New index will be:', newIndex);
     
     // Add the new item to the array
     const updatedItems = [...currentItems, newItem];
-    console.log('Updated items array:', updatedItems);
     setItems(updatedItems);
     onValueChange?.(updatedItems);
     
     // Select it for editing
-    console.log('Setting editingItem to:', newItem);
-    console.log('Setting selectedItemIndex to:', newIndex);
     setEditingItem(newItem);
     setSelectedItemIndex(newIndex);
   }, [createNewItem, items, onValueChange]);
 
   const handleItemChange = useCallback((newItem: T) => {
-    console.log('=== Complex item changed ===');
-    console.log('New item:', newItem);
-    console.log('Selected index:', selectedItemIndex);
-    
     if (selectedItemIndex !== null) {
       // Update the items array
       const currentItems = items;
       const updatedItems = [...currentItems];
-      console.log('Updating index', selectedItemIndex, 'in array:', currentItems);
       updatedItems[selectedItemIndex] = newItem;
-      console.log('Updated items array:', updatedItems);
       setItems(updatedItems);
       onValueChange?.(updatedItems);
       
       // Update local editing state
       setEditingItem(newItem);
-    } else {
-      console.warn('selectedItemIndex is null, cannot update item!');
     }
   }, [selectedItemIndex, items, onValueChange]);
 
   const handleDeleteItem = useCallback((index: number) => {
-    console.log('Delete complex item at index:', index);
     const currentItems = items;
     const updatedItems = currentItems.filter((_, i) => i !== index);
     
@@ -142,7 +128,6 @@ export function useComplexItemEditor<T>({
   }, [items, selectedItemIndex, onValueChange]);
 
   const handleEditingDone = useCallback(() => {
-    console.log('=== Editing done, clearing selection ===');
     setSelectedItemIndex(null);
     setEditingItem(null);
   }, []);

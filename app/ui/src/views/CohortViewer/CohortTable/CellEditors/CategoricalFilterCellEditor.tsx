@@ -13,7 +13,17 @@ import { useLogicalFilterEditor } from '../../../../hooks/useLogicalFilterEditor
  */
 export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps>(  
   (props, ref) => {
-    const initialValue = props.value as FilterType | undefined;
+    // Parse the value if it's a JSON string (from constants table)
+    let parsedValue = props.value;
+    if (typeof props.value === 'string') {
+      try {
+        parsedValue = JSON.parse(props.value);
+      } catch (e) {
+        console.error('Failed to parse categorical filter value:', props.value, e);
+      }
+    }
+    
+    const initialValue = parsedValue as FilterType | undefined;
     
     // Read clicked index from node.data (set by renderer)
     const clickedItemIndex = props.data?._clickedItemIndex;
@@ -22,8 +32,6 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
     if (clickedItemIndex !== undefined && props.data) {
       delete props.data._clickedItemIndex;
     }
-    
-    console.log('CategoricalFilterCellEditor clickedItemIndex:', clickedItemIndex);
 
     // Type guard to identify leaf nodes (BaseCategoricalFilter)
     const isLeafNode = (value: any): value is BaseCategoricalFilter => {
@@ -93,6 +101,7 @@ export const CategoricalFilterCellEditor = forwardRef<any, PhenexCellEditorProps
         {...agGridProps}
         ref={ref}
         value={filterTree}
+        fieldName="categorical_filter"
         onValueChange={onValueChange}
         selectedItemIndex={selectedItemIndex ?? undefined}
         onEditingDone={handleEditingDone}

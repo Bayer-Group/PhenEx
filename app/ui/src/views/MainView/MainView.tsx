@@ -13,6 +13,7 @@ import { ActionNavBar } from '../../components/PhenExNavBar/ActionNavBar';
 
 import styles from './MainView.module.css';
 import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
+import { ReportModeProvider } from '../../contexts/ReportModeContext';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -147,22 +148,22 @@ export const MainView = () => {
         return (
           <>
             <TwoPanelCohortViewer data={currentView.data} />
-            <NewCohortWizard
+            {/* <NewCohortWizard
               isVisible={true}
               onClose={closeNewCohortWizard}
               data={currentView.data}
-            />
+            /> */}
           </>
         );
       case ViewType.NewStudy:
         return (
           <>
             <StudyViewerWrapper data={currentView.data} />
-            <NewCohortWizard
+            {/* <NewCohortWizard
               isVisible={true}
               onClose={closeNewCohortWizard}
               data={currentView.data}
-            />
+            /> */}
           </>
         );
   
@@ -206,7 +207,9 @@ export const MainView = () => {
       >
         <HierarchicalLeftPanel isVisible={true} />
         <RightPanel>
-          {renderView()}
+          <ReportModeProvider value={inReportView}>
+            {renderView()}
+          </ReportModeProvider>
           <div style={{ position: 'absolute', bottom: '10px', right: '25px', zIndex: 100, display: 'flex', flexDirection: 'row', gap: '20px' }}>
             <ActionNavBar height={44} showReport={inReportView} onShowReportChange={setInReportView} onExecute={() => { /* Add your execute logic here */ }} />
           </div>

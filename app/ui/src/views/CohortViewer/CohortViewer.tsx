@@ -3,10 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
 import { getUserCohort, getPublicCohort, getStudy } from '../../api/text_to_cohort/route';
-
-import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
-import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
-import { RighPanelNavigationTabBar } from './RighPanelNavigationTabBar';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
@@ -14,12 +10,9 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { MainViewService, ViewType } from '../MainView/MainView';
-import { PhenExNavBar } from '../../components/PhenExNavBar/PhenExCohortNavBar';
-import { DraggablePositionedPortal } from '../../components/Portal/DraggablePositionedPortal';
-import { CohortNavBar } from '../../components/PhenExNavBar/CohortNavBar';
-import { TabsAndAddButton } from '../../components/PhenExNavBar/TabsAndAddButton';
-import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
+
 import { useFadeIn } from '../../hooks/useFadeIn';
 
 enum CohortDefinitionViewType {
@@ -60,12 +53,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
-  const navBarDragHandleRef = useRef<HTMLDivElement>(null);
   const bottomSectionRef = useRef<HTMLDivElement>(null);
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  const [resetNavBarToPositioned, setResetNavBarToPositioned] = useState(false);
   
   const fadeInStyle = useFadeIn();
 
@@ -440,16 +431,17 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           {renderTable()}
           <div className={styles.bottomGradient} />
         </div>
-        <PhenExNavBar
-          onSectionTabChange={onTabChange}
-          dragHandleRef={navBarDragHandleRef}
-          scrollPercentage={scrollPercentage}
-          canScrollLeft={canScrollLeft}
-          canScrollRight={canScrollRight}
-          onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-          onViewNavigationScroll={handleViewNavigationScroll}
-          onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-        />
+        <div className={navBarStyles.topRight}>
+          <ViewNavBar
+            height={44}
+            scrollPercentage={scrollPercentage}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+            onViewNavigationScroll={handleViewNavigationScroll}
+            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+          />
+        </div>
       </div>
   );
 };

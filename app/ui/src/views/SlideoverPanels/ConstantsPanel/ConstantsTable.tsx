@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import styles from './ConstantsPanel.module.css'
@@ -12,7 +12,7 @@ export const ConstantsTable: React.FC = () => {
       const firstRow = api.getFirstDisplayedRow();
       const lastRow = api.getLastDisplayedRow();
 
-      api.setGridOption('rowData', dataService.constants_service.tableData);
+      api.setGridOption('rowData', dataService.constants_service.tableData.rows);
 
       requestAnimationFrame(() => {
         api.ensureIndexVisible(firstRow, 'top');
@@ -38,14 +38,14 @@ export const ConstantsTable: React.FC = () => {
 
   const onCellValueChanged = async (event: any) => {
     if (event.newValue !== event.oldValue) {
-      dataService.valueChanged(event.data, event.newValue);
+      const field = event.colDef.field;
+      const rowIndex = event.rowIndex;
+      dataService.constants_service.valueChanged(rowIndex, field, event.newValue);
     }
   };
 
   return (
-    console.log('CONSTANTS DATA', dataService.constants_service.tableData),
-    (
-      <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <div className={styles.controls}>
         <button onClick={addConstant} className={styles.addButton}>
           Add Constant
@@ -56,6 +56,7 @@ export const ConstantsTable: React.FC = () => {
           columnDefs={dataService.constants_service.tableData.columns}
           ref={gridRef}
           theme={dataService.constants_service.getTheme()}
+          onCellValueChanged={onCellValueChanged}
           animateRows={true}
           defaultColDef={{
             flex: 1,
@@ -64,6 +65,5 @@ export const ConstantsTable: React.FC = () => {
           }}
         />
       </div>
-    )
   );
 };

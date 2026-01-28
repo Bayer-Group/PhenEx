@@ -238,7 +238,7 @@
 
 .noshadow{
   box-shadow: none !important;
-  border: var(--border);
+  border: 1px solid transparent;
 }
 
 .classNameActiveTab {

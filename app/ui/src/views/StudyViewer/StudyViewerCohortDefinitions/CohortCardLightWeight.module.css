@@ -10,6 +10,10 @@
   max-width: 380px;
 }
 
+.verticalCardContainerReport {
+  width: 500px; /* can set report specific width*/
+}
+
 /* Cohort Card */
 .cohortCard {
   outline: 2px solid transparent;
@@ -18,6 +22,12 @@
   width: 100%;
   min-width: 380px;
   max-width: 380px;
+}
+
+.cohortCardReport {
+  width: 400px; /* can set report specific width*/
+  /* min-width: 180px;
+  max-width: 180px; */
 }
 
 .cohortCard:hover:not(.noHover) {
@@ -145,7 +155,9 @@
   height: var(--dynamic-arrow-size, 40px);
   display: block;
 }
+
 .topFiller {
+  width:100%;
   height: 20px;
   background-color: var(--color_entry_dim);
 }
@@ -192,3 +204,9 @@
   font-size: 14px;
 }
 
+
+.reportMode {
+  box-shadow: none !important;
+  background: transparent !important;
+
+}

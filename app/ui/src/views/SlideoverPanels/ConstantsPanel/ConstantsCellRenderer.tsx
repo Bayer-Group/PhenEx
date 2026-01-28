@@ -18,7 +18,19 @@ const classNameToRendererMapping = {
 export const ConstantsCellRenderer: React.FC<ConstantsCellRendererProps> = props => {
   if (props.data?.type in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.type];
-    return <Renderer {...props} fontSize={'12px'} />;
+    
+    // Parse the value if it's a JSON string
+    let parsedValue = props.value;
+    if (typeof props.value === 'string') {
+      try {
+        parsedValue = JSON.parse(props.value);
+      } catch (e) {
+        console.error('Failed to parse value:', props.value, e);
+      }
+    }
+    
+    // Pass all props through (including node, api, column) so child renderer can handle clicks properly
+    return <Renderer {...props} value={parsedValue} fontSize={'12px'} />;
   }
   return <div>{props.data.value}</div>;
 };

@@ -3,7 +3,7 @@ import styles from './CohortCardPhenotypeRow.module.css';
 import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 import { getHierarchicalBackgroundColor } from '@/views/CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
 
-interface CohortCardPhenotypeRowProps {
+export interface CohortCardPhenotypeRowProps {
   row: any;
   index: number;
   isSelected: boolean;

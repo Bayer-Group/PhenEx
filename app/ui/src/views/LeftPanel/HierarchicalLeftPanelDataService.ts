@@ -223,8 +223,6 @@ export class HierarchicalLeftPanelDataService {
       this.treeData.push(await createRootNode('mystudies', 'My Studies'));
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
-
-    console.log('🔄 HierarchicalLeftPanelDataService: Tree rebuilt, notifying', this.changeListeners.length, 'listeners');
     this.notifyListeners();
   }
 
@@ -353,16 +351,19 @@ export class HierarchicalLeftPanelDataService {
   public async addNewCohortToStudy(study_data: any) {
     // Don't await - let it happen in background
     const newCohortPromise = this.dataService.createNewCohort(study_data);
-    
+
     // Get the cohort data immediately (it's created synchronously)
     const newCohortData = await newCohortPromise;
-    
+
     // Note: updateTreeData will be triggered by the listener we set up in constructor
     // when dataService.notifyListeners() is called from createNewCohort
-    
+
     if (newCohortData) {
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
+
+      // Dispatch a custom event to notify all listeners (including StudyViewerCohortDefinitions)
+      window.dispatchEvent(new CustomEvent('cohort-added', { detail: { studyId: study_data.id, cohortId: newCohortData.id } }));
     }
 
     // Handle errors in background

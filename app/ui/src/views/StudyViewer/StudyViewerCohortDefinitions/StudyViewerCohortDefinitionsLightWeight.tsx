@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewerCohortDefinitions.module.css';
 import { StudyDataService } from '../StudyDataService';
@@ -7,11 +7,37 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { deleteCohort } from '@/api/text_to_cohort/route';
 import { CohortGroupView } from './CohortGroupView';
 
-interface StudyViewerCohortDefinitionsLightWeightProps {
-  studyDataService: StudyDataService;
+// Scale range constants
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 1.5;
+
+// Convert scale (0.3-1.5) to percentage (0-100)
+const scaleToPercentage = (scale: number): number => {
+  return ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100;
+};
+
+// Convert percentage (0-100) to scale (0.3-1.5)
+const percentageToScale = (percentage: number): number => {
+  return MIN_SCALE + (percentage / 100) * (MAX_SCALE - MIN_SCALE);
+};
+
+export interface StudyViewerCohortDefinitionsHandle {
+  navigateCohort: (direction: 'left' | 'right') => void;
+  setZoomPercentage: (percentage: number) => void;
+  getZoomPercentage: () => number;
+  canNavigateLeft: () => boolean;
+  canNavigateRight: () => boolean;
 }
 
-export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohortDefinitionsLightWeightProps> = ({ studyDataService }) => {
+interface StudyViewerCohortDefinitionsLightWeightProps {
+  studyDataService: StudyDataService;
+  onZoomChange?: (percentage: number) => void;
+}
+
+export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
+  StudyViewerCohortDefinitionsHandle,
+  StudyViewerCohortDefinitionsLightWeightProps
+>(({ studyDataService, onZoomChange }, ref) => {
   const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
   const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
   
@@ -92,8 +118,11 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
     };
   }, []);
   
+  // Track current focused cohort index for navigation
+  const [focusedCohortIndex, setFocusedCohortIndex] = useState(0);
+
   // Helper to update transform directly on DOM
-  const applyTransform = (x: number, y: number, scale: number) => {
+  const applyTransform = useCallback((x: number, y: number, scale: number) => {
     if (transformRef.current) {
       transformRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
       // @ts-ignore
@@ -101,12 +130,91 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
     }
     currentTransform.current = { x, y, scale };
     
+    // Notify parent of zoom change
+    onZoomChange?.(scaleToPercentage(scale));
+    
     // Debounce persist to localStorage
     if (persistTimeout.current) clearTimeout(persistTimeout.current);
     persistTimeout.current = setTimeout(() => {
       setViewState({ x, y, scale });
     }, 500);
-  };
+  }, [onZoomChange]);
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    navigateCohort: (direction: 'left' | 'right') => {
+      if (!cohortDefinitionsRef.current || cohortDefinitionsRef.current.length === 0) return;
+      
+      const maxIndex = cohortDefinitionsRef.current.length - 1;
+      let newIndex = focusedCohortIndex;
+      
+      if (direction === 'left') {
+        newIndex = Math.max(0, focusedCohortIndex - 1);
+      } else {
+        newIndex = Math.min(maxIndex, focusedCohortIndex + 1);
+      }
+      
+      if (newIndex !== focusedCohortIndex) {
+        setFocusedCohortIndex(newIndex);
+        
+        // Scroll to the cohort card - find its position and center it
+        const cohortCards = document.querySelectorAll('[data-cohort-card]');
+        const targetCard = cohortCards[newIndex] as HTMLElement;
+        
+        if (targetCard && viewportRef.current) {
+          const viewportRect = viewportRef.current.getBoundingClientRect();
+          const current = currentTransform.current;
+          
+          // Calculate offset to center the card
+          const cardCenterX = (targetCard.offsetLeft + targetCard.offsetWidth / 2) * current.scale;
+          const cardCenterY = (targetCard.offsetTop + targetCard.offsetHeight / 2) * current.scale;
+          const viewportCenterX = viewportRect.width / 2;
+          const viewportCenterY = viewportRect.height / 2;
+          
+          const newX = viewportCenterX - cardCenterX;
+          const newY = viewportCenterY - cardCenterY;
+          
+          applyTransform(newX, newY, current.scale);
+        }
+      }
+    },
+    
+    setZoomPercentage: (percentage: number) => {
+      const newScale = percentageToScale(Math.max(0, Math.min(100, percentage)));
+      const current = currentTransform.current;
+      
+      // Zoom towards center of viewport
+      if (viewportRef.current) {
+        const centerX = viewportRef.current.clientWidth / 2;
+        const centerY = viewportRef.current.clientHeight / 2;
+        const pointX = (centerX - current.x) / current.scale;
+        const pointY = (centerY - current.y) / current.scale;
+        const newX = centerX - pointX * newScale;
+        const newY = centerY - pointY * newScale;
+        applyTransform(newX, newY, newScale);
+      } else {
+        applyTransform(current.x, current.y, newScale);
+      }
+    },
+    
+    getZoomPercentage: () => {
+      return scaleToPercentage(currentTransform.current.scale);
+    },
+    
+    canNavigateLeft: () => {
+      return focusedCohortIndex > 0;
+    },
+    
+    canNavigateRight: () => {
+      if (!cohortDefinitionsRef.current) return false;
+      return focusedCohortIndex < cohortDefinitionsRef.current.length - 1;
+    }
+  }), [focusedCohortIndex, applyTransform]);
+
+  // Notify parent of initial zoom state on mount
+  useEffect(() => {
+    onZoomChange?.(scaleToPercentage(viewState.scale));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Function to update cohort definitions when study data changes
@@ -115,15 +223,121 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
       setCohortDefinitions(definitions);
     };
 
+    // Set up export callback
+    studyDataService.exportStudyCallback = async () => {
+      // Find all D3 flowchart SVG elements
+      const svgElements = document.querySelectorAll('svg[data-cohort-flowchart]');
+      
+      if (svgElements.length === 0) {
+        console.warn('No cohort flowchart SVG elements found to export');
+        alert('Please switch to Report view to export flowcharts');
+        return;
+      }
+
+      console.log(`Found ${svgElements.length} cohort flowcharts to export`);
+
+      // Ask user which format
+      const format = confirm('Export as PNG? (Click OK for PNG, Cancel for SVG)') ? 'png' : 'svg';
+
+      // Export each flowchart
+      for (let i = 0; i < svgElements.length; i++) {
+        const svgElement = svgElements[i] as SVGSVGElement;
+        const cohortId = svgElement.getAttribute('data-cohort-flowchart') || `cohort_${i}`;
+        const cohortName = svgElement.getAttribute('data-cohort-name') || `Cohort ${i + 1}`;
+        const studyName = studyDataService.study_name || 'study';
+        const timestamp = new Date().toISOString().split('T')[0];
+        const sanitizedCohortName = cohortName.replace(/[^a-z0-9]/gi, '_');
+        
+        if (format === 'svg') {
+          // Export SVG directly
+          const svgData = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          
+          const link = document.createElement('a');
+          link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.svg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        } else {
+          // Export as PNG - use data URL to avoid CORS issues
+          await new Promise<void>((resolve) => {
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              console.error('Could not get canvas context');
+              resolve();
+              return;
+            }
+            
+            const img = new Image();
+            // Use data URL instead of blob URL to avoid cross-origin issues
+            const encodedSvg = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            
+            img.onload = () => {
+              try {
+                canvas.width = img.width * 2; // 2x resolution
+                canvas.height = img.height * 2;
+                ctx.scale(2, 2);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const pngUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.png`;
+                    link.href = pngUrl;
+                    link.click();
+                    URL.revokeObjectURL(pngUrl);
+                  }
+                  resolve();
+                }, 'image/png');
+              } catch (error) {
+                console.error('PNG export failed (likely due to foreignObject/HTML content):', error);
+                alert('PNG export failed. The SVG contains HTML elements that cannot be converted to PNG.\n\nPlease use SVG export instead.');
+                resolve();
+              }
+            };
+            
+            img.onerror = (error) => {
+              console.error('Failed to load SVG for PNG conversion:', error);
+              alert('Failed to load SVG image for PNG conversion');
+              resolve();
+            };
+            
+            img.src = encodedSvg;
+          });
+        }
+        
+        // Small delay between downloads
+        if (i < svgElements.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      console.log(`Exported ${svgElements.length} cohort flowcharts as ${format.toUpperCase()}`);
+    };
+
     // Initial load
     updateCohortDefinitions();
 
     // Listen for study data service changes
     studyDataService.addStudyDataServiceListener(updateCohortDefinitions);
 
+    // Listen for global cohort-added event
+    const handleCohortAdded = (e: Event) => {
+      updateCohortDefinitions();
+    };
+    window.addEventListener('cohort-added', handleCohortAdded);
+
     // Cleanup listener on unmount
     return () => {
       studyDataService.removeStudyDataServiceListener(updateCohortDefinitions);
+      window.removeEventListener('cohort-added', handleCohortAdded);
     };
   }, [studyDataService]);
 
@@ -217,7 +431,7 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
         lastZoomTime.current = Date.now();
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
-        const newScale = Math.max(0.3, Math.min(1, current.scale * (1 + delta)));
+        const newScale = Math.max(0.3, Math.min(1.5, current.scale * (1 + delta)));
         const pointX = (centerX - current.x) / current.scale;
         const pointY = (centerY - current.y) / current.scale;
         const newX = centerX - pointX * newScale;
@@ -252,7 +466,6 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
   const handleCreateFirstCohort = async () => {
     try {
       const studyId = studyDataService.study_data?.id;
-      
       if (!studyId) {
         console.error('No study ID found');
         return;
@@ -260,6 +473,10 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
 
       const { createAndNavigateToNewCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
       await createAndNavigateToNewCohort(studyId, navigate);
+
+      // Explicitly refresh cohort definitions in this view
+      const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
+      setCohortDefinitions(definitions);
     } catch (error) {
       console.error('Failed to create cohort:', error);
     }
@@ -407,4 +624,4 @@ export const StudyViewerCohortDefinitionsLightWeight: React.FC<StudyViewerCohort
       )}
     </>
   );
-};
+});

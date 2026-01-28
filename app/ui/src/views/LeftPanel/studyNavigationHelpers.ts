@@ -68,7 +68,7 @@ export async function createAndNavigateToNewCohort(
     if (newCohortData) {
       console.log('✅ Cohort created, navigating to:', newCohortData.id);
       // Add onboarding=true query parameter to trigger the wizard
-      navigate(`/studies/${studyId}/cohorts/${newCohortData.id}?onboarding=true`);
+      navigate(`/studies/${studyId}`);
     }
   } catch (error) {
     console.error('❌ Failed to create cohort:', error);

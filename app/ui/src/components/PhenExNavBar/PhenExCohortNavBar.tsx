@@ -49,16 +49,6 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
           onViewNavigationVisibilityClicked={onViewNavigationVisibilityClicked}
         />
       </div>
-      <div className={`${styles.phenexNavBar} ${allHidden ? styles.allHidden : ''}`}>
-
-      </div>
-      <div className={styles.bottomRight}>
-        {/* <ActionNavBar 
-          height={heightNavBar}
-          onHideNavBar={handleHideNavBar}
-          onShowNavBar={handleShowNavBar}
-        /> */}
-      </div>
     </NavBarMenuProvider>
   );
 };

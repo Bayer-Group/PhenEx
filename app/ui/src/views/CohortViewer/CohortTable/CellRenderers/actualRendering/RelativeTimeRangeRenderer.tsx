@@ -53,7 +53,7 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
     if (filter.useConstant && filter.constant) {
       return (
         <span className={styles.filterRowSpan}>
-          {filter.constant === 'one_year_pre_index' ? 'One Year Pre-Index' : 'Any Time Post-Index'}
+          {filter.constant}
         </span>
       );
     }

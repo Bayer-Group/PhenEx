@@ -57,12 +57,19 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Only set initial position if user hasn't dragged yet
+  // Use individual values in deps to avoid object reference comparison issues
+  const initialLeft = initialPosition?.left;
+  const initialTop = initialPosition?.top;
+  
   useEffect(() => {
-    if (initialPosition && !userHasDragged) {
-      const newPos = getInitialPosition();
+    if (initialLeft !== undefined && initialTop !== undefined && !userHasDragged) {
+      const newPos = {
+        x: parsePosition(initialLeft),
+        y: parsePosition(initialTop),
+      };
       setPosition(newPos);
     }
-  }, [initialPosition, userHasDragged]);
+  }, [initialLeft, initialTop, userHasDragged]);
   useEffect(() => {
     container.style.position = 'fixed';
     container.style.left = `${position.x}px`;
