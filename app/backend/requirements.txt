@@ -10,6 +10,7 @@ deepdiff
 fastembed
 faiss-cpu
 python-jose[cryptography]
+msal
 passlib[bcrypt]
 python-multipart
 asyncpg
@@ -18,3 +19,4 @@ authlib
 SQLAlchemy
 psycopg[binary]
 argon2-cffi
+medconb-client

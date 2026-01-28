@@ -20,7 +20,7 @@ from ..utils.auth import get_authenticated_user_id
 
 class StudyMetadata(BaseModel):
     """Metadata for a study."""
-    
+
     id: str
     name: str
     description: str = ""
@@ -30,7 +30,7 @@ class StudyMetadata(BaseModel):
 
 class StatusResponse(BaseModel):
     """Standard status response."""
-    
+
     status: str
     message: str
 
