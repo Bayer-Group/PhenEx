@@ -114,6 +114,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
           scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
           animateRows={false}
           bottomPadding={0}
+          hideScrollbars={true}
           headerHeight={0}
           domLayout="autoHeight"
           

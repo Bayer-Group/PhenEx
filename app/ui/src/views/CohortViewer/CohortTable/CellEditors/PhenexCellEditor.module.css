@@ -481,13 +481,13 @@
 
 .addButton {
   position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0px;
+  top: calc(100% + 8px);
+  left: 0px;
   width: 28px;
   height: 28px;
   border-radius: 14px;
-  border: 2px solid;
-  background-color: var(--background-color);
+  border: none;
+  background-color: var(--color_accent_dark);
   line-height: 1;
   display: flex;
   align-items: center;
@@ -499,7 +499,7 @@
 }
 
 .addButton svg {
-  stroke: var(--color_accent_dark);
+  stroke: white;
   stroke-width: 3;
   stroke-linecap: round;
 }

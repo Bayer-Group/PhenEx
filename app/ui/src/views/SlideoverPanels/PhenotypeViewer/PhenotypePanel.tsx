@@ -205,15 +205,14 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         <div className={`${styles.header}`}>
           {renderBreadcrumbs()}
           {renderDescription()}
-        </div>
-        <div className={styles.mainContainer}>
           <div className={styles.viewerSection}>
             <PhenotypeViewer data={data} />
           </div>
+
+        </div>
           <div className={styles.componentsSection}>
             <PhenotypeComponents data={data} />
           </div>
-        </div>
       </div>
     </SlideoverPanel>
   );

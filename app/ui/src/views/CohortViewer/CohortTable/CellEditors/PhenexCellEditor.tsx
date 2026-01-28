@@ -690,7 +690,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           {renderCellMirrorContents()}
           {props.showAddButton && (
             <button
-              className={`${styles.addButton} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+              className={`${styles.addButton}`}
               onClick={(e) => {
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();

@@ -8,6 +8,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: transparent !important;
 }
 
 .header {
@@ -19,6 +20,8 @@
   font-size: 20px;
   flex-shrink: 0;
   margin-bottom: 0px;
+  background-color: var(--background-color) !important;
+  border-radius: 15px;
 }
 
 .phenotypeNameInput{
@@ -32,6 +35,7 @@
   min-height: 0;
   overflow-y: auto;
   gap: 0px;
+  background-color: transparent !important;
 }
 
 .viewerSection {

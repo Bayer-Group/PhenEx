@@ -422,3 +422,8 @@
 .switchSelected{
   background-color: white !important;
 }
+
+.navBarAddButton{
+  box-shadow: none !important;
+  border: none !important;
+}

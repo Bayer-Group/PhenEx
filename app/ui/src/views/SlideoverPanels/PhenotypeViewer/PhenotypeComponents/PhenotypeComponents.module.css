@@ -6,12 +6,11 @@
 }
 
 .tableBox {
-  background-color: transparent;
-  border-radius:20px;
-  width: calc(100% - 40px);
-  margin-left: 20px;
+  background-color: var(--background-color) !important;
+  border-radius:15px;
+  width: calc(100% - 10px);
+  margin-left: 5px;
   margin-bottom: 10px;
-  min-height: 100px;
 }
 
 .header {

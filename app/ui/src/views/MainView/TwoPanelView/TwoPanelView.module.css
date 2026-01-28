@@ -27,6 +27,8 @@
   transition:
     width 0.2s ease,
     opacity 0.1s ease;
+  border-radius: 20px 20px 20px 20px;
+
 }
 
 .rightPanel.collapsed {
@@ -42,11 +44,6 @@
 
 .leftPanel.collapsed {
   opacity: 0;
-}
-
-.rightPanel {
-  border-radius: 20px 20px 20px 20px;
-  background-color: red; /*var(--background-color) !important;*/
 }
 
 .divider {
@@ -76,7 +73,7 @@
   height: 100%;/*calc(100% - 2 * var(--margin_top_right_panel));*/
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
-  background-color: var(--background-color) !important;
+  background-color: transparent !important;
   /* border-left: 1px solid var(--line-color);
   border-top: 1px solid var(--line-color);
   border-right: 1px solid var(--line-color) !important; */
@@ -393,7 +390,7 @@
 .popoverContent {
   width: 600px;
   height: 600px;
-  background-color: var(--background-color) !important;
+  background-color: transparent !important; /* This sets the entire popover background color! */
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   overflow: hidden;

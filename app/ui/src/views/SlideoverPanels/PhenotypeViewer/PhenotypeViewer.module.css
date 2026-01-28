@@ -44,6 +44,7 @@
   margin-right:0px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
   width: 100%;
   display: flex;
+  border-radius: 18px;
   flex-direction: column;
 }
 
