@@ -34,7 +34,8 @@ export class TwoPanelCohortViewerService {
   private currentViewType: any = CohortViewType.Info;
   private isRightPanelCollapsed: boolean = true;
   private listeners: Array<(viewType: any, extraData: any, isCollapsed: boolean) => void> = [];
-  private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>;
+  private panelRef?: React.RefObject<{ collapseSlideoverPanel: (collapse: boolean) => void; showPopover: (content: React.ReactNode) => void; hidePopover: () => void }>;
+
 
   private constructor() {}
 
@@ -54,7 +55,7 @@ export class TwoPanelCohortViewerService {
     return this.data;
   }
 
-  public setPanelRef(ref: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>) {
+  public setPanelRef(ref: React.RefObject<{ collapseSlideoverPanel: (collapse: boolean) => void; showPopover: (content: React.ReactNode) => void; hidePopover: () => void }>) {
     this.panelRef = ref;
   }
 
@@ -72,8 +73,7 @@ export class TwoPanelCohortViewerService {
     
     this.currentViewType = viewType;
     this.extraData = data;
-    this.isRightPanelCollapsed = false;
-    this.panelRef?.current?.collapseRightPanel(false);
+    // Don't modify slideover state - only show popover
     this.notifyListeners();
   };
 
@@ -111,7 +111,7 @@ export class TwoPanelCohortViewerService {
     this.currentViewType = viewType;
     this.extraData = data;
     this.isRightPanelCollapsed = false;
-    this.panelRef?.current?.collapseRightPanel(false);
+    this.panelRef?.current?.collapseSlideoverPanel(false);
     this.notifyListeners();
   };
 
@@ -123,7 +123,14 @@ export class TwoPanelCohortViewerService {
     }
     
     this.isRightPanelCollapsed = true;
-    this.panelRef?.current?.collapseRightPanel(true);
+    this.panelRef?.current?.collapseSlideoverPanel(true);
+    this.notifyListeners();
+  };
+
+  hidePopover = () => {
+    // Close popover without affecting slideover state
+    this.currentViewType = null;
+    this.extraData = null;
     this.notifyListeners();
   };
 
@@ -151,9 +158,15 @@ export class TwoPanelCohortViewerService {
 export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, contentMode = 'cohort' }) => {
   const navigate = useNavigate();
   const service = TwoPanelCohortViewerService.getInstance();
-  const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>(null);
+  const panelRef = React.useRef<{ 
+    collapseSlideoverPanel: (collapse: boolean) => void;
+    showPopover: (content: React.ReactNode) => void;
+    hidePopover: () => void;
+  }>(null);
+  
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
+  const [popoverContent, setPopoverContent] = useState<React.ReactNode>(null);
   
   // Breadcrumb state
   const [breadcrumbItems, setBreadcrumbItems] = useState<Array<{displayName: string; onClick: () => void}>>([]);
@@ -182,16 +195,26 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   };
 
   React.useEffect(() => {
-    const updateState = (viewType: any, extraData: any) => {
+    const updateState = (viewType: any, extraData: any, isCollapsed: boolean) => {
       setViewType(viewType);
       setExtraData(extraData);
+      // Show popover when there's content (viewType is set)
+      if (viewType && extraData) {
+        setPopoverContent(renderPopoverContent(viewType, extraData));
+        panelRef.current?.showPopover(renderPopoverContent(viewType, extraData));
+      } else {
+        setPopoverContent(null);
+        panelRef.current?.hidePopover();
+      }
     };
     
     // Subscribe to service changes
     service.addListener(updateState);
     
     // Set initial state
-    updateState(service.getCurrentViewType(), service.getExtraData());
+    const currentViewType = service.getCurrentViewType();
+    const currentData = service.getExtraData();
+    updateState(currentViewType, currentData, service['isRightPanelCollapsed'] !== false);
     
     return () => service.removeListener(updateState);
   }, [service]);
@@ -324,10 +347,17 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   };
 
   const renderRightPanel = () => {
-    // Add to history when rendering a panel
-    const historyService = RightPanelHistoryDataService.getInstance();
-    historyService.addToHistory(viewType, extraData);
+    return null; // Removed - using renderPopoverContent instead
+  };
 
+  const renderLeftPanel = () => {
+    if (contentMode === 'study') {
+      return <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />;
+    }
+    return <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />;
+  };
+  
+  const renderPopoverContent = (viewType: any, extraData: any) => {
     if (viewType === 'phenotype') {
       return <PhenotypePanel data={extraData} />;
     } else if (viewType === 'report') {
@@ -347,13 +377,11 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     } else if (viewType === 'newcohort') {
       return <NewCohortWizardPanel data={extraData} />;
     }
+    return null;
   };
-
-  const renderLeftPanel = () => {
-    if (contentMode === 'study') {
-      return <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />;
-    }
-    return <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />;
+  
+  const renderSlideoverPanel = () => {
+    return <div style={{ padding: '20px', color: '#999' }}>Slideover panel (empty)</div>;
   };
 
   return (
@@ -394,19 +422,19 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         </div>
         <div className={styles.contentSection}>
           <TwoPanelView 
-            ref={panelRef} 
-            split="vertical" 
+            ref={panelRef}
             initialSizeLeft={500} 
             minSizeLeft={400}
-            maxSizeRight={600}
+            minSizeRight={100}
+            maxSizeRight={400}
+            leftContent={renderLeftPanel()}
+            slideoverContent={renderSlideoverPanel()}
+            popoverContent={popoverContent}
             collapseButtonTheme={'dark'}
-            onRightPanelCollapse={handleRightPanelCollapse}
-          >
-            <>
-              {renderLeftPanel()}
-            </>
-            {renderRightPanel()}
-          </TwoPanelView>
+            onSlideoverCollapse={handleRightPanelCollapse}
+            onPopoverClose={() => service.hidePopover()}
+            slideoverCollapsed={false}
+          />
         </div>
       </div>
     </NavBarMenuProvider>
