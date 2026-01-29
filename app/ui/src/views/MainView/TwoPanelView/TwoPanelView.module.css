@@ -82,8 +82,6 @@
   /* border-left: var(--border); */
   /* margin-top: 0pxvar(--margin_top_right_panel); */
   overflow: hidden;
-
-
 }
 .divider.collapsed {
   width: 0;

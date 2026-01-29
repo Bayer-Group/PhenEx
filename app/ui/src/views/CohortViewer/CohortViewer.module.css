@@ -7,10 +7,10 @@
 .cohortTableContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  margin-top:100px;
+  height: calc(100% - 100px);
   width: 100%;
   position: relative;
-  background-color: var(--background-color);
 }
 
 .topSection {

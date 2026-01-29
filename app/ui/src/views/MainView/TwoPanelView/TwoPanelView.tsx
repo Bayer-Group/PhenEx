@@ -71,6 +71,7 @@ export const TwoPanelView = React.forwardRef<
     if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
       return;
     }
+    e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
     const container = containerRef.current;
@@ -79,9 +80,7 @@ export const TwoPanelView = React.forwardRef<
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
     const container = containerRef.current;
     if (!container) return;
     
@@ -100,20 +99,16 @@ export const TwoPanelView = React.forwardRef<
     
     const newLeftWidth = container.offsetWidth - newRightWidth;
     setLeftWidth(newLeftWidth);
-    if (!isSlideoverCollapsed) {
-      setRightWidth(newRightWidth);
-    }
-  };
+    setRightWidth(newRightWidth);
+  }, [minSizeLeft, minSizeRight, maxSizeRight]);
 
-  const handleMouseUp = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      const container = containerRef.current;
-      if (container) {
-        container.dataset.dragging = 'false';
-      }
+  const handleMouseUp = React.useCallback(() => {
+    setIsDragging(false);
+    const container = containerRef.current;
+    if (container) {
+      container.dataset.dragging = 'false';
     }
-  };
+  }, []);
 
   React.useEffect(() => {
     if (isDragging) {
@@ -125,7 +120,7 @@ export const TwoPanelView = React.forwardRef<
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   React.useEffect(() => {
     const observer = new ResizeObserver(() => {
