@@ -38,8 +38,14 @@ export const TwoPanelView = React.forwardRef<
     slideoverCollapsed
   } = props;
 
+  // Initialize rightWidth with a reasonable default that respects constraints
+  const initialRightWidth = React.useMemo(() => {
+    // Start at minSizeRight if available, otherwise 150px as a narrow default
+    return minSizeRight || 150;
+  }, [minSizeRight]);
+
   const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
-  const [rightWidth, setRightWidth] = useState(300);
+  const [rightWidth, setRightWidth] = useState(initialRightWidth);
   const [isSlideoverCollapsed, setIsSlideoverCollapsed] = useState(slideoverCollapsed ?? false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverContentState, setPopoverContentState] = useState<React.ReactNode>(null);
