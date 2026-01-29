@@ -20,6 +20,7 @@ import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
 import { TabsAndAddButton } from '../../../components/PhenExNavBar/TabsAndAddButton';
 import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
+import { CohortRightPanel } from '../CohortRightPanel/CohortRightPanel';
 import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
@@ -360,16 +361,12 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   const renderPopoverContent = (viewType: any, extraData: any) => {
     if (viewType === 'phenotype') {
       return <PhenotypePanel data={extraData} />;
-    } else if (viewType === 'report') {
-      return <CohortReportView />;
     } else if (viewType === 'execute') {
       return <ExecutePanel />;
     } else if (viewType === 'database') {
       return <DatabasePanel />;
     } else if (viewType === 'constants') {
       return <ConstantsPanel />;
-    } else if (viewType === 'visibility') {
-      return <VisibilityPanel />;
     } else if (viewType === 'info') {
       return <InfoPanel />;
     } else if (viewType === 'codelists') {
@@ -381,7 +378,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   };
   
   const renderSlideoverPanel = () => {
-    return <div style={{ padding: '20px', color: '#999' }}>Slideover panel (empty)</div>;
+    return <CohortRightPanel contentMode={contentMode} />;
   };
 
   return (
