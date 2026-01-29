@@ -133,18 +133,17 @@
 
 .inputGroup {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .inputLabel {
   font-size: 12px;
   color: var(--text-color-secondary);
   font-family: 'IBMPlexSans-bold';
-  min-width: 150px;
   margin: 0;
-  text-align: right;
+  text-align: left;
 }
 
 .input {

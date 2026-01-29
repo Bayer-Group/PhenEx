@@ -10,7 +10,7 @@ export interface PhenExNavBarMenuProps {
   menuRef?: React.RefObject<HTMLDivElement>;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
-  verticalPosition?: 'above' | 'below';
+  verticalPosition?: 'above' | 'below' | 'alignTop';
   horizontalAlignment?: 'left' | 'center' | 'right';
   gap?: number;
 }
@@ -86,6 +86,8 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
     // Vertical positioning
     if (verticalPosition === 'above') {
       style.bottom = `${window.innerHeight - rect.top + gap}px`;
+    } else if (verticalPosition === 'alignTop') {
+      style.top = `${rect.top}px`;
     } else {
       style.top = `${rect.bottom + gap}px`;
     }

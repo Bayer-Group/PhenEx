@@ -52,7 +52,8 @@ const AddMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      verticalPosition={'below'}
+      verticalPosition={'alignTop'}
+      gap={0}
     >
       <div style={{ padding: '8px', minWidth: '240px' }}>
        

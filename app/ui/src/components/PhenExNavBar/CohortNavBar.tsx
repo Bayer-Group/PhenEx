@@ -95,7 +95,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
       <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
         {/* ⋮⋮ */}
       </div>
-      <button
+      {/* <button
         ref={optionsButtonRef}
         className={styles.optionsButton}
         onMouseEnter={(e) => {
@@ -125,7 +125,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
           <circle cx="12" cy="12" r="2" />
           <circle cx="12" cy="20" r="2" />
         </svg>
-      </button>
+      </button> */}
       <Tabs
         tabs={tabs}
         onTabChange={onSectionTabChange || (() => {})}
