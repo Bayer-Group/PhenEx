@@ -1,6 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import styles from './NavBar.module.css';
-import { Tabs } from '../ButtonsAndTabs/Tabs/Tabs';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { useNavBarMenu } from './PhenExNavBarMenuContext';
 
@@ -85,16 +84,78 @@ const OptionsMenu: React.FC<{
 };
 
 export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTabChange, dragHandleRef, shadow = false, menuItems = [] }) => {
-  const tabs = ['Definition', 'Characteristics', 'Outcomes'];
+  const sections = ['Definition', 'Characteristics', 'Outcomes'];
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('options');
+  const { isOpen: isSectionMenuOpen, open: openSectionMenu, close: closeSectionMenu } = useNavBarMenu('section');
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
+  const sectionButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const sectionMenuRef = useRef<HTMLDivElement>(null);
+
+  const getShuffledSections = () => {
+    const shuffled = [...sections];
+    const activeItem = shuffled.splice(activeTabIndex, 1)[0];
+    return [activeItem, ...shuffled];
+  };
+
+  const handleSectionClick = (section: string) => {
+    const originalIndex = sections.indexOf(section);
+    setActiveTabIndex(originalIndex);
+    if (onSectionTabChange) {
+      onSectionTabChange(originalIndex);
+    }
+    closeSectionMenu();
+  };
 
   return (
     <div className={`${styles.navBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px` }}>
       <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
         {/* ⋮⋮ */}
       </div>
+      
+      <button
+        ref={sectionButtonRef}
+        className={styles.sectionButton}
+        onMouseEnter={() => {
+          openSectionMenu();
+        }}
+        onMouseLeave={() => {
+          setTimeout(() => {
+            if (!sectionMenuRef.current?.matches(':hover')) {
+              closeSectionMenu();
+            }
+          }, 100);
+        }}
+      >
+        {sections[activeTabIndex]}
+      </button>
+
+      <PhenExNavBarMenu
+        isOpen={isSectionMenuOpen}
+        onClose={closeSectionMenu}
+        anchorElement={sectionButtonRef.current}
+        menuRef={sectionMenuRef}
+        onMouseEnter={openSectionMenu}
+        onMouseLeave={closeSectionMenu}
+        verticalPosition='alignTop'
+        gap={0}
+      >
+        <div style={{ padding: '8px 4px', minWidth: '180px' }}>
+          <div className={styles.itemList}>
+            {getShuffledSections().map((section) => (
+              <button
+                key={section}
+                onClick={() => handleSectionClick(section)}
+                className={styles.addMenuItem}
+              >
+                {section}
+              </button>
+            ))}
+          </div>
+        </div>
+      </PhenExNavBarMenu>
+      
       {/* <button
         ref={optionsButtonRef}
         className={styles.optionsButton}
@@ -126,15 +187,6 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
           <circle cx="12" cy="20" r="2" />
         </svg>
       </button> */}
-      <Tabs
-        tabs={tabs}
-        onTabChange={onSectionTabChange || (() => {})}
-        active_tab_index={0}
-        classNameTabs = {styles.classNameSectionTabs}
-        classNameTabsContainer={styles.classNameTabsContainer}
-        classNameActiveTab={styles.classNameActiveTab}
-        classNameHoverTab={styles.classNameHoverTab}
-      />
 
       
       <OptionsMenu

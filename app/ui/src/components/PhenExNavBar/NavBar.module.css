@@ -427,3 +427,38 @@
   box-shadow: none !important;
   border: none !important;
 }
+
+.sectionButton {
+  background: var(--color_accent_dark);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 0px 12px;
+  color: white;
+  font-size: var(--font_size_mid_phenotype_info);
+  font-family: "IBMPlexSans-bold";
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  /* height: 10; */
+  display: flex;
+  padding: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 10px;
+  outline: none;
+}
+
+.sectionButton:hover {
+  background: var(--color_accent_dark);
+  transform: var(--scale_transform_small);
+}
+
+.sectionButton:focus {
+  outline: none;
+}
+
+.sectionButton.menuShowing,
+.sectionButton:global(.menuShowing) {
+  background-color: var(--color_accent_dark);
+  transform: var(--scale_transform_small);
+}
