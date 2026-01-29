@@ -78,10 +78,11 @@
   border-top: 1px solid var(--line-color);
   border-right: 1px solid var(--line-color) !important; */
   /* margin-right: 20px !important; */
-  box-shadow:var(--box_shadow);
+  /* box-shadow:var(--box_shadow); */
   /* border-left: var(--border); */
   /* margin-top: 0pxvar(--margin_top_right_panel); */
   overflow: hidden;
+  border-left: var(--border);
 }
 .divider.collapsed {
   width: 0;

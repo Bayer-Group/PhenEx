@@ -68,58 +68,86 @@ export const TwoPanelView = React.forwardRef<
   }));
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    console.log('[TwoPanelView] handleMouseDown triggered', { target: e.target, classList: (e.target as HTMLElement).classList });
     if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
+      console.log('[TwoPanelView] Ignoring - collapse button clicked');
       return;
     }
     e.preventDefault();
     e.stopPropagation();
+    console.log('[TwoPanelView] Setting isDragging to true');
     setIsDragging(true);
     const container = containerRef.current;
     if (container) {
       container.dataset.dragging = 'true';
+      console.log('[TwoPanelView] Container dragging set to true');
     }
   };
 
   const handleMouseMove = React.useCallback((e: MouseEvent) => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
     
-    if (container.dataset.dragging !== 'true') return;
+    const draggingState = container.dataset.dragging;
+    
+    if (draggingState !== 'true') {
+      return;
+    }
 
     const containerRect = container.getBoundingClientRect();
     const mouseX = e.clientX - containerRect.left;
-    let newRightWidth = Math.max(minSizeLeft, container.offsetWidth - Math.max(minSizeLeft, mouseX - 10));
+    console.log('[TwoPanelView] Mouse position:', { 
+      clientX: e.clientX, 
+      containerLeft: containerRect.left, 
+      mouseX,
+      containerWidth: container.offsetWidth 
+    });
+    
+    // Calculate left panel width based on mouse position
+    let newLeftWidth = Math.max(minSizeLeft, mouseX - 10); // -10 accounts for divider position
+    let newRightWidth = container.offsetWidth - newLeftWidth;
+    
+    console.log('[TwoPanelView] Before constraints:', { newLeftWidth, newRightWidth, minSizeRight, maxSizeRight });
     
     if (minSizeRight) {
       newRightWidth = Math.max(newRightWidth, minSizeRight);
+      newLeftWidth = container.offsetWidth - newRightWidth;
     }
     if (maxSizeRight) {
       newRightWidth = Math.min(newRightWidth, maxSizeRight);
+      newLeftWidth = container.offsetWidth - newRightWidth;
     }
     
-    const newLeftWidth = container.offsetWidth - newRightWidth;
+    console.log('[TwoPanelView] After constraints - Setting widths:', { newLeftWidth, newRightWidth });
     setLeftWidth(newLeftWidth);
     setRightWidth(newRightWidth);
   }, [minSizeLeft, minSizeRight, maxSizeRight]);
 
   const handleMouseUp = React.useCallback(() => {
+    console.log('[TwoPanelView] handleMouseUp called');
     setIsDragging(false);
     const container = containerRef.current;
     if (container) {
       container.dataset.dragging = 'false';
+      console.log('[TwoPanelView] Container dragging set to false');
     }
   }, []);
 
   React.useEffect(() => {
+    console.log('[TwoPanelView] isDragging changed:', isDragging);
     if (isDragging) {
+      console.log('[TwoPanelView] Adding mousemove and mouseup listeners');
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        console.log('[TwoPanelView] Removing mousemove and mouseup listeners');
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
     }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   React.useEffect(() => {
