@@ -15,47 +15,12 @@ interface CohortRightPanelProps {
 export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode = 'cohort' }) => {
   return (
     <div className={styles.container}>
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Info</div>
-        <div className={styles.sectionContent}>
-          <InfoPanel />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Database</div>
-        <div className={styles.sectionContent}>
-          <DatabasePanel />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Codelists</div>
-        <div className={styles.sectionContent}>
-          <CodelistsViewer />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Constants</div>
-        <div className={styles.sectionContent}>
-          <ConstantsPanel />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Visibility</div>
-        <div className={styles.sectionContent}>
-          <VisibilityPanel />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Execute</div>
-        <div className={styles.sectionContent}>
-          <ExecutePanel />
-        </div>
-      </div>
+      <InfoPanel />
+      <DatabasePanel />
+      <CodelistsViewer />
+      <ConstantsPanel />
+      <VisibilityPanel />
+      <ExecutePanel />
     </div>
   );
 };
