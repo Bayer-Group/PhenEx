@@ -6,7 +6,13 @@
   overflow-x: hidden;
   background-color: var(--background-color);
   gap: 0;
-  padding-bottom: 500px;
+}
+
+.container::after {
+  content: '';
+  display: block;
+  height: 500px;
+  flex-shrink: 0;
 }
 
 /* Scrollbar styling */
