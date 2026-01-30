@@ -140,7 +140,7 @@
   z-index: 100;
   position: absolute;
   margin-left: 10px;
-  transition: all 0.2s ease;
+  /* transition: all 0.2s ease; */
   /* border-left: 1px solid var(--line-color); */
   /* background-color: red; */
 }
@@ -158,8 +158,8 @@
 
 .panel {
   transition:
-    max-width 0.2s ease,
-    width 0.2s ease,
+    /* max-width 0.2s ease,
+    width 0.2s ease, */
     opacity 0.2s ease;
   overflow: hidden;
   opacity: 1;
@@ -188,8 +188,8 @@
 
 .divider {
   transition:
-    all 0.2s ease,
-    width 0.2s ease,
+    /* all 0.2s ease,
+    width 0.2s ease, */
     opacity 0.2s ease;
   opacity: 1;
 }

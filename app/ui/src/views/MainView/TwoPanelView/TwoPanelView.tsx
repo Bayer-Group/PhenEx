@@ -191,15 +191,10 @@ export const TwoPanelView = React.forwardRef<
       >
         {leftContent}
       </div>
+      <div
+            // className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+            className={`${styles.collapseButton}`}
 
-      {slideoverContent && (
-        <div
-          className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-          style={{ width: isSlideoverCollapsed ? 0 : rightWidth }}
-        >
-          <div className={styles.rightPanelContent}>{slideoverContent}</div>
-          <div
-            className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
             onClick={() => {
               const newCollapsedState = !isSlideoverCollapsed;
               setIsSlideoverCollapsed(newCollapsedState);
@@ -207,7 +202,14 @@ export const TwoPanelView = React.forwardRef<
             }}
           >
             {'—'}
-          </div>
+      </div>
+
+      {slideoverContent && (
+        <div
+          className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+          style={{ width: isSlideoverCollapsed ? 0 : rightWidth }}
+        >
+          <div className={styles.rightPanelContent}>{slideoverContent}</div>
           <div
             className={`${styles.divider} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
             onMouseDown={handleMouseDown}
@@ -232,7 +234,7 @@ export const TwoPanelView = React.forwardRef<
               className={`${styles.popoverContent} ${isClosing ? styles.closing : ''}`} 
               onClick={(e) => e.stopPropagation()}
             >
-              <div
+              {/* <div
                 className={`${styles.collapseButton} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
                 onClick={() => {
                   setIsClosing(true);
@@ -244,7 +246,7 @@ export const TwoPanelView = React.forwardRef<
                 }}
               >
                 {'—'}
-              </div>
+              </div> */}
               <div className={styles.rightPanelContent}>
                 {popoverContentState || popoverContent}
               </div>
