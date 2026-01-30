@@ -135,14 +135,14 @@ async def get_cohort_for_user(request: Request, cohort_id: str):
                 status_code=404,
                 detail=f"Cohort {cohort_id} not found for user {user_id}",
             )
-        
+
         # Validate that returned cohort_data follows phenotypes-only format
         # Note: db_manager returns {cohort_data: {...}, version: ..., is_provisional: ...}
         try:
             validate_cohort_data_format(cohort["cohort_data"])
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
-        
+
         return cohort
     except HTTPException:
         raise
@@ -224,7 +224,7 @@ async def create_or_update_cohort(
     - 500: If there's an error saving the cohort to the database
     """
     user_id = get_authenticated_user_id(request)
-    
+
     # Validate cohort data format before processing
     try:
         validate_cohort_data_format(cohort)

@@ -425,8 +425,10 @@ class Cohort:
 
     def append_counts(self):
         def append_count_to_phenotype(phenotype):
-            phenotype.count = int(phenotype.table.select('PERSON_ID').distinct().count().to_pandas())
-            if len(phenotype.children)>0:
+            phenotype.count = int(
+                phenotype.table.select("PERSON_ID").distinct().count().to_pandas()
+            )
+            if len(phenotype.children) > 0:
                 for child in phenotype.children:
                     append_count_to_phenotype(child)
 
@@ -439,7 +441,8 @@ class Cohort:
         append_count_to_phenotypes(self.exclusions)
         append_count_to_phenotypes(self.characteristics)
         append_count_to_phenotypes(self.outcomes)
-        
+
+
 class Subcohort(Cohort):
     """
     A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.

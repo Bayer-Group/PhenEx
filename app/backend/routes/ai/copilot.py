@@ -2626,7 +2626,9 @@ async def save_updated_cohort(
             }
 
             # Verify phenotypes-only format
-            print(f"💾 SAVE_COHORT: Using phenotypes-only format with {len(updated_phenotypes)} phenotypes")
+            print(
+                f"💾 SAVE_COHORT: Using phenotypes-only format with {len(updated_phenotypes)} phenotypes"
+            )
             phenotype_types = {}
             for p in updated_phenotypes:
                 ptype = p.get("type", "unknown")
@@ -2660,7 +2662,7 @@ async def save_updated_cohort(
                     f"💾 SAVE_COHORT:   Context has 'phenotypes' field with {len(context.current_cohort['phenotypes'])} phenotypes"
                 )
                 phenotype_types = {}
-                for p in context.current_cohort['phenotypes']:
+                for p in context.current_cohort["phenotypes"]:
                     ptype = p.get("type", "unknown")
                     phenotype_types[ptype] = phenotype_types.get(ptype, 0) + 1
                 print(f"💾 SAVE_COHORT:   Phenotype types: {phenotype_types}")
@@ -2782,9 +2784,15 @@ async def suggest_changes_v2(
         validate_cohort_data_format(current_cohort)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    
+
     # Remove any legacy structured keys if they somehow exist (for backwards compatibility during migration)
-    legacy_keys = ["entry_criterion", "inclusions", "exclusions", "characteristics", "outcomes"]
+    legacy_keys = [
+        "entry_criterion",
+        "inclusions",
+        "exclusions",
+        "characteristics",
+        "outcomes",
+    ]
     for field in legacy_keys:
         current_cohort.pop(field, None)
 

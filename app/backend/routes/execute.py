@@ -106,7 +106,7 @@ async def execute_cohort(
     """
     # Get authenticated user_id and add it to cohort
     user_id = get_authenticated_user_id(request)
-    
+
     # Validate cohort data format before execution
     if cohort:
         try:
@@ -114,7 +114,7 @@ async def execute_cohort(
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
         cohort["user_id"] = user_id
-    
+
     import sys
     import asyncio
     from queue import Queue
@@ -295,7 +295,9 @@ async def execute_cohort(
 
                 # Convert back to phenotypes-only format for frontend
                 print("Converting results back to phenotypes-only format...")
-                logger.info("Converting cohort from structured format back to phenotypes array for frontend...")
+                logger.info(
+                    "Converting cohort from structured format back to phenotypes array for frontend..."
+                )
                 cohort = convert_structured_to_phenotypes(cohort)
 
                 final_result["cohort"] = cohort
@@ -377,24 +379,24 @@ async def execute_cohort(
 def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
     """
     Converts a cohort from structured format back to phenotypes-only format.
-    
-    Takes a cohort with separate entry_criterion, inclusions, exclusions, characteristics, 
+
+    Takes a cohort with separate entry_criterion, inclusions, exclusions, characteristics,
     and outcomes keys and combines them into a single 'phenotypes' array with type fields.
-    
+
     This is the reverse operation of the conversion done in prepare_cohort_for_phenex.
     Used to return execution results to the frontend in the expected format.
-    
+
     Args:
         cohort_dict: Cohort in structured format with entry_criterion, inclusions, etc.
-        
+
     Returns:
         Dict: Cohort with all phenotypes in a single 'phenotypes' array
     """
     import copy
-    
+
     result = copy.deepcopy(cohort_dict)
     phenotypes = []
-    
+
     # Add entry criterion
     if "entry_criterion" in result:
         entry = result["entry_criterion"]
@@ -404,7 +406,7 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 entry["type"] = "entry"
             phenotypes.append(entry)
         del result["entry_criterion"]
-    
+
     # Add inclusions
     if "inclusions" in result:
         for inclusion in result["inclusions"]:
@@ -413,7 +415,7 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 inclusion["type"] = "inclusion"
             phenotypes.append(inclusion)
         del result["inclusions"]
-    
+
     # Add exclusions
     if "exclusions" in result:
         for exclusion in result["exclusions"]:
@@ -422,7 +424,7 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 exclusion["type"] = "exclusion"
             phenotypes.append(exclusion)
         del result["exclusions"]
-    
+
     # Add characteristics
     if "characteristics" in result:
         for characteristic in result["characteristics"]:
@@ -431,7 +433,7 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 characteristic["type"] = "baseline"
             phenotypes.append(characteristic)
         del result["characteristics"]
-    
+
     # Add outcomes
     if "outcomes" in result:
         for outcome in result["outcomes"]:
@@ -440,12 +442,14 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 outcome["type"] = "outcome"
             phenotypes.append(outcome)
         del result["outcomes"]
-    
+
     # Set the phenotypes array
     result["phenotypes"] = phenotypes
-    
-    logger.info(f"Converted cohort from structured format to phenotypes array with {len(phenotypes)} phenotypes")
-    
+
+    logger.info(
+        f"Converted cohort from structured format to phenotypes array with {len(phenotypes)} phenotypes"
+    )
+
     return result
 
 
@@ -1013,12 +1017,12 @@ def prepare_computation_graph_node(node: dict, user_id: str):
 def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
     """
     Prepares a cohort from PhenEx UI for PhenEx library execution.
-    
+
     This function performs two main tasks:
-    1. Converts phenotypes-only format to structured format (entry_criterion, inclusions, etc.) 
+    1. Converts phenotypes-only format to structured format (entry_criterion, inclusions, etc.)
        required by PhenEx library
     2. Resolves codelists (manual, from file, from medconb) to actual code lists
-    
+
     The UI sends cohorts in phenotypes-only format with a single 'phenotypes' array where each
     phenotype has a 'type' field. The PhenEx library expects the structured format with separate
     keys for entry_criterion, inclusions, exclusions, characteristics, and outcomes.
@@ -1031,7 +1035,7 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
         dict: The cohort dictionary in PhenEx library format with:
             - entry_criterion: Single phenotype object
             - inclusions: List of phenotypes
-            - exclusions: List of phenotypes  
+            - exclusions: List of phenotypes
             - characteristics: List of phenotypes
             - outcomes: List of phenotypes
             - All codelists resolved with actual codes
@@ -1051,47 +1055,51 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
         logger.info(
             f"🏥 Converting {len(phenex_cohort['phenotypes'])} phenotypes from array format to structured format"
         )
-        
+
         phenotypes = phenex_cohort["phenotypes"]
-        
+
         # Split phenotypes by type
         entry_phenotypes = [p for p in phenotypes if p.get("type") == "entry"]
         inclusion_phenotypes = [p for p in phenotypes if p.get("type") == "inclusion"]
         exclusion_phenotypes = [p for p in phenotypes if p.get("type") == "exclusion"]
         baseline_phenotypes = [p for p in phenotypes if p.get("type") == "baseline"]
         outcome_phenotypes = [p for p in phenotypes if p.get("type") == "outcome"]
-        
+
         # Set entry_criterion (should be exactly one)
         if entry_phenotypes:
             phenex_cohort["entry_criterion"] = entry_phenotypes[0]
-            logger.info(f"🏥 Set entry_criterion: {entry_phenotypes[0].get('name', 'Unnamed')}")
+            logger.info(
+                f"🏥 Set entry_criterion: {entry_phenotypes[0].get('name', 'Unnamed')}"
+            )
         else:
             logger.warning(f"🏥 No entry phenotype found in cohort '{cohort_name}'")
-        
+
         # Set other categories
         if inclusion_phenotypes:
             phenex_cohort["inclusions"] = inclusion_phenotypes
             logger.info(f"🏥 Set {len(inclusion_phenotypes)} inclusions")
-        
+
         if exclusion_phenotypes:
             phenex_cohort["exclusions"] = exclusion_phenotypes
             logger.info(f"🏥 Set {len(exclusion_phenotypes)} exclusions")
-        
+
         if baseline_phenotypes:
             phenex_cohort["characteristics"] = baseline_phenotypes
             logger.info(f"🏥 Set {len(baseline_phenotypes)} characteristics")
-        
+
         if outcome_phenotypes:
             phenex_cohort["outcomes"] = outcome_phenotypes
             logger.info(f"🏥 Set {len(outcome_phenotypes)} outcomes")
-        
+
         # Remove the phenotypes array as it's no longer needed
         del phenex_cohort["phenotypes"]
         logger.info(f"🏥 Removed phenotypes array after conversion")
 
     # Now prepare codelists for each category
     if "entry_criterion" in phenex_cohort:
-        logger.info(f"🏥 Preparing entry criterion codelists for cohort '{cohort_name}'")
+        logger.info(
+            f"🏥 Preparing entry criterion codelists for cohort '{cohort_name}'"
+        )
         phenex_cohort["entry_criterion"] = prepare_phenotypes_for_phenex(
             [phenex_cohort["entry_criterion"]], user_id
         )[0]
@@ -1103,7 +1111,7 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
         phenex_cohort["inclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["inclusions"], user_id
         )
-    
+
     if "exclusions" in phenex_cohort:
         logger.info(
             f"🏥 Preparing codelists for {len(phenex_cohort['exclusions'])} exclusions"
@@ -1111,7 +1119,7 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
         phenex_cohort["exclusions"] = prepare_phenotypes_for_phenex(
             phenex_cohort["exclusions"], user_id
         )
-    
+
     if "characteristics" in phenex_cohort:
         logger.info(
             f"🏥 Preparing codelists for {len(phenex_cohort['characteristics'])} characteristics"
@@ -1119,7 +1127,7 @@ def prepare_cohort_for_phenex(phenexui_cohort: dict, user_id):
         phenex_cohort["characteristics"] = prepare_phenotypes_for_phenex(
             phenex_cohort["characteristics"], user_id
         )
-    
+
     if "outcomes" in phenex_cohort:
         logger.info(
             f"🏥 Preparing codelists for {len(phenex_cohort['outcomes'])} outcomes"

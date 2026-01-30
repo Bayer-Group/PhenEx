@@ -7,7 +7,7 @@ try:
 except Exception as e:
     medconb_router = None
     MEDCONB_ENABLED = False
-    
+
 from .models import (
     CodelistMetadata,
     CodelistFile,
@@ -29,7 +29,9 @@ if MEDCONB_ENABLED and medconb_router is not None:
     router.include_router(medconb_router, prefix="/medconb")
     logging.getLogger(__name__).info("MedConB router registered at /codelist/medconb")
 else:
-    logging.getLogger(__name__).warning("MedConB router not registered - integration disabled")
+    logging.getLogger(__name__).warning(
+        "MedConB router not registered - integration disabled"
+    )
 
 # Setup logger
 logger = logging.getLogger(__name__)

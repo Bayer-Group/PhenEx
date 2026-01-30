@@ -128,6 +128,6 @@ class AgePhenotype(Phenotype):
 
     def _perform_value_filtering(self, table: Table) -> Table:
         if self.value_filter is not None:
-            self.value_filter.column_name = 'VALUE'
+            self.value_filter.column_name = "VALUE"
             table = self.value_filter.filter(table)
         return table

@@ -306,7 +306,7 @@ class DatabaseManager:
         # Validate cohort data format using centralized validation function
         # ValueError will bubble up to caller
         validate_cohort_data_format(cohort_data)
-        
+
         conn = None
         try:
             conn = await self.get_connection()
