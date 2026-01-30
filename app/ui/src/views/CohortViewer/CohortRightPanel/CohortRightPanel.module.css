@@ -16,6 +16,7 @@
   background-color: var(--background-color);
   margin-top: 90px;
   padding-bottom:400px;
+  border-right: var(--border);
 }
 
 /* Hide default scrollbar */

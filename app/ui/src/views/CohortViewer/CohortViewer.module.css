@@ -7,8 +7,8 @@
 .cohortTableContainer {
   display: flex;
   flex-direction: column;
-  margin-top:65px;
-  height: calc(100% - 65px);
+  margin-top:50px;
+  height: calc(100% - 50px);
   width: 100%;
   position: relative;
 }

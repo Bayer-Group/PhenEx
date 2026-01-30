@@ -409,7 +409,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             components={components} // Pass registered components for cell renderers
             defaultColDef={{
               sortable: true,
-              filter: true,
+              filter: false,
               resizable: true,
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,
