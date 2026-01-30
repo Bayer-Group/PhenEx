@@ -14,10 +14,9 @@
 .leftPanel {
   background-color: var(--background-color) !important;
   position: relative;
-  min-width: 500px;
-  /* transition:
+  transition:
     width 0.2s ease,
-    opacity 0.2s ease; */
+    opacity 0.2s ease;
 }
 
 .rightPanel {
@@ -25,11 +24,10 @@
   transition: none;
   background-color: var(--background-color) !important;
   opacity: 1;
+  min-width: 500px;
   transition:
-    /* width 0.2s ease, */
     opacity 0.1s ease;
   border-radius: 20px 20px 20px 20px;
-
 }
 
 .rightPanel.collapsed {
@@ -50,40 +48,40 @@
 .divider {
   width: 15px;
   height: 100%;
-  /* background-color: var(--background-color) !important; */
   cursor: col-resize;
   position: absolute;
   background-color: transparent;
   z-index: 5000;
   top: 0px;
-  left: 0px;
+  right: 0px;
 }
 
-.rightPanel .rightPanelContent{
+.leftPanel .leftPanelContent{
   opacity: 1!important;
   transition: opacity 1.1s ease !important;
 }
-.rightPanel.collapsed .rightPanelContent{
+.leftPanel.collapsed .leftPanelContent{
   opacity:0 !important;
   transition: opacity .3s ease !important;
+}
 
+.leftPanelContent {
+  position: relative;
+  height: 100%;
+  z-index: 0;
+  border-radius: var(--border_radius_right_panel);
+  background-color: transparent !important;
+  overflow: hidden;
+  border-right: var(--border);
 }
 
 .rightPanelContent {
   position: relative;
-  height: 100%;/*calc(100% - 2 * var(--margin_top_right_panel));*/
+  height: 100%;
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
   background-color: transparent !important;
-  /* border-left: 1px solid var(--line-color);
-  border-top: 1px solid var(--line-color);
-  border-right: 1px solid var(--line-color) !important; */
-  /* margin-right: 20px !important; */
-  /* box-shadow:var(--box_shadow); */
-  /* border-left: var(--border); */
-  /* margin-top: 0pxvar(--margin_top_right_panel); */
   overflow: hidden;
-  border-left: var(--border);
 }
 .divider.collapsed {
   width: 0;
@@ -123,21 +121,9 @@
   display: flex;
   position: absolute;
   top: 5px;
-  right: 20px;
+  left: 20px;
   height: 40px;
   width:40px;
-  /* padding: 3px 10px 3px 8px;
-  font-family: 'SNPro-black'!important;
-  box-sizing: border-box;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 24px !important;
-  z-index: 1000;
-  transition: all 0.5s ease;
-  user-select: none;
-  color: var(--color-accent-bright);
-  cursor: pointer !important; */
 }
 
 /* .collapseButton:hover {
@@ -185,7 +171,11 @@
 
 .leftPanel.rightCollapsed{
     transition:
-    /* width 0.1s ease, */
+    opacity 0.1s ease;
+}
+
+.rightPanel.leftCollapsed{
+    transition:
     opacity 0.1s ease;
 }
 

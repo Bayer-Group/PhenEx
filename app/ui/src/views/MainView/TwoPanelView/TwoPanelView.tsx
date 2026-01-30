@@ -111,24 +111,34 @@ export const TwoPanelView = React.forwardRef<
       containerWidth: container.offsetWidth 
     });
     
-    // Calculate left panel width based on mouse position
-    let newLeftWidth = Math.max(minSizeLeft, mouseX - 10); // -10 accounts for divider position
-    let newRightWidth = container.offsetWidth - newLeftWidth;
+    // Calculate widths: mouseX is the right edge of the left panel (slideover)
+    // leftWidth state = right panel (main content) width
+    // rightWidth state = left panel (slideover) width
+    let newSlideoverWidth = mouseX;
+    let newMainContentWidth = container.offsetWidth - mouseX;
     
-    console.log('[TwoPanelView] Before constraints:', { newLeftWidth, newRightWidth, minSizeRight, maxSizeRight });
+    console.log('[TwoPanelView] Before constraints:', { newSlideoverWidth, newMainContentWidth, minSizeRight, maxSizeRight, minSizeLeft });
     
+    // Apply constraints: slideover uses minSizeRight/maxSizeRight, main content uses minSizeLeft
     if (minSizeRight) {
-      newRightWidth = Math.max(newRightWidth, minSizeRight);
-      newLeftWidth = container.offsetWidth - newRightWidth;
+      newSlideoverWidth = Math.max(newSlideoverWidth, minSizeRight);
+      newMainContentWidth = container.offsetWidth - newSlideoverWidth;
     }
     if (maxSizeRight) {
-      newRightWidth = Math.min(newRightWidth, maxSizeRight);
-      newLeftWidth = container.offsetWidth - newRightWidth;
+      newSlideoverWidth = Math.min(newSlideoverWidth, maxSizeRight);
+      newMainContentWidth = container.offsetWidth - newSlideoverWidth;
+    }
+    if (minSizeLeft) {
+      newMainContentWidth = Math.max(newMainContentWidth, minSizeLeft);
+      newSlideoverWidth = container.offsetWidth - newMainContentWidth;
     }
     
-    console.log('[TwoPanelView] After constraints - Setting widths:', { newLeftWidth, newRightWidth });
-    setLeftWidth(newLeftWidth);
-    setRightWidth(newRightWidth);
+    console.log('[TwoPanelView] After constraints - Setting widths:', { 
+      leftWidth: newMainContentWidth, 
+      rightWidth: newSlideoverWidth 
+    });
+    setLeftWidth(newMainContentWidth);   // right panel (main content)
+    setRightWidth(newSlideoverWidth);     // left panel (slideover)
   }, [minSizeLeft, minSizeRight, maxSizeRight]);
 
   const handleMouseUp = React.useCallback(() => {
@@ -185,31 +195,13 @@ export const TwoPanelView = React.forwardRef<
       className={`${styles.container} ${styles.vertical}`}
       data-dragging="false"
     >
-      <div 
-        className={`${styles.leftPanel} ${isSlideoverCollapsed ? styles.rightCollapsed : ''}`} 
-        style={{ width: isSlideoverCollapsed ? '100%' : leftWidth }}
-      >
-        {leftContent}
-      </div>
-      <div
-            // className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-            className={`${styles.collapseButton}`}
-
-            onClick={() => {
-              const newCollapsedState = !isSlideoverCollapsed;
-              setIsSlideoverCollapsed(newCollapsedState);
-              onSlideoverCollapse?.(newCollapsedState);
-            }}
-          >
-            {'—'}
-      </div>
-
       {slideoverContent && (
         <div
-          className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+          className={`${styles.leftPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
           style={{ width: isSlideoverCollapsed ? 0 : rightWidth }}
         >
-          <div className={styles.rightPanelContent}>{slideoverContent}</div>
+
+          <div className={styles.leftPanelContent}>{slideoverContent}</div>
           <div
             className={`${styles.divider} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
             onMouseDown={handleMouseDown}
@@ -217,6 +209,25 @@ export const TwoPanelView = React.forwardRef<
         </div>
       )}
 
+      
+
+      <div 
+        className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''}`} 
+        style={{ width: isSlideoverCollapsed ? '100%' : leftWidth }}
+      >
+        {leftContent}
+      </div>
+
+          <div
+            className={`${styles.collapseButton}`}
+            onClick={() => {
+              const newCollapsedState = !isSlideoverCollapsed;
+              setIsSlideoverCollapsed(newCollapsedState);
+              onSlideoverCollapse?.(newCollapsedState);
+            }}
+          >
+            {'—'}
+          </div>
       {(isPopoverOpen || popoverContent) && (
         <Portal>
           <div 
