@@ -10,7 +10,6 @@ import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
 import { SmartTextField } from '../../../components/SmartTextField';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
-import { HeightAdjustableContainer } from '@/components/HeightAdjustableContainer/HeightAdjustableContainer';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -26,16 +25,11 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [phenotypeName, setPhenotypeName] = useState('');
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
-  const [bottomContainerHeight, setBottomContainerHeight] = useState(300);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
   );
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
-
-  const handleHeightChange = (height: number) => {
-    setBottomContainerHeight(height);
-  };
 
   // Subscribe to data service updates
   useEffect(() => {
@@ -121,19 +115,35 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
       ? dataService.cohortDataService.getAllAncestors(data)
       : [];
     
-    // Get cohort name only if this is a component phenotype
-    const cohortName = data.type != 'component' ? dataService.getCohortName() : null;
+    // Get cohort and study names
+    const cohortName = dataService.getCohortName();
+    const studyName = dataService.cohortDataService.getStudyNameForCohort();
     
-    // Build breadcrumb items: cohort first (if component), then ancestors, then current phenotype
+    // Build breadcrumb items: My Studies, Study, Cohort, ancestors, then current phenotype
     const breadcrumbItems = [
-      ...(cohortName ? [{
+      {
+        displayName: 'My Studies',
+        onClick: () => {
+          window.location.href = '/studies';
+        },
+      },
+      ...(studyName ? [{
+        displayName: studyName,
+        onClick: () => {
+          const studyId = dataService.cohortDataService.cohort_data?.study_id;
+          if (studyId) {
+            window.location.href = `/studies/${studyId}`;
+          }
+        },
+      }] : []),
+      {
         displayName: cohortName || 'Unnamed Cohort',
         onClick: () => {
           // Close the phenotype panel to return to cohort view
           const cohortViewer = TwoPanelCohortViewerService.getInstance();
           cohortViewer.hideExtraContent();
         },
-      }] : []),
+      },
       ...ancestors.map(ancestor => ({
         displayName: ancestor.name || ancestor.id || 'Unnamed',
         onClick: () => onClickAncestor(ancestor as Phenotype),
@@ -146,7 +156,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
 
     const handleEditLastItem = async (newValue: string) => {
       setPhenotypeName(newValue);
-      dataService.valueChanged({ parameter: 'name', value: newValue }, newValue);
+      dataService.valueChanged('name', newValue);
     };
 
     return (
@@ -158,6 +168,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
         classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
         classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
         classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${data.effective_type}_text_color`]}`}
+        compact={false}
       />
       </>
     );
@@ -166,7 +177,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const renderDescription = () => {
     const handleDescriptionSave = (newValue: string) => {
       setDescription(newValue);
-      dataService.valueChanged({ parameter: 'description', value: newValue }, newValue);
+      dataService.valueChanged('description', newValue);
     };
 
     return (
@@ -185,30 +196,23 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     <SlideoverPanel
       title=""
       info={infoContent()}
-      classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
-      classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
-      classNameContainer={typeStyles[`${data.effective_type}_border_color`]}
+      // classNameHeader={typeStyles[`${data.effective_type}_color_block_dim`]}
+      // classNameButton={typeStyles[`${data.effective_type}_color_block_text_and_border`]}
+      classNameContainer={styles.slideoverContainer}
     >
-      {/* <div className={`${styles.wrapper}`}>
-        <div className={`${styles.header} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}> */}
-        <div className={`${styles.wrapper} ${typeStyles[`${data.effective_type}_color_block_dim`]}`}>
+  
+        <div className={`${styles.wrapper}`}>
         <div className={`${styles.header}`}>
           {renderBreadcrumbs()}
           {renderDescription()}
-        </div>
-        <div className={styles.mainContainer} style={{ position: 'relative', height: '100%', width: '100%' }}>
-          <PhenotypeViewer data={data} bottomMargin={bottomContainerHeight} />
-          <div className={styles.bottomSection}>
-            <HeightAdjustableContainer
-              initialHeight={300}
-              minHeight={200}
-              maxHeight={600}
-              onHeightChange={handleHeightChange}
-            >
-              <PhenotypeComponents data={data} />
-            </HeightAdjustableContainer>
+          <div className={styles.viewerSection}>
+            <PhenotypeViewer data={data} />
           </div>
+
         </div>
+          <div className={styles.componentsSection}>
+            <PhenotypeComponents data={data} />
+          </div>
       </div>
     </SlideoverPanel>
   );

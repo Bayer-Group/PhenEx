@@ -6,14 +6,14 @@ import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustom
 import typeStyles from '../../../styles/study_types.module.css';
 interface PhenotypeViewerProps {
   data?: Phenotype;
-  bottomMargin?: number;
 }
 
-export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMargin = 0 }) => {
+export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const [typeColor, setTypeColor] = useState('red');
+  const [typeColor, setTypeColor] = useState('green');
+  const [typeColorDim, setTypeColorDim] = useState('green');
 
   const refreshGrid = () => {
     const maxRetries = 5;
@@ -83,8 +83,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
     // Set type color based on phenotype type
     if (data?.effective_type && typeStyles[`${data.effective_type}_color_block`]) {
       setTypeColor(typeStyles[`${data.effective_type}_color_block`]);
+      setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
     } else {
-      setTypeColor('red'); // default color
+      setTypeColor('blue'); // default color
     }
 
     return () => {
@@ -102,8 +103,9 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
 
   const renderPhenotypeEditorTable = () => {
     return (
-      <div className={styles.gridContainer} style={{ marginBottom: `${bottomMargin}px` }}>
-        <AgGridWithCustomScrollbars
+      <div className={`${styles.gridWrapper}`}>
+      <div className={`${styles.gridContainer} ${typeColorDim}`}>
+          <AgGridWithCustomScrollbars
           rowData={dataService.rowData}
           columnDefs={dataService.getColumnDefs()}
           ref={gridRef}
@@ -111,10 +113,14 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
           onCellValueChanged={onCellValueChanged}
           scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
           animateRows={false}
+          bottomPadding={0}
+          hideScrollbars={true}
+          headerHeight={0}
+          domLayout="autoHeight"
           
           getRowHeight={params => {
             // Calculate height of CODELISTS
-            let current_max_height = 100;
+            let current_max_height = 34;
 
             if (params.data?.parameter == 'codelist' && params.data.codelist?.codelist) {
               const numEntries = Object.keys(params.data.codelist.codelist).length;
@@ -159,6 +165,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data, bottomMa
             return current_max_height;
           }}
         />
+        </div>
       </div>
     );
   };

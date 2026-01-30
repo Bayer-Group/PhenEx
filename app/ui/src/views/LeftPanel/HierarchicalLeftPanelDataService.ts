@@ -20,9 +20,22 @@ import { CohortsDataService, StudyData, CohortData as ServiceCohortData } from '
 import { MainViewService } from '../MainView/MainView';
 import { getCurrentUser, onUserChange } from '@/auth/userProviderBridge';
 
-interface HierarchicalTreeNode {
+export interface HierarchicalTreeNode {
   id: string;
+  displayName?: string;
+  level?: number;
   viewInfo?: ViewInfo;
+  children?: HierarchicalTreeNode[];
+  height?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  collapsed?: boolean;
+  selected?: boolean;
+  hasButton?: boolean;
+  buttonTitle?: string;
+  buttonOnClick?: () => void;
+  hideButton?: boolean;
+  onClick?: () => void;
 }
 
 interface CohortData {
@@ -55,11 +68,13 @@ export class HierarchicalLeftPanelDataService {
 
     this.dataService.addListener(() => {
       // When cohort data changes, refresh the cohort names and IDs
+      console.log('🔔 HierarchicalLeftPanelDataService: CohortsDataService changed, updating tree...');
       this.updateTreeData();
     });
 
     // Listen for auth user changes to rebuild tree if needed
     onUserChange(() => {
+      console.log('🔔 HierarchicalLeftPanelDataService: User changed, updating tree...');
       this.updateTreeData();
     });
   }
@@ -69,6 +84,13 @@ export class HierarchicalLeftPanelDataService {
       HierarchicalLeftPanelDataService.instance = new HierarchicalLeftPanelDataService();
     }
     return HierarchicalLeftPanelDataService.instance;
+  }
+
+  /**
+   * Check if a study is a public study (vs a user study)
+   */
+  public isPublicStudy(studyId: string): boolean {
+    return this.cachedPublicStudies.some(s => s.id === studyId);
   }
 
   private createCohortNode = (
@@ -108,7 +130,7 @@ export class HierarchicalLeftPanelDataService {
       id: study.id,
       displayName: study.name,
       level: level,
-      viewInfo: { viewType: ViewType.StudyViewer, data: study },
+      viewInfo: { viewType: ViewType.StudyViewer, data: study.id },
       children: children,
       height: 35,
       fontSize: 16,
@@ -116,7 +138,7 @@ export class HierarchicalLeftPanelDataService {
       collapsed: true, // Start collapsed - TreeListItem will manage its own state
       selected: isSelected,
       hasButton: !isPublic,
-      buttonTitle: 'Add Cohort',
+      buttonTitle: 'New',
       buttonOnClick: () => this.addNewCohortToStudy(study.id),
       hideButton: true, // Hide button by default, show on hover
     };
@@ -125,6 +147,7 @@ export class HierarchicalLeftPanelDataService {
   };
 
   public async updateTreeData() {
+    console.log('🔄 HierarchicalLeftPanelDataService: updateTreeData called');
 
     // Capture currently selected node ID before rebuilding
     const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
@@ -134,37 +157,15 @@ export class HierarchicalLeftPanelDataService {
       await this.dataService.loadUserWorkspace();
       this.cachedUserStudies = await this.dataService.getUserStudies();
       this.cachedPublicStudies = await this.dataService.getPublicStudies();
+      console.log('🔄 HierarchicalLeftPanelDataService: Fetched studies, user:', this.cachedUserStudies.length, 'public:', this.cachedPublicStudies.length);
     } catch (error) {
-      console.warn('🚨 Failed to load workspace, likely auth not ready:', error);
-      // Set empty arrays and return early if auth not ready
+      console.warn('🚨 Failed to load workspace:', error);
+      // Set empty arrays if loading fails
       this.cachedUserStudies = [];
       this.cachedPublicStudies = [];
       
-      // Build minimal tree structure without data
-      const createEmptyRootNode = (id: string, displayName: string): HierarchicalTreeNode => ({
-        id,
-        displayName,
-        level: 0,
-        children: [],
-        viewInfo: { viewType: ViewType.CohortDefinition, data: null },
-        height: 60,
-        fontSize: 18,
-        fontFamily: 'IBMPlexSans-bold',
-        collapsed: false,
-        selected: id === currentlySelectedNodeId,
-        hasButton: id === 'mystudies' ? true : false,
-        buttonTitle: 'New',
-        buttonOnClick: this.addNewStudy.bind(this),
-      });
-      
-      this.treeData = [];
-      if (!getCurrentUser()?.isAnonymous) {
-        this.treeData.push(createEmptyRootNode('mystudies', 'My Studies'));
-      }
-      this.treeData.push(createEmptyRootNode('publicstudies', 'Public Studies'));
-      
-      this.notifyListeners();
-      return;
+      // Build minimal tree structure without data - don't return, continue to build tree
+      // This allows the UI to show the loading state rather than an error
     }
 
     const createUserStudies = async () => {
@@ -206,7 +207,7 @@ export class HierarchicalLeftPanelDataService {
       displayName,
       level: 0,
       children: id === 'mystudies' ? await createUserStudies() : await createPublicStudies(),
-      viewInfo: { viewType: ViewType.CohortDefinition, data: null },
+      viewInfo: { viewType: ViewType.Empty, data: { navigateTo: '/studies' } },
       height: 60,
       fontSize: 18,
       fontFamily: 'IBMPlexSans-bold',
@@ -219,10 +220,9 @@ export class HierarchicalLeftPanelDataService {
 
     this.treeData = [];
     if (!getCurrentUser()?.isAnonymous) {
-      this.treeData.push(await createRootNode('mystudies', 'Studies'));
+      this.treeData.push(await createRootNode('mystudies', 'My Studies'));
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
-
     this.notifyListeners();
   }
 
@@ -242,7 +242,8 @@ export class HierarchicalLeftPanelDataService {
   }
 
   getTreeData(): HierarchicalTreeNode[] {
-    return this.treeData;
+    // Return a new array reference to ensure React detects changes
+    return [...this.treeData];
   }
 
   // Recursively deselect all nodes in the tree
@@ -320,7 +321,7 @@ export class HierarchicalLeftPanelDataService {
   }
 
   public async addNewStudy() {
-    // Don't await - let it happen in background
+    // Create a new study and navigate to it
     const newStudyPromise = this.dataService.createNewStudy();
     
     // Get the study data immediately (it's created synchronously)
@@ -330,8 +331,12 @@ export class HierarchicalLeftPanelDataService {
     // when dataService.notifyListeners() is called from createNewStudy
     
     if (newStudyData) {
-      console.log('CREATING NEW STUDY:', newStudyData);
-      this.addNewCohortToStudy(newStudyData);
+      // Navigate to the study viewer (don't create a cohort yet)
+      const mainViewService = MainViewService.getInstance();
+      mainViewService.navigateTo({ 
+        viewType: ViewType.StudyViewer, 
+        data: newStudyData.id 
+      });
     }
 
     // Handle errors in background
@@ -340,23 +345,25 @@ export class HierarchicalLeftPanelDataService {
       // Tree will be updated by the revert in createNewStudy()
     });
 
-    return ViewType.CohortDefinition;
+    return ViewType.StudyViewer;
   }
 
   public async addNewCohortToStudy(study_data: any) {
     // Don't await - let it happen in background
     const newCohortPromise = this.dataService.createNewCohort(study_data);
-    
+
     // Get the cohort data immediately (it's created synchronously)
     const newCohortData = await newCohortPromise;
-    
+
     // Note: updateTreeData will be triggered by the listener we set up in constructor
     // when dataService.notifyListeners() is called from createNewCohort
-    
+
     if (newCohortData) {
-      console.log('CREATING NEW COHORT FOR STUDY:', study_data.id, newCohortData);
       const mainViewService = MainViewService.getInstance();
       mainViewService.navigateTo({ viewType: ViewType.NewCohort, data: newCohortData });
+
+      // Dispatch a custom event to notify all listeners (including StudyViewerCohortDefinitions)
+      window.dispatchEvent(new CustomEvent('cohort-added', { detail: { studyId: study_data.id, cohortId: newCohortData.id } }));
     }
 
     // Handle errors in background
@@ -424,9 +431,7 @@ export class HierarchicalLeftPanelDataService {
    * @param cohortId The ID of the cohort being moved
    * @param newIndex The target index position
    */
-  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {
-    console.log(`🔄 reorderCohort: Moving cohort ${cohortId} to index ${newIndex} in study ${studyId}`);
-    
+  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {    
     try {
       // Clear and reload cohorts to ensure we have fresh data
       this.dataService.clearStudyCohortsCache(studyId);
@@ -478,13 +483,10 @@ export class HierarchicalLeftPanelDataService {
    * @param studyId The ID of the study to rename
    * @param newName The new name for the study
    */
-  public async updateStudyName(studyId: string, newName: string) {
-    console.log(`✏️ updateStudyName: Renaming study ${studyId} to "${newName}"`);
-    
+  public async updateStudyName(studyId: string, newName: string) {    
     try {
       // Update the study name via the data service
       await this.dataService.updateStudyData(studyId, { name: newName });
-      console.log('✅ Study name updated successfully');
       
       // Update cached studies
       const userStudy = this.cachedUserStudies.find(s => s.id === studyId);
@@ -511,7 +513,6 @@ export class HierarchicalLeftPanelDataService {
    * @param newName The new name for the cohort
    */
   public async updateCohortName(cohortId: string, newName: string) {
-    console.log(`✏️ updateCohortName: Renaming cohort ${cohortId} to "${newName}"`);
     
     try {
       // Load the cohort data using CohortDataService
@@ -536,9 +537,7 @@ export class HierarchicalLeftPanelDataService {
       await cohortDataService.loadCohortData(cohortId);
       cohortDataService.cohort_name = newName;
       await cohortDataService.saveChangesToCohort();
-      
-      console.log('✅ Cohort name updated successfully');
-      
+            
       // Clear cache and update tree data
       this.dataService.clearStudyCohortsCache(studyId);
       await this.updateTreeData();

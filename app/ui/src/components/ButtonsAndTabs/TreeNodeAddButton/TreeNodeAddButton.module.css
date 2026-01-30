@@ -1,0 +1,43 @@
+.buttonContainer {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.addButton {
+  position: absolute;
+  right:0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color_accent_blue);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.addButton:hover {
+  transform: scale(1.15);
+  background: var(--color_accent_dark);
+  color: white;
+}
+
+.addButton:active {
+  transform: scale(1.05);
+}
+
+.addButton svg {
+  display: block;
+}

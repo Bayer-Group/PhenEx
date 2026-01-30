@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --root-user-action=ignore --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade openai 'pydantic-ai[openai]'
 
 # Copy application code
 COPY . .

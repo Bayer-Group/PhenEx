@@ -28,10 +28,13 @@ export interface PhenexCellEditorProps extends ICellEditorParams {
   showComposerPanel?: boolean; // If false, hide composer panel (for complex item editors before selection)
   showAddButton?: boolean; // If true, show a '+' button to add new items (for complex item editors)
   onAddItem?: () => void; // Callback when add button is clicked
-  onItemSelect?: (item: any, index?: number) => void; // Callback when a complex item is selected for editing
+  onItemSelect?: (item: any, index?: number, position?: { x: number; y: number }) => void; // Callback when a complex item is selected for editing
   onEditingDone?: () => void; // Callback when complex item editing is complete (for Done button)
   selectedItemIndex?: number; // Index of the currently selected item in a complex item array (for visual highlighting)
   rendererProps?: Record<string, any>; // Additional props to pass to the renderer (e.g., onOperatorClick for logical filters)
+  onRequestPositionAdjustment?: (offset: { x: number; y: number }) => void; // Callback for children to adjust composer position
+  clickedItemIndex?: number; // Index of item that was clicked to open the editor (used to position composer panel)
+  onDelete?: () => void; // Callback when delete key is pressed (behavior varies by editor type)
 }
 
 const PHENEX_CELL_EDITOR_INFO_STATE_KEY = 'phenexCellEditorInfoOpen';
@@ -75,20 +78,57 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
-  const [showComposer, setShowComposer] = useState(() => props.showComposerPanel !== false);
-
+  const [showComposer, setShowComposer] = useState(false); // Always start hidden - only show on explicit user interaction
+  const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Callback for children to update the current value
+  // Used by list-view editors to update value and trigger auto-close
+  const handleValueChange = React.useCallback((value: any) => {
+    console.log('PhenexCellEditor.handleValueChange called with:', value);
+    setCurrentValue(value);
+    console.log('Set currentValue to:', value);
+    
+    // Notify parent if callback provided
+    props.onValueChange?.(value);
+    console.log('Called props.onValueChange with:', value);
+    
+    // Auto-close editor for list-view editors when a value is selected
+    if (props.autoCloseOnChange) {
+      // Small delay to ensure the value is saved before closing
+      setTimeout(() => {
+        props.api.stopEditing();
+      }, 0);
+    }
+  }, [props.onValueChange, props.autoCloseOnChange, props.api]);
+  
+  // Default delete handler for list-view editors - clears the value
+  const handleDeleteDefault = React.useCallback(() => {
+    if (props.autoCloseOnChange) {
+      // For list-view editors, clear the value
+      console.log('=== Delete pressed in list-view editor - clearing value ===');
+      handleValueChange(null);
+    }
+  }, [props.autoCloseOnChange, handleValueChange]);
+  
+  // Use provided onDelete or default behavior
+  const onDeleteHandler = props.onDelete || handleDeleteDefault;
+  
+  // Read clicked position from node.data (captured in renderer)
+  useEffect(() => {
+    const storedPosition = props.data?._clickedItemPosition;
+    if (storedPosition) {
+      console.log('Using clicked position from renderer:', storedPosition);
+      setClickedItemPosition(storedPosition);
+      // Clean up
+      delete props.data._clickedItemPosition;
+    }
+  }, [props.data]);
+  
   // Update currentValue when props.value changes (for complex item editors managing arrays)
   useEffect(() => {
     console.log('PhenexCellEditor: props.value changed to:', props.value);
     setCurrentValue(props.value);
   }, [props.value]);
-
-  // Update showComposer when prop changes
-  useEffect(() => {
-    if (props.showComposerPanel !== undefined) {
-      setShowComposer(props.showComposerPanel);
-    }
-  }, [props.showComposerPanel]);
 
   useEffect(() => {
     // Listen for storage changes from other tabs/windows
@@ -143,6 +183,11 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     props.api.stopEditing(); // AG Grid will call getValue() which returns currentValueRef.current
   };
 
+  const handleCloseComposer = () => {
+    console.log("=== Closing composer panel only ===");
+    setShowComposer(false);
+  };
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const contentScrollableRef = React.useRef<HTMLDivElement>(null);
 
@@ -173,8 +218,18 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           : 0;
 
       (focusableElements[nextIndex] as HTMLElement).focus();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Check if we're not focused in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        e.nativeEvent.stopImmediatePropagation();
+        e.preventDefault();
+        e.stopPropagation();
+        onDeleteHandler();
+        console.log("DELETING")
+      }
     }
-  }, []);
+  }, [onDeleteHandler]);
 
   React.useEffect(() => {
     const container = containerRef.current;
@@ -193,6 +248,27 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       (focusableElements[0] as HTMLElement).focus();
     }
   }, []);
+
+  // Global keyboard listener for delete functionality
+  React.useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      console.log('=== Global key pressed:', e.key);
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Check if we're not focused in an input/textarea
+        const target = e.target as HTMLElement;
+        console.log('Target element:', target.tagName);
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          console.log('=== Calling onDeleteHandler ===');
+          e.preventDefault();
+          e.stopPropagation();
+          onDeleteHandler();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [onDeleteHandler]);
 
   let titleText = props.data?.parameter || props.column?.getColDef().headerName || 'Editor';
   if (titleText == 'Name') {
@@ -223,58 +299,77 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     }
 
     // Cell dimensions - bottom section matches exactly
+    const offsetX = 5;
+    const offsetY = 10;
     const cellWidth = cellRect.width;
-    const cellHeight = cellRect.height;
+    const cellHeight = cellRect.height+10;
     
     // Current Selection Panel dimensions (with minimum width)
     const minCurrentSelectionWidth = 300;
-    const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth);
+    const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth) +2*offsetX;
     
     // Bottom section is positioned at EXACT cell coordinates
-    const bottomSectionLeft = cellRect.left;
-    const bottomSectionTop = cellRect.top;
+    const bottomSectionLeft = cellRect.left - offsetX;
+    const bottomSectionTop = cellRect.top - offsetY;
     
     // Composer Panel dimensions
-    const composerWidth = 350;
+    const composerWidth = 100;
     const composerMaxHeight = viewport.height - 100; // Max height with padding
     
-    // Position Composer Panel independently for maximum visibility
-    // Must account for actual current selection width (which may be larger than cell)
+    // Position Composer Panel - use clicked item position if available, otherwise use default logic
     let composerLeft: number;
     let composerTop: number;
-    const composerPlacementThreshold = viewport.width / 2;
     
-    if (cellRect.left < composerPlacementThreshold) {
-      // Cell is on left side - place composer on the right
-      // Use the actual width of current selection panel (could be wider than cell due to minWidth)
-      composerLeft = Math.min(
-        bottomSectionLeft + currentSelectionWidth + 10, // 10px gap from current selection panel
-        viewport.width - composerWidth - 10 // Ensure it fits
-      );
+    if (clickedItemPosition) {
+      composerLeft = clickedItemPosition.x;
+      composerTop = clickedItemPosition.y;
+      
+      // Shift up only if it would be cut off (estimate 500px height)
+      if (composerTop + 500 > viewport.height) {
+        composerTop = viewport.height - 500;
+      }
+      
+      composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
+      composerTop = Math.max(10, composerTop);
     } else {
-      // Cell is on right side - place composer on the left
-      composerLeft = Math.max(
-        10, // Minimum left padding
-        bottomSectionLeft - composerWidth - 10 // 10px gap from current selection panel
-      );
+      // Default positioning logic when no item has been clicked
+      const composerPlacementThreshold = viewport.width / 2;
+      
+      if (cellWidth > 350) {
+        // If cell is wide, overlap at 350px from left edge
+        composerLeft = bottomSectionLeft + 350;
+      } else if (cellRect.left < composerPlacementThreshold) {
+        // Cell is narrow and on left side - place composer on the right
+        composerLeft = Math.min(
+          bottomSectionLeft + currentSelectionWidth + 10,
+          viewport.width - composerWidth - 10
+        );
+      } else {
+        // Cell is narrow and on right side - place composer on the left
+        composerLeft = Math.max(
+          10,
+          bottomSectionLeft - composerWidth - 10
+        );
+      }
+      
+      composerTop = cellRect.top;
+      // Shift up only if it would be cut off (estimate 500px height)
+      if (composerTop + 500 > viewport.height) {
+        composerTop = viewport.height - 500;
+      }
+      composerTop = Math.max(10, composerTop);
     }
-    
-    // Position composer vertically - try to align with cell top, but adjust for visibility
-    composerTop = cellRect.top;
-    
-    // Ensure composer doesn't go above viewport or too close to bottom
-    composerTop = Math.max(10, Math.min(composerTop, viewport.height - 150)); // Ensure minimum space at bottom
     
     return {
       currentSelection: {
         bottomLeft: `${bottomSectionLeft}px`,
-        bottomTop: `${bottomSectionTop}px`,
+        bottomTop: bottomSectionTop,
         width: `${cellWidth}px`,
         bottomHeight: `${cellHeight}px`,
       },
       composer: {
         left: `${composerLeft}px`,
-        top: `${composerTop}px`,
+        top: `${composerTop + 25}px`, // pushing composer down below the selecting item TODO composerTop should adjust to height of item selected
         width: `${composerWidth}px`,
         maxHeight: `${composerMaxHeight}px`,
       },
@@ -285,7 +380,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     };
   };
 
-  const portalPosition = calculatePosition();
+  const portalPosition = React.useMemo(() => {
+    return calculatePosition();
+  }, [clickedItemPosition, props.eGridCell]); // Recalculate when clicked position changes
 
   // const renderXButton = () => {
   //   return <button className={`${stylesXbutton.xButton} ${styles.xButton}`}>×</button>;
@@ -337,18 +434,55 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         }}
       >
         <>
-          <div className={`${styles.index} ${typeStyles[`${props.data.effective_type}_text_color`]}`}>
+          <div className={`${styles.index} `}>
             {props.data.hierarchical_index}
           </div>
           <SmartBreadcrumbs 
             items={breadcrumbItems}
             classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
-            classNameBreadcrumbItem={`${typeStyles[`${props.data.effective_type}_text_color`]} ${styles.breadcrumbItem} `}
-            classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeStyles[`${props.data.effective_type}_text_color`]}`}
+            classNameBreadcrumbItem={`${styles.breadcrumbItem} `}
+            classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} `}
           />
         </>
       </div>
     );
+  };
+
+  // Internal handler that captures click position and calls parent's onItemSelect
+  const handleItemClick = (item: any, index?: number, event?: React.MouseEvent) => {
+    console.log('=== handleItemClick called ===');
+    console.log('item:', item);
+    console.log('index:', index);
+    console.log('event:', event);
+    
+    if (event) {
+      // Use the actual target element that was clicked
+      const clickedElement = event.currentTarget as HTMLElement;
+      const rect = clickedElement.getBoundingClientRect();
+      const position = { x: rect.left, y: rect.top };
+      
+      console.log('handleItemClick - clicked element:', clickedElement);
+      console.log('handleItemClick - rect:', rect);
+      console.log('handleItemClick - position:', position);
+      
+      setClickedItemPosition(position);
+      setShowComposer(true);
+      props.onItemSelect?.(item, index, position);
+    } else {
+      console.log('handleItemClick - NO EVENT provided, using default position');
+      setShowComposer(true);
+      props.onItemSelect?.(item, index);
+    }
+  };
+
+  // Handler for children to adjust composer position (e.g., to align a dropdown with clicked item)
+  const handlePositionAdjustment = (offset: { x: number; y: number }) => {
+    if (clickedItemPosition) {
+      setClickedItemPosition({
+        x: clickedItemPosition.x + offset.x,
+        y: clickedItemPosition.y + offset.y,
+      });
+    }
   };
 
   const renderCellMirrorContents = () => {
@@ -378,7 +512,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             <RendererByField
               value={props.value}
               data={props.data}
-              onItemClick={props.onItemSelect}
+              onItemClick={handleItemClick}
               selectedIndex={props.selectedItemIndex}
               selectedClassName={selectedClassName}
               {...(props.rendererProps || {})}
@@ -411,26 +545,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
-  // Callback for children to update the current value
-  // Used by list-view editors to update value and trigger auto-close
-  const handleValueChange = (value: any) => {
-    console.log('PhenexCellEditor.handleValueChange called with:', value);
-    setCurrentValue(value);
-    console.log('Set currentValue to:', value);
-    
-    // Notify parent if callback provided
-    props.onValueChange?.(value);
-    console.log('Called props.onValueChange with:', value);
-    
-    // Auto-close editor for list-view editors when a value is selected
-    if (props.autoCloseOnChange) {
-      // Small delay to ensure the value is saved before closing
-      setTimeout(() => {
-        props.api.stopEditing();
-      }, 0);
-    }
-  };
-
   const renderMainContent = () => {
     // Don't spread all props to avoid passing AG Grid props to DOM elements
     // For list-view editors with autoCloseOnChange, ALWAYS inject handleValueChange
@@ -447,6 +561,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
             ? { onValueChange: handleValueChange }
             : ((child.props as any).onValueChange ? {} : { onValueChange: handleValueChange })
           ),
+          // Pass position adjustment callback to all children
+          onRequestPositionAdjustment: handlePositionAdjustment,
+          // Pass close handler so children can close the composer panel only
+          onClose: handleCloseComposer,
+          // Pass delete handler to children
+          onDelete: props.onDelete,
         });
       }
       return child;
@@ -499,11 +619,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         className={`${styles.currentSelectionTopSection}`}
         style={{
           position: 'absolute',
-          left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
-          width: portalPosition.currentSelection.width,
-          minWidth: '300px',
-          transform: 'translateY(-100%)',
+          left: 0,
+          bottom: '100%',
+          width: '100%',
           zIndex: 9998,
         }}
         data-drag-handle="true"
@@ -520,7 +638,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div className={`${styles.currentSelectionInfo} ${colorBlock}`}>
+        <div className={`${styles.currentSelectionInfo}`}>
           {renderTitle()}
         </div>
       </div>
@@ -535,10 +653,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       <div
         className={`${styles.currentSelectionBottomSection}`}
         style={{
-          position: 'absolute',
-          left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
-          width: portalPosition.currentSelection.width,
+          position: 'relative',
+          width: '100%',
           minWidth: '300px',
           minHeight: portalPosition.currentSelection.bottomHeight,
           zIndex: 9999,
@@ -557,12 +673,24 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-
-        <div className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}>
+{/* ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''} */}
+        <div 
+          className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            if (showComposer) {
+              handleCloseComposer();
+            } else if (props.selectedItemIndex !== undefined) {
+              // Clear selection by calling onItemSelect with null
+              props.onItemSelect?.(null, undefined);
+            }
+          }}
+        >
           {renderCellMirrorContents()}
           {props.showAddButton && (
             <button
-              className={`${styles.addButton} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+              className={`${styles.addButton}`}
               onClick={(e) => {
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
@@ -571,7 +699,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               }}
               title="Add new item"
             >
-              +
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
             </button>
           )}
         </div>
@@ -581,119 +712,175 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
 
   const renderCurrentSelectionPanel = () => {
     return (
-      <div className={styles.currentSelectionContainer}>
+      <div 
+        className={styles.currentSelectionContainer}
+        style={{
+          position: 'absolute',
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop,
+          minWidth: portalPosition.currentSelection.width,
+        }}
+      >
         {renderCurrentSelectionPanel_top()}
         {renderCurrentSelectionPanel_bottom()}
+        <div className={styles.blocker}></div>
       </div>
     );
   };
 
   const renderComposerPanel = () => {
     return (
-      <div
-        style={{
-          position: 'absolute',
-          left: portalPosition.composer.left,
-          top: portalPosition.composer.top,
-          width: portalPosition.composer.width,
-          maxHeight: portalPosition.composer.maxHeight,
-          zIndex: 9999,
-        }}
-        ref={containerRef}
-        className={`${styles.container} ${colorBorder}`}
-        onClick={e => {
-          e.stopPropagation();
-          e.nativeEvent.stopImmediatePropagation();
-        }}
-        onMouseDown={e => {
-          const target = e.target as HTMLElement;
-          const isDragHandle = target.closest('[data-drag-handle="true"]');
-          if (!isDragHandle) {
+      <>
+        {/* Backdrop for clicking outside to close */}
+        <div
+          className={styles.composerBackdrop}
+          onClick={(e) => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
-          }
-        }}
-        onKeyDown={e => {
-          if (e.key === 'Tab') {
-            e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
-            e.stopPropagation();
-            handleKeyDown(e);
-          }
-        }}
-        onKeyDownCapture={e => {
-          if (e.key === 'Tab') {
-            e.nativeEvent.stopImmediatePropagation();
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
-        tabIndex={-1}
-      >
-        <div className={`${styles.content}`}>
-          <div 
-            ref={contentScrollableRef}
-            className={`${styles.contentScrollable}`}
-          >
-            {isInfoOpen ? (
-              renderInfoContent()
-            ) : (
-              renderMainContent()
+            handleCloseComposer();
+          }}
+        />
+        <DraggablePortal
+          initialPosition={{
+            left: portalPosition.composer.left,
+            top: portalPosition.composer.top,
+          }}
+          dragHandleSelector="[data-drag-handle='true']"
+          onDragStart={() => {
+            setRecentlyDragged(false);
+          }}
+          onDragEnd={wasDragged => {
+            if (wasDragged) {
+              setRecentlyDragged(true);
+              setTimeout(() => {
+                setRecentlyDragged(false);
+              }, 200);
+            }
+          }}
+        >
+          <div
+            style={{
+              width: 'fit-content',
+              minWidth: '100px',
+              maxWidth: '600px',
+              maxHeight: portalPosition.composer.maxHeight,
+              zIndex: 100001,
+            }}
+            ref={containerRef}
+            className={`${styles.composerContainer}`}
+            onClick={e => {
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
+          <div className={`${styles.composerContent}`}>
+            {renderMainContent()}
+            {props.onEditingDone && showComposer && (
+              <div className={styles.doneButtonContainer}>
+                <button 
+                  className={`${styles.doneButton}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
+                    handleCloseComposer();
+                  }}
+                >
+                  <svg width="16" height="4" viewBox="0 0 16 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="16" height="4" rx="2"/>
+                  </svg>
+
+                </button>
+              </div>
             )}
           </div>
-          
-          <SimpleCustomScrollbar 
-            targetRef={contentScrollableRef}
-            orientation="vertical"
-            marginTop={65}
-            marginBottom={5}
-            classNameThumb={typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}
-          />
-          
-          {props.onEditingDone && showComposer && (
-            <div className={styles.doneButtonContainer}>
-              <button 
-                className={`${styles.doneButton} ${typeStyles[`${props.data.effective_type || ''}_color_block`] || ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.nativeEvent.stopImmediatePropagation();
-                  props.onEditingDone?.();
-                }}
-              >
-                Done
-              </button>
-            </div>
-          )}
+            <div className={`${styles.composerHeader}`} data-drag-handle="true">
+            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
+          </div>
+
         </div>
-      </div>
+      </DraggablePortal>
+      </>
     );
 
   }
 
+  // List-view editors (autoCloseOnChange) only show composer at cell position
+  if (props.autoCloseOnChange) {
+    return (
+      <DraggablePortal
+        initialPosition={{
+          left: portalPosition.currentSelection.bottomLeft,
+          top: portalPosition.currentSelection.bottomTop - 35,
+        }}
+        dragHandleSelector="[data-drag-handle='true']"
+        onDragStart={() => {
+          setRecentlyDragged(false);
+        }}
+        onDragEnd={wasDragged => {
+          if (wasDragged) {
+            setRecentlyDragged(true);
+            setTimeout(() => {
+              setRecentlyDragged(false);
+            }, 200);
+          }
+        }}
+      >
+        <div
+          style={{
+            width: 'fit-content',
+            minWidth: '100px',
+            maxWidth: '600px',
+            maxHeight: portalPosition.composer.maxHeight,
+            zIndex: 100001,
+          }}
+          ref={containerRef}
+          className={`${styles.composerContainer}`}
+          onClick={e => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
+          <div className={`${styles.composerContent}`}>
+            {renderMainContent()}
+          </div>
+          <div className={`${styles.composerHeader}`} data-drag-handle="true">
+          </div>
+        </div>
+      </DraggablePortal>
+    );
+  }
+
+  // Complex item editors show both cell mirror and composer panel
   return (
-    <DraggablePortal
-      initialPosition={{
-        left: '0px',
-        top: '0px',
-      }}
-      dragHandleSelector="[data-drag-handle='true']"
-      onDragStart={() => {
-        setRecentlyDragged(false);
-      }}
-      onDragEnd={wasDragged => {
-        if (wasDragged) {
-          setRecentlyDragged(true);
-          setTimeout(() => {
-            setRecentlyDragged(false);
-          }, 200);
-        }
-      }}
-    >
-      <div className={styles.twoPanelWrapper}>
-        {renderCurrentSelectionPanel()}
-        {showComposer && renderComposerPanel()}
-      </div>
-    </DraggablePortal>
+    <>
+      <DraggablePortal
+        initialPosition={{
+          left: '0px',
+          top: '0px',
+        }}
+        dragHandleSelector="[data-drag-handle='true']"
+        onDragStart={() => {
+          setRecentlyDragged(false);
+        }}
+        onDragEnd={wasDragged => {
+          if (wasDragged) {
+            setRecentlyDragged(true);
+            setTimeout(() => {
+              setRecentlyDragged(false);
+            }, 200);
+          }
+        }}
+      >
+        <div onKeyDown={handleKeyDown} tabIndex={0}>
+          {renderCurrentSelectionPanel()}
+        </div>
+      </DraggablePortal>
+      {showComposer && renderComposerPanel()}
+    </>
   );
 });
 

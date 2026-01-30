@@ -16,6 +16,7 @@
   background-color: white;
   height: calc(100%); /* asf bottom of cohrot view card to bottom!*/
   border-radius: 0px 0px 0px 0px;
+  position: relative;
   /* border-left: var(--line-color);
   border-right: var(--line-color); */
   overflow: hidden;

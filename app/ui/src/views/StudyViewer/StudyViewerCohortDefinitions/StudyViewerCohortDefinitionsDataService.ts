@@ -1,10 +1,16 @@
-import { TableData } from '../../CohortViewer/tableTypes';
+import { TableData, TableRow } from '../../CohortViewer/tableTypes';
 import { CohortWithTableData, cohortDefinitionColumns } from './StudyViewerCohortDefinitionsTypes';
+import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { CohortsDataService } from '../../LeftPanel/CohortsDataService';
 
 // Data service for StudyViewerCohortDefinitions
 export class StudyViewerCohortDefinitionsDataService {
   private _study_data: Record<string, any> = {};
   private _studyDataService: any;
+  private _cohortModels: Map<string, CohortModel> = new Map(); // Store CohortModel instances by cohort ID
+  private _activeCohortId: string | null = null; // Track which cohort is currently active
+  private _listeners: Array<() => void> = []; // Listeners for when cohort data changes
 
   constructor() {
     this._study_data = {};
@@ -24,32 +30,34 @@ export class StudyViewerCohortDefinitionsDataService {
    * @returns TableData object with rows containing entry, inclusion, and exclusion phenotypes
    */
   private prepareCohortTableData(cohort: Record<string, any>): TableData {
-    console.log('Preparing cohort table data for:', cohort.name);
-    console.log('Cohort phenotypes:', cohort.phenotypes);
-    console.log("COHORT DATA", cohort)
-    // Filter phenotypes by type (entry, inclusion, exclusion) - similar to tableDataForComponentPhenotype
-    let filteredPhenotypes = cohort.cohort_data.phenotypes || [];
+    // Reuse existing model or create new one
+    let model = this._cohortModels.get(cohort.id);
+    if (!model) {
+      model = new CohortModel();
+      model.loadCohortData(cohort);
+      this._cohortModels.set(cohort.id, model);
+      
+      // Subscribe to model changes to notify StudyViewer
+      const modelListener = () => {
+        console.log('[StudyViewer] CohortModel changed for cohort:', cohort.id);
+        this.notifyListeners();
+      };
+      model.addListener(modelListener);
+      
+      // Subscribe to name changes to notify CohortsDataService (left panel)
+      const nameChangeListener = () => {
+        console.log('[StudyViewer] CohortModel name changed for cohort:', cohort.id);
+        const cohortsDataService = CohortsDataService.getInstance();
+        cohortsDataService.invalidateCache();
+        cohortsDataService.notifyListeners();
+      };
+      model.addNameChangeListener(nameChangeListener);
+    }
     
-    console.log('All phenotypes before filter:', filteredPhenotypes);
-    console.log('Phenotype types found:', filteredPhenotypes.map(p => p.type));
+    const tableData = model.table_data;
     
-    filteredPhenotypes = filteredPhenotypes.filter(
-      (phenotype: any) =>
-        phenotype.type === 'entry' ||
-        phenotype.type === 'inclusion' ||
-        phenotype.type === 'exclusion'
-    );
-
-    console.log('Filtered phenotypes:', filteredPhenotypes);
-
-    // Add colorCellBorder property to each phenotype
-    const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
-      ...phenotype,
-      colorCellBorder: false,
-    }));
-
     return {
-      rows: phenotypesWithColorSettings,
+      rows: tableData.rows,
       columns: cohortDefinitionColumns,
     };
   }
@@ -68,5 +76,165 @@ export class StudyViewerCohortDefinitionsDataService {
 
   public getCohorts(): any[] {
     return this._study_data.cohorts || [];
+  }
+
+  /**
+   * Sets the active cohort model in the singleton CohortDataService
+   * Call this before editing a phenotype to ensure edits are saved to the correct cohort
+   * @param cohortId The ID of the cohort to set as active
+   */
+  public setActiveCohort(cohortId: string): void {
+    console.log('[StudyViewer] setActiveCohort called with:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (model) {
+      this._activeCohortId = cohortId;
+      console.log('[StudyViewer] Setting cohort as active, model found:', model.cohort_data?.id);
+      const cohortDataService = CohortDataService.getInstance();
+      cohortDataService.setActiveCohortModel(model);
+    } else {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+    }
+  }
+
+  /**
+   * Gets the ID of the currently active cohort
+   * @returns The active cohort ID or null if none is set
+   */
+  public getActiveCohortId(): string | null {
+    console.log('[StudyViewer] getActiveCohortId returning:', this._activeCohortId);
+    return this._activeCohortId;
+  }
+
+  /**
+   * Gets the cohort ID that a phenotype belongs to
+   * @param phenotypeId The ID of the phenotype
+   * @returns The cohort ID or null if not found
+   */
+  public getCohortIdForPhenotype(phenotypeId: string): string | null {
+    for (const [cohortId, model] of this._cohortModels.entries()) {
+      const phenotype = model.getPhenotypeById(phenotypeId);
+      if (phenotype) {
+        return cohortId;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Refreshes a single cohort's data by getting from the stored model
+   * @param cohortId The ID of the cohort to refresh
+   * @returns Updated CohortWithTableData or null if cohort not found
+   */
+  public refreshSingleCohort(cohortId: string): CohortWithTableData | null {
+    console.log('[StudyViewer] refreshSingleCohort called for:', cohortId);
+    // Get the model from our Map (it's the same instance that's active in the singleton)
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] refreshSingleCohort: No model found for:', cohortId);
+      return null;
+    }
+
+    // Get the updated data directly from the model
+    const cohortData = model.cohort_data;
+    const tableData = model.table_data;
+    console.log('[StudyViewer] refreshSingleCohort: Got data, rows:', tableData.rows.length);
+    
+    // Use only the columns we need for study viewer
+    return {
+      cohort: cohortData,
+      table_data: {
+        rows: tableData.rows,
+        columns: cohortDefinitionColumns
+      }
+    };
+  }
+
+  /**
+   * Add a listener to be notified when cohort data changes
+   */
+  public addListener(listener: () => void): void {
+    this._listeners.push(listener);
+  }
+
+  /**
+   * Remove a listener
+   */
+  public removeListener(listener: () => void): void {
+    this._listeners = this._listeners.filter(l => l !== listener);
+  }
+
+  /**
+   * Notify all listeners that cohort data has changed
+   */
+  private notifyListeners(): void {
+    this._listeners.forEach(listener => listener());
+  }
+
+  /**
+   * Handle cell value changes for a specific cohort
+   * @param cohortId The ID of the cohort whose cell was changed
+   * @param event The cell change event from AG Grid
+   * @param selectedRows Optional array of selected rows
+   */
+  public async onCellValueChanged(cohortId: string, event: any, selectedRows?: any[]): Promise<void> {
+    console.log('[StudyViewer] onCellValueChanged for cohort:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Set this cohort as active before making changes
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
+    // Delegate to the model's onCellValueChanged handler
+    await cohortDataService.onCellValueChanged(event, selectedRows);
+  }
+
+  /**
+   * Handle row drag end for a specific cohort
+   * @param cohortId The ID of the cohort whose rows were reordered
+   * @param newRowData The new row order after dragging
+   */
+  public async onRowDragEnd(cohortId: string, newRowData: any[]): Promise<void> {
+    console.log('[StudyViewer] onRowDragEnd for cohort:', cohortId);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Set this cohort as active before making changes
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
+    // Delegate to the model's updateRowOrder handler
+    await cohortDataService.updateRowOrder(newRowData);
+  }
+
+  /**
+   * Add a phenotype to a specific cohort
+   * @param cohortId The ID of the cohort to add the phenotype to
+   * @param type The type of phenotype to add
+   * @param parentPhenotypeId Optional parent phenotype ID for nested phenotypes
+   */
+  public addPhenotype(cohortId: string, type: string = 'NA', parentPhenotypeId: string | null = null): void {
+    console.log('[StudyViewer] addPhenotype for cohort:', cohortId, 'type:', type);
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+
+    // Set this cohort as active before adding phenotype (so listeners know which cohort changed)
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+
+    // Call addPhenotype directly on the model instance
+    model.addPhenotype(type, parentPhenotypeId);
   }
 }

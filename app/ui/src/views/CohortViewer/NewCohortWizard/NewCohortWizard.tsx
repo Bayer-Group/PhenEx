@@ -20,7 +20,6 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   const [currentStep, setCurrentStep] = useState(0);
   const [cohortName, setCohortName] = useState('');
   const [dataService] = useState(() => CohortDataService.getInstance());
-  const [localCohortData, setLocalCohortData] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const stepTitles = ['Cohort name', 'Description', 'Database', 'Codelists', 'Constants', 'Finish'];
@@ -29,9 +28,8 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     // Reset wizard state when it closes
     if (!isVisible) {
       setCurrentStep(0);
-      setCohortName('');
       setIsInitialized(false);
-      setLocalCohortData(null);
+      // Don't reset cohortName here - it will be set when reopening
     }
   }, [isVisible]);
 
@@ -39,12 +37,11 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     // Initialize the data service with the new cohort data when wizard becomes visible
     const initializeData = async () => {
       if (isVisible && _data && !isInitialized) {
-        // Store a local copy of the cohort data
-        setLocalCohortData({ ..._data });
-        
-        // Load into data service WITHOUT saving to backend
+        // Load the full cohort object into data service
         await dataService.loadCohortData(_data);
-        setCohortName(dataService.cohort_name);
+        // Set the cohort name from the data service (the default ID-based name)
+        const initialName = dataService.cohort_name;
+        setCohortName(initialName);
         setIsInitialized(true);
       }
     };
@@ -89,7 +86,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
 
   const handleFinish = async () => {
     // Save all changes to backend when finishing the wizard
-    console.log('💾 NewCohortWizard: Saving cohort to backend on finish');
+    console.log('💾 NewCohortWizard: Saving cohort updates to backend on finish');
     try {
       // Update the cohort name in the data service
       dataService.cohort_name = cohortName;
@@ -97,6 +94,16 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
       // Save to backend
       await dataService.saveChangesToCohort();
       console.log('✅ NewCohortWizard: Cohort saved successfully');
+      
+      // Force update of left panel by clearing cache and notifying
+      const { CohortsDataService } = await import('../../LeftPanel/CohortsDataService');
+      const cohortsDataService = CohortsDataService.getInstance();
+      const studyId = dataService.cohort_data?.study_id;
+      if (studyId) {
+        console.log('🔄 NewCohortWizard: Clearing cohort cache for study', studyId);
+        cohortsDataService.clearStudyCohortsCache(studyId);
+        cohortsDataService['notifyListeners'](); // Force notification
+      }
     } catch (error) {
       console.error('❌ NewCohortWizard: Failed to save cohort:', error);
     }
@@ -105,15 +112,28 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
     onClose();
   };
 
-  const handleCancel = () => {
-    // Discard changes and close without saving
-    console.log('🚫 NewCohortWizard: Cancelled, discarding changes');
-    
-    // Reset local data to original state if needed
-    if (localCohortData) {
-      dataService.loadCohortData(localCohortData);
+  const handleSkip = async () => {
+    // Save current changes and close, leaving onboarding incomplete
+    try {
+      // Update the cohort name in the data service
+      dataService.cohort_name = cohortName;
+      
+      // Save to backend
+      await dataService.saveChangesToCohort();
+      
+      // Force update of left panel by clearing cache and notifying
+      const { CohortsDataService } = await import('../../LeftPanel/CohortsDataService');
+      const cohortsDataService = CohortsDataService.getInstance();
+      const studyId = dataService.cohort_data?.study_id;
+      if (studyId) {
+        cohortsDataService.clearStudyCohortsCache(studyId);
+        cohortsDataService['notifyListeners'](); // Force notification
+      }
+    } catch (error) {
+      console.error('Failed to save cohort on skip:', error);
     }
     
+    // Close the wizard
     onClose();
   };
 
@@ -128,12 +148,11 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
             className={styles.cohortNameInput}
             onChange={newValue => {
               // Update local state only, don't save to backend yet
+              // Don't update dataService here - only update on skip/finish
               setCohortName(newValue);
-              dataService.cohort_name = newValue;
             }}
             onSaveChanges={async () => {
               // Don't save to backend during wizard, just update local state
-              console.log('💡 NewCohortWizard: Name changed, not saving to backend yet');
             }}
           />
         </div>
@@ -184,7 +203,7 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
   return (
     <Modal
       isVisible={isVisible}
-      onClose={handleCancel}
+      onClose={handleSkip}
       contentClassName={styles.wizardContent}
       maxWidth="800px"
     >
@@ -208,9 +227,9 @@ export const NewCohortWizard: FC<NewCohortWizardProps> = ({ isVisible, onClose, 
       <div className={styles.navigationButtons}>
         <button
           className={styles.button}
-          onClick={handleCancel}
+          onClick={handleSkip}
         >
-          Cancel
+          Skip
         </button>
 
         <button

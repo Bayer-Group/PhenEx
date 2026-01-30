@@ -4,12 +4,30 @@ import { FilterType, SingleLogicalExpression } from '../../CellEditors/logicalEx
 import typeStyles from '../../../../../styles/study_types.module.css';
 import { LogicalFilterRenderer } from './LogicalFilterRenderer';
 import type { FlattenedItem } from '../../../../../hooks/useLogicalFilterEditor';
+import ArrowIcon from '../../../../../assets/icons/arrow-up-right.svg';
+
+/**
+ * Render the expand arrow icon with proper CSS states
+ * States: default, row hovered, self hovered
+ */
+const renderExpandArrow = (onClick?: (e: React.MouseEvent) => void, className?: string) => {
+  return (
+    <img
+      src={ArrowIcon}
+      alt="Expand"
+      className={`${styles.expandArrow} ${className || ''}`}
+      onClick={onClick}
+    />
+  );
+};
 
 export interface LogicalExpressionRendererProps {
   value: FilterType | null | undefined;
   data?: any;
-  onItemClick?: (item: FlattenedItem<SingleLogicalExpression>) => void;
+  onItemClick?: (item: FlattenedItem<SingleLogicalExpression>, index?: number, event?: React.MouseEvent) => void;
   onOperatorClick?: (path: number[]) => void;
+  onArrowClick?: (expression: SingleLogicalExpression, event: React.MouseEvent) => void;
+  showArrow?: boolean;
   selectedIndex?: number;
   selectedClassName?: string;
 }
@@ -32,12 +50,14 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
   data,
   onItemClick,
   onOperatorClick,
+  onArrowClick,
+  showArrow = true,
   selectedIndex,
   selectedClassName,
 }) => {
   const effectiveType = data?.effective_type;
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
-  const colorBlockClass = typeStyles[`${effectiveType || ''}_color_block`] || '';
+  const colorBlockClass = typeStyles[`color_selected`]// typeStyles[`${effectiveType || ''}_color_block`] || '';
   const colorTextClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
 
   // Flatten the expression tree for rendering
@@ -103,9 +123,17 @@ export const LogicalExpressionRenderer: React.FC<LogicalExpressionRendererProps>
    * Render a single logical expression item
    */
   const renderFilter = (expression: SingleLogicalExpression): React.ReactNode => {
+    const handleArrowClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onArrowClick?.(expression, e);
+    };
+
     return (
       <div className={`${styles.unit} ${colorTextClass}`}>
-        <div className={styles.top}>{expression.phenotype_name || '(empty)'}</div>
+        <div className={styles.top}>
+          {expression.phenotype_name || '(empty)'}
+          {showArrow && renderExpandArrow(handleArrowClick)}
+        </div>
         <div className={styles.bottom}></div>
       </div>
     );

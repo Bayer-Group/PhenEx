@@ -6,7 +6,7 @@ import {
   updateCodelistFileColumnMapping,
 } from '../../../api/codelists/route';
 import { createID } from '../../../types/createID';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
 
 interface CodelistFile {
   filename: string;
@@ -48,8 +48,8 @@ interface CodelistCache {
 
 export class CodelistDataService {
   public activeFile: CodelistFile | null = null;
-  private cohortDataService: CohortDataService;
-  public _filenames: string[] = null;
+  private cohortDataService!: CohortModel;
+  public _filenames: string[] | null = null;
   private listeners: (() => void)[] = [];
   public files: CodelistFile[] = [];
   private filesMetadata: FileMetadata[] = [];
@@ -152,9 +152,6 @@ export class CodelistDataService {
       return;
     }
     
-    // Check localStorage cache first to see if we have recent data
-    const cache = this.getCodelistCache(cohortId);
-    
     // Fetch metadata from backend (lightweight call)
     const filenames = await getCodelistFilenamesForCohort(cohortId);
     
@@ -192,7 +189,7 @@ export class CodelistDataService {
     
     // OPTIMIZATION: Only load full file contents if we don't have them in cache
     // This is the SLOW part that we want to avoid
-    const filesToLoad = filenames.filter(fileinfo => {
+    const filesToLoad = filenames.filter((fileinfo: any) => {
       const filename = fileinfo.filename.startsWith('"') && fileinfo.filename.endsWith('"') 
         ? fileinfo.filename.slice(1, -1) 
         : fileinfo.filename;
@@ -202,7 +199,7 @@ export class CodelistDataService {
     
     if (filesToLoad.length > 0) {
       const filePromises = await Promise.all(
-        filesToLoad.map(fileinfo =>
+        filesToLoad.map((fileinfo: any) =>
           getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
         )
       );
@@ -228,7 +225,7 @@ export class CodelistDataService {
     this.listeners.forEach(listener => listener());
   }
 
-  public async setCohortDataService(dataService: CohortDataService) {
+  public async setCohortDataService(dataService: CohortModel) {
     this.cohortDataService = dataService;
     this.cohortDataService.addListener(() => {
       this.setFilenamesForCohort();
@@ -260,6 +257,7 @@ export class CodelistDataService {
       contents: csvData,
     };
     this.files.push(newFile);
+    if (!this._filenames) this._filenames = [];
     this._filenames.push(newFile.filename);
     this.notifyListeners();
     uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, newFile);
@@ -475,8 +473,7 @@ export class CodelistDataService {
       return [];
     }
     
-    return file.contents.headers || [];
-    return file.contents.headers || [];
+    return file.contents?.headers || [];
   }
 
   public getFileIdForName(filename: string) {
@@ -574,7 +571,7 @@ export class CodelistDataService {
   }
 
 
-  public summarizeCodelistFile(file) {
+  public summarizeCodelistFile(file: CodelistFile) {
     if (!file) return [];
     if (!file.contents || !file.contents.data) {
       console.warn('File missing contents or data:', file);
@@ -593,11 +590,11 @@ export class CodelistDataService {
     return uniqueCodelistNames.map(codelistName => {
       // Get indices where this codelist name appears
       const indices = data[codelistColumn]
-        .map((name, idx) => (name === codelistName ? idx : -1))
-        .filter(idx => idx !== -1);
+        .map((name: string, idx: number) => (name === codelistName ? idx : -1))
+        .filter((idx: number) => idx !== -1);
 
       // Get codes and their types for these indices
-      const codesByType = indices.reduce((acc, idx) => {
+      const codesByType = indices.reduce((acc: Record<string, Set<string>>, idx: number) => {
         const codeType = data[codeTypeColumn][idx];
         const code = data[codeColumn][idx];
         if (!acc[codeType]) acc[codeType] = new Set();
@@ -607,7 +604,7 @@ export class CodelistDataService {
 
       // Calculate total unique codes
       const totalCodes = Object.values(codesByType).reduce(
-        (sum, codes: Set<string>) => sum + codes.size,
+        (sum: number, codes: Set<string>) => sum + codes.size,
         0
       );
 
@@ -617,7 +614,7 @@ export class CodelistDataService {
         filename: file.filename,
       };
     });
-  };
+  }
 
   public summarizeAllCodelistFiles() {
     const all_summaries = this.files.map(file => this.summarizeCodelistFile(file));

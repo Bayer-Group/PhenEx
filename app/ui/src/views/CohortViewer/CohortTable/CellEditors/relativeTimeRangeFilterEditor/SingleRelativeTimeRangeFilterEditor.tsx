@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './RelativeTimeRangeFilterEditor.module.css';
 import { TimeRangeFilter } from './types';
+import { CohortDataService } from '../../../CohortDataService/CohortDataService';
 
 interface SingleRelativeTimeRangeFilterEditorProps {
   value: TimeRangeFilter;
@@ -77,6 +78,22 @@ export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRan
   onValueChange,
 }) => {
   const [filter, setFilter] = useState<TimeRangeFilter>(() => normalizeFilter(value));
+  
+  // Get available constants of type RelativeTimeRangeFilter from the cohort data service
+  const [availableConstants, setAvailableConstants] = useState<Record<string, any>>(() => {
+    const dataService = CohortDataService.getInstance();
+    if (!dataService.constants_service) return {};
+    return dataService.constants_service.getConstantsOfType('RelativeTimeRangeFilter');
+  });
+  
+  // Refresh constants when component mounts or when constants might have changed
+  useEffect(() => {
+    const dataService = CohortDataService.getInstance();
+    if (dataService.constants_service) {
+      const constants = dataService.constants_service.getConstantsOfType('RelativeTimeRangeFilter');
+      setAvailableConstants(constants);
+    }
+  }, []); // Only run on mount
 
   // Notify parent component when filter changes
   useEffect(() => {
@@ -159,7 +176,7 @@ export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRan
         <UseConstantSection filter={filter} onUpdate={updateFilter} />
 
         {filter.useConstant ? (
-          <ConstantSelector filter={filter} onUpdate={updateFilter} />
+          <ConstantSelector filter={filter} onUpdate={updateFilter} availableConstants={availableConstants} />
         ) : (
           <ManualTimeRangeControls
             filter={filter}
@@ -200,20 +217,42 @@ const UseConstantSection: React.FC<UseConstantSectionProps> = ({ filter, onUpdat
 interface ConstantSelectorProps {
   filter: TimeRangeFilter;
   onUpdate: (updates: Partial<TimeRangeFilter>) => void;
+  availableConstants: Record<string, any>;
 }
 
-const ConstantSelector: React.FC<ConstantSelectorProps> = ({ filter, onUpdate }) => (
-  <div className={styles.filterSection}>
-    <select
-      value={filter.constant || 'one_year_pre_index'}
-      onChange={e => onUpdate({ constant: e.target.value as TimeRangeFilter['constant'] })}
-      className={styles.select}
-    >
-      <option value="one_year_pre_index">One Year Pre-Index</option>
-      <option value="any_time_post_index">Any Time Post-Index</option>
-    </select>
-  </div>
-);
+const ConstantSelector: React.FC<ConstantSelectorProps> = ({ filter, onUpdate, availableConstants }) => {
+  const constantNames = Object.keys(availableConstants);
+  const hasConstants = constantNames.length > 0;
+  
+  // Auto-select first constant if none selected (only when user first enables useConstant)
+  const selectedConstant = filter.constant || (hasConstants ? constantNames[0] : '');
+  
+  if (!hasConstants) {
+    return (
+      <div className={styles.filterSection}>
+        <p style={{ fontSize: '12px', opacity: 0.7 }}>
+          No RelativeTimeRangeFilter constants available. Add constants in the Constants panel.
+        </p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className={styles.filterSection}>
+      <select
+        value={selectedConstant}
+        onChange={e => onUpdate({ constant: e.target.value as TimeRangeFilter['constant'] })}
+        className={styles.select}
+      >
+        {constantNames.map(name => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
 /**
  * Manual time range controls (when useConstant is false)
@@ -281,28 +320,30 @@ const DaysRangeSection: React.FC<DaysRangeSectionProps> = ({
   defaultValue,
 }) => (
   <div className={styles.filterSection}>
-    <label>{label}:</label>
-    <select
-      value={value?.operator || 'not set'}
-      onChange={e => onOperatorChange(field, e.target.value)}
-      className={styles.select}
-    >
-      <option value="not set">Not Set</option>
-      {operators.map(op => (
-        <option key={op} value={op}>
-          {op === '>' ? '>' : op === '>=' ? '≥' : op === '<' ? '<' : '≤'}
-        </option>
-      ))}
-    </select>
-    {value && (
-      <input
-        type="number"
-        value={value.value ?? ''}
-        onChange={e => onValueChange(field, parseIntegerValue(e.target.value))}
-        className={styles.input}
-        placeholder={defaultValue.toString()}
-      />
-    )}
+    <div className={styles.fieldLabel}>{label}:</div>
+    <div className={styles.fieldInputs}>
+      <select
+        value={value?.operator || 'not set'}
+        onChange={e => onOperatorChange(field, e.target.value)}
+        className={`${styles.select} ${styles.operatorSelect}`}
+      >
+        <option value="not set">Not Set</option>
+        {operators.map(op => (
+          <option key={op} value={op}>
+            {op === '>' ? '>' : op === '>=' ? '≥' : op === '<' ? '<' : '≤'}
+          </option>
+        ))}
+      </select>
+      {value && (
+        <input
+          type="number"
+          value={value.value ?? ''}
+          onChange={e => onValueChange(field, parseIntegerValue(e.target.value))}
+          className={styles.input}
+          placeholder={defaultValue.toString()}
+        />
+      )}
+    </div>
   </div>
 );
 
@@ -316,16 +357,18 @@ interface WhenSectionProps {
 
 const WhenSection: React.FC<WhenSectionProps> = ({ filter, onUpdate }) => (
   <div className={styles.filterSection}>
-    <label>When:</label>
-    <select
-      value={filter.when}
-      onChange={e => onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })}
-      className={styles.select}
-    >
-      <option value="before">Before</option>
-      <option value="after">After</option>
-      <option value="range">Range</option>
-    </select>
+    <div className={styles.fieldLabel}>When:</div>
+    <div className={styles.fieldInputs}>
+      <select
+        value={filter.when}
+        onChange={e => onUpdate({ when: e.target.value as 'before' | 'after' | 'range' })}
+        className={styles.select}
+      >
+        <option value="before">Before</option>
+        <option value="after">After</option>
+        <option value="range">Range</option>
+      </select>
+    </div>
   </div>
 );
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../DomainCellRenderer.module.css';
+import styles from './DomainCellRenderer.module.css';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface DomainRendererProps {

@@ -3,6 +3,7 @@ import { themeQuartz } from 'ag-grid-community';
 
 import { ConstantsCellRenderer } from './ConstantsCellRenderer';
 import { ConstantsCellEditorSelector } from './ConstantsCellEditorSelector';
+import { ConstantTypeSelectorCellEditor } from './ConstantTypeSelectorCellEditor';
 
 const defaultColumns: ColumnDefinition[] = [
   {
@@ -24,7 +25,9 @@ const defaultColumns: ColumnDefinition[] = [
     headerName: 'Type',
     editable: true,
     wrapText: false,
-    width: 20,
+    width: 180,
+    cellEditorPopup: true,
+    cellEditor: ConstantTypeSelectorCellEditor,
   },
   {
     field: 'value',
@@ -41,7 +44,6 @@ const defaultColumns: ColumnDefinition[] = [
       params.data.value = params.newValue;
       return true;
     },
-    type: 'text',
   },
 ];
 
@@ -117,8 +119,9 @@ export class ConstantsDataService {
   }
 
   public refreshConstants() {
-    // this.createDefaultConstants();
-    // this.tableData = this.tableDataFromConstants();
+    if (this.cohortDataService?._cohort_data?.constants) {
+      this.tableData = this.tableDataFromConstants();
+    }
   }
 
   private createDefaultConstants() {
@@ -134,16 +137,18 @@ export class ConstantsDataService {
   }
 
   public addConstant() {
-      console.log(this.cohortDataService._cohort_data.constants, "IN ADD")
-
     this.cohortDataService._cohort_data.constants.push({
       name: '',
-      description:'',
+      description: '',
       type: '',
-      value:'',
+      value: '',
     });
 
-    this.cohortDataService.saveChangesToCohort(false, false);
+    // Update tableData so the grid can refresh
+    this.tableData = this.tableDataFromConstants();
+    
+    // Save and notify listeners
+    this.cohortDataService.saveChangesToCohort(false, true);
   }
 
   public deleteConstant(name: string) {
@@ -154,6 +159,13 @@ export class ConstantsDataService {
 
   public getConstantsOfType(type: string): Record<string, any> {
     const result: Record<string, any> = {};
+    console.log('Getting constants of type:', type, this.cohortDataService);
+    
+    // Safety check: ensure constants array exists
+    if (!this.cohortDataService?._cohort_data?.constants) {
+      return result;
+    }
+    
     this.cohortDataService._cohort_data.constants.forEach(
       (constant: any) => {
         if (constant.type === type) {
@@ -198,33 +210,27 @@ export class ConstantsDataService {
     });
   }
 
-  public valueChanged(rowData: any, newValue: any) {
-    // Find the constant in the cohort data and update it
-    const constantIndex = this.cohortDataService._cohort_data.constants.findIndex(
-      (constant: any) => constant.name === rowData.name
-    );
+  public valueChanged(rowIndex: number, field: string, newValue: any) {
+    const constants = this.cohortDataService._cohort_data.constants;
     
-    if (constantIndex !== -1) {
-      // Update the specific field that changed
-      const fieldName = rowData.parameter || 'value'; // Fallback to 'value' if parameter is not set
-      if (fieldName === 'value') {
+    if (rowIndex >= 0 && rowIndex < constants.length) {
+      if (field === 'value') {
         // Try to parse JSON if it's a string, otherwise use as-is
         try {
-          this.cohortDataService._cohort_data.constants[constantIndex].value = 
-            typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+          constants[rowIndex].value = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
         } catch {
-          this.cohortDataService._cohort_data.constants[constantIndex].value = newValue;
+          constants[rowIndex].value = newValue;
         }
       } else {
-        this.cohortDataService._cohort_data.constants[constantIndex][fieldName] = newValue;
+        constants[rowIndex][field] = newValue;
       }
+      
+      this.saveChangesToConstants();
     }
-    
-    this.saveChangesToConstants();
   }
 
   public saveChangesToConstants() {
-    this.cohortDataService.saveChangesToCohort(false, false);
-    this.refreshConstants(); // Refresh to update the table data
+    this.refreshConstants();
+    this.cohortDataService.saveChangesToCohort(false, true);
   }
 }

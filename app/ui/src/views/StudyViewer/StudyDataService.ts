@@ -8,6 +8,7 @@ import {
   getPublicCohort,
   updateCohort,
   deleteCohort,
+  deleteStudy,
   getStudy,
   updateStudy
 } from '../../api/text_to_cohort/route';
@@ -21,6 +22,7 @@ export class StudyDataService {
   private _study_data: Record<string, any> = {};
   private _cohortDataService: CohortDataService | null = null;
   private _cohort_definitions_service: StudyViewerCohortDefinitionsDataService;
+  public exportStudyCallback: (() => Promise<void>) | null = null;
   
   private constructor() {
     this._cohort_definitions_service = new StudyViewerCohortDefinitionsDataService();
@@ -161,6 +163,36 @@ export class StudyDataService {
     }
   }
 
+  public async refreshStudyData() {
+    if (!this._study_data.id) {
+      console.warn('No study ID to refresh');
+      return;
+    }
+
+    try {
+      const studyId = this._study_data.id;
+      console.log('🔄 Refreshing study data for study:', studyId);
+      
+      // Fetch fresh study data from API
+      const studyData = await getStudy(studyId);
+      
+      // Fetch cohorts for this study
+      const { CohortsDataService } = await import('../LeftPanel/CohortsDataService');
+      const cohortsDataService = CohortsDataService.getInstance();
+      const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
+      
+      // Add cohorts to study data
+      const updatedStudyData = { ...studyData, cohorts };
+      
+      // Reload the data which will notify all listeners
+      this.loadStudyData(updatedStudyData);
+      
+      console.log('✅ Study data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Failed to refresh study data:', error);
+    }
+  }
+
 
   public getCohortById(id: string): TableRow | undefined {
     return this._study_data.phenotypes.find(
@@ -257,7 +289,7 @@ export class StudyDataService {
   
   async deleteStudy() {
     if (this._study_data.id) {
-      await deleteCohort(this._study_data.id);
+      await deleteStudy(this._study_data.id);
       this._study_data = {};
       this._study_name = '';
       this.notifyStudyDataServiceListener();

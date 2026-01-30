@@ -1,0 +1,42 @@
+.phenexNavBar {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+  background-color: transparent;
+  pointer-events: none;
+  transition: all 100ms ease-in-out;
+  transform: translateX(-50%);
+  opacity: 1;
+}
+
+.phenexNavBar.allHidden {
+  transform: translate(-50%, calc(100% + 30px));
+  opacity: 0;
+}
+
+.phenexNavBar > * {
+  pointer-events: auto;
+}
+
+.topRight{
+  position: absolute;
+  bottom: 50px;
+  left: 40%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.bottomRight{
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}

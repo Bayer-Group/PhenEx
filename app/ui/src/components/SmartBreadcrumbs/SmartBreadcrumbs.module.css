@@ -1,13 +1,25 @@
 .container {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: fit-content;
+}
+
+.compactContainer {
+  flex-direction: row;
+}
+
+.compactSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: fit-content;
 }
 
 .topSection {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
   width: 100%;
   color: var(--color-accent-bright);
@@ -28,7 +40,7 @@
 }
 
 .item {
-  padding: 4px 8px;
+  padding: 4px 2px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -42,21 +54,26 @@
 }
 
 .regularItem:hover {
-  color: #333;
-  background-color: #f0f0f0;
+  color: var(--color_accent_blue);
+  background-color: transparent;
 }
 
 .lastItem {
   color: var(--color-accent-bright);
   font-family: "IBMPlexSans-bold";
+  padding-left:4px;
 }
 
 .lastItem:hover {
-  background-color: #d2e3fc;
+  background-color: transparent;
+  color: var(--color_accent_blue);
+
 }
 
 .separator {
   color: #999;
-  font-size: 14px;
+  font-size: 10px;
+  padding:0px;
+  font-family:"IBMPlexSans-bold" !important;
   user-select: none;
 }

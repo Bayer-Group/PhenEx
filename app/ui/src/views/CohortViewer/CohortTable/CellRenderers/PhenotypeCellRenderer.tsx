@@ -15,7 +15,7 @@ const PhenotypeCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   };
 
   return (
-    <PhenexCellRenderer {...props} showButtons={false}>
+    <PhenexCellRenderer {...props} showButtons={false} showRightBorder={true}>
       <PhenotypeRenderer
         value={props.value}
         data={props.data}

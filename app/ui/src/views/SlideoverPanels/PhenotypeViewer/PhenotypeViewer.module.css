@@ -42,9 +42,16 @@
 
 .gridContainer {
   margin-right:0px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
-  width: calc(100% - 0px);
-  flex: 1;
-  height: 100%;
+  width: 100%;
+  display: flex;
+  border-radius: 18px;
+  flex-direction: column;
+}
+
+.gridWrapper {
+  background-color: white;
+  border-radius: 20px;
+  min-height: 200px;
 }
 
 
@@ -130,7 +137,7 @@
 }
 
 .scrollbarContainer{
-  background-color: red;
+  background-color: white;
   /* position: absolute;
   left:100px; */
 }

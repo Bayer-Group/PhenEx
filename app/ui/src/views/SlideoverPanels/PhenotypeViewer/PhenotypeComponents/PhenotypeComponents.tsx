@@ -80,8 +80,8 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   };
 
   const default_theme = {
-      accentColor: '#BBB',
-      borderColor: 'var(--line-color-grid)',
+      borderColor: 'transparent',
+      accentColor: 'transparent',
       browserColorScheme: 'light',
       columnBorder: false,
       headerFontSize: 16,
@@ -94,6 +94,21 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
       wrapperBorder: false,
       backgroundColor: 'transparent',
     };
+    
+  const calculateRowHeight = (params: any) => {
+    let current_max_height = 20;
+    const minHeight = 20; 
+
+    const nameCol = params.api.getColumnDef('name');
+    if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
+    const nameWidth = 200;
+    const nameCharPerLine = Math.floor(nameWidth / 8);
+    const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
+    const nameHeight = nameLines * 15 + 8; // 14px per line + padding
+    current_max_height = Math.max(current_max_height, nameHeight);
+    return current_max_height;
+  
+  }
 
   return (
     <div className={styles.phenotypeContainer}>
@@ -105,7 +120,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           Add Component
         </button>
       </div>
-      <div className={styles.tableBox}>
+      <div className={`${styles.tableBox} ${typeStyles[`${data.type}_border_color`]}`}>
         <CohortTable
           data={tableData}
           onCellValueChanged={onCellValueChanged}
@@ -114,7 +129,9 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           currentlyViewing={'components'}
           tableTheme={default_theme}
           hideHorizontalScrollbar={true}
-
+          customGetRowHeight={calculateRowHeight}
+          headerHeight={0}
+          domLayout="autoHeight"
         />
       </div>
     </div>

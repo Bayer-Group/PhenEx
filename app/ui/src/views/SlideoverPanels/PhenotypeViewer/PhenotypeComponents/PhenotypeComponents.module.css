@@ -1,16 +1,16 @@
 .phenotypeContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
   min-width: 0;
-  background-color: transparent;
 }
 
 .tableBox {
-  flex: 1;
-  height: 100%;
-  width: 100%;
+  background-color: var(--background-color) !important;
+  border-radius:15px;
+  width: calc(100% - 10px);
+  margin-left: 5px;
+  margin-bottom: 10px;
 }
 
 .header {
@@ -24,6 +24,7 @@
   right: 20px;
   padding: 4px 5px;
   border: none;
+  bottom: 0px;
   margin-top: 0;
   margin-bottom: 0;
   border-radius: 6px;

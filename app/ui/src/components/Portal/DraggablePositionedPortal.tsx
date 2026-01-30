@@ -187,8 +187,7 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
     // Event listeners for position updates
     const handleUpdate = () => updatePortalPosition();
 
-    document.addEventListener('mousedown', startMonitoring);
-    document.addEventListener('mouseup', stopMonitoring);
+    // Only monitor scroll and resize, not mousedown/mouseup which cause jumps
     window.addEventListener('scroll', handleUpdate, true);
     window.addEventListener('resize', handleUpdate);
 
@@ -211,8 +210,6 @@ export const DraggablePositionedPortal: React.FC<DraggablePositionedPortalProps>
 
     return () => {
       stopMonitoring();
-      document.removeEventListener('mousedown', startMonitoring);
-      document.removeEventListener('mouseup', stopMonitoring);
       window.removeEventListener('scroll', handleUpdate, true);
       window.removeEventListener('resize', handleUpdate);
       if (resizeObserver) resizeObserver.disconnect();

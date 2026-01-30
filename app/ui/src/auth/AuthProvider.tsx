@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!email || !password) return { success: false, error: 'Email and password required' };
 
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       const authToken = (res.data as any)?.auth_token;
       if (!authToken) return { success: false, error: 'Token missing in response' };
 
@@ -236,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!email || !password) return { success: false, error: 'Email and password required' };
 
-      const res = await api.post('/register', { email, password, username });
+      const res = await api.post('/auth/register', { email, password, username });
       if (res.data?.status !== 'success') {
         return { success: false, error: res.data?.message || 'Registration failed' };
       }
@@ -252,10 +252,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!config.loginOptions.msal || !msalInstance || !config.msal)
       return { success: false, error: 'MSAL auth disabled' };
     try {
-      getMsalToken(msalInstance, config.msal.scopes).then(token => {
-        if (token) processToken(token, 'msal');
-      });
-      return { success: true };
+      const token = await getMsalToken(msalInstance, config.msal.scopes);
+      if (token) {
+        await processToken(token, 'msal');
+        return { success: true };
+      } else {
+        return { success: false, error: 'Failed to acquire token' };
+      }
     } catch (err: any) {
       return { success: false, error: err?.message || 'MSAL login failed' };
     }

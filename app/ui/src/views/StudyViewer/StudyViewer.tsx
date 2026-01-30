@@ -1,13 +1,21 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import { FC, useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
-import { Button } from '@/components/ButtonsAndTabs/Button/Button';
 import { StudyDataService } from './StudyDataService';
-import { StudyViewerCohortDefinitions } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitions';
-import { MainViewService, ViewType } from '../MainView/MainView';
+
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
+import { useFadeIn } from '../../hooks/useFadeIn';
+import { getStudy } from '../../api/text_to_cohort/route';
+import { 
+  StudyViewerCohortDefinitionsLightWeight,
+  StudyViewerCohortDefinitionsHandle 
+} from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsLightWeight';
+
 enum StudyDefinitionViewType {
   Cohort = 'cohort',
   Baseline = 'baseline',
@@ -22,21 +30,75 @@ const sectionDisplayNames = {
 
 interface StudyViewerProps {
   data?: string;
+  embeddedMode?: boolean;
+  activeTabIndex?: number;
 }
 
-export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
+export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, activeTabIndex }) => {
+  const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
+  const [isPublicStudy, setIsPublicStudy] = useState(false);
   const gridRef = useRef<any>(null);
   const [studyDataService] = useState(() => StudyDataService.getInstance());
   const [currentView, setCurrentView] = useState<StudyDefinitionViewType>(
     StudyDefinitionViewType.Cohort
   );
+  
+  // Navigation bar state
+  const cohortViewRef = useRef<StudyViewerCohortDefinitionsHandle>(null);
+  const [zoomPercentage, setZoomPercentage] = useState(58.3); // Default scale 1.0 maps to ~58.3%
+  const [canNavigateLeft, setCanNavigateLeft] = useState(false);
+  const [canNavigateRight, setCanNavigateRight] = useState(false);
+  
+  const fadeInStyle = useFadeIn();
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
     const loadData = async () => {
       if (data !== undefined) {
-        studyDataService.loadStudyData(data);
+        
+        // If data is a string (study ID), fetch the full study data
+        if (typeof data === 'string') {
+          try {
+            const cohortsDataService = CohortsDataService.getInstance();
+            
+            // Try to find the study in the cached studies first
+            const userStudies = await cohortsDataService.getUserStudies();
+            const publicStudies = await cohortsDataService.getPublicStudies();
+            const allStudies = [...userStudies, ...publicStudies];
+            
+            let studyData = allStudies.find(s => s.id === data);
+            
+            if (!studyData) {
+              console.log('📚 Study not found in cache, fetching directly from API');
+              // Fetch study directly from API
+              try {
+                studyData = await getStudy(data);
+                console.log('📚 Successfully fetched study from API:', studyData);
+              } catch (error) {
+                console.error('📚 Failed to fetch study from API:', error);
+                return;
+              }
+            }
+            
+            // Check if this is a public study
+            const isPublic = publicStudies.some(s => s.id === data) || studyData.is_public;
+            setIsPublicStudy(isPublic);
+            
+            // Fetch cohorts for this study
+            const cohorts = await cohortsDataService.getCohortsForStudy(data);
+            
+            // Add cohorts to study data
+            studyData = { ...studyData, cohorts };
+            
+            studyDataService.loadStudyData(studyData);
+          } catch (error) {
+            console.error('Error loading study:', error);
+          }
+        } else {
+          // Data is already a full study object
+          studyDataService.loadStudyData(data);
+        }
       } else {
         studyDataService.createNewStudy();
       }
@@ -60,6 +122,12 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
       studyDataService.removeStudyDataServiceListener(updateStudyName);
     };
   }, [studyDataService]);
+
+  useEffect(() => {
+    if (activeTabIndex !== undefined) {
+      onTabChange(activeTabIndex);
+    }
+  }, [activeTabIndex]);
 
   const tabs = Object.values(StudyDefinitionViewType).map(value => {
     return sectionDisplayNames[value];
@@ -111,13 +179,14 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
   };
 
   const navigateToMyStudies = () => {
-    // Empty function - placeholder for future navigation to studies list
+    // Navigate back to studies page
+    window.location.href = '/studies';
   };
 
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
       {
-        displayName: 'My Studies',
+        displayName: isPublicStudy ? 'Public Studies' : 'My Studies',
         onClick: navigateToMyStudies,
       },
       {
@@ -132,43 +201,9 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
       await studyDataService.saveChangesToStudy();
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false}/>;
   };
 
-  const clickedOnAddNewCohort = async () => {
-    // Get the study ID from the data prop
-    const studyId = studyDataService.study_data?.id;
-    
-    if (!studyId) {
-      console.error('No study ID found');
-      return;
-    }
-
-    // Create a new cohort for this study
-    const cohortsDataService = CohortsDataService.getInstance();
-    const newCohortData = await cohortsDataService.createNewCohort(studyDataService.study_data);
-    
-    if (newCohortData) {
-      // Navigate to the NewCohort view which will show the wizard
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({ 
-        viewType: ViewType.NewCohort, 
-        data: newCohortData 
-      });
-    }
-  };
-
-
-  // FOR ADD NEW PHENOTYPE DROPDOWN
-  const renderAddNewPhenotypeButton = () => {
-    return (
-        <Button
-          key={"new cohort"}
-          title="+ New Cohort"
-          onClick={clickedOnAddNewCohort}
-        />
-    );
-  };
 
   const renderSectionTabs = () => {
     return (
@@ -181,29 +216,61 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data }) => {
           active_tab_index={determineTabIndex()}
           classNameTabsContainer={styles.classNameTabsContainer}
         />
-        <div className={styles.addPhenotypeButton}>
-          {renderAddNewPhenotypeButton()}
-        </div>
       </div>
     );
   };
 
-  const renderContent = () => {
-    switch (currentView) {
-      case StudyDefinitionViewType.Cohort:
-        return <StudyViewerCohortDefinitions studyDataService={studyDataService} />;
-      default:
-        return <div />;
+  // Navigation bar handlers
+  const handleZoomChange = useCallback((percentage: number) => {
+    setZoomPercentage(percentage);
+    // Update navigation state
+    if (cohortViewRef.current) {
+      setCanNavigateLeft(cohortViewRef.current.canNavigateLeft());
+      setCanNavigateRight(cohortViewRef.current.canNavigateRight());
     }
+  }, []);
+
+  const handleNavigationArrowClicked = useCallback((direction: 'left' | 'right') => {
+    cohortViewRef.current?.navigateCohort(direction);
+    // Update navigation state after navigation
+    setTimeout(() => {
+      if (cohortViewRef.current) {
+        setCanNavigateLeft(cohortViewRef.current.canNavigateLeft());
+        setCanNavigateRight(cohortViewRef.current.canNavigateRight());
+      }
+    }, 0);
+  }, []);
+
+  const handleNavigationScroll = useCallback((percentage: number) => {
+    cohortViewRef.current?.setZoomPercentage(percentage);
+  }, []);
+
+  const renderContent = () => {
+    return (
+      <StudyViewerCohortDefinitionsLightWeight 
+        ref={cohortViewRef}
+        studyDataService={studyDataService}
+        onZoomChange={handleZoomChange}
+      />
+    );
   };
 
   return (
-    <div className={styles.cohortTableContainer}>
-      <div className={styles.topSection}>
-        {renderBreadcrumbs()}
-        {renderSectionTabs()}
-      </div>
+    <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.bottomSection}>{renderContent()}</div>
+      <div className={navBarStyles.topRight}>
+        <ViewNavBar
+          height={44}
+          scrollPercentage={zoomPercentage}
+          canScrollLeft={canNavigateLeft}
+          canScrollRight={canNavigateRight}
+          onViewNavigationArrowClicked={handleNavigationArrowClicked}
+          onViewNavigationScroll={handleNavigationScroll}
+          scrollbarTooltipLabel="Zoom In and Out"
+          leftArrowTooltipLabel="Pan Left"
+          rightArrowTooltipLabel="Pan Right"
+        />
+      </div>
     </div>
   );
 };

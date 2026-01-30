@@ -1,5 +1,5 @@
 .container {
-  padding: 20px 25px 20px 10px;
+  color:white !important;
   /* background-color: var(--background-color); */
 }
 .phenotypeSection {
@@ -29,8 +29,7 @@
 
 .phenotypeName {
   font-family: 'IBMPlexSans-bold';
-  font-size: 18px;
-  line-height: 1.2;
+  /* line-height: 1.2; */
 }
 
 .phenotypeInfo {
@@ -39,4 +38,10 @@
   padding-left: 3px;
   /* width: calc(100% - 50px); */
   font-size: 10px;
+}
+
+.listItem{
+  color: white !important;
+  font-size: var(--font_size_items) !important;
+
 }

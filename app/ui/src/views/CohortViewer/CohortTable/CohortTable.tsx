@@ -48,13 +48,16 @@ interface CohortTableProps {
   headerHeight?: number;
   tableTheme?: any;
   tableGridOptions?: any;
+  customGetRowHeight?: (params: any) => number;
+  gridBottomPadding?: number;
+  components?: any; // AG Grid components map for custom cell renderers
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 44, tableTheme, tableGridOptions }, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0, components}, ref) => {
 
     const default_theme = {
-      accentColor: '#4a4a4aff',
+      accentColor: 'transparent',
       borderColor: 'var(--line-color-grid)',
       browserColorScheme: 'light',
       columnBorder: false,
@@ -64,10 +67,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       cellHorizontalPadding: 10,
       headerBackgroundColor: 'transparent',
       rowBorder: false,
-      spacing: 8,
+      spacing: 0,
       wrapperBorder: false,
       backgroundColor: 'var(--background-color)',
-      wrapperBorderRadius: 0
+      wrapperBorderRadius: 0,
     };
     const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);
     
@@ -75,7 +78,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
           // turns OFF row hover, it's on by default
           suppressRowHoverHighlight: false,
           // turns ON column hover, it's off by default
-          columnHoverHighlight: true,
+          // columnHoverHighlight: true,
 
           // other grid options ...
       }
@@ -83,15 +86,22 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const selectedNodesBeforeEdit = useRef<any[]>([]);
+  
+  // Internal ref as fallback when parent doesn't provide one
+  const internalRef = useRef<any>(null);
+  const gridRef = ref || internalRef;
 
     const onGridReady = () => {
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.resetRowHeights();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.resetRowHeights();
       }
     };
 
     const handleRowDragEnd = () => {
       console.log("=== CohortTable handleRowDragEnd START ===");
+      console.log("gridRef:", gridRef);
+      console.log("gridRef.current:", gridRef && typeof gridRef === 'object' ? gridRef.current : 'N/A');
+      console.log("gridRef.current?.api:", gridRef && typeof gridRef === 'object' && gridRef.current ? gridRef.current.api : 'N/A');
       
       if (!onRowDragEnd) {
         console.log("❌ No onRowDragEnd callback provided");
@@ -100,18 +110,17 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
 
       // Get the current order from the grid and update indices
       const newRowData: any[] = [];
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.forEachNode((node: any) => {
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.forEachNode((node: any) => {
           newRowData.push(node.data);
         });
       }
       
-      console.log("📊 Collected newRowData:", newRowData.length, "rows");
-      console.log("First 3 rows:", newRowData.slice(0, 3).map(r => ({ id: r.id, type: r.type, name: r.name })));
-
+      console.log("newRowData length:", newRowData.length);
+      
       // Simple validation: ensure we have data and all items have the required properties
       if (newRowData.length === 0) {
-        console.log("❌ Validation failed: newRowData is empty");
+        console.log("Validation failed: newRowData is empty");
         return;
       }
 
@@ -149,8 +158,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     const handleCellValueChanged = (event: any) => {
       // Get currently selected rows
       let selectedRows: any[] = [];
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        selectedRows = ref.current.api.getSelectedRows();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        selectedRows = gridRef.current.api.getSelectedRows();
       }
 
       // Call the parent callback with the event and selected rows
@@ -225,8 +234,8 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
     };
 
     useEffect(() => {
-      if (ref && typeof ref === 'object' && ref.current?.api) {
-        ref.current.api.resetRowHeights();
+      if (gridRef && typeof gridRef === 'object' && gridRef.current?.api) {
+        gridRef.current.api.resetRowHeights();
       }
     }, [data]);
 
@@ -381,12 +390,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
-            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:20}}}
+            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:10, marginTop: 130, marginBottom: 60}}}
             hideScrollbars={hideScrollbars}
             hideVerticalScrollbar={hideVerticalScrollbar}
-            hideHorizontalScrollbar={hideHorizontalScrollbar}
+            hideHorizontalScrollbar={true}
+            bottomPadding={gridBottomPadding}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
-            ref={ref}
+            ref={gridRef}
             noRowsOverlayComponent={NoRowsOverlayText()}
             rowData={data.rows}
             getRowId={(params) => params.data.id}
@@ -396,9 +406,10 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             columnDefs={data.columns.length > 0 ? data.columns : []}
             domLayout={domLayout}
             gridOptions = {gridOptions}
+            components={components} // Pass registered components for cell renderers
             defaultColDef={{
               sortable: true,
-              // filter: true,
+              filter: true,
               resizable: true,
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,
@@ -406,7 +417,13 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             cellSelection={false}
             rowSelection="multiple"
             onSelectionChanged={() => {
-              // Selection changed - could be used for future functionality
+              // Refresh cells to update selection cell renderer
+              if (ref && typeof ref === 'object' && ref.current?.api) {
+                ref.current.api.refreshCells({ 
+                  force: true,
+                  columns: ['selection']
+                });
+              }
             }}
             onCellEditingStarted={() => {
               // Store the current selection before editing starts
@@ -440,15 +457,16 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             rowDragManaged={true}
             loadThemeGoogleFonts={true}
             animateRows={true}
-            getRowHeight={params => {
+            getRowHeight={customGetRowHeight || (params => {
               // Calculate height of CODELISTS
-              let current_max_height = 48;
+              let current_max_height = 24;
+              const minHeight = 24; 
               if (
                 params.data?.class_name == 'CodelistPhenotype' &&
                 params.data.codelist?.codelist
               ) {
                 const numEntries = Object.keys(params.data.codelist.codelist).length;
-                const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
+                const codelist_phenotype_height = Math.max(minHeight, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
                 current_max_height = Math.max(current_max_height, codelist_phenotype_height);
               }
 
@@ -458,27 +476,30 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
                 Array.isArray(params.data.relative_time_range)
               ) {
                 const numEntries = params.data.relative_time_range.length;
-                const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
+                const time_range_phenotype_height = Math.max(minHeight, numEntries * 30 + 10); // Adjust row height based on number of entries
                 current_max_height = Math.max(current_max_height, time_range_phenotype_height);
               }
 
            
 
               const nameCol = params.api.getColumnDef('name');
-              if (!nameCol || !params.data?.name) return 48; // Increased minimum height
-              const nameWidth = nameCol.width || 250;
+              if (!nameCol || !params.data?.name) return minHeight; // Increased minimum height
+              const nameWidth = (nameCol.width - 100) || 100;
               const nameCharPerLine = Math.floor(nameWidth / 8);
               const nameLines = Math.ceil(params.data?.name.length / nameCharPerLine);
-              const nameHeight = nameLines * 22 + 40; // 14px per line + padding
+              const nameHeight = nameLines * 22 + 10; // 14px per line + padding
               if (!params.data?.description) {
                 return Math.max(current_max_height, nameHeight); // Increased minimum height
               }
               const descriptionLines = params.data.description.split('\n').length;
-              const descriptionHeight = descriptionLines * 14 + 20; // 14px per line + padding
+              // if (descriptionLines.length === 0) {
+              //   return Math.max(current_max_height, nameHeight); // Increased minimum height
+              // }
+              const descriptionHeight = descriptionLines * 20 + 5; // 12px per line + padding
               current_max_height = Math.max(current_max_height, nameHeight+descriptionHeight);
               
               return current_max_height; // Increased minimum height
-            }}
+            })}
             rowClassRules={
               {
                 // 'rag-dark-outer': (params) => params.data.type === 'entry',

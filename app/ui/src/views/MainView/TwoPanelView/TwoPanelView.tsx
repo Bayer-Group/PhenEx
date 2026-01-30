@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
+import { Portal } from '../../../components/Portal/Portal';
 interface TwoPanelViewProps {
   split: 'vertical' | 'horizontal';
   initialSizeLeft: number;
   minSizeLeft: number;
+  maxSizeRight?: number;
   children: React.ReactNode[];
   collapseButtonTheme?: 'light' | 'dark'; // Add this prop
   onRightPanelCollapse?: (isCollapsed: boolean) => void; // Add this prop
+  viewType?: 'slideover' | 'popover';
 }
 
 export const TwoPanelView = React.forwardRef<
@@ -16,7 +19,8 @@ export const TwoPanelView = React.forwardRef<
   },
   TwoPanelViewProps
 >((props, ref) => {
-  const { split, initialSizeLeft, minSizeLeft, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
+  const { split, initialSizeLeft, minSizeLeft, maxSizeRight, children, collapseButtonTheme = 'dark', onRightPanelCollapse } = props;
+  const viewType = props.viewType || 'popover';
 
   React.useImperativeHandle(ref, () => ({
     collapseRightPanel: (collapse: boolean) => {
@@ -33,6 +37,7 @@ export const TwoPanelView = React.forwardRef<
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isBottomCollapsed, setIsBottomCollapsed] = useState(false); // Start with bottom panel visible
   const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -56,7 +61,10 @@ export const TwoPanelView = React.forwardRef<
 
     if (split === 'vertical') {
       const mouseX = e.clientX - containerRect.left;
-      const newRightWidth = Math.max(200, container.offsetWidth - Math.max(minSizeLeft, mouseX - 10));
+      let newRightWidth = Math.max(minSizeLeft, container.offsetWidth - Math.max(minSizeLeft, mouseX - 10));
+      if (maxSizeRight) {
+        newRightWidth = Math.min(newRightWidth, maxSizeRight);
+      }
       const newLeftWidth = container.offsetWidth - newRightWidth;
       setLeftWidth(newLeftWidth);
       if (!isRightCollapsed) {
@@ -149,30 +157,51 @@ export const TwoPanelView = React.forwardRef<
     >
       {split === 'vertical' ? (
         <>
-          <div className={`${styles.leftPanel} ${isRightCollapsed ? styles.rightCollapsed : ''}`} style={{ width: isRightCollapsed ? '100%' : leftWidth }}>
+          <div className={`${styles.leftPanel} ${isRightCollapsed && viewType === 'slideover' ? styles.rightCollapsed : ''}`} style={{ width: (isRightCollapsed || viewType !== 'slideover') ? '100%' : leftWidth }}>
             {children[0]}
           </div>
 
-          <div
-            className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
-            style={{ width: isRightCollapsed ? 0 : rightWidth }}
-          >
-            <div className={styles.rightPanelContent}>{children[1]}</div>
+          {viewType === 'slideover' ? (
             <div
-              className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
-              onClick={() => {
-                const newCollapsedState = !isRightCollapsed;
-                setIsRightCollapsed(newCollapsedState);
-                onRightPanelCollapse?.(newCollapsedState);
-              }}
+              className={`${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
+              style={{ width: isRightCollapsed ? 0 : rightWidth }}
             >
-              {'>'}
+              <div className={styles.rightPanelContent}>{children[1]}</div>
+              <div
+                className={`${styles.collapseButton} ${isRightCollapsed ? styles.collapsed : ''} ${collapseButtonTheme === 'light' ? styles.lightTheme : ''}`}
+                onClick={() => {
+                  const newCollapsedState = !isRightCollapsed;
+                  setIsRightCollapsed(newCollapsedState);
+                  onRightPanelCollapse?.(newCollapsedState);
+                }}
+              >
+                {'—'}
+              </div>
+              <div
+                className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
+                onMouseDown={handleMouseDown}
+              ></div>
             </div>
-            <div
-              className={`${styles.divider} ${isRightCollapsed ? styles.collapsed : ''}`}
-              onMouseDown={handleMouseDown}
-            ></div>
-          </div>
+          ) : (
+            !isRightCollapsed && (
+              <Portal>
+                <div className={`${styles.popoverOverlay} ${isClosing ? styles.closing : ''}`} onClick={() => {
+                    setIsClosing(true);
+                    setTimeout(() => {
+                      setIsRightCollapsed(true);
+                      setIsClosing(false);
+                      onRightPanelCollapse?.(true);
+                    }, 100);
+                }}>
+                  <div className={`${styles.popoverContent} ${isClosing ? styles.closing : ''}`} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.rightPanelContent}>
+                        {children[1]}
+                    </div>
+                  </div>
+                </div>
+              </Portal>
+            )
+          )}
         </>
       ) : (
         <>

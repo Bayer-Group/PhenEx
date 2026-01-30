@@ -9,7 +9,7 @@
   padding: 0px 0px 0px 0px;
   margin: 0;
   box-sizing: border-box;
-  /* background-color: red; */
+  background-color: var(--background-color) !important;
   /* border-left: var(--border); */
   border-right: 1px solid transparent;
   border-radius: var(--border_radius_right_panel);
@@ -18,7 +18,7 @@
     border-right: none !important;
   border-bottom: none !important;
   border-left: 1px solid var(--line-color);
-
+  
 }
 
 .title {
@@ -66,6 +66,7 @@
   flex: 1;
   overflow: auto; /* Allow content to scroll if needed */
   padding: 0px;
+  background-color: transparent !important;
   /* background-color: green; */
 }
 

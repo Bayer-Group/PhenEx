@@ -1,0 +1,15 @@
+.cohortCardContainer{
+
+}
+
+.cohortGroupView{
+    border: var(--dynamic-outline-width, 3px) solid transparent;
+    border-radius: 12px;
+    padding: calc(80px / var(--zoom-scale, 1)) calc(80px / var(--zoom-scale, 1));
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+}
+.cohortGroupView:hover{
+    border-radius: 30px;
+}

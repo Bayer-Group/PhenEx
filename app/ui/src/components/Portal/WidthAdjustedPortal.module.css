@@ -7,15 +7,14 @@
   overflow: hidden;
   
   /* Add shadow casting */
-  background-color: var(--color_translucent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: var(--background-color);
+  /*backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); */
 
-  height: calc(100vh - 40px) !important;
-  border-radius: 20px;
-  margin-top: 20px;
-  box-shadow: var(--box_shadow) !important;
-    border: var(--border);
+  height: calc(100vh - 2px) !important;
+  margin-top: 0px;
+  /* box-shadow: var(--box_shadow) !important; */
+  border-right: var(--border);
 }
 
 .portalContent {
@@ -98,7 +97,7 @@
 /* High DPI displays */
 @media (min-resolution: 2dppx) {
   .portalContainer {
-    box-shadow: var(--box_shadow_hover);
+    /* box-shadow: var(--box_shadow_hover); */
   }
 }
 
@@ -129,17 +128,19 @@
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* When collapsed - hide completely off-screen, accounting for left margin */
 .portalContainer.collapsed {
   transform: translateX(calc(-100% - var(--margin-left)));
+  opacity: 0;
   pointer-events: none;
 }
 
 /* When hover animating - override collapsed state and slide in */
 .portalContainer.hoverAnimating {
   transform: translateX(0) !important;
+  opacity: 1 !important;
   pointer-events: auto !important;
 }

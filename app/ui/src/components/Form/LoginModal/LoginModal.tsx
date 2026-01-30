@@ -1,4 +1,4 @@
-import { FC, useState, useContext } from 'react';
+import { FC, useState, useContext, useEffect } from 'react';
 import { Modal } from '../../Modal/Modal';
 import { Input } from '../Input';
 import { ModernButton } from '../Button';
@@ -29,8 +29,20 @@ export const LoginModal: FC<LoginModalProps> = ({ isOpen, onClose, onLoginSucces
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { loginOptions, loginWithPassword, registerWithPassword, loginWithMsal } =
+  const { user, loginOptions, loginWithPassword, registerWithPassword, loginWithMsal } =
     useContext(AuthContext);
+
+  // Auto-close modal when user successfully authenticates
+  useEffect(() => {
+    if (isOpen && user && !user.isAnonymous) {
+      // User is authenticated, close the modal
+      onLoginSuccess?.();
+      onClose();
+      setFormData({ email: '', password: '', username: '' });
+      setErrors({});
+      setIsLoading(false);
+    }
+  }, [user, isOpen, onClose, onLoginSuccess]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -100,7 +112,11 @@ export const LoginModal: FC<LoginModalProps> = ({ isOpen, onClose, onLoginSucces
       // Currently only msal (azure) supported via context action. For other providers we would add similar actions.
       if (provider === 'azure') {
         const result = await loginWithMsal();
-        if (!result.success) {
+        if (result.success) {
+          onLoginSuccess?.();
+          onClose();
+          setFormData({ email: '', password: '', username: '' });
+        } else {
           setErrors({ general: result.error || 'OAuth login failed.' });
         }
       } else {

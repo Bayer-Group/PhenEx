@@ -1,5 +1,6 @@
 import { TwoPanelCohortViewerService } from '../../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer';
+import { SingleLogicalExpression } from '../CellEditors/logicalExpressionEditor/types';
 
 /**
  * Cell Renderer Handler Utilities
@@ -51,4 +52,20 @@ export const createDeleteHandler = (props: any) => () => {
     key: 'settings',
   };
   props.api?.startEditingCell(params);
+};
+
+/**
+ * Handler for editing a specific logical expression item
+ * Opens the phenotype detail panel for the clicked expression
+ */
+export const createLogicalExpressionEditHandler = () => async (expression: SingleLogicalExpression, event: React.MouseEvent) => {
+  // Dynamic import to avoid circular dependency
+  const { CohortDataService } = await import('../../CohortDataService/CohortDataService');
+  const cohortDataService = CohortDataService.getInstance();
+  const phenotype = cohortDataService.getPhenotypeById(expression.phenotype_id);
+  
+  if (phenotype) {
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.displayExtraContent('phenotype' as CohortViewType, phenotype);
+  }
 };

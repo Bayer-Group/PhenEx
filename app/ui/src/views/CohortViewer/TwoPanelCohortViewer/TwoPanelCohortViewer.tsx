@@ -1,4 +1,5 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 import { CohortViewer } from '../CohortViewer';
 import { CohortViewType } from '../CohortViewer';
@@ -10,11 +11,20 @@ import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPa
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
+import { NewCohortWizardPanel } from '../../SlideoverPanels/NewCohortWizardPanel/NewCohortWizardPanel';
 import { RightPanelHistoryDataService } from './RightPanelHistoryDataService';
-import { RightPanelHistory } from './RightPanelHistory';
+import { StudyViewer } from '../../StudyViewer/StudyViewer';
+import { MainViewService, ViewType } from '../../MainView/MainView';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
+import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
+import { TabsAndAddButton } from '../../../components/PhenExNavBar/TabsAndAddButton';
+import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import { CohortDataService } from '../CohortDataService/CohortDataService';
+import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
   data?: string;
+  contentMode?: 'cohort' | 'study';
 }
 
 export class TwoPanelCohortViewerService {
@@ -27,6 +37,7 @@ export class TwoPanelCohortViewerService {
   private panelRef?: React.RefObject<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>;
 
   private constructor() {}
+
 
   public static getInstance(): TwoPanelCohortViewerService {
     if (!TwoPanelCohortViewerService.instance) {
@@ -47,8 +58,13 @@ export class TwoPanelCohortViewerService {
     this.panelRef = ref;
   }
 
-  public displayExtraContent = (viewType: any, data: any) => {
+  displayExtraContent = (viewType: any, data: any) => {
     console.log(`Displaying extra content for view type: ${viewType}`);
+    
+    // If opening phenotype panel in StudyViewer, set the correct cohort as active
+    if (viewType === 'phenotype' && data?.id) {
+      this.ensureCorrectCohortIsActive(data.id);
+    }
     
     // Add to history
     const historyService = RightPanelHistoryDataService.getInstance();
@@ -61,7 +77,35 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
-  public setCurrentViewAndData = (viewType: any, data: any) => {
+  private ensureCorrectCohortIsActive(phenotypeId: string) {
+    try {
+      console.log('[TwoPanelCohortViewer] ensureCorrectCohortIsActive called for phenotype:', phenotypeId);
+      // Check if we're in StudyViewer context
+      const mainViewService = MainViewService.getInstance();
+      const currentView = mainViewService.getCurrentView();
+      console.log('[TwoPanelCohortViewer] currentView:', currentView?.viewType);
+      
+      if (currentView?.viewType === ViewType.StudyViewer) {
+        console.log('[TwoPanelCohortViewer] In StudyViewer context');
+        // We're in StudyViewer - need to set the correct cohort as active
+        const studyDataService = StudyDataService.getInstance();
+        if (studyDataService?.cohort_definitions_service) {
+          const cohortId = studyDataService.cohort_definitions_service.getCohortIdForPhenotype(phenotypeId);
+          console.log('[TwoPanelCohortViewer] Found cohortId:', cohortId, 'for phenotype:', phenotypeId);
+          if (cohortId) {
+            console.log(`[TwoPanelCohortViewer] Setting cohort ${cohortId} as active for phenotype ${phenotypeId}`);
+            studyDataService.cohort_definitions_service.setActiveCohort(cohortId);
+          }
+        }
+      } else {
+        console.log('[TwoPanelCohortViewer] Not in StudyViewer context');
+      }
+    } catch (error) {
+      console.warn('[TwoPanelCohortViewer] Could not ensure correct cohort is active:', error);
+    }
+  }
+
+  setCurrentViewAndData = (viewType: any, data: any) => {
     console.log(`Setting current view and data without adding to history: ${viewType}`);
     
     this.currentViewType = viewType;
@@ -71,7 +115,7 @@ export class TwoPanelCohortViewerService {
     this.notifyListeners();
   };
 
-  public hideExtraContent = () => {
+  hideExtraContent = () => {
     // Add to history if it was a phenotype before closing
     if (this.currentViewType === 'phenotype') {
       const historyService = RightPanelHistoryDataService.getInstance();
@@ -104,11 +148,19 @@ export class TwoPanelCohortViewerService {
   }
 }
 
-export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) => {
+export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, contentMode = 'cohort' }) => {
+  const navigate = useNavigate();
   const service = TwoPanelCohortViewerService.getInstance();
   const panelRef = React.useRef<{ collapseRightPanel: (collapse: boolean) => void; collapseBottomPanel: (collapse: boolean) => void }>(null);
   const [viewType, setViewType] = useState<any>(service.getCurrentViewType());
   const [extraData, setExtraData] = useState<any>(service.getExtraData());
+  
+  // Breadcrumb state
+  const [breadcrumbItems, setBreadcrumbItems] = useState<Array<{displayName: string; onClick: () => void}>>([]);
+  const [editableName, setEditableName] = useState('');
+  
+  // Tab state
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
   React.useEffect(() => {
     service.setPanelRef(panelRef);
@@ -143,8 +195,133 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
     
     return () => service.removeListener(updateState);
   }, [service]);
+
+  // Update breadcrumbs when content mode or data changes
+  useEffect(() => {
+    updateBreadcrumbs();
+    
+    // Subscribe to data service changes
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      const listener = updateBreadcrumbs;
+      cohortService.addListener(listener);
+      return () => cohortService.removeListener(listener);
+    } else {
+      const studyService = StudyDataService.getInstance();
+      const listener = updateBreadcrumbs;
+      studyService.addStudyDataServiceListener(listener);
+      return () => studyService.removeStudyDataServiceListener(listener);
+    }
+  }, [contentMode, data]);
   
   service.setData(data);
+  
+  const updateBreadcrumbs = React.useCallback(() => {
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      const items = [
+        {
+          displayName: 'My Studies',
+          onClick: () => { window.location.href = '/studies'; },
+        },
+        {
+          displayName: cohortService.getStudyNameForCohort() || 'Study',
+          onClick: () => {
+            const studyId = cohortService.cohort_data?.study_id;
+            if (studyId) navigate(`/studies/${studyId}`);
+          },
+        },
+        {
+          displayName: cohortService.cohort_name || 'Unnamed Cohort',
+          onClick: () => {},
+        },
+      ];
+      setBreadcrumbItems(items);
+      setEditableName(cohortService.cohort_name || 'Unnamed Cohort');
+    } else {
+      const studyService = StudyDataService.getInstance();
+      const isPublic = studyService.study_data?.is_public || false;
+      const items = [
+        {
+          displayName: isPublic ? 'Public Studies' : 'My Studies',
+          onClick: () => { window.location.href = '/studies'; },
+        },
+        {
+          displayName: studyService.study_name || 'Unnamed Study',
+          onClick: () => {},
+        },
+      ];
+      setBreadcrumbItems(items);
+      setEditableName(studyService.study_name || 'Unnamed Study');
+    }
+  }, [contentMode, navigate]);
+  
+  const handleEditLastItem = async (newValue: string) => {
+    if (contentMode === 'cohort') {
+      const cohortService = CohortDataService.getInstance();
+      cohortService.cohort_name = newValue;
+      cohortService.cohort_data.name = newValue;
+      await cohortService.saveChangesToCohort(true, false);
+      setEditableName(newValue);
+      updateBreadcrumbs(); // Explicitly update breadcrumbs after save
+    } else {
+      const studyService = StudyDataService.getInstance();
+      studyService._study_name = newValue;
+      await studyService.saveChangesToStudy();
+      setEditableName(newValue);
+      updateBreadcrumbs(); // Explicitly update breadcrumbs after save
+    }
+  };
+  
+  const handleTabChange = (index: number) => {
+    setCurrentTabIndex(index);
+  };
+
+  const handleAddNewCohort = async () => {
+    if (contentMode === 'study') {
+      // Get the study ID from the data prop
+      let studyId = data;
+      if (typeof data !== 'string') {
+        studyId = data?.id;
+      }
+      
+      if (!studyId) {
+        console.error('No study ID found');
+        return;
+      }
+
+      // Create a new cohort via API
+      const { createCohort } = await import('../../LeftPanel/studyNavigationHelpers');
+      await createCohort(studyId);
+      
+      // Refresh the study data to show the new cohort
+      const studyDataService = StudyDataService.getInstance();
+      await studyDataService.refreshStudyData();
+    }
+  };
+
+  const handleMenuClick = (viewType: string) => {
+    if (viewType === 'export' && contentMode === 'study') {
+      // Trigger export for study view
+      console.log("EXPORT STUDY");
+      const studyService = StudyDataService.getInstance();
+      studyService.exportStudyCallback?.();
+    } else {
+      service.displayExtraContent(viewType, null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (contentMode === 'study') {
+      const studyService = StudyDataService.getInstance();
+      await studyService.deleteStudy();
+      navigate('/');
+    } else {
+      const cohortService = CohortDataService.getInstance();
+      await cohortService.deleteCohort();
+      navigate('/');
+    }
+  };
 
   const renderRightPanel = () => {
     // Add to history when rendering a panel
@@ -167,24 +344,71 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data }) =>
       return <InfoPanel />;
     } else if (viewType === 'codelists') {
       return <CodelistsViewer />;
+    } else if (viewType === 'newcohort') {
+      return <NewCohortWizardPanel data={extraData} />;
     }
   };
 
-  return (
-    <TwoPanelView 
-      ref={panelRef} 
-      split="vertical" 
-      initialSizeLeft={500} 
-      minSizeLeft={100}
-      collapseButtonTheme={'dark'}
-      onRightPanelCollapse={handleRightPanelCollapse}
-    >
-      <>
-        <CohortViewer data={service.getData()} />
-        <RightPanelHistory />
+  const renderLeftPanel = () => {
+    if (contentMode === 'study') {
+      return <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />;
+    }
+    return <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />;
+  };
 
-      </>
-      {renderRightPanel()}
-    </TwoPanelView>
+  return (
+    <NavBarMenuProvider>
+      <div className={`${styles.container} ${contentMode === 'study' ? styles.studyMode : ''}`}>
+        <div className={styles.topSection}>
+          <div className={styles.breadcrumbsContainer}>
+            <SmartBreadcrumbs 
+              items={breadcrumbItems} 
+              onEditLastItem={handleEditLastItem}
+              classNameBreadcrumbItem={styles.breadcrumbItem}
+              classNameBreadcrumbLastItem={styles.breadcrumbLastItem}
+              compact={false}
+            />
+          </div>
+          <TabsAndAddButton 
+            height={44} 
+            mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
+            onSectionTabChange={handleTabChange} 
+            onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
+            shadow={contentMode === 'study' ? true : false} 
+            menuItems={contentMode === 'study' ? 
+              [
+                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
+                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
+              ] : 
+              [
+                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
+                { type: 'database', label: 'Database', onClick: () => handleMenuClick('database') },
+                { type: 'codelists', label: 'Codelists', onClick: () => handleMenuClick('codelists') },
+                { type: 'constants', label: 'Constants', onClick: () => handleMenuClick('constants') },
+                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
+                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
+              ]
+            }
+          />
+        </div>
+        <div className={styles.contentSection}>
+          <TwoPanelView 
+            ref={panelRef} 
+            split="vertical" 
+            initialSizeLeft={500} 
+            minSizeLeft={400}
+            maxSizeRight={600}
+            collapseButtonTheme={'dark'}
+            onRightPanelCollapse={handleRightPanelCollapse}
+          >
+            <>
+              {renderLeftPanel()}
+            </>
+            {renderRightPanel()}
+          </TwoPanelView>
+        </div>
+      </div>
+    </NavBarMenuProvider>
   );
 };

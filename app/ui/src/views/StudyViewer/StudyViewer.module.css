@@ -8,21 +8,14 @@
 }
 
 .topSection {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-  pointer-events: none;
-  padding: 20px 20px;
-  background-color: var(--color_translucent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.topSection > * {
-  pointer-events: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left: 20px;
 }
 
 .bottomSection {
@@ -88,20 +81,29 @@
 
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
-  margin-top: 10px;
-  margin-left: 30px;
-  font-size: 40px !important;
-}
-
-.breadcrumbItem{
-  font-size: 20px !important;
+  margin-top: 0px;
+  margin-left: var(--centerPanelLeftMargin);
   line-height: 10px;
+
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 8px;
+  border-radius: 8px;
+
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
+}
+.breadcrumbItem{
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
 }
 
-.breadcrumbLastItem{
-  font-size: 32px !important;
+.breadcrumbLastItem{ /* this is the main title */
+
+  font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
 }
 
 .studyNameInput {
@@ -137,14 +139,30 @@
   
 }
 
-.addPhenotypeButton{
-  margin-left:30px;
-  margin-top:5px;
-  font-family: "IBMPlexSans-regular" !important;
+.newCohortButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
 }
 
-.addPhenotypeButtonLabel{
-  /* height: 32px !important; */
-  padding-left: 8px!important;
-  padding-right: 8px !important;
+.newCohortButton:hover {
+  background: #0052a3;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.newCohortButton:active {
+  transform: scale(0.98);
 }

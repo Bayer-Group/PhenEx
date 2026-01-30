@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './CodelistRenderer.module.css';
-import { ComplexItemRenderer } from './ComplexItemRenderer';
+import { LogicalFilterRenderer, FlattenedItem } from './LogicalFilterRenderer';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 const MAX_CODES_TO_SHOW = 3;
@@ -27,7 +27,7 @@ export interface CodelistRendererProps {
   value: CodelistValue | CodelistValue[] | null | undefined;
   data?: any;
   onClick?: () => void;
-  onItemClick?: (item: CodelistValue, index: number) => void; // Callback for clicking individual items in an array
+  onItemClick?: (item: CodelistValue, index: number, event?: React.MouseEvent) => void; // Callback for clicking individual items in an array
   selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
   selectedClassName?: string; // Optional className to apply to the selected item
 }
@@ -69,8 +69,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
           <div
             key={codeIndex}
             className={styles.codeBlock}
-            onClick={(e) => {
-              // e.stopPropagation();
+            onClick={() => {
+              // Disabled for now
               // if (onClick) {
               //   onClick();
               // }
@@ -97,25 +97,20 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   );
 
   const effectiveType = data?.effective_type;
-  console.log("THIS IS THE DATA IN CODELIST RENDERER,", data);
   const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
-  console.log("THIS IS THE CODELIST CLOR CL", colorClass);
   const renderFileCodelist = (codelistValue: CodelistValue, index: number = 0) => {
     // Extract data from either top-level or nested codelist object
-    const fileName = codelistValue.file_name || codelistValue.codelist?.file_name;
     const codelistName = codelistValue.codelist_name || codelistValue.codelist?.codelist_name;
     
     // Replace underscores with spaces for better readability
     const displayCodelistName = codelistName?.replace(/_/g, ' ') || 'Unknown codelist';
-    const displayFileName = fileName?.replace(/_/g, ' ') || 'Unknown file';
     
     return (
       <div key={index} className={styles.codelistContainer}>
         <div
           className={styles.codeBlock}
-          onClick={(e) => {
-            // e.stopPropagation();
+          onClick={() => {
             if (onClick) {
               onClick();
             }
@@ -145,15 +140,21 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
 
   if (Array.isArray(value)) {
     // If the codelist is an array, it's a list of codelists
+    const flattenedItems: FlattenedItem<CodelistValue>[] = value.map((codelist, index) => ({
+      type: 'filter',
+      filter: codelist,
+      index: index,
+      path: [index],
+    }));
+    
     return (
-      <ComplexItemRenderer
-        items={value}
-        renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+      <LogicalFilterRenderer
+        flattenedItems={flattenedItems}
+        renderFilter={(codelist) => renderSingleCodelist(codelist, 0)}
         onItemClick={onItemClick}
-        itemClassName={borderColorClass}
+        filterClassName={borderColorClass}
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName}
-        emptyPlaceholder={<div className={styles.missing}></div>}
       />
     );
   }
@@ -167,15 +168,21 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   }
 
   // Single item - treat as array of one for consistency
+  const flattenedItems: FlattenedItem<CodelistValue>[] = [{
+    type: 'filter',
+    filter: value,
+    index: 0,
+    path: [0],
+  }];
+  
   return (
-    <ComplexItemRenderer
-      items={[value]}
-      renderItem={(codelist, index) => renderSingleCodelist(codelist, index)}
+    <LogicalFilterRenderer
+      flattenedItems={flattenedItems}
+      renderFilter={(codelist) => renderSingleCodelist(codelist, 0)}
       onItemClick={onItemClick}
-      itemClassName={borderColorClass}
+      filterClassName={borderColorClass}
       selectedIndex={selectedIndex}
       selectedClassName={selectedClassName}
-      emptyPlaceholder={<div className={styles.missing}></div>}
     />
   );
 };

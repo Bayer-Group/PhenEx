@@ -3,10 +3,12 @@ import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, TreeEnvironme
 import 'react-complex-tree/lib/style-modern.css';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
-import { HierarchicalTreeNode } from './CohortTreeListItem.tsx';
+import { HierarchicalTreeNode } from './HierarchicalLeftPanelDataService';
 import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
-import { MainViewService } from '../MainView/MainView';
+import { MainViewService, ViewType } from '../MainView/MainView';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { TreeNodeAddButton } from '../../components/ButtonsAndTabs/TreeNodeAddButton/TreeNodeAddButton.tsx';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
@@ -56,13 +58,20 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
   const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
   const isExpandCollapseAction = useRef(false);
   const isDragging = useRef(false);
+  const mouseDownTime = useRef<number>(0);
+  const mouseDownPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const navigationTimeout = useRef<NodeJS.Timeout | null>(null);
+  const navigate = useNavigate();
+  const { studyId, cohortId } = useParams();
+  const location = useLocation();
 
   const DOUBLE_CLICK_THRESHOLD = 300; // ms
+  const DRAG_THRESHOLD = 5; // pixels - if mouse moves more than this, it's a drag
 
   useEffect(() => {
     const updateTreeData = () => {
       const rawTreeData = dataService.current.getTreeData();
-      setTreeData(rawTreeData);
+      setTreeData([...rawTreeData]); // Force new array reference to trigger re-render
     };
 
     updateTreeData();
@@ -71,10 +80,89 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     return () => dataService.current.removeListener(updateTreeData);
   }, []);
 
+  // Auto-expand and select based on URL
+  useEffect(() => {
+    if (!studyId) return;
+
+    // Determine if this is a public study or user study
+    const isPublicStudy = dataService.current.isPublicStudy(studyId);
+    const rootSection = isPublicStudy ? 'publicstudies' : 'mystudies';
+
+    // Always expand the appropriate root section and the study
+    const newExpandedItems = ['root', rootSection];
+    if (!expandedItems.includes(studyId)) {
+      newExpandedItems.push(studyId);
+    } else {
+      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies' && id !== 'publicstudies'));
+    }
+    setExpandedItems(newExpandedItems);
+
+    // Select the current study or cohort
+    if (cohortId) {
+      setSelectedItems([cohortId]);
+      dataService.current.selectNode(cohortId);
+    } else {
+      setSelectedItems([studyId]);
+      dataService.current.selectNode(studyId);
+    }
+  }, [studyId, cohortId, location.pathname]);
+  
+  // Subscribe to MainViewService to sync selection when navigation happens
+  useEffect(() => {
+    const mainViewService = MainViewService.getInstance();
+    
+    const handleNavigation = (viewInfo: any) => {
+      console.log('📍 Left panel received navigation event:', viewInfo);
+      
+      // Extract the ID from viewInfo.data to determine what should be selected
+      if (viewInfo.data) {
+        let itemIdToSelect: string | null = null;
+        
+        // For cohort views, select the cohort
+        if (viewInfo.viewType === 'sdef' || viewInfo.viewType === 'psdef' || viewInfo.viewType === 'newCohort') {
+          itemIdToSelect = viewInfo.data.cohortId || viewInfo.data.id;
+        }
+        // For study views, select the study
+        else if (viewInfo.viewType === 'studyViewer' || viewInfo.viewType === 'newStudy') {
+          itemIdToSelect = viewInfo.data.studyId || viewInfo.data.id;
+        }
+        
+        if (itemIdToSelect) {
+          console.log('📍 Selecting item in left panel:', itemIdToSelect);
+          setSelectedItems([itemIdToSelect]);
+          setFocusedItem(itemIdToSelect);
+          
+          // Expand parent if needed - use functional update to access current state
+          setExpandedItems(prevExpanded => {
+            if (!prevExpanded.includes(itemIdToSelect)) {
+              return [...prevExpanded, itemIdToSelect];
+            }
+            return prevExpanded;
+          });
+        }
+      }
+    };
+    
+    mainViewService.addListener(handleNavigation);
+    return () => mainViewService.removeListener(handleNavigation);
+  }, []); // Empty deps - listener registered once
+
   const items = useMemo(() => {
     const converted = convertToComplexTree(treeData);
     return converted;
   }, [treeData]);
+
+  const handleAddNewStudy = async () => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewStudy } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewStudy(navigate);
+  };
+
+  const handleAddNewCohortToStudy = async (studyId: string) => {
+    // Use centralized helper to ensure consistent behavior
+    const { createAndNavigateToNewCohort } = await import('./studyNavigationHelpers');
+    await createAndNavigateToNewCohort(studyId, navigate);
+  };
 
   const handleItemClick = (itemId: TreeItemIndex, item: TreeItem<HierarchicalTreeNode>) => {
     const now = Date.now();
@@ -109,7 +197,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle special action items
     if (node.id === 'new-study-action') {
-      dataService.current.addNewStudy();
+      handleAddNewStudy();
       return;
     }
 
@@ -123,9 +211,22 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
 
     // Handle selection
     dataService.current.selectNode(node.id);
+    
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -141,10 +242,21 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
     // Handle selection in data service
     dataService.current.selectNode(node.id);
 
-    // Handle navigation
+    // Navigate using URL routing instead of MainViewService
     if (node.viewInfo) {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo(node.viewInfo);
+      const { viewType, data } = node.viewInfo;
+      
+      if (viewType === ViewType.StudyViewer && data) {
+        // Navigate to study URL - data is the study ID
+        navigate(`/studies/${data}`);
+      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+        // Navigate to cohort URL - data is the cohort object with id and study_id
+        const cohortId = typeof data === 'string' ? data : data.id;
+        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+        if (studyId && cohortId) {
+          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+        }
+      }
     }
   };
 
@@ -164,6 +276,26 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
         <div 
           ref={scrollContainerRef}
           className={styles.scrollContainer}
+          onMouseDown={(e) => {
+            mouseDownTime.current = Date.now();
+            mouseDownPos.current = { x: e.clientX, y: e.clientY };
+          }}
+          onMouseMove={(e) => {
+            // If mouse has moved significantly since mousedown, mark as dragging
+            if (mouseDownTime.current > 0) {
+              const dx = Math.abs(e.clientX - mouseDownPos.current.x);
+              const dy = Math.abs(e.clientY - mouseDownPos.current.y);
+              if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+                if (!isDragging.current) {
+                  console.log('🎯 DETECTED DRAG via mouse movement');
+                  isDragging.current = true;
+                }
+              }
+            }
+          }}
+          onMouseUp={() => {
+            mouseDownTime.current = 0;
+          }}
         >
           <ControlledTreeEnvironment<HierarchicalTreeNode>
             ref={treeEnvironmentRef}
@@ -174,7 +306,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             }}
             renderItemTitle={({ title, item }) => {
               const node = item.data;
-              const hasButton = node?.hasButton && node?.buttonTitle && node?.buttonOnClick;
+              const isSelected = selectedItems.includes(item.index);
               
               // Determine the level of this item
               let level = 0;
@@ -202,31 +334,35 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
               
               const levelClass = `level${level}`;
               
+              // Use hasButton from node data
+              const showButton = node?.hasButton === true;
+              
+              // Determine tooltip text and handler based on level
+              let tooltipText = '';
+              let handleClick = () => {};
+              
+              if (level === 0 && item.index === 'mystudies') {
+                tooltipText = 'Create a new study';
+                handleClick = handleAddNewStudy;
+              } else if (level === 1) {
+                tooltipText = 'Create a new cohort';
+                // If it's a study node, handle adding cohort with navigation
+                if (node?.id) {
+                  handleClick = () => handleAddNewCohortToStudy(node.id);
+                }
+              }
+              
               return (
                 <div 
                   className={`${styles.itemTitle} ${styles[levelClass]}`}
+                  style={{ fontFamily: isSelected ? '"IBMPlexSans-bold"' : undefined }}
                 >
                   <span>{title}</span>
-                  {hasButton && (
-                    <span
-                      className={styles.nodeButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        node.buttonOnClick?.();
-                      }}
-                      title={node.buttonTitle}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          node.buttonOnClick?.();
-                        }
-                      }}
-                    >
-                      {node.buttonTitle}
-                    </span>
+                  {showButton && (
+                    <TreeNodeAddButton
+                      tooltipText={tooltipText}
+                      onClick={handleClick}
+                    />
                   )}
                 </div>
               );
@@ -240,7 +376,41 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             }}
             defaultInteractionMode={InteractionMode.ClickArrowToExpand}
             canRename={true}
-            canInvokePrimaryActionOnItemContainer={false}
+            canInvokePrimaryActionOnItemContainer={true}
+            onPrimaryAction={(item) => {
+              // Primary action (click) - this is separate from selection
+              if (!item.data) return;
+              const node = item.data;
+              
+              console.log('🎯 PRIMARY ACTION (click) - navigating');
+              
+              // Handle special action items
+              if (node.id === 'new-study-action') {
+                handleAddNewStudy();
+                return;
+              }
+              
+              // Handle root items
+              if (node.id === 'mystudies' || node.id === 'publicstudies') {
+                navigate('/studies');
+                return;
+              }
+              
+              // Navigate based on viewInfo
+              if (node.viewInfo) {
+                const { viewType, data } = node.viewInfo;
+                
+                if (viewType === ViewType.StudyViewer && data) {
+                  navigate(`/studies/${data}`);
+                } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
+                  const cohortId = typeof data === 'string' ? data : data.id;
+                  const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
+                  if (studyId && cohortId) {
+                    navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+                  }
+                }
+              }
+            }}
             onRenameItem={(item, newName) => {
               
               if (!item.data) {
@@ -272,24 +442,19 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
                     return;
                   }
 
-                  console.log('📚 Renaming study:', node.id, 'to:', newName);
-                  
                   // Update study name via data service
                   try {
                     await dataService.current.updateStudyName(node.id, newName);
-                    console.log('✅ Study renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename study:', error);
+                    console.error('Failed to rename study:', error);
                   }
                 } else if (isCohort) {
-                  console.log('📋 Renaming cohort:', node.id, 'to:', newName);
                   
                   // Update cohort name via data service
                   try {
                     await dataService.current.updateCohortName(node.id, newName);
-                    console.log('✅ Cohort renamed successfully');
                   } catch (error) {
-                    console.error('❌ Failed to rename cohort:', error);
+                    console.error('Failed to rename cohort:', error);
                   }
                 } else {
                   console.warn('⚠️ Cannot determine item type for rename');
@@ -315,37 +480,35 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             onSelectItems={(itemIds) => {
               // Don't handle selection if it's from expand/collapse or drag action
               if (isExpandCollapseAction.current || isDragging.current) {
-                setSelectedItems(itemIds); // Still update selected items visually
+                console.log('🚫 Blocking selection during drag/expand:', { isDragging: isDragging.current, isExpandCollapse: isExpandCollapseAction.current });
                 return;
               }
               
+              // Just update selection state - navigation happens in onPrimaryAction
               setSelectedItems(itemIds);
+              
               if (itemIds.length > 0 && itemIds[0] !== 'root') {
                 const itemId = itemIds[0];
                 const item = items[itemId];
                 if (item?.data) {
                   const node = item.data;
-                  
-                  // Handle special action items
-                  if (node.id === 'new-study-action') {
-                    dataService.current.addNewStudy();
-                    return;
-                  }
-                  
                   dataService.current.selectNode(node.id);
-                  if (node.viewInfo) {
-                    const mainViewService = MainViewService.getInstance();
-                    console.log("NAVIGATING TO:", node.viewInfo);
-                    mainViewService.navigateTo(node.viewInfo);
+                  
+                  // If it's a folder, expand it
+                  if (item.isFolder && !expandedItems.includes(itemId)) {
+                    setExpandedItems([...expandedItems, itemId]);
                   }
                 }
               }
             }}
             onFocusItem={(item) => setFocusedItem(item.index)}
-            onDrop={(draggedItems, target) => {
-              // Mark that we're in a drag operation to prevent selection
+            onDragStart={(items) => {
+              // Mark that we're starting a drag operation to prevent selection
+              console.log('🎯 DRAG START - setting isDragging to true');
               isDragging.current = true;
-              
+            }}
+            onDrop={(draggedItems, target) => {
+              console.log('🎯 DROP - resetting isDragging');
               // Get the dragged item IDs
               const draggedIds = draggedItems.map(item => item.index as string);
               

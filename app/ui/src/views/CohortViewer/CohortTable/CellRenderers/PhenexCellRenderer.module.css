@@ -68,7 +68,7 @@
   font-size: 14px;
   width: 100%;
   height: 100%;
-  padding: 10px;
+  padding: 0px var(--item-margin-horizontal);
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
@@ -86,7 +86,14 @@
 .missingLabel {
   color: white;
   font-family: "IBMPlexSans-bolditalic";
-  font-size: 16px;
+  font-size: var(--font_size_items);
+  margin-top: var(--item-margin-top);
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  border-radius: var(--item-radius);
+}
+
+.missingLabel:hover{
+  background-color: white;
 }
 
 /* Button styles for cells */

@@ -1,0 +1,76 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--background-color);
+  position: relative;
+}
+
+.topSection {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left: 40px !important; /* margin for arrow */
+  background-color: transparent;
+  z-index: 10;
+}
+
+.topSection > * {
+  transition: transform 0.2s ease, width 0.2s ease;
+}
+
+.contentSection {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Study mode: floating top section */
+.studyMode .topSection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.studyMode .topSection > * {
+  pointer-events: auto;
+}
+
+.studyMode .contentSection {
+  height: 100%;
+  flex: none;
+}
+
+.breadcrumbsContainer {
+  min-width: 200px;
+  flex-shrink: 0;
+  line-height: 10px;
+  /* Prevent layout shift during content changes */
+}
+
+.breadcrumbItem {
+    font-size: var(--font_size_infotext);
+    line-height: var(--font_size_infotext);
+
+  /* Add any specific breadcrumb item styling */
+}
+
+.breadcrumbLastItem {
+    font-size: var(--font_size_breadcrumbs);
+    line-height: 20px;
+  /* Add any specific last breadcrumb item styling */
+}
+
+.bottomRight{
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100000;
+}

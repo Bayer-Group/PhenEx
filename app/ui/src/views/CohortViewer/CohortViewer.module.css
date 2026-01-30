@@ -15,11 +15,14 @@
 
 .topSection {
   /* Height hugs content */
-  width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
   flex-shrink: 0;
-  padding-bottom: 20px;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left:20px;
 }
 
 .bottomSection {
@@ -38,10 +41,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 200px;
-  background: linear-gradient(to top, #ffffff, #ffffff00);
+  height: 50px;
+  background: linear-gradient(to top, var(--background-color), #ffffff00);
   pointer-events: none;
-  z-index: -100;
 }
 
 .visible {
@@ -98,18 +100,23 @@
 }
 .breadcrumbsContainer{
   /* No absolute positioning - flows naturally */
-  margin-top: 10px;
+  width: fit-content;
+  margin-top: 0px;
   margin-left: var(--centerPanelLeftMargin);
+  line-height: 10px;
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
 }
 .breadcrumbItem{
-  font-size: var(--font_size_breadcrumb) !important;
-  line-height: 10px;
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
+
 }
 
 .breadcrumbLastItem{ /* this is the main title */
-  font-size: var(--font_size_pagetitle) !important;
+  font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
-  line-height: 28px;
 }
 
 
@@ -149,4 +156,36 @@
   /* height: 32px !important; */
   padding-left: 8px!important;
   padding-right: 8px !important;
+}
+
+.newPhenotypeButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+}
+
+.newPhenotypeButtonLabel {
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: #0066cc !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-family: 'IBMPlexSans-semibold', sans-serif !important;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2) !important;
+  height: auto !important;
+}
+
+.newPhenotypeButtonLabel:hover {
+  background: #0052a3 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3) !important;
+}
+
+.newPhenotypeButtonLabel:active {
+  transform: scale(0.98) !important;
 }

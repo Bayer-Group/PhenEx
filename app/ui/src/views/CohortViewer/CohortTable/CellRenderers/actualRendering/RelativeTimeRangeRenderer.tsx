@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '../RelativeTimeRangeCellRenderer.module.css';
-import { ComplexItemRenderer } from './ComplexItemRenderer';
+import { LogicalFilterRenderer, FlattenedItem } from './LogicalFilterRenderer';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface RelativeTimeRangeFilter {
@@ -53,7 +53,7 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
     if (filter.useConstant && filter.constant) {
       return (
         <span className={styles.filterRowSpan}>
-          {filter.constant === 'one_year_pre_index' ? 'One Year Pre-Index' : 'Any Time Post-Index'}
+          {filter.constant}
         </span>
       );
     }
@@ -91,19 +91,25 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
   const colorClass = typeStyles[`${effectiveType || ''}_text_color`] || '';
   const borderColorClass = typeStyles[`${effectiveType || ''}_border_color`] || '';
 
+  const flattenedItems: FlattenedItem<RelativeTimeRangeFilter>[] = filters.map((filter, index) => ({
+    type: 'filter',
+    filter: filter,
+    index: index,
+    path: [index],
+  }));
+
   return (
-    <ComplexItemRenderer
-      items={filters}
-      renderItem={(filter) => (
+    <LogicalFilterRenderer
+      flattenedItems={flattenedItems}
+      renderFilter={(filter) => (
         <div className={`${styles.filtersContainer} ${colorClass}`}>
           {formatTimeRange(filter)}
         </div>
       )}
       onItemClick={onItemClick}
-      itemClassName={borderColorClass}
+      filterClassName={borderColorClass}
       selectedIndex={selectedIndex}
       selectedClassName={selectedClassName}
-      emptyPlaceholder={null}
     />
   );
 };

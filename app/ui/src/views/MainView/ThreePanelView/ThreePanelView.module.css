@@ -68,13 +68,16 @@
   z-index: 10000;
   position: absolute;
   pointer-events: all;
-  padding: 0px 10px;
-  margin-left: 10px;
-  margin-top: 14px;
+  margin-left: 0px;
+  margin-top: 5px;
+  padding: 0px 3px 0px 0px;
   font-size: 22px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
+  width: 25px !important;
+  color: var(--color_inactive);
+  /* transform: rotate(90deg); */
 }
 
 .arrow {
@@ -93,9 +96,8 @@
 }
 
 .collapseButton.left {
-  right: 10px;
+  left: 5px;
   top:0px;
-  width: 30px;
   height:40px;
   display: flex;
   justify-content: center;
@@ -104,12 +106,11 @@
 
 
 .collapseButton.left:hover {
-  color: var(--color_accent_orange);
-  background-color: var(--color-accent-hover);
+  color: var(--color_accent_blue);
 }
 
 .collapseButton.left.collapsed {
-  /* transform: rotate(180deg) !important; */
+  transform: rotate(180deg);
 
 }
 

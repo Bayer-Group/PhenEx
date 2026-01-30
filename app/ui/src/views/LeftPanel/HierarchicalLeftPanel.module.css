@@ -8,6 +8,11 @@
   position: relative; /* For absolute positioning of custom scrollbar */
   display: flex;
   flex-direction: column;
+  
+  /* Override react-complex-tree modern style variables */
+  --rct-bar-color: var(--color_accent_blue);
+  --rct-radius: 0px;
+  --rct-bar-width: 4px;
 }
 
 /* Hide default scrollbars on the scroll container */
@@ -52,41 +57,41 @@
 
 /* Custom item title styling */
 .itemTitle {
-  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 0px 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .itemTitle > span:first-child {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  flex: 1;
   display: block;
+  min-width: 0;
+  padding-right: 32px;
 }
 
 /* Level-based styling */
 .level0 {
   /* Root level: mystudies, publicstudies */
-  font-size: 24px;
-  font-weight: 600;
-  font-family: "IBMPlexSans-bold";
+  font-size: var(--font_size_infotext);
+  font-family: "IBMPlexSans-regular";
 }
 
 .level1 {
   /* Study level */
   font-weight: 500;
-  font-family: "IBMPlexSans-bold";
-  font-size:16px;
+  font-family: "IBMPlexSans-regular";
+  font-size: var(--font_size_breadcrumbs);
 
 }
 
 .level2 {
   /* Cohort level */
-  font-size: 16px;
+  font-size: var(--font_size_infotext);
   font-weight: 400;
   font-family: "IBMPlexSans-regular";
   min-height: 28px;
@@ -151,6 +156,11 @@
   background: rgba(0, 120, 212, 0.1);
 }
 
+/* Show TreeNodeAddButton on row hover */
+.treeContainer :global(.rct-tree-item-title-container:hover) .itemTitle > div {
+  opacity: 1;
+}
+
 /* Override react-complex-tree default styles */
 .treeContainer :global(.rct-tree-item-li) {
   list-style: none;
@@ -188,9 +198,7 @@
 /* Target the list item by data-rct-item-id, then select its title container child */
 .treeContainer :global(.rct-tree-item-li[data-rct-item-id="mystudies"] > .rct-tree-item-title-container),
 .treeContainer :global(.rct-tree-item-li[data-rct-item-id="publicstudies"] > .rct-tree-item-title-container) {
-  font-size: 22px;
-  font-weight: 600;
-  min-height: 30px;
+  font-size: var(--font_size_infotext);
   font-family: "IBMPlexSans-regular";
 }
 
@@ -212,11 +220,20 @@
 }
 
 .treeContainer :global(.rct-tree-item-title-container:hover) {
-  /* background-color: rgba(0, 0, 0, 0.05); */
+  color: var(--color_accent_blue);
+  background-color: transparent !important;
+}
+
+.treeContainer :global(.rct-tree-item-button:hover) {
+  background-color: transparent !important;
+}
+
+.treeContainer :global(.rct-tree-item-li:hover > .rct-tree-item-button) {
+  background-color: transparent !important;
 }
 
 .treeContainer :global(.rct-tree-item-title-container-selected) {
-  /* background-color: rgba(0, 120, 212, 0.15) !important; */
+  font-family: "IBMPlexSans-bold" !important;
 }
 
 .treeContainer :global(.rct-tree-item-arrow) {

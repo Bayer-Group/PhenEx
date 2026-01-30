@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import styles from './InteractionArea.module.css';
 import { chatPanelDataService } from '../ChatPanelDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { InteractionBar } from './InteractionBar';
 
 interface InteractionAreaProps {
@@ -16,6 +17,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
   >('empty');
+  const [isProvisional, setIsProvisional] = useState<boolean>(false);
 
   // Expose focus method to parent components
   useImperativeHandle(ref, () => ({
@@ -26,16 +28,64 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     }
   }));
 
+  // Check if cohort is provisional and update state accordingly
+  // This is the SINGLE SOURCE OF TRUTH for whether buttons should show
   useEffect(() => {
-    const handleAICompletion = (success: boolean) => {
-      console.log('InteractionArea: handleAICompletion called with success:', success);
-      if (success) {
-        console.log('InteractionArea: Setting state to interactive');
+    const checkProvisionalState = () => {
+      const cohortDataService = CohortDataService.getInstance();
+      const cohortData = cohortDataService.cohort_data;
+      const provisional = cohortData?.is_provisional === true;
+      setIsProvisional(provisional);
+      
+      // Set interaction state based PURELY on provisional status
+      if (provisional) {
         setInteractionState('interactive');
       } else {
-        console.log('InteractionArea: Setting state to retry');
+        setInteractionState('empty');
+      }
+    };
+
+    // Check initial state
+    checkProvisionalState();
+    
+    // If there are provisional changes but no chat history, show a system message
+    const cohortDataService = CohortDataService.getInstance();
+    const hasProvisionalChanges = cohortDataService.cohort_data?.is_provisional === true;
+    const currentMessages = chatPanelDataService.getMessages();
+    // Only count user messages for "has chat history" - system/AI messages don't count
+    const hasChatHistory = currentMessages.filter(m => m.isUser).length > 0;
+    
+    console.log('🔔 Initial provisional check:', {
+      hasProvisionalChanges,
+      totalMessages: currentMessages.length,
+      userMessages: currentMessages.filter(m => m.isUser).length,
+      hasChatHistory
+    });
+    
+    if (hasProvisionalChanges && !hasChatHistory) {
+      console.log('✅ Adding provisional changes warning message');
+      chatPanelDataService.addSystemMessage(
+        'You have some unreviewed changes. Should we keep going from here or undo these changes? You can Accept to keep them, Reject to undo them, or continue chatting to make more changes.'
+      );
+    }
+
+    // Listen for cohort updates to re-check provisional state
+    const handleMessagesUpdated = () => {
+      checkProvisionalState();
+    };
+
+    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
+  }, []);
+
+  useEffect(() => {
+    const handleAICompletion = (success: boolean) => {
+      if (!success) {
+        // Only handle failure case - show retry button
         setInteractionState('retry');
       }
+      // Success case: do nothing here - let checkProvisionalState handle button visibility
+      // This ensures buttons are ONLY shown when cohort is actually provisional
     };
 
     chatPanelDataService.onAICompletion(handleAICompletion);
@@ -47,9 +97,12 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
 
   // Focus on mount/first render
   useEffect(() => {
-    if (textBoxRef.current) {
-      textBoxRef.current.focus();
-    }
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      if (textBoxRef.current) {
+        textBoxRef.current.focus();
+      }
+    });
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -72,23 +125,15 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   };
 
   const handleAccept = () => {
-    try {
-      // Handle accept action
-      setInteractionState('empty');
-      chatPanelDataService.acceptAIResult();
-    } catch (error) {
-      console.error('InteractionArea: Error in handleAccept:', error);
-    }
+    // Handle accept action
+    // Don't set state here - let checkProvisionalState handle it after the API call completes
+    chatPanelDataService.acceptAIResult();
   };
 
   const handleReject = () => {
-    try {
-      // Handle reject action
-      setInteractionState('empty');
-      chatPanelDataService.rejectAIResult();
-    } catch (error) {
-      console.error('InteractionArea: Error in handleReject:', error);
-    }
+    // Handle reject action
+    // Don't set state here - let checkProvisionalState handle it after the API call completes
+    chatPanelDataService.rejectAIResult();
   };
 
   const handleRetry = () => {
@@ -98,6 +143,12 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   };
 
   const handleNewChat = () => {
+    // Check if cohort is provisional - require accept/reject first
+    if (isProvisional) {
+      alert('Please accept or reject the current changes before starting a new chat.');
+      return;
+    }
+    
     // Clear conversation history and messages
     chatPanelDataService.clearMessages();
     setInteractionState('empty');
@@ -108,6 +159,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       <div className={styles.topBar}>
         <InteractionBar
           state={interactionState}
+          isProvisional={isProvisional}
           onAccept={handleAccept}
           onReject={handleReject}
           onRetry={handleRetry}

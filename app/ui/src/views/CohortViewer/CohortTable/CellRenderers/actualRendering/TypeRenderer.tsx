@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../TypeCellRenderer.module.css';
+import styles from './TypeCellRenderer.module.css';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
 export interface TypeRendererProps {
@@ -33,12 +33,16 @@ export const TypeRenderer: React.FC<TypeRendererProps> = ({
   const renderComponentDisplay = () => {
     if (type === 'component') {
       if (hierarchicalIndex) {
-        return hierarchicalIndex;
+        return (
+          <div className={`${styles[`level_${level}`]} ${styles.indexLabel}`}>{hierarchicalIndex}</div>
+        );
       }
     }
     
     if (hierarchicalIndex) {
-      return hierarchicalIndex;
+        return (
+          <div className={`${styles[`level_${level}`]} ${styles.indexLabel}`}>{hierarchicalIndex}</div>
+        );
     }
     
     // For non-components: show type + index
@@ -78,7 +82,7 @@ export const TypeRenderer: React.FC<TypeRendererProps> = ({
         backgroundColor: 'transparent'
       }}
     >
-      <span
+      <div
         className={`${styles.block} ${colorClassText}`}
         onClick={(e) => {
           e.stopPropagation();
@@ -89,7 +93,7 @@ export const TypeRenderer: React.FC<TypeRendererProps> = ({
         style={{ cursor: onClick ? 'pointer' : 'default' }}
       >
         {renderComponentDisplay()}
-      </span>
+      </div>
       {renderCount()}
     </div>
   );

@@ -1,10 +1,8 @@
 import { FC, useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
-
-import { IssuesDisplayControl } from './CohortIssuesDisplay/IssuesDisplayControl';
-import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
-import { RighPanelNavigationTabBar } from './RighPanelNavigationTabBar';
+import { getUserCohort, getPublicCohort, getStudy } from '../../api/text_to_cohort/route';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
@@ -12,7 +10,10 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { MainViewService, ViewType } from '../MainView/MainView';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
+
+import { useFadeIn } from '../../hooks/useFadeIn';
 
 enum CohortDefinitionViewType {
   Cohort = 'cohort',
@@ -31,6 +32,7 @@ const sectionDisplayNames = {
 interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
+  activeTabIndex?: number;
 }
 
 export enum CohortViewType {
@@ -39,7 +41,8 @@ export enum CohortViewType {
   Report = 'report',
 }
 
-export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) => {
+export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, activeTabIndex }) => {
+  const navigate = useNavigate();
   const [cohortName, setCohortName] = useState('');
   const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
@@ -50,14 +53,45 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   const [showIssuesPopover, setShowIssuesPopover] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
+  const bottomSectionRef = useRef<HTMLDivElement>(null);
+  const [scrollPercentage, setScrollPercentage] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  
+  const fadeInStyle = useFadeIn();
 
   useEffect(() => {
     // Update cohort data when a new cohort is selected
-    const loadData = () => {
-      console.log("loading cohort data")
+    const loadData = async () => {
       if (data !== undefined) {
-        dataService.loadCohortData(data);
-        console.log("finished loading cohort data", dataService.cohort_data)
+        // If data is a string (cohort ID), fetch the full cohort data
+        if (typeof data === 'string') {
+          try {
+            let cohortData;
+            try {
+              cohortData = await getUserCohort(data);
+            } catch (error) {
+              cohortData = await getPublicCohort(data);
+            }
+            
+            // Fetch the study data if study_id exists
+            if (cohortData.study_id) {
+              try {
+                const studyData = await getStudy(cohortData.study_id);
+                cohortData.study = studyData;
+              } catch (error) {
+                console.error('Failed to load study:', error);
+              }
+            }
+            
+            dataService.loadCohortData(cohortData);
+          } catch (error) {
+            console.error('Failed to load cohort:', error);
+          }
+        } else {
+          // Data is already a full cohort object
+          dataService.loadCohortData(data);
+        }
       } else {
         dataService.createNewCohort();
       }
@@ -89,10 +123,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
   useEffect(() => {
     // Update cohort name and study name when data service changes
     const updateCohortData = () => {
-      if (dataService.cohort_data?.name) {
-        setCohortName(dataService._cohort_name);
-        setStudyName(dataService.getStudyNameForCohort());
-      }
+      setCohortName(dataService._cohort_name);
+      setStudyName(dataService.getStudyNameForCohort());
     };
 
     updateCohortData();
@@ -108,16 +140,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     // We just need to update the grid data
     if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
       const api = gridRef.current.api;
-      
-      console.log(
-        'Setting grid rowData to:',
-        dataService.table_data['rows'].map(r => ({
-          id: r.id,
-          type: r.type,
-          name: r.name,
-          index: r.index,
-        }))
-      );
       
       // Update grid data - AG Grid will maintain scroll position automatically with getRowId
       api.setGridOption('rowData', dataService.table_data['rows']);
@@ -144,6 +166,12 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
       refreshGrid();
     }
   }, [currentView]);
+
+  useEffect(() => {
+    if (activeTabIndex !== undefined) {
+      onTabChange(activeTabIndex);
+    }
+  }, [activeTabIndex]);
 
   const onCellValueChanged = async (event: any, selectedRows?: any[]) => {
     if (event.newValue !== event.oldValue) {
@@ -267,11 +295,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     return (
         <CustomizableDropdownButton
           key={"new phenotype"}
-          label={"Add a new phenotype"}
+          label={"+ New Phenotype"}
           content={renderAddNewPhenotypeDropdown()}
           ref={customizableDropdownButtonRef}
-          buttonClassName={styles.addPhenotypeButtonLabel}
-          outline={true}
+          buttonClassName={styles.newPhenotypeButtonLabel}
+          outline={false}
         />
     );
   };
@@ -288,9 +316,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
           classNameTabs = {styles.classNameSectionTabs}
           classNameTabsContainer={styles.classNameTabsContainer}
         />
-        <div className={styles.addPhenotypeButton}>
-          {renderAddNewPhenotypeButton()}
-        </div>
       </div>
     );
   };
@@ -305,17 +330,30 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
+        gridBottomPadding={400}
       />
     );
   };
 
+  const navigateToMyStudies = () => {
+    // Navigate back to studies page
+    window.location.href = '/studies';
+  };
+
+
   const navigateToStudyViewer = () => {
-      const mainViewService = MainViewService.getInstance();
-      mainViewService.navigateTo({ viewType: ViewType.StudyViewer, data: dataService._study_data });
+    const studyId = dataService.cohort_data?.study_id;
+    if (studyId) {
+      navigate(`/studies/${studyId}`);
+    }
   };
 
   const renderBreadcrumbs = () => {
     const breadcrumbItems = [
+      {
+        displayName: 'My Studies',// TODO; cohorts need to know if they're public or not
+        onClick: navigateToMyStudies,
+      },
       {
         displayName: studyName || 'Study',
         onClick: navigateToStudyViewer,
@@ -327,29 +365,83 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype }) =>
     ];
 
     const handleEditLastItem = async (newValue: string) => {
-      setCohortName(newValue);
       dataService.cohort_name = newValue;
-      await dataService.saveChangesToCohort();
+      dataService.cohort_data.name = newValue; // Also update the cohort_data directly
+      await dataService.saveChangesToCohort(true, false); // Save without refreshing grid
+      setCohortName(newValue); // Update local state after save completes
     };
 
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem}/>;
-  };  
+    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false} />;
+  };
+
+  const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
+    if (gridRef.current?.scrollByColumn) {
+      gridRef.current.scrollByColumn(direction);
+      // Update scroll state after scrolling
+      updateScrollState();
+    }
+  };
+
+  const handleViewNavigationScroll = (percentage: number) => {
+    if (gridRef.current?.scrollToPercentage) {
+      gridRef.current.scrollToPercentage(percentage);
+      setScrollPercentage(percentage);
+      updateScrollState();
+    }
+  };
+
+  const handleViewNavigationVisibilityClicked = () => {
+    console.log('ViewNavigation visibility clicked');
+  };
+
+  const updateScrollState = () => {
+    if (gridRef.current?.getScrollPercentage) {
+      const percentage = gridRef.current.getScrollPercentage();
+      setScrollPercentage(percentage);
+      setCanScrollLeft(percentage > 0);
+      setCanScrollRight(percentage < 100);
+    }
+  };
+
+  // Listen to grid scroll events to update navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      updateScrollState();
+    };
+
+    // Find the grid viewport and attach scroll listener
+    const gridElement = gridRef.current?.eGridDiv;
+    if (gridElement) {
+      const viewport = gridElement.querySelector('.ag-center-cols-viewport');
+      if (viewport) {
+        viewport.addEventListener('scroll', handleScroll);
+        // Initial state update
+        updateScrollState();
+        
+        return () => {
+          viewport.removeEventListener('scroll', handleScroll);
+        };
+      }
+    }
+  }, [dataService.table_data]);
   
   return (
-    <div className={styles.cohortTableContainer}>
-      <div className={styles.topSection}>
-        {renderBreadcrumbs()}
-        <RighPanelNavigationTabBar title="Cohort Navigation" onSectionTabChange={onTabChange} />
-        {renderSectionTabs()}
+      <div className={styles.cohortTableContainer} style={fadeInStyle}>
+        <div className={styles.bottomSection} ref={bottomSectionRef}>
+          {renderTable()}
+          <div className={styles.bottomGradient} />
+        </div>
+        <div className={navBarStyles.topRight}>
+          <ViewNavBar
+            height={44}
+            scrollPercentage={scrollPercentage}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+            onViewNavigationScroll={handleViewNavigationScroll}
+            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+          />
+        </div>
       </div>
-      <div className={styles.bottomSection}>
-        {renderTable()}
-        <div className={styles.bottomGradient} />
-      </div>
-        <IssuesDisplayControl 
-          showPopover={showIssuesPopover} 
-          setShowPopover={setShowIssuesPopover} 
-        />
-    </div>
   );
 };
