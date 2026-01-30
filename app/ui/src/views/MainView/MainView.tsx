@@ -207,7 +207,7 @@ export const MainView = () => {
       >
         <HierarchicalLeftPanel isVisible={true} />
         <RightPanel>
-          <ReportModeProvider value={inReportView}>
+          <ReportModeProvider value={inReportView} onValueChange={setInReportView}>
             {renderView()}
           </ReportModeProvider>
           <div style={{ position: 'absolute', bottom: '10px', right: '25px', zIndex: 100, display: 'flex', flexDirection: 'row', gap: '20px' }}>

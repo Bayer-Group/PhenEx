@@ -405,9 +405,11 @@
 }
 .switchContainer{
   transition: transform 0.2s ease-in-out;
+  transform: scale(1.5);
+
 }
 .switchContainer:hover{
-  transform: scale(1.2);
+  /* transform: scale(1.2); */
 }
 
 .switchBackgroundSelected{
@@ -464,4 +466,12 @@
 .sectionButton:global(.menuShowing) {
   background-color: var(--color_accent_dark);
   transform: var(--scale_transform_small);
+}
+
+.CallToActionNavBar{
+  /* background-color: red !important; */
+  position: absolute;
+  top: 5px;
+  right: 20px;
+  padding-right: 8px;
 }

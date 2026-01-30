@@ -17,10 +17,11 @@ import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
 import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
-import { TabsAndAddButton } from '../../../components/PhenExNavBar/TabsAndAddButton';
+import { CallToActionNavBar } from '../../../components/PhenExNavBar/CallToActionNavBar';
 import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortRightPanel } from '../CohortRightPanel/CohortRightPanel';
+import { useReportMode } from '../../../contexts/ReportModeContext';
 import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
@@ -175,6 +176,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   
   // Tab state
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
+  const { isReportMode, setReportMode } = useReportMode();
 
   React.useEffect(() => {
     service.setPanelRef(panelRef);
@@ -394,27 +396,14 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               compact={false}
             />
           </div>
-          <TabsAndAddButton 
+          <CallToActionNavBar 
             height={44} 
             mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
             onSectionTabChange={handleTabChange} 
-            onButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
-            shadow={contentMode === 'study' ? true : false} 
-            menuItems={contentMode === 'study' ? 
-              [
-                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
-                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
-                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
-              ] : 
-              [
-                { type: 'info', label: 'Info', onClick: () => handleMenuClick('info') },
-                { type: 'database', label: 'Database', onClick: () => handleMenuClick('database') },
-                { type: 'codelists', label: 'Codelists', onClick: () => handleMenuClick('codelists') },
-                { type: 'constants', label: 'Constants', onClick: () => handleMenuClick('constants') },
-                { type: 'export', label: 'Export', divider: true, onClick: () => handleMenuClick('export') },
-                { type: 'delete', label: 'Delete', divider: true, onClick: handleDelete },
-              ]
-            }
+            onAddButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
+            shadow={contentMode === 'study' ? true : false}
+            showReport={isReportMode}
+            onShowReportChange={setReportMode}
           />
         </div>
         <div className={styles.contentSection}>

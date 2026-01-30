@@ -12,6 +12,7 @@ export interface SwitchButtonProps {
   classNameSwitchBackgroundSelected?: string;
   classNameSwitch?: string;
   classNameSwitchSelected?: string;
+  verticalPosition?: 'above' | 'below';
 }
 
 export const SwitchButton: React.FC<SwitchButtonProps> = ({
@@ -24,6 +25,7 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
   classNameSwitchBackgroundSelected,
   classNameSwitch,
   classNameSwitchSelected,
+  verticalPosition = 'above',
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,7 +64,7 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
           isVisible={showTooltip}
           anchorElement={containerRef.current}
           label={tooltip}
-          verticalPosition="above"
+          verticalPosition={verticalPosition}
         />
       )}
     </>
