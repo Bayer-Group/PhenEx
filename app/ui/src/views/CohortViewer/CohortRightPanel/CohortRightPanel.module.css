@@ -17,27 +17,12 @@
   padding-top: 100px;
 }
 
-.container::after {
-  content: '';
-  /* display: block; */
-  /* height: 500px; */
-  /* flex-shrink: 0; */
-}
-
-/* Scrollbar styling */
+/* Hide default scrollbar */
 .container::-webkit-scrollbar {
-  width: 8px;
+  display: none;
 }
 
-.container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.container::-webkit-scrollbar-thumb {
-  background: var(--line-color);
-  border-radius: 4px;
-}
-
-.container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+.container {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
