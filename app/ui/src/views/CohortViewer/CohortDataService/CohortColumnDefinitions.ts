@@ -144,7 +144,7 @@ export const defaultColumns = [
   {
     field: 'name',
     headerName: '',
-    width: 230,
+    width: 250,
     pinned: 'left',
     resizable: false,
     editable: true,

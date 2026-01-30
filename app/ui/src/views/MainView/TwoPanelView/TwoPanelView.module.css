@@ -113,14 +113,14 @@
 
 .collapseButton {
   color: var(--color-accent-bright);
-  background-color: red !important;
+  background-color: var(--color_accent_dark) !important;
   position: absolute;
   border-radius: 12px;
   cursor: pointer;
   z-index: 1;
   display: flex;
   position: absolute;
-  top: 5px;
+  bottom: 5px;
   left: 20px;
   height: 40px;
   width:40px;
