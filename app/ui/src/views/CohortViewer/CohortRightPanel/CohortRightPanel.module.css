@@ -14,9 +14,10 @@
   overflow-y: scroll;
   overflow-x: hidden;
   background-color: var(--background-color);
-  margin-top: 90px;
+  margin-top: 78px;
   padding-bottom:400px;
   border-right: var(--border);
+  border-top: var(--border);
 }
 
 /* Hide default scrollbar */
