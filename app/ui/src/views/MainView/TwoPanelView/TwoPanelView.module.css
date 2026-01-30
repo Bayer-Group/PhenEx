@@ -113,18 +113,33 @@
 }
 
 .collapseButton {
-  color: var(--color-accent-bright);
-  background-color: var(--color_accent_dark) !important;
+  z-index: 10000;
   position: absolute;
-  border-radius: 12px;
+  pointer-events: all;
+  margin-left: 0px;
+  margin-top: 5px;
+  padding: 0px 3px 0px 0px;
+  font-size: 22px;
+  font-family: 'SNPro-black' !important;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  z-index: 1;
-  display: flex;
-  position: absolute;
-  bottom: 5px;
-  left: 20px;
+  width: 25px !important;
+  color: var(--color_inactive);
+  left: 5px;
+  top: 40px;
   height: 40px;
-  width:40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent !important;
+}
+
+.collapseButton:hover {
+  color: var(--color_accent_blue);
+}
+
+.collapseButton.collapsed {
+  transform: rotate(180deg);
 }
 
 /* .collapseButton:hover {
