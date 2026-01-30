@@ -107,12 +107,14 @@ export const defaultColumns = [
     filter: false,
     suppressHeaderMenuButton: true,
     cellRenderer: SelectionCellRenderer,
+    lockPosition: 'left',
   },
   {
     field: 'rowDrag',
     headerName: '',
     width: 30,
     pinned: 'left',
+    // lockPosition: 'left',
     rowDrag: true,
     resizable: false,
     filter: false,
@@ -142,7 +144,7 @@ export const defaultColumns = [
   {
     field: 'name',
     headerName: '',
-    width: 250,
+    width: 230,
     pinned: 'left',
     resizable: false,
     editable: true,
@@ -160,15 +162,6 @@ export const defaultColumns = [
       };
     },
   },
-  // {
-  //   field: 'description',
-  //   headerName: 'Description',
-  //   width: 250,
-  //   editable: true,
-  //   cellEditor: DescriptionCellEditor,
-  //   cellEditorPopup: true,
-  //   cellRenderer: DescriptionCellRenderer,
-  // },
   {
     field: 'class_name',
     headerName: 'Phenotype',
