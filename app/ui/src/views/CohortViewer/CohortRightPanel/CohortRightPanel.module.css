@@ -1,19 +1,27 @@
-.container {
-  display: flex;
-  flex-direction: column;
+.wrapper {
+  position: relative;
   height: 100%;
-  overflow-y: auto;
+  width: 100%;
+  overflow: hidden;
+}
+
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: scroll;
   overflow-x: hidden;
   background-color: var(--background-color);
-  gap: 0;
   padding-top: 100px;
 }
 
 .container::after {
   content: '';
-  display: block;
-  height: 500px;
-  flex-shrink: 0;
+  /* display: block; */
+  /* height: 500px; */
+  /* flex-shrink: 0; */
 }
 
 /* Scrollbar styling */

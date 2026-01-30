@@ -14,6 +14,7 @@
 .leftPanel {
   background-color: var(--background-color) !important;
   position: relative;
+  height: 100%;
   transition:
     width 0.2s ease,
     opacity 0.2s ease;
@@ -46,7 +47,7 @@
 }
 
 .divider {
-  width: 15px;
+  width: 10px;
   height: 100%;
   cursor: col-resize;
   position: absolute;
@@ -80,8 +81,8 @@
   height: 100%;
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
-  background-color: transparent !important;
-  overflow: hidden;
+  background-color: red !important;
+  /* overflow: hidden; */
 }
 .divider.collapsed {
   width: 0;
