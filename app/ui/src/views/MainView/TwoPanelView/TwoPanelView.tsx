@@ -197,13 +197,17 @@ export const TwoPanelView = React.forwardRef<
       const container = containerRef.current;
       if (container && !isDragging && !isSlideoverCollapsed) {
         const containerWidth = container.offsetWidth;
-        const newRightWidth = Math.max(
-          200,
-          containerWidth * (rightWidth / (leftWidth + rightWidth))
-        );
-        const newLeftWidth = containerWidth - newRightWidth;
-        setLeftWidth(newLeftWidth);
-        setRightWidth(newRightWidth);
+        // Keep slideover width fixed so it stays right-justified without jumpiness
+        let newLeftWidth = containerWidth - rightWidth;
+        if (minSizeLeft != null && newLeftWidth < minSizeLeft) {
+          const newRightWidth = containerWidth - minSizeLeft;
+          setRightWidth(
+            Math.min(maxSizeRight ?? Infinity, Math.max(minSizeRight ?? 0, newRightWidth))
+          );
+          setLeftWidth(minSizeLeft);
+        } else {
+          setLeftWidth(newLeftWidth);
+        }
       }
     });
 
@@ -212,7 +216,7 @@ export const TwoPanelView = React.forwardRef<
     }
 
     return () => observer.disconnect();
-  }, [leftWidth, rightWidth, isDragging, isSlideoverCollapsed]);
+  }, [rightWidth, minSizeLeft, minSizeRight, maxSizeRight, isDragging, isSlideoverCollapsed]);
 
   return (
     <div

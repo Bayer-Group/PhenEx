@@ -115,7 +115,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       setLeftWidth(newWidth);
     } else {
       const newWidth = Math.max(minSizeRight, containerRect.width - mouseX - 7);
-      console.log('SETTING RIGTH WIDTH', rightWidth, newWidth);
       setRightWidth(newWidth);
     }
   };
