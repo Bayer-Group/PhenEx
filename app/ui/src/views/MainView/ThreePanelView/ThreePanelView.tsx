@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
-import { useCollapseState, CollapseState } from '../../../contexts/CollapseStateContext';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -33,9 +32,24 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const { collapseState, cycleCollapseState } = useCollapseState();
-  const isLeftCollapsed = collapseState === CollapseState.Hide1 || collapseState === CollapseState.Hide2;
+  const getInitialLeftCollapsed = () => {
+    try {
+      const stored = localStorage.getItem('phenex_three_panel_left_collapsed');
+      return stored === 'true';
+    } catch {
+      return false;
+    }
+  };
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(getInitialLeftCollapsed);
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('phenex_three_panel_left_collapsed', String(isLeftCollapsed));
+    } catch (error) {
+      console.warn('Failed to save left panel collapse state to localStorage:', error);
+    }
+  }, [isLeftCollapsed]);
 
   React.useEffect(() => {
     try {
@@ -150,7 +164,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const toggleLeftPanel = () => {
     if (!wasDragging) {
-      cycleCollapseState();
+      setIsLeftCollapsed(prev => !prev);
     }
   };
 
@@ -177,24 +191,11 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const renderLeftCollapseButton = () => {
-    const getIconRotation = () => {
-      switch (collapseState) {
-        case CollapseState.AllOpen:
-          return 0;
-        case CollapseState.Hide1:
-          return 180;
-        case CollapseState.Hide2:
-          return 0;
-        default:
-          return 0;
-      }
-    };
-
     const button = (
       <div
         className={`${styles.collapseButton} ${styles.left}`}
         onClick={toggleLeftPanel}
-        style={{ transform: `rotate(${getIconRotation()}deg)` }}
+        style={{ transform: isLeftCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}
       >
         <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
           <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
