@@ -42,12 +42,43 @@ export const TwoPanelView = React.forwardRef<
 
   // Initialize rightWidth with a reasonable default that respects constraints
   const initialRightWidth = React.useMemo(() => {
-    // Start at minSizeRight if available, otherwise 150px as a narrow default
+    try {
+      const stored = localStorage.getItem('phenex_two_panel_right_width');
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        // Respect constraints
+        if (minSizeRight && parsed < minSizeRight) return minSizeRight;
+        if (maxSizeRight && parsed > maxSizeRight) return maxSizeRight;
+        return parsed;
+      }
+    } catch {
+      // Fall through to default
+    }
     return minSizeRight || 150;
-  }, [minSizeRight]);
+  }, [minSizeRight, maxSizeRight]);
 
-  const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
   const [rightWidth, setRightWidth] = useState(initialRightWidth);
+  // leftWidth will be calculated dynamically based on container size
+  const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
+
+  // Recalculate leftWidth when container size is available
+  React.useEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const calculatedLeftWidth = containerWidth - rightWidth;
+      // Respect minSizeLeft constraint
+      const finalLeftWidth = minSizeLeft ? Math.max(calculatedLeftWidth, minSizeLeft) : calculatedLeftWidth;
+      setLeftWidth(finalLeftWidth);
+    }
+  }, [rightWidth, minSizeLeft]); // Recalculate when rightWidth changes or constraints change
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('phenex_two_panel_right_width', rightWidth.toString());
+    } catch (error) {
+      console.warn('Failed to save right width to localStorage:', error);
+    }
+  }, [rightWidth]);
   const { collapseState } = useCollapseState();
   const isLeftPanelHidden = collapseState === CollapseState.Hide2;
   const [isSlideoverCollapsed, setIsSlideoverCollapsed] = useState(slideoverCollapsed ?? false);

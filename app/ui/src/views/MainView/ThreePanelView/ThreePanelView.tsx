@@ -22,11 +22,28 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   minSizeRight,
   children,
 }) => {
-  const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
+  const getInitialLeftWidth = () => {
+    try {
+      const stored = localStorage.getItem('phenex_three_panel_left_width');
+      return stored ? parseInt(stored, 10) : initalSizeLeft;
+    } catch {
+      return initalSizeLeft;
+    }
+  };
+
+  const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
   const { collapseState, cycleCollapseState } = useCollapseState();
   const isLeftCollapsed = collapseState === CollapseState.Hide1 || collapseState === CollapseState.Hide2;
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('phenex_three_panel_left_width', leftWidth.toString());
+    } catch (error) {
+      console.warn('Failed to save left width to localStorage:', error);
+    }
+  }, [leftWidth]);
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragging, setWasDragging] = useState(false);
 
