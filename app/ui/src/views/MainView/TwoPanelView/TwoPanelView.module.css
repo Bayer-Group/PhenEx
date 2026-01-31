@@ -12,6 +12,8 @@
 }
 
 .leftPanel {
+  flex: 0 0 auto;
+  min-width: 0;
   background-color: var(--background-color) !important;
   position: relative;
   height: 100%;
@@ -21,11 +23,12 @@
 }
 
 .rightPanel {
+  flex: 0 0 auto;
+  min-width: 0;
   position: relative;
   transition: none;
   background-color: var(--background-color) !important;
   opacity: 1;
-  min-width: 500px;
   transition:
     opacity 0.1s ease;
   border-radius: 20px 20px 20px 20px;
