@@ -7,15 +7,15 @@
 
 .container {
   position: absolute;
-  top: 0;
+  top: 78px;
   left: 0;
   right: 0;
   bottom: 0;
   overflow-y: scroll;
   overflow-x: hidden;
   background-color: var(--background-color);
-  margin-top: 78px;
   padding-bottom:400px;
+  height: calc(100% - 78px - 400px + 70px); /* Adjust for top offset and bottom padding */
   border-right: var(--border);
   border-top: var(--border);
 }

@@ -22,6 +22,7 @@ import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBa
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortRightPanel } from '../CohortRightPanel/CohortRightPanel';
 import { useReportMode } from '../../../contexts/ReportModeContext';
+import { useCollapseState, CollapseState } from '../../../contexts/CollapseStateContext';
 import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
@@ -177,6 +178,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   // Tab state
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const { isReportMode, setReportMode } = useReportMode();
+  const { collapseState } = useCollapseState();
 
   React.useEffect(() => {
     service.setPanelRef(panelRef);
@@ -387,7 +389,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     <NavBarMenuProvider>
       <div className={`${styles.container} ${contentMode === 'study' ? styles.studyMode : ''}`}>
         <div className={styles.topSection}>
-          <div className={styles.breadcrumbsContainer}>
+          <div className={`${styles.breadcrumbsContainer} ${collapseState === CollapseState.AllOpen ? styles.breadcrumbsNoMargin : ''}`}>
             <SmartBreadcrumbs 
               items={breadcrumbItems} 
               onEditLastItem={handleEditLastItem}

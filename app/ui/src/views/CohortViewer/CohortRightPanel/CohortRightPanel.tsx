@@ -28,7 +28,7 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
       </div>
       <SimpleCustomScrollbar targetRef={containerRef} 
         marginToEnd={4}
-        marginBottom={20}
+        marginBottom={0}
         marginTop={85}
       />
     </div>

@@ -196,9 +196,9 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
   };
 
   return (
-    <div className={`${styles.navBar} ${styles.CallToActionNavBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+    <div className={`${styles.navBar} ${styles.CallToActionNavBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', gap: '0px' }}>
       {/* Left: CohortNavBar section */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div>
         <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
           {/* ⋮⋮ */}
         </div>
@@ -206,6 +206,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
         <button
           ref={sectionButtonRef}
           className={styles.sectionButton}
+          style={{ marginRight: 10}}
           onMouseEnter={() => {
             openSectionMenu();
           }}
@@ -257,7 +258,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
       </div>
 
       {/* Center: Switch Button */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginRight: '28px'}}>
         <SwitchButton
           tooltip="Show report"
           value={showReport}
