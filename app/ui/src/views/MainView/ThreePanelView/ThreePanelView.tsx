@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
@@ -157,7 +158,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const renderLeftCollapseButton = () => {
-    return (
+    const button = (
       <div
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
@@ -167,6 +168,9 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         </svg>
       </div>
     );
+    
+    // Render to document.body using portal
+    return ReactDOM.createPortal(button, document.body);
   };
 
   const renderRightCollapseButton = () => {
@@ -236,8 +240,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
-                {renderLeftCollapseButton()}
-
         {/* Hover trigger area for animating portal when collapsed */}
         {isLeftCollapsed && (
           <div 
@@ -258,6 +260,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         {children[2]}
         {renderRightDivider()}
       </div>
+      
+      {renderLeftCollapseButton()}
     </div>
   );
 };

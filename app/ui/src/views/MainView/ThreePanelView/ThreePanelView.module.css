@@ -12,6 +12,7 @@
 .centerPanel {
   flex: 1;
   min-width: 500px;
+  position: relative;
 }
 
 .rightPanel {
@@ -65,17 +66,18 @@
 }
 
 .collapseButton {
-  z-index: 10000;
-  position: absolute;
+  z-index: 999999999;
+  position: fixed;
   pointer-events: all;
   margin-left: 0px;
-  margin-top: 5px;
-  padding: 0px 3px 0px 0px;
+  margin-top: 0px;
+  padding: 0px;
   font-size: 22px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
   width: 25px !important;
+  height: 100px;
   color: var(--color_inactive);
   /* transform: rotate(90deg); */
 }
@@ -96,12 +98,14 @@
 }
 
 .collapseButton.left {
-  left: 5px;
-  top:0px;
-  height:40px;
+  left: 10px;
+  top: 10px;
+  height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Keep the red background from base style for visibility */
+  border-radius: var(--border-radius);
 }
 
 
