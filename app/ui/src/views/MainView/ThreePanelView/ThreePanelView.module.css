@@ -72,14 +72,17 @@
   margin-left: 0px;
   margin-top: 0px;
   padding: 0px;
-  font-size: 22px;
-  font-family: 'SNPro-black' !important;
-  border-radius: var(--border-radius);
   cursor: pointer;
-  width: 25px !important;
-  height: 100px;
+  width: 40px !important;
+  height: 40px !important;
   color: var(--color_inactive);
-  /* transform: rotate(90deg); */
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease, color 0.2s ease;
 }
 
 .arrow {
@@ -100,12 +103,6 @@
 .collapseButton.left {
   left: 10px;
   top: 10px;
-  height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* Keep the red background from base style for visibility */
-  border-radius: var(--border-radius);
 }
 
 
@@ -115,7 +112,6 @@
 
 .collapseButton.left.collapsed {
   transform: rotate(180deg);
-
 }
 
 .panel.collapsed {

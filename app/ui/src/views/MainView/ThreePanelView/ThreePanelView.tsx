@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
+import { useCollapseState, CollapseState } from '../../../contexts/CollapseStateContext';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -23,7 +24,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 }) => {
   const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+  const { collapseState, cycleCollapseState } = useCollapseState();
+  const isLeftCollapsed = collapseState === CollapseState.Hide1 || collapseState === CollapseState.Hide2;
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragging, setWasDragging] = useState(false);
@@ -131,7 +133,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const toggleLeftPanel = () => {
     if (!wasDragging) {
-      setIsLeftCollapsed(prevState => !prevState);
+      cycleCollapseState();
     }
   };
 
@@ -158,10 +160,24 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const renderLeftCollapseButton = () => {
+    const getIconRotation = () => {
+      switch (collapseState) {
+        case CollapseState.AllOpen:
+          return 0;
+        case CollapseState.Hide1:
+          return 180;
+        case CollapseState.Hide2:
+          return 0;
+        default:
+          return 0;
+      }
+    };
+
     const button = (
       <div
-        className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
+        className={`${styles.collapseButton} ${styles.left}`}
         onClick={toggleLeftPanel}
+        style={{ transform: `rotate(${getIconRotation()}deg)` }}
       >
         <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
           <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>

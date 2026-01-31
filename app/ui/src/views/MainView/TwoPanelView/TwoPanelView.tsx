@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
 import { Portal } from '../../../components/Portal/Portal';
+import { useCollapseState, CollapseState } from '../../../contexts/CollapseStateContext';
+
 
 interface TwoPanelViewProps {
   initialSizeLeft: number;
@@ -46,6 +48,8 @@ export const TwoPanelView = React.forwardRef<
 
   const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
   const [rightWidth, setRightWidth] = useState(initialRightWidth);
+  const { collapseState } = useCollapseState();
+  const isLeftPanelHidden = collapseState === CollapseState.Hide2;
   const [isSlideoverCollapsed, setIsSlideoverCollapsed] = useState(slideoverCollapsed ?? false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverContentState, setPopoverContentState] = useState<React.ReactNode>(null);
@@ -212,8 +216,8 @@ export const TwoPanelView = React.forwardRef<
       
 
       <div 
-        className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''}`} 
-        style={{ width: isSlideoverCollapsed ? '100%' : leftWidth }}
+        className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''} ${isLeftPanelHidden ? styles.fullWidth : ''}`} 
+        style={{ width: isLeftPanelHidden ? '100%' : (isSlideoverCollapsed ? '100%' : leftWidth) }}
       >
         {leftContent}
       </div>
