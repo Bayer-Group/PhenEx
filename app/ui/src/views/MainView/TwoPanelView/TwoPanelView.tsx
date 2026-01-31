@@ -146,11 +146,10 @@ export const TwoPanelView = React.forwardRef<
       containerWidth: container.offsetWidth 
     });
     
-    // Calculate widths: mouseX is the right edge of the left panel (slideover)
-    // leftWidth state = right panel (main content) width
-    // rightWidth state = left panel (slideover) width
-    let newSlideoverWidth = mouseX;
-    let newMainContentWidth = container.offsetWidth - mouseX;
+    // Slideover is on the right: mouseX is the left edge of the slideover (right edge of main content)
+    // leftWidth state = main content width, rightWidth state = slideover width
+    let newMainContentWidth = mouseX;
+    let newSlideoverWidth = container.offsetWidth - mouseX;
     
     console.log('[TwoPanelView] Before constraints:', { newSlideoverWidth, newMainContentWidth, minSizeRight, maxSizeRight, minSizeLeft });
     
@@ -167,13 +166,9 @@ export const TwoPanelView = React.forwardRef<
       newMainContentWidth = Math.max(newMainContentWidth, minSizeLeft);
       newSlideoverWidth = container.offsetWidth - newMainContentWidth;
     }
-    
-    console.log('[TwoPanelView] After constraints - Setting widths:', { 
-      leftWidth: newMainContentWidth, 
-      rightWidth: newSlideoverWidth 
-    });
-    setLeftWidth(newMainContentWidth);   // right panel (main content)
-    setRightWidth(newSlideoverWidth);     // left panel (slideover)
+
+    setLeftWidth(newMainContentWidth);
+    setRightWidth(newSlideoverWidth);
   }, [minSizeLeft, minSizeRight, maxSizeRight]);
 
   const handleMouseUp = React.useCallback(() => {
@@ -230,41 +225,39 @@ export const TwoPanelView = React.forwardRef<
       className={`${styles.container} ${styles.vertical}`}
       data-dragging="false"
     >
-      {slideoverContent && (
-        <div
-          className={`${styles.leftPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-          style={{ width: isSlideoverCollapsed ? 0 : rightWidth }}
-        >
-
-          <div className={styles.leftPanelContent}>{slideoverContent}</div>
-          <div
-            className={`${styles.divider} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-            onMouseDown={handleMouseDown}
-          ></div>
-        </div>
-      )}
-
-      
-
-      <div 
-        className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''} ${isLeftPanelHidden ? styles.fullWidth : ''}`} 
+      <div
+        className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''} ${isLeftPanelHidden ? styles.fullWidth : ''}`}
         style={{ width: isLeftPanelHidden ? '100%' : (isSlideoverCollapsed ? '100%' : leftWidth) }}
       >
         {leftContent}
       </div>
 
-      <div
-        className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-        onClick={() => {
-          const newCollapsedState = !isSlideoverCollapsed;
-          setIsSlideoverCollapsed(newCollapsedState);
-          onSlideoverCollapse?.(newCollapsedState);
-        }}
-      >
-        <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
+      {slideoverContent && (
+        <>
+          <div
+            className={`${styles.leftPanel} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+            style={{ width: isSlideoverCollapsed ? 0 : rightWidth }}
+          >
+            <div
+              className={`${styles.divider} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+              onMouseDown={handleMouseDown}
+            />
+            <div className={styles.leftPanelContent}>{slideoverContent}</div>
+          </div>
+          <div
+            className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
+            onClick={() => {
+              const newCollapsedState = !isSlideoverCollapsed;
+              setIsSlideoverCollapsed(newCollapsedState);
+              onSlideoverCollapse?.(newCollapsedState);
+            }}
+          >
+            <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
+              <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+        </>
+      )}
       {(isPopoverOpen || popoverContent) && (
         <Portal>
           <div 

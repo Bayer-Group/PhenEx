@@ -58,8 +58,8 @@
   position: absolute;
   background-color: transparent;
   z-index: 5000;
-  top: 0px;
-  right: -6px;
+  top: 0;
+  left: -6px;
 }
 
 .leftPanel .leftPanelContent{
@@ -118,21 +118,20 @@
 }
 
 .collapseButton {
-  opacity: 0;
+  opacity: 1;
   z-index: 10000;
   position: absolute;
   pointer-events: all;
-  margin-left: 0px;
   margin-top: 5px;
-  padding: 0px 3px 0px 0px;
+  padding: 0 3px 0 0;
   font-size: 22px;
   font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
   width: 25px !important;
   color: var(--color_inactive);
-  left: 5px;
-  top: 40px;
+  top: 10px;
+  right: 10px;
   height: 40px;
   display: flex;
   justify-content: center;
