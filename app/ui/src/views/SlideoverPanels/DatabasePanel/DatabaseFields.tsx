@@ -193,8 +193,8 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
   const renderManualEntry = () => {
     return (
-       <div className={styles.section}>
-        <div className={styles.inputFields}>
+      <div className={styles.section}>
+        <div className={styles.inputFieldsGrid}>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Mapper</label>
             <select
@@ -311,7 +311,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
     return (
       <div className={styles.section}>
-        <div className={styles.inputFields}>
+        <div className={styles.inputFieldsGrid}>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Database</label>
             <select
