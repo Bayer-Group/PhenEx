@@ -45,7 +45,7 @@ export const ConstantsTable: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div className={styles.tableBox}>
       <div className={styles.controls}>
         <button onClick={addConstant} className={styles.addButton}>
           Add Constant

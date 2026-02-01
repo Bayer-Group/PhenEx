@@ -1,12 +1,17 @@
 .container {
-  height: 100%;
-  max-height: 100vh; /* Ensure it never exceeds viewport height */
+  height: fit-content;
+  max-height: 400px; /* Ensure it never exceeds viewport height */
   display: flex;
   flex-direction: column;
   padding: 60px 0px 0px 0px;
   margin: 0;
   overflow: hidden; /* Prevent container from growing */
   box-sizing: border-box; /* Include padding in height calculation */
+  background-color: green !important;
+}
+
+.tableBox{
+  background-color: yellow !important;
 }
 
 .title {
@@ -64,3 +69,4 @@
 .addButton:focus-visible {
   outline: none;
 }
+

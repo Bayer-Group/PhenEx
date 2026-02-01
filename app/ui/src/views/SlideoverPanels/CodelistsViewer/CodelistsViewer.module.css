@@ -5,6 +5,7 @@
   padding-top: 0;
   height: fit-content;
   min-height: 0;
+  max-height: 400px;
 }
 
 .topSection {
@@ -22,6 +23,7 @@
   flex-direction: column;
   height: 300px;
   min-height: 300px;
+  max-height: 300px;
 }
 
 .tableBox {
