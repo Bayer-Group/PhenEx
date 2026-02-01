@@ -125,7 +125,7 @@
   z-index: 10000;
   position: absolute;
   pointer-events: all;
-  margin-top: 5px;
+  margin-top: 12px;
   padding: 0 3px 0 0;
   font-size: 22px;
   border-radius: var(--border-radius);
@@ -140,16 +140,15 @@
   align-items: center;
   background-color: transparent !important;
   transition: transform 0.2s ease;
-  transform: rotate(-180deg)!important;
-
 }
 
 .collapseButtonIcon {
   display: inline-block;
+  transform: scaleX(-1);
 }
 
 .collapseButton.collapsed .collapseButtonIcon {
-  transform: scaleX(-1);
+  transform: scaleX(1);
 }
 
 .collapseButton svg{
@@ -158,7 +157,7 @@
 }
 
 .collapseButton:hover {
-  transform: scale(1.4);
+  transform: scale(1.5);
 }
 
 .collapseButton:hover svg{
