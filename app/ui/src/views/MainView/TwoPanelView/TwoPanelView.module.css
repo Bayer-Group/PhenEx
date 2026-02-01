@@ -128,39 +128,42 @@
   margin-top: 5px;
   padding: 0 3px 0 0;
   font-size: 22px;
-  font-family: 'SNPro-black' !important;
   border-radius: var(--border-radius);
   cursor: pointer;
   width: 25px !important;
   color: var(--color_inactive);
-  top: 10px;
+  top: 0px;
   right: 10px;
   height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: transparent !important;
+  transition: transform 0.2s ease;
+  transform: rotate(-180deg)!important;
+
+}
+
+.collapseButtonIcon {
+  display: inline-block;
+}
+
+.collapseButton.collapsed .collapseButtonIcon {
+  transform: scaleX(-1);
+}
+
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
 }
 
 .collapseButton:hover {
+  transform: scale(1.4);
+}
+
+.collapseButton:hover svg{
   color: var(--color_accent_blue);
 }
-
-.collapseButton.collapsed {
-  transform: rotate(180deg);
-}
-
-/* .collapseButton:hover {
-  transition: transform 0.2s ease;
-  color: white !important;
-  outline: none;
-  background-color: var(--color_accent_blue);
-  border-color: white;
-}
-
-.collapseButton.collapsed {
-} */
-
 
 .panel.collapsed {
   width: 0 !important;
@@ -306,7 +309,7 @@
 
 
 .collapseButtonHorizontal.collapsed .collapseArrows{
-  transform: rotate(-90deg)!important;
+  transform: rotate(0deg)!important;
     display: inline-block; /* Important for rotation to take effect */
 
 }

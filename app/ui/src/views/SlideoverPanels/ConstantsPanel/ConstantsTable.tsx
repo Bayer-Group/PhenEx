@@ -63,6 +63,7 @@ export const ConstantsTable: React.FC = () => {
               theme={dataService.constants_service.getTheme()}
               onCellValueChanged={onCellValueChanged}
               animateRows={true}
+              domLayout="autoHeight"
               defaultColDef={{
                 flex: 1,
                 minWidth: 100,
