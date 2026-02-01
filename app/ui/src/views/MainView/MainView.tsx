@@ -14,6 +14,7 @@ import { ActionNavBar } from '../../components/PhenExNavBar/ActionNavBar';
 import styles from './MainView.module.css';
 import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
 import { ReportModeProvider } from '../../contexts/ReportModeContext';
+import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -198,7 +199,8 @@ export const MainView = () => {
 
   return (
     <div className={styles.mainView}>
-      <ThreePanelView
+      <ThreePanelCollapseProvider>
+        <ThreePanelView
           split="vertical"
           initalSizeRight={300}
           initalSizeLeft={300}
@@ -219,7 +221,8 @@ export const MainView = () => {
             // Handle the text input here
           }}
         ></ChatPanel>
-      </ThreePanelView>
+        </ThreePanelView>
+      </ThreePanelCollapseProvider>
     </div>
   );
 };

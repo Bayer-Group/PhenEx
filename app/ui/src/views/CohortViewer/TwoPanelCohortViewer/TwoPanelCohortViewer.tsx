@@ -22,6 +22,7 @@ import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBa
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortRightPanel } from '../CohortRightPanel/CohortRightPanel';
 import { useReportMode } from '../../../contexts/ReportModeContext';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import styles from './TwoPanelCohortViewer.module.css';
 
 interface TwoPanelCohortViewerProps {
@@ -177,7 +178,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   // Tab state
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const { isReportMode, setReportMode } = useReportMode();
-  const [isSlideoverOpen, setIsSlideoverOpen] = useState(true);
+  const { isLeftPanelShown } = useThreePanelCollapse();
 
   React.useEffect(() => {
     service.setPanelRef(panelRef);
@@ -185,7 +186,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
   // Handle right panel collapse events from TwoPanelView collapse button
   const handleRightPanelCollapse = (isCollapsed: boolean) => {
-    setIsSlideoverOpen(!isCollapsed);
     // Update service state when collapse button is clicked (without triggering panelRef call)
     if (isCollapsed) {
       if (viewType === 'phenotype') {
@@ -388,8 +388,8 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   return (
     <NavBarMenuProvider>
       <div className={`${styles.container} ${contentMode === 'study' ? styles.studyMode : ''}`}>
-        <div className={styles.topSection}>
-          <div className={`${styles.breadcrumbsContainer} ${isSlideoverOpen ? styles.breadcrumbsNoMargin : ''}`}>
+        <div className={`${styles.topSection} ${isLeftPanelShown ? styles.leftPanelShown : ''}`}>
+          <div className={styles.breadcrumbsContainer}>
             <SmartBreadcrumbs 
               items={breadcrumbItems} 
               onEditLastItem={handleEditLastItem}
@@ -403,7 +403,9 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
             mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
             onSectionTabChange={handleTabChange} 
             onAddButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
-            shadow={contentMode === 'study' ? true : false}
+            // shadow={contentMode === 'study' ? true : false}
+            shadow={true}
+
             showReport={isReportMode}
             onShowReportChange={setReportMode}
           />

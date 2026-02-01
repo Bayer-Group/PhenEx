@@ -15,7 +15,7 @@
   flex-shrink: 0;
   padding-bottom: 10px;
   padding-top: 5px;
-  padding-left: 50px !important; /* margin for arrow */
+  padding-left: 70px !important; /* margin for collapse arrow when left panel hidden */
   background-color: transparent;
   z-index: 10;
   position: absolute;
@@ -23,6 +23,10 @@
   left: 0;
   right: 0;
   pointer-events: none;
+}
+
+.topSection.leftPanelShown {
+  padding-left: 10px !important;
 }
 
 .topSection > * {
@@ -57,9 +61,6 @@
   /* Prevent layout shift during content changes */
 }
 
-.breadcrumbsNoMargin {
-  margin-left: -35px;
-}
 
 .breadcrumbItem {
     font-size: var(--font_size_infotext);

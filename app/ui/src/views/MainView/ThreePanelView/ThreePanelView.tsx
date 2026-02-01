@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -32,24 +33,9 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const getInitialLeftCollapsed = () => {
-    try {
-      const stored = localStorage.getItem('phenex_three_panel_left_collapsed');
-      return stored === 'true';
-    } catch {
-      return false;
-    }
-  };
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(getInitialLeftCollapsed);
+  const { isLeftPanelShown, toggleLeftPanel: contextToggleLeftPanel } = useThreePanelCollapse();
+  const isLeftCollapsed = !isLeftPanelShown;
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem('phenex_three_panel_left_collapsed', String(isLeftCollapsed));
-    } catch (error) {
-      console.warn('Failed to save left panel collapse state to localStorage:', error);
-    }
-  }, [isLeftCollapsed]);
 
   React.useEffect(() => {
     try {
@@ -163,7 +149,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const toggleLeftPanel = () => {
     if (!wasDragging) {
-      setIsLeftCollapsed(prev => !prev);
+      contextToggleLeftPanel();
     }
   };
 

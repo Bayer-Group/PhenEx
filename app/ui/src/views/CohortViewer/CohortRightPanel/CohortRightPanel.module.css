@@ -16,8 +16,6 @@
   background-color: var(--background-color);
   padding-bottom:400px;
   height: calc(100% - 78px - 400px + 70px); /* Adjust for top offset and bottom padding */
-  border-left: var(--border);
-  border-top: 2px solid var(--line-color);
 }
 
 /* Hide default scrollbar */

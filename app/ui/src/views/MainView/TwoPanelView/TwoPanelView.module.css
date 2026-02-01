@@ -81,7 +81,7 @@
   border-radius: var(--border_radius_right_panel);
   background-color: transparent !important;
   overflow: hidden;
-  /* border-right: var(--border); */
+  border-left: var(--border);
 }
 
 .rightPanelContent {
