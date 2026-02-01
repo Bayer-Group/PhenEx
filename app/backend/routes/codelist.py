@@ -248,9 +248,14 @@ async def create_or_update_codelist(
     if not cohort_id:
         raise HTTPException(status_code=400, detail="cohort_id is required")
 
-    await save_codelist_file_for_cohort(
+    success = await save_codelist_file_for_cohort(
         db_manager, cohort_id, file["id"], file, user_id
     )
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save codelist to database. Check server logs.",
+        )
     return {
         "status": "success",
         "message": f"Codelist {file['id']} saved successfully.",
@@ -299,7 +304,10 @@ async def delete_codelist(cohort_id: str, file_id: str):
     "/column_mapping", tags=["codelist"], response_model=ColumnMappingUpdateResponse
 )
 async def update_codelist_column_mapping(
-    request: Request, file_id: str, column_mapping: ColumnMapping
+    request: Request,
+    file_id: str,
+    column_mapping: ColumnMapping,
+    cohort_id: Optional[str] = None,
 ):
     """
     Update the column mapping configuration for an existing codelist file.
@@ -361,8 +369,12 @@ async def update_codelist_column_mapping(
     column_mapping_dict = column_mapping.model_dump()
 
     try:
-        # First get the codelist data to extract unique codelist names
+        # Resolve codelist: try by (user_id, file_id) first; if not found and cohort_id provided, try by (cohort_id, file_id)
         codelist = await db_manager.get_codelist(user_id, file_id)
+        if not codelist and cohort_id:
+            by_cohort = await db_manager.get_codelist_by_cohort(cohort_id, file_id)
+            if by_cohort:
+                codelist, user_id = by_cohort
         if not codelist:
             raise HTTPException(
                 status_code=404,
@@ -532,8 +544,17 @@ async def save_codelist_file_for_cohort(
     """
 
     try:
-        # Extract needed data
+        # Extract needed data (accept both backend shape and frontend CodelistFile shape)
         column_mapping = codelist_file.get("column_mapping", {})
+        if not column_mapping and (
+            codelist_file.get("code_column") is not None
+            or codelist_file.get("codelist_column") is not None
+        ):
+            column_mapping = {
+                "code_column": codelist_file.get("code_column", ""),
+                "code_type_column": codelist_file.get("code_type_column", ""),
+                "codelist_column": codelist_file.get("codelist_column", ""),
+            }
         codelist_data = codelist_file.get("codelist_data", codelist_file)
 
         # Extract filename from the codelist data
@@ -574,7 +595,7 @@ async def save_codelist_file_for_cohort(
         logger.error(
             f"Failed to save codelist file {file_id} for cohort {cohort_id}: {e}"
         )
-        return False
+        raise
 
 
 async def delete_codelist_file_for_cohort(

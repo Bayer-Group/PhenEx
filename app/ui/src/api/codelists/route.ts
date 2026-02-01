@@ -116,15 +116,21 @@ export const deleteCodelist = async (cohort_id: string, file_id: string) => {
  * const result = await updateCodelistColumnMapping('codelist_123', mapping);
  * // Returns: { status: 'success', message: '...', codelists: ['diabetes', 'hypertension'] }
  */
-export const updateCodelistColumnMapping = async (file_id: string, column_mapping: {
-  code_column: string;
-  code_type_column: string;
-  codelist_column: string;
-}) => {
+export const updateCodelistColumnMapping = async (
+  file_id: string,
+  column_mapping: {
+    code_column: string;
+    code_type_column: string;
+    codelist_column: string;
+  },
+  cohort_id?: string
+) => {
   try {
     console.log(`Updating column mapping for codelist ${file_id}:`, column_mapping);
+    const params = new URLSearchParams({ file_id: file_id });
+    if (cohort_id) params.set('cohort_id', cohort_id);
     const response = await api.patch(
-      `/codelist/column_mapping?file_id=${encodeURIComponent(file_id)}`,
+      `/codelist/column_mapping?${params.toString()}`,
       column_mapping
     );
     console.log('Column mapping updated successfully');
