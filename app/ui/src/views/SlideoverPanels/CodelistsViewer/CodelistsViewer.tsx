@@ -110,16 +110,16 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
     }
     return (
       <AgGridReact
-              rowData={gridData.rowData}
-              columnDefs={gridData.columnDefs}
-              defaultColDef={{
-                sortable: true,
-                filter: true,
-                resizable: true,
-              }}
-              animateRows={true}
-              theme={dataService.codelists_service.getTheme()}
-            />
+        rowData={gridData.rowData}
+        columnDefs={gridData.columnDefs}
+        defaultColDef={{
+          sortable: true,
+          filter: true,
+          resizable: true,
+        }}
+        animateRows={true}
+        theme={dataService.codelists_service.getTheme()}
+      />
     );
   }
 

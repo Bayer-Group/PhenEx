@@ -80,7 +80,7 @@
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
   background-color: transparent !important;
-  overflow: hidden;
+  overflow: auto;
   border-left: var(--border);
 }
 

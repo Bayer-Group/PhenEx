@@ -1,9 +1,10 @@
 .container {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0px;
-  padding-top: 0px;
+  padding: 0;
+  padding-top: 0;
+  height: fit-content;
+  min-height: 0;
 }
 
 .topSection {
@@ -17,15 +18,16 @@
 }
 
 .bottomSection {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 300px;
+  min-height: 300px;
 }
 
 .tableBox {
   flex: 1;
   min-height: 0;
+  height: 100%;
 }
 
 .infoBox {
