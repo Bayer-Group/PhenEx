@@ -45,25 +45,33 @@ export const ConstantsTable: React.FC = () => {
   };
 
   return (
-    <div className={styles.tableBox}>
-      <div className={styles.controls}>
-        <button onClick={addConstant} className={styles.addButton}>
-          Add Constant
-        </button>
+    <div className={styles.container}>
+      <div className={styles.topSection}>
+        <div className={styles.controls}>
+          <button onClick={addConstant} className={styles.addButton}>
+            Add Constant
+          </button>
+        </div>
       </div>
-        <AgGridReact
-          rowData={dataService.constants_service.tableData.rows}
-          columnDefs={dataService.constants_service.tableData.columns}
-          ref={gridRef}
-          theme={dataService.constants_service.getTheme()}
-          onCellValueChanged={onCellValueChanged}
-          animateRows={true}
-          defaultColDef={{
-            flex: 1,
-            minWidth: 100,
-            resizable: true,
-          }}
-        />
+      <div className={styles.bottomSection}>
+        <div className={styles.tableBox}>
+          <div className={styles.gridContainer}>
+            <AgGridReact
+              rowData={dataService.constants_service.tableData.rows}
+              columnDefs={dataService.constants_service.tableData.columns}
+              ref={gridRef}
+              theme={dataService.constants_service.getTheme()}
+              onCellValueChanged={onCellValueChanged}
+              animateRows={true}
+              defaultColDef={{
+                flex: 1,
+                minWidth: 100,
+                resizable: true,
+              }}
+            />
+          </div>
+        </div>
       </div>
+    </div>
   );
 };
