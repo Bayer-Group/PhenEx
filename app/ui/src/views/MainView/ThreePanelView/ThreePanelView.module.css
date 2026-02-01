@@ -82,7 +82,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: transform 0.3s ease, color 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.collapseButtonIcon {
+  display: inline-block;
+}
+
+.collapseButton.left.collapsed .collapseButtonIcon {
+  transform: scaleX(-1);
 }
 
 .arrow {
@@ -92,8 +100,7 @@
 }
 
 .collapseButton:hover {
-  /* transition: transform 0.2s ease; */
-
+  transform: scale(1.4);
 }
 
 .collapseButton:focus {
@@ -105,13 +112,8 @@
   top: 10px;
 }
 
-
 .collapseButton.left:hover {
   color: var(--color_accent_blue);
-}
-
-.collapseButton.left.collapsed {
-  transform: rotate(180deg);
 }
 
 .panel.collapsed {
