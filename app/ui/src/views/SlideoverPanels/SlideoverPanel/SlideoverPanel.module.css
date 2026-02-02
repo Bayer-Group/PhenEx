@@ -31,6 +31,28 @@
   cursor: pointer;
 }
 
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.headerControls {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right:20px;
+  margin-top: 5px;
+}
+
 .controls {
   display: flex;
   gap: 10px;

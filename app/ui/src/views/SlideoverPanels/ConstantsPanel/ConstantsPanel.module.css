@@ -7,16 +7,6 @@
   min-height: 0;
 }
 
-.topSection {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  position: sticky;
-  top: 0;
-  background: inherit;
-  z-index: 1;
-}
-
 .bottomSection {
   display: flex;
   flex-direction: column;
@@ -25,10 +15,12 @@
 
 .tableBox {
   flex: 0 0 auto;
+
 }
 
 .gridContainer {
-  width: 100%;
+  width: calc(100% - 30px);
+  margin-left: 15px;
   margin-top: 10px;
   min-height: 0;
 }
@@ -40,14 +32,9 @@
   flex-shrink: 0; /* Prevent title from shrinking */
 }
 
-.controls {
-  height:40px;
-}
-
-
 .addButton {
-  position: absolute;
-  right: 20px;
+  /* position: absolute;
+  right: 20px; */
   padding: 4px 5px;
   border: none;
   top: 0px;

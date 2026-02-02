@@ -1,31 +1,26 @@
 import React, { useState, useRef } from 'react';
-import styles from './TreeNodeAddButton.module.css';
+import styles from './InfoPanelButton.module.css';
 import { PhenExNavBarTooltip } from '../../PhenExNavBar/PhenExNavBarTooltip';
 
-interface TreeNodeAddButtonProps {
+interface InfoPanelButtonProps {
   tooltipText: string;
   onClick: () => void;
-  /** When true, button is always visible (e.g. in a header). Default: false (show on parent hover in tree). */
-  alwaysVisible?: boolean;
+  svg: React.ReactNode;
 }
 
-export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({
+export const InfoPanelButton: React.FC<InfoPanelButtonProps> = ({
   tooltipText,
   onClick,
-  alwaysVisible = false,
+  svg,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const buttonRef = useRef<HTMLSpanElement>(null);
 
-  const containerClass = alwaysVisible
-    ? `${styles.buttonContainer} ${styles.alwaysVisible}`
-    : styles.buttonContainer;
-
   return (
-    <div className={containerClass}>
+    <div className={styles.buttonContainer}>
       <span
         ref={buttonRef}
-        className={styles.addButton}
+        className={styles.button}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         onClick={(e) => {
@@ -42,18 +37,15 @@ export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({
           }
         }}
       >
-        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        {svg}
       </span>
-      
+
       <PhenExNavBarTooltip
         isVisible={showTooltip}
         anchorElement={buttonRef.current}
         label={tooltipText}
         verticalPosition="below"
-        horizontalAlignment="left"
+        horizontalAlignment="right"
         gap={6}
       />
     </div>

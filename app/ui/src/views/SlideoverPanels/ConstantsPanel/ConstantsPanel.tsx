@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styles from './ConstantsPanel.module.css';
+import React from 'react';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-
 import { ConstantsTable } from './ConstantsTable';
-import { ConstantsDataService } from './ConstantsDataService';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { InfoPanelAddButton } from '../../../components/ButtonsAndTabs/InfoPanelButton/InfoPanelAddButton';
+
 interface ConstantsPanelProps {
   showTitle?: boolean;
 }
+
 export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true }) => {
-  const constantsDataService = useRef(new ConstantsDataService()).current;
+  const addConstant = () => {
+    CohortDataService.getInstance().constants_service.addConstant();
+  };
 
   const infoContent = () => {
     return (
@@ -28,7 +31,7 @@ export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true
         To use constants in PhenEx :
         <ol>
           <li>
-            <em>Create a constant</em> : <i>click</i> <code>Add Constant</code> below.
+            <em>Create a constant</em> : <i>click</i> <code>Add Constant</code> in the header.
           </li>
           <li>
             <em>Select type</em> : In the constants editor below, select what type of constant you
@@ -46,8 +49,17 @@ export const ConstantsPanel: React.FC<ConstantsPanelProps> = ({ showTitle = true
     );
   };
 
+  const headerControls = (
+    <InfoPanelAddButton tooltipText="Add Constant" onClick={addConstant} />
+  );
+
   return (
-    <SlideoverPanel title="Constants" info={infoContent()} showTitle={showTitle}>
+    <SlideoverPanel
+      title="Constants"
+      info={infoContent()}
+      showTitle={showTitle}
+      headerControls={headerControls}
+    >
       <ConstantsTable />
     </SlideoverPanel>
   );

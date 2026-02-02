@@ -1,28 +1,13 @@
 .buttonContainer {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   display: inline-flex;
   align-items: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  min-width: 25px;
+  min-height: 25px;
   z-index: 10;
 }
 
-.buttonContainer.alwaysVisible {
-  position: relative;
-  right: auto;
-  top: auto;
-  transform: none;
-  opacity: 1;
-  min-width: 25px;
-  min-height: 25px;
-}
-
-.addButton {
-  position: absolute;
-  right:0px;
+.button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,23 +16,23 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--color_accent_blue);
+  color: var(--color_accent_dark);
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
   flex-shrink: 0;
 }
 
-.addButton:hover {
+.button:hover {
   transform: scale(1.15);
   background: var(--color_accent_dark);
   color: white;
 }
 
-.addButton:active {
+.button:active {
   transform: scale(1.05);
 }
 
-.addButton svg {
+.button svg {
   display: block;
 }

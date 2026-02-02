@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styles from './SlideoverPanel.module.css';
-import { Button } from '../../../components/ButtonsAndTabs/Button/Button';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 
 interface SlideoverPanelProps {
   title: string;
   info: string | React.ReactNode | undefined;
   children: React.ReactNode;
+  headerControls?: React.ReactNode;
   classNameHeader?: string;
-  classNameButton?: string;
   classNameContainer?: string;
   showTitle?: boolean;
 }
@@ -36,8 +35,8 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   title,
   info = '',
   children,
+  headerControls,
   classNameHeader = '',
-  classNameButton = '',
   classNameContainer = '',
   showTitle = true,
 }) => {
@@ -59,7 +58,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const toggleInfobox = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const toggleInfobox = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     const newState = !isOpen;
     setIsOpen(newState);
@@ -75,25 +74,28 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   };
 
   const clickOnHeader = () => {
-      const cohortViewer = TwoPanelCohortViewerService.getInstance();
-      cohortViewer.hideExtraContent();
-  }
+    const cohortViewer = TwoPanelCohortViewerService.getInstance();
+    cohortViewer.hideExtraContent();
+  };
 
   return (
     <div className={`${styles.container} ${classNameContainer}`} onClick={onClick}>
       <div className={`${styles.header} ${classNameHeader}`} onClick={clickOnHeader}>
-        {showTitle && renderHeader()}
-        {/* <Button
-          title="Help"
-          onClick={toggleInfobox}
-          className={`${styles.infoButton} ${isOpen ? styles.open : styles.closed} ${classNameButton}`}
-        /> */}
-
-        <div
-          className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}
-          onClick={toggleInfobox}
-        >
-          {info}
+        <div className={styles.headerRow}>
+          <div className={styles.headerLeft}>
+            {showTitle && renderHeader()}
+            <div
+              className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}
+              onClick={toggleInfobox}
+            >
+              {info}
+            </div>
+          </div>
+          {headerControls != null && (
+            <div className={styles.headerControls} onClick={e => e.stopPropagation()}>
+              {headerControls}
+            </div>
+          )}
         </div>
       </div>
       <div className={styles.content}>{children}</div>

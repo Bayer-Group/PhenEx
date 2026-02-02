@@ -21,12 +21,6 @@ export const ConstantsTable: React.FC = () => {
     }
   };
 
-  const addConstant = () => {
-    console.log('adding constant');
-    dataService.constants_service.addConstant();
-  };
-
-
   useEffect(() => {
     const listener = () => refreshGrid();
     dataService.addListener(listener);
@@ -46,13 +40,6 @@ export const ConstantsTable: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.topSection}>
-        <div className={styles.controls}>
-          <button onClick={addConstant} className={styles.addButton}>
-            Add Constant
-          </button>
-        </div>
-      </div>
       <div className={styles.bottomSection}>
         <div className={styles.tableBox}>
           <div className={styles.gridContainer}>
