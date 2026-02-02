@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { ColDef } from '@ag-grid-community/core';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
@@ -6,7 +6,8 @@ import { ConstantsCellRenderer } from '../ConstantsPanel/ConstantsCellRenderer';
 import { ConstantsCellEditorSelector } from '../ConstantsPanel/ConstantsCellEditorSelector';
 
 import styles from './ConstantsPanels.module.css';
-import RowDragCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/RowDragCellRenderer';
+import InfoPanelRowDragCellRenderer from './InfoPanelRowDragCellRenderer';
+import InfoPanelDeleteCellRenderer from './InfoPanelDeleteCellRenderer';
 const NAME_VALUE_COLUMNS: ColDef[] = [
   {
     field: 'rowDrag',
@@ -19,7 +20,7 @@ const NAME_VALUE_COLUMNS: ColDef[] = [
     resizable: false,
     filter: false,
     cellClass: 'row-drag-handle',
-    cellRenderer: RowDragCellRenderer,
+    cellRenderer: InfoPanelRowDragCellRenderer,
   },
   {
     field: 'name',
@@ -45,10 +46,12 @@ const NAME_VALUE_COLUMNS: ColDef[] = [
   {
     field: 'delete',
     headerName: 'Delete',
-    width: 20,
-    minWidth: 20,
-    maxWidth: 20,
+    width: 30,
+    minWidth: 30,
+    maxWidth: 30,
     editable: false,
+    cellRenderer: InfoPanelDeleteCellRenderer,
+    cellRendererParams: {}, // onDelete set in component
   },
 ];
 
@@ -59,6 +62,23 @@ interface TypedConstantsTableProps {
 export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ constantType }) => {
   const dataService = useRef(CohortDataService.getInstance()).current;
   const gridRef = useRef<any>(null);
+
+  const columnDefs = useMemo<ColDef[]>(() => {
+    return NAME_VALUE_COLUMNS.map((col) =>
+      col.field === 'delete'
+        ? {
+            ...col,
+            cellRendererParams: {
+              onDelete: (data: { _actualIndex?: number }) => {
+                if (typeof data._actualIndex === 'number') {
+                  dataService.constants_service.deleteConstantByActualIndex(data._actualIndex);
+                }
+              },
+            },
+          }
+        : col
+    );
+  }, [dataService]);
 
   const refreshGrid = () => {
     if (gridRef.current?.api) {
@@ -87,6 +107,18 @@ export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ consta
     dataService.constants_service.valueChangedForType(constantType, rowIndex, field, event.newValue);
   };
 
+  const onRowDragEnd = (event: any) => {
+    if (!event.api || event.node?.rowIndex == null) return;
+    const orderedActualIndices: number[] = [];
+    event.api.forEachNodeAfterFilterAndSort((node: any) => {
+      const actualIndex = node.data?._actualIndex;
+      if (typeof actualIndex === 'number') orderedActualIndices.push(actualIndex);
+    });
+    if (orderedActualIndices.length > 0) {
+      dataService.constants_service.reorderConstantsOfType(constantType, orderedActualIndices);
+    }
+  };
+
   const { rows } = dataService.constants_service.getRowsForType(constantType);
 
   return (
@@ -96,10 +128,12 @@ export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ consta
           <div className={styles.gridContainer}>
             <AgGridReact
               rowData={rows}
-              columnDefs={NAME_VALUE_COLUMNS}
+              columnDefs={columnDefs}
               ref={gridRef}
               theme={dataService.constants_service.getTheme()}
               onCellValueChanged={onCellValueChanged}
+              onRowDragEnd={onRowDragEnd}
+              rowDragManaged={true}
               animateRows={true}
               headerHeight={0}
               domLayout="autoHeight"

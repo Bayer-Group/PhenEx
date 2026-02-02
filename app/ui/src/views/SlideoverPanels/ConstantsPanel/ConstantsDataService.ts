@@ -149,6 +149,14 @@ export class ConstantsDataService {
     );
   }
 
+  /** Remove constant by its index in the constants array (for typed panels). */
+  public deleteConstantByActualIndex(actualIndex: number): void {
+    const constants = this.cohortDataService?._cohort_data?.constants;
+    if (!constants || actualIndex < 0 || actualIndex >= constants.length) return;
+    constants.splice(actualIndex, 1);
+    this.saveChangesToConstants();
+  }
+
   public getConstantsOfType(type: string): Record<string, any> {
     const result: Record<string, any> = {};
     console.log('Getting constants of type:', type, this.cohortDataService);
@@ -168,21 +176,31 @@ export class ConstantsDataService {
     return result;
   }
 
-  /** Rows and indices for a single constant type (name + value columns). */
-  public getRowsForType(type: string): { rows: { name: string; value: string; type: string }[]; indices: number[] } {
+  /** Rows and indices for a single constant type (name + value columns). Sorted by index (order). */
+  public getRowsForType(type: string): {
+    rows: { name: string; value: string; type: string; _actualIndex: number }[];
+    indices: number[];
+  } {
     const constants = this.cohortDataService?._cohort_data?.constants ?? [];
-    const rows: { name: string; value: string; type: string }[] = [];
-    const indices: number[] = [];
-    constants.forEach((constant: any, index: number) => {
-      if (constant.type === type) {
-        indices.push(index);
-        rows.push({
-          name: constant.name ?? '',
-          value: typeof constant.value === 'string' ? constant.value : JSON.stringify(constant.value ?? ''),
-          type,
-        });
+    const withType: { constant: any; actualIndex: number; orderIndex: number }[] = [];
+    constants.forEach((constant: any, actualIndex: number) => {
+      if (constant.type !== type) return;
+      let orderIndex = constant.index;
+      if (typeof orderIndex !== 'number') {
+        orderIndex = withType.length;
+        constant.index = orderIndex;
       }
+      withType.push({ constant, actualIndex, orderIndex });
     });
+    withType.sort((a, b) => a.orderIndex - b.orderIndex);
+    const rows = withType.map(({ constant, actualIndex }) => ({
+      name: constant.name ?? '',
+      value:
+        typeof constant.value === 'string' ? constant.value : JSON.stringify(constant.value ?? ''),
+      type,
+      _actualIndex: actualIndex,
+    }));
+    const indices = withType.map((w) => w.actualIndex);
     return { rows, indices };
   }
 
@@ -191,14 +209,31 @@ export class ConstantsDataService {
     if (!constants) {
       this.cohortDataService._cohort_data.constants = [];
     }
+    const existingOfType = constants.filter((c: any) => c.type === type);
+    const maxIndex =
+      existingOfType.length === 0
+        ? -1
+        : Math.max(...existingOfType.map((c: any) => (typeof c.index === 'number' ? c.index : -1)));
     this.cohortDataService._cohort_data.constants.push({
-      name: 'New ' + type ,
+      name: 'New ' + type,
       description: '',
       type,
       value: defaultConstantValue,
+      index: maxIndex + 1,
     });
     this.tableData = this.tableDataFromConstants();
     this.cohortDataService.saveChangesToCohort(false, true);
+  }
+
+  /** Update order indices after drag-and-drop. orderedActualIndices = new order of constants array indices. */
+  public reorderConstantsOfType(type: string, orderedActualIndices: number[]): void {
+    orderedActualIndices.forEach((actualIndex, newOrderIndex) => {
+      const constants = this.cohortDataService._cohort_data.constants;
+      if (actualIndex >= 0 && actualIndex < constants.length && constants[actualIndex].type === type) {
+        constants[actualIndex].index = newOrderIndex;
+      }
+    });
+    this.saveChangesToConstants();
   }
 
   public valueChangedForType(type: string, filteredRowIndex: number, field: 'name' | 'value', newValue: any): void {

@@ -19,7 +19,7 @@
 }
 
 .gridContainer {
-  width: calc(100% - 30px);
+  width: calc(100% - 20px);
   margin-left: 5px;
   margin-top: 10px;
   min-height: 0;
