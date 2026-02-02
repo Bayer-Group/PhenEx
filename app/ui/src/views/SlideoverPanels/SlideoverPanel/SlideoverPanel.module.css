@@ -21,7 +21,7 @@
 .title {
   font-size: 16px;
   font-family: 'IBMPlexSans-bold';
-  padding: 12px 16px;
+  padding: 10px 16px 0px 16px;
   background-color: var(--background-color-secondary);
   color: var(--color-text);
   user-select: none;

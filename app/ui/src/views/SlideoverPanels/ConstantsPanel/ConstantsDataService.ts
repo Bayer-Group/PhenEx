@@ -192,7 +192,7 @@ export class ConstantsDataService {
       this.cohortDataService._cohort_data.constants = [];
     }
     this.cohortDataService._cohort_data.constants.push({
-      name: '',
+      name: 'New ' + type ,
       description: '',
       type,
       value: defaultConstantValue,

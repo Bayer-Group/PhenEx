@@ -4,9 +4,23 @@ import { ColDef } from '@ag-grid-community/core';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { ConstantsCellRenderer } from '../ConstantsPanel/ConstantsCellRenderer';
 import { ConstantsCellEditorSelector } from '../ConstantsPanel/ConstantsCellEditorSelector';
-import styles from './ConstantsPanels.module.css';
 
+import styles from './ConstantsPanels.module.css';
+import RowDragCellRenderer from '../../CohortViewer/CohortTable/CellRenderers/RowDragCellRenderer';
 const NAME_VALUE_COLUMNS: ColDef[] = [
+  {
+    field: 'rowDrag',
+    headerName: '',
+    width: 30,
+    minWidth: 30,
+    maxWidth: 30,
+    pinned: 'left',
+    rowDrag: true,
+    resizable: false,
+    filter: false,
+    cellClass: 'row-drag-handle',
+    cellRenderer: RowDragCellRenderer,
+  },
   {
     field: 'name',
     headerName: 'Name',
@@ -27,6 +41,14 @@ const NAME_VALUE_COLUMNS: ColDef[] = [
       params.data.value = params.newValue;
       return true;
     },
+  },
+  {
+    field: 'delete',
+    headerName: 'Delete',
+    width: 20,
+    minWidth: 20,
+    maxWidth: 20,
+    editable: false,
   },
 ];
 
@@ -81,10 +103,9 @@ export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ consta
               animateRows={true}
               headerHeight={0}
               domLayout="autoHeight"
+              suppressNoRowsOverlay
               defaultColDef={{
                 flex: 1,
-                minWidth: 100,
-                resizable: true,
               }}
             />
           </div>

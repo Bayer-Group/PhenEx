@@ -11,9 +11,9 @@ const ellipsisSvg = (
     strokeWidth="2"
     strokeLinecap="round"
   >
-    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-    <circle cx="6" cy="12" r="1.5" fill="currentColor" />
-    <circle cx="18" cy="12" r="1.5" fill="currentColor" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" />
+    <circle cx="6" cy="12" r="1" fill="currentColor" />
+    <circle cx="18" cy="12" r="1" fill="currentColor" />
   </svg>
 );
 

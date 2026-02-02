@@ -15,11 +15,22 @@
 
 .tableBox {
   flex: 0 0 auto;
+  min-height: 0;
 }
 
 .gridContainer {
   width: calc(100% - 30px);
-  margin-left: 15px;
+  margin-left: 5px;
   margin-top: 10px;
   min-height: 0;
+}
+
+/* AG Grid autoHeight: allow empty grid to be 0 height; don't override height so rows size correctly */
+.gridContainer :global(.ag-root),
+.gridContainer :global(.ag-root-wrapper),
+.gridContainer :global(.ag-body-viewport),
+.gridContainer :global(.ag-center-cols-viewport),
+.gridContainer :global(.ag-center-cols-clipper),
+.gridContainer :global(.ag-center-cols-container) {
+  min-height: 0 !important;
 }
