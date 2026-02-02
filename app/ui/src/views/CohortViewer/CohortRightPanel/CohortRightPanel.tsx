@@ -38,7 +38,7 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
         classNameThumb={styles.customScrollbarThumb}
         classNameTrack={styles.customScrollbarTrack}
       />
-                  <div className={styles.topGradient} />
+      <div className={styles.topGradient} />
 
     </div>
   );

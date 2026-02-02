@@ -30,11 +30,9 @@
 }
 
 .customScrollbarThumb{
-  background-color: var(--color_accent_dark) !important;
+  background-color: var(--color_scrollbar_thumb) !important;
 }
 
-.customScrollbarTrack{
-}
 
 .topGradient {
   position: absolute;

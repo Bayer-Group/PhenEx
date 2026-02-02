@@ -8,6 +8,8 @@ import { ConstantsCellEditorSelector } from '../ConstantsPanel/ConstantsCellEdit
 import styles from './ConstantsPanels.module.css';
 import InfoPanelRowDragCellRenderer from './InfoPanelRowDragCellRenderer';
 import InfoPanelDeleteCellRenderer from './InfoPanelDeleteCellRenderer';
+import InfoPanelNameCellRenderer from './InfoPanelNameCellRenderer';
+
 const NAME_VALUE_COLUMNS: ColDef[] = [
   {
     field: 'rowDrag',
@@ -27,6 +29,7 @@ const NAME_VALUE_COLUMNS: ColDef[] = [
     headerName: 'Name',
     width: 200,
     editable: true,
+    cellRenderer: InfoPanelNameCellRenderer,
   },
   {
     field: 'value',
