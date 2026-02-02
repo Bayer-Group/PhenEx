@@ -204,7 +204,7 @@ export const MainView = () => {
           split="vertical"
           initalSizeRight={300}
           initalSizeLeft={300}
-          minSizeLeft={300}
+          minSizeLeft={200}
           minSizeRight={300}
         >
           <HierarchicalLeftPanel isVisible={true} />

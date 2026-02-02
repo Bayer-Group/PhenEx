@@ -1,5 +1,6 @@
 import React from 'react';
 import { PhenexCellRendererProps } from '../../CohortViewer/CohortTable/CellRenderers/PhenexCellRenderer';
+import styles from './ConstantsCellRenderer.module.css';
 
 export interface ConstantsCellRendererProps extends PhenexCellRendererProps {}
 
@@ -29,11 +30,12 @@ export const ConstantsCellRenderer: React.FC<ConstantsCellRendererProps> = props
       }
     }
     
-    // Pass all props through (including node, api, column) so child renderer can handle clicks properly
     return (
-    <div style={{ padding: '5px 5px 5px 5px', color: 'var(--text-color)', backgroundColor: 'yellow' }}>
-      <Renderer {...props} value={parsedValue} fontSize={'12px'} />
-    </div>
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <Renderer {...props} value={parsedValue} fontSize={'12px'} />
+        </div>
+      </div>
     );
   }
   return <div>{props.data.value}</div>;
