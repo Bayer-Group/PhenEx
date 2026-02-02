@@ -25,6 +25,11 @@
   background-color: var(--background-color-secondary);
   color: var(--color-text);
   user-select: none;
+  flex: 1 1 0%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header {
@@ -41,9 +46,13 @@
 
 .headerLeft {
   display: flex;
-  align-items: center;
-  flex: 1;
+  align-items: stretch;
+  flex: 1 1 0%;
   min-width: 0;
+}
+
+.headerLeft > .title {
+  width: 100%;
 }
 
 .headerControls {
@@ -140,14 +149,8 @@ code {
 }
 
 .infobox {
+  flex: 0 0 auto;
   margin: 0px 0px 0px 10px;
-  padding: 10px 10px 10px 20px;
-  background-color: white;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  /* margin: 0px 0px 0px 10px; */
-  /* padding: 10px 10px 10px 20px; */
   padding: 10px;
   background-color: var(--background-color) !important;
   color: var(--color-text-normal) !important;
@@ -156,24 +159,11 @@ code {
   border: var(--border);
   transition:
     max-height 0.3s ease,
-    opacity 0.3s ease; /* Animation for opening and closing */
-  max-height: 0; /* Start closed */
-  opacity: 0; /* Start hidden */
-  overflow: hidden; /* Prevent overflow when closed */
-  margin-right: 10px;
-  margin-bottom: 0px;
-  margin-left: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  transition:
-    max-height 0.3s ease,
     opacity 0.3s ease,
-    margin 0.3s ease; /* Add margin to transition properties */
-  max-height: 0; /* Start closed */
-  opacity: 0; /* Start hidden */
-  overflow: hidden; /* Prevent overflow when closed */
+    margin 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
   user-select: none;
   cursor: pointer;
 }

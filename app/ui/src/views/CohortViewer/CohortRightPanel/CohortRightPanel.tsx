@@ -2,7 +2,9 @@ import React, { useRef } from 'react';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
-import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
+import { RelativeTimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/RelativeTimeRangePanel';
+import { CategoricalFilterPanel } from '../../SlideoverPanels/ConstantsPanels/CategoricalFilterPanel';
+import { TimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/TimeRangePanel';
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
 import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
@@ -18,21 +20,26 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
   
   return (
     <div className={styles.wrapper}>
+
       <div ref={containerRef} className={styles.container}>
+
         <InfoPanel />
         <DatabasePanel />
-        <ConstantsPanel />
+        <RelativeTimeRangePanel />
+        <CategoricalFilterPanel />
+        <TimeRangePanel />
         <CodelistsViewer />
-        <VisibilityPanel />
         <ExecutePanel />
       </div>
       <SimpleCustomScrollbar targetRef={containerRef} 
         marginToEnd={2}
         marginBottom={120}
-        marginTop={85}
+        marginTop={70}
         classNameThumb={styles.customScrollbarThumb}
         classNameTrack={styles.customScrollbarTrack}
       />
+                  <div className={styles.topGradient} />
+
     </div>
   );
 };

@@ -84,12 +84,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
         <div className={styles.headerRow}>
           <div className={styles.headerLeft}>
             {showTitle && renderHeader()}
-            <div
-              className={`${styles.infobox} ${isOpen ? styles.open : styles.closed}`}
-              onClick={toggleInfobox}
-            >
-              {info}
-            </div>
+
           </div>
           {headerControls != null && (
             <div className={styles.headerControls} onClick={e => e.stopPropagation()}>

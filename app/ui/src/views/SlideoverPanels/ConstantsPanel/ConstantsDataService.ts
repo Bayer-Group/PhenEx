@@ -1,4 +1,4 @@
-import { TableData, ColumnDefinition } from '../CohortViewer/tableTypes';
+import { TableData, ColumnDefinition } from '../../CohortViewer/tableTypes';
 import { themeQuartz } from 'ag-grid-community';
 
 import { ConstantsCellRenderer } from './ConstantsCellRenderer';
@@ -172,6 +172,57 @@ export class ConstantsDataService {
       }
     );
     return result;
+  }
+
+  /** Rows and indices for a single constant type (name + value columns). */
+  public getRowsForType(type: string): { rows: { name: string; value: string; type: string }[]; indices: number[] } {
+    const constants = this.cohortDataService?._cohort_data?.constants ?? [];
+    const rows: { name: string; value: string; type: string }[] = [];
+    const indices: number[] = [];
+    constants.forEach((constant: any, index: number) => {
+      if (constant.type === type) {
+        indices.push(index);
+        rows.push({
+          name: constant.name ?? '',
+          value: typeof constant.value === 'string' ? constant.value : JSON.stringify(constant.value ?? ''),
+          type,
+        });
+      }
+    });
+    return { rows, indices };
+  }
+
+  public addConstantOfType(type: string, defaultConstantValue: any): void {
+    const constants = this.cohortDataService._cohort_data.constants;
+    if (!constants) {
+      this.cohortDataService._cohort_data.constants = [];
+    }
+    this.cohortDataService._cohort_data.constants.push({
+      name: '',
+      description: '',
+      type,
+      value: defaultConstantValue,
+    });
+    this.tableData = this.tableDataFromConstants();
+    this.cohortDataService.saveChangesToCohort(false, true);
+  }
+
+  public valueChangedForType(type: string, filteredRowIndex: number, field: 'name' | 'value', newValue: any): void {
+    const { indices } = this.getRowsForType(type);
+    const actualIndex = indices[filteredRowIndex];
+    if (actualIndex == null || actualIndex < 0) return;
+    const constants = this.cohortDataService._cohort_data.constants;
+    if (actualIndex >= constants.length) return;
+    if (field === 'value') {
+      try {
+        constants[actualIndex].value = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+      } catch {
+        constants[actualIndex].value = newValue;
+      }
+    } else {
+      constants[actualIndex][field] = newValue;
+    }
+    this.saveChangesToConstants();
   }
 
   public tableDataFromConstants(): TableData {

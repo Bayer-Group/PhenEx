@@ -1,0 +1,25 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  padding-top: 0;
+  height: fit-content;
+  min-height: 0;
+}
+
+.bottomSection {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+
+.tableBox {
+  flex: 0 0 auto;
+}
+
+.gridContainer {
+  width: calc(100% - 30px);
+  margin-left: 15px;
+  margin-top: 10px;
+  min-height: 0;
+}
