@@ -356,10 +356,27 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   };
 
   const renderLeftPanel = () => {
-    if (contentMode === 'study') {
-      return <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />;
-    }
-    return <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />;
+    const viewer =
+      contentMode === 'study' ? (
+        <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />
+      ) : (
+        <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />
+      );
+    return (
+      <div className={styles.leftContentWrapper}>
+
+        <div className={styles.leftContentViewer}>{viewer}</div>
+        <CallToActionNavBar
+          height={44}
+          mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'}
+          onSectionTabChange={handleTabChange}
+          onAddButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined}
+          shadow={true}
+          showReport={isReportMode}
+          onShowReportChange={setReportMode}
+        />
+      </div>
+    );
   };
   
   const renderPopoverContent = (viewType: any, extraData: any) => {
@@ -398,17 +415,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               compact={false}
             />
           </div>
-          <CallToActionNavBar 
-            height={44} 
-            mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'} 
-            onSectionTabChange={handleTabChange} 
-            onAddButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined} 
-            // shadow={contentMode === 'study' ? true : false}
-            shadow={true}
-
-            showReport={isReportMode}
-            onShowReportChange={setReportMode}
-          />
         </div>
         <div className={styles.contentSection}>
           <TwoPanelView 

@@ -41,6 +41,20 @@
   height: 100%;
 }
 
+.leftContentWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.leftContentViewer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Study mode: floating top section - now same as default */
 .studyMode .topSection {
   /* No additional styles needed - uses default absolute positioning */
