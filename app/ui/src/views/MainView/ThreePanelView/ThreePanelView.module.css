@@ -85,6 +85,11 @@
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
+}
+
 .collapseButtonIcon {
   display: inline-block;
 }
@@ -101,6 +106,10 @@
 
 .collapseButton:hover {
   transform: scale(1.4);
+}
+
+.collapseButton:hover svg{
+  color: var(--color_accent_blue);
 }
 
 .collapseButton:focus {
