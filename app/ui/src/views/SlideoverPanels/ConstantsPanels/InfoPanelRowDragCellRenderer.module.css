@@ -21,7 +21,7 @@
   justify-content: flex-end !important;
   align-items: flex-start !important;
   padding-right: 10px !important;
-  padding-top: 5px !important;
+  padding-top: 0px !important;
 }
 
 :global(.row-drag-handle .ag-drag-handle) {

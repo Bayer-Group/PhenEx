@@ -58,6 +58,34 @@ const NAME_VALUE_COLUMNS: ColDef[] = [
   },
 ];
 
+const minHeight = 40;
+
+function getConstantsRowHeight(params: any): number {
+  let rowHeight = minHeight;
+
+  const nameCol = params.api?.getColumnDef('name');
+  if (nameCol && params.data?.name != null) {
+    const nameWidth = (nameCol.width ?? 200) - 10;
+    const nameCharPerLine = Math.floor(nameWidth / 8) || 1;
+    const nameLines = Math.ceil(params.data.name.length / nameCharPerLine);
+    const nameHeight = nameLines * 16 + 15;
+    rowHeight = Math.max(rowHeight, nameHeight);
+  }
+
+  // const valueCol = params.api?.getColumnDef('value');
+  // const value = params.data?.value;
+  // const valueStr = typeof value === 'string' ? value : JSON.stringify(value ?? '');
+  // if (valueStr && valueCol) {
+  //   const valueWidth = valueCol.width ?? 200;
+  //   const valueCharPerLine = Math.floor(valueWidth / 8) || 1;
+  //   const valueLines = Math.ceil(valueStr.length / valueCharPerLine);
+  //   const valueHeight = valueLines * 22 + 10;
+  //   rowHeight = Math.max(rowHeight, valueHeight);
+  // }
+
+  return rowHeight;
+}
+
 interface TypedConstantsTableProps {
   constantType: string;
 }
@@ -141,6 +169,7 @@ export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ consta
               headerHeight={0}
               domLayout="autoHeight"
               suppressNoRowsOverlay
+              getRowHeight={getConstantsRowHeight}
               defaultColDef={{
                 flex: 1,
               }}
