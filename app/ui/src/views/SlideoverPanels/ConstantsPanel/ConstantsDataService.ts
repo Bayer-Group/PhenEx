@@ -12,13 +12,7 @@ const defaultColumns: ColumnDefinition[] = [
     width: 200,
     editable: true,
   },
-  // {
-  //   field: 'description',
-  //   headerName: 'Description',
-  //   editable: true,
-  //   wrapText: true,
-  //   width: 180,
-  // },
+
   {
     field: 'type',
     headerName: 'Type',
@@ -244,7 +238,7 @@ export class ConstantsDataService {
   public getTheme() {
     return themeQuartz.withParams({
       accentColor: '#FF00000',
-      borderColor: 'var(--line-color-grid)',
+      borderColor: 'transparent',
       browserColorScheme: 'light',
       columnBorder: true,
       headerFontSize: 14,

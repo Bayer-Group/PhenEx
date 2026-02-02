@@ -308,11 +308,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     const minCurrentSelectionWidth = 300;
     const currentSelectionWidth = Math.max(cellWidth, minCurrentSelectionWidth) +2*offsetX;
     
-    // Bottom section is positioned at EXACT cell coordinates
-    const bottomSectionLeft = cellRect.left - offsetX;
+    // Bottom section is positioned at EXACT cell coordinates; clamp to viewport so panel stays visible
+    let bottomSectionLeft = cellRect.left - offsetX;
     const bottomSectionTop = cellRect.top - offsetY;
-    
-    // Composer Panel dimensions
+    const viewportPadding = 10;
+    if (bottomSectionLeft + currentSelectionWidth > viewport.width - viewportPadding) {
+      bottomSectionLeft = viewport.width - currentSelectionWidth - viewportPadding;
+    }
+    if (bottomSectionLeft < viewportPadding) {
+      bottomSectionLeft = viewportPadding;
+    }
+
+    // Composer Panel dimensions (max width used in JSX for right-edge clamp)
+    const composerMaxWidthPx = 600;
     const composerWidth = 100;
     const composerMaxHeight = viewport.height - 100; // Max height with padding
     
@@ -329,8 +337,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         composerTop = viewport.height - 500;
       }
       
-      composerLeft = Math.max(10, Math.min(composerLeft, viewport.width - composerWidth - 10));
-      composerTop = Math.max(10, composerTop);
+      composerLeft = Math.max(viewportPadding, Math.min(composerLeft, viewport.width - composerMaxWidthPx - viewportPadding));
+      composerTop = Math.max(viewportPadding, composerTop);
     } else {
       // Default positioning logic when no item has been clicked
       const composerPlacementThreshold = viewport.width / 2;
@@ -342,22 +350,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         // Cell is narrow and on left side - place composer on the right
         composerLeft = Math.min(
           bottomSectionLeft + currentSelectionWidth + 10,
-          viewport.width - composerWidth - 10
+          viewport.width - composerMaxWidthPx - viewportPadding
         );
       } else {
         // Cell is narrow and on right side - place composer on the left
         composerLeft = Math.max(
-          10,
-          bottomSectionLeft - composerWidth - 10
+          viewportPadding,
+          bottomSectionLeft - composerMaxWidthPx - 10
         );
       }
-      
+      composerLeft = Math.max(viewportPadding, Math.min(composerLeft, viewport.width - composerMaxWidthPx - viewportPadding));
+
       composerTop = cellRect.top;
       // Shift up only if it would be cut off (estimate 500px height)
       if (composerTop + 500 > viewport.height) {
         composerTop = viewport.height - 500;
       }
-      composerTop = Math.max(10, composerTop);
+      composerTop = Math.max(viewportPadding, composerTop);
     }
     
     return {
