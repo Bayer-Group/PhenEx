@@ -229,6 +229,7 @@ class Cohort:
         self._characteristics = value or []
         self._validate_node_uniqueness()
         self._table1 = None
+        self.characteristics_table_node = None
         logger.info(f"Cohort '{self.name}': characteristics updated")
 
     @property
@@ -245,6 +246,7 @@ class Cohort:
         """
         self._outcomes = value or []
         self._validate_node_uniqueness()
+        self.outcomes_table_node = None
         logger.info(f"Cohort '{self.name}': outcomes updated")
 
     @property
