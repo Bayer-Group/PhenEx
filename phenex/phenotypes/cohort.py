@@ -57,19 +57,12 @@ class Cohort:
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions or []
         self.exclusions = exclusions or []
-        self.characteristics = characteristics or []
+        self._characteristics = characteristics or []
         self.derived_tables = derived_tables or []
-        self.outcomes = outcomes or []
-        self.data_period = data_period
+        self._outcomes = outcomes or []
+        self._data_period = data_period
         self.n_persons_in_source_database = None
 
-        self.phenotypes = (
-            [self.entry_criterion]
-            + self.inclusions
-            + self.exclusions
-            + self.characteristics
-            + self.outcomes
-        )
         self._validate_node_uniqueness()
 
         # stages: set at execute() time
@@ -77,6 +70,7 @@ class Cohort:
         self.entry_stage = None
         self.index_stage = None
         self.reporting_stage = None
+        self.data_period_filter_stage = None
 
         # special Nodes that Cohort builds (later, in build_stages())
         # need to be able to refer to later to get outputs
@@ -220,6 +214,75 @@ class Cohort:
 
         self._table1 = None
 
+    @property
+    def characteristics(self) -> List[Phenotype]:
+        """Get the list of baseline characteristics phenotypes."""
+        return self._characteristics
+
+    @characteristics.setter
+    def characteristics(self, value: Optional[List[Phenotype]]):
+        """
+        Set the list of baseline characteristics phenotypes.
+        
+        Validates node uniqueness and invalidates cached computation stages.
+        """
+        self._characteristics = value or []
+        self._validate_node_uniqueness()
+        self._table1 = None
+        logger.info(f"Cohort '{self.name}': characteristics updated")
+
+    @property
+    def outcomes(self) -> List[Phenotype]:
+        """Get the list of outcomes phenotypes."""
+        return self._outcomes
+
+    @outcomes.setter
+    def outcomes(self, value: Optional[List[Phenotype]]):
+        """
+        Set the list of outcomes phenotypes.
+        
+        Validates node uniqueness and invalidates cached computation stages.
+        """
+        self._outcomes = value or []
+        self._validate_node_uniqueness()
+        logger.info(f"Cohort '{self.name}': outcomes updated")
+
+    @property
+    def data_period(self) -> Optional[DateFilter]:
+        """Get the data period filter."""
+        return self._data_period
+
+    @data_period.setter
+    def data_period(self, value: Optional[DateFilter]):
+        """
+        Set the data period filter.
+        
+        Invalidates cached computation stages since the data period affects all stages.
+        """
+        self._data_period = value
+        self._invalidate_stages()
+        logger.info(f"Cohort '{self.name}': data_period updated")
+
+    def _invalidate_stages(self):
+        """
+        Invalidate cached computation stages.
+        
+        This should be called whenever the cohort configuration changes in a way
+        that would affect the computational graph (characteristics, outcomes, data_period).
+        """
+        self.derived_tables_stage = None
+        self.entry_stage = None
+        self.index_stage = None
+        self.reporting_stage = None
+        self.data_period_filter_stage = None
+        self.inclusions_table_node = None
+        self.exclusions_table_node = None
+        self.characteristics_table_node = None
+        self.outcomes_table_node = None
+        self.index_table_node = None
+        self.subset_tables_entry_nodes = None
+        self.subset_tables_index_nodes = None
+
     def _get_domains(self):
         """
         Get a list of all domains used by any phenotype in this cohort.
@@ -331,6 +394,9 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+
+        self._validate_node_uniqueness()
+
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
@@ -420,6 +486,13 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
         Node().add_children(self.phenotypes)
 
