@@ -19,7 +19,6 @@ def UserDefinedPhenotype(
     name: str,
     function: Callable[[Dict[str, "PhenexTable"]], "PhenexTable"],
     returns_value: bool = False,
-    value_ty
 ):
     """
     UserDefinedPhenotype allows users of PhenEx to implement custom functionality within a single phenotype. To use, the user must pass a function that returns an ibis table. This means that the function must
