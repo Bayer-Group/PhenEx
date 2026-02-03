@@ -84,6 +84,6 @@ def UserDefinedPhenotype(
             return table
 
     # Set output_type as a class variable based on returns_value parameter
-    _UserDefinedPhenotype.output_type = 'value' if returns_value else 'boolean'
-    
+    _UserDefinedPhenotype.output_type = "value" if returns_value else "boolean"
+
     return _UserDefinedPhenotype(name=name, returns_value=returns_value)

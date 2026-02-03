@@ -27,7 +27,9 @@ class Phenotype(Node):
         description: A plain text description of the phenotype.
         kwargs: For additional parameters, see Node.
     """
-    output_type = 'boolean'
+
+    output_type = "boolean"
+
     def __init__(self, description: str = None, output_type: str = "boolean", **kwargs):
         self.description = description
         super(Phenotype, self).__init__(**kwargs)

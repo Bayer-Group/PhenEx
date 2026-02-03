@@ -4,7 +4,7 @@ from phenex.filters import CategoricalFilter
 
 
 class SexPhenotype(CategoricalPhenotype):
-    output_type = 'categorical'
+    output_type = "categorical"
     """
     SexPhenotype represents a sex-based phenotype. It returns the sex of individuals in the VALUE column and optionally filters based on identified sex. DATE is not defined for SexPhenotype.
 
