@@ -33,7 +33,7 @@ export const ConstantsCellRenderer: React.FC<ConstantsCellRendererProps> = props
     return (
       <div className={styles.container}>
         <div className={styles.content}>
-          <Renderer {...props} value={parsedValue} fontSize={'12px'} />
+          <Renderer {...props} value={parsedValue} fontSize={'2px'} />
         </div>
       </div>
     );
