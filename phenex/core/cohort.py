@@ -31,6 +31,8 @@ class Cohort:
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
+        con: Optional database connector for storing database connections. If defined, mapper must also be defined.
+        mapper: Optional OMOPMapper for mapping standard storing mapper connections. If defined, con must also be defined.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -53,6 +55,8 @@ class Cohort:
         outcomes: Optional[List[Phenotype]] = None,
         data_period: DateFilter = None,
         description: Optional[str] = None,
+        con: Optional["SnowflakeConnector"] = None,
+        mapper: Optional["OMOPMapper"] = None,
     ):
         self.name = name
         self.description = description
@@ -91,6 +95,17 @@ class Cohort:
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
+
+        # Validate that both con and mapper are either defined or not defined
+        if (con is None) != (mapper is None):
+            raise ValueError(
+                "Both 'con' and 'mapper' must be defined "
+                f"Got con={'defined' if con is not None else 'None'}, "
+                f"mapper={'defined' if mapper is not None else 'None'}"
+            )
+        self.con = con
+        self.mapper = mapper
+        
 
     def build_stages(self, tables: Dict[str, PhenexTable]):
         """
@@ -380,9 +395,24 @@ class Cohort:
             subset_tables_index[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_index
 
+    def _prepare_database_connection_for_execution(self, con):
+        if self.con is None:
+            raise ValueError("Cohort was not initialized with a connector. Please pass tables dictionary.")
+
+        if con is not None:
+            if con != self.con:
+                logger.warning(
+                    "Cohort was initialized with a different connector than the one passed to execute(). Using the passed connector."
+                )
+        else:
+            con = self.con
+
+        tables = self.mapper.get_mapped_tables(con)
+        return tables
+
     def execute(
         self,
-        tables: Dict[str, PhenexTable],
+        tables: Dict[str, PhenexTable] = None,
         con: Optional["SnowflakeConnector"] = None,
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
@@ -391,9 +421,26 @@ class Cohort:
         """
         The execute method executes the full cohort in order of computation. The order is data period filter -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
 
+        There are two ways to use the execute method and thus execute a cohort:
+        
+        1. Directly passing source data in the `tables` dictionary
+        ```python
+        tables = con.get_mapped_tables(mapper)
+        cohort.execute(tables)
+        ```
+        2. Indirectly by defining the data source using the con and mapped_tables keyword arguments at initialization. The source data `tables` is then retrieved at execution time
+        ```python
+        cohort = Cohort(
+            con=SnowflakeConnector(), 
+            mapper= OMOPDomains, 
+            ...
+        )
+        cohort.execute()
+        ````
+
         Parameters:
-            tables: A dictionary mapping domains to Table objects
-            con: Database connector for materializing outputs
+            tables: A dictionary mapping domains to Table objects. This is optional if the Cohort was initialized with a con and mapper. If passed, this takes precedence over the con and mapper defined at initialization.
+            con: Database connector for materializing outputs. If passed, this takes precedence over the con defined at initialization.
             overwrite: Whether to overwrite existing tables
             lazy_execution: Whether to use lazy execution with change detection
             n_threads: Max number of jobs to run simultaneously.
@@ -401,6 +448,17 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+
+        if tables is None:
+            tables = self._prepare_database_connection_for_execution(con)
+        
+        if con is None:
+            if self.con is not None:
+                con = self.con
+                logger.warning(
+                    "Cohort was initialized with a connector but none was passed to execute(). Using the connector from initialization."
+                )
+
 
         self._validate_node_uniqueness()
 
