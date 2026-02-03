@@ -950,6 +950,49 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def get_codelist_by_cohort(
+        self, cohort_id: str, codelist_id: str
+    ) -> Optional[tuple]:
+        """
+        Retrieve a codelist by cohort_id and codelist_id (latest version).
+        Returns (codelist_data_dict, user_id) or None. Used when resolving by cohort context.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            query = """
+                SELECT user_id, codelist_data, column_mapping, codelists, version, created_at, updated_at
+                FROM codelistfile
+                WHERE cohort_id = $1 AND file_id = $2
+                ORDER BY version DESC
+                LIMIT 1
+            """
+            row = await conn.fetchrow(query, cohort_id, codelist_id)
+            if not row:
+                return None
+            codelist_data = {
+                "codelist_data": row["codelist_data"],
+                "column_mapping": row["column_mapping"],
+                "codelists": row["codelists"],
+                "version": row["version"],
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+                "updated_at": (
+                    row["updated_at"].isoformat() if row["updated_at"] else None
+                ),
+            }
+            return (codelist_data, str(row["user_id"]))
+        except Exception as e:
+            error_msg = str(e)[:500]
+            logger.error(
+                f"Failed to retrieve codelist {codelist_id} for cohort {cohort_id}: {error_msg}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
     async def save_codelist(
         self,
         user_id: str,

@@ -53,6 +53,7 @@ export class CodelistDataService {
   private listeners: (() => void)[] = [];
   public files: CodelistFile[] = [];
   private filesMetadata: FileMetadata[] = [];
+  private lastFetchedCohortId: string | null = null;
   private readonly CACHE_KEY = 'phenex_codelist_cache';
 
   private usedCodelists: UsedCodelist[] = [
@@ -144,16 +145,32 @@ export class CodelistDataService {
   }
 
   public async setFilenamesForCohort() {
-    const cohortId = this.cohortDataService.cohort_data.id;
-    
-    
-    // If we already have filenames loaded for this cohort, skip the backend call
-    if (this._filenames && this._filenames.length > 0) {
+    const cohortId = this.cohortDataService?.cohort_data?.id;
+    if (!cohortId) {
+      this._filenames = [];
+      this.filesMetadata = [];
+      this.files = [];
+      this.lastFetchedCohortId = null;
+      this.notifyListeners();
       return;
     }
-    
+
+    // If we already have filenames loaded for this cohort, skip the backend call
+    if (this.lastFetchedCohortId === cohortId && this._filenames && this._filenames.length > 0) {
+      return;
+    }
+
+    // Switching cohort: clear previous cohort's data so we don't mix or show stale files
+    if (this.lastFetchedCohortId !== null && this.lastFetchedCohortId !== cohortId) {
+      this.files = [];
+      this.filesMetadata = [];
+      this._filenames = [];
+      this.activeFile = null;
+    }
+
     // Fetch metadata from backend (lightweight call)
     const filenames = await getCodelistFilenamesForCohort(cohortId);
+    this.lastFetchedCohortId = cohortId;
     
     // Store the metadata (including cached codelists array) separately
     // This allows us to avoid loading full file contents when we just need codelist names
@@ -441,11 +458,15 @@ export class CodelistDataService {
     };
 
     try {
-      const response = await updateCodelistFileColumnMapping(this.activeFile.id, columnMapping);
+      const cohortId = this.cohortDataService?.cohort_data?.id;
+      const response = await updateCodelistFileColumnMapping(
+        this.activeFile.id,
+        columnMapping,
+        cohortId
+      );
       
       // Update localStorage cache with new codelists from backend response
-      if (response && response.codelists) {
-        const cohortId = this.cohortDataService.cohort_data.id;
+      if (response && response.codelists && cohortId) {
         this.updateCacheForFile(
           cohortId,
           this.activeFile.filename,

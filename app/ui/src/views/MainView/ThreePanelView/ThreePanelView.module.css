@@ -11,7 +11,8 @@
 
 .centerPanel {
   flex: 1;
-  min-width: 400px;
+  min-width: 500px;
+  position: relative;
 }
 
 .rightPanel {
@@ -65,19 +66,36 @@
 }
 
 .collapseButton {
-  z-index: 10000;
-  position: absolute;
+  z-index: 999999999;
+  position: fixed;
   pointer-events: all;
   margin-left: 0px;
-  margin-top: 5px;
-  padding: 0px 3px 0px 0px;
-  font-size: 22px;
-  font-family: 'SNPro-black' !important;
-  border-radius: var(--border-radius);
+  margin-top: 0px;
+  padding: 0px;
   cursor: pointer;
-  width: 25px !important;
+  width: 40px !important;
+  height: 40px !important;
   color: var(--color_inactive);
-  /* transform: rotate(90deg); */
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
+}
+
+.collapseButtonIcon {
+  display: inline-block;
+}
+
+.collapseButton.left.collapsed .collapseButtonIcon {
+  transform: scaleX(-1);
 }
 
 .arrow {
@@ -87,8 +105,11 @@
 }
 
 .collapseButton:hover {
-  /* transition: transform 0.2s ease; */
+  transform: scale(1.4);
+}
 
+.collapseButton:hover svg{
+  color: var(--color_accent_blue);
 }
 
 .collapseButton:focus {
@@ -96,22 +117,12 @@
 }
 
 .collapseButton.left {
-  left: 5px;
-  top:0px;
-  height:40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  left: 10px;
+  top: 10px;
 }
-
 
 .collapseButton.left:hover {
   color: var(--color_accent_blue);
-}
-
-.collapseButton.left.collapsed {
-  transform: rotate(180deg);
-
 }
 
 .panel.collapsed {
@@ -140,7 +151,7 @@
   z-index: 100;
   position: absolute;
   margin-left: 10px;
-  transition: all 0.2s ease;
+  /* transition: all 0.2s ease; */
   /* border-left: 1px solid var(--line-color); */
   /* background-color: red; */
 }
@@ -158,8 +169,8 @@
 
 .panel {
   transition:
-    max-width 0.2s ease,
-    width 0.2s ease,
+    /* max-width 0.2s ease,
+    width 0.2s ease, */
     opacity 0.2s ease;
   overflow: hidden;
   opacity: 1;
@@ -188,8 +199,8 @@
 
 .divider {
   transition:
-    all 0.2s ease,
-    width 0.2s ease,
+    /* all 0.2s ease,
+    width 0.2s ease, */
     opacity 0.2s ease;
   opacity: 1;
 }

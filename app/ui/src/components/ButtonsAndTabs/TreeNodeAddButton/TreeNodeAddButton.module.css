@@ -10,6 +10,16 @@
   z-index: 10;
 }
 
+.buttonContainer.alwaysVisible {
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
+  opacity: 1;
+  min-width: 25px;
+  min-height: 25px;
+}
+
 .addButton {
   position: absolute;
   right:0px;

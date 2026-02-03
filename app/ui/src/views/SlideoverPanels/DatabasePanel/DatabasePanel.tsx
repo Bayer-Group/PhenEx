@@ -1,14 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styles from './ConstantsPanel.module.css';
+import React, { useState } from 'react';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-
 import { DatabaseFields } from './DatabaseFields';
+import { DatabaseTabTypes } from './DatabaseFields';
+import { InfoPanelEllipsis } from '../../../components/ButtonsAndTabs/InfoPanelButton/InfoPanelEllipsis';
 
 interface DatabasePanelProps {
   showTitle?: boolean;
 }
 
 export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true }) => {
+  const [mode, setMode] = useState<DatabaseTabTypes>(DatabaseTabTypes.Default);
+
+  const toggleMode = () => {
+    setMode((m) =>
+      m === DatabaseTabTypes.Default ? DatabaseTabTypes.Manual : DatabaseTabTypes.Default
+    );
+  };
+
   const infoContent = () => {
     return (
       <span>
@@ -34,9 +42,21 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true }
     );
   };
 
+  const headerControls = (
+    <InfoPanelEllipsis
+      tooltipText={mode === DatabaseTabTypes.Default ? 'Switch to manual entry' : 'Switch to default'}
+      onClick={toggleMode}
+    />
+  );
+
   return (
-    <SlideoverPanel title="Database" info={infoContent()} showTitle={showTitle}>
-      <DatabaseFields />
+    <SlideoverPanel
+      title="Database"
+      info={infoContent()}
+      showTitle={showTitle}
+      headerControls={headerControls}
+    >
+      <DatabaseFields mode={mode} />
     </SlideoverPanel>
   );
 };

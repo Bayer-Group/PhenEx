@@ -92,12 +92,39 @@ app.add_middleware(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins. Replace with specific origins if needed.
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 app.add_middleware(DBSessionMiddleware, sessionmaker=sessionmaker)
+
+
+def _cors_headers(origin: str | None = None) -> dict:
+    """Headers so error responses are not blocked by CORS."""
+    if origin and origin in origins:
+        return {"Access-Control-Allow-Origin": origin}
+    return {"Access-Control-Allow-Origin": origins[0] if origins else "*"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Ensure error responses include CORS headers so the frontend can read them."""
+    origin = request.headers.get("origin")
+    headers = _cors_headers(origin)
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail if isinstance(exc.detail, str) else exc.detail},
+            headers=headers,
+        )
+    logger.exception("Unhandled exception: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)[:500]},
+        headers=headers,
+    )
 
 
 @app.get("/health")

@@ -73,7 +73,7 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({
   return (
     <div className={styles.navBar} style={{ height: `${height}px`,width: `auto`, gap:`20px` }}>
       <div className={styles.actionButtons}>
-        <SwitchButton
+        {/* <SwitchButton /* TODO : REMOVE COMPLETELY
           tooltip="Show report"
           value={showReport}
           onValueChange={onShowReportChange}
@@ -92,7 +92,7 @@ export const ActionNavBar: React.FC<ActionNavBarProps> = ({
           onClick={onExecute}
         >
           <img src={playButton} alt="Execute" style={{ width: '30px', height: '30px' }} />
-        </button>
+        </button> */}
         <button 
           ref={chatButtonRef}
           className={styles.actionButton}

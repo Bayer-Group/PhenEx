@@ -5,17 +5,24 @@ import { PhenExNavBarTooltip } from '../../PhenExNavBar/PhenExNavBarTooltip';
 interface TreeNodeAddButtonProps {
   tooltipText: string;
   onClick: () => void;
+  /** When true, button is always visible (e.g. in a header). Default: false (show on parent hover in tree). */
+  alwaysVisible?: boolean;
 }
 
-export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({ 
-  tooltipText, 
-  onClick
+export const TreeNodeAddButton: React.FC<TreeNodeAddButtonProps> = ({
+  tooltipText,
+  onClick,
+  alwaysVisible = false,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const buttonRef = useRef<HTMLSpanElement>(null);
 
+  const containerClass = alwaysVisible
+    ? `${styles.buttonContainer} ${styles.alwaysVisible}`
+    : styles.buttonContainer;
+
   return (
-    <div className={styles.buttonContainer}>
+    <div className={containerClass}>
       <span
         ref={buttonRef}
         className={styles.addButton}

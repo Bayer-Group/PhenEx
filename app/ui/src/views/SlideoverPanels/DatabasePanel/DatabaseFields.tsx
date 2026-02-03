@@ -5,11 +5,17 @@ import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDa
 import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
 import editPencilIcon from '../../../../../assets/icons/edit-pencil.svg';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import databasesDataRaw from '/assets/databases.json?raw';
 let databasesData = JSON.parse(databasesDataRaw);
 
-interface DatabaseFieldsProps {}
+export enum DatabaseTabTypes {
+  Default = 'Default',
+  Manual = 'Manual',
+}
+
+interface DatabaseFieldsProps {
+  mode: DatabaseTabTypes;
+}
 
 const mappers = Object.values(Mapper);
 const connector_types = ['Snowflake', 'duckdb'];
@@ -22,19 +28,11 @@ const snowflakeDefaults = {
   password: 'default_password',
 };
 
-enum DatabaseTabTypes {
-  Default = 'Default',
-  Manual = 'Manual',
-}
-
-
-export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
+export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
   const dataService = CohortDataService.getInstance();
   const [existingConfig, setExistingConfig] = useState(
     dataService.cohort_data.database_config || {}
   );
-  const tabs = Object.values(DatabaseTabTypes).map(value => value.charAt(0) + value.slice(1));
-  const [currentTab, setCurrentTab] = useState<DatabaseTabTypes>(DatabaseTabTypes.Default);
 
   const [selectedMapper, setSelectedMapper] = useState(existingConfig.mapper || mappers[0]);
   const [selectedConnector, setSelectedConnector] = useState(
@@ -117,31 +115,25 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
         } else {
           setSelectedSchema('');
         }
-        
-        // Database found in defaults, stay on Default tab
-        setCurrentTab(DatabaseTabTypes.Default);
       } else {
-        // Database not found in defaults, reset selections and switch to Manual tab
+        // Database not found in defaults, reset selections
         console.log('🚨 Database not found in defaults, resetting');
         setSelectedDatabase('');
         setSelectedSchema('');
         setAvailableSchemas([]);
-        setCurrentTab(DatabaseTabTypes.Manual);
       }
     } else if (sourceDb) {
-      // Source database exists but doesn't contain a dot (invalid format), switch to Manual tab
+      // Source database exists but doesn't contain a dot (invalid format)
       console.log('🚨 Invalid sourceDb format, switching to Manual');
       setSelectedDatabase('');
       setSelectedSchema('');
       setAvailableSchemas([]);
-      setCurrentTab(DatabaseTabTypes.Manual);
     } else {
-      // No valid source_database, reset selections and stay on Default tab
+      // No valid source_database, reset selections
       console.log('🚨 No valid sourceDb, resetting to defaults');
       setSelectedDatabase('');
       setSelectedSchema('');
       setAvailableSchemas([]);
-      setCurrentTab(DatabaseTabTypes.Default);
     }
   };
 
@@ -193,8 +185,8 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
   const renderManualEntry = () => {
     return (
-       <div className={styles.section}>
-        <div className={styles.inputFields}>
+      <div className={styles.section}>
+        <div className={styles.inputFieldsGrid}>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Mapper</label>
             <select
@@ -311,7 +303,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
 
     return (
       <div className={styles.section}>
-        <div className={styles.inputFields}>
+        <div className={styles.inputFieldsGrid}>
           <div className={styles.inputGroup}>
             <label className={styles.inputLabel}>Database</label>
             <select
@@ -351,22 +343,10 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = () => {
     );
   };
 
-  const onTabChange = (index: number) => {
-    const tabTypes = Object.values(DatabaseTabTypes);
-    setCurrentTab(tabTypes[index]);
-  };
-
   return (
     <div className={styles.container}>
-       <Tabs
-        width={200}
-        height={25}
-        tabs={tabs}
-        onTabChange={onTabChange}
-        active_tab_index={Object.values(DatabaseTabTypes).indexOf(currentTab)}
-        />
-      {currentTab === DatabaseTabTypes.Manual && renderManualEntry()}
-      {currentTab === DatabaseTabTypes.Default && renderDefaults()}
+      {mode === DatabaseTabTypes.Manual && renderManualEntry()}
+      {mode === DatabaseTabTypes.Default && renderDefaults()}
     </div>
   );
 };

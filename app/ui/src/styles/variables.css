@@ -3,6 +3,7 @@
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
   --line-color: hsl(0, 0%, 88%);
+  --color_scrollbar_thumb: #514655f3;
   --line-color-grid: hsl(0, 0%, 88%);
   --line-width-grid: 1px;
   --button-color-inactive: #ebebebea;
@@ -126,6 +127,9 @@
 
   --item-font-size: var(--font_size_items);
 
+  /* Info panel items */
+  --color_info_panel_item_background: #f0f0f0;
+  --border_radius_info_panel_item: 8px;
 }
 
 .rag-blue-outer {

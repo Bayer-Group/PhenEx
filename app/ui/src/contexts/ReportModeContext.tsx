@@ -1,10 +1,22 @@
 import React, { createContext, useContext } from 'react';
 
-// Default to false (not in report mode)
-const ReportModeContext = createContext<boolean>(false);
+// Context includes both the value and a setter
+interface ReportModeContextType {
+  isReportMode: boolean;
+  setReportMode: (value: boolean) => void;
+}
+
+const ReportModeContext = createContext<ReportModeContextType>({
+  isReportMode: false,
+  setReportMode: () => {},
+});
 
 export const useReportMode = () => useContext(ReportModeContext);
 
-export const ReportModeProvider: React.FC<{ value: boolean; children: React.ReactNode }> = ({ value, children }) => {
-  return <ReportModeContext.Provider value={value}>{children}</ReportModeContext.Provider>;
+export const ReportModeProvider: React.FC<{ value: boolean; onValueChange?: (value: boolean) => void; children: React.ReactNode }> = ({ value, onValueChange, children }) => {
+  return (
+    <ReportModeContext.Provider value={{ isReportMode: value, setReportMode: onValueChange || (() => {}) }}>
+      {children}
+    </ReportModeContext.Provider>
+  );
 };

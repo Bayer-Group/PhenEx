@@ -52,7 +52,9 @@ const AddMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      verticalPosition={'below'}
+      verticalPosition={'alignTop'}
+      horizontalAlignment={'right'}
+      gap={0}
     >
       <div style={{ padding: '8px', minWidth: '240px' }}>
        
@@ -165,6 +167,7 @@ export const AddButtonNavBar: React.FC<AddButtonNavBarProps> = ({
           anchorElement={addButtonRef.current}
           menuRef={tooltipRef}
           verticalPosition={'below'}
+          horizontalAlignment={'center'}
         >
           <div style={{ padding: '8px 12px', fontSize: 'var(--font_size_items)', whiteSpace: 'nowrap', color: 'white' }}>
             Add a cohort

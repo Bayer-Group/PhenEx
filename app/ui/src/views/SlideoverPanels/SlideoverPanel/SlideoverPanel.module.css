@@ -3,34 +3,63 @@
   --margin_top_right_panel_title: 5px;
 }
 .container {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0px 0px 0px 0px;
+  padding: 3px 0px 5px 0px;
   margin: 0;
   box-sizing: border-box;
   background-color: var(--background-color) !important;
-  /* border-left: var(--border); */
-  border-right: 1px solid transparent;
-  border-radius: var(--border_radius_right_panel);
-  overflow: hidden;
+  border-radius: 0;
   border-top: none !important;
-    border-right: none !important;
-  border-bottom: none !important;
-  border-left: 1px solid var(--line-color);
-  
+  border-right: none !important;
+  border-bottom: 1px solid var(--line-color);
+  border-left: none;
+  flex-shrink: 0;
+
 }
 
 .title {
-  font-size: 28px;
+  font-size: var(--font_size_infotext);
   font-family: 'IBMPlexSans-bold';
-  margin-left: var(--margin_left_slideover_panel);
-  margin-top: var(--margin_top_right_panel_title);
-  /* margin-left: 30px; */
+  padding: 10px 16px 0px 16px;
+  background-color: var(--background-color-secondary);
+  color: var(--color-text);
+  user-select: none;
+  flex: 1 1 0%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header {
   cursor: pointer;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.headerLeft > .title {
+  width: 100%;
+}
+
+.headerControls {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right:15px;
+  margin-top: 5px;
 }
 
 .controls {
@@ -63,8 +92,6 @@
 }
 
 .content {
-  flex: 1;
-  overflow: auto; /* Allow content to scroll if needed */
   padding: 0px;
   background-color: transparent !important;
   /* background-color: green; */
@@ -122,14 +149,8 @@ code {
 }
 
 .infobox {
+  flex: 0 0 auto;
   margin: 0px 0px 0px 10px;
-  padding: 10px 10px 10px 20px;
-  background-color: white;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  /* margin: 0px 0px 0px 10px; */
-  /* padding: 10px 10px 10px 20px; */
   padding: 10px;
   background-color: var(--background-color) !important;
   color: var(--color-text-normal) !important;
@@ -138,24 +159,11 @@ code {
   border: var(--border);
   transition:
     max-height 0.3s ease,
-    opacity 0.3s ease; /* Animation for opening and closing */
-  max-height: 0; /* Start closed */
-  opacity: 0; /* Start hidden */
-  overflow: hidden; /* Prevent overflow when closed */
-  margin-right: 10px;
-  margin-bottom: 0px;
-  margin-left: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 14px;
-  border: var(--border);
-  transition:
-    max-height 0.3s ease,
     opacity 0.3s ease,
-    margin 0.3s ease; /* Add margin to transition properties */
-  max-height: 0; /* Start closed */
-  opacity: 0; /* Start hidden */
-  overflow: hidden; /* Prevent overflow when closed */
+    margin 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
   user-select: none;
   cursor: pointer;
 }

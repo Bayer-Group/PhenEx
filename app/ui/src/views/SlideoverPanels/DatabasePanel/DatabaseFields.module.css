@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
-  padding-right: 20px;
-  padding-left:10px;
+  padding-right: 50px;
+  padding-left:20px;
 }
 
 .headerContainer {
@@ -121,30 +121,40 @@
   margin-top: 20px;
 }
 
+.inputFieldsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.gridFullWidth {
+  grid-column: 1 / -1;
+}
+
 .additionalFieldsContainer {
   margin-top: 0px;
 }
 
 .additionalFields {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
 .inputGroup {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .inputLabel {
-  font-size: 12px;
+  font-size: 0px;
   color: var(--text-color-secondary);
   font-family: 'IBMPlexSans-bold';
-  min-width: 150px;
   margin: 0;
-  text-align: right;
+  text-align: left;
 }
 
 .input {
@@ -175,7 +185,6 @@
   font-size: var(--button-size-default);
   transition: all 0.2s ease-in-out;
   outline: none;
-  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
   font-family: 'IBMPlexSans-bold';
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -183,11 +192,8 @@
   background-color: var(--button-background-color-default);
   color: var(--button-text-color-default);
   border: var(--border);
-  font-family: "IBMPlexSans-bold";
   text-wrap: nowrap;
-  margin-left:100px;
-  margin-top:10px;
-  margin-bottom:10px;
+  margin: 10px 0;
 }
 
 .moreButton:focus {

@@ -1710,7 +1710,7 @@ async def atomic_update_codelist(
                 )
                 return f"❌ ERROR: Codelist '{codelist_name}' not found. Use list_codelists() to see all available codelists and their exact names."
 
-            # Get file_id
+            # Get file_id (exposed as file_id in API response for frontend)
             file_id_found = result["file_id"]
 
             # 🚨 CRITICAL: Validate that we actually got a file ID

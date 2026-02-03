@@ -390,7 +390,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       <div className={styles.gridContainer}>
         <ErrorBoundary>
           <AgGridWithCustomScrollbars
-            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:10, marginTop: 130, marginBottom: 60}}}
+            scrollbarConfig={{horizontal: {marginRight: 35 ,marginLeft: 600, marginToEnd:100}, vertical: { marginToEnd:4, marginTop: 35, marginBottom: 60}}}
             hideScrollbars={hideScrollbars}
             hideVerticalScrollbar={hideVerticalScrollbar}
             hideHorizontalScrollbar={true}
@@ -409,7 +409,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             components={components} // Pass registered components for cell renderers
             defaultColDef={{
               sortable: true,
-              filter: true,
+              filter: false,
               resizable: true,
               menuTabs: ['filterMenuTab'],
               suppressHeaderMenuButton: true,

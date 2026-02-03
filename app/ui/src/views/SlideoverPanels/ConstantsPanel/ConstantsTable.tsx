@@ -21,12 +21,6 @@ export const ConstantsTable: React.FC = () => {
     }
   };
 
-  const addConstant = () => {
-    console.log('adding constant');
-    dataService.constants_service.addConstant();
-  };
-
-
   useEffect(() => {
     const listener = () => refreshGrid();
     dataService.addListener(listener);
@@ -45,25 +39,27 @@ export const ConstantsTable: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <div className={styles.controls}>
-        <button onClick={addConstant} className={styles.addButton}>
-          Add Constant
-        </button>
+    <div className={styles.container}>
+      <div className={styles.bottomSection}>
+        <div className={styles.tableBox}>
+          <div className={styles.gridContainer}>
+            <AgGridReact
+              rowData={dataService.constants_service.tableData.rows}
+              columnDefs={dataService.constants_service.tableData.columns}
+              ref={gridRef}
+              theme={dataService.constants_service.getTheme()}
+              onCellValueChanged={onCellValueChanged}
+              animateRows={true}
+              domLayout="autoHeight"
+              defaultColDef={{
+                flex: 1,
+                minWidth: 100,
+                resizable: true,
+              }}
+            />
+          </div>
+        </div>
       </div>
-        <AgGridReact
-          rowData={dataService.constants_service.tableData.rows}
-          columnDefs={dataService.constants_service.tableData.columns}
-          ref={gridRef}
-          theme={dataService.constants_service.getTheme()}
-          onCellValueChanged={onCellValueChanged}
-          animateRows={true}
-          defaultColDef={{
-            flex: 1,
-            minWidth: 100,
-            resizable: true,
-          }}
-        />
-      </div>
+    </div>
   );
 };

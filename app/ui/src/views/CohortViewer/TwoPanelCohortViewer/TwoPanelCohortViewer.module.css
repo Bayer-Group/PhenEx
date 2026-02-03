@@ -15,23 +15,9 @@
   flex-shrink: 0;
   padding-bottom: 10px;
   padding-top: 5px;
-  padding-left: 40px !important; /* margin for arrow */
+  padding-left: 70px !important; /* margin for collapse arrow when left panel hidden */
   background-color: transparent;
   z-index: 10;
-}
-
-.topSection > * {
-  transition: transform 0.2s ease, width 0.2s ease;
-}
-
-.contentSection {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* Study mode: floating top section */
-.studyMode .topSection {
   position: absolute;
   top: 0;
   left: 0;
@@ -39,13 +25,47 @@
   pointer-events: none;
 }
 
-.studyMode .topSection > * {
+.topSection.leftPanelShown {
+  padding-left: 20px !important;
+}
+
+.topSection > * {
+  transition: transform 0.2s ease, width 0.2s ease;
   pointer-events: auto;
 }
 
-.studyMode .contentSection {
+.contentSection {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
   height: 100%;
-  flex: none;
+}
+
+.leftContentWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.leftContentViewer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Study mode: floating top section - now same as default */
+.studyMode .topSection {
+  /* No additional styles needed - uses default absolute positioning */
+}
+
+.studyMode .topSection > * {
+  /* No additional styles needed */
+}
+
+.studyMode .contentSection {
+  /* No additional styles needed */
 }
 
 .breadcrumbsContainer {
@@ -54,6 +74,7 @@
   line-height: 10px;
   /* Prevent layout shift during content changes */
 }
+
 
 .breadcrumbItem {
     font-size: var(--font_size_infotext);
@@ -65,6 +86,7 @@
 .breadcrumbLastItem {
     font-size: var(--font_size_breadcrumbs);
     line-height: 20px;
+    margin-left:-5px;
   /* Add any specific last breadcrumb item styling */
 }
 

@@ -73,8 +73,8 @@ export const SnowflakeConnectorFields: FC<SnowflakeConnectorFieldsProps> = ({
         />
       </div>
       
-      <div className={styles.inputGroup}>
-        <button 
+      <div className={`${styles.inputGroup} ${styles.gridFullWidth}`}>
+        <button
           type="button"
           className={styles.moreButton}
           onClick={() => setShowMore(!showMore)}
@@ -83,8 +83,8 @@ export const SnowflakeConnectorFields: FC<SnowflakeConnectorFieldsProps> = ({
         </button>
       </div>
 
-      <div 
-        className={styles.additionalFieldsContainer}
+      <div
+        className={`${styles.additionalFieldsContainer} ${styles.gridFullWidth}`}
         style={{ 
           height: `${height}px`,
           overflow: 'hidden',
@@ -140,7 +140,7 @@ export const SnowflakeConnectorFields: FC<SnowflakeConnectorFieldsProps> = ({
               onBlur={onSave}
             />
           </div>
-          <div className={styles.inputGroup + ' ' + styles.lastField}>
+          <div className={`${styles.inputGroup} ${styles.lastField}`}>
             <label className={styles.inputLabel}>Password</label>
             <input
               type="password"

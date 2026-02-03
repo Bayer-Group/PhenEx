@@ -36,7 +36,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   isShiftPressed,
   isCommandPressed,
 }) => {
-  const isReportMode = useReportMode();
+  const { isReportMode } = useReportMode();
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveringActions, setIsHoveringActions] = useState(false);
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);

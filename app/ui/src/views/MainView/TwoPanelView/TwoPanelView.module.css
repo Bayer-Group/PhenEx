@@ -12,29 +12,37 @@
 }
 
 .leftPanel {
+  flex: 0 0 auto;
+  min-width: 0;
   background-color: var(--background-color) !important;
   position: relative;
-  /* transition:
+  height: 100%;
+  transition:
     width 0.2s ease,
-    opacity 0.2s ease; */
+    opacity 0.2s ease;
 }
 
 .rightPanel {
+  flex: 0 0 auto;
+  min-width: 0;
   position: relative;
   transition: none;
   background-color: var(--background-color) !important;
   opacity: 1;
   transition:
-    width 0.2s ease,
     opacity 0.1s ease;
   border-radius: 20px 20px 20px 20px;
+}
 
+.rightPanel.fullWidth {
+  width: 100% !important;
+  min-width: 100% !important;
 }
 
 .rightPanel.collapsed {
   opacity: 0;
   transition:
-    width .3s ease,
+    /* width .3s ease, */
     opacity 0.1s ease !important;
 }
 
@@ -47,43 +55,42 @@
 }
 
 .divider {
-  width: 15px;
+  width: 10px;
   height: 100%;
-  /* background-color: var(--background-color) !important; */
   cursor: col-resize;
   position: absolute;
   background-color: transparent;
   z-index: 5000;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: -6px;
 }
 
-.rightPanel .rightPanelContent{
+.leftPanel .leftPanelContent{
   opacity: 1!important;
   transition: opacity 1.1s ease !important;
 }
-.rightPanel.collapsed .rightPanelContent{
+.leftPanel.collapsed .leftPanelContent{
   opacity:0 !important;
   transition: opacity .3s ease !important;
+}
 
+.leftPanelContent {
+  position: relative;
+  height: 100%;
+  z-index: 0;
+  border-radius: var(--border_radius_right_panel);
+  background-color: transparent !important;
+  overflow: auto;
+  border-left: var(--border);
 }
 
 .rightPanelContent {
   position: relative;
-  height: 100%;/*calc(100% - 2 * var(--margin_top_right_panel));*/
+  height: 100%;
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
-  background-color: transparent !important;
-  /* border-left: 1px solid var(--line-color);
-  border-top: 1px solid var(--line-color);
-  border-right: 1px solid var(--line-color) !important; */
-  /* margin-right: 20px !important; */
-  box-shadow:var(--box_shadow);
-  /* border-left: var(--border); */
-  /* margin-top: 0pxvar(--margin_top_right_panel); */
-  overflow: hidden;
-
-
+  background-color: red !important;
+  /* overflow: hidden; */
 }
 .divider.collapsed {
   width: 0;
@@ -114,53 +121,47 @@
 }
 
 .collapseButton {
-  color: var(--color-accent-bright);
-
-  border-radius: 12px;
-  cursor: pointer;
-  z-index: 1;
-  background-color: transparent;
-  display: flex;
+  opacity: 1;
+  z-index: 10000;
   position: absolute;
-  top: 5px;
-  right: 20px;
-  /* width: 48px; */
-  padding: 3px 10px 3px 8px;
-  font-family: 'SNPro-black'!important;
-  box-sizing: border-box;
-
-  align-items: center;
+  pointer-events: all;
+  margin-top: 12px;
+  padding: 0 3px 0 0;
+  font-size: 22px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  width: 25px !important;
+  color: var(--color_inactive);
+  top: 0px;
+  right: 10px;
+  height: 40px;
+  display: flex;
   justify-content: center;
-  text-align: center;
-  font-size: 24px !important;
-  z-index: 1000;
-  /* line-height: 30px; */
+  align-items: center;
+  background-color: transparent !important;
+  transition: transform 0.2s ease;
+}
 
-  transition: all 0.5s ease;
-  user-select: none;
-  color: var(--color-accent-bright);
-  cursor: pointer !important;
+.collapseButtonIcon {
+  display: inline-block;
+  transform: scaleX(-1);
+}
 
+.collapseButton.collapsed .collapseButtonIcon {
+  transform: scaleX(1);
+}
+
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
 }
 
 .collapseButton:hover {
-  transition: transform 0.2s ease;
-  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-  color: white !important;
-  outline: none;
-  background-color: var(--color_accent_blue);
-  border-color: white;
+  transform: scale(1.5);
 }
 
-.collapseButton.collapsed {
-}
-
-.collapseButton.lightTheme {
-  color: white !important;
-}
-
-.collapseButton.lightTheme:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
+.collapseButton:hover svg{
+  color: var(--color_accent_blue);
 }
 
 .panel.collapsed {
@@ -190,13 +191,17 @@
 .leftPanel {
   background-color: var(--background-color) !important;
   transition:
-    width 0.3s ease,
+    /* width 0.3s ease, */
     opacity 0.2s ease;
 }
 
 .leftPanel.rightCollapsed{
     transition:
-    width 0.1s ease,
+    opacity 0.1s ease;
+}
+
+.rightPanel.leftCollapsed{
+    transition:
     opacity 0.1s ease;
 }
 
@@ -204,7 +209,7 @@
   position: relative;
   background-color: var(--background-color) !important;
   transition:
-    width 0.2s ease,
+    /* width 0.2s ease, */
     opacity 0.2s ease;
 }
 
@@ -289,49 +294,9 @@
 .dividerHorizontal:hover {
 }
 
-.collapseButtonHorizontal {
-  position: absolute;
-  padding: 4px;
-  background-color: green;
-  border: 1px solid transparent;
-  cursor: pointer;
-  z-index: 1;
-  background-color: transparent;
-  color: hsl(0, 0%, 60%);
-  z-index: 1000;
-  top: 5px; /* Changed from -100px to 0px */
-  left: 10px;
-  transition: transform 0.2s ease;
-  color: black;
-  user-select: none;
-  font-family: 'IBMPlexSans-bold' !important;
-  font-size: 24px !important;
-  height: 30px; /* Changed from 100px to 30px for proper sizing */
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-}
-
-.collapseButtonHorizontal.collapsed{
-  top: -70px!important;;
-  width: 300px!important;
-}
 
 
 
-.collapseButtonHorizontal:hover {
-  color: var(--color-accent-bright);
-  outline: none;
-}
-
-.collapseButtonHorizontal.lightTheme {
-  color: white !important;
-}
-
-.collapseButtonHorizontal.lightTheme:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
 
 .collapseArrows{
   margin-left: 5px;
@@ -343,7 +308,7 @@
 
 
 .collapseButtonHorizontal.collapsed .collapseArrows{
-  transform: rotate(-90deg)!important;
+  transform: rotate(0deg)!important;
     display: inline-block; /* Important for rotation to take effect */
 
 }

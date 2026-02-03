@@ -1,4 +1,4 @@
-import { TableData, ColumnDefinition } from '../CohortViewer/tableTypes';
+import { TableData, ColumnDefinition } from '../../CohortViewer/tableTypes';
 import { themeQuartz } from 'ag-grid-community';
 
 import { ConstantsCellRenderer } from './ConstantsCellRenderer';
@@ -10,16 +10,9 @@ const defaultColumns: ColumnDefinition[] = [
     field: 'name',
     headerName: 'Name',
     width: 200,
-    pinned: 'left',
     editable: true,
   },
-  {
-    field: 'description',
-    headerName: 'Description',
-    editable: true,
-    wrapText: true,
-    width: 180,
-  },
+
   {
     field: 'type',
     headerName: 'Type',
@@ -33,9 +26,8 @@ const defaultColumns: ColumnDefinition[] = [
     field: 'value',
     headerName: 'Value',
     editable: true,
-    width: 1000,
-    maxWidth: 1000,
-    minWidth: 300,
+    minWidth: 0,
+    flex: 1,
     cellEditorPopup: true,
     cellRenderer: ConstantsCellRenderer,
     cellEditor: ConstantsCellEditorSelector,
@@ -157,6 +149,14 @@ export class ConstantsDataService {
     );
   }
 
+  /** Remove constant by its index in the constants array (for typed panels). */
+  public deleteConstantByActualIndex(actualIndex: number): void {
+    const constants = this.cohortDataService?._cohort_data?.constants;
+    if (!constants || actualIndex < 0 || actualIndex >= constants.length) return;
+    constants.splice(actualIndex, 1);
+    this.saveChangesToConstants();
+  }
+
   public getConstantsOfType(type: string): Record<string, any> {
     const result: Record<string, any> = {};
     console.log('Getting constants of type:', type, this.cohortDataService);
@@ -174,6 +174,84 @@ export class ConstantsDataService {
       }
     );
     return result;
+  }
+
+  /** Rows and indices for a single constant type (name + value columns). Sorted by index (order). */
+  public getRowsForType(type: string): {
+    rows: { name: string; value: string; type: string; _actualIndex: number }[];
+    indices: number[];
+  } {
+    const constants = this.cohortDataService?._cohort_data?.constants ?? [];
+    const withType: { constant: any; actualIndex: number; orderIndex: number }[] = [];
+    constants.forEach((constant: any, actualIndex: number) => {
+      if (constant.type !== type) return;
+      let orderIndex = constant.index;
+      if (typeof orderIndex !== 'number') {
+        orderIndex = withType.length;
+        constant.index = orderIndex;
+      }
+      withType.push({ constant, actualIndex, orderIndex });
+    });
+    withType.sort((a, b) => a.orderIndex - b.orderIndex);
+    const rows = withType.map(({ constant, actualIndex }) => ({
+      name: constant.name ?? '',
+      value:
+        typeof constant.value === 'string' ? constant.value : JSON.stringify(constant.value ?? ''),
+      type,
+      _actualIndex: actualIndex,
+    }));
+    const indices = withType.map((w) => w.actualIndex);
+    return { rows, indices };
+  }
+
+  public addConstantOfType(type: string, defaultConstantValue: any): void {
+    const constants = this.cohortDataService._cohort_data.constants;
+    if (!constants) {
+      this.cohortDataService._cohort_data.constants = [];
+    }
+    const existingOfType = constants.filter((c: any) => c.type === type);
+    const maxIndex =
+      existingOfType.length === 0
+        ? -1
+        : Math.max(...existingOfType.map((c: any) => (typeof c.index === 'number' ? c.index : -1)));
+    this.cohortDataService._cohort_data.constants.push({
+      name: 'New ' + type,
+      description: '',
+      type,
+      value: defaultConstantValue,
+      index: maxIndex + 1,
+    });
+    this.tableData = this.tableDataFromConstants();
+    this.cohortDataService.saveChangesToCohort(false, true);
+  }
+
+  /** Update order indices after drag-and-drop. orderedActualIndices = new order of constants array indices. */
+  public reorderConstantsOfType(type: string, orderedActualIndices: number[]): void {
+    orderedActualIndices.forEach((actualIndex, newOrderIndex) => {
+      const constants = this.cohortDataService._cohort_data.constants;
+      if (actualIndex >= 0 && actualIndex < constants.length && constants[actualIndex].type === type) {
+        constants[actualIndex].index = newOrderIndex;
+      }
+    });
+    this.saveChangesToConstants();
+  }
+
+  public valueChangedForType(type: string, filteredRowIndex: number, field: 'name' | 'value', newValue: any): void {
+    const { indices } = this.getRowsForType(type);
+    const actualIndex = indices[filteredRowIndex];
+    if (actualIndex == null || actualIndex < 0) return;
+    const constants = this.cohortDataService._cohort_data.constants;
+    if (actualIndex >= constants.length) return;
+    if (field === 'value') {
+      try {
+        constants[actualIndex].value = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+      } catch {
+        constants[actualIndex].value = newValue;
+      }
+    } else {
+      constants[actualIndex][field] = newValue;
+    }
+    this.saveChangesToConstants();
   }
 
   public tableDataFromConstants(): TableData {
@@ -195,7 +273,7 @@ export class ConstantsDataService {
   public getTheme() {
     return themeQuartz.withParams({
       accentColor: '#FF00000',
-      borderColor: 'var(--line-color-grid)',
+      borderColor: 'transparent',
       browserColorScheme: 'light',
       columnBorder: true,
       headerFontSize: 14,

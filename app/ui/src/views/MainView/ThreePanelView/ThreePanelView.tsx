@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styles from './ThreePanelView.module.css';
 import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
 import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -20,10 +22,28 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   minSizeRight,
   children,
 }) => {
-  const [leftWidth, setLeftWidth] = useState(initalSizeLeft);
+  const getInitialLeftWidth = () => {
+    try {
+      const stored = localStorage.getItem('phenex_three_panel_left_width');
+      return stored ? parseInt(stored, 10) : initalSizeLeft;
+    } catch {
+      return initalSizeLeft;
+    }
+  };
+
+  const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+  const { isLeftPanelShown, toggleLeftPanel: contextToggleLeftPanel } = useThreePanelCollapse();
+  const isLeftCollapsed = !isLeftPanelShown;
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('phenex_three_panel_left_width', leftWidth.toString());
+    } catch (error) {
+      console.warn('Failed to save left width to localStorage:', error);
+    }
+  }, [leftWidth]);
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragging, setWasDragging] = useState(false);
 
@@ -81,7 +101,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       setLeftWidth(newWidth);
     } else {
       const newWidth = Math.max(minSizeRight, containerRect.width - mouseX - 7);
-      console.log('SETTING RIGTH WIDTH', rightWidth, newWidth);
       setRightWidth(newWidth);
     }
   };
@@ -130,7 +149,7 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const toggleLeftPanel = () => {
     if (!wasDragging) {
-      setIsLeftCollapsed(prevState => !prevState);
+      contextToggleLeftPanel();
     }
   };
 
@@ -157,16 +176,21 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
   };
 
   const renderLeftCollapseButton = () => {
-    return (
+    const button = (
       <div
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
       >
-        <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
+        <span className={styles.collapseButtonIcon}>
+          <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
+            <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </span>
       </div>
     );
+    
+    // Render to document.body using portal
+    return ReactDOM.createPortal(button, document.body);
   };
 
   const renderRightCollapseButton = () => {
@@ -236,8 +260,6 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       </WidthAdjustedPortal>
 
       <div className={`${styles.panel} ${styles.centerPanel}`}>
-                {renderLeftCollapseButton()}
-
         {/* Hover trigger area for animating portal when collapsed */}
         {isLeftCollapsed && (
           <div 
@@ -258,6 +280,8 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         {children[2]}
         {renderRightDivider()}
       </div>
+      
+      {renderLeftCollapseButton()}
     </div>
   );
 };

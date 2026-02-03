@@ -14,6 +14,7 @@ import { ActionNavBar } from '../../components/PhenExNavBar/ActionNavBar';
 import styles from './MainView.module.css';
 import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
 import { ReportModeProvider } from '../../contexts/ReportModeContext';
+import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -198,18 +199,19 @@ export const MainView = () => {
 
   return (
     <div className={styles.mainView}>
-      <ThreePanelView
-        split="vertical"
-        initalSizeRight={300}
-        initalSizeLeft={300}
-        minSizeLeft={300}
-        minSizeRight={300}
-      >
-        <HierarchicalLeftPanel isVisible={true} />
-        <RightPanel>
-          <ReportModeProvider value={inReportView}>
-            {renderView()}
-          </ReportModeProvider>
+      <ThreePanelCollapseProvider>
+        <ThreePanelView
+          split="vertical"
+          initalSizeRight={300}
+          initalSizeLeft={300}
+          minSizeLeft={200}
+          minSizeRight={300}
+        >
+          <HierarchicalLeftPanel isVisible={true} />
+          <RightPanel>
+            <ReportModeProvider value={inReportView} onValueChange={setInReportView}>
+              {renderView()}
+            </ReportModeProvider>
           <div style={{ position: 'absolute', bottom: '10px', right: '25px', zIndex: 100, display: 'flex', flexDirection: 'row', gap: '20px' }}>
             <ActionNavBar height={44} showReport={inReportView} onShowReportChange={setInReportView} onExecute={() => { /* Add your execute logic here */ }} />
           </div>
@@ -219,7 +221,8 @@ export const MainView = () => {
             // Handle the text input here
           }}
         ></ChatPanel>
-      </ThreePanelView>
+        </ThreePanelView>
+      </ThreePanelCollapseProvider>
     </div>
   );
 };
