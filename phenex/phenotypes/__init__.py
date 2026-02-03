@@ -20,4 +20,5 @@ from .computation_graph_phenotypes import (
     LogicPhenotype,
 )
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
+
 # from ..core.cohort import Cohort, Subcohort

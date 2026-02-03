@@ -228,7 +228,7 @@ class Cohort:
     def characteristics(self, value: Optional[List[Phenotype]]):
         """
         Set the list of baseline characteristics phenotypes.
-        
+
         Validates node uniqueness and invalidates cached computation stages.
         """
         self._characteristics = value or []
@@ -246,7 +246,7 @@ class Cohort:
     def outcomes(self, value: Optional[List[Phenotype]]):
         """
         Set the list of outcomes phenotypes.
-        
+
         Validates node uniqueness and invalidates cached computation stages.
         """
         self._outcomes = value or []
@@ -263,7 +263,7 @@ class Cohort:
     def data_period(self, value: Optional[DateFilter]):
         """
         Set the data period filter.
-        
+
         Invalidates cached computation stages since the data period affects all stages.
         """
         self._data_period = value
@@ -273,7 +273,7 @@ class Cohort:
     def _invalidate_stages(self):
         """
         Invalidate cached computation stages.
-        
+
         This should be called whenever the cohort configuration changes in a way
         that would affect the computational graph (characteristics, outcomes, data_period).
         """
