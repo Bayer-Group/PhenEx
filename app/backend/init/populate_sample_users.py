@@ -9,6 +9,7 @@ import sys
 import os
 import asyncpg
 import logging
+from argon2 import PasswordHasher
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,12 @@ class UserInitializer:
         self.database = os.getenv("POSTGRES_DB", "phenex")
         self.user = os.getenv("POSTGRES_USER", "postgres")
         self.password = os.getenv("POSTGRES_PASSWORD")
+        self.default_user_password = os.getenv("DEFAULT_USER_PASSWORD", "phenex")
+        self.default_user_email_public = os.getenv(
+            "DEFAULT_USER_EMAIL_PUBLIC", "public@phenex.ai"
+        )
+        self.default_user_email_1 = os.getenv("DEFAULT_USER_EMAIL_1", "test@phenex.ai")
+        self.default_user_email_2 = os.getenv("DEFAULT_USER_EMAIL_2", "test2@phenex.ai")
 
         if not self.password:
             raise ValueError("POSTGRES_PASSWORD environment variable is required")
@@ -93,6 +100,10 @@ class UserInitializer:
     async def create_test_users(self) -> bool:
         """Create test users in the users table."""
         try:
+            # Hash the default password
+            ph = PasswordHasher()
+            password_hash = ph.hash(self.default_user_password)
+
             conn = await asyncpg.connect(
                 host=self.host,
                 port=self.port,
@@ -103,9 +114,6 @@ class UserInitializer:
 
             # SQL to create test users
             create_user_sql = """
-            -- Ensure the pgcrypto extension is available for password hashing
-            CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
             -- Insert test users into user table
             INSERT INTO public.user (
                 id,
@@ -115,33 +123,44 @@ class UserInitializer:
                 name
             ) VALUES 
             (
-                'c0799d5d-2bdf-4da4-8496-4f6d44b8fd26',
-                'public@phenex.ai',
-                '$argon2id$v=19$m=65536,t=3,p=4$wP+BamZgZvVA4RBIOdwXGA$1J/NfgQRodKHUzH16jqL3UN8FkfRLrFQX6La68YsOaU',
+                $1,
+                $2,
+                $3,
                 NULL,
                 'Public User'
             ),
             (
-                '00000000-0000-0000-0000-000000000000',
-                'test@phenex.ai',
-                '$argon2id$v=19$m=65536,t=3,p=4$wP+BamZgZvVA4RBIOdwXGA$1J/NfgQRodKHUzH16jqL3UN8FkfRLrFQX6La68YsOaU',
+                $4,
+                $5,
+                $3,
                 NULL,
                 'Test User 1'
             ),
             (
-                '00000000-0000-0000-0000-000000000001',
-                'test2@phenex.ai',
-                '$argon2id$v=19$m=65536,t=3,p=4$wP+BamZgZvVA4RBIOdwXGA$1J/NfgQRodKHUzH16jqL3UN8FkfRLrFQX6La68YsOaU',
+                $6,
+                $7,
+                $3,
                 NULL,
                 'Test User 2'
             )
             ON CONFLICT (id) DO NOTHING;
             """
 
-            await conn.execute(create_user_sql)
+            await conn.execute(
+                create_user_sql,
+                "c0799d5d-2bdf-4da4-8496-4f6d44b8fd26",
+                self.default_user_email_public,
+                password_hash,
+                "00000000-0000-0000-0000-000000000000",
+                self.default_user_email_1,
+                "00000000-0000-0000-0000-000000000001",
+                self.default_user_email_2,
+            )
             await conn.close()
 
-            logger.info("✅ Test users created successfully")
+            logger.info(
+                f"✅ Test users created successfully with password from DEFAULT_USER_PASSWORD env var"
+            )
             return True
 
         except Exception as e:

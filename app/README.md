@@ -49,7 +49,6 @@ Follow these steps to get the PhenEx application running locally:
 
    **Authentication Configuration:**
    Choose your authentication method by configuring the relevant section:
-
    - **Azure AD (Enterprise):** Configure `PHENEX_AUTH__AD__*` variables with your Azure tenant details
    - **Password Auth (JWT):** Set `PHENEX_AUTH__PASSWORD__SECRET` to a secure secret
    - **Anonymous (Development only):** Set `PHENEX_AUTH__ANONYMOUS__TOKEN` and `PHENEX_AUTH__ANONYMOUS__USER_ID`
@@ -91,7 +90,6 @@ Follow these steps to get the PhenEx application running locally:
    ```
 
    This command will:
-
    - Build and start all required services
    - Automatically initialize the PostgreSQL database with PhenEx schemas
    - Start the backend API server on port 8000
@@ -110,6 +108,20 @@ Once all services are running (this may take a few minutes on first startup):
   - Username: `phenex`
   - Password: (see `POSTGRES_PASSWORD` in `.env`)
   - Database: `phenex`
+
+#### Default Test Users
+
+When you first start the application, **the database initialization automatically creates default test users**. You don't need to manually create users or look up IDs from the database.
+
+📝 **Configuration for these users is in the `.env`**:
+
+- `PUBLIC_USER_ID` - The UUID of the public user
+- `DEFAULT_USER_PASSWORD` - The password for all default test users (defaults to `phenex`)
+- `DEFAULT_USER_EMAIL_PUBLIC` - Email for public user (defaults to `public@phenex.ai`)
+- `DEFAULT_USER_EMAIL_1` - Email for test user 1 (defaults to `test@phenex.ai`)
+- `DEFAULT_USER_EMAIL_2` - Email for test user 2 (defaults to `test2@phenex.ai`)
+
+These settings allow you to customize the default user credentials without modifying code.
 
 ### 👤 Authentication
 
