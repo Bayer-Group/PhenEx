@@ -30,7 +30,7 @@ class Phenotype(Node):
 
     output_type = "boolean"
 
-    def __init__(self, description: str = None, output_type: str = "boolean", **kwargs):
+    def __init__(self, description: str = None, **kwargs):
         self.description = description
         super(Phenotype, self).__init__(**kwargs)
 
