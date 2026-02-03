@@ -105,7 +105,6 @@ class Cohort:
             )
         self.con = con
         self.mapper = mapper
-        
 
     def build_stages(self, tables: Dict[str, PhenexTable]):
         """
@@ -397,7 +396,9 @@ class Cohort:
 
     def _prepare_database_connection_for_execution(self, con):
         if self.con is None:
-            raise ValueError("Cohort was not initialized with a connector. Please pass tables dictionary.")
+            raise ValueError(
+                "Cohort was not initialized with a connector. Please pass tables dictionary."
+            )
 
         if con is not None:
             if con != self.con:
@@ -422,7 +423,7 @@ class Cohort:
         The execute method executes the full cohort in order of computation. The order is data period filter -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
 
         There are two ways to use the execute method and thus execute a cohort:
-        
+
         1. Directly passing source data in the `tables` dictionary
         ```python
         tables = con.get_mapped_tables(mapper)
@@ -431,8 +432,8 @@ class Cohort:
         2. Indirectly by defining the data source using the con and mapped_tables keyword arguments at initialization. The source data `tables` is then retrieved at execution time
         ```python
         cohort = Cohort(
-            con=SnowflakeConnector(), 
-            mapper= OMOPDomains, 
+            con=SnowflakeConnector(),
+            mapper= OMOPDomains,
             ...
         )
         cohort.execute()
@@ -451,14 +452,13 @@ class Cohort:
 
         if tables is None:
             tables = self._prepare_database_connection_for_execution(con)
-        
+
         if con is None:
             if self.con is not None:
                 con = self.con
                 logger.warning(
                     "Cohort was initialized with a connector but none was passed to execute(). Using the connector from initialization."
                 )
-
 
         self._validate_node_uniqueness()
 
