@@ -45,6 +45,8 @@ class CategoricalPhenotype(Phenotype):
         categorical_filter: Use CategoricalFilter to input allowed values for the categorical variable. If not passed, all values are returned.
     """
 
+    output_display_type = "categorical"
+
     def __init__(
         self,
         name: str,

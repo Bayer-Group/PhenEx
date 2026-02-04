@@ -99,6 +99,8 @@ class BinPhenotype(Phenotype):
     ```
     """
 
+    output_display_type = "categorical"
+
     def __init__(
         self,
         phenotype: Phenotype,

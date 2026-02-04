@@ -49,6 +49,8 @@ class MeasurementPhenotype(CodelistPhenotype):
 
     """
 
+    output_display_type = "value"
+
     def __init__(
         self,
         value_filter: Optional["ValueFilter"] = None,

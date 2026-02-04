@@ -37,6 +37,8 @@ class TimeRangeDaysToNextRange(Phenotype):
         ```
     """
 
+    output_display_type = "value"
+
     def __init__(
         self,
         domain: str,

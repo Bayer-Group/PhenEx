@@ -53,6 +53,8 @@ class AgePhenotype(Phenotype):
         ```
     """
 
+    output_display_type = "value"
+
     # FIXME this will become a problem when modern medicine allows people to live more
     # than 365*4 years (so they accumulate enough leap days to get an extra year)
     DAYS_IN_YEAR = 365
