@@ -15,7 +15,6 @@ logger = create_logger(__name__)
 
 
 class BinPhenotype(Phenotype):
-    output_type = "categorical"
     """
     BinPhenotype converts values into categorical bin labels. Supports both continuous numeric binning and discrete value mapping.
 
@@ -99,6 +98,8 @@ class BinPhenotype(Phenotype):
         # Result will have VALUE column with labels like "Acute MI", "MI Complications", etc.
     ```
     """
+
+    output_display_type = "categorical"
 
     def __init__(
         self,
