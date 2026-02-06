@@ -68,67 +68,14 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        default_boolean_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__
-            not in [
-                "MeasurementPhenotype",
-                "AgePhenotype",
-                "TimeRangePhenotype",
-                "TimeRangeDaysToNextRange",
-                "ScorePhenotype",
-                "CategoricalPhenotype",
-                "SexPhenotype",
-                "ArithmeticPhenotype",
-                "EventCountPhenotype",
-                "BinPhenotype",
-            ]
-        ]
-        user_defined_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__ == "_UserDefinedPhenotype" and x.returns_value
-        ]
-        return [
-            x
-            for x in default_boolean_phenotypes
-            if x not in user_defined_value_phenotypes
-        ]
+        return [x for x in self.cohort.characteristics if x.output_type == "boolean"]
 
     def _get_value_characteristics(self):
-        default_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__
-            in [
-                "MeasurementPhenotype",
-                "AgePhenotype",
-                "TimeRangePhenotype",
-                "TimeRangeDaysToNextRange",
-                "ArithmeticPhenotype",
-                "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
-            ]
-        ]
-
-        user_defined_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
-        ]
-        return default_value_phenotypes + user_defined_value_phenotypes
+        return [x for x in self.cohort.characteristics if x.output_type == "value"]
 
     def _get_categorical_characteristics(self):
         return [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__
-            in [
-                "CategoricalPhenotype",
-                "SexPhenotype",
-                "ScorePhenotype",  # score is categorical; show number of patients in each score category
-                "BinPhenotype",
-            ]
+            x for x in self.cohort.characteristics if x.output_type == "categorical"
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):

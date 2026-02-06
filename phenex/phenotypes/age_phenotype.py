@@ -13,6 +13,7 @@ logger = create_logger(__name__)
 
 
 class AgePhenotype(Phenotype):
+    output_type = "value"
     """
     AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
     based on their date of birth and an optional anchor phenotype. The age is computed in years and can

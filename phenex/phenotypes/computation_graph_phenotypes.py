@@ -219,6 +219,7 @@ class ComputationGraphPhenotype(Phenotype):
 
 
 class ScorePhenotype(ComputationGraphPhenotype):
+    output_type = "categorical"
     """
     ScorePhenotype is a CompositePhenotype that performs arithmetic operations using the **boolean** column of its component phenotypes and populations the **value** column. It should be used for calculating medical scores such as CHADSVASC, HASBLED, etc.
 
@@ -280,6 +281,7 @@ class ScorePhenotype(ComputationGraphPhenotype):
 
 
 class ArithmeticPhenotype(ComputationGraphPhenotype):
+    output_type = "value"
     """
     ArithmeticPhenotype is a composite phenotype that performs arithmetic operations using the **value** column of its component phenotypes and populations the **value** column. It should be used for calculating values such as BMI, GFR or converting units.
     --> See the comparison table of CompositePhenotype classes

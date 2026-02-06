@@ -12,6 +12,7 @@ logger = create_logger(__name__)
 
 
 class EventCountPhenotype(Phenotype):
+    output_type = "value"
     """
     EventCountPhenotype counts the number of events that occur on distinct days. It is additionally able to filter patients based on:
     1. the number of distinct days an event occurred, by setting value_filter
