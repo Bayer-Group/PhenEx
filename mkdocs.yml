@@ -12,6 +12,8 @@ nav:
       - LogicPhenotype: tutorials/LogicPhenotype_Tutorial.ipynb
       - Python For PhenEx Tutorial: tutorials/Python_For_Phenex_Tutorial.ipynb
   - API:
+      - Core:
+          - Cohort: api/core/cohort.md
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
@@ -30,7 +32,6 @@ nav:
           - ArithmeticPhenotype: api/phenotypes/arithmetic_phenotype.md
           - LogicPhenotype: api/phenotypes/logic_phenotype.md
           - ScorePhenotype: api/phenotypes/score_phenotype.md
-          - Cohort: api/phenotypes/cohort.md
           - Factory:
               - CHADSVASCPhenotype: api/phenotypes/factory/chadsvasc.md
               - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md

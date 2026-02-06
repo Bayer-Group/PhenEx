@@ -3,7 +3,7 @@ Test cohort node uniqueness validation
 """
 
 import pytest
-from phenex.phenotypes.cohort import Cohort
+from phenex.core.cohort import Cohort
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 

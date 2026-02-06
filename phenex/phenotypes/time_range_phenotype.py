@@ -9,7 +9,6 @@ import ibis
 
 
 class TimeRangePhenotype(Phenotype):
-    output_type = "value"
     """
     As the name implies, TimeRangePhenotype is designed for working with time ranges. If the input data has a start and an end date, use TimeRangePhenotype to identify other events (or patients) that occur within this time range. The most common use case of this is working with 'health insurance coverage' data i.e. on 'OBSERVATION_PERIOD' table. These tables have one or many rows per patient with the start of coverage and end of coverage i.e. domains compatible with TimeRangePhenotype require a START_DATE and an END_DATE column. At it's simplest, TimeRangePhenotype identifies patients who have their INDEX_DATE (or other anchor date of interest) within this time range. Additionally, a minimum or maximum number of days from the anchor date to the beginning/end of the time range can be defined. The returned Phenotype has the following interpretation:
 
@@ -65,6 +64,8 @@ class TimeRangePhenotype(Phenotype):
     )
     ```
     """
+
+    output_display_type = "value"
 
     def __init__(
         self,

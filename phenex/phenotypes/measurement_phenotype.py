@@ -10,7 +10,6 @@ from ibis import _
 
 
 class MeasurementPhenotype(CodelistPhenotype):
-    output_type = "value"
     """
     # What is MeasurementPhenotype for?
     The MeasurementPhenotype is for manipulating numerical data found in RWD data sources e.g. laboratory or observation results. These tables often contain numerical values (height, weight, blood pressure, lab results). As an event-based table, each row records a single measurement value for a single patient with a date. All numerical values are in a 'value' column. A medical code indicates the type of numerical measurement and the units of measurement are in an additional column.
@@ -49,6 +48,8 @@ class MeasurementPhenotype(CodelistPhenotype):
         return_date (str): Specifies whether to return the 'first', 'last', or 'nearest' event date. Default is 'first'.
 
     """
+
+    output_display_type = "value"
 
     def __init__(
         self,

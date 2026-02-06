@@ -6,7 +6,7 @@ import pytest
 import ibis
 from datetime import date
 import pandas as pd
-from phenex.phenotypes.cohort import DataPeriodFilterNode
+from phenex.core.cohort import DataPeriodFilterNode
 from phenex.filters import DateFilter
 from phenex.filters.date_filter import AfterOrOn, BeforeOrOn, Before, After
 

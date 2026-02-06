@@ -31,7 +31,6 @@ def check_categorical_filters_share_same_domain(filter, domain):
 
 
 class CategoricalPhenotype(Phenotype):
-    output_type = "categorical"
     """
     CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity. Categorical Phenotype is especially helpful as a baseline characteristic from PERSON like tables.
     The returned Phenotype has the following interpretation:
@@ -45,6 +44,8 @@ class CategoricalPhenotype(Phenotype):
         domain: Domain of the phenotype.
         categorical_filter: Use CategoricalFilter to input allowed values for the categorical variable. If not passed, all values are returned.
     """
+
+    output_display_type = "categorical"
 
     def __init__(
         self,

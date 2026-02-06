@@ -9,7 +9,6 @@ from ibis.expr.types.relations import Table
 
 
 class TimeRangeDaysToNextRange(Phenotype):
-    output_type = "value"
     """
     TimeRangeDaysToNextRange identifies the time range that contains the anchor phenotype,
     then finds the adjacent time range (next or previous) and counts the days difference between them.
@@ -37,6 +36,8 @@ class TimeRangeDaysToNextRange(Phenotype):
         )
         ```
     """
+
+    output_display_type = "value"
 
     def __init__(
         self,
