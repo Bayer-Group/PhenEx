@@ -143,7 +143,7 @@ class Cohort:
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
-        if self.database.data_period:
+        if self.database and self.database.data_period:
             data_period_filter_nodes = [
                 DataPeriodFilterNode(
                     name=f"{self.name}__data_period_filter_{domain}".upper(),
@@ -452,7 +452,7 @@ class Cohort:
             )
             return self.database.connector
         else:
-            raise ValueError("No database connector provided for cohort execution!")
+            logger.warning("No database connector provided for cohort execution!")
 
     def _prepare_tables_for_execution(self, con, tables):
         """
