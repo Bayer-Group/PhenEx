@@ -2,7 +2,7 @@ from typing import Dict
 from ibis.expr.types.relations import Table
 
 from phenex.tables import *
-
+from phenex.util.serialization.to_dict import to_dict
 
 class DomainsDictionary:
     """
@@ -80,6 +80,11 @@ class DomainsDictionary:
             if table_name not in source_tables:
                 source_tables[table_name] = con.get_source_table(table_name)
         return source_tables
+
+    def to_dict(self):
+        print("caling TOD CIT ON A DOMAINS DICT")
+        return to_dict(self)
+
 
 
 #

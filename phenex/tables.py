@@ -4,6 +4,7 @@ from typing import Union
 import ibis
 import copy
 
+from phenex.util.serialization.to_dict import to_dict
 
 class PhenexTable:
     """
@@ -150,6 +151,16 @@ class PhenexTable:
             column_mapping=self.column_mapping,
         )
 
+    # TODOD FIX TABLE SERIALIZATION should store n
+    # def to_dict(self):
+    #     print("caling TOD CIT ON A DOMAINS DICT")
+    #     return to_dict(self)
+
+    # def to_dict(self):
+    #     return {
+    #         'NAME_TABLE': self.NAME_TABLE,
+
+    #     }
 
 class PhenexPersonTable(PhenexTable):
     NAME_TABLE = "PERSON"
