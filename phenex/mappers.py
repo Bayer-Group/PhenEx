@@ -4,6 +4,7 @@ from ibis.expr.types.relations import Table
 from phenex.tables import *
 from phenex.util.serialization.to_dict import to_dict
 
+
 class DomainsDictionary:
     """
     A DomainsDictionary is used to map an entire database from an arbitrary schema to a PhenEx internal representation.
@@ -84,7 +85,6 @@ class DomainsDictionary:
     def to_dict(self):
         print("caling TOD CIT ON A DOMAINS DICT")
         return to_dict(self)
-
 
 
 #

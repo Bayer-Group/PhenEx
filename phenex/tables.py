@@ -6,6 +6,7 @@ import copy
 
 from phenex.util.serialization.to_dict import to_dict
 
+
 class PhenexTable:
     """
     Phenex provides certain table types on which it knows how to operate. For instance, Phenex implements a CodeTable, which is an event table containing codes. Phenex has abstracted operations for each table type. For instance, given a CodeTable, Phenex knows how to filter this table based on the presence of codes within that table. Phenex doesn't care if the code table is actually a diagnosis code table or a procedure code table or a medication code table.
@@ -161,6 +162,7 @@ class PhenexTable:
     #         'NAME_TABLE': self.NAME_TABLE,
 
     #     }
+
 
 class PhenexPersonTable(PhenexTable):
     NAME_TABLE = "PERSON"

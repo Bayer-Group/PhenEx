@@ -220,6 +220,7 @@ def test_postgres_connector_serialization():
     assert serialized["name"] == "postgres_db"
     assert "__connector_type__" in serialized["connector"]
 
+
 def test_database_default_name():
     """Test that Database gets a default name if none provided."""
     db = Database()

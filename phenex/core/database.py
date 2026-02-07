@@ -169,7 +169,7 @@ class Database:
                 )
 
             result["connector"] = connector_config
-        
+
         # TODO add mappers custom serialization
 
         return result
