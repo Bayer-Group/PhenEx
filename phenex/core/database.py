@@ -112,7 +112,7 @@ class Database:
             }
 
             # Extract non-sensitive configuration parameters based on connector type
-            if connector_class_name == "SnowflakeConnector":
+            if "Snowflake" in connector_class_name:
                 # Store Snowflake config except sensitive credentials #TODO eventually harmonize parameter names
                 connector_config.update(
                     {
@@ -134,7 +134,7 @@ class Database:
                         # Explicitly exclude: SNOWFLAKE_USER, SNOWFLAKE_PASSWORD
                     }
                 )
-            elif connector_class_name == "DuckDBConnector":
+            elif "DuckDB" in connector_class_name:
                 # Store DuckDB config (no sensitive data in DuckDB connector)
                 connector_config.update(
                     {
@@ -146,7 +146,7 @@ class Database:
                         ),
                     }
                 )
-            elif connector_class_name == "PostgresConnector":
+            elif "Postgres" in connector_class_name:
                 # Store PostgreSQL config except sensitive credentials
                 connector_config.update(
                     {
@@ -169,6 +169,8 @@ class Database:
                 )
 
             result["connector"] = connector_config
+        
+        # TODO add mappers custom serialization
 
         return result
 
