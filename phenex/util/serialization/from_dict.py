@@ -34,6 +34,57 @@ def from_dict(data: dict):
             # logger.debug(f"Processing param: {param}, value: {value}, type: {param_type}")
             if value is None:
                 init_args[param] = None
+            elif isinstance(value, dict) and "__connector_type__" in value:
+                # Handle connector reconstruction with stored configuration
+                connector_type = value["__connector_type__"]
+                logger.info(
+                    f"Reconstructing connector of type '{connector_type}' from stored configuration. "
+                    "Credentials (username/password) will be loaded from environment variables."
+                )
+
+                # Import connector classes
+                from phenex.ibis_connect import (
+                    SnowflakeConnector,
+                    DuckDBConnector,
+                    PostgresConnector,
+                )
+
+                # Reconstruct the connector with stored config
+                # Credentials will be loaded from environment variables
+                connector = None
+                if connector_type == "SnowflakeConnector":
+                    connector = SnowflakeConnector(
+                        SNOWFLAKE_ACCOUNT=value.get("SNOWFLAKE_ACCOUNT"),
+                        SNOWFLAKE_WAREHOUSE=value.get("SNOWFLAKE_WAREHOUSE"),
+                        SNOWFLAKE_ROLE=value.get("SNOWFLAKE_ROLE"),
+                        SNOWFLAKE_SOURCE_DATABASE=value.get(
+                            "SNOWFLAKE_SOURCE_DATABASE"
+                        ),
+                        SNOWFLAKE_DEST_DATABASE=value.get("SNOWFLAKE_DEST_DATABASE"),
+                        # SNOWFLAKE_USER and SNOWFLAKE_PASSWORD will be loaded from env vars
+                    )
+                elif connector_type == "DuckDBConnector":
+                    connector = DuckDBConnector(
+                        DUCKDB_SOURCE_DATABASE=value.get("DUCKDB_SOURCE_DATABASE"),
+                        DUCKDB_DEST_DATABASE=value.get("DUCKDB_DEST_DATABASE"),
+                    )
+                elif connector_type == "PostgresConnector":
+                    connector = PostgresConnector(
+                        POSTGRES_HOST=value.get("POSTGRES_HOST"),
+                        POSTGRES_PORT=value.get("POSTGRES_PORT"),
+                        POSTGRES_SOURCE_DATABASE=value.get("POSTGRES_SOURCE_DATABASE"),
+                        POSTGRES_SOURCE_SCHEMA=value.get("POSTGRES_SOURCE_SCHEMA"),
+                        POSTGRES_DEST_DATABASE=value.get("POSTGRES_DEST_DATABASE"),
+                        POSTGRES_DEST_SCHEMA=value.get("POSTGRES_DEST_SCHEMA"),
+                        # POSTGRES_USER and POSTGRES_PASSWORD will be loaded from env vars
+                    )
+                else:
+                    logger.warning(
+                        f"Unknown connector type '{connector_type}'. "
+                        "Connector will be set to None. You must provide it manually."
+                    )
+
+                init_args[param] = connector
             elif isinstance(value, list):
                 init_args[param] = [
                     (
