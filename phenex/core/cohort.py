@@ -14,6 +14,7 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
+from phenex.core.database import Database
 
 logger = create_logger(__name__)
 
@@ -53,24 +54,30 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
-        data_period: DateFilter = None,
         description: Optional[str] = None,
-        con: Optional["SnowflakeConnector"] = None,
-        mapper: Optional["OMOPMapper"] = None,
+        database: Optional[Database] = None,
     ):
         self.name = name
         self.description = description
+        self.database = database
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions or []
         self.exclusions = exclusions or []
-        self._characteristics = characteristics or []
+        self.characteristics = characteristics or []
         self.derived_tables = derived_tables or []
-        self._outcomes = outcomes or []
-        self._data_period = data_period
+        self.outcomes = outcomes or []
         self.n_persons_in_source_database = None
+
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
 
         self._validate_node_uniqueness()
 
@@ -95,16 +102,6 @@ class Cohort:
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
-
-        # Validate that both con and mapper are either defined or not defined
-        if (con is None) != (mapper is None):
-            raise ValueError(
-                "Both 'con' and 'mapper' must be defined "
-                f"Got con={'defined' if con is not None else 'None'}, "
-                f"mapper={'defined' if mapper is not None else 'None'}"
-            )
-        self.con = con
-        self.mapper = mapper
 
     def build_stages(self, tables: Dict[str, PhenexTable]):
         """
@@ -146,12 +143,12 @@ class Cohort:
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
-        if self.data_period:
+        if self.database.data_period:
             data_period_filter_nodes = [
                 DataPeriodFilterNode(
                     name=f"{self.name}__data_period_filter_{domain}".upper(),
                     domain=domain,
-                    date_filter=self.data_period,
+                    date_filter=self.database.data_period,
                 )
                 for domain in domains
             ]
@@ -232,77 +229,6 @@ class Cohort:
             )
 
         self._table1 = None
-
-    @property
-    def characteristics(self) -> List[Phenotype]:
-        """Get the list of baseline characteristics phenotypes."""
-        return self._characteristics
-
-    @characteristics.setter
-    def characteristics(self, value: Optional[List[Phenotype]]):
-        """
-        Set the list of baseline characteristics phenotypes.
-
-        Validates node uniqueness and invalidates cached computation stages.
-        """
-        self._characteristics = value or []
-        self._validate_node_uniqueness()
-        self._table1 = None
-        self.characteristics_table_node = None
-        logger.info(f"Cohort '{self.name}': characteristics updated")
-
-    @property
-    def outcomes(self) -> List[Phenotype]:
-        """Get the list of outcomes phenotypes."""
-        return self._outcomes
-
-    @outcomes.setter
-    def outcomes(self, value: Optional[List[Phenotype]]):
-        """
-        Set the list of outcomes phenotypes.
-
-        Validates node uniqueness and invalidates cached computation stages.
-        """
-        self._outcomes = value or []
-        self._validate_node_uniqueness()
-        self.outcomes_table_node = None
-        logger.info(f"Cohort '{self.name}': outcomes updated")
-
-    @property
-    def data_period(self) -> Optional[DateFilter]:
-        """Get the data period filter."""
-        return self._data_period
-
-    @data_period.setter
-    def data_period(self, value: Optional[DateFilter]):
-        """
-        Set the data period filter.
-
-        Invalidates cached computation stages since the data period affects all stages.
-        """
-        self._data_period = value
-        self._invalidate_stages()
-        logger.info(f"Cohort '{self.name}': data_period updated")
-
-    def _invalidate_stages(self):
-        """
-        Invalidate cached computation stages.
-
-        This should be called whenever the cohort configuration changes in a way
-        that would affect the computational graph (characteristics, outcomes, data_period).
-        """
-        self.derived_tables_stage = None
-        self.entry_stage = None
-        self.index_stage = None
-        self.reporting_stage = None
-        self.data_period_filter_stage = None
-        self.inclusions_table_node = None
-        self.exclusions_table_node = None
-        self.characteristics_table_node = None
-        self.outcomes_table_node = None
-        self.index_table_node = None
-        self.subset_tables_entry_nodes = None
-        self.subset_tables_index_nodes = None
 
     def _get_domains(self):
         """
@@ -394,23 +320,6 @@ class Cohort:
             subset_tables_index[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_index
 
-    def _prepare_database_connection_for_execution(self, con):
-        if self.con is None:
-            raise ValueError(
-                "Cohort was not initialized with a connector. Please pass tables dictionary."
-            )
-
-        if con is not None:
-            if con != self.con:
-                logger.warning(
-                    "Cohort was initialized with a different connector than the one passed to execute(). Using the passed connector."
-                )
-        else:
-            con = self.con
-
-        tables = self.mapper.get_mapped_tables(con)
-        return tables
-
     def execute(
         self,
         tables: Dict[str, PhenexTable] = None,
@@ -450,17 +359,8 @@ class Cohort:
             PhenotypeTable: The index table corresponding the cohort.
         """
 
-        if tables is None:
-            tables = self._prepare_database_connection_for_execution(con)
-
-        if con is None:
-            if self.con is not None:
-                con = self.con
-                logger.warning(
-                    "Cohort was initialized with a connector but none was passed to execute(). Using the connector from initialization."
-                )
-
-        self._validate_node_uniqueness()
+        con = self._prepare_database_connector_for_execution(con)
+        tables = self._prepare_tables_for_execution(con, tables)
 
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
@@ -534,6 +434,52 @@ class Cohort:
 
         return self.index_table
 
+    def _prepare_database_connector_for_execution(self, con):
+        """
+        identify correct connector for cohort execution. If a connector is passed to execute(), use that. Else, if a connector was defined at initialization, use that. Else, raise an error since no connector was provided.
+        Parameters:
+            con: A database connector passed to execute(). This takes precedence over any connector defined at initialization.
+        """
+        if con is not None:
+            if self.database is not None and con != self.database.connector:
+                logger.warning(
+                    "Cohort was initialized with a different connector than the one passed to execute(). Using the passed connector."
+                )
+            return con
+        elif self.database is not None:
+            logger.warning(
+                "Cohort was initialized with a connector but none was passed to execute(). Using the connector from initialization."
+            )
+            return self.database.connector
+        else:
+            raise ValueError("No database connector provided for cohort execution!")
+
+    def _prepare_tables_for_execution(self, con, tables):
+        """
+        Docstring for _prepare_tables_for_execution
+
+        Parameters:
+            con: A database connector to use for retrieving tables if tables are not passed directly. This is required if tables are not passed directly and the Cohort was initialized with a database.
+            tables: Tables passed to execute(). This takes precedence over any tables retrieved from the database defined at initialization.
+        """
+        if tables is not None:
+            return tables
+        elif self.database is not None:
+            if self.database.mapper is not None:
+                logger.warning(
+                    "Cohort was initialized with a mapper but no tables were passed to execute(). Using the mapper to retrieve tables for execution."
+                )
+                tables = self.database.mapper.get_mapped_tables(con)
+                return tables
+            else:
+                raise ValueError(
+                    "Cohort was initialized with a database but no tables were passed to execute() and no mapper was defined in the database to retrieve tables for execution!"
+                )
+        else:
+            raise ValueError(
+                "No tables provided for cohort execution and no database defined to retrieve tables for execution!"
+            )
+
     # FIXME this should be implmemented as a ComputeNode and added to the graph
     @property
     def table1(self):
@@ -551,12 +497,5 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
-        self.phenotypes = (
-            [self.entry_criterion]
-            + self.inclusions
-            + self.exclusions
-            + self.characteristics
-            + self.outcomes
-        )
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
         Node().add_children(self.phenotypes)
