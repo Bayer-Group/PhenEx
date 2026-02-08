@@ -1,6 +1,7 @@
 
-import os, datetime, json
+import os, datetime, json, sys
 from typing import List, Dict, Optional
+from importlib.metadata import version, PackageNotFoundError
 
 from arrow import now
 from phenex.node import Node, NodeGroup
@@ -23,11 +24,11 @@ class Study:
 
     """
 
-    def __init__(self, path:str, name: str, cohorts: List[Cohort], custom_reporters: List["Reporter"]):
+    def __init__(self, path:str, name: str, cohorts: List[Cohort], custom_reporters: List["Reporter"] = None):
         self.path = path
         self.name = name
         self.cohorts = cohorts
-        self.custom_reporters = reporters
+        self.custom_reporters = custom_reporters
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
@@ -88,9 +89,28 @@ class Study:
             os.makedirs(path)
         return path
 
-    def _freeze_software_versions(self):
-        # store python and phenex versions in .txt file 
-        pass
+    def _freeze_software_versions(self, path_exec_dir_study):
+        """Store Python and PhenEx versions in info.txt file for reproducibility."""
+        info_path = os.path.join(path_exec_dir_study, "info.txt")
+        
+        # Get Python version
+        python_version = sys.version
+        
+        # Get PhenEx version
+        try:
+            phenex_version = version("phenex")
+        except PackageNotFoundError:
+            phenex_version = "unknown (package not installed)"
+        
+        # Write to file
+        with open(info_path, 'w') as f:
+            f.write("Software Environment Information\n")
+            f.write("=" * 50 + "\n\n")
+            f.write(f"Study Execution Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(f"Python Version:\n{python_version}\n\n")
+            f.write(f"PhenEx Version: {phenex_version}\n")
+        
+        logger.info(f"Software version information saved to {info_path}")
 
     def _prepare_cohort_execution_directory(self, cohort, path_exec_dir_study):
         _path = os.path.join(path_exec_dir_study, cohort.name)
