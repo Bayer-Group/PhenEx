@@ -3,7 +3,7 @@ from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodT
 
 
 class PersonTableForTests(PhenexPersonTable):
-    NAME_TABLE = "PATIENT"
+    NAME_TABLE = "PERSON"
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
         "YEAR_OF_BIRTH": "YOB",
@@ -16,7 +16,7 @@ class PersonTableForTests(PhenexPersonTable):
 
 
 class ConditionOccurenceTableForTests(CodeTable):
-    NAME_TABLE = "OBSERVATION"
+    NAME_TABLE = "CONDITION_OCCURRENCE"
     JOIN_KEYS = {
         "PersonTableForTests": ["PATID"],
     }
@@ -28,7 +28,7 @@ class ConditionOccurenceTableForTests(CodeTable):
 
 
 class DrugExposureTableForTests(CodeTable):
-    NAME_TABLE = "DRUGISSUE"
+    NAME_TABLE = "DRUG_EXPOSURE"
     JOIN_KEYS = {
         "PersonTableForTests": ["PATID"],
     }
@@ -40,7 +40,7 @@ class DrugExposureTableForTests(CodeTable):
 
 
 class ObservationPeriodTableForTests(PhenexObservationPeriodTable):
-    NAME_TABLE = "PATIENT"
+    NAME_TABLE = "OBSERVATION_PERIOD"
     JOIN_KEYS = {"PersonTableForTests": ["PATID"]}
     DEFAULT_MAPPING = {
         "PERSON_ID": "PATID",
@@ -52,6 +52,6 @@ TestMappersDict = {
     "PERSON": PersonTableForTests,
     "CONDITION_OCCURRENCE": ConditionOccurenceTableForTests,
     "DRUG_EXPOSURE": DrugExposureTableForTests,
-    "OBSERVATION": ObservationPeriodTableForTests,
+    "OBSERVATION_PERIOD": ObservationPeriodTableForTests,
 }
 TestDomains = DomainsDictionary(TestMappersDict)
