@@ -1,6 +1,6 @@
 from phenex.mappers import DomainsDictionary
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
-
+from phenex.mappers import DomainsDictionary
 
 class PersonTableForTests(PhenexPersonTable):
     NAME_TABLE = "PERSON"

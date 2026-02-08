@@ -53,8 +53,13 @@ class MockPostgresConnector:
 
 class MockMapper:
     """Mock mapper for testing."""
-
-    pass
+    
+    def to_dict(self):
+        """Mock serialization for testing."""
+        return {
+            "class_name": "DomainsDictionary",
+            "domains_dict": {}
+        }
 
 
 def test_database_init():
@@ -241,8 +246,8 @@ def test_database_with_only_data_period():
 
 
 if __name__ == "__main__":
-    # test_database_with_only_data_period()
-    # test_database_default_name()
-    # test_snowflake_connector_serialization()
+    test_database_with_only_data_period()
+    test_database_default_name()
+    test_snowflake_connector_serialization()
     test_postgres_connector_serialization()
     # pytest.main([__file__])
