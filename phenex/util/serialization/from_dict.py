@@ -59,7 +59,7 @@ def from_dict(data: dict):
                 # Reconstruct the connector with stored config
                 # Credentials will be loaded from environment variables
                 connector = None
-                if connector_type == "SnowflakeConnector":
+                if "Snowflake" in connector_type:
                     connector = SnowflakeConnector(
                         SNOWFLAKE_ACCOUNT=value.get("SNOWFLAKE_ACCOUNT"),
                         SNOWFLAKE_WAREHOUSE=value.get("SNOWFLAKE_WAREHOUSE"),
@@ -70,12 +70,12 @@ def from_dict(data: dict):
                         SNOWFLAKE_DEST_DATABASE=value.get("SNOWFLAKE_DEST_DATABASE"),
                         # SNOWFLAKE_USER and SNOWFLAKE_PASSWORD will be loaded from env vars
                     )
-                elif connector_type == "DuckDBConnector":
+                elif "DuckDB" in connector_type:
                     connector = DuckDBConnector(
                         DUCKDB_SOURCE_DATABASE=value.get("DUCKDB_SOURCE_DATABASE"),
                         DUCKDB_DEST_DATABASE=value.get("DUCKDB_DEST_DATABASE"),
                     )
-                elif connector_type == "PostgresConnector":
+                elif "Postgres" in connector_type:
                     connector = PostgresConnector(
                         POSTGRES_HOST=value.get("POSTGRES_HOST"),
                         POSTGRES_PORT=value.get("POSTGRES_PORT"),
