@@ -1,5 +1,5 @@
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
-
+from phenex.mappers import DomainsDictionary
 
 class PersonTableForTests(PhenexPersonTable):
     NAME_TABLE = "PATIENT"
@@ -46,7 +46,7 @@ class ObservationPeriodTableForTests(PhenexObservationPeriodTable):
         "START_DATE": "REGSTARTDATE",
         "END_DATE": "REGENDDATE",
     }
-    
+
 TestMappersDict = {
     "PERSON": PersonTableForTests,
     "CONDITION_OCCURRENCE": ConditionOccurenceTableForTests,
