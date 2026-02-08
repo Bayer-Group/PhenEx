@@ -4,6 +4,7 @@ from phenex.phenotypes import *
 from phenex.core import *
 from phenex.phenotypes.phenotype import ComputationGraph
 from phenex.filters import *
+from phenex.mappers import DomainsDictionary
 import inspect
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import get_phenex_init_params
@@ -17,7 +18,13 @@ def from_dict(data: dict):
     """
     # logger.debug(f"Decoding data: {data}")
 
-    class_name = data.pop("class_name")
+    class_name = data.get("class_name")
+    
+    # Special handling for DomainsDictionary
+    if class_name == "DomainsDictionary":
+        return DomainsDictionary.from_dict(data)
+    
+    data.pop("class_name", None)
     # logger.debug(f"Class name: {class_name}")
     cls = globals()[class_name]
     all_params = get_phenex_init_params(cls)
