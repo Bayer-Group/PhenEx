@@ -1,6 +1,8 @@
 
 import os, datetime, json
 from typing import List, Dict, Optional
+
+from arrow import now
 from phenex.node import Node, NodeGroup
 import ibis
 from phenex.util.serialization.to_dict import to_dict
@@ -76,8 +78,7 @@ class Study:
 
     def _prepare_study_execution_directory(self):
         now = datetime.datetime.today()
-        # TODO single digit integers should have a 0 in front (currently just single digit)
-        dirname = f"{now.year}-{now.month}-{now.day}__{now.hour}-{now.minute}"
+        dirname = now.strftime("D%Y-%m-%d__T%H-%M")
         path = os.path.join(self.path, dirname)
         print(path)
         if os.path.exists(path):
