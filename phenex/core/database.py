@@ -170,7 +170,9 @@ class Database:
 
             result["connector"] = connector_config
 
-        # TODO add mappers custom serialization
+        # Serialize mapper (DomainsDictionary)
+        if self.mapper is not None:
+            result["mapper"] = self.mapper.to_dict()
 
         return result
 
