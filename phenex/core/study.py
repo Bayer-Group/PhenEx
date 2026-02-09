@@ -24,8 +24,22 @@ class Study:
         path: Base directory where study outputs will be saved. A subdirectory with the study name will be created if it doesn't exist.
         name: Name of the study. Used for directory naming and identification.
         cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
-        custom_reporters: Additional reporters to run on each cohort (e.g., baseline characteristics, custom tables). A Waterfall reporter is always included by default.
+        custom_reporters: Additional reporters to run on each cohort. A Waterfall and Table1 reporter is always included by default.
 
+    Example:
+    ```python
+        # will write to output path ./my_study
+        # every time we execute, a new directory with date and time will be added
+        # within it, a directory with each cohort's output is created and 
+        # a combined study_results.xlsx file with all reports concatenated
+        study1 = Study(
+            name = "my_study", 
+            path = "./",
+            cohorts = [cohort1, cohort2],
+        )
+        study1.execute()
+
+    ```
 
     """
 
