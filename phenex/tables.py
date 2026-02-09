@@ -156,10 +156,10 @@ class PhenexTable:
     def to_dict(cls) -> dict:
         """
         Serialize the PhenexTable class configuration (not the data).
-        
+
         This serializes the class-level attributes that define the table mapping,
         but not the actual ibis table data which cannot be serialized.
-        
+
         Returns:
             dict: Class configuration including NAME_TABLE, JOIN_KEYS, DEFAULT_MAPPING, etc.
         """
@@ -173,18 +173,18 @@ class PhenexTable:
             "PATHS": cls.PATHS,
             "REQUIRED_FIELDS": cls.REQUIRED_FIELDS,
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict):
         """
         Reconstruct a PhenexTable class reference from serialized data.
-        
+
         Note: This returns the class itself, not an instance, since we cannot
         reconstruct the actual table data without a database connection.
-        
+
         Args:
             data: Serialized class configuration
-            
+
         Returns:
             The PhenexTable subclass
         """

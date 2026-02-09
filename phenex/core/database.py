@@ -172,7 +172,7 @@ class Database:
 
         # Serialize mapper (DomainsDictionary)
         if self.mapper is not None:
-            if hasattr(self.mapper, 'to_dict') and callable(self.mapper.to_dict):
+            if hasattr(self.mapper, "to_dict") and callable(self.mapper.to_dict):
                 result["mapper"] = self.mapper.to_dict()
             else:
                 logger.warning(

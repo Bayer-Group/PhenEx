@@ -2,6 +2,7 @@ from phenex.mappers import DomainsDictionary
 from phenex.tables import PhenexPersonTable, CodeTable, PhenexObservationPeriodTable
 from phenex.mappers import DomainsDictionary
 
+
 class PersonTableForTests(PhenexPersonTable):
     NAME_TABLE = "PERSON"
     DEFAULT_MAPPING = {
@@ -47,6 +48,7 @@ class ObservationPeriodTableForTests(PhenexObservationPeriodTable):
         "START_DATE": "REGSTARTDATE",
         "END_DATE": "REGENDDATE",
     }
+
 
 TestMappersDict = {
     "PERSON": PersonTableForTests,

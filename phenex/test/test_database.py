@@ -53,13 +53,10 @@ class MockPostgresConnector:
 
 class MockMapper:
     """Mock mapper for testing."""
-    
+
     def to_dict(self):
         """Mock serialization for testing."""
-        return {
-            "class_name": "DomainsDictionary",
-            "domains_dict": {}
-        }
+        return {"class_name": "DomainsDictionary", "domains_dict": {}}
 
 
 def test_database_init():

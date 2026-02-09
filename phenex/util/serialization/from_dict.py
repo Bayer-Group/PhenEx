@@ -19,11 +19,11 @@ def from_dict(data: dict):
     # logger.debug(f"Decoding data: {data}")
 
     class_name = data.get("class_name")
-    
+
     # Special handling for DomainsDictionary
     if class_name == "DomainsDictionary":
         return DomainsDictionary.from_dict(data)
-    
+
     data.pop("class_name", None)
     # logger.debug(f"Class name: {class_name}")
     cls = globals()[class_name]
