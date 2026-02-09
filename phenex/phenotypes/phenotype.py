@@ -28,7 +28,7 @@ class Phenotype(Node):
         kwargs: For additional parameters, see Node.
     """
 
-    output_type = "boolean"
+    output_display_type = "boolean"
 
     def __init__(self, description: str = None, **kwargs):
         self.description = description

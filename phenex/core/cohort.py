@@ -32,8 +32,6 @@ class Cohort:
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
-        con: Optional database connector for storing database connections. If defined, mapper must also be defined.
-        mapper: Optional OMOPMapper for mapping standard storing mapper connections. If defined, con must also be defined.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -102,6 +100,10 @@ class Cohort:
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
+
+    def _validate_node_uniqueness(self):
+        # Use Node's capability to check for node uniqueness rather than reimplementing it here
+        Node().add_children(self.phenotypes)
 
     def build_stages(self, tables: Dict[str, PhenexTable]):
         """
@@ -511,7 +513,3 @@ class Cohort:
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
         return to_dict(self)
-
-    def _validate_node_uniqueness(self):
-        # Use Node's capability to check for node uniqueness rather than reimplementing it here
-        Node().add_children(self.phenotypes)

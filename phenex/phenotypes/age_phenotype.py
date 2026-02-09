@@ -13,7 +13,6 @@ logger = create_logger(__name__)
 
 
 class AgePhenotype(Phenotype):
-    output_type = "value"
     """
     AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
     based on their date of birth and an optional anchor phenotype. The age is computed in years and can
@@ -53,6 +52,8 @@ class AgePhenotype(Phenotype):
         display(result_table)
         ```
     """
+
+    output_display_type = "value"
 
     # FIXME this will become a problem when modern medicine allows people to live more
     # than 365*4 years (so they accumulate enough leap days to get an extra year)

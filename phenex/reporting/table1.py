@@ -68,14 +68,20 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        return [x for x in self.cohort.characteristics if x.output_type == "boolean"]
+        return [
+            x for x in self.cohort.characteristics if x.output_display_type == "boolean"
+        ]
 
     def _get_value_characteristics(self):
-        return [x for x in self.cohort.characteristics if x.output_type == "value"]
+        return [
+            x for x in self.cohort.characteristics if x.output_display_type == "value"
+        ]
 
     def _get_categorical_characteristics(self):
         return [
-            x for x in self.cohort.characteristics if x.output_type == "categorical"
+            x
+            for x in self.cohort.characteristics
+            if x.output_display_type == "categorical"
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
