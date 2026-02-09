@@ -2,7 +2,6 @@ import os, datetime, json, sys
 from typing import List, Dict, Optional
 from importlib.metadata import version, PackageNotFoundError
 
-from arrow import now
 from phenex.node import Node, NodeGroup
 import ibis
 from phenex.util.serialization.to_dict import to_dict
