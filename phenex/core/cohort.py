@@ -14,7 +14,10 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
+<<<<<<< feat/cohortexecution
 from phenex.core.database import Database
+=======
+>>>>>>> main
 
 logger = create_logger(__name__)
 
@@ -32,8 +35,11 @@ class Cohort:
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
+<<<<<<< feat/cohortexecution
         con: Optional database connector for storing database connections. If defined, mapper must also be defined.
         mapper: Optional OMOPMapper for mapping standard storing mapper connections. If defined, con must also be defined.
+=======
+>>>>>>> main
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -54,18 +60,27 @@ class Cohort:
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
+<<<<<<< feat/cohortexecution
         description: Optional[str] = None,
         database: Optional[Database] = None,
     ):
         self.name = name
         self.description = description
         self.database = database
+=======
+        data_period: DateFilter = None,
+        description: Optional[str] = None,
+    ):
+        self.name = name
+        self.description = description
+>>>>>>> main
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions or []
         self.exclusions = exclusions or []
+<<<<<<< feat/cohortexecution
         self.characteristics = characteristics or []
         self.derived_tables = derived_tables or []
         self.outcomes = outcomes or []
@@ -79,6 +94,14 @@ class Cohort:
             + self.outcomes
         )
 
+=======
+        self._characteristics = characteristics or []
+        self.derived_tables = derived_tables or []
+        self._outcomes = outcomes or []
+        self._data_period = data_period
+        self.n_persons_in_source_database = None
+
+>>>>>>> main
         self._validate_node_uniqueness()
 
         # stages: set at execute() time
@@ -143,12 +166,20 @@ class Cohort:
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
+<<<<<<< feat/cohortexecution
         if self.database and self.database.data_period:
+=======
+        if self.data_period:
+>>>>>>> main
             data_period_filter_nodes = [
                 DataPeriodFilterNode(
                     name=f"{self.name}__data_period_filter_{domain}".upper(),
                     domain=domain,
+<<<<<<< feat/cohortexecution
                     date_filter=self.database.data_period,
+=======
+                    date_filter=self.data_period,
+>>>>>>> main
                 )
                 for domain in domains
             ]
@@ -230,6 +261,80 @@ class Cohort:
 
         self._table1 = None
 
+<<<<<<< feat/cohortexecution
+=======
+    @property
+    def characteristics(self) -> List[Phenotype]:
+        """Get the list of baseline characteristics phenotypes."""
+        return self._characteristics
+
+    @characteristics.setter
+    def characteristics(self, value: Optional[List[Phenotype]]):
+        """
+        Set the list of baseline characteristics phenotypes.
+
+        Validates node uniqueness and invalidates cached computation stages.
+        """
+        self._characteristics = value or []
+        self._validate_node_uniqueness()
+        self._table1 = None
+        self.characteristics_table_node = None
+        logger.info(f"Cohort '{self.name}': characteristics updated")
+
+    @property
+    def outcomes(self) -> List[Phenotype]:
+        """Get the list of outcomes phenotypes."""
+        return self._outcomes
+
+    @outcomes.setter
+    def outcomes(self, value: Optional[List[Phenotype]]):
+        """
+        Set the list of outcomes phenotypes.
+
+        Validates node uniqueness and invalidates cached computation stages.
+        """
+        self._outcomes = value or []
+        self._validate_node_uniqueness()
+        self.outcomes_table_node = None
+        logger.info(f"Cohort '{self.name}': outcomes updated")
+
+    @property
+    def data_period(self) -> Optional[DateFilter]:
+        """Get the data period filter."""
+        return self._data_period
+
+    @data_period.setter
+    def data_period(self, value: Optional[DateFilter]):
+        """
+        Set the data period filter.
+
+        Invalidates cached computation stages since the data period affects all stages.
+        """
+        self._data_period = value
+        self._invalidate_stages()
+        logger.info(f"Cohort '{self.name}': data_period updated")
+
+    def _invalidate_stages(self):
+        """
+        Invalidate cached computation stages.
+
+        This should be called whenever the cohort configuration changes in a way
+        that would affect the computational graph (characteristics, outcomes, data_period).
+        """
+        self.derived_tables_stage = None
+        self.entry_stage = None
+        self.index_stage = None
+        self.reporting_stage = None
+        self.data_period_filter_stage = None
+        self.inclusions_table_node = None
+        self.exclusions_table_node = None
+        self.characteristics_table_node = None
+        self.outcomes_table_node = None
+        self.index_table_node = None
+        self.subset_tables_entry_nodes = None
+        self.subset_tables_index_nodes = None
+
+>>>>>>> main
     def _get_domains(self):
         """
         Get a list of all domains used by any phenotype in this cohort.
@@ -322,7 +427,11 @@ class Cohort:
 
     def execute(
         self,
+<<<<<<< feat/cohortexecution
         tables: Dict[str, PhenexTable] = None,
+=======
+        tables: Dict[str, PhenexTable],
+>>>>>>> main
         con: Optional["SnowflakeConnector"] = None,
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
@@ -331,6 +440,7 @@ class Cohort:
         """
         The execute method executes the full cohort in order of computation. The order is data period filter -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
 
+<<<<<<< feat/cohortexecution
         There are two ways to use the execute method and thus execute a cohort:
 
         1. Directly passing source data in the `tables` dictionary
@@ -351,6 +461,11 @@ class Cohort:
         Parameters:
             tables: A dictionary mapping domains to Table objects. This is optional if the Cohort was initialized with a con and mapper. If passed, this takes precedence over the con and mapper defined at initialization.
             con: Database connector for materializing outputs. If passed, this takes precedence over the con defined at initialization.
+=======
+        Parameters:
+            tables: A dictionary mapping domains to Table objects
+            con: Database connector for materializing outputs
+>>>>>>> main
             overwrite: Whether to overwrite existing tables
             lazy_execution: Whether to use lazy execution with change detection
             n_threads: Max number of jobs to run simultaneously.
@@ -359,8 +474,12 @@ class Cohort:
             PhenotypeTable: The index table corresponding the cohort.
         """
 
+<<<<<<< feat/cohortexecution
         con = self._prepare_database_connector_for_execution(con)
         tables = self._prepare_tables_for_execution(con, tables)
+=======
+        self._validate_node_uniqueness()
+>>>>>>> main
 
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
@@ -434,6 +553,7 @@ class Cohort:
 
         return self.index_table
 
+<<<<<<< feat/cohortexecution
     def _prepare_database_connector_for_execution(self, con):
         """
         identify correct connector for cohort execution. If a connector is passed to execute(), use that. Else, if a connector was defined at initialization, use that. Else, raise an error since no connector was provided.
@@ -480,6 +600,8 @@ class Cohort:
                 "No tables provided for cohort execution and no database defined to retrieve tables for execution!"
             )
 
+=======
+>>>>>>> main
     # FIXME this should be implmemented as a ComputeNode and added to the graph
     @property
     def table1(self):
@@ -497,5 +619,15 @@ class Cohort:
         return to_dict(self)
 
     def _validate_node_uniqueness(self):
+<<<<<<< feat/cohortexecution
+=======
+        self.phenotypes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
+>>>>>>> main
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
         Node().add_children(self.phenotypes)

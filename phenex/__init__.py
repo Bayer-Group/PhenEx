@@ -2,7 +2,14 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
+<<<<<<< feat/cohortexecution
 from .core import Cohort, Subcohort, Database
+=======
+from .core import (
+    Cohort,
+    Subcohort,
+)
+>>>>>>> main
 
 # Phenotype classes - the main public API
 from .phenotypes import (
@@ -102,7 +109,10 @@ __all__ = [
     "NodeGroup",
     "Cohort",
     "Subcohort",
+<<<<<<< feat/cohortexecution
     "Database"
+=======
+>>>>>>> main
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
