@@ -107,7 +107,7 @@ class CodelistPhenotype(Phenotype):
     ):
         super(CodelistPhenotype, self).__init__(name=name or codelist.name)
 
-        self.codelist_filter = CodelistFilter(codelist)
+        self.codelist_filter = CodelistFilter(codelist, domain=domain)
         self.codelist = codelist
         self.categorical_filter = categorical_filter
         self.date_range = date_range
@@ -135,7 +135,7 @@ class CodelistPhenotype(Phenotype):
 
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]
-        code_table = self._perform_codelist_filtering(code_table)
+        code_table = self._perform_codelist_filtering(code_table, tables)
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
@@ -144,9 +144,9 @@ class CodelistPhenotype(Phenotype):
         code_table = self._perform_final_processing(code_table)
         return code_table
 
-    def _perform_codelist_filtering(self, code_table):
-        assert is_phenex_code_table(code_table)
-        code_table = self.codelist_filter.filter(code_table)
+    def _perform_codelist_filtering(self, code_table, tables):
+        # assert is_phenex_code_table(code_table)
+        code_table = self.codelist_filter.autojoin_filter(code_table, tables=tables)
         return code_table
 
     def _perform_categorical_filtering(self, code_table, tables):
