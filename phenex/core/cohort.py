@@ -137,7 +137,7 @@ class Cohort:
         available_tables = {k: v for k, v in tables.items() if v is not None}
         domains = list(available_tables.keys()) + [x.name for x in self.derived_tables]
         required_domains = self._get_domains()
-        
+
         missing_domains = [d for d in required_domains if d not in domains]
         if missing_domains:
             logger.warning(

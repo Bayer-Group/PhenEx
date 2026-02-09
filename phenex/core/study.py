@@ -1,4 +1,3 @@
-
 import os, datetime, json, sys
 from typing import List, Dict, Optional
 from importlib.metadata import version, PackageNotFoundError
@@ -25,7 +24,13 @@ class Study:
 
     """
 
-    def __init__(self, path:str, name: str, cohorts: List[Cohort], custom_reporters: List["Reporter"] = None):
+    def __init__(
+        self,
+        path: str,
+        name: str,
+        cohorts: List[Cohort],
+        custom_reporters: List["Reporter"] = None,
+    ):
         self.path = path
         self.name = name
         self.cohorts = cohorts
@@ -47,17 +52,20 @@ class Study:
         all_names = [x.name for x in self.cohorts]
         unique_names = list(set(all_names))
         if len(all_names) != len(unique_names):
-            raise ValueError(f"Ensure that cohort names are unique; found cohort names {sorted(all_names)}")
-    
+            raise ValueError(
+                f"Ensure that cohort names are unique; found cohort names {sorted(all_names)}"
+            )
+
     def _check_cohorts_have_databases(self):
         missing_database = []
         for cohort in self.cohorts:
             if cohort.database is None:
                 missing_database.append(cohort)
-        if len(missing_database)>0:
-            raise ValueError(f"Cohorts must have databases defined in order for use in a Study. Cohorts missing database : {[x.name for x in missing_database]}")
-            
-    
+        if len(missing_database) > 0:
+            raise ValueError(
+                f"Cohorts must have databases defined in order for use in a Study. Cohorts missing database : {[x.name for x in missing_database]}"
+            )
+
     def execute(
         self,
         overwrite: Optional[bool] = False,
@@ -67,21 +75,25 @@ class Study:
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
         for _cohort in self.cohorts:
-            path_exec_dir_cohort = self._prepare_cohort_execution_directory(_cohort, path_exec_dir_study)
+            path_exec_dir_cohort = self._prepare_cohort_execution_directory(
+                _cohort, path_exec_dir_study
+            )
             self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
             _cohort.execute(
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            path_table = os.path.join(path_exec_dir_cohort, 'table1.csv')
+            path_table = os.path.join(path_exec_dir_cohort, "table1.csv")
             _cohort.table1.to_csv(path_table)
 
             for reporter in self.custom_reporters:
                 reporter.execute(_cohort)
-                report_filename = reporter.__class__.__name__ 
+                report_filename = reporter.__class__.__name__
                 print("execurint repoerter", report_filename, reporter.df)
-                reporter.to_csv(os.path.join(path_exec_dir_cohort, report_filename+'.csv'))
+                reporter.to_csv(
+                    os.path.join(path_exec_dir_cohort, report_filename + ".csv")
+                )
 
     def _prepare_study_execution_directory(self):
         now = datetime.datetime.today()
@@ -98,24 +110,26 @@ class Study:
     def _freeze_software_versions(self, path_exec_dir_study):
         """Store Python and PhenEx versions in info.txt file for reproducibility."""
         info_path = os.path.join(path_exec_dir_study, "info.txt")
-        
+
         # Get Python version
         python_version = sys.version
-        
+
         # Get PhenEx version
         try:
             phenex_version = version("phenex")
         except PackageNotFoundError:
             phenex_version = "unknown (package not installed)"
-        
+
         # Write to file
-        with open(info_path, 'w') as f:
+        with open(info_path, "w") as f:
             f.write("Software Environment Information\n")
             f.write("=" * 50 + "\n\n")
-            f.write(f"Study Execution Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(
+                f"Study Execution Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            )
             f.write(f"Python Version:\n{python_version}\n\n")
             f.write(f"PhenEx Version: {phenex_version}\n")
-        
+
         logger.info(f"Software version information saved to {info_path}")
 
     def _prepare_cohort_execution_directory(self, cohort, path_exec_dir_study):
@@ -125,6 +139,6 @@ class Study:
         return _path
 
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
-        _path = os.path.join(path_exec_dir_cohort, cohort.name+'.json')
-        with open(_path, 'w') as f:
-            dump(cohort,f, indent=4)
+        _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
+        with open(_path, "w") as f:
+            dump(cohort, f, indent=4)

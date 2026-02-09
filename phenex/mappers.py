@@ -11,6 +11,7 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 class DomainsDictionary:
     """
     A DomainsDictionary is used to map an entire database from an arbitrary schema to a PhenEx internal representation.
@@ -64,7 +65,7 @@ class DomainsDictionary:
 
         Returns:
             Dict[str, PhenexTable]: A dictionary where keys are domain names and values are mapped tables.
-        
+
         Raises:
             ValueError: If a required table is not found in the database.
         """

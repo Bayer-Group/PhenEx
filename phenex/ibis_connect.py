@@ -387,7 +387,7 @@ class DuckDBConnector:
         )
         required_vars = []
         self._check_env_vars(required_vars)
-        
+
         # If no source database is specified but dest is (or defaults to :memory:),
         # use the same connection for both source and dest
         if not self.DUCKDB_SOURCE_DATABASE and self.DUCKDB_DEST_DATABASE:

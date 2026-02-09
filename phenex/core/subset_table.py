@@ -41,14 +41,14 @@ class SubsetTable(Node):
 
     def _execute(self, tables: Dict[str, Table]):
         table = tables.get(self.domain)
-        
+
         # Skip subsetting if table doesn't exist in source data
         if table is None:
             logger.warning(
                 f"Table for domain '{self.domain}' not found in source data. Skipping subset for '{self.name}'."
             )
             return None
-        
+
         index_table = self.index_phenotype.table
 
         # Check if EVENT_DATE exists in the index table

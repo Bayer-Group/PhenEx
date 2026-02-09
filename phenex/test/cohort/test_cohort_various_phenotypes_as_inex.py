@@ -44,17 +44,17 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
 
     def define_cohort(self):
         entry = CodelistPhenotype(
-            name= "c1_CohortWithContinuousCoverageTestGenerator",
+            name="c1_CohortWithContinuousCoverageTestGenerator",
             return_date="first",
             codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         cc = TimeRangePhenotype(
-            name= "cc_CohortWithContinuousCoverageTestGenerator",
+            name="cc_CohortWithContinuousCoverageTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
-            )
+            ),
         )
 
         return Cohort(
@@ -96,7 +96,9 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema=schema_person)
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
         )
         # create drug exposure table
         df_drug_exposure_entry = pd.DataFrame(
@@ -129,7 +131,9 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
         )
         return {
             "PERSON": person_table,
@@ -170,17 +174,17 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
 
     def define_cohort(self):
         entry = CodelistPhenotype(
-            name = "c1_CohortWithContinuousCoverageAndExclusionTestGenerator",
+            name="c1_CohortWithContinuousCoverageAndExclusionTestGenerator",
             return_date="first",
             codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         cc = TimeRangePhenotype(
-            name = "cc_CohortWithContinuousCoverageAndExclusionTestGenerator",
+            name="cc_CohortWithContinuousCoverageAndExclusionTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
-            )
+            ),
         )
 
         e4 = CodelistPhenotype(
@@ -245,7 +249,9 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema=schema_person)
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
         )
         # create drug exposure table
         df_drug_exposure_entry = pd.DataFrame(
@@ -281,7 +287,9 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
         )
         return {
             "PERSON": person_table,
@@ -338,21 +346,21 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
 
     def define_cohort(self):
         entry = CodelistPhenotype(
-            name= "c1_CohortWithContinuousCoverageExclusionAndAgeTestGenerator",
+            name="c1_CohortWithContinuousCoverageExclusionAndAgeTestGenerator",
             return_date="first",
             codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         cc = TimeRangePhenotype(
-            name= "cc_CohortWithContinuousCoverageExclusionAndAgeTestGenerator",
+            name="cc_CohortWithContinuousCoverageExclusionAndAgeTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
-            )
+            ),
         )
         agege18 = AgePhenotype(
             name="agege18_CohortWithContinuousCoverageExclusionAndAgeTestGenerator",
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)),
         )
 
         e4 = CodelistPhenotype(
@@ -409,7 +417,9 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema=schema_person)
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
         )
         # create drug exposure table
         df_drug_exposure_entry = pd.DataFrame(
@@ -444,7 +454,9 @@ class CohortWithContinuousCoverageExclusionAndAgeTestGenerator(CohortTestGenerat
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
         )
         return {
             "PERSON": person_table,
@@ -470,17 +482,17 @@ class CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator(
 
     def define_cohort(self):
         entry = CodelistPhenotype(
-            name= "c1_CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator",
+            name="c1_CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator",
             return_date="first",
             codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         cc = TimeRangePhenotype(
-            name= "cc_CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator",
+            name="cc_CohortWithContinuousCoverageExclusionAndAgeAsExclusionTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
-            )
+            ),
         )
         agel18 = AgePhenotype(value_filter=ValueFilter(max_value=LessThan(18)))
 
@@ -601,25 +613,26 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
 
     def define_cohort(self):
         entry = CodelistPhenotype(
-            name= "c1_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
+            name="c1_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
             return_date="first",
             codelist=Codelist(["d1"]).copy(use_code_type=False),
             domain="DRUG_EXPOSURE",
         )
 
         cc = TimeRangePhenotype(
-            name= "cc_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
+            name="cc_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(365)
-            )
+            ),
         )
         agege18 = AgePhenotype(
             name="agege18_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
-            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18))
+            value_filter=ValueFilter(min_value=GreaterThanOrEqualTo(18)),
         )
         sex = SexPhenotype(
             name="sex_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
-            categorical_filter=CategoricalFilter(allowed_values=[1]))
+            categorical_filter=CategoricalFilter(allowed_values=[1]),
+        )
 
         e4 = CodelistPhenotype(
             name="prior_et_usage_CohortWithContinuousCoverageExclusionAgeSexTestGenerator",
@@ -675,7 +688,9 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema=schema_person)
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
         )
         # create drug exposure table
         df_drug_exposure_entry = pd.DataFrame(
@@ -710,7 +725,9 @@ class CohortWithContinuousCoverageExclusionAgeSexTestGenerator(CohortTestGenerat
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
         )
         return {
             "PERSON": person_table,
@@ -775,7 +792,7 @@ class CohortWithUDPTestGenerator(CohortTestGenerator):
             name="cc_CohortWithUDPTestGenerator",
             relative_time_range=RelativeTimeRangeFilter(
                 min_days=GreaterThanOrEqualTo(30)
-            )
+            ),
         )
 
         return Cohort(
@@ -822,7 +839,9 @@ class CohortWithUDPTestGenerator(CohortTestGenerator):
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema=schema_person)
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
         )
         # create drug exposure table
         df_drug_exposure_entry = pd.DataFrame(
@@ -858,7 +877,9 @@ class CohortWithUDPTestGenerator(CohortTestGenerator):
             "REGENDDATE": datetime.date,
         }
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema=schema_obs)
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
         )
         return {
             "PERSON": person_table,
