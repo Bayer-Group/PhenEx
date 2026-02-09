@@ -7,6 +7,7 @@ from phenex.node import Node, NodeGroup
 import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
+from phenex.util.output_concatenator import OutputConcatenator
 from phenex.core.cohort import Cohort
 from phenex.reporting import Waterfall
 from phenex import dump
@@ -92,13 +93,17 @@ class Study:
             path_table = os.path.join(path_exec_dir_cohort, "table1.xlsx")
             _cohort.table1.to_excel(path_table)
 
-            for reporter in self.custom_reporters:
-                reporter.execute(_cohort)
-                report_filename = reporter.__class__.__name__
-                print("executing reporter", report_filename, reporter.df)
-                reporter.to_excel(
-                    os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
-                )
+
+            if self.custom_reporters is not None:
+                for reporter in self.custom_reporters:
+                    reporter.execute(_cohort)
+                    report_filename = reporter.__class__.__name__
+                    print("executing reporter", report_filename, reporter.df)
+                    reporter.to_excel(
+                        os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
+                    )
+        
+        self._concatenate_reports(path_exec_dir_study)
 
     def _prepare_study_execution_directory(self):
         now = datetime.datetime.today()
@@ -147,3 +152,9 @@ class Study:
         _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
+    
+
+    def _concatenate_reports(self, path_exec_dir_study):
+        """Concatenate all cohort reports into a single Excel file."""
+        concatenator = OutputConcatenator(path_exec_dir_study)
+        concatenator.concatenate_all_reports()

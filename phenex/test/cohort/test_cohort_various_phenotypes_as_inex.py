@@ -56,11 +56,15 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
                 min_days=GreaterThanOrEqualTo(365)
             ),
         )
+        
+        age = AgePhenotype(name="age")
+        sex = SexPhenotype(name="sex")
 
         return Cohort(
             name="test_continuous_coverage",
             entry_criterion=entry,
             inclusions=[cc],
+            characteristics=[age, sex],
         )
 
     def generate_dummy_input_data(self):
@@ -91,8 +95,10 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
 
         # create dummy person table
         df_person = pd.DataFrame(df_allvalues[["PATID"]])
-        df_person["YOB"] = 1
-        df_person["GENDER"] = 1
+        # Set YOB to 1980 for age ~40 at index date (2020-01-01)
+        df_person["YOB"] = 1980
+        # Set GENDER: 1=Male, 2=Female (alternate for variety)
+        df_person["GENDER"] = df_person.index % 2 + 1
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
@@ -203,12 +209,16 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             return table
 
         udp = UserDefinedPhenotype(name="udp", function=user_defined_function)
+        
+        age = AgePhenotype(name="age")
+        sex = SexPhenotype(name="sex")
 
         return Cohort(
             name="test_continuous_coverage_with_exclusion",
             entry_criterion=entry,
             inclusions=[cc, udp],
             exclusions=[e4],
+            characteristics=[age, sex],
         )
 
     def generate_dummy_input_data(self):
@@ -244,8 +254,10 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
 
         # create dummy person table
         df_person = pd.DataFrame(df_allvalues[["PATID"]])
-        df_person["YOB"] = 1
-        df_person["GENDER"] = 1
+        # Set YOB to 1975 for age ~45 at index date (2020-01-01)
+        df_person["YOB"] = 1975
+        # Set GENDER: 1=Male, 2=Female (alternate for variety)
+        df_person["GENDER"] = df_person.index % 2 + 1
         df_person["ACCEPTABLE"] = 1
         schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
         person_table = PersonTableForTests(
