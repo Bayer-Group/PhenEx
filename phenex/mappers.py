@@ -8,6 +8,7 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 class DomainsDictionary:
     """
     A DomainsDictionary is used to map an entire database from an arbitrary schema to a PhenEx internal representation.

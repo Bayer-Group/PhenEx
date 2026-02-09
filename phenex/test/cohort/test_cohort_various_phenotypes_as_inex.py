@@ -56,7 +56,7 @@ class CohortWithContinuousCoverageTestGenerator(CohortTestGenerator):
                 min_days=GreaterThanOrEqualTo(365)
             ),
         )
-        
+
         age = AgePhenotype(name="age")
         sex = SexPhenotype(name="sex")
 
@@ -209,7 +209,7 @@ class CohortWithContinuousCoverageAndExclusionTestGenerator(CohortTestGenerator)
             return table
 
         udp = UserDefinedPhenotype(name="udp", function=user_defined_function)
-        
+
         age = AgePhenotype(name="age")
         sex = SexPhenotype(name="sex")
 

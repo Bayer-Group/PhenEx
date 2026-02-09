@@ -93,7 +93,6 @@ class Study:
             path_table = os.path.join(path_exec_dir_cohort, "table1.xlsx")
             _cohort.table1.to_excel(path_table)
 
-
             if self.custom_reporters is not None:
                 for reporter in self.custom_reporters:
                     reporter.execute(_cohort)
@@ -102,7 +101,7 @@ class Study:
                     reporter.to_excel(
                         os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
                     )
-        
+
         self._concatenate_reports(path_exec_dir_study)
 
     def _prepare_study_execution_directory(self):
@@ -152,7 +151,6 @@ class Study:
         _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
-    
 
     def _concatenate_reports(self, path_exec_dir_study):
         """Concatenate all cohort reports into a single Excel file."""

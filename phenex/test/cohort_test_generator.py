@@ -123,7 +123,7 @@ class CohortTestGenerator:
         # Support both DuckDBConnector and direct ibis connection
         # DuckDBConnector.create_table(table, name_table, overwrite)
         # ibis.BaseBackend.create_table(name, obj, schema, ...)
-        if hasattr(self.con, 'dest_connection'):
+        if hasattr(self.con, "dest_connection"):
             # This is a DuckDBConnector from phenex
             expected_output_table = self.con.create_table(expected, name)
         else:
