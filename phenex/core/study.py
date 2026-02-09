@@ -9,6 +9,7 @@ import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.core.cohort import Cohort
+from phenex import dump
 
 logger = create_logger(__name__)
 
@@ -65,17 +66,22 @@ class Study:
     ):
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
-        for cohort in self.cohorts:
-            path_exec_dir_cohort = self._prepare_cohort_execution_directory(cohort, path_exec_dir_study)
-            self._save_serialized_cohort(cohort, path_exec_dir_cohort)
+        for _cohort in self.cohorts:
+            path_exec_dir_cohort = self._prepare_cohort_execution_directory(_cohort, path_exec_dir_study)
+            self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
-            # cohort.execute(
-            #     overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
-            # )
+            _cohort.execute(
+                overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
+            )
 
-            for reporter in self.reporters:
-                reporter.execute(cohort)
-                reporter
+            path_table = os.path.join(path_exec_dir_cohort, 'table1.csv')
+            _cohort.table1.to_csv(path_table)
+
+            for reporter in self.custom_reporters:
+                reporter.execute(_cohort)
+                report_filename = reporter.__class__.__name__ 
+                print("execurint repoerter", report_filename, reporter.df)
+                reporter.to_csv(os.path.join(path_exec_dir_cohort, report_filename+'.csv'))
 
     def _prepare_study_execution_directory(self):
         now = datetime.datetime.today()
@@ -121,4 +127,4 @@ class Study:
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
         _path = os.path.join(path_exec_dir_cohort, cohort.name+'.json')
         with open(_path, 'w') as f:
-            json.dump(cohort.to_dict(),f)
+            dump(cohort,f, indent=4)
