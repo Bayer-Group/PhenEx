@@ -16,12 +16,16 @@ logger = create_logger(__name__)
 
 class Study:
     """
-    The Study
+    Orchestrates the execution of multiple cohorts and aggregates their reports.
+
+    A Study manages the execution of one or more cohorts, automatically generating standardized reports (Waterfall, Table1) for each cohort and concatenating them into a single multi-sheet Excel file for easy comparison. Each execution creates a timestamped directory containing individual cohort outputs and a combined study results file.
 
     Parameters:
+        path: Base directory where study outputs will be saved. A subdirectory with the study name will be created if it doesn't exist.
+        name: Name of the study. Used for directory naming and identification.
+        cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
+        custom_reporters: Additional reporters to run on each cohort (e.g., baseline characteristics, custom tables). A Waterfall reporter is always included by default.
 
-
-    Attributes:
 
     """
 
