@@ -30,10 +30,10 @@ class Study:
     ```python
         # will write to output path ./my_study
         # every time we execute, a new directory with date and time will be added
-        # within it, a directory with each cohort's output is created and 
+        # within it, a directory with each cohort's output is created and
         # a combined study_results.xlsx file with all reports concatenated
         study1 = Study(
-            name = "my_study", 
+            name = "my_study",
             path = "./",
             cohorts = [cohort1, cohort2],
         )
