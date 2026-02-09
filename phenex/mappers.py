@@ -7,10 +7,6 @@ from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
-from phenex.util import create_logger
-
-logger = create_logger(__name__)
-
 
 class DomainsDictionary:
     """
