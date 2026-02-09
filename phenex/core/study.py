@@ -8,6 +8,7 @@ import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.core.cohort import Cohort
+from phenex.reporting import Waterfall
 from phenex import dump
 
 logger = create_logger(__name__)
@@ -74,6 +75,10 @@ class Study:
     ):
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
+
+        waterfall_reporter = Waterfall()
+        self.custom_reporters = [waterfall_reporter] + (self.custom_reporters or [])
+
         for _cohort in self.cohorts:
             path_exec_dir_cohort = self._prepare_cohort_execution_directory(
                 _cohort, path_exec_dir_study
@@ -84,15 +89,15 @@ class Study:
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            path_table = os.path.join(path_exec_dir_cohort, "table1.csv")
-            _cohort.table1.to_csv(path_table)
+            path_table = os.path.join(path_exec_dir_cohort, "table1.xlsx")
+            _cohort.table1.to_excel(path_table)
 
             for reporter in self.custom_reporters:
                 reporter.execute(_cohort)
                 report_filename = reporter.__class__.__name__
-                print("execurint repoerter", report_filename, reporter.df)
-                reporter.to_csv(
-                    os.path.join(path_exec_dir_cohort, report_filename + ".csv")
+                print("executing reporter", report_filename, reporter.df)
+                reporter.to_excel(
+                    os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
                 )
 
     def _prepare_study_execution_directory(self):
