@@ -14,6 +14,7 @@ nav:
   - API:
       - Core:
           - Cohort: api/core/cohort.md
+          - Study: api/core/study.md
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
