@@ -424,7 +424,10 @@ class AsymmetricConceptTable(CodeTable):
 
     NAME_TABLE = "CONCEPT_ASYM"
     JOIN_KEYS = {
-        "AsymmetricEventMappingTable": ["ID", "CONCEPTID"],  # Asymmetric: ID -> CONCEPTID
+        "AsymmetricEventMappingTable": [
+            "ID",
+            "CONCEPTID",
+        ],  # Asymmetric: ID -> CONCEPTID
     }
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "ID"]
     DEFAULT_MAPPING = {
@@ -536,7 +539,9 @@ class CodelistPhenotypeAutojoinAsymmetricTestGenerator(PhenotypeTestGenerator):
                 mapping_rows.append(
                     {
                         "EVENTID": event_id,  # Asymmetric: FK uses EVENTID
-                        "CONCEPTID": concept_id_map[code],  # Asymmetric: FK uses CONCEPTID
+                        "CONCEPTID": concept_id_map[
+                            code
+                        ],  # Asymmetric: FK uses CONCEPTID
                     }
                 )
 

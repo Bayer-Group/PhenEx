@@ -197,7 +197,7 @@ class PhenexTable:
 
             # join keys are defined by the left table; in theory should enforce symmetry
             join_keys = current_left_table.JOIN_KEYS[right_table_class_name]
-            
+
             # Handle asymmetric joins: if join_keys has 2 elements, create explicit predicate
             if len(join_keys) == 2 and join_keys[0] != join_keys[1]:
                 # Asymmetric join: [left_col, right_col]
@@ -206,7 +206,7 @@ class PhenexTable:
             else:
                 # Symmetric join: column name(s) exist in both tables
                 join_predicate = join_keys
-            
+
             columns = list(set(joined_table.columns + right_table.columns))
             # subset columns, making sure to set type of table to the very left table (self)
             joined_table = type(self)(
