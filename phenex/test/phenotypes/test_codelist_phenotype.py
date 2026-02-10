@@ -551,11 +551,11 @@ class DummyEncounterTable(PhenexTable):
         "DummyConditionOccurenceTable": [
             "PERSON_ID",
             "ENCID",
-        ],  # I changed this from EVENT_DATE
+        ], 
         "DummyVisitDetailTable": [
             "PERSON_ID",
             "VISITID",
-        ],  # I changed this from EVENT_DATE
+        ],
     }
     DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
 
