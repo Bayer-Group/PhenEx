@@ -90,17 +90,17 @@ class CodelistFilter(Filter):
         """
         Automatically joins the necessary tables and applies the codelist filter.
         Use when the input table does not contain CODE/CODE_TYPE columns that define the filter.
-        
-        This is particularly useful when codelist codes are in a concept/reference table that 
+
+        This is particularly useful when codelist codes are in a concept/reference table that
         requires joining through intermediate tables (e.g., CONDITION_OCCURRENCE -> CONCEPT).
-        
+
         Parameters:
             table (CodeTable): The table containing events to be filtered.
             tables (dict): A dictionary of tables from the DomainsDictionary for joining.
-            
+
         Returns:
             CodeTable: The filtered CodeTable with events matching the codelist.
-            
+
         Examples:
             ```
             # Example 1: Filter conditions using concept table (requires 2 joins)
@@ -120,8 +120,10 @@ class CodelistFilter(Filter):
         """
         # Check if CODE and CODE_TYPE columns exist in the current table
         has_code = "CODE" in table.columns
-        has_code_type = "CODE_TYPE" in table.columns if self.codelist.use_code_type else True
-        
+        has_code_type = (
+            "CODE_TYPE" in table.columns if self.codelist.use_code_type else True
+        )
+
         if not (has_code and has_code_type):
             # Need to join to get CODE/CODE_TYPE columns
             if self.domain is None:
@@ -136,20 +138,20 @@ class CodelistFilter(Filter):
                     "within domains dictionary. Ensure the domain is included in your "
                     "DomainsDictionary and passed via the 'tables' parameter."
                 )
-            
+
             # Store original columns to preserve table structure
             original_columns = table.columns
-            
+
             # Perform autojoin to the target domain
             table = table.join(tables[self.domain], domains=tables)
-            
+
             # Apply the codelist filter
             filtered_table = self._filter(table)
-            
+
             # Restore original column structure (plus any columns needed from join)
             # This ensures we don't pollute the output with unnecessary joined columns
             columns_to_keep = list(set(original_columns) & set(filtered_table.columns))
             return type(table)(filtered_table.select(columns_to_keep))
-        
+
         # If CODE/CODE_TYPE already exist, just apply the filter directly
         return self._filter(table)

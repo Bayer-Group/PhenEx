@@ -551,7 +551,7 @@ class DummyEncounterTable(PhenexTable):
         "DummyConditionOccurenceTable": [
             "PERSON_ID",
             "ENCID",
-        ], 
+        ],
         "DummyVisitDetailTable": [
             "PERSON_ID",
             "VISITID",

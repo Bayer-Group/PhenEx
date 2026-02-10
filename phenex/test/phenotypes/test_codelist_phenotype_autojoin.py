@@ -31,7 +31,7 @@ class DummyConceptTable(CodeTable):
     """
     Concept table containing the actual CODE and CODE_TYPE columns.
     This is the target table that contains the codelist codes.
-    
+
     Note: Must define symmetric JOIN_KEYS back to DummyEventMappingTable.
     """
 
@@ -50,17 +50,19 @@ class DummyConceptTable(CodeTable):
 class DummyEventMappingTable(PhenexTable):
     """
     Intermediate mapping table that links events to concepts.
-    
+
     This table acts as a bridge, connecting:
     - EVENTMAPPINGID back to DummyEventWithoutCodesTable
     - CONCEPTID forward to DummyConceptTable
-    
+
     Both relationships must be defined for bidirectional autojoin.
     """
 
     NAME_TABLE = "EVENT_MAPPING"
     JOIN_KEYS = {
-        "DummyEventWithoutCodesTable": ["EVENTMAPPINGID"],  # Symmetric join back to event table
+        "DummyEventWithoutCodesTable": [
+            "EVENTMAPPINGID"
+        ],  # Symmetric join back to event table
         "DummyConceptTable": ["CONCEPTID"],  # Symmetric join forward to concept table
     }
     KNOWN_FIELDS = ["EVENTMAPPINGID", "CONCEPTID"]
@@ -70,12 +72,11 @@ class DummyEventMappingTable(PhenexTable):
     }
 
 
-
 class DummyEventWithoutCodesTable(CodeTable):
     """
     Event table that does NOT contain CODE/CODE_TYPE directly.
     Must join through EventMapping -> Concept to reach codes.
-    
+
     JOIN_KEYS: Direct join to DummyEventMappingTable using EVENTMAPPINGID
     PATHS: To reach DummyConceptTable, must go through DummyEventMappingTable
     """
@@ -149,7 +150,9 @@ class CodelistPhenotypeAutojoinBasicTestGenerator(PhenotypeTestGenerator):
         concept_id_map = {}  # Map code -> concept_id
 
         # First, create concept rows for unique codes
-        unique_codes = sorted(set(code for codes in patient_codes.values() for code in codes))
+        unique_codes = sorted(
+            set(code for codes in patient_codes.values() for code in codes)
+        )
         for code in unique_codes:
             concept_rows.append(
                 {

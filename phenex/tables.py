@@ -21,16 +21,16 @@ class PhenexTable:
     Note that for each table type, there are REQUIRED_FIELDS, i.e., fields that MUST be defined for Phenex to work with such a table and KNOWN_FIELDS, i.e., fields that Phenex internally understands what to do with (there is a Phenotype that knows how to work with that field). For instance, in a PhenexPersonTable, one MUST define PERSON_ID, but DATE_OF_BIRTH is an optional field that PhenEx can process if given and transform into AGE. These are fixed for each table type and should not be overridden.
 
     JOIN_KEYS and PATHS Documentation:
-    
+
     JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
     and the value is a list of column names to use as join keys.
-    
+
     PATHS defines multi-hop join paths. The key is the CLASS NAME of the final target table,
     and the value is a list of CLASS NAMES for intermediate tables to traverse.
-    
+
     IMPORTANT: JOIN_KEYS should be defined symmetrically - if TableA can join to TableB,
     then TableB should also define how to join back to TableA.
-    
+
     Example 1: Direct joins (working example from test suite)
     ```python
     class DummyConditionOccurrenceTable(CodeTable):
@@ -42,7 +42,7 @@ class PhenexTable:
         PATHS = {
             "DummyVisitDetailTable": ["DummyEncounterTable"]  # To reach VisitDetail, go through Encounter
         }
-    
+
     class DummyEncounterTable(PhenexTable):
         NAME_TABLE = "ENCOUNTER"
         JOIN_KEYS = {
@@ -50,7 +50,7 @@ class PhenexTable:
             "DummyConditionOccurrenceTable": ["PERSON_ID", "ENCID"],  # Symmetric!
             "DummyVisitDetailTable": ["PERSON_ID", "VISITID"],
         }
-    
+
     class DummyVisitDetailTable(PhenexTable):
         NAME_TABLE = "VISIT"
         JOIN_KEYS = {
@@ -58,12 +58,12 @@ class PhenexTable:
             "DummyEncounterTable": ["PERSON_ID", "VISITID"],  # Symmetric!
         }
     ```
-    
+
     In this example:
     - DummyConditionOccurrenceTable can join directly to DummyEncounterTable
     - To get from DummyConditionOccurrenceTable to DummyVisitDetailTable, it goes through DummyEncounterTable
     - All JOIN_KEYS are symmetric (both sides define the relationship)
-    
+
     Example 2: Chain of joins (Event -> Mapping -> Concept)
     ```python
     class DummyEventWithoutCodesTable(CodeTable):
@@ -74,21 +74,21 @@ class PhenexTable:
         PATHS = {
             "DummyEventConceptTable": ["DummyEventMappingTable"],  # To reach Concept, go through Mapping
         }
-    
+
     class DummyEventMappingTable(PhenexTable):
         NAME_TABLE = "EVENT_MAPPING"
         JOIN_KEYS = {
             "DummyEventWithoutCodesTable": ["EVENTMAPPINGID"],  # Symmetric join back to Event
             "DummyEventConceptTable": ["CONCEPTID"],  # Direct join to Concept
         }
-    
+
     class DummyEventConceptTable(CodeTable):
         NAME_TABLE = "CONCEPT"
         JOIN_KEYS = {
             "DummyEventMappingTable": ["CONCEPTID"],  # Symmetric join back to Mapping
         }
     ```
-    
+
     In this example:
     - Event joins to Mapping using EVENTMAPPINGID
     - Mapping joins to Concept using CONCEPTID
@@ -168,8 +168,10 @@ class PhenexTable:
         # joined table is the sequentially joined table
         # current table is the table for the left join in the current iteration
         joined_table = current_left_table = self
-        logger.debug(f"Starting autojoin from {self.__class__.__name__} to {other.__class__.__name__}")
-        
+        logger.debug(
+            f"Starting autojoin from {self.__class__.__name__} to {other.__class__.__name__}"
+        )
+
         for right_table_class_name in self._find_path(other):
             # get the next right table
             right_table_search_results = [
@@ -177,9 +179,13 @@ class PhenexTable:
                 for k, v in domains.items()
                 if v.__class__.__name__ == right_table_class_name
             ]
-            logger.debug(f"Searching for {right_table_class_name} in domains: {list(domains.keys())}")
-            logger.debug(f"Found {len(right_table_search_results)} matches for {right_table_class_name}")
-            
+            logger.debug(
+                f"Searching for {right_table_class_name} in domains: {list(domains.keys())}"
+            )
+            logger.debug(
+                f"Found {len(right_table_search_results)} matches for {right_table_class_name}"
+            )
+
             if len(right_table_search_results) != 1:
                 raise ValueError(
                     f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
@@ -205,25 +211,35 @@ class PhenexTable:
     def _find_path(self, other):
         start_name = self.__class__.__name__
         end_name = other.__class__.__name__
-        
+
         logger.debug(f"Finding path from {start_name} to {end_name}")
-        
+
         # first see if direct connection
         try:
             join_keys = self.JOIN_KEYS[end_name]
-            logger.debug(f"Found direct connection: {start_name} -> {end_name} using keys {join_keys}")
+            logger.debug(
+                f"Found direct connection: {start_name} -> {end_name} using keys {join_keys}"
+            )
             return [end_name]
         except KeyError:
-            logger.debug(f"No direct connection found in JOIN_KEYS for {start_name} -> {end_name}")
+            logger.debug(
+                f"No direct connection found in JOIN_KEYS for {start_name} -> {end_name}"
+            )
             try:
                 path = self.PATHS[end_name]
                 full_path = path + [end_name]
-                logger.debug(f"Found path in PATHS: {start_name} -> {' -> '.join(full_path)}")
+                logger.debug(
+                    f"Found path in PATHS: {start_name} -> {' -> '.join(full_path)}"
+                )
                 return full_path
             except KeyError:
                 logger.error(f"No path found for {start_name} -> {end_name}")
-                logger.debug(f"Available JOIN_KEYS for {start_name}: {list(self.JOIN_KEYS.keys())}")
-                logger.debug(f"Available PATHS for {start_name}: {list(self.PATHS.keys())}")
+                logger.debug(
+                    f"Available JOIN_KEYS for {start_name}: {list(self.JOIN_KEYS.keys())}"
+                )
+                logger.debug(
+                    f"Available PATHS for {start_name}: {list(self.PATHS.keys())}"
+                )
                 raise ValueError(
                     f"Cannot autojoin {start_name} --> {end_name}. Please specify join path in PATHS."
                 )
