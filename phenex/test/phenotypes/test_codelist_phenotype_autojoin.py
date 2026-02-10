@@ -410,6 +410,197 @@ class CodelistPhenotypeAutojoinTimeRangeTestGenerator(PhenotypeTestGenerator):
 # Test Registration
 # ============================================================================
 
+
+# ============================================================================
+# Asymmetric Join Keys Test
+# ============================================================================
+
+
+class AsymmetricConceptTable(CodeTable):
+    """
+    Concept table with ID column (asymmetric naming pattern).
+    Foreign keys in other tables will reference this as CONCEPTID.
+    """
+
+    NAME_TABLE = "CONCEPT_ASYM"
+    JOIN_KEYS = {
+        "AsymmetricEventMappingTable": ["ID", "CONCEPTID"],  # Asymmetric: ID -> CONCEPTID
+    }
+    KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "ID"]
+    DEFAULT_MAPPING = {
+        "ID": "ID",  # Needed for joins
+        "CODE": "CODE",
+        "CODE_TYPE": "CODE_TYPE",
+    }
+
+
+class AsymmetricEventMappingTable(PhenexTable):
+    """
+    Mapping table with foreign keys using [TABLENAME]ID pattern.
+    - EVENTID references AsymmetricEventTable.ID
+    - CONCEPTID references AsymmetricConceptTable.ID
+    """
+
+    NAME_TABLE = "EVENT_MAPPING_ASYM"
+    JOIN_KEYS = {
+        "AsymmetricEventTable": ["EVENTID", "ID"],  # Asymmetric: EVENTID -> ID
+        "AsymmetricConceptTable": ["CONCEPTID", "ID"],  # Asymmetric: CONCEPTID -> ID
+    }
+    KNOWN_FIELDS = ["EVENTID", "CONCEPTID"]
+    DEFAULT_MAPPING = {
+        "EVENTID": "EVENTID",  # Needed for joins
+        "CONCEPTID": "CONCEPTID",  # Needed for joins
+    }
+
+
+class AsymmetricEventTable(CodeTable):
+    """
+    Event table with ID column.
+    Foreign keys in mapping table reference this as EVENTID.
+    """
+
+    NAME_TABLE = "EVENT_ASYM"
+    CODES_DEFINED_IN = "CONCEPT_ASYM"
+    JOIN_KEYS = {
+        "AsymmetricEventMappingTable": ["ID", "EVENTID"],  # Asymmetric: ID -> EVENTID
+    }
+    PATHS = {
+        "AsymmetricConceptTable": ["AsymmetricEventMappingTable"],
+    }
+    KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "ID"]
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENT_DATE": "EVENT_DATE",
+        "ID": "ID",  # Needed for joins
+    }
+
+
+class CodelistPhenotypeAutojoinAsymmetricTestGenerator(PhenotypeTestGenerator):
+    """
+    Test autojoin with asymmetric join keys where table uses ID column
+    but foreign keys use [TABLENAME]ID pattern.
+    """
+
+    name_space = "clpt_autojoin_asymmetric"
+
+    def define_input_tables(self):
+        """
+        Create three tables with asymmetric join keys:
+        1. EVENT_ASYM: Has ID column
+        2. EVENT_MAPPING_ASYM: Has EVENTID (FK to EVENT) and CONCEPTID (FK to CONCEPT)
+        3. CONCEPT_ASYM: Has ID column
+        """
+        patient_codes = {
+            "P1": ["c1", "c2", "c3"],
+            "P2": ["c1", "c2"],
+            "P3": ["c1", "c3"],
+            "P4": ["c1"],
+        }
+
+        event_date = datetime.datetime.strptime("10-10-2021", "%m-%d-%Y")
+
+        event_rows = []
+        mapping_rows = []
+        concept_rows = []
+
+        event_id = 1
+        concept_id = 1
+        concept_id_map = {}
+
+        # Create concept rows
+        unique_codes = sorted(
+            set(code for codes in patient_codes.values() for code in codes)
+        )
+        for code in unique_codes:
+            concept_rows.append(
+                {
+                    "ID": concept_id,  # Asymmetric: table uses ID
+                    "CODE": code,
+                    "CODE_TYPE": "ICD10CM",
+                }
+            )
+            concept_id_map[code] = concept_id
+            concept_id += 1
+
+        # Create event and mapping rows
+        for person_id, codes in patient_codes.items():
+            for code in codes:
+                event_rows.append(
+                    {
+                        "PERSON_ID": person_id,
+                        "EVENT_DATE": event_date,
+                        "ID": event_id,  # Asymmetric: table uses ID
+                    }
+                )
+
+                mapping_rows.append(
+                    {
+                        "EVENTID": event_id,  # Asymmetric: FK uses EVENTID
+                        "CONCEPTID": concept_id_map[code],  # Asymmetric: FK uses CONCEPTID
+                    }
+                )
+
+                event_id += 1
+
+        df_event = pd.DataFrame(event_rows)
+        df_mapping = pd.DataFrame(mapping_rows)
+        df_concept = pd.DataFrame(concept_rows)
+
+        return [
+            {
+                "name": "event_asym",
+                "df": df_event,
+                "type": AsymmetricEventTable,
+            },
+            {
+                "name": "event_mapping_asym",
+                "df": df_mapping,
+                "type": AsymmetricEventMappingTable,
+            },
+            {
+                "name": "concept_asym",
+                "df": df_concept,
+                "type": AsymmetricConceptTable,
+            },
+        ]
+
+    def define_phenotype_tests(self):
+        """
+        Test that asymmetric joins work correctly.
+        """
+        c1 = {
+            "name": "c1_asym",
+            "persons": ["P1", "P2", "P3", "P4"],
+        }
+        c2 = {
+            "name": "c2_asym",
+            "persons": ["P1", "P2"],
+        }
+        c3 = {
+            "name": "c3_asym",
+            "persons": ["P1", "P3"],
+        }
+
+        test_infos = [c1, c2, c3]
+        codelist_factory = LocalCSVCodelistFactory(
+            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        for test_info in test_infos:
+            codelist_name = test_info["name"].replace("_asym", "")
+            test_info["phenotype"] = CodelistPhenotype(
+                name=test_info["name"],
+                codelist=codelist_factory.get_codelist(codelist_name),
+                domain="event_asym",
+            )
+
+        return test_infos
+
+
+# ============================================================================
+# Test Registration
+# ============================================================================
+
 if __name__ == "__main__":
     import sys
 
@@ -420,6 +611,10 @@ if __name__ == "__main__":
     # Time range autojoin test
     timerange_gen = CodelistPhenotypeAutojoinTimeRangeTestGenerator()
     timerange_gen.run_tests()
+
+    # Asymmetric join keys test
+    asymmetric_gen = CodelistPhenotypeAutojoinAsymmetricTestGenerator()
+    asymmetric_gen.run_tests()
 
     print("\n" + "=" * 80)
     print("All CodelistPhenotype autojoin tests completed successfully!")
