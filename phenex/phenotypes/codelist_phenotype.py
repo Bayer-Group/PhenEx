@@ -24,6 +24,7 @@ class CodelistPhenotype(Phenotype):
         return_date: Specifies whether to return the 'first', 'last', 'nearest', or 'all' event date(s). Default is 'first'.
         return_value: Specifies which values to return. None for no return value or 'all' for all return values on the selected date(s). Default is None.
         categorical_filter: Additional categorical filters to apply.
+        codelist_domain: Optional domain of the codelist if different from the main domain. This is used for autojoin functionality when CODE/CODE_TYPE are in a different table.
 
     Attributes:
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
@@ -103,11 +104,12 @@ class CodelistPhenotype(Phenotype):
         return_date="first",
         return_value=None,
         categorical_filter: Optional[CategoricalFilter] = None,
+        codelist_domain: Optional[str] = None,
         **kwargs,
     ):
         super(CodelistPhenotype, self).__init__(name=name or codelist.name)
 
-        self.codelist_filter = CodelistFilter(codelist, domain=domain)
+        self.codelist_filter = CodelistFilter(codelist, domain=codelist_domain)
         self.codelist = codelist
         self.categorical_filter = categorical_filter
         self.date_range = date_range
