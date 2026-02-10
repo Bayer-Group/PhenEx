@@ -82,6 +82,7 @@ class DummyEventWithoutCodesTable(CodeTable):
     """
 
     NAME_TABLE = "EVENT"
+    CODES_DEFINED_IN = "DummyConceptTable"  # NAME_TABLE of the table where codes are defined
     JOIN_KEYS = {
         "DummyEventMappingTable": ["EVENTMAPPINGID"],  # Direct join to mapping table
     }
@@ -251,8 +252,8 @@ class CodelistPhenotypeAutojoinBasicTestGenerator(PhenotypeTestGenerator):
                 name=test_info["name"],
                 codelist=codelist_factory.get_codelist(test_info["name"]),
                 domain="event",
-                # The key: specify that codes are in the concept domain
-                codelist_domain="concept",
+                # Note: No need to specify codelist_domain - the DummyEventWithoutCodesTable
+                # mapper defines CODES_DEFINED_IN="concept" to handle this automatically
             )
 
         return test_infos
@@ -396,7 +397,7 @@ class CodelistPhenotypeAutojoinTimeRangeTestGenerator(PhenotypeTestGenerator):
                 name=test_info["name"],
                 codelist=codelist_factory.get_codelist("c1"),
                 domain="event",
-                codelist_domain="concept",  # Codes are in concept table
+                # Note: CODES_DEFINED_IN="concept" in mapper handles autojoin automatically
                 relative_time_range=test_info["relative_time_range"],
             )
 

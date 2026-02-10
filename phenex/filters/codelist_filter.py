@@ -10,18 +10,20 @@ import pandas as pd
 class CodelistFilter(Filter):
     """
     CodelistFilter is a class designed to filter a CodeTable based on a specified codelist.
+    
+    The filter automatically detects where codes are defined by checking the CodeTable's 
+    CODES_DEFINED_IN property. If CODES_DEFINED_IN is set to a domain name (e.g., "concept"),
+    the filter will use autojoin to reach that table. If CODES_DEFINED_IN is None, codes 
+    are assumed to be in the current table.
 
     Attributes:
         codelist (Codelist): The codelist used for filtering the CodeTable.
         name (str): The name of the filter. Defaults to the name of the codelist if not provided.
-        use_code_type (bool): A flag indicating whether to use the code type in the filtering process. Defaults to True.
-        domain (Optional[str]): The domain to which the codelist applies. Used for autojoin functionality when CODE/CODE_TYPE are in a different table.
     """
 
-    def __init__(self, codelist: Codelist, name=None, domain=None):
+    def __init__(self, codelist: Codelist, name=None):
         self.codelist = codelist
         self.name = name or self.codelist.name
-        self.domain = domain
         self.codelist_as_tuples = self._convert_codelist_to_tuples()
         super(CodelistFilter, self).__init__()
 
@@ -89,69 +91,93 @@ class CodelistFilter(Filter):
     ) -> CodeTable:
         """
         Automatically joins the necessary tables and applies the codelist filter.
-        Use when the input table does not contain CODE/CODE_TYPE columns that define the filter.
-
-        This is particularly useful when codelist codes are in a concept/reference table that
-        requires joining through intermediate tables (e.g., CONDITION_OCCURRENCE -> CONCEPT).
-
+        
+        The filter checks the table's CODES_DEFINED_IN property to determine where codes are located:
+        - If CODES_DEFINED_IN is None: codes are in the current table, filter directly
+        - If CODES_DEFINED_IN is set: codes are in another table, perform autojoin to reach it
+        
+        This design allows the table mapper to control where codes are located, keeping the
+        phenotype and filter logic clean and unaware of database schema details.
+        
         Parameters:
             table (CodeTable): The table containing events to be filtered.
             tables (dict): A dictionary of tables from the DomainsDictionary for joining.
-
+            
         Returns:
             CodeTable: The filtered CodeTable with events matching the codelist.
-
+            
         Examples:
             ```
-            # Example 1: Filter conditions using concept table (requires 2 joins)
-            # CONDITION_OCCURRENCE -> VISIT_OCCURRENCE -> CONCEPT
-            concept_codelist = Codelist(
-                codelist={"ICD10CM": ["I48.0", "I48.1"]},
-                name="afib_concepts",
-                use_code_type=True
-            )
-            codelist_filter = CodelistFilter(
-                codelist=concept_codelist,
-                domain="CONCEPT"
-            )
-            # Will automatically join through necessary tables to reach CONCEPT
-            filtered = codelist_filter.autojoin_filter(condition_table, tables=omop_tables)
+            # Example 1: Codes in the table itself (traditional pattern)
+            class ConditionOccurrenceTable(CodeTable):
+                CODES_DEFINED_IN = None  # Codes are in this table
+                DEFAULT_MAPPING = {
+                    "CODE": "CONDITION_CONCEPT_ID",
+                    "CODE_TYPE": "VOCABULARY_ID"
+                }
+            
+            # Example 2: Codes in a separate concept table (autojoin pattern)
+            class EventWithoutCodesTable(CodeTable):
+                CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of table containing codes
+                JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
+                PATHS = {"ConceptTable": ["EventMappingTable"]}
+            
+            # Usage is identical regardless of where codes are:
+            codelist_filter = CodelistFilter(codelist)
+            filtered = codelist_filter.autojoin_filter(table, tables)
             ```
         """
+        # Check if table specifies where codes are defined
+        codes_domain = getattr(table, 'CODES_DEFINED_IN', None)
+        
         # Check if CODE and CODE_TYPE columns exist in the current table
         has_code = "CODE" in table.columns
-        has_code_type = (
-            "CODE_TYPE" in table.columns if self.codelist.use_code_type else True
-        )
-
+        has_code_type = "CODE_TYPE" in table.columns if self.codelist.use_code_type else True
+        
         if not (has_code and has_code_type):
             # Need to join to get CODE/CODE_TYPE columns
-            if self.domain is None:
+            if codes_domain is None:
                 raise ValueError(
-                    "CodelistFilter requires 'domain' parameter when CODE/CODE_TYPE "
-                    "columns are not present in the input table. Specify the domain "
-                    "containing the codelist codes (e.g., 'CONCEPT')."
+                    f"CodeTable {table.__class__.__name__} does not have CODE/CODE_TYPE columns "
+                    "and CODES_DEFINED_IN is not set. Either add CODE/CODE_TYPE columns to the "
+                    "table mapping or set CODES_DEFINED_IN to specify which table contains the codes."
                 )
-            if tables is None or self.domain not in tables.keys():
+            if tables is None:
                 raise ValueError(
-                    f"Table required for codelist filter ({self.domain}) does not exist "
-                    "within domains dictionary. Ensure the domain is included in your "
-                    "DomainsDictionary and passed via the 'tables' parameter."
+                    f"Table required for codelist filter ({codes_domain}) but 'tables' parameter is None. "
+                    "Pass the domains dictionary via the 'tables' parameter."
                 )
-
+            
+            # Find the target table by NAME_TABLE or class name
+            target_table = None
+            for domain_key, domain_table in tables.items():
+                table_name = getattr(domain_table, 'NAME_TABLE', None)
+                class_name = domain_table.__class__.__name__
+                if table_name == codes_domain or class_name == codes_domain:
+                    target_table = domain_table
+                    break
+            
+            if target_table is None:
+                available_tables = [f"{t.__class__.__name__} (NAME_TABLE={getattr(t, 'NAME_TABLE', 'N/A')})" 
+                                    for t in tables.values()]
+                raise ValueError(
+                    f"Table required for codelist filter ({codes_domain}) not found. "
+                    f"Searched by NAME_TABLE and class name. Available tables: {', '.join(available_tables)}"
+                )
+            
             # Store original columns to preserve table structure
             original_columns = table.columns
-
-            # Perform autojoin to the target domain
-            table = table.join(tables[self.domain], domains=tables)
-
+            
+            # Perform autojoin to the target table
+            table = table.join(target_table, domains=tables)
+            
             # Apply the codelist filter
             filtered_table = self._filter(table)
-
+            
             # Restore original column structure (plus any columns needed from join)
             # This ensures we don't pollute the output with unnecessary joined columns
             columns_to_keep = list(set(original_columns) & set(filtered_table.columns))
             return type(table)(filtered_table.select(columns_to_keep))
-
+        
         # If CODE/CODE_TYPE already exist, just apply the filter directly
         return self._filter(table)

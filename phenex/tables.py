@@ -288,11 +288,33 @@ class EventTable(PhenexTable):
 
 
 class CodeTable(PhenexTable):
+    """
+    Base class for tables containing coded events (diagnoses, procedures, medications, etc.).
+    
+    CODES_DEFINED_IN: Specifies where CODE/CODE_TYPE columns are located.
+        - None (default): Codes are in this table itself
+        - NAME_TABLE or class name: Codes are in another table (matched by NAME_TABLE or class name)
+        
+    Example 1: Traditional pattern (codes in the table)
+        class ConditionOccurrenceTable(CodeTable):
+            CODES_DEFINED_IN = None  # Default, codes are here
+            DEFAULT_MAPPING = {
+                "CODE": "CONDITION_CONCEPT_ID",
+                "CODE_TYPE": "VOCABULARY_ID"
+            }
+    
+    Example 2: Concept table pattern (codes in separate table)
+        class EventTable(CodeTable):
+            CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of target table
+            JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
+            PATHS = {"ConceptTable": ["EventMappingTable"]}
+    """
     NAME_TABLE = "CODE"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
+    CODES_DEFINED_IN = None  # Set to domain name if codes are in a different table
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
