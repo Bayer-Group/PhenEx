@@ -557,7 +557,9 @@ class DummyEncounterTable(PhenexTable):
             "VISITID",
         ],
     }
-    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+    }
 
 
 class DummyVisitDetailTable(PhenexTable):
@@ -566,7 +568,9 @@ class DummyVisitDetailTable(PhenexTable):
         "DummyPersonTable": ["PERSON_ID"],
         "DummyEncounterTable": ["PERSON_ID", "VISITID"],
     }
-    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+    }
 
 
 class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
