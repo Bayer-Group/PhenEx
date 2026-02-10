@@ -85,7 +85,7 @@ class CodelistFilter(Filter):
             code_table.columns
         )
         return filtered_table
-
+    
     def autojoin_filter(
         self, table: CodeTable, tables: Optional[Dict[str, PhenexTable]] = None
     ) -> CodeTable:
@@ -148,27 +148,9 @@ class CodelistFilter(Filter):
                     "Pass the domains dictionary via the 'tables' parameter."
                 )
             
-            # Find the target table by NAME_TABLE or class name
-            target_table = None
-            for domain_key, domain_table in tables.items():
-                table_name = getattr(domain_table, 'NAME_TABLE', None)
-                class_name = domain_table.__class__.__name__
-                if table_name == codes_domain or class_name == codes_domain:
-                    target_table = domain_table
-                    break
-            
-            if target_table is None:
-                available_tables = [f"{t.__class__.__name__} (NAME_TABLE={getattr(t, 'NAME_TABLE', 'N/A')})" 
-                                    for t in tables.values()]
-                raise ValueError(
-                    f"Table required for codelist filter ({codes_domain}) not found. "
-                    f"Searched by NAME_TABLE and class name. Available tables: {', '.join(available_tables)}"
-                )
-            
-            # Store original columns to preserve table structure
+            # Find the target table and perform autojoin
+            target_table = self._find_target_table(codes_domain, tables)
             original_columns = table.columns
-            
-            # Perform autojoin to the target table
             table = table.join(target_table, domains=tables)
             
             # Apply the codelist filter
@@ -181,3 +163,35 @@ class CodelistFilter(Filter):
         
         # If CODE/CODE_TYPE already exist, just apply the filter directly
         return self._filter(table)
+
+    def _find_target_table(
+        self, codes_domain: str, tables: Dict[str, PhenexTable]
+    ) -> PhenexTable:
+        """
+        Find the target table containing codes by searching for NAME_TABLE or class name match.
+        
+        Parameters:
+            codes_domain: The NAME_TABLE or class name to search for
+            tables: Dictionary of available tables
+            
+        Returns:
+            The matching PhenexTable
+            
+        Raises:
+            ValueError: If no matching table is found
+        """
+        for domain_key, domain_table in tables.items():
+            table_name = getattr(domain_table, 'NAME_TABLE', None)
+            class_name = domain_table.__class__.__name__
+            if table_name == codes_domain or class_name == codes_domain:
+                return domain_table
+        
+        # No match found - provide helpful error message
+        available_tables = [
+            f"{t.__class__.__name__} (NAME_TABLE={getattr(t, 'NAME_TABLE', 'N/A')})" 
+            for t in tables.values()
+        ]
+        raise ValueError(
+            f"Table required for codelist filter ({codes_domain}) not found. "
+            f"Searched by NAME_TABLE and class name. Available tables: {', '.join(available_tables)}"
+        )
