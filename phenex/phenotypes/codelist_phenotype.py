@@ -145,7 +145,7 @@ class CodelistPhenotype(Phenotype):
         return code_table
 
     def _perform_codelist_filtering(self, code_table, tables):
-        # assert is_phenex_code_table(code_table)
+        assert is_phenex_code_table(code_table)
         code_table = self.codelist_filter.autojoin_filter(code_table, tables=tables)
         return code_table
 
