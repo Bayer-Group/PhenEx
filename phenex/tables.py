@@ -23,7 +23,9 @@ class PhenexTable:
     JOIN_KEYS and PATHS Documentation:
 
     JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
-    and the value is a list of column names to use as join keys.
+    and the value is a list of join keys. Each join key can be:
+    - A string: symmetric join (column has same name in both tables)
+    - A 2-element tuple/list: asymmetric join (left_col, right_col) with different names
 
     PATHS defines multi-hop join paths. The key is the CLASS NAME of the final target table,
     and the value is a list of CLASS NAMES for intermediate tables to traverse.
@@ -31,13 +33,13 @@ class PhenexTable:
     IMPORTANT: JOIN_KEYS should be defined symmetrically - if TableA can join to TableB,
     then TableB should also define how to join back to TableA.
 
-    Example 1: Direct joins (working example from test suite)
+    Example 1: Symmetric joins (same column names)
     ```python
     class DummyConditionOccurrenceTable(CodeTable):
         NAME_TABLE = "DIAGNOSIS"
         JOIN_KEYS = {
-            "DummyPersonTable": ["PERSON_ID"],  # Join to Person using PERSON_ID
-            "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # Join to Encounter using both keys
+            "DummyPersonTable": ["PERSON_ID"],  # Join using PERSON_ID in both tables
+            "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # Compound join: both keys must match
         }
         PATHS = {
             "DummyVisitDetailTable": ["DummyEncounterTable"]  # To reach VisitDetail, go through Encounter
@@ -59,41 +61,61 @@ class PhenexTable:
         }
     ```
 
-    In this example:
-    - DummyConditionOccurrenceTable can join directly to DummyEncounterTable
-    - To get from DummyConditionOccurrenceTable to DummyVisitDetailTable, it goes through DummyEncounterTable
-    - All JOIN_KEYS are symmetric (both sides define the relationship)
-
-    Example 2: Chain of joins (Event -> Mapping -> Concept)
+    Example 2: Asymmetric joins (different column names)
     ```python
-    class DummyEventWithoutCodesTable(CodeTable):
+    class EventTable(CodeTable):
         NAME_TABLE = "EVENT"
         JOIN_KEYS = {
-            "DummyEventMappingTable": ["EVENTMAPPINGID"],  # Direct join to mapping table
+            "EventMappingTable": [("ID", "EVENTID")],  # EventTable.ID joins to EventMappingTable.EVENTID
         }
         PATHS = {
-            "DummyEventConceptTable": ["DummyEventMappingTable"],  # To reach Concept, go through Mapping
+            "ConceptTable": ["EventMappingTable"],
+        }
+        DEFAULT_MAPPING = {
+            "PERSON_ID": "PERSON_ID",
+            "ID": "ID",  # Must include ID in mapping for it to exist
         }
 
-    class DummyEventMappingTable(PhenexTable):
+    class EventMappingTable(PhenexTable):
         NAME_TABLE = "EVENT_MAPPING"
         JOIN_KEYS = {
-            "DummyEventWithoutCodesTable": ["EVENTMAPPINGID"],  # Symmetric join back to Event
-            "DummyEventConceptTable": ["CONCEPTID"],  # Direct join to Concept
+            "EventTable": [("EVENTID", "ID")],  # Symmetric: reverse the tuple
+            "ConceptTable": [("CONCEPTID", "ID")],  # Maps to ConceptTable.ID
+        }
+        DEFAULT_MAPPING = {
+            "EVENTID": "EVENTID",
+            "CONCEPTID": "CONCEPTID",
         }
 
-    class DummyEventConceptTable(CodeTable):
+    class ConceptTable(CodeTable):
         NAME_TABLE = "CONCEPT"
         JOIN_KEYS = {
-            "DummyEventMappingTable": ["CONCEPTID"],  # Symmetric join back to Mapping
+            "EventMappingTable": [("ID", "CONCEPTID")],  # Symmetric: reverse the tuple
+        }
+        DEFAULT_MAPPING = {
+            "ID": "ID",
+            "CODE": "CONCEPT_CODE",
+            "CODE_TYPE": "VOCABULARY_ID",
         }
     ```
 
-    In this example:
-    - Event joins to Mapping using EVENTMAPPINGID
-    - Mapping joins to Concept using CONCEPTID
-    - Event can reach Concept by going through Mapping (defined in PATHS)
-    - All relationships are symmetric
+    Example 3: Mixed symmetric and asymmetric joins
+    ```python
+    class PatientEventTable(CodeTable):
+        JOIN_KEYS = {
+            "EventMappingTable": [
+                "PERSON_ID",  # Symmetric: PERSON_ID in both tables
+                ("EVENT_ID", "EVENTID")  # Asymmetric: different column names
+            ],
+        }
+    ```
+
+    In all examples:
+    - Symmetric relationships use strings: ["COLUMN_NAME"]
+    - Asymmetric relationships use tuples: [("LEFT_COL", "RIGHT_COL")]
+    - Compound joins use multiple elements: ["COL1", "COL2"] or [("L1", "R1"), ("L2", "R2")]
+    - All relationships should be symmetric (both tables define the join)
+    - ALL join columns must be in DEFAULT_MAPPING for them to exist in the mapped table
     """
 
     NAME_TABLE = "PHENEX_TABLE"  # name of table in the database
@@ -139,7 +161,7 @@ class PhenexTable:
             if key not in self.KNOWN_FIELDS:
                 raise ValueError(
                     f"Unknown mapped field {key} --> {column_mapping[key]} for f{type(self)}."
-            )
+                )
         default_mapping = copy.deepcopy(self.DEFAULT_MAPPING)
         default_mapping.update(column_mapping)
         return default_mapping
@@ -202,10 +224,36 @@ class PhenexTable:
             # join keys are defined by the left table; in theory should enforce symmetry
             join_keys = current_left_table.JOIN_KEYS[right_table_class_name]
 
+            # Build join predicate(s) - supports symmetric and asymmetric joins
+            # Symmetric: ["COLUMN"] or ["COL1", "COL2"] - same column names in both tables
+            # Asymmetric: [("LEFT_COL", "RIGHT_COL")] - different column names
+            # Mixed: ["COL1", ("LEFT_COL", "RIGHT_COL")]
+            predicates = []
+            for join_key in join_keys:
+                if isinstance(join_key, str):
+                    # Symmetric: column exists in both tables with same name
+                    predicates.append(joined_table[join_key] == right_table[join_key])
+                elif isinstance(join_key, (tuple, list)) and len(join_key) == 2:
+                    # Asymmetric: (left_col, right_col) - different column names
+                    left_col, right_col = join_key
+                    predicates.append(joined_table[left_col] == right_table[right_col])
+                else:
+                    raise ValueError(
+                        f"Invalid join key format: {join_key}. Must be either a string or a 2-element tuple/list."
+                    )
+
+            # Combine all predicates with AND
+            if len(predicates) == 1:
+                join_predicate = predicates[0]
+            else:
+                join_predicate = predicates[0]
+                for pred in predicates[1:]:
+                    join_predicate = join_predicate & pred
+
             columns = list(set(joined_table.columns + right_table.columns))
             # subset columns, making sure to set type of table to the very left table (self)
             joined_table = type(self)(
-                joined_table.join(right_table, join_keys, **kwargs).select(columns)
+                joined_table.join(right_table, join_predicate, **kwargs).select(columns)
             )
             current_left_table = right_table
         return joined_table

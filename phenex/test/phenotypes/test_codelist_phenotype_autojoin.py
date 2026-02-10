@@ -425,8 +425,7 @@ class AsymmetricConceptTable(CodeTable):
     NAME_TABLE = "CONCEPT_ASYM"
     JOIN_KEYS = {
         "AsymmetricEventMappingTable": [
-            "ID",
-            "CONCEPTID",
+            ("ID", "CONCEPTID"),
         ],  # Asymmetric: ID -> CONCEPTID
     }
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "ID"]
@@ -446,8 +445,8 @@ class AsymmetricEventMappingTable(PhenexTable):
 
     NAME_TABLE = "EVENT_MAPPING_ASYM"
     JOIN_KEYS = {
-        "AsymmetricEventTable": ["EVENTID", "ID"],  # Asymmetric: EVENTID -> ID
-        "AsymmetricConceptTable": ["CONCEPTID", "ID"],  # Asymmetric: CONCEPTID -> ID
+        "AsymmetricEventTable": [("EVENTID", "ID")],  # Asymmetric: EVENTID -> ID
+        "AsymmetricConceptTable": [("CONCEPTID", "ID")],  # Asymmetric: CONCEPTID -> ID
     }
     KNOWN_FIELDS = ["EVENTID", "CONCEPTID"]
     DEFAULT_MAPPING = {
@@ -465,7 +464,7 @@ class AsymmetricEventTable(CodeTable):
     NAME_TABLE = "EVENT_ASYM"
     CODES_DEFINED_IN = "CONCEPT_ASYM"
     JOIN_KEYS = {
-        "AsymmetricEventMappingTable": ["ID", "EVENTID"],  # Asymmetric: ID -> EVENTID
+        "AsymmetricEventMappingTable": [("ID", "EVENTID")],  # Asymmetric: ID -> EVENTID
     }
     PATHS = {
         "AsymmetricConceptTable": ["AsymmetricEventMappingTable"],

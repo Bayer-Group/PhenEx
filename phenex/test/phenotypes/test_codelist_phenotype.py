@@ -533,7 +533,7 @@ class DummyConditionOccurenceTable(CodeTable):
     NAME_TABLE = "DIAGNOSIS"
     JOIN_KEYS = {
         "DummyPersonTable": ["PERSON_ID"],
-        "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # I changed this from EVENT_DATE
+        "DummyEncounterTable": ["PERSON_ID", "ENCID"],
     }
     PATHS = {"DummyVisitDetailTable": ["DummyEncounterTable"]}
     DEFAULT_MAPPING = {
