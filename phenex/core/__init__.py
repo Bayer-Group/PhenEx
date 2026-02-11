@@ -6,6 +6,7 @@ from .subset_table import SubsetTable
 from .inclusions_table_node import InclusionsTableNode
 from .exclusions_table_node import ExclusionsTableNode
 from .index_phenotype import IndexPhenotype
+from .database import Database
 
 __all__ = [
     "Cohort",
@@ -16,4 +17,5 @@ __all__ = [
     "InclusionsTableNode",
     "ExclusionsTableNode",
     "IndexPhenotype",
+    "Database",
 ]

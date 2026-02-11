@@ -2,10 +2,7 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
-from .core import (
-    Cohort,
-    Subcohort,
-)
+from .core import Cohort, Subcohort, Database
 
 # Phenotype classes - the main public API
 from .phenotypes import (
@@ -105,6 +102,7 @@ __all__ = [
     "NodeGroup",
     "Cohort",
     "Subcohort",
+    "Database"
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",

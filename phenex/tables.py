@@ -7,6 +7,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from phenex.util.serialization.to_dict import to_dict
+
 
 class PhenexTable:
     """
@@ -312,6 +314,45 @@ class PhenexTable:
             name=self.NAME_TABLE,
             column_mapping=self.column_mapping,
         )
+
+    @classmethod
+    def to_dict(cls) -> dict:
+        """
+        Serialize the PhenexTable class configuration (not the data).
+
+        This serializes the class-level attributes that define the table mapping,
+        but not the actual ibis table data which cannot be serialized.
+
+        Returns:
+            dict: Class configuration including NAME_TABLE, JOIN_KEYS, DEFAULT_MAPPING, etc.
+        """
+        return {
+            "__table_class__": cls.__name__,
+            "__module__": cls.__module__,
+            "NAME_TABLE": cls.NAME_TABLE,
+            "JOIN_KEYS": cls.JOIN_KEYS,
+            "KNOWN_FIELDS": cls.KNOWN_FIELDS,
+            "DEFAULT_MAPPING": cls.DEFAULT_MAPPING,
+            "PATHS": cls.PATHS,
+            "REQUIRED_FIELDS": cls.REQUIRED_FIELDS,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """
+        Reconstruct a PhenexTable class reference from serialized data.
+
+        Note: This returns the class itself, not an instance, since we cannot
+        reconstruct the actual table data without a database connection.
+
+        Args:
+            data: Serialized class configuration
+
+        Returns:
+            The PhenexTable subclass
+        """
+        # The class should already exist in the module, just return it
+        return cls
 
 
 class PhenexPersonTable(PhenexTable):
