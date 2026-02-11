@@ -2,6 +2,7 @@ from typing import Dict
 from ibis.expr.types.relations import Table
 
 from phenex.tables import *
+from phenex.util.serialization.to_dict import to_dict
 
 
 class DomainsDictionary:
@@ -80,6 +81,63 @@ class DomainsDictionary:
             if table_name not in source_tables:
                 source_tables[table_name] = con.get_source_table(table_name)
         return source_tables
+
+    def to_dict(self) -> dict:
+        """
+        Serialize the DomainsDictionary configuration.
+
+        This serializes the mapping of domain names to PhenexTable classes,
+        storing only the class configuration, not any actual table data.
+
+        Returns:
+            dict: Serialized domains dictionary configuration
+        """
+        serialized_domains = {}
+        for domain_name, mapper_class in self.domains_dict.items():
+            # Store the class configuration
+            serialized_domains[domain_name] = mapper_class.to_dict()
+
+        return {
+            "class_name": "DomainsDictionary",
+            "domains_dict": serialized_domains,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "DomainsDictionary":
+        """
+        Reconstruct a DomainsDictionary from serialized data.
+
+        Args:
+            data: Serialized DomainsDictionary configuration
+
+        Returns:
+            DomainsDictionary instance with mapper classes
+        """
+        from phenex.tables import PhenexTable
+        import importlib
+
+        domains_dict = {}
+        for domain_name, table_config in data.get("domains_dict", {}).items():
+            # Reconstruct the mapper class by looking it up in globals
+            table_class_name = table_config["__table_class__"]
+
+            # Try to find the class in the current module (mappers.py)
+            if table_class_name in globals():
+                mapper_class = globals()[table_class_name]
+            else:
+                # Try to import from the module specified
+                module_name = table_config.get("__module__", "phenex.mappers")
+                try:
+                    module = importlib.import_module(module_name)
+                    mapper_class = getattr(module, table_class_name)
+                except (ImportError, AttributeError):
+                    raise ValueError(
+                        f"Cannot find mapper class '{table_class_name}' in module '{module_name}'"
+                    )
+
+            domains_dict[domain_name] = mapper_class
+
+        return DomainsDictionary(domains_dict)
 
 
 #

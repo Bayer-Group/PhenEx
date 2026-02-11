@@ -29,6 +29,6 @@ class Subcohort(Cohort):
             entry_criterion=cohort.entry_criterion,
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,
-            data_period=cohort.data_period,
+            database=cohort.database,
         )
         self.cohort = cohort
