@@ -533,7 +533,7 @@ class DummyConditionOccurenceTable(CodeTable):
     NAME_TABLE = "DIAGNOSIS"
     JOIN_KEYS = {
         "DummyPersonTable": ["PERSON_ID"],
-        "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # I changed this from EVENT_DATE
+        "DummyEncounterTable": ["PERSON_ID", "ENCID"],
     }
     PATHS = {"DummyVisitDetailTable": ["DummyEncounterTable"]}
     DEFAULT_MAPPING = {
@@ -551,13 +551,15 @@ class DummyEncounterTable(PhenexTable):
         "DummyConditionOccurenceTable": [
             "PERSON_ID",
             "ENCID",
-        ],  # I changed this from EVENT_DATE
+        ],
         "DummyVisitDetailTable": [
             "PERSON_ID",
             "VISITID",
-        ],  # I changed this from EVENT_DATE
+        ],
     }
-    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+    }
 
 
 class DummyVisitDetailTable(PhenexTable):
@@ -566,7 +568,9 @@ class DummyVisitDetailTable(PhenexTable):
         "DummyPersonTable": ["PERSON_ID"],
         "DummyEncounterTable": ["PERSON_ID", "VISITID"],
     }
-    DEFAULT_MAPPING = {"PERSON_ID": "PERSON_ID"}
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+    }
 
 
 class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):

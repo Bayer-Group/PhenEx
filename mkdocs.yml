@@ -48,6 +48,8 @@ nav:
       - Codelists:
           - Codelist: api/codelists/codelists.md
           - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md
+      - Database connections mappers and tables:
+          - Table: api/tables.md
       - DerivedTables:
           - CombineOverlappingPeriods: api/derived_tables/combine_overlapping_periods.md
           - EventsToTimeRange: api/derived_tables/events_to_time_range.md

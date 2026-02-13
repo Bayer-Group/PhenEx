@@ -3,6 +3,9 @@ from ibis.expr.types.relations import Table
 from typing import Union
 import ibis
 import copy
+import logging
+
+logger = logging.getLogger(__name__)
 
 from phenex.util.serialization.to_dict import to_dict
 
@@ -18,6 +21,103 @@ class PhenexTable:
         3. PATHS: if you want to use the autojoin functionality of PhenexTable for more complex joins, you must specify join paths to take to get from one table to another
 
     Note that for each table type, there are REQUIRED_FIELDS, i.e., fields that MUST be defined for Phenex to work with such a table and KNOWN_FIELDS, i.e., fields that Phenex internally understands what to do with (there is a Phenotype that knows how to work with that field). For instance, in a PhenexPersonTable, one MUST define PERSON_ID, but DATE_OF_BIRTH is an optional field that PhenEx can process if given and transform into AGE. These are fixed for each table type and should not be overridden.
+
+    JOIN_KEYS and PATHS Documentation:
+
+    JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
+    and the value is a list of join keys. Each join key can be:
+    - A string: symmetric join (column has same name in both tables)
+    - A 2-element tuple/list: asymmetric join (left_col, right_col) with different names
+
+    PATHS defines multi-hop join paths. The key is the CLASS NAME of the final target table,
+    and the value is a list of CLASS NAMES for intermediate tables to traverse.
+
+    IMPORTANT: JOIN_KEYS should be defined symmetrically - if TableA can join to TableB,
+    then TableB should also define how to join back to TableA.
+
+    Example 1: Symmetric joins (same column names)
+    ```python
+    class DummyConditionOccurrenceTable(CodeTable):
+        NAME_TABLE = "DIAGNOSIS"
+        JOIN_KEYS = {
+            "DummyPersonTable": ["PERSON_ID"],  # Join using PERSON_ID in both tables
+            "DummyEncounterTable": ["PERSON_ID", "ENCID"],  # Compound join: both keys must match
+        }
+        PATHS = {
+            "DummyVisitDetailTable": ["DummyEncounterTable"]  # To reach VisitDetail, go through Encounter
+        }
+
+    class DummyEncounterTable(PhenexTable):
+        NAME_TABLE = "ENCOUNTER"
+        JOIN_KEYS = {
+            "DummyPersonTable": ["PERSON_ID"],
+            "DummyConditionOccurrenceTable": ["PERSON_ID", "ENCID"],  # Symmetric!
+            "DummyVisitDetailTable": ["PERSON_ID", "VISITID"],
+        }
+
+    class DummyVisitDetailTable(PhenexTable):
+        NAME_TABLE = "VISIT"
+        JOIN_KEYS = {
+            "DummyPersonTable": ["PERSON_ID"],
+            "DummyEncounterTable": ["PERSON_ID", "VISITID"],  # Symmetric!
+        }
+    ```
+
+    Example 2: Asymmetric joins (different column names)
+    ```python
+    class EventTable(CodeTable):
+        NAME_TABLE = "EVENT"
+        JOIN_KEYS = {
+            "EventMappingTable": [("ID", "EVENTID")],  # EventTable.ID joins to EventMappingTable.EVENTID
+        }
+        PATHS = {
+            "ConceptTable": ["EventMappingTable"],
+        }
+        DEFAULT_MAPPING = {
+            "PERSON_ID": "PERSON_ID",
+            "ID": "ID",  # Must include ID in mapping for it to exist
+        }
+
+    class EventMappingTable(PhenexTable):
+        NAME_TABLE = "EVENT_MAPPING"
+        JOIN_KEYS = {
+            "EventTable": [("EVENTID", "ID")],  # Symmetric: reverse the tuple
+            "ConceptTable": [("CONCEPTID", "ID")],  # Maps to ConceptTable.ID
+        }
+        DEFAULT_MAPPING = {
+            "EVENTID": "EVENTID",
+            "CONCEPTID": "CONCEPTID",
+        }
+
+    class ConceptTable(CodeTable):
+        NAME_TABLE = "CONCEPT"
+        JOIN_KEYS = {
+            "EventMappingTable": [("ID", "CONCEPTID")],  # Symmetric: reverse the tuple
+        }
+        DEFAULT_MAPPING = {
+            "ID": "ID",
+            "CODE": "CONCEPT_CODE",
+            "CODE_TYPE": "VOCABULARY_ID",
+        }
+    ```
+
+    Example 3: Mixed symmetric and asymmetric joins
+    ```python
+    class PatientEventTable(CodeTable):
+        JOIN_KEYS = {
+            "EventMappingTable": [
+                "PERSON_ID",  # Symmetric: PERSON_ID in both tables
+                ("EVENT_ID", "EVENTID")  # Asymmetric: different column names
+            ],
+        }
+    ```
+
+    In all examples:
+    - Symmetric relationships use strings: ["COLUMN_NAME"]
+    - Asymmetric relationships use tuples: [("LEFT_COL", "RIGHT_COL")]
+    - Compound joins use multiple elements: ["COL1", "COL2"] or [("L1", "R1"), ("L2", "R2")]
+    - All relationships should be symmetric (both tables define the join)
+    - ALL join columns must be in DEFAULT_MAPPING for them to exist in the mapped table
     """
 
     NAME_TABLE = "PHENEX_TABLE"  # name of table in the database
@@ -55,6 +155,10 @@ class PhenexTable:
 
     def _get_column_mapping(self, column_mapping=None):
         column_mapping = column_mapping or {}
+        # Only validate fields explicitly passed in column_mapping parameter
+        # DEFAULT_MAPPING is defined by the class itself and should be trusted
+        # This allows join keys and other auxiliary fields to be in DEFAULT_MAPPING
+        # without requiring them to be in KNOWN_FIELDS
         for key in column_mapping.keys():
             if key not in self.KNOWN_FIELDS:
                 raise ValueError(
@@ -92,6 +196,10 @@ class PhenexTable:
         # joined table is the sequentially joined table
         # current table is the table for the left join in the current iteration
         joined_table = current_left_table = self
+        logger.debug(
+            f"Starting autojoin from {self.__class__.__name__} to {other.__class__.__name__}"
+        )
+
         for right_table_class_name in self._find_path(other):
             # get the next right table
             right_table_search_results = [
@@ -99,6 +207,13 @@ class PhenexTable:
                 for k, v in domains.items()
                 if v.__class__.__name__ == right_table_class_name
             ]
+            logger.debug(
+                f"Searching for {right_table_class_name} in domains: {list(domains.keys())}"
+            )
+            logger.debug(
+                f"Found {len(right_table_search_results)} matches for {right_table_class_name}"
+            )
+
             if len(right_table_search_results) != 1:
                 raise ValueError(
                     f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
@@ -110,10 +225,37 @@ class PhenexTable:
 
             # join keys are defined by the left table; in theory should enforce symmetry
             join_keys = current_left_table.JOIN_KEYS[right_table_class_name]
+
+            # Build join predicate(s) - supports symmetric and asymmetric joins
+            # Symmetric: ["COLUMN"] or ["COL1", "COL2"] - same column names in both tables
+            # Asymmetric: [("LEFT_COL", "RIGHT_COL")] - different column names
+            # Mixed: ["COL1", ("LEFT_COL", "RIGHT_COL")]
+            predicates = []
+            for join_key in join_keys:
+                if isinstance(join_key, str):
+                    # Symmetric: column exists in both tables with same name
+                    predicates.append(joined_table[join_key] == right_table[join_key])
+                elif isinstance(join_key, (tuple, list)) and len(join_key) == 2:
+                    # Asymmetric: (left_col, right_col) - different column names
+                    left_col, right_col = join_key
+                    predicates.append(joined_table[left_col] == right_table[right_col])
+                else:
+                    raise ValueError(
+                        f"Invalid join key format: {join_key}. Must be either a string or a 2-element tuple/list."
+                    )
+
+            # Combine all predicates with AND
+            if len(predicates) == 1:
+                join_predicate = predicates[0]
+            else:
+                join_predicate = predicates[0]
+                for pred in predicates[1:]:
+                    join_predicate = join_predicate & pred
+
             columns = list(set(joined_table.columns + right_table.columns))
             # subset columns, making sure to set type of table to the very left table (self)
             joined_table = type(self)(
-                joined_table.join(right_table, join_keys, **kwargs).select(columns)
+                joined_table.join(right_table, join_predicate, **kwargs).select(columns)
             )
             current_left_table = right_table
         return joined_table
@@ -124,14 +266,35 @@ class PhenexTable:
     def _find_path(self, other):
         start_name = self.__class__.__name__
         end_name = other.__class__.__name__
+
+        logger.debug(f"Finding path from {start_name} to {end_name}")
+
         # first see if direct connection
         try:
-            self.JOIN_KEYS[end_name]
+            join_keys = self.JOIN_KEYS[end_name]
+            logger.debug(
+                f"Found direct connection: {start_name} -> {end_name} using keys {join_keys}"
+            )
             return [end_name]
         except KeyError:
+            logger.debug(
+                f"No direct connection found in JOIN_KEYS for {start_name} -> {end_name}"
+            )
             try:
-                return self.PATHS[end_name] + [end_name]
+                path = self.PATHS[end_name]
+                full_path = path + [end_name]
+                logger.debug(
+                    f"Found path in PATHS: {start_name} -> {' -> '.join(full_path)}"
+                )
+                return full_path
             except KeyError:
+                logger.error(f"No path found for {start_name} -> {end_name}")
+                logger.debug(
+                    f"Available JOIN_KEYS for {start_name}: {list(self.JOIN_KEYS.keys())}"
+                )
+                logger.debug(
+                    f"Available PATHS for {start_name}: {list(self.PATHS.keys())}"
+                )
                 raise ValueError(
                     f"Cannot autojoin {start_name} --> {end_name}. Please specify join path in PATHS."
                 )
@@ -219,11 +382,34 @@ class EventTable(PhenexTable):
 
 
 class CodeTable(PhenexTable):
+    """
+    Base class for tables containing coded events (diagnoses, procedures, medications, etc.).
+
+    CODES_DEFINED_IN: Specifies where CODE/CODE_TYPE columns are located.
+        - None (default): Codes are in this table itself
+        - NAME_TABLE or class name: Codes are in another table (matched by NAME_TABLE or class name)
+
+    Example 1: Traditional pattern (codes in the table)
+        class ConditionOccurrenceTable(CodeTable):
+            CODES_DEFINED_IN = None  # Default, codes are here
+            DEFAULT_MAPPING = {
+                "CODE": "CONDITION_CONCEPT_ID",
+                "CODE_TYPE": "VOCABULARY_ID"
+            }
+
+    Example 2: Concept table pattern (codes in separate table)
+        class EventTable(CodeTable):
+            CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of target table
+            JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
+            PATHS = {"ConceptTable": ["EventMappingTable"]}
+    """
+
     NAME_TABLE = "CODE"
     RELATIONSHIPS = {
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
+    CODES_DEFINED_IN = None  # Set to domain name if codes are in a different table
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
