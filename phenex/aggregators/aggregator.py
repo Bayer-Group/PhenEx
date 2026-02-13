@@ -119,7 +119,8 @@ class VerticalDateAggregator:
             # Original behavior - nulls will be dropped
             input_table = input_table.filter(date_match)
 
-        # Select the necessary columns
+        # Drop the temporary aggregated_date column
+        input_table = input_table.drop("aggregated_date")
 
         # Apply the distinct reduction if required
         if self.reduce:

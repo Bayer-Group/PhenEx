@@ -51,7 +51,7 @@ class CategoricalPhenotype(Phenotype):
         self,
         name: str,
         domain: str,
-        categorical_filter: CategoricalFilter,
+        categorical_filter: CategoricalFilter = None,
         date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
