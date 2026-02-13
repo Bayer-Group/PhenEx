@@ -77,13 +77,23 @@ class SnowflakeConnector:
         SNOWFLAKE_DEST_DATABASE: Optional[str] = None,
     ):
         self.SNOWFLAKE_USER = SNOWFLAKE_USER or os.environ.get("SNOWFLAKE_USER")
-        self.SNOWFLAKE_ACCOUNT = SNOWFLAKE_ACCOUNT or os.environ.get("SNOWFLAKE_ACCOUNT")
-        self.SNOWFLAKE_WAREHOUSE = SNOWFLAKE_WAREHOUSE or os.environ.get("SNOWFLAKE_WAREHOUSE")
+        self.SNOWFLAKE_ACCOUNT = SNOWFLAKE_ACCOUNT or os.environ.get(
+            "SNOWFLAKE_ACCOUNT"
+        )
+        self.SNOWFLAKE_WAREHOUSE = SNOWFLAKE_WAREHOUSE or os.environ.get(
+            "SNOWFLAKE_WAREHOUSE"
+        )
         self.SNOWFLAKE_ROLE = SNOWFLAKE_ROLE or os.environ.get("SNOWFLAKE_ROLE")
-        self.SNOWFLAKE_PASSWORD = SNOWFLAKE_PASSWORD or os.environ.get("SNOWFLAKE_PASSWORD" )
-        self.SNOWFLAKE_PKEY = SNOWFLAKE_PKEY or os.environ.get("SNOWFLAKE_PKEY" )
-        self.SNOWFLAKE_SOURCE_DATABASE = SNOWFLAKE_SOURCE_DATABASE or os.environ.get("SNOWFLAKE_SOURCE_DATABASE")
-        self.SNOWFLAKE_DEST_DATABASE = SNOWFLAKE_DEST_DATABASE or os.environ.get("SNOWFLAKE_DEST_DATABASE")
+        self.SNOWFLAKE_PASSWORD = SNOWFLAKE_PASSWORD or os.environ.get(
+            "SNOWFLAKE_PASSWORD"
+        )
+        self.SNOWFLAKE_PKEY = SNOWFLAKE_PKEY or os.environ.get("SNOWFLAKE_PKEY")
+        self.SNOWFLAKE_SOURCE_DATABASE = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
+            "SNOWFLAKE_SOURCE_DATABASE"
+        )
+        self.SNOWFLAKE_DEST_DATABASE = SNOWFLAKE_DEST_DATABASE or os.environ.get(
+            "SNOWFLAKE_DEST_DATABASE"
+        )
 
         try:
             _, _ = self.SNOWFLAKE_SOURCE_DATABASE.split(".")
