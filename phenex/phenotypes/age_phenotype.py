@@ -70,7 +70,7 @@ class AgePhenotype(Phenotype):
         # Generate default name from value_filter if not provided
         if name is None:
             name = self._generate_name_from_filter(value_filter)
-        
+
         super(AgePhenotype, self).__init__(name=name)
         self.value_filter = value_filter
         self.domain = domain
@@ -88,7 +88,7 @@ class AgePhenotype(Phenotype):
         """Generate a name like 'age_g18_le65' from the value filter."""
         if value_filter is None:
             return "AGE"
-        
+
         filter_string = value_filter.to_short_string()
         if filter_string:
             return f"age_{filter_string}"
