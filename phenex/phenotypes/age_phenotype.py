@@ -61,12 +61,16 @@ class AgePhenotype(Phenotype):
 
     def __init__(
         self,
-        name: Optional[str] = "AGE",
+        name: Optional[str] = None,
         value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
         domain: str = "PERSON",
         **kwargs,
     ):
+        # Generate default name from value_filter if not provided
+        if name is None:
+            name = self._generate_name_from_filter(value_filter)
+        
         super(AgePhenotype, self).__init__(name=name)
         self.value_filter = value_filter
         self.domain = domain
@@ -79,6 +83,17 @@ class AgePhenotype(Phenotype):
         # Set children to the dependent PHENOTYPES
         if anchor_phenotype is not None:
             self.add_children(anchor_phenotype)
+
+    def _generate_name_from_filter(self, value_filter: Optional[ValueFilter]) -> str:
+        """Generate a name like 'age_g18_le65' from the value filter."""
+        if value_filter is None:
+            return "AGE"
+        
+        filter_string = value_filter.to_short_string()
+        if filter_string:
+            return f"age_{filter_string}"
+        else:
+            return "age"
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]

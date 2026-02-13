@@ -48,6 +48,40 @@ class ValueFilter(Filter):
         self.column_name = column_name
         super(ValueFilter, self).__init__()
 
+    def to_short_string(self) -> str:
+        """
+        Generate a short string representation of the filter like 'g18_le65'.
+        
+        Returns:
+            A string with abbreviated operators: 'g' for >, 'ge' for >=, 'l' for <, 'le' for <=
+        """
+        parts = []
+        
+        if self.min_value is not None:
+            parts.append(self.min_value.to_short_string())
+        
+        if self.max_value is not None:
+            parts.append(self.max_value.to_short_string())
+        
+        return "_".join(parts) if parts else ""
+
+    def __str__(self) -> str:
+        """
+        Generate a human-readable string representation of the filter.
+        
+        Returns:
+            A string like 'greater than 18 and less than or equal to 65'
+        """
+        parts = []
+        
+        if self.min_value is not None:
+            parts.append(str(self.min_value))
+        
+        if self.max_value is not None:
+            parts.append(str(self.max_value))
+        
+        return " and ".join(parts) if parts else "no filter"
+
     def _filter(self, table: PhenexTable) -> PhenexTable:
         conditions = []
         value_column = getattr(table, self.column_name)
