@@ -1,4 +1,6 @@
 from typing import Optional, List
+import base64
+import inspect
 import os
 import ibis
 from ibis.backends import BaseBackend
@@ -33,6 +35,7 @@ class SnowflakeConnector:
         SNOWFLAKE_WAREHOUSE: Snowflake warehouse name.
         SNOWFLAKE_ROLE: Snowflake role name.
         SNOWFLAKE_PASSWORD: Snowflake password. If not specified, will attempt to authenticate with externalbrowser.
+        SNOWFLAKE_PKEY: Snowflake private key for key=pair authentification. Private key has precedence over password authetification.
         SNOWFLAKE_SOURCE_DATABASE: Snowflake source database name. Use a fully qualified database name (in snowflake terminology DATABASE.SCHEMA; ibis calls this a "database").
         SNOWFLAKE_DEST_DATABASE: Snowflake destination database name. Use a fully qualified database name (in snowflake terminology DATABASE.SCHEMA; ibis calls this a "database").
 
@@ -69,6 +72,7 @@ class SnowflakeConnector:
         SNOWFLAKE_WAREHOUSE: Optional[str] = None,
         SNOWFLAKE_ROLE: Optional[str] = None,
         SNOWFLAKE_PASSWORD: Optional[str] = None,
+        SNOWFLAKE_PKEY: Optional[str] = None,
         SNOWFLAKE_SOURCE_DATABASE: Optional[str] = None,
         SNOWFLAKE_DEST_DATABASE: Optional[str] = None,
     ):
@@ -83,6 +87,7 @@ class SnowflakeConnector:
         self.SNOWFLAKE_PASSWORD = SNOWFLAKE_PASSWORD or os.environ.get(
             "SNOWFLAKE_PASSWORD"
         )
+        self.SNOWFLAKE_PKEY = SNOWFLAKE_PKEY or os.environ.get("SNOWFLAKE_PKEY")
         self.SNOWFLAKE_SOURCE_DATABASE = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
             "SNOWFLAKE_SOURCE_DATABASE"
         )
@@ -129,6 +134,36 @@ class SnowflakeConnector:
         ):
             raise ValueError("Source and destination locations cannot be the same.")
 
+    def _load_private_key_bytes(self, pkey_value: str) -> bytes:
+        try:
+            from cryptography.hazmat.primitives import serialization
+        except ImportError as e:
+            raise ImportError(
+                "Key-pair auth (SNOWFLAKE_PKEY) requires the 'cryptography' package."
+            ) from e
+
+        if os.path.isfile(pkey_value):
+            with open(pkey_value, "rb") as f:
+                raw = f.read()
+        else:
+            candidate = "".join(pkey_value.split())
+            try:
+                raw = base64.b64decode(candidate, validate=True)
+            except Exception as e:
+                raise ValueError(
+                    "SNOWFLAKE_PKEY must be either an existing file path or a base64-encoded PEM private key."
+                ) from e
+
+        if raw.lstrip().startswith(b"-----BEGIN"):
+            key = serialization.load_pem_private_key(raw, password=None)
+        else:
+            key = serialization.load_der_private_key(raw, password=None)
+        return key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
     def _connect(self, database) -> BaseBackend:
         """
         Private method to get a database connection. End users should use connect_source() and connect_dest() to get connections to source and destination databases.
@@ -144,7 +179,17 @@ class SnowflakeConnector:
         # In the below connect method, the arguments are the SNOWFLAKE terms.
         #
 
-        if self.SNOWFLAKE_PASSWORD:
+        if self.SNOWFLAKE_PKEY:
+            return ibis.snowflake.connect(
+                user=self.SNOWFLAKE_USER,
+                account=self.SNOWFLAKE_ACCOUNT,
+                warehouse=self.SNOWFLAKE_WAREHOUSE,
+                role=self.SNOWFLAKE_ROLE,
+                database=database,
+                schema=schema,
+                private_key=self._load_private_key_bytes(self.SNOWFLAKE_PKEY),
+            )
+        elif self.SNOWFLAKE_PASSWORD:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
                 password=self.SNOWFLAKE_PASSWORD,
