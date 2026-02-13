@@ -102,7 +102,7 @@ __all__ = [
     "NodeGroup",
     "Cohort",
     "Subcohort",
-    "Database"
+    "Database",
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
