@@ -1,8 +1,12 @@
 from typing import Dict
 from ibis.expr.types.relations import Table
+import ibis.common.exceptions as exc
 
 from phenex.tables import *
 from phenex.util.serialization.to_dict import to_dict
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 class DomainsDictionary:
@@ -58,11 +62,24 @@ class DomainsDictionary:
 
         Returns:
             Dict[str, PhenexTable]: A dictionary where keys are domain names and values are mapped tables.
+
+        Raises:
+            ValueError: If a required table is not found in the database.
         """
         # self.set_mapped_tables(con)
         mapped_tables = {}
         for domain, mapper in self.domains_dict.items():
-            mapped_tables[domain] = mapper(con.get_source_table(mapper.NAME_TABLE))
+            try:
+                source_table = con.get_source_table(mapper.NAME_TABLE)
+                mapped_tables[domain] = mapper(source_table)
+            except exc.IbisError as e:
+                if "Table not found" in str(e):
+                    logger.warning(
+                        f"Required table '{mapper.NAME_TABLE}' for domain '{domain}' not found in the database@ adding None for this domain"
+                    )
+                    mapped_tables[domain] = None
+                else:
+                    raise
         return mapped_tables
 
     def get_source_tables(self, con) -> Dict[str, str]:

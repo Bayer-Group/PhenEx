@@ -135,11 +135,17 @@ class Cohort:
             Node uniqueness is validated across all stages to prevent naming conflicts.
         """
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
-        domains = list(tables.keys()) + [x.name for x in self.derived_tables]
+        # Filter out None tables (tables not found in source data)
+        available_tables = {k: v for k, v in tables.items() if v is not None}
+        domains = list(available_tables.keys()) + [x.name for x in self.derived_tables]
         required_domains = self._get_domains()
-        for d in required_domains:
-            if d not in domains:
-                raise ValueError(f"Required domain {d} not present in input tables!")
+
+        missing_domains = [d for d in required_domains if d not in domains]
+        if missing_domains:
+            logger.warning(
+                f"Some required domains are not present in input tables: {missing_domains}. "
+                f"Phenotypes requiring these domains may fail during execution."
+            )
 
         #
         # Data period filter stage: OPTIONAL
@@ -310,6 +316,11 @@ class Cohort:
         """
         subset_tables_entry = {}
         for node in self.subset_tables_entry_nodes:
+            # Skip if table is None (not found in source data)
+            if node.table is None:
+                continue
+            if tables[node.domain] is None:
+                continue
             subset_tables_entry[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_entry
 
@@ -319,6 +330,11 @@ class Cohort:
         """
         subset_tables_index = {}
         for node in self.subset_tables_index_nodes:
+            # Skip if table is None (not found in source data)
+            if node.table is None:
+                continue
+            if tables.get(node.domain) is None:
+                continue
             subset_tables_index[node.domain] = type(tables[node.domain])(node.table)
         return subset_tables_index
 
