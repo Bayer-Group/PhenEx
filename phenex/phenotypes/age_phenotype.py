@@ -121,8 +121,21 @@ class AgePhenotype(Phenotype):
             ), f"INDEX_DATE column not found in table {table}"
             reference_column = table.INDEX_DATE
 
+        # Ensure both columns are timestamps for delta calculation
+        # Cast to timestamp if needed, but output will remain as datetime
+        ref_col_type = reference_column.type()
+        event_col_type = table.EVENT_DATE.type()
+        
+        # Cast to timestamp if either is a date type
+        if str(ref_col_type).startswith('date') and not str(ref_col_type).startswith('timestamp'):
+            reference_column = reference_column.cast('timestamp')
+        if str(event_col_type).startswith('date') and not str(event_col_type).startswith('timestamp'):
+            event_date_col = table.EVENT_DATE.cast('timestamp')
+        else:
+            event_date_col = table.EVENT_DATE
+
         YEARS_FROM_ANCHOR = (
-            reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
+            reference_column.delta(event_date_col, "day") / self.DAYS_IN_YEAR
         ).floor()
         table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
         table = self._perform_value_filtering(table)
