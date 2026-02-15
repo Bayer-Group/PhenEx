@@ -61,10 +61,11 @@ class CategoricalPhenotype(Phenotype):
     ):
         super(CategoricalPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
-        if not check_categorical_filters_share_same_domain(
-            categorical_filter, self.domain
-        ):
-            raise ValueError("CategoricalPhenotype only works on a single domain.")
+        if categorical_filter is not None:
+            if not check_categorical_filters_share_same_domain(
+                categorical_filter, self.domain
+            ):
+                raise ValueError("CategoricalPhenotype only works on a single domain.")
         self.categorical_filter = categorical_filter
         self.date_range = date_range
         self.return_date = return_date
