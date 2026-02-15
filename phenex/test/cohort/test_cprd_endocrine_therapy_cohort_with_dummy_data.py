@@ -190,7 +190,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
                 "breast_cancer",
                 "time_range",
                 "data_quality",
-                "age",
+                "age_ge18",
                 "sex",
             ]
         ]
