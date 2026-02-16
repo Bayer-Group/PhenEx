@@ -139,6 +139,7 @@ class Codelist:
         name: Optional[str] = None,
         use_code_type: Optional[bool] = True,
         remove_punctuation: Optional[bool] = False,
+        fuzzy_match: Optional[bool] = False,
     ) -> None:
         self.name = name
 
@@ -160,7 +161,7 @@ class Codelist:
 
         self.remove_punctuation = remove_punctuation
 
-        self.fuzzy_match = False
+        self.fuzzy_match = fuzzy_match
         for code_type, codelist in self.codelist.items():
             if any(["%" in str(code) for code in codelist]):
                 self.fuzzy_match = True
@@ -174,9 +175,10 @@ class Codelist:
     def copy(
         self,
         name: Optional[str] = None,
-        use_code_type: bool = True,
-        remove_punctuation: bool = False,
+        use_code_type: bool = None,
+        remove_punctuation: bool = None,
         rename_code_type: dict = None,
+        fuzzy_match: Optional[bool] = None,
     ) -> "Codelist":
         """
         Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
@@ -200,8 +202,9 @@ class Codelist:
         return Codelist(
             _codelist,
             name=name or self.name,
-            use_code_type=use_code_type,
-            remove_punctuation=remove_punctuation,
+            use_code_type=use_code_type if use_code_type is not None else self.use_code_type,
+            remove_punctuation=remove_punctuation if remove_punctuation is not None else self.remove_punctuation,
+            fuzzy_match=fuzzy_match if fuzzy_match is not None else self.fuzzy_match,
         )
 
     @property
