@@ -202,8 +202,14 @@ class Codelist:
         return Codelist(
             _codelist,
             name=name or self.name,
-            use_code_type=use_code_type if use_code_type is not None else self.use_code_type,
-            remove_punctuation=remove_punctuation if remove_punctuation is not None else self.remove_punctuation,
+            use_code_type=(
+                use_code_type if use_code_type is not None else self.use_code_type
+            ),
+            remove_punctuation=(
+                remove_punctuation
+                if remove_punctuation is not None
+                else self.remove_punctuation
+            ),
             fuzzy_match=fuzzy_match if fuzzy_match is not None else self.fuzzy_match,
         )
 

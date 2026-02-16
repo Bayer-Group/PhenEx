@@ -140,12 +140,16 @@ class AgePhenotype(Phenotype):
         # Cast to timestamp if needed, but output will remain as datetime
         ref_col_type = reference_column.type()
         event_col_type = table.EVENT_DATE.type()
-        
+
         # Cast to timestamp if either is a date type
-        if str(ref_col_type).startswith('date') and not str(ref_col_type).startswith('timestamp'):
-            reference_column = reference_column.cast('timestamp')
-        if str(event_col_type).startswith('date') and not str(event_col_type).startswith('timestamp'):
-            event_date_col = table.EVENT_DATE.cast('timestamp')
+        if str(ref_col_type).startswith("date") and not str(ref_col_type).startswith(
+            "timestamp"
+        ):
+            reference_column = reference_column.cast("timestamp")
+        if str(event_col_type).startswith("date") and not str(
+            event_col_type
+        ).startswith("timestamp"):
+            event_date_col = table.EVENT_DATE.cast("timestamp")
         else:
             event_date_col = table.EVENT_DATE
 
