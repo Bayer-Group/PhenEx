@@ -100,7 +100,8 @@ class CategoricalPhenotype(Phenotype):
         return select_phenotype_columns(table)
 
     def _perform_categorical_filtering(self, table):
-        table = self.categorical_filter.filter(table)
+        if self.categorical_filter is not None:
+            table = self.categorical_filter.filter(table)
         return table
 
     def _perform_time_filtering(self, table):
