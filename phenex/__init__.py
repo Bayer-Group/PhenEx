@@ -94,7 +94,7 @@ from .derived_tables import (
 # Serialization utilities
 from .util.serialization.json import dump, dumps, load, loads
 
-__version__ = "v0.7.8"
+__version__ = "v0.8.0"
 
 __all__ = [
     # Core
