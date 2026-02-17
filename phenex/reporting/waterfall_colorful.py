@@ -9,7 +9,7 @@ logger = create_logger(__name__)
 class WaterfallColorful(Waterfall):
     """
     A colorful version of Waterfall that ensures color styling is always applied.
-    
+
     This class extends Waterfall with guaranteed color-coded rows to distinguish between
     different types of criteria (entry, inclusion, exclusion, component) and their nesting levels.
     """
@@ -22,7 +22,7 @@ class WaterfallColorful(Waterfall):
     ):
         """
         Initialize WaterfallColorful with pretty_display enabled by default.
-        
+
         Args:
             decimal_places: Number of decimal places for rounding (default: 1)
             pretty_display: Enable formatted display with colors (default: True)
@@ -37,21 +37,21 @@ class WaterfallColorful(Waterfall):
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         """
         Execute the WaterfallColorful report and return styled dataframe.
-        
+
         Args:
             cohort: The cohort to generate the waterfall for
-            
+
         Returns:
             pd.DataFrame or Styler: The waterfall data with color styling applied
         """
         # Call parent execute which already handles styling
         result = super().execute(cohort)
-        
+
         # If pretty_display is off but we still want colors, add them
         if not self.pretty_display and "_color" not in self.df.columns:
             self._add_row_colors()
             return self._apply_styling()
-        
+
         return result
 
     def get_pretty_display(self):
