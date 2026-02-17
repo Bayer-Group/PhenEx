@@ -14,6 +14,7 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
+from phenex.core.table1_node import Table1Node
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -95,7 +96,7 @@ class Cohort:
         self.index_table_node = None
         self.subset_tables_entry_nodes = None
         self.subset_tables_index_nodes = None
-        self._table1 = None
+        self.table1_node = None
 
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
@@ -231,12 +232,19 @@ class Cohort:
                 name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
             )
             reporting_nodes.append(self.outcomes_table_node)
+        
+        # Add Table1 node if there are characteristics
+        if self.characteristics:
+            self.table1_node = Table1Node(
+                name=f"{self.name}__table1".upper(),
+                cohort=self,
+            )
+            reporting_nodes.append(self.table1_node)
+        
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes
             )
-
-        self._table1 = None
 
     def _get_domains(self):
         """
@@ -498,15 +506,12 @@ class Cohort:
                 "No tables provided for cohort execution and no database defined to retrieve tables for execution!"
             )
 
-    # FIXME this should be implmemented as a ComputeNode and added to the graph
     @property
     def table1(self):
-        if self._table1 is None:
-            logger.debug("Generating Table1 report ...")
-            reporter = Table1()
-            self._table1 = reporter.execute(self)
-            logger.debug("Table1 report generated.")
-        return self._table1
+        """Get the Table1 report DataFrame from the table1_node if it exists."""
+        if self.table1_node:
+            return self.table1_node.table1
+        return None
 
     def to_dict(self):
         """
