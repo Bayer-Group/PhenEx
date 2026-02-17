@@ -17,15 +17,13 @@ class WaterfallNode(Node):
     The pandas DataFrame report can be accessed via the waterfall property.
     """
 
-    def __init__(self, name: str, cohort: "Cohort"):
+    def __init__(self, name: str, cohort: "Cohort", index_table_node: "Node"):
         super(WaterfallNode, self).__init__(name=name)
         self.cohort = cohort
         self.reporter = Waterfall()
         
-        # Add dependencies on entry, inclusions, and exclusions
-        dependencies = [cohort.entry_criterion] + cohort.inclusions + cohort.exclusions
-        if dependencies:
-            self.add_children(dependencies)
+        # Add dependency on index_table_node to ensure it executes first
+        self.add_children([index_table_node])
 
     def _execute(self, tables: Dict[str, Table]):
         """
