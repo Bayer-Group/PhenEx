@@ -1,4 +1,5 @@
 from typing import Dict
+import ibis
 from ibis.expr.types.relations import Table
 from phenex.node import Node
 from phenex.reporting import Table1
@@ -11,15 +12,15 @@ class Table1Node(Node):
     """
     A compute node that generates a Table1 (baseline characteristics) report for a cohort.
     
-    This node depends on the cohort's characteristics being computed and produces a 
-    pandas DataFrame containing summary statistics for all baseline characteristics.
+    This node depends on the cohort's characteristics being computed and produces an
+    Ibis table that can be materialized to the database. The pandas DataFrame report
+    can be accessed via the table1 property.
     """
 
     def __init__(self, name: str, cohort: "Cohort"):
         super(Table1Node, self).__init__(name=name)
         self.cohort = cohort
         self.reporter = Table1()
-        self._table1_df = None
         
         # Add dependencies on characteristics if they exist
         if cohort.characteristics:
@@ -33,16 +34,40 @@ class Table1Node(Node):
             tables: Dictionary of table names to Table objects (required by Node interface)
             
         Returns:
-            Table: Returns None as Table1 produces a pandas DataFrame, not an Ibis Table
+            Table: Ibis table containing the Table1 report data (for materialization)
         """
         logger.debug(f"Generating Table1 report for cohort '{self.cohort.name}'...")
-        self.reporter.execute(self.cohort)
-        self._table1_df = self.reporter.get_pretty_display()
+        df = self.reporter.execute(self.cohort)
         logger.debug(f"Table1 report generated for cohort '{self.cohort.name}'.")
-        # Return None since Table1 produces a DataFrame, not an Ibis Table
-        return None
+        
+        # Ensure all columns have explicit types for Ibis conversion
+        # Convert object columns to strings and handle NaN values
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].fillna('').astype(str)
+            elif df[col].dtype == 'float64':
+                # Keep as float but replace NaN with None for Ibis
+                df[col] = df[col].where(df[col].notna(), None)
+            elif df[col].dtype == 'int64':
+                # Convert to nullable Int64 to handle NaN
+                df[col] = df[col].astype('Int64')
+        
+        # Create Ibis memtable
+        table = ibis.memtable(df)
+        return table
 
     @property
     def table1(self):
-        """Get the generated Table1 DataFrame."""
-        return self._table1_df
+        """Get the generated Table1 DataFrame with pretty formatting."""
+        if self.table is not None:
+            # If table is an Ibis table, convert to pandas
+            if hasattr(self.table, 'execute'):
+                df = self.table.execute()
+            else:
+                # Already a pandas DataFrame
+                df = self.table
+            
+            # Apply pretty formatting
+            self.reporter.df = df
+            return self.reporter.get_pretty_display()
+        return None

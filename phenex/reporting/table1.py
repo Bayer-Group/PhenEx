@@ -49,9 +49,9 @@ class Table1(Reporter):
         else:
             self.df = None
         if self.df is not None:
-            self.df["%"] = 100 * self.df["N"] / self.N
-            # reorder columns so N and % are first
-            first_cols = ["N", "%"]
+            self.df["Pct"] = 100 * self.df["N"] / self.N
+            # reorder columns so N and Pct are first
+            first_cols = ["N", "Pct"]
             column_order = first_cols + [
                 x for x in self.df.columns if x not in first_cols
             ]
@@ -140,11 +140,11 @@ class Table1(Reporter):
                 "Mean": _table["VALUE"].mean().execute(),
                 "STD": _table["VALUE"].std().execute(),
                 "Min": _table["VALUE"].min().execute(),
-                "10th": _table["VALUE"].quantile(0.10).execute(),
-                "25th": _table["VALUE"].quantile(0.25).execute(),
+                "P10": _table["VALUE"].quantile(0.10).execute(),
+                "P25": _table["VALUE"].quantile(0.25).execute(),
                 "Median": _table["VALUE"].median().execute(),
-                "75th": _table["VALUE"].quantile(0.75).execute(),
-                "90th": _table["VALUE"].quantile(0.90).execute(),
+                "P75": _table["VALUE"].quantile(0.75).execute(),
+                "P90": _table["VALUE"].quantile(0.90).execute(),
                 "Max": _table["VALUE"].max().execute(),
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
             }
@@ -205,15 +205,15 @@ class Table1(Reporter):
         pretty_df = pretty_df.round(self.decimal_places)
 
         to_prettify = [
-            "%",
+            "Pct",
             "Mean",
             "STD",
             "Min",
-            "10th",
-            "25th",
+            "P10",
+            "P25",
             "Median",
-            "75th",
-            "90th",
+            "P75",
+            "P90",
             "Max",
         ]
         for column in to_prettify:

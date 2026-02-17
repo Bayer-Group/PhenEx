@@ -94,10 +94,10 @@ class Waterfall(Reporter):
         self.df = pd.DataFrame(self.ds)
 
         # calculate percentage of entry criterion
-        self.df["% Remaining"] = self.df["Remaining"] / N_entry * 100
-        self.df["% N"] = self.df["N"] / N_entry * 100
+        self.df["Pct_Remaining"] = self.df["Remaining"] / N_entry * 100
+        self.df["Pct_N"] = self.df["N"] / N_entry * 100
 
-        # Calculate % Source Database column before rounding
+        # Calculate Pct Source Database column before rounding
         # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
         entry_pct = N_entry / cohort.n_persons_in_source_database * 100
 
@@ -118,7 +118,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "Final Cohort Size",
             "Remaining": N,
-            "% Remaining": round(100 * N / N_entry, self.decimal_places),
+            "Pct_Remaining": round(100 * N / N_entry, self.decimal_places),
             "Level": 0,
             "Index": "",
         }
@@ -135,7 +135,7 @@ class Waterfall(Reporter):
             N / cohort.n_persons_in_source_database * 100, self.decimal_places
         )
 
-        self.df["% Source Database"] = (
+        self.df["Pct_Source_Database"] = (
             [np.nan, entry_pct] + [np.nan] * (self.df.shape[0] - 3) + [final_pct]
         )
 
@@ -145,11 +145,11 @@ class Waterfall(Reporter):
             "Index",
             "Name",
             "N",
-            "% N",
+            "Pct_N",
             "Remaining",
-            "% Remaining",
+            "Pct_Remaining",
             "Delta",
-            "% Source Database",
+            "Pct_Source_Database",
         ]
 
         # Add _color column if it exists
@@ -298,10 +298,10 @@ class Waterfall(Reporter):
         )
 
         # Format percentage columns without commas (they won't need them)
-        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
-        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
-        self.df["% Source Database"] = (
-            self.df["% Source Database"].astype("Float64").astype(str)
+        self.df["Pct_Remaining"] = self.df["Pct_Remaining"].astype("Float64").astype(str)
+        self.df["Pct_N"] = self.df["Pct_N"].astype("Float64").astype(str)
+        self.df["Pct_Source_Database"] = (
+            self.df["Pct_Source_Database"].astype("Float64").astype(str)
         )
 
     def _apply_styling(self):

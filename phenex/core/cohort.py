@@ -15,6 +15,7 @@ from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
 from phenex.core.table1_node import Table1Node
+from phenex.core.waterfall_node import WaterfallNode
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -97,6 +98,7 @@ class Cohort:
         self.subset_tables_entry_nodes = None
         self.subset_tables_index_nodes = None
         self.table1_node = None
+        self.waterfall_node = None
 
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
@@ -221,6 +223,13 @@ class Cohort:
         # Post-index / reporting stage: OPTIONAL
         #
         reporting_nodes = []
+        # Add Waterfall node to show attrition through inclusion/exclusion criteria
+        self.waterfall_node = WaterfallNode(
+            name=f"{self.name}__waterfall".upper(),
+            cohort=self,
+        )
+        reporting_nodes.append(self.waterfall_node)
+
         if self.characteristics:
             self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
@@ -511,6 +520,13 @@ class Cohort:
         """Get the Table1 report DataFrame from the table1_node if it exists."""
         if self.table1_node:
             return self.table1_node.table1
+        return None
+
+    @property
+    def waterfall(self):
+        """Get the Waterfall report DataFrame from the waterfall_node if it exists."""
+        if self.waterfall_node:
+            return self.waterfall_node.waterfall
         return None
 
     def to_dict(self):
