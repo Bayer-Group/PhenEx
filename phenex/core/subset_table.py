@@ -61,6 +61,13 @@ class SubsetTable(Node):
             )
             columns = table.columns
 
+        # concept tables and mapping tables do not usually have person ids and cannot be subset using this method. We will return the full table and log a warning in this case.
+        # TODO: In the future, we may want to allow users to specify a different column to join on for subsetting (ie map tables can be subset to event ids that exist in other event tables), but for now we will just return the full table if PERSON_ID is not present.
+        if "PERSON_ID" not in table.columns:
+            logger.info(
+                f"PERSON_ID column not found in domain table for SubsetTable '{self.name}'. Cannot perform subsetting without PERSON_ID."
+            )
+            return table.table
         subset_table = table.inner_join(index_table, "PERSON_ID")
         subset_table = subset_table.select(columns)
         return subset_table
