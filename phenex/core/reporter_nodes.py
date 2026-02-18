@@ -34,8 +34,21 @@ class Reporter(Node):
         """
         logger.debug(f"Generating {self.name} report for cohort '{self.cohort.name}'...")
         self.reporter.execute(self.cohort)
-        df = self.reporter.get_pretty_display()
+        df = self.reporter.df
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
+        
+        # Ensure all columns have explicit types for Ibis conversion
+        # Convert object columns to strings and handle NaN values
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].fillna('').astype(str)
+            elif df[col].dtype == 'float64':
+                # Keep as float but replace NaN with None for Ibis
+                df[col] = df[col].where(df[col].notna(), None)
+            elif df[col].dtype == 'int64':
+                # Convert to nullable Int64 to handle NaN
+                df[col] = df[col].astype('Int64')
+        
         table = ibis.memtable(df)
         return table
 
