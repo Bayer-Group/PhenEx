@@ -14,8 +14,7 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
-from phenex.core.table1_node import Table1Node
-from phenex.core.waterfall_node import WaterfallNode
+from phenex.core.reporter_nodes import WaterfallNode, Table1Node
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -522,14 +521,14 @@ class Cohort:
     def table1(self):
         """Get the Table1 report DataFrame from the table1_node if it exists."""
         if self.table1_node:
-            return self.table1_node.table1
+            return self.table1_node.df_report
         return None
 
     @property
     def waterfall(self):
         """Get the Waterfall report DataFrame from the waterfall_node if it exists."""
         if self.waterfall_node:
-            return self.waterfall_node.waterfall
+            return self.waterfall_node.df_report
         return None
 
     def to_dict(self):
