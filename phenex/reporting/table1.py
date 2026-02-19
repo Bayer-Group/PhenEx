@@ -113,10 +113,7 @@ class Table1(Reporter):
             self._get_boolean_count_for_phenotype(phenotype)
             for phenotype in boolean_phenotypes
         ]
-        df_t1.index = [
-            x.display_name if self.pretty_display else x.name
-            for x in boolean_phenotypes
-        ]
+        df_t1.index = [x.display_name for x in boolean_phenotypes]
         df_t1["inex_order"] = [
             self.cohort_names_in_order.index(x.name) for x in boolean_phenotypes
         ]
@@ -149,9 +146,7 @@ class Table1(Reporter):
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
-            names.append(
-                phenotype.display_name if self.pretty_display else phenotype.name
-            )
+            names.append(phenotype.display_name)
         if len(dfs) == 1:
             df = dfs[0]
         else:
@@ -169,7 +164,7 @@ class Table1(Reporter):
         dfs = []
         names = []
         for phenotype in categorical_phenotypes:
-            name = phenotype.display_name if self.pretty_display else phenotype.name
+            name = phenotype.display_name
             _table = phenotype.table.select(["PERSON_ID", "VALUE"])
             # Get counts for each category
             cat_counts = (

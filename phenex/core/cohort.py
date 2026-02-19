@@ -210,7 +210,7 @@ class Cohort:
             exclusion_table_node=self.exclusions_table_node,
         )
         index_nodes.append(self.index_table_node)
-        
+
         # Add Waterfall node after index table (depends on index_table_node)
         self.waterfall_node = WaterfallNode(
             name=f"{self.name}__waterfall".upper(),
@@ -218,7 +218,7 @@ class Cohort:
             index_table_node=self.index_table_node,
         )
         index_nodes.append(self.waterfall_node)
-        
+
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
             stage="subset_index", domains=domains, index_phenotype=self.index_table_node
         )
@@ -243,7 +243,7 @@ class Cohort:
                 name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
             )
             reporting_nodes.append(self.outcomes_table_node)
-        
+
         # Add Table1 node if there are characteristics
         if self.characteristics:
             self.table1_node = Table1Node(
@@ -251,7 +251,7 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_node)
-        
+
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes

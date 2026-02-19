@@ -23,13 +23,11 @@ class TestTimeToEvent:
             right_censor_phenotypes=[death],
             end_of_study_period=datetime(2024, 12, 31),
             decimal_places=3,
-            pretty_display=True,
         )
 
         assert tte.right_censor_phenotypes == [death]
         assert tte.end_of_study_period == datetime(2024, 12, 31)
         assert tte.decimal_places == 3
-        assert tte.pretty_display is True
         assert tte._tte_table is None
         assert tte._date_column_names is None
 
@@ -41,7 +39,6 @@ class TestTimeToEvent:
         )
 
         assert tte.decimal_places == 4
-        assert tte.pretty_display is True
 
     def test_inherits_from_reporter(self):
         """Test that TimeToEvent properly inherits from Reporter."""

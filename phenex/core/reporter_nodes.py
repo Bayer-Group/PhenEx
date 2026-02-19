@@ -1,4 +1,3 @@
-
 from typing import Dict
 import ibis
 from ibis.expr.types.relations import Table
@@ -12,7 +11,7 @@ logger = create_logger(__name__)
 class Reporter(Node):
     """
     A compute node that generates a Table1 (baseline characteristics) report for a cohort.
-    
+
     This node depends on the cohort's characteristics being computed and produces an
     Ibis table that can be materialized to the database. The pandas DataFrame report
     can be accessed via the table1 property.
@@ -25,30 +24,32 @@ class Reporter(Node):
     def _execute(self, tables: Dict[str, Table]):
         """
         Execute the Table1 report generation.
-        
+
         Args:
             tables: Dictionary of table names to Table objects (required by Node interface)
-            
+
         Returns:
             Table: Ibis table containing the Table1 report data (for materialization)
         """
-        logger.debug(f"Generating {self.name} report for cohort '{self.cohort.name}'...")
+        logger.debug(
+            f"Generating {self.name} report for cohort '{self.cohort.name}'..."
+        )
         self.reporter.execute(self.cohort)
         df = self.reporter.df
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
-        
+
         # Ensure all columns have explicit types for Ibis conversion
         # Convert object columns to strings and handle NaN values
         for col in df.columns:
-            if df[col].dtype == 'object':
-                df[col] = df[col].fillna('').astype(str)
-            elif df[col].dtype == 'float64':
+            if df[col].dtype == "object":
+                df[col] = df[col].fillna("").astype(str)
+            elif df[col].dtype == "float64":
                 # Keep as float but replace NaN with None for Ibis
                 df[col] = df[col].where(df[col].notna(), None)
-            elif df[col].dtype == 'int64':
+            elif df[col].dtype == "int64":
                 # Convert to nullable Int64 to handle NaN
-                df[col] = df[col].astype('Int64')
-        
+                df[col] = df[col].astype("Int64")
+
         table = ibis.memtable(df)
         return table
 
@@ -57,22 +58,22 @@ class Reporter(Node):
         """Get the generated Table1 DataFrame with pretty formatting."""
         if self.table is not None:
             # If table is an Ibis table, convert to pandas
-            if hasattr(self.table, 'execute'):
+            if hasattr(self.table, "execute"):
                 df = self.table.execute()
             else:
                 # Already a pandas DataFrame
                 df = self.table
-            
+
             # Apply pretty formatting
             self.reporter.df = df
             return self.reporter.get_pretty_display()
         return None
-    
+
 
 class Table1Node(Reporter):
     """
     A compute node that generates a Table1 (baseline characteristics) report for a cohort.
-    
+
     This node depends on the cohort's characteristics being computed and produces an
     Ibis table that can be materialized to the database. The pandas DataFrame report
     can be accessed via the table1 property.
@@ -81,15 +82,16 @@ class Table1Node(Reporter):
     def __init__(self, name: str, cohort: "Cohort"):
         super(Table1Node, self).__init__(name=name, cohort=cohort)
         self.reporter = Table1()
-        
+
         # Add dependencies on characteristics if they exist
         if cohort.characteristics:
             self.add_children(cohort.characteristics)
 
+
 class WaterfallNode(Reporter):
     """
     A compute node that generates a Waterfall (attrition) report for a cohort.
-    
+
     This node depends on the cohort's entry criterion, inclusions, and exclusions
     being computed and produces an Ibis table that can be materialized to the database.
     The pandas DataFrame report can be accessed via the waterfall property.
@@ -98,6 +100,6 @@ class WaterfallNode(Reporter):
     def __init__(self, name: str, cohort: "Cohort", index_table_node: "Node"):
         super(WaterfallNode, self).__init__(name=name, cohort=cohort)
         self.reporter = Waterfall()
-        
+
         # Add dependency on index_table_node to ensure it executes first
         self.add_children([index_table_node])
