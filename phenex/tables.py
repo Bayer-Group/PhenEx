@@ -146,8 +146,10 @@ class PhenexTable:
 
         self.NAME_TABLE = name or self.NAME_TABLE
 
-        self.column_mapping = self._get_column_mapping(table, column_mapping)
-        self._table = table.mutate(**self.column_mapping)
+        self.column_mapping = self._get_column_mapping(column_mapping)
+        self._table = table.mutate(
+            **self._resolve_column_mapping(table, self.column_mapping)
+        )
 
         for key in self.REQUIRED_FIELDS:
             try:
@@ -160,7 +162,7 @@ class PhenexTable:
     def _add_phenotype_table_relationship(self):
         self.JOIN_KEYS["PhenotypeTable"] = ["PERSON_ID"]
 
-    def _get_column_mapping(self, table, column_mapping=None):
+    def _get_column_mapping(self, column_mapping=None):
         column_mapping = column_mapping or {}
         # Only validate fields explicitly passed in column_mapping parameter
         # DEFAULT_MAPPING is defined by the class itself and should be trusted
@@ -173,11 +175,18 @@ class PhenexTable:
                 )
         default_mapping = copy.deepcopy(self.DEFAULT_MAPPING)
         default_mapping.update(column_mapping)
-        
-        # Process list values as coalesce expressions
-        # Convert all mappings to column references for mutate()
+        return default_mapping
+
+    def _resolve_column_mapping(self, table, column_mapping):
+        """
+        Convert raw column mapping (strings/lists) to ibis expressions for use in mutate().
+
+        String values become direct column references: table[col].
+        List values become coalesce expressions over the listed columns.
+        Date columns in a coalesce list are cast to timestamp for consistent typing.
+        """
         processed_mapping = {}
-        for key, value in default_mapping.items():
+        for key, value in column_mapping.items():
             if isinstance(value, list):
                 # Coalesce multiple columns - first non-null value wins
                 # Cast date columns to timestamp for consistent typing
@@ -185,14 +194,15 @@ class PhenexTable:
                 for col in value:
                     col_ref = table[col]
                     col_type = str(col_ref.type())
-                    if col_type.startswith("date") and not col_type.startswith("timestamp"):
+                    if col_type.startswith("date") and not col_type.startswith(
+                        "timestamp"
+                    ):
                         col_ref = col_ref.cast("timestamp")
                     cols.append(col_ref)
                 processed_mapping[key] = ibis.coalesce(*cols)
             else:
                 # Single column mapping - create column reference
                 processed_mapping[key] = table[value]
-        
         return processed_mapping
 
     def __getattr__(self, name):
