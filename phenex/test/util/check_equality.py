@@ -13,9 +13,9 @@ def check_equality(
     test_date=False,
 ):
     result = result.to_pandas()
-    result.loc[:, "DUMMY"] = 1
+    result["DUMMY"] = 1
     expected = expected.to_pandas()
-    expected.loc[:, "DUMMY"] = 1
+    expected["DUMMY"] = 1
 
     full_results = result.merge(
         expected, on=join_on, suffixes=("_result", "_expected"), how="outer"

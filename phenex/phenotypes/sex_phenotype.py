@@ -35,6 +35,8 @@ class SexPhenotype(CategoricalPhenotype):
     ```
     """
 
+    output_display_type = "categorical"
+
     def __init__(
         self,
         name: str = "SEX",

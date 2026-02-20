@@ -53,18 +53,24 @@ class AgePhenotype(Phenotype):
         ```
     """
 
+    output_display_type = "value"
+
     # FIXME this will become a problem when modern medicine allows people to live more
     # than 365*4 years (so they accumulate enough leap days to get an extra year)
     DAYS_IN_YEAR = 365
 
     def __init__(
         self,
-        name: Optional[str] = "AGE",
+        name: Optional[str] = None,
         value_filter: Optional[ValueFilter] = None,
         anchor_phenotype: Optional[Phenotype] = None,
         domain: str = "PERSON",
         **kwargs,
     ):
+        # Generate default name from value_filter if not provided
+        if name is None:
+            name = self._generate_name_from_filter(value_filter)
+
         super(AgePhenotype, self).__init__(name=name)
         self.value_filter = value_filter
         self.domain = domain
@@ -77,6 +83,17 @@ class AgePhenotype(Phenotype):
         # Set children to the dependent PHENOTYPES
         if anchor_phenotype is not None:
             self.add_children(anchor_phenotype)
+
+    def _generate_name_from_filter(self, value_filter: Optional[ValueFilter]) -> str:
+        """Generate a name like 'age_g18_le65' from the value filter."""
+        if value_filter is None:
+            return "AGE"
+
+        filter_string = value_filter.to_short_string()
+        if filter_string:
+            return f"age_{filter_string}"
+        else:
+            return "age"
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
@@ -119,8 +136,25 @@ class AgePhenotype(Phenotype):
             ), f"INDEX_DATE column not found in table {table}"
             reference_column = table.INDEX_DATE
 
+        # Ensure both columns are timestamps for delta calculation
+        # Cast to timestamp if needed, but output will remain as datetime
+        ref_col_type = reference_column.type()
+        event_col_type = table.EVENT_DATE.type()
+
+        # Cast to timestamp if either is a date type
+        if str(ref_col_type).startswith("date") and not str(ref_col_type).startswith(
+            "timestamp"
+        ):
+            reference_column = reference_column.cast("timestamp")
+        if str(event_col_type).startswith("date") and not str(
+            event_col_type
+        ).startswith("timestamp"):
+            event_date_col = table.EVENT_DATE.cast("timestamp")
+        else:
+            event_date_col = table.EVENT_DATE
+
         YEARS_FROM_ANCHOR = (
-            reference_column.delta(table.EVENT_DATE, "day") / self.DAYS_IN_YEAR
+            reference_column.delta(event_date_col, "day") / self.DAYS_IN_YEAR
         ).floor()
         table = table.mutate(VALUE=YEARS_FROM_ANCHOR)
         table = self._perform_value_filtering(table)

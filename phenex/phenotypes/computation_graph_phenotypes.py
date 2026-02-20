@@ -249,6 +249,8 @@ class ScorePhenotype(ComputationGraphPhenotype):
     ```
     """
 
+    output_display_type = "categorical"
+
     def __init__(
         self,
         expression: ComputationGraph,
@@ -304,6 +306,8 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
     )
     ```
     """
+
+    output_display_type = "value"
 
     def __init__(
         self,

@@ -65,6 +65,8 @@ class TimeRangePhenotype(Phenotype):
     ```
     """
 
+    output_display_type = "value"
+
     def __init__(
         self,
         name: Optional[str] = "TIME_RANGE",

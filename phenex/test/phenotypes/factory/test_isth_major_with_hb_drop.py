@@ -3,7 +3,8 @@ import pandas as pd
 import ibis
 from phenex.test.cohort_test_generator import CohortTestGenerator
 from phenex.codelists import Codelist
-from phenex.phenotypes import Cohort, CodelistPhenotype
+from phenex.phenotypes import CodelistPhenotype
+from phenex.core import Cohort
 from phenex.phenotypes.factory.isth_major_bleed import (
     ISTHMajorBleedPhenotype,
     ISTHBleedComponents,
