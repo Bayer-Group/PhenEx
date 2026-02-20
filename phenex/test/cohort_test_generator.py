@@ -154,6 +154,15 @@ class CohortTestGenerator:
         r.df_counts_exclusion.to_csv(
             os.path.join(self.dirpaths["result"], "counts_exclusion.csv"), index=False
         )
+        print("ACTUAL")
+        print(r.df_counts_inclusion)
+        print("EXPECTED")
+        print(self.test_infos["counts_inclusion"])
+
+        print("ACTUAL")
+        print(r.df_counts_exclusion)
+        print("EXPECTED")
+        print(self.test_infos["counts_exclusion"])
         # test results
         if len(self.cohort.inclusions) > 0:
             check_counts_table_equal(
