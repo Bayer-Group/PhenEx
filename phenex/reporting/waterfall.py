@@ -25,10 +25,9 @@ class Waterfall(Reporter):
     def __init__(
         self,
         decimal_places: int = 1,
-        pretty_display: bool = True,
         include_component_phenotypes_level=None,
     ):
-        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        super().__init__(decimal_places=decimal_places)
         self.include_component_phenotypes_level = include_component_phenotypes_level
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
@@ -52,11 +51,7 @@ class Waterfall(Reporter):
                 "Type": "entry",
                 "Level": 0,
                 "Index": str(index),
-                "Name": (
-                    cohort.entry_criterion.display_name
-                    if self.pretty_display
-                    else cohort.entry_criterion.name
-                ),
+                "Name": (cohort.entry_criterion.display_name),
                 "N": N_entry,
                 "Remaining": table.count().execute(),
             }
@@ -94,10 +89,10 @@ class Waterfall(Reporter):
         self.df = pd.DataFrame(self.ds)
 
         # calculate percentage of entry criterion
-        self.df["% Remaining"] = self.df["Remaining"] / N_entry * 100
-        self.df["% N"] = self.df["N"] / N_entry * 100
+        self.df["Pct_Remaining"] = self.df["Remaining"] / N_entry * 100
+        self.df["Pct_N"] = self.df["N"] / N_entry * 100
 
-        # Calculate % Source Database column before rounding
+        # Calculate Pct Source Database column before rounding
         # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
         entry_pct = N_entry / cohort.n_persons_in_source_database * 100
 
@@ -118,7 +113,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "Final Cohort Size",
             "Remaining": N,
-            "% Remaining": round(100 * N / N_entry, self.decimal_places),
+            "Pct_Remaining": round(100 * N / N_entry, self.decimal_places),
             "Level": 0,
             "Index": "",
         }
@@ -135,32 +130,24 @@ class Waterfall(Reporter):
             N / cohort.n_persons_in_source_database * 100, self.decimal_places
         )
 
-        self.df["% Source Database"] = (
+        self.df["Pct_Source_Database"] = (
             [np.nan, entry_pct] + [np.nan] * (self.df.shape[0] - 3) + [final_pct]
         )
 
-        # Do final column selection (keep _color if it exists for styling)
+        # Do final column selection (never include _color in raw df)
         columns_to_select = [
             "Type",
             "Index",
             "Name",
             "N",
-            "% N",
+            "Pct_N",
             "Remaining",
-            "% Remaining",
+            "Pct_Remaining",
             "Delta",
-            "% Source Database",
+            "Pct_Source_Database",
         ]
 
-        # Add _color column if it exists
-        if "_color" in self.df.columns:
-            columns_to_select.append("_color")
-
         self.df = self.df[columns_to_select]
-
-        # Return styled dataframe if pretty display is enabled
-        if self.pretty_display and "_color" in self.df.columns:
-            return self._apply_styling()
 
         return self.df
 
@@ -170,7 +157,7 @@ class Waterfall(Reporter):
         if level <= self.include_component_phenotypes_level:
             for i, child in enumerate(current_phenotype.children):
                 current_index = f"{parent_index}.{i+1}"
-                current_name = child.display_name if self.pretty_display else child.name
+                current_name = child.display_name
                 self.append_phenotype_to_waterfall(
                     table,
                     child,
@@ -199,9 +186,7 @@ class Waterfall(Reporter):
         logger.debug(f"Starting {type} criteria {phenotype.name}")
 
         if full_name is None:
-            full_name = (
-                phenotype.display_name if self.pretty_display else phenotype.name
-            )
+            full_name = phenotype.display_name
 
         self.ds.append(
             {
@@ -227,10 +212,27 @@ class Waterfall(Reporter):
         Return a formatted version of the waterfall results for display.
 
         Formatting includes:
-        - Adding row colors based on type and level
         - Formatting numeric columns as strings with thousand separators
         - Replacing NAs with empty strings
         - Creating sparse type column
+
+        Returns:
+            pd.DataFrame: Formatted copy of the results without color styling
+        """
+        return self.get_pretty_display(color=False)
+
+    def get_pretty_display(self, color: bool = True) -> pd.DataFrame:
+        """
+        Return a formatted version of the waterfall results for display.
+
+        Formatting includes:
+        - Formatting numeric columns as strings with thousand separators
+        - Replacing NAs with empty strings
+        - Creating sparse type column
+        - Optionally adding row colors based on type and level
+
+        Args:
+            color: If True, add color styling to rows. Default: True
 
         Returns:
             pd.DataFrame: Formatted copy of the results
@@ -243,8 +245,9 @@ class Waterfall(Reporter):
         self.df = pretty_df
 
         try:
-            # Add colors before any transformations
-            self._add_row_colors()
+            # Add colors before any transformations (if requested)
+            if color:
+                self._add_row_colors()
 
             # Format numeric columns as strings
             self._format_numeric_columns()
@@ -298,10 +301,12 @@ class Waterfall(Reporter):
         )
 
         # Format percentage columns without commas (they won't need them)
-        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
-        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
-        self.df["% Source Database"] = (
-            self.df["% Source Database"].astype("Float64").astype(str)
+        self.df["Pct_Remaining"] = (
+            self.df["Pct_Remaining"].astype("Float64").astype(str)
+        )
+        self.df["Pct_N"] = self.df["Pct_N"].astype("Float64").astype(str)
+        self.df["Pct_Source_Database"] = (
+            self.df["Pct_Source_Database"].astype("Float64").astype(str)
         )
 
     def _apply_styling(self):
@@ -352,13 +357,16 @@ class Waterfall(Reporter):
         # Create parent directories if needed
         filename.parent.mkdir(parents=True, exist_ok=True)
 
-        # Get dataframe without _color column for export
-        if "_color" in self.df.columns:
-            export_df = self.df.drop(columns=["_color"])
-            colors = self.df["_color"].tolist()
+        # Get formatted dataframe with colors
+        colored_df = self.get_pretty_display(color=True)
+
+        # Extract colors if they exist
+        if "_color" in colored_df.columns:
+            export_df = colored_df.drop(columns=["_color"])
+            colors = colored_df["_color"].tolist()
         else:
-            export_df = self.df
-            colors = [None] * len(self.df)
+            export_df = colored_df
+            colors = [None] * len(colored_df)
 
         # Create workbook and worksheet
         wb = Workbook()
