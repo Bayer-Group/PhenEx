@@ -460,6 +460,23 @@ class Cohort:
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
+
+        if self.derived_tables_post_entry_stage:
+            logger.info(f"Cohort '{self.name}': executing derived tables post-entry stage ...")
+            self.derived_tables_post_entry_stage.execute(
+                tables=self.subset_tables_entry,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
+            logger.info(f"Cohort '{self.name}': completed derived tables post-entry stage.")
+            entry_dates = self.entry_criterion.table.select("PERSON_ID", "EVENT_DATE").rename({"INDEX_DATE": "EVENT_DATE"})
+            for node in self.derived_tables_post_entry:
+                table_with_index = node.table.join(entry_dates, "PERSON_ID")
+                self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
+            tables = self.subset_tables_entry
+
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         self.index_stage.execute(
@@ -475,19 +492,6 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
         self.subset_tables_index = self.get_subset_tables_index(tables)
-
-        if self.derived_tables_post_entry_stage:
-            logger.info(f"Cohort '{self.name}': executing derived tables post-entry stage ...")
-            self.derived_tables_post_entry_stage.execute(
-                tables=self.subset_tables_index,
-                con=con,
-                overwrite=overwrite,
-                n_threads=n_threads,
-                lazy_execution=lazy_execution,
-            )
-            logger.info(f"Cohort '{self.name}': completed derived tables post-entry stage.")
-            for node in self.derived_tables_post_entry:
-                self.subset_tables_index[node.name] = PhenexTable(node.table)
 
         if self.reporting_stage:
             self.reporting_stage.execute(
