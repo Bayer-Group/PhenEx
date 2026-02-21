@@ -61,11 +61,11 @@ class CategoricalPhenotype(Phenotype):
     ):
         super(CategoricalPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
-        if categorical_filter is not None:
-            if not check_categorical_filters_share_same_domain(
-                categorical_filter, self.domain
-            ):
-                raise ValueError("CategoricalPhenotype only works on a single domain.")
+        # if categorical_filter is not None:
+        #     if not check_categorical_filters_share_same_domain(
+        #         categorical_filter, self.domain
+        #     ):
+        #         logger.info("CategoricalPhenotype only works on a single domain.")
         self.categorical_filter = categorical_filter
         self.date_range = date_range
         self.return_date = return_date
@@ -88,7 +88,7 @@ class CategoricalPhenotype(Phenotype):
 
     def _execute(self, tables) -> PhenotypeTable:
         table = tables[self.domain]
-        table = self._perform_categorical_filtering(table)
+        table = self._perform_categorical_filtering(table, tables)
         table = self._perform_time_filtering(table)
         table = self._perform_date_selection(table)
 
@@ -99,9 +99,10 @@ class CategoricalPhenotype(Phenotype):
             )
         return select_phenotype_columns(table)
 
-    def _perform_categorical_filtering(self, table):
+    def _perform_categorical_filtering(self, table, tables):
         if self.categorical_filter is not None:
-            table = self.categorical_filter.filter(table)
+            table = self.categorical_filter.autojoin_filter(table, tables)
+            print(table)
         return table
 
     def _perform_time_filtering(self, table):
