@@ -14,6 +14,7 @@ from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
+
 def check_categorical_filters_share_same_domain(filter, domain):
     # if any leaf node of the tree has a different domain, return false
     if isinstance(filter, AndFilter) or isinstance(filter, OrFilter):
@@ -35,10 +36,10 @@ def check_categorical_filters_share_same_domain(filter, domain):
 class CategoricalPhenotype(Phenotype):
     """
     CategoricalPhenotype is used for discrete entities such for sex, race, or ethnicity, diagnosis position, or encounter type. CategoricalPhenotypes are especially helpful as a baseline characteristic from PERSON like tables to identify demographic information.
-    
-    CategoricalPhenotype can be used to filter patients by a category, or to pull relevant categorical information. 
-    
-    
+
+    CategoricalPhenotype can be used to filter patients by a category, or to pull relevant categorical information.
+
+
     DATE: Often null; only populated if the categorical value is associated with a date e.g.a categorical phenotype identifying all inpatient encounters in an event table
     VALUE: The identified category from the source column.
 
@@ -47,7 +48,7 @@ class CategoricalPhenotype(Phenotype):
         name: Name of the phenotype.
         domain: Domain of the phenotype.
         categorical_filter: Use CategoricalFilter to input allowed values for the categorical variable. If not passed, all values are returned.
-    
+
     Example: Get female patients where categorical variable is in the PERSON table
         ```python
         # create a filter defining the allowed values for the categorical variable
@@ -63,7 +64,7 @@ class CategoricalPhenotype(Phenotype):
             categorical_filter=f_female,
         )
         ```
-        
+
     Example: Get categorical variable assigned to patients without performing filtering
         ```python
         f_any_sex = CategoricalFilter(
@@ -93,7 +94,6 @@ class CategoricalPhenotype(Phenotype):
         ```
     """
 
-
     output_display_type = "categorical"
 
     def __init__(
@@ -114,7 +114,9 @@ class CategoricalPhenotype(Phenotype):
             if not check_categorical_filters_share_same_domain(
                 categorical_filter, self.domain
             ):
-                logger.info(f"CategoricalPhenotype {self.name} operates on multiple tables {self.domain} and {self.categorical_filter.domain}.")
+                logger.info(
+                    f"CategoricalPhenotype {self.name} operates on multiple tables {self.domain} and {self.categorical_filter.domain}."
+                )
         self.categorical_filter = categorical_filter
         self.date_range = date_range
         self.return_date = return_date
