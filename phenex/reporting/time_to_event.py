@@ -40,7 +40,6 @@ class TimeToEvent(Reporter):
             Suggested are death and end of followup.
         end_of_study_period: A datetime defining the end of study period.
         decimal_places: Number of decimal places for rounding survival probabilities. Default: 4
-        pretty_display: If True, format output for display. Default: True
     """
 
     def __init__(
@@ -48,9 +47,8 @@ class TimeToEvent(Reporter):
         right_censor_phenotypes: Optional[List["Phenotype"]] = None,
         end_of_study_period: Optional["datetime"] = None,
         decimal_places: int = 4,
-        pretty_display: bool = True,
     ):
-        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        super().__init__(decimal_places=decimal_places)
         self.right_censor_phenotypes = right_censor_phenotypes
         self.end_of_study_period = end_of_study_period
         self._date_column_names = None

@@ -3,12 +3,11 @@ import pandas as pd
 import ibis
 from phenex.test.cohort_test_generator import CohortTestGenerator
 from phenex.codelists import Codelist
+from phenex.core import Cohort, Subcohort
 from phenex.phenotypes import (
     AgePhenotype,
     CategoricalPhenotype,
     CodelistPhenotype,
-    Cohort,
-    Subcohort,
     TimeRangePhenotype,
     SexPhenotype,
 )

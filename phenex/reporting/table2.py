@@ -51,11 +51,10 @@ class Table2(Reporter):
         self,
         time_points: List[int] = [365],  # Default to 1 year
         decimal_places: int = 3,
-        pretty_display: bool = True,
         right_censor_phenotypes: Optional[List[Phenotype]] = None,
         end_of_study_period: Optional["datetime"] = None,
     ):
-        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        super().__init__(decimal_places=decimal_places)
         self.time_points = sorted(time_points)  # Sort time points
         self.right_censor_phenotypes = right_censor_phenotypes or []
         self.end_of_study_period = end_of_study_period

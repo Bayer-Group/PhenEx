@@ -1,7 +1,7 @@
 import datetime
 import pandas as pd
 import ibis
-from phenex.phenotypes.cohort import HStackNode
+from phenex.core.cohort import HStackNode
 from phenex.phenotypes import CodelistPhenotype, AgePhenotype
 from phenex.codelists import Codelist
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator

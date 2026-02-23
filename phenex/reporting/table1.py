@@ -49,9 +49,9 @@ class Table1(Reporter):
         else:
             self.df = None
         if self.df is not None:
-            self.df["%"] = 100 * self.df["N"] / self.N
-            # reorder columns so N and % are first
-            first_cols = ["N", "%"]
+            self.df["Pct"] = 100 * self.df["N"] / self.N
+            # reorder columns so N and Pct are first
+            first_cols = ["N", "Pct"]
             column_order = first_cols + [
                 x for x in self.df.columns if x not in first_cols
             ]
@@ -68,67 +68,20 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        default_boolean_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__
-            not in [
-                "MeasurementPhenotype",
-                "AgePhenotype",
-                "TimeRangePhenotype",
-                "TimeRangeDaysToNextRange",
-                "ScorePhenotype",
-                "CategoricalPhenotype",
-                "SexPhenotype",
-                "ArithmeticPhenotype",
-                "EventCountPhenotype",
-                "BinPhenotype",
-            ]
-        ]
-        user_defined_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__ == "_UserDefinedPhenotype" and x.returns_value
-        ]
         return [
-            x
-            for x in default_boolean_phenotypes
-            if x not in user_defined_value_phenotypes
+            x for x in self.cohort.characteristics if x.output_display_type == "boolean"
         ]
 
     def _get_value_characteristics(self):
-        default_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__
-            in [
-                "MeasurementPhenotype",
-                "AgePhenotype",
-                "TimeRangePhenotype",
-                "TimeRangeDaysToNextRange",
-                "ArithmeticPhenotype",
-                "EventCountPhenotype",  # event count is a value; show summary statistics for number of days
-            ]
+        return [
+            x for x in self.cohort.characteristics if x.output_display_type == "value"
         ]
-
-        user_defined_value_phenotypes = [
-            x
-            for x in self.cohort.characteristics
-            if type(x).__name__ == "UserDefinedPhenotype" and x.returns_value
-        ]
-        return default_value_phenotypes + user_defined_value_phenotypes
 
     def _get_categorical_characteristics(self):
         return [
             x
             for x in self.cohort.characteristics
-            if type(x).__name__
-            in [
-                "CategoricalPhenotype",
-                "SexPhenotype",
-                "ScorePhenotype",  # score is categorical; show number of patients in each score category
-                "BinPhenotype",
-            ]
+            if x.output_display_type == "categorical"
         ]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
@@ -160,10 +113,7 @@ class Table1(Reporter):
             self._get_boolean_count_for_phenotype(phenotype)
             for phenotype in boolean_phenotypes
         ]
-        df_t1.index = [
-            x.display_name if self.pretty_display else x.name
-            for x in boolean_phenotypes
-        ]
+        df_t1.index = [x.display_name for x in boolean_phenotypes]
         df_t1["inex_order"] = [
             self.cohort_names_in_order.index(x.name) for x in boolean_phenotypes
         ]
@@ -187,18 +137,16 @@ class Table1(Reporter):
                 "Mean": _table["VALUE"].mean().execute(),
                 "STD": _table["VALUE"].std().execute(),
                 "Min": _table["VALUE"].min().execute(),
-                "10th": _table["VALUE"].quantile(0.10).execute(),
-                "25th": _table["VALUE"].quantile(0.25).execute(),
+                "P10": _table["VALUE"].quantile(0.10).execute(),
+                "P25": _table["VALUE"].quantile(0.25).execute(),
                 "Median": _table["VALUE"].median().execute(),
-                "75th": _table["VALUE"].quantile(0.75).execute(),
-                "90th": _table["VALUE"].quantile(0.90).execute(),
+                "P75": _table["VALUE"].quantile(0.75).execute(),
+                "P90": _table["VALUE"].quantile(0.90).execute(),
                 "Max": _table["VALUE"].max().execute(),
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
-            names.append(
-                phenotype.display_name if self.pretty_display else phenotype.name
-            )
+            names.append(phenotype.display_name)
         if len(dfs) == 1:
             df = dfs[0]
         else:
@@ -216,7 +164,7 @@ class Table1(Reporter):
         dfs = []
         names = []
         for phenotype in categorical_phenotypes:
-            name = phenotype.display_name if self.pretty_display else phenotype.name
+            name = phenotype.display_name
             _table = phenotype.table.select(["PERSON_ID", "VALUE"])
             # Get counts for each category
             cat_counts = (
@@ -252,15 +200,15 @@ class Table1(Reporter):
         pretty_df = pretty_df.round(self.decimal_places)
 
         to_prettify = [
-            "%",
+            "Pct",
             "Mean",
             "STD",
             "Min",
-            "10th",
-            "25th",
+            "P10",
+            "P25",
             "Median",
-            "75th",
-            "90th",
+            "P75",
+            "P90",
             "Max",
         ]
         for column in to_prettify:
