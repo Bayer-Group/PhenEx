@@ -153,7 +153,6 @@ class CategoricalPhenotype(Phenotype):
     def _perform_categorical_filtering(self, table, tables):
         if self.categorical_filter is not None:
             table = self.categorical_filter.autojoin_filter(table, tables)
-            print(table)
         return table
 
     def _perform_time_filtering(self, table):
