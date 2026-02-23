@@ -30,6 +30,8 @@ class Cohort:
         inclusions: A list of phenotypes that must evaluate to True for patients to be included in the cohort.
         exclusions: A list of phenotypes that must evaluate to False for patients to be included in the cohort.
         characteristics: A list of phenotypes representing baseline characteristics of the cohort to be computed for all patients passing the inclusion and exclusion criteria.
+        derived_tables: A list of derived tables to compute before the entry stage. Their outputs are available as domains for all subsequent stages.
+        derived_tables_post_entry: A list of derived tables to compute after the index stage, using index-subset tables. Their outputs are available as domains for the reporting stage.
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
@@ -52,6 +54,7 @@ class Cohort:
         exclusions: Optional[List[Phenotype]] = None,
         characteristics: Optional[List[Phenotype]] = None,
         derived_tables: Optional[List["DerivedTable"]] = None,
+        derived_tables_post_entry: Optional[List["DerivedTable"]] = None,
         outcomes: Optional[List[Phenotype]] = None,
         description: Optional[str] = None,
         database: Optional[Database] = None,
@@ -67,6 +70,7 @@ class Cohort:
         self.exclusions = exclusions or []
         self.characteristics = characteristics or []
         self.derived_tables = derived_tables or []
+        self.derived_tables_post_entry = derived_tables_post_entry or []
         self.outcomes = outcomes or []
         self.n_persons_in_source_database = None
 
@@ -81,11 +85,12 @@ class Cohort:
         self._validate_node_uniqueness()
 
         # stages: set at execute() time
+        self.data_period_filter_stage = None
         self.derived_tables_stage = None
         self.entry_stage = None
         self.index_stage = None
+        self.derived_tables_post_entry_stage = None
         self.reporting_stage = None
-        self.data_period_filter_stage = None
 
         # special Nodes that Cohort builds (later, in build_stages())
         # need to be able to refer to later to get outputs
@@ -153,6 +158,8 @@ class Cohort:
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
+        self.derived_tables_stage = None
+        self.derived_tables_post_entry_stage = None
         if self.database and self.database.data_period:
             data_period_filter_nodes = [
                 DataPeriodFilterNode(
@@ -167,7 +174,7 @@ class Cohort:
             )
 
         #
-        # Derived tables stage: OPTIONAL
+        # Derived tables pre-entry stage: OPTIONAL
         #
         if self.derived_tables:
             self.derived_tables_stage = NodeGroup(
@@ -183,6 +190,15 @@ class Cohort:
         self.entry_stage = NodeGroup(
             name="entry_stage", nodes=self.subset_tables_entry_nodes
         )
+        #
+
+        # Derived tables post-entry stage: OPTIONAL
+        #
+        if self.derived_tables_post_entry:
+            self.derived_tables_post_entry_stage = NodeGroup(
+                name="derived_tables_post_entry_stage",
+                nodes=self.derived_tables_post_entry,
+            )
 
         #
         # Index stage: REQUIRED
@@ -421,7 +437,9 @@ class Cohort:
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:
-            logger.info(f"Cohort '{self.name}': executing derived tables stage ...")
+            logger.info(
+                f"Cohort '{self.name}': executing derived tables pre-entry stage ..."
+            )
             self.derived_tables_stage.execute(
                 tables=tables,
                 con=con,
@@ -429,7 +447,9 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
-            logger.info(f"Cohort '{self.name}': completed derived tables stage.")
+            logger.info(
+                f"Cohort '{self.name}': completed derived tables pre-entry stage."
+            )
             for node in self.derived_tables:
                 tables[node.name] = PhenexTable(node.table)
 
@@ -445,6 +465,29 @@ class Cohort:
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
+
+        if self.derived_tables_post_entry_stage:
+            logger.info(
+                f"Cohort '{self.name}': executing derived tables post-entry stage ..."
+            )
+            self.derived_tables_post_entry_stage.execute(
+                tables=self.subset_tables_entry,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+            )
+            logger.info(
+                f"Cohort '{self.name}': completed derived tables post-entry stage."
+            )
+            entry_dates = self.entry_criterion.table.select(
+                "PERSON_ID", "EVENT_DATE"
+            ).rename({"INDEX_DATE": "EVENT_DATE"})
+            for node in self.derived_tables_post_entry:
+                table_with_index = node.table.join(entry_dates, "PERSON_ID")
+                self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
+            tables = self.subset_tables_entry
+
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
         self.index_stage.execute(
@@ -460,6 +503,7 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
 
         self.subset_tables_index = self.get_subset_tables_index(tables)
+
         if self.reporting_stage:
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
