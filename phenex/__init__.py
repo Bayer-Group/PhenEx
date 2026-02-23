@@ -85,6 +85,7 @@ from .codelists import (
     Codelist,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
+    MedConBCollection,
 )
 
 # Derived Tables
@@ -175,7 +176,7 @@ __all__ = [
     "Codelist",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
-    # Derived Tables
+    "MedConBCollection",
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     # Serialization
