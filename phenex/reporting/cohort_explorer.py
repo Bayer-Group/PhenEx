@@ -1012,7 +1012,9 @@ class CohortExplorer(Reporter):
                     color = (
                         "#28a745"
                         if str(value).lower() == "inclusion"
-                        else "#dc3545" if str(value).lower() == "exclusion" else "#000"
+                        else "#dc3545"
+                        if str(value).lower() == "exclusion"
+                        else "#000"
                     )
                     html += f"<td style='padding:8px;border:1px solid #ddd;text-align:{align};color:{color};font-weight:bold;'>{value}</td>"
                 else:

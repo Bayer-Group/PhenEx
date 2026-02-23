@@ -72,7 +72,9 @@ class EventsToTimeRange(Node):
         ```
     """
 
-    def __init__(self, domain: str, max_days: "Value", codelist: "Codelist" = None, **kwargs):
+    def __init__(
+        self, domain: str, max_days: "Value", codelist: "Codelist" = None, **kwargs
+    ):
         self.domain = domain
         if codelist is not None:
             if not isinstance(codelist, Codelist):

@@ -196,7 +196,8 @@ class Cohort:
         #
         if self.derived_tables_post_entry:
             self.derived_tables_post_entry_stage = NodeGroup(
-                name="derived_tables_post_entry_stage", nodes=self.derived_tables_post_entry
+                name="derived_tables_post_entry_stage",
+                nodes=self.derived_tables_post_entry,
             )
 
         #
@@ -436,7 +437,9 @@ class Cohort:
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:
-            logger.info(f"Cohort '{self.name}': executing derived tables pre-entry stage ...")
+            logger.info(
+                f"Cohort '{self.name}': executing derived tables pre-entry stage ..."
+            )
             self.derived_tables_stage.execute(
                 tables=tables,
                 con=con,
@@ -444,7 +447,9 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
-            logger.info(f"Cohort '{self.name}': completed derived tables pre-entry stage.")
+            logger.info(
+                f"Cohort '{self.name}': completed derived tables pre-entry stage."
+            )
             for node in self.derived_tables:
                 tables[node.name] = PhenexTable(node.table)
 
@@ -462,7 +467,9 @@ class Cohort:
         logger.info(f"Cohort '{self.name}': completed entry stage.")
 
         if self.derived_tables_post_entry_stage:
-            logger.info(f"Cohort '{self.name}': executing derived tables post-entry stage ...")
+            logger.info(
+                f"Cohort '{self.name}': executing derived tables post-entry stage ..."
+            )
             self.derived_tables_post_entry_stage.execute(
                 tables=self.subset_tables_entry,
                 con=con,
@@ -470,8 +477,12 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
-            logger.info(f"Cohort '{self.name}': completed derived tables post-entry stage.")
-            entry_dates = self.entry_criterion.table.select("PERSON_ID", "EVENT_DATE").rename({"INDEX_DATE": "EVENT_DATE"})
+            logger.info(
+                f"Cohort '{self.name}': completed derived tables post-entry stage."
+            )
+            entry_dates = self.entry_criterion.table.select(
+                "PERSON_ID", "EVENT_DATE"
+            ).rename({"INDEX_DATE": "EVENT_DATE"})
             for node in self.derived_tables_post_entry:
                 table_with_index = node.table.join(entry_dates, "PERSON_ID")
                 self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
