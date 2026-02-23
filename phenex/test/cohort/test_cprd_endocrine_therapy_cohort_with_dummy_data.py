@@ -3,11 +3,11 @@ import pandas as pd
 import ibis
 from phenex.test.cohort_test_generator import CohortTestGenerator
 from phenex.codelists import Codelist
+from phenex.core import Cohort
 from phenex.phenotypes import (
     AgePhenotype,
     CategoricalPhenotype,
     CodelistPhenotype,
-    Cohort,
     TimeRangePhenotype,
     SexPhenotype,
 )
@@ -190,7 +190,7 @@ class SimpleCohortTestGenerator(CohortTestGenerator):
                 "breast_cancer",
                 "time_range",
                 "data_quality",
-                "age",
+                "age_ge18",
                 "sex",
             ]
         ]

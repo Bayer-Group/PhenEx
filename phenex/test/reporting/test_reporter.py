@@ -32,7 +32,7 @@ class TestReporterDefaultMethods:
 
     def test_get_pretty_display_rounds_numeric_columns(self):
         """Test that get_pretty_display rounds numeric columns to decimal_places."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=False)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         # Get pretty display
@@ -50,7 +50,7 @@ class TestReporterDefaultMethods:
 
     def test_get_pretty_display_replaces_nan_with_empty_string(self):
         """Test that get_pretty_display replaces NaN with empty strings."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=False)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         # Add some NaN values
@@ -70,7 +70,7 @@ class TestReporterDefaultMethods:
 
     def test_get_pretty_display_without_df_raises_error(self):
         """Test that get_pretty_display raises AttributeError if df is not set."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=False)
+        reporter = SimpleReporter(decimal_places=1)
         # Don't call execute()
 
         with pytest.raises(AttributeError, match="does not have a 'df' attribute"):
@@ -78,7 +78,7 @@ class TestReporterDefaultMethods:
 
     def test_execute_returns_raw_df(self):
         """Test that execute() returns raw, unformatted data."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         df = reporter.execute()
 
         # Check that values are NOT rounded (raw data)
@@ -87,7 +87,7 @@ class TestReporterDefaultMethods:
 
     def test_to_excel_creates_file(self):
         """Test that to_excel creates an Excel file."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -103,7 +103,7 @@ class TestReporterDefaultMethods:
 
     def test_to_excel_adds_extension_if_missing(self):
         """Test that to_excel adds .xlsx extension if not provided."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -114,7 +114,7 @@ class TestReporterDefaultMethods:
 
     def test_to_excel_creates_parent_directories(self):
         """Test that to_excel creates parent directories if needed."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -126,7 +126,7 @@ class TestReporterDefaultMethods:
 
     def test_to_excel_without_df_raises_error(self):
         """Test that to_excel raises AttributeError if df is not set."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         # Don't call execute()
 
         with pytest.raises(AttributeError, match="does not have a 'df' attribute"):
@@ -134,7 +134,7 @@ class TestReporterDefaultMethods:
 
     def test_to_csv_creates_file(self):
         """Test that to_csv creates a CSV file."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -150,7 +150,7 @@ class TestReporterDefaultMethods:
 
     def test_to_csv_adds_extension_if_missing(self):
         """Test that to_csv adds .csv extension if not provided."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -161,7 +161,7 @@ class TestReporterDefaultMethods:
 
     def test_to_html_creates_file(self):
         """Test that to_html creates an HTML file."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -178,7 +178,7 @@ class TestReporterDefaultMethods:
 
     def test_to_html_adds_extension_if_missing(self):
         """Test that to_html adds .html extension if not provided."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -189,7 +189,7 @@ class TestReporterDefaultMethods:
 
     def test_to_markdown_creates_file(self):
         """Test that to_markdown creates a Markdown file."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -205,7 +205,7 @@ class TestReporterDefaultMethods:
 
     def test_to_markdown_adds_extension_if_missing(self):
         """Test that to_markdown adds .md extension if not provided."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -216,7 +216,7 @@ class TestReporterDefaultMethods:
 
     def test_to_word_creates_file(self):
         """Test that to_word creates a Word document."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -230,7 +230,7 @@ class TestReporterDefaultMethods:
 
     def test_to_word_adds_extension_if_missing(self):
         """Test that to_word adds .docx extension if not provided."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -241,7 +241,7 @@ class TestReporterDefaultMethods:
 
     def test_export_methods_respect_pretty_display_true(self):
         """Test that export methods apply formatting when pretty_display=True."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -253,23 +253,9 @@ class TestReporterDefaultMethods:
             assert df_read["Value"].iloc[0] == 1.2
             assert df_read["Score"].iloc[0] == 10.5
 
-    def test_export_methods_respect_pretty_display_false(self):
-        """Test that export methods preserve original values when pretty_display=False."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=False)
-        reporter.execute()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Export to CSV without pretty display
-            csv_path = reporter.to_csv(os.path.join(tmpdir, "test.csv"))
-            df_read = pd.read_csv(csv_path)
-
-            # Values should NOT be rounded
-            assert abs(df_read["Value"].iloc[0] - 1.234) < 0.001
-            assert abs(df_read["Score"].iloc[0] - 10.5) < 0.001
-
     def test_export_methods_do_not_modify_original_df(self):
         """Test that export methods don't modify the original DataFrame."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         # Store original values
@@ -287,14 +273,14 @@ class TestReporterDefaultMethods:
     def test_different_decimal_places(self):
         """Test that different decimal_places settings work correctly."""
         # Test with 0 decimal places
-        reporter = SimpleReporter(decimal_places=0, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=0)
         reporter.execute()
         pretty_df = reporter.get_pretty_display()
         assert pretty_df["Value"].iloc[0] == 1.0
         assert pretty_df["Score"].iloc[0] == 10.0
 
         # Test with 2 decimal places
-        reporter = SimpleReporter(decimal_places=2, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=2)
         reporter.execute()
         pretty_df = reporter.get_pretty_display()
         assert pretty_df["Value"].iloc[0] == 1.23
@@ -302,7 +288,7 @@ class TestReporterDefaultMethods:
 
     def test_returns_absolute_path(self):
         """Test that export methods return absolute paths."""
-        reporter = SimpleReporter(decimal_places=1, pretty_display=True)
+        reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
         with tempfile.TemporaryDirectory() as tmpdir:

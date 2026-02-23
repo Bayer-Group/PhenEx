@@ -56,6 +56,32 @@ PhenEx can be used in two ways:
 
 Head on over to the [Official PhenEx Documentation](https://bayer-group.github.io/PhenEx) for comprehensive tutorials and API documentation. If you have any questions, please feel free to reach out to any of the developers and we'll be happy to get you on your way.
 
+#### Snowflake authentication (`SNOWFLAKE_PKEY`)
+
+PhenEx can connect to Snowflake via the `SnowflakeConnector` (`phenex.ibis_connect.SnowflakeConnector`). Connection parameters can be passed as constructor args, or set as environment variables.
+
+When using environment variables, `SNOWFLAKE_PKEY` enables **Snowflake key-pair authentication** and takes precedence over `SNOWFLAKE_PASSWORD`.
+
+- **`SNOWFLAKE_PKEY`**: either
+  - a **file path** to a private key (PEM or DER), or
+  - a **base64-encoded** private key (PEM text including `-----BEGIN ...-----` / `-----END ...-----`, or DER bytes).
+- **`SNOWFLAKE_PASSWORD`**: password auth (used only if `SNOWFLAKE_PKEY` is not set).
+- **Neither set**: PhenEx will attempt `authenticator="externalbrowser"`.
+
+Example `.env` (using a key file path):
+
+```bash
+SNOWFLAKE_USER="..."
+SNOWFLAKE_ACCOUNT="..."
+SNOWFLAKE_WAREHOUSE="..."
+SNOWFLAKE_ROLE="..."
+SNOWFLAKE_SOURCE_DATABASE="CATALOG.SCHEMA"
+SNOWFLAKE_DEST_DATABASE="CATALOG.SCHEMA"
+SNOWFLAKE_PKEY="/absolute/path/to/snowflake_private_key.pem"
+```
+
+Note: key-pair auth requires the Python package `cryptography` to be installed.
+
 ### Web Application
 
 PhenEx also includes a user-friendly web application for a visual approach to real-world data analysis. The web app provides:

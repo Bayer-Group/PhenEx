@@ -9,6 +9,7 @@ from phenex.filters import (
 )
 from phenex.codelists import *
 from phenex.phenotypes import *
+from phenex.core import *
 from phenex.filters import *
 import phenex.util.serialization.json as pxjson
 from phenex.util.serialization.from_dict import from_dict

@@ -45,11 +45,13 @@ class CategoricalPhenotype(Phenotype):
         categorical_filter: Use CategoricalFilter to input allowed values for the categorical variable. If not passed, all values are returned.
     """
 
+    output_display_type = "categorical"
+
     def __init__(
         self,
         name: str,
         domain: str,
-        categorical_filter: CategoricalFilter,
+        categorical_filter: CategoricalFilter = None,
         date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
@@ -59,10 +61,11 @@ class CategoricalPhenotype(Phenotype):
     ):
         super(CategoricalPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
-        if not check_categorical_filters_share_same_domain(
-            categorical_filter, self.domain
-        ):
-            raise ValueError("CategoricalPhenotype only works on a single domain.")
+        if categorical_filter is not None:
+            if not check_categorical_filters_share_same_domain(
+                categorical_filter, self.domain
+            ):
+                raise ValueError("CategoricalPhenotype only works on a single domain.")
         self.categorical_filter = categorical_filter
         self.date_range = date_range
         self.return_date = return_date
@@ -97,7 +100,8 @@ class CategoricalPhenotype(Phenotype):
         return select_phenotype_columns(table)
 
     def _perform_categorical_filtering(self, table):
-        table = self.categorical_filter.filter(table)
+        if self.categorical_filter is not None:
+            table = self.categorical_filter.filter(table)
         return table
 
     def _perform_time_filtering(self, table):

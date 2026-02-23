@@ -25,16 +25,13 @@ class Reporter:
 
     Parameters:
         decimal_places: Number of decimal places to round to. Default: 1
-        pretty_display: If True, format output for display (rounded decimals, display names, empty strings instead of NaNs). Default: True
     """
 
     def __init__(
         self,
         decimal_places: int = 1,
-        pretty_display: bool = True,
     ):
         self.decimal_places = decimal_places
-        self.pretty_display = pretty_display
 
     def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
         """
@@ -126,8 +123,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to Excel
         df_to_export.to_excel(filepath, index=False)
@@ -163,8 +160,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to CSV
         df_to_export.to_csv(filepath, index=False)
@@ -200,8 +197,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to HTML
         df_to_export.to_html(filepath, index=False)
@@ -238,8 +235,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to Markdown (requires tabulate package)
         try:
@@ -291,8 +288,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Create Word document with table
         doc = Document()
