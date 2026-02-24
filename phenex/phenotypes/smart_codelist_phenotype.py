@@ -194,10 +194,10 @@ def SmartCodelistPhenotype(
         component_phenotypes[0].name = phenotype_name
         return component_phenotypes[0]
 
-    # Build OR expression: p1 + p2 + p3 ...
+    # Build OR expression: p1 | p2 | p3 ...
     expression = component_phenotypes[0]
     for p in component_phenotypes[1:]:
-        expression = expression + p
+        expression = expression | p
 
     return LogicPhenotype(
         expression=expression,
