@@ -20,5 +20,6 @@ from .computation_graph_phenotypes import (
     LogicPhenotype,
 )
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
+from .smart_codelist_phenotype import SmartCodelistPhenotype, CODETYPE_INFO
 
 # from ..core.cohort import Cohort, Subcohort

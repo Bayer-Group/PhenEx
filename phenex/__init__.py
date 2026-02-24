@@ -10,6 +10,8 @@ from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 from .phenotypes import (
     Phenotype,
     CodelistPhenotype,
+    SmartCodelistPhenotype,
+    CODETYPE_INFO,
     MeasurementPhenotype,
     MeasurementChangePhenotype,
     AgePhenotype,
@@ -113,6 +115,8 @@ __all__ = [
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
+    "SmartCodelistPhenotype",
+    "CODETYPE_INFO",
     "MeasurementPhenotype",
     "MeasurementChangePhenotype",
     "AgePhenotype",
