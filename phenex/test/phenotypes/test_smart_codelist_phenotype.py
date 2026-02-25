@@ -33,7 +33,10 @@ import os
 import pytest
 import pandas as pd
 
-from phenex.phenotypes.smart_codelist_phenotype import SmartCodelistPhenotype, CODETYPE_INFO
+from phenex.phenotypes.smart_codelist_phenotype import (
+    SmartCodelistPhenotype,
+    CODETYPE_INFO,
+)
 from phenex.codelists.codelists import Codelist
 from phenex.tables import CodeTable, PhenexPersonTable
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
@@ -42,6 +45,7 @@ from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 # ---------------------------------------------------------------------------
 # Shared input-table builder
 # ---------------------------------------------------------------------------
+
 
 def _build_input_tables():
     """Return input_info list for the standard CONDITION / PROCEDURE / PERSON layout."""
@@ -86,6 +90,7 @@ def _build_input_tables():
 # ---------------------------------------------------------------------------
 # Test generator 1 – single domain (returns CodelistPhenotype)
 # ---------------------------------------------------------------------------
+
 
 class SmartCodelistPhenotypeSingleDomainTestGenerator(PhenotypeTestGenerator):
     """
@@ -154,6 +159,7 @@ class SmartCodelistPhenotypeSingleDomainTestGenerator(PhenotypeTestGenerator):
 # Test generator 2 – multi-domain (returns LogicPhenotype)
 # ---------------------------------------------------------------------------
 
+
 class SmartCodelistPhenotypeMultiDomainTestGenerator(PhenotypeTestGenerator):
     """
     Tests where code types span two domains.
@@ -182,9 +188,7 @@ class SmartCodelistPhenotypeMultiDomainTestGenerator(PhenotypeTestGenerator):
             "name": "c2_or_c3",
             "persons": ["P1", "P2", "P3", "P5", "P6", "P7"],
             "phenotype": SmartCodelistPhenotype(
-                codelist=Codelist(
-                    {"ICD-9-CM": ["c2"], "CPT": ["c3"]}, name="c2_or_c3"
-                ),
+                codelist=Codelist({"ICD-9-CM": ["c2"], "CPT": ["c3"]}, name="c2_or_c3"),
             ),
         }
 
@@ -282,6 +286,7 @@ class SmartCodelistPhenotypeCustomInfoTestGenerator(PhenotypeTestGenerator):
 # Test generator 4 – filters propagate to sub-phenotypes
 # ---------------------------------------------------------------------------
 
+
 class SmartCodelistPhenotypeFiltersTestGenerator(PhenotypeTestGenerator):
     """
     Tests that date_range and relative_time_range filters are forwarded correctly
@@ -297,8 +302,8 @@ class SmartCodelistPhenotypeFiltersTestGenerator(PhenotypeTestGenerator):
             ("P2", "c1", "ICD10CM", datetime.date(2021, 6, 1)),  # outside window
             ("P3", "c1", "ICD10CM", datetime.date(2022, 6, 1)),
             ("P4", "c1", "ICD10CM", datetime.date(2021, 6, 1)),  # outside window
-            ("P1", "c2", "ICD9CM",  datetime.date(2022, 6, 1)),
-            ("P5", "c2", "ICD9CM",  datetime.date(2021, 6, 1)),  # outside window
+            ("P1", "c2", "ICD9CM", datetime.date(2022, 6, 1)),
+            ("P5", "c2", "ICD9CM", datetime.date(2021, 6, 1)),  # outside window
         ]
         df_condition = pd.DataFrame(
             condition_rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "EVENT_DATE"]
@@ -374,6 +379,7 @@ class SmartCodelistPhenotypeFiltersTestGenerator(PhenotypeTestGenerator):
 # ---------------------------------------------------------------------------
 # Error-case tests (standalone, not via PhenotypeTestGenerator)
 # ---------------------------------------------------------------------------
+
 
 def test_smart_codelist_unknown_code_type_raises():
     """Unknown code types that are not in codetype_info must raise ValueError."""
@@ -454,12 +460,16 @@ def test_smart_codelist_remove_punctuation_propagation():
     p = SmartCodelistPhenotype(
         codelist=Codelist({"ICD-10-CM": ["I48.0"]}, name="af"),
     )
-    assert p.codelist.remove_punctuation == CODETYPE_INFO["ICD-10-CM"]["remove_punctuation"]
+    assert (
+        p.codelist.remove_punctuation
+        == CODETYPE_INFO["ICD-10-CM"]["remove_punctuation"]
+    )
 
 
 # ---------------------------------------------------------------------------
 # Pytest entry points
 # ---------------------------------------------------------------------------
+
 
 def test_smart_codelist_single_domain():
     SmartCodelistPhenotypeSingleDomainTestGenerator().run_tests()

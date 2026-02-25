@@ -170,7 +170,9 @@ def SmartCodelistPhenotype(
         # (e.g. "ICD10CM") as defined by the 'source' field in codetype_info.
         # use_punctuation=True means keep punctuation, i.e. remove_punctuation=False.
         # All code types within a domain are expected to share the same settings.
-        sub_codelist_dict = {info[ct]["source"]: codelist.codelist[ct] for ct in code_types}
+        sub_codelist_dict = {
+            info[ct]["source"]: codelist.codelist[ct] for ct in code_types
+        }
         use_code_type = info[code_types[0]]["use_code_type"]
         remove_punctuation = info[code_types[0]]["remove_punctuation"]
         sub_codelist = Codelist(

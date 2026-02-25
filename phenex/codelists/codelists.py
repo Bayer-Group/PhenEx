@@ -21,7 +21,7 @@ class Codelist:
         use_code_type: User can define whether code type should be used or not.
         remove_punctuation: User can define whether punctuation should be removed from codes or not.
         rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
-        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format: 
+        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
 
 
     Methods:
@@ -166,7 +166,11 @@ class Codelist:
 
         self.remove_punctuation = remove_punctuation
 
-        self.codelist = self._rename_code_types(codelist = codelist, rename_code_type=rename_code_type, code_type_info=code_type_info)
+        self.codelist = self._rename_code_types(
+            codelist=codelist,
+            rename_code_type=rename_code_type,
+            code_type_info=code_type_info,
+        )
 
         self.fuzzy_match = fuzzy_match
         for code_type, _codelist in self.codelist.items():
@@ -180,7 +184,7 @@ class Codelist:
         self._resolved_codelist = None
 
     def _rename_code_types(self, codelist, rename_code_type=None, code_type_info=None):
-        
+
         def rename_codelist_with_mapping(_codelist, rename_code_type):
             for current, renamed in rename_code_type.items():
                 if _codelist.get(current) is not None:
@@ -189,8 +193,8 @@ class Codelist:
             return _codelist
 
         def create_mapping_from_mapping_info(codetype_info):
-            return {k:v['source'] for k,v in codetype_info.items()}
-        
+            return {k: v["source"] for k, v in codetype_info.items()}
+
         _codelist = codelist.copy()
         # manual mapping of code types takes precedence over mapping based on code_type_info
         if rename_code_type is not None and isinstance(rename_code_type, dict):
@@ -199,7 +203,7 @@ class Codelist:
         elif code_type_info is not None:
             mapping = create_mapping_from_mapping_info(code_type_info)
             _codelist = rename_codelist_with_mapping(_codelist, mapping)
-        
+
         return _codelist
 
     def copy(
@@ -219,13 +223,13 @@ class Codelist:
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
             rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
-            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format: 
+            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
 
         Returns:
             Codelist instance with the updated resolution options.
-        """            
+        """
         return Codelist(
-            codelist = self.codelist,
+            codelist=self.codelist,
             name=name or self.name,
             use_code_type=(
                 use_code_type if use_code_type is not None else self.use_code_type
@@ -516,4 +520,4 @@ class Codelist:
 
 
 def create_mapping_from_mapping_info(codetype_info):
-    return {k:v['source'] for k,v in codetype_info.items()}
+    return {k: v["source"] for k, v in codetype_info.items()}

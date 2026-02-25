@@ -5,6 +5,7 @@ import warnings
 from .codelists import Codelist
 from phenex.util.serialization.to_dict import to_dict
 
+
 class LocalCSVCodelistFactory:
     """
     LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
@@ -71,7 +72,6 @@ class LocalCSVCodelistFactory:
             raise ValueError("Could not find the codelist with the given name.")
 
 
-
 class MedConBCodelistFactory:
     """
     Retrieve Codelists for use in Phenex from MedConB.
@@ -111,6 +111,7 @@ class MedConBCodelistFactory:
             [c.items for c in self.medconb_client.get_workspace().collections], []
         )
 
+
 class MedConBCollection:
     """
     Retrieve Codelists for use in Phenex from a MedConB Collection. Codelists are accessed by name, and the collection name is specified when initializing the factory.
@@ -128,10 +129,11 @@ class MedConBCollection:
     )
     ```
     """
+
     def __init__(self, medconb_client: "Client", collection_name: str):
         self.medconb_client = medconb_client
         self.collection_name = collection_name
-    
+
     def get_codelist(self, name: str):
         medconb_codelist = self.medconb_client.get_codelist_by_name(
             codelist_name=name,
