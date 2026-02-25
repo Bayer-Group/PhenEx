@@ -182,6 +182,7 @@ __all__ = [
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
     "MedConBCollection",
+    # Derived Tables
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     # Serialization

@@ -21,8 +21,7 @@ class Codelist:
         use_code_type: User can define whether code type should be used or not.
         remove_punctuation: User can define whether punctuation should be removed from codes or not.
         rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
-        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
-
+        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. Each entry in code_type_info must have a 'source' key whose value is the renamed code type.
 
     Methods:
         from_yaml: Load a codelist from a YAML file.
@@ -223,7 +222,7 @@ class Codelist:
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
             rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
-            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
+            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. Each entry in code_type_info must have a 'source' key whose value is the renamed code type.
 
         Returns:
             Codelist instance with the updated resolution options.
@@ -518,6 +517,3 @@ class Codelist:
             use_code_type=self.use_code_type,
         )
 
-
-def create_mapping_from_mapping_info(codetype_info):
-    return {k: v["source"] for k, v in codetype_info.items()}

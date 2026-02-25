@@ -466,6 +466,29 @@ def test_smart_codelist_remove_punctuation_propagation():
     )
 
 
+def test_smart_codelist_inconsistent_settings_raises():
+    """Inconsistent use_code_type/remove_punctuation within a domain must raise ValueError."""
+    inconsistent_info = {
+        "A": {
+            "domain": "CONDITION",
+            "source": "A_SRC",
+            "use_code_type": True,
+            "remove_punctuation": False,
+        },
+        "B": {
+            "domain": "CONDITION",
+            "source": "B_SRC",
+            "use_code_type": True,
+            "remove_punctuation": True,  # conflicts with A
+        },
+    }
+    with pytest.raises(ValueError, match="Inconsistent 'remove_punctuation'"):
+        SmartCodelistPhenotype(
+            codelist=Codelist({"A": ["x1"], "B": ["x2"]}, name="bad"),
+            codetype_info=inconsistent_info,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Pytest entry points
 # ---------------------------------------------------------------------------
@@ -500,3 +523,4 @@ if __name__ == "__main__":
     test_smart_codelist_codelist_name_fallback()
     test_smart_codelist_code_type_renamed_to_source()
     test_smart_codelist_remove_punctuation_propagation()
+    test_smart_codelist_inconsistent_settings_raises()

@@ -166,10 +166,23 @@ def SmartCodelistPhenotype(
 
     component_phenotypes = []
     for domain, code_types in domain_to_code_types.items():
+        # Validate that all code types within a domain share the same settings
+        for ct in code_types[1:]:
+            if info[ct]["use_code_type"] != info[code_types[0]]["use_code_type"]:
+                raise ValueError(
+                    f"Inconsistent 'use_code_type' settings within domain '{domain}': "
+                    f"'{code_types[0]}' has {info[code_types[0]]['use_code_type']} but "
+                    f"'{ct}' has {info[ct]['use_code_type']}."
+                )
+            if info[ct]["remove_punctuation"] != info[code_types[0]]["remove_punctuation"]:
+                raise ValueError(
+                    f"Inconsistent 'remove_punctuation' settings within domain '{domain}': "
+                    f"'{code_types[0]}' has {info[code_types[0]]['remove_punctuation']} but "
+                    f"'{ct}' has {info[ct]['remove_punctuation']}."
+                )
+
         # Rename code type keys from external names (e.g. "ICD-10-CM") to source names
         # (e.g. "ICD10CM") as defined by the 'source' field in codetype_info.
-        # use_punctuation=True means keep punctuation, i.e. remove_punctuation=False.
-        # All code types within a domain are expected to share the same settings.
         sub_codelist_dict = {
             info[ct]["source"]: codelist.codelist[ct] for ct in code_types
         }
