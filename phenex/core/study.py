@@ -9,7 +9,6 @@ from phenex.util import create_logger
 from phenex.util.output_concatenator import OutputConcatenator
 from phenex.core.cohort import Cohort
 from phenex.reporting import Waterfall
-from phenex import dump
 
 logger = create_logger(__name__)
 
@@ -165,6 +164,7 @@ class Study:
         return _path
 
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
+        from phenex import dump
         _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)

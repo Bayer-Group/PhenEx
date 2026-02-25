@@ -2,7 +2,7 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
-from .core import Cohort, Subcohort, Database
+from .core import Cohort, Subcohort, Database, Study
 
 from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 
@@ -112,6 +112,7 @@ __all__ = [
     "Cohort",
     "Subcohort",
     "Database",
+    "Study",
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
