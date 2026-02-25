@@ -20,6 +20,9 @@ class Codelist:
         codelist: User can enter codelists as either a string, a list of strings or a dictionary keyed by code type. In first two cases, the class will convert the input to a dictionary with a single key None. All consumers of the Codelist instance can then assume the codelist in that format.
         use_code_type: User can define whether code type should be used or not.
         remove_punctuation: User can define whether punctuation should be removed from codes or not.
+        rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
+        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format: 
+
 
     Methods:
         from_yaml: Load a codelist from a YAML file.
@@ -140,37 +143,64 @@ class Codelist:
         use_code_type: Optional[bool] = True,
         remove_punctuation: Optional[bool] = False,
         fuzzy_match: Optional[bool] = False,
+        rename_code_type: Optional[Dict[str, str]] = None,
+        code_type_info: Optional[Dict[str, Dict]] = None,
     ) -> None:
         self.name = name
 
         if isinstance(codelist, dict):
-            self.codelist = codelist
+            pass
         elif isinstance(codelist, list):
-            self.codelist = {None: codelist}
+            codelist = {None: codelist}
         elif isinstance(codelist, str):
             if name is None:
                 self.name = codelist
-            self.codelist = {None: [codelist]}
+            codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
-        if list(self.codelist.keys()) == [None]:
+        if list(codelist.keys()) == [None]:
             self.use_code_type = False
         else:
             self.use_code_type = use_code_type
 
         self.remove_punctuation = remove_punctuation
 
+        self.codelist = self._rename_code_types(codelist = codelist, rename_code_type=rename_code_type, code_type_info=code_type_info)
+
         self.fuzzy_match = fuzzy_match
-        for code_type, codelist in self.codelist.items():
-            if any(["%" in str(code) for code in codelist]):
+        for code_type, _codelist in self.codelist.items():
+            if any(["%" in str(code) for code in _codelist]):
                 self.fuzzy_match = True
-                if len(codelist) > 100:
+                if len(_codelist) > 100:
                     warnings.warn(
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
 
         self._resolved_codelist = None
+
+    def _rename_code_types(self, codelist, rename_code_type=None, code_type_info=None):
+        
+        def rename_codelist_with_mapping(_codelist, rename_code_type):
+            for current, renamed in rename_code_type.items():
+                if _codelist.get(current) is not None:
+                    _codelist[renamed] = _codelist[current]
+                    del _codelist[current]
+            return _codelist
+
+        def create_mapping_from_mapping_info(codetype_info):
+            return {k:v['source'] for k,v in codetype_info.items()}
+        
+        _codelist = codelist.copy()
+        # manual mapping of code types takes precedence over mapping based on code_type_info
+        if rename_code_type is not None and isinstance(rename_code_type, dict):
+            _codelist = rename_codelist_with_mapping(_codelist, rename_code_type)
+        # if rename_code_type is not provided but code_type_info is provided, we create the mapping based on the code_type_info
+        elif code_type_info is not None:
+            mapping = create_mapping_from_mapping_info(code_type_info)
+            _codelist = rename_codelist_with_mapping(_codelist, mapping)
+        
+        return _codelist
 
     def copy(
         self,
@@ -179,6 +209,7 @@ class Codelist:
         remove_punctuation: bool = None,
         rename_code_type: dict = None,
         fuzzy_match: Optional[bool] = None,
+        code_type_info: Optional[Dict[str, Dict]] = None,
     ) -> "Codelist":
         """
         Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
@@ -188,19 +219,13 @@ class Codelist:
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
             rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
+            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format: 
 
         Returns:
             Codelist instance with the updated resolution options.
-        """
-        _codelist = self.codelist.copy()
-        if rename_code_type is not None and isinstance(rename_code_type, dict):
-            for current, renamed in rename_code_type.items():
-                if _codelist.get(current) is not None:
-                    _codelist[renamed] = _codelist[current]
-                    del _codelist[current]
-
+        """            
         return Codelist(
-            _codelist,
+            codelist = self.codelist,
             name=name or self.name,
             use_code_type=(
                 use_code_type if use_code_type is not None else self.use_code_type
@@ -211,6 +236,8 @@ class Codelist:
                 else self.remove_punctuation
             ),
             fuzzy_match=fuzzy_match if fuzzy_match is not None else self.fuzzy_match,
+            rename_code_type=rename_code_type,
+            code_type_info=code_type_info,
         )
 
     @property
@@ -486,3 +513,7 @@ class Codelist:
             remove_punctuation=self.remove_punctuation,
             use_code_type=self.use_code_type,
         )
+
+
+def create_mapping_from_mapping_info(codetype_info):
+    return {k:v['source'] for k,v in codetype_info.items()}
