@@ -33,7 +33,7 @@ import os
 import pytest
 import pandas as pd
 
-from phenex.phenotypes.smart_codelist_phenotype import (
+from phenex.phenotypes.factory.smart_codelist_phenotype import (
     SmartCodelistPhenotype,
     CODETYPE_INFO,
 )

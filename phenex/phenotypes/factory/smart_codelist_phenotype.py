@@ -75,10 +75,10 @@ def SmartCodelistPhenotype(
     """
     SmartCodelistPhenotype is a factory that inspects a codelist, maps each code type to
     its corresponding domain via ``codetype_info``, and automatically constructs either a
-    single :class:`CodelistPhenotype` (when all code types share one domain) or a
-    :class:`LogicPhenotype` combining one :class:`CodelistPhenotype` per domain (OR logic).
+    single `CodelistPhenotype` (when all code types share one domain) or a
+    `LogicPhenotype` combining one `CodelistPhenotype` per domain (OR logic).
 
-    The interface is intentionally identical to :class:`CodelistPhenotype` except that
+    The interface is intentionally identical to `CodelistPhenotype` except that
     ``domain`` is omitted – domains are derived from the code types present in *codelist*.
 
     Parameters:
@@ -97,11 +97,11 @@ def SmartCodelistPhenotype(
         codetype_info: Mapping from code-type name to domain information. Defaults to
             :data:`CODETYPE_INFO`. Each entry must contain at least a ``'domain'`` key.
         **kwargs: Additional keyword arguments forwarded to every
-            :class:`CodelistPhenotype`.
+            `CodelistPhenotype`.
 
     Returns:
-        A single :class:`CodelistPhenotype` when all code types map to the same domain,
-        or a :class:`LogicPhenotype` (OR combination) when code types span multiple
+        A single `CodelistPhenotype` when all code types map to the same domain,
+        or a `LogicPhenotype` (OR combination) when code types span multiple
         domains.
 
     Raises:
