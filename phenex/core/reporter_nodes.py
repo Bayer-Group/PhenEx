@@ -97,9 +97,29 @@ class WaterfallNode(Reporter):
     The pandas DataFrame report can be accessed via the waterfall property.
     """
 
-    def __init__(self, name: str, cohort: "Cohort", index_table_node: "Node"):
+    def __init__(self, name: str, cohort: "Cohort", index_table_node: "Node", include_component_phenotypes_level: int = None):
         super(WaterfallNode, self).__init__(name=name, cohort=cohort)
-        self.reporter = Waterfall()
+        self.reporter = Waterfall(include_component_phenotypes_level=include_component_phenotypes_level)
 
         # Add dependency on index_table_node to ensure it executes first
         self.add_children([index_table_node])
+
+    @property
+    def df_report(self):
+        """Get the formatted waterfall DataFrame (without color column)."""
+        if self.table is not None:
+            if hasattr(self.table, "execute"):
+                df = self.table.execute()
+            else:
+                df = self.table
+            self.reporter.df = df
+            result = self.reporter.get_pretty_display(color=False)
+            return result.drop(columns=["_color"], errors="ignore")
+        return None
+
+    def to_excel(self, path: str):
+        """Export the waterfall to a colored Excel file."""
+        if self.table is not None:
+            # Ensure reporter.df is populated/refreshed
+            _ = self.df_report
+            self.reporter.to_excel(path)

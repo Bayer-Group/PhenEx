@@ -1,17 +1,67 @@
 from typing import List, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.core.cohort import Cohort
+from phenex.reporting import Table1
+
+
+class _FilteredPhenotypeView:
+    """
+    Wraps a phenotype and presents a filtered view of its table restricted to
+    patients present in a given index table. All other attributes are delegated
+    to the underlying phenotype unchanged.
+    """
+
+    def __init__(self, phenotype: Phenotype, index_patient_ids):
+        self._phenotype = phenotype
+        self._index_patient_ids = index_patient_ids
+
+    @property
+    def table(self):
+        return self._phenotype.table.semi_join(self._index_patient_ids, "PERSON_ID")
+
+    def __getattr__(self, name: str):
+        return getattr(self._phenotype, name)
+
+
+class _CohortViewForTable1:
+    """
+    A lightweight cohort-like proxy used to compute Table1 for a subset of
+    patients from a parent cohort. Provides the interface expected by Table1:
+    ``characteristics``, ``index_table``, and ``characteristics_table``.
+    """
+
+    def __init__(self, parent_cohort: "Cohort", index_table):
+        self.index_table = index_table
+        # Restrict each characteristic's table to the subcohort patients
+        index_patient_ids = index_table.filter(index_table.BOOLEAN == True).select(
+            "PERSON_ID"
+        )
+        self.characteristics = [
+            _FilteredPhenotypeView(p, index_patient_ids)
+            for p in parent_cohort.characteristics
+        ]
+        self.characteristics_table = None  # accessed but unused by Table1
 
 
 class Subcohort(Cohort):
     """
-    A Subcohort derives from a parent cohort and applies additional inclusion /exclusion criteria. The subcohort inherits the entry criterion, inclusion and exclusion criteria from the parent cohort but can add additional filtering criteria.
+    A Subcohort derives from a parent cohort and applies additional inclusion /
+    exclusion criteria. The subcohort inherits the entry criterion, inclusions,
+    and exclusions from the parent cohort but can add additional filtering
+    criteria.
+
+    Like ``Cohort``, a ``Subcohort`` exposes a ``table1`` property that reports
+    baseline characteristics for the subcohort population. The characteristics
+    are taken from the parent cohort and their data are subset to the patients
+    that satisfy the subcohort's criteria.
 
     Parameters:
         name: A descriptive name for the subcohort.
         cohort: The parent cohort from which this subcohort derives.
-        inclusions: Additional phenotypes that must evaluate to True for patients to be included in the subcohort.
-        exclusions: Additional phenotypes that must evaluate to False for patients to be included in the subcohort.
+        inclusions: Additional phenotypes that must evaluate to True for
+            patients to be included in the subcohort.
+        exclusions: Additional phenotypes that must evaluate to False for
+            patients to be included in the subcohort.
     """
 
     def __init__(
@@ -21,7 +71,6 @@ class Subcohort(Cohort):
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
     ):
-        # Initialize as a regular Cohort with Cohort index table as entry criterion
         additional_inclusions = inclusions or []
         additional_exclusions = exclusions or []
         super(Subcohort, self).__init__(
@@ -32,3 +81,20 @@ class Subcohort(Cohort):
             database=cohort.database,
         )
         self.cohort = cohort
+
+    @property
+    def table1(self) -> Optional["pd.DataFrame"]:
+        """
+        Baseline characteristics Table1 for the subcohort population.
+
+        Takes the parent cohort's characteristics (already computed), filters
+        each phenotype's results to the patients in this subcohort, and returns
+        a formatted Table1 DataFrame. Returns ``None`` if the parent cohort has
+        no characteristics or if the subcohort has not yet been executed.
+        """
+        if not self.cohort.characteristics:
+            return None
+        reporter = Table1()
+        proxy = _CohortViewForTable1(self.cohort, self.index_table)
+        reporter.execute(proxy)
+        return reporter.get_pretty_display()

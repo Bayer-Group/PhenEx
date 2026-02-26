@@ -103,6 +103,7 @@ class Cohort:
         self.subset_tables_index_nodes = None
         self.table1_node = None
         self.waterfall_node = None
+        self.waterfall_detailed_node = None
 
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
@@ -234,6 +235,14 @@ class Cohort:
             index_table_node=self.index_table_node,
         )
         index_nodes.append(self.waterfall_node)
+        self.waterfall_detailed_node = WaterfallNode(
+            name=f"{self.name}__waterfall_detailed".upper(),
+            cohort=self,
+            index_table_node=self.index_table_node,
+            include_component_phenotypes_level=100,  # include all component phenotypes in the detailed waterfall report
+        )
+        index_nodes.append(self.waterfall_detailed_node)
+
 
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
             stage="subset_index", domains=domains, index_phenotype=self.index_table_node
@@ -573,6 +582,13 @@ class Cohort:
         """Get the Waterfall report DataFrame from the waterfall_node if it exists."""
         if self.waterfall_node:
             return self.waterfall_node.df_report
+        return None
+    
+    @property
+    def waterfall_detailed(self):
+        """Get the detailed Waterfall report DataFrame from the waterfall_node if it exists."""
+        if self.waterfall_detailed_node:
+            return self.waterfall_detailed_node.df_report
         return None
 
     def to_dict(self):

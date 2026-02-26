@@ -93,8 +93,7 @@ class Study:
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
 
-        waterfall_reporter = Waterfall()
-        self.custom_reporters = [waterfall_reporter] + (self.custom_reporters or [])
+        self.custom_reporters =  self.custom_reporters or []
 
         for _cohort in self.cohorts:
             path_exec_dir_cohort = self._prepare_cohort_execution_directory(
@@ -106,8 +105,9 @@ class Study:
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            path_table = os.path.join(path_exec_dir_cohort, "table1.xlsx")
-            _cohort.table1.to_excel(path_table)
+            _cohort.table1.to_excel(os.path.join(path_exec_dir_cohort, "table1.xlsx"))
+            _cohort.waterfall_node.to_excel(os.path.join(path_exec_dir_cohort, "waterfall.xlsx"))
+            _cohort.waterfall_detailed.to_excel(os.path.join(path_exec_dir_cohort, "waterfall_detailed.xlsx"))
 
             if self.custom_reporters is not None:
                 for reporter in self.custom_reporters:
