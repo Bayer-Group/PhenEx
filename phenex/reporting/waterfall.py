@@ -139,6 +139,7 @@ class Waterfall(Reporter):
             "Type",
             "Index",
             "Name",
+            "Level",
             "N",
             "Pct_N",
             "Remaining",
@@ -248,6 +249,9 @@ class Waterfall(Reporter):
             # Add colors before any transformations (if requested)
             if color:
                 self._add_row_colors()
+
+            # Drop Level column now that coloring is done
+            self.df = self.df.drop(columns=["Level"], errors="ignore")
 
             # Format numeric columns as strings
             self._format_numeric_columns()

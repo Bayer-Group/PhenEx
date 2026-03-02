@@ -69,6 +69,12 @@ class Reporter(Node):
             return self.reporter.get_pretty_display()
         return None
 
+    def to_excel(self, path: str):
+        """Export to Excel. Ensures reporter.df is populated (handles cached/lazy nodes)."""
+        if self.table is not None:
+            _ = self.df_report  # populates self.reporter.df from self.table
+            self.reporter.to_excel(path)
+
 
 class Table1Node(Reporter):
     """
