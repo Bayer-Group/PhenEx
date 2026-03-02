@@ -116,10 +116,3 @@ class WaterfallNode(Reporter):
             result = self.reporter.get_pretty_display(color=False)
             return result.drop(columns=["_color"], errors="ignore")
         return None
-
-    def to_excel(self, path: str):
-        """Export the waterfall to a colored Excel file."""
-        if self.table is not None:
-            # Ensure reporter.df is populated/refreshed
-            _ = self.df_report
-            self.reporter.to_excel(path)

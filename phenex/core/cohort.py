@@ -514,6 +514,7 @@ class Cohort:
         self.subset_tables_index = self.get_subset_tables_index(tables)
 
         if self.reporting_stage:
+            logger.info("Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
                 con=con,
