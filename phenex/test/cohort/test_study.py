@@ -17,6 +17,7 @@ from phenex.reporting import Reporter
 from phenex.test.cohort.test_cohort_various_phenotypes_as_inex import (
     CohortWithContinuousCoverageAndExclusionTestGenerator,
     CohortWithContinuousCoverageTestGenerator,
+    CohortWithLogicPhenotypeAsInclusionTestGenerator,
 )
 from phenex.test.cohort.test_mappings import TestDomains
 
@@ -121,12 +122,12 @@ class TestStudyExecution(unittest.TestCase):
         wb = openpyxl.load_workbook(filepath)
 
         # Verify expected sheets exist
-        expected_sheets = ["Waterfall", "Table1"]
+        expected_sheets = ["Waterfall", "Table1", "waterfall_detailed"]
         actual_sheets = wb.sheetnames
         self.assertEqual(
             actual_sheets,
             expected_sheets,
-            "Should have sheets in correct order: Waterfall, Table1",
+            "Should have sheets in correct order: Waterfall, Table1, waterfall_detailed",
         )
 
         # Verify Waterfall sheet
@@ -143,6 +144,14 @@ class TestStudyExecution(unittest.TestCase):
             table1_sheet,
             expected_cohorts=["CohortWithExclusion", "CohortWithoutExclusion"],
             sheet_name="Table1",
+        )
+
+        # Verify waterfall_detailed sheet
+        waterfall_detailed_sheet = wb["waterfall_detailed"]
+        self._verify_concatenated_sheet(
+            waterfall_detailed_sheet,
+            expected_cohorts=["CohortWithExclusion", "CohortWithoutExclusion"],
+            sheet_name="waterfall_detailed",
         )
 
         wb.close()
@@ -220,6 +229,78 @@ class TestStudyExecution(unittest.TestCase):
             )
             self.assertIn("Table1", wb.sheetnames, "Should have Table1 sheet")
             wb.close()
+
+    def test_study_with_component_phenotypes(self):
+        """Test that Study correctly handles cohorts with LogicPhenotype (composite) inclusions.
+
+        A LogicPhenotype has component phenotypes as children. This test verifies that
+        the study executes successfully and that the waterfall_detailed sheet contains
+        rows for those component phenotypes.
+        """
+        gen = CohortWithLogicPhenotypeAsInclusionTestGenerator()
+        gen.define_mapped_tables()
+        cohort = gen.define_cohort()
+        cohort.name = "CohortWithComponentPhenotypes"
+        cohort.database = Database(connector=gen.con, mapper=TestDomains)
+
+        study = Study(
+            name="component_phenotype_study",
+            path=str(self.artifacts_dir),
+            cohorts=[cohort],
+        )
+        study.execute(overwrite=True)
+
+        # Verify study execution directory was created
+        study_dir = self.artifacts_dir / "component_phenotype_study"
+        self.assertTrue(study_dir.exists(), "component_phenotype_study directory should exist")
+
+        study_dirs = [
+            d for d in study_dir.iterdir()
+            if d.is_dir() and d.name.startswith("D20")
+        ]
+        self.assertGreater(len(study_dirs), 0, "Should create at least one execution directory")
+
+        study_exec_dir = max(study_dirs, key=lambda x: x.stat().st_mtime)
+
+        # Verify study_results.xlsx exists
+        study_results_file = study_exec_dir / "study_results.xlsx"
+        self.assertTrue(study_results_file.exists(), "study_results.xlsx should be created")
+
+        # Verify waterfall_detailed sheet contains component phenotype rows
+        wb = openpyxl.load_workbook(study_results_file)
+        self.assertIn("waterfall_detailed", wb.sheetnames,
+                      "study_results.xlsx should have waterfall_detailed sheet")
+
+        detailed_sheet = wb["waterfall_detailed"]
+
+        # Collect all non-empty cell values from the sheet
+        all_values = set()
+        for row in detailed_sheet.iter_rows(values_only=True):
+            for cell in row:
+                if cell is not None:
+                    all_values.add(str(cell))
+
+        # display_name capitalizes and replaces underscores with spaces, e.g.
+        # "combined_cc_and_prior_drug" -> "Combined cc and prior drug"
+        all_values_lower = {v.lower() for v in all_values}
+
+        # The LogicPhenotype 'combined_cc_and_prior_drug' should appear
+        self.assertTrue(
+            any("combined cc and prior drug" in v for v in all_values_lower),
+            "waterfall_detailed should contain the LogicPhenotype inclusion name",
+        )
+
+        # Its component phenotypes (children) should also appear in waterfall_detailed
+        self.assertTrue(
+            any("continuous coverage" in v for v in all_values_lower),
+            "waterfall_detailed should contain component phenotype 'continuous_coverage'",
+        )
+        self.assertTrue(
+            any("prior drug d1" in v for v in all_values_lower),
+            "waterfall_detailed should contain component phenotype 'prior_drug_d1'",
+        )
+
+        wb.close()
 
     def test_cohort_waterfall_values(self):
         """Test that waterfall values are correct for known cohorts."""

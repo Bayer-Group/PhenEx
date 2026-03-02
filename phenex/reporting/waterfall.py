@@ -96,8 +96,9 @@ class Waterfall(Reporter):
         # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
         entry_pct = N_entry / cohort.n_persons_in_source_database * 100
 
-        # Round all numeric columns including % Source Database
-        self.df = self.df.round(self.decimal_places)
+        # Round numeric (float) columns; preserve integer columns like Level
+        float_cols = self.df.select_dtypes(include="float").columns
+        self.df[float_cols] = self.df[float_cols].round(self.decimal_places)
 
         # first row data
         first_row_data = {
@@ -277,18 +278,24 @@ class Waterfall(Reporter):
         last_parent_color = None
 
         for idx, row in self.df.iterrows():
-            row_type = self._get_effective_type(row)
-            level = row.get("Level", 0)
+            row_type = str(row["Type"]) if row["Type"] != "" else "component"
+            # Derive level from the Index column (always present): the number of
+            # dots encodes nesting depth, e.g. "2" → 0, "2.1" → 1, "2.1.3" → 2.
+            # This avoids relying on the Level column which is not saved to Excel.
+            index_val = str(row.get("Index", "")) if pd.notna(row.get("Index", None)) else ""
+            level = index_val.count(".")
 
-            # Determine base color
+            # Determine base color and apply lightness for component depth
             if row_type == "component":
+                # Inherit parent color and lighten based on nesting level
                 base_color = last_parent_color
+                adjusted_color = self._adjust_brightness(base_color, level)
             else:
+                # Non-component rows: use base color (level is always 0 here)
                 base_color = color_map.get(row_type, (0, 0, 100))
                 last_parent_color = base_color
+                adjusted_color = base_color
 
-            # Apply brightness adjustment and convert to CSS string
-            adjusted_color = self._adjust_brightness(base_color, level)
             self.df.at[idx, "_color"] = self._hsl_to_string(adjusted_color)
 
     def _format_numeric_columns(self):
@@ -520,7 +527,7 @@ class Waterfall(Reporter):
         if hsl_tuple is None:
             return None
         h, s, l = hsl_tuple
-        return f"hsl({h}, {s}%, {l}%)"
+        return f"hsl({int(round(h))}, {int(round(s))}%, {int(round(l))}%)"
 
     def _create_sparse_type_column(self):
         """Show type label only once per section (not repeated on each row)"""
