@@ -69,6 +69,7 @@ class OutputConcatenator:
 
             # Create sheet for this report type
             sheet = output_wb.create_sheet(title=report_type)
+            sheet.sheet_view.showGridLines = False
             self._concatenate_reports_horizontally(sheet, report_files)
 
         # Save output file

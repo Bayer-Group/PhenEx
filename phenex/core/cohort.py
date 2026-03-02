@@ -244,7 +244,6 @@ class Cohort:
         )
         index_nodes.append(self.waterfall_detailed_node)
 
-
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
             stage="subset_index", domains=domains, index_phenotype=self.index_table_node
         )
@@ -600,7 +599,9 @@ class Cohort:
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
-            self.waterfall_detailed_node.to_excel(os.path.join(path, "waterfall_detailed.xlsx"))
+            self.waterfall_detailed_node.to_excel(
+                os.path.join(path, "waterfall_detailed.xlsx")
+            )
 
     def to_dict(self):
         """

@@ -282,7 +282,9 @@ class Waterfall(Reporter):
             # Derive level from the Index column (always present): the number of
             # dots encodes nesting depth, e.g. "2" → 0, "2.1" → 1, "2.1.3" → 2.
             # This avoids relying on the Level column which is not saved to Excel.
-            index_val = str(row.get("Index", "")) if pd.notna(row.get("Index", None)) else ""
+            index_val = (
+                str(row.get("Index", "")) if pd.notna(row.get("Index", None)) else ""
+            )
             level = index_val.count(".")
 
             # Determine base color and apply lightness for component depth

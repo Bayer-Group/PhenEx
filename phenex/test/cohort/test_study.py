@@ -252,24 +252,32 @@ class TestStudyExecution(unittest.TestCase):
 
         # Verify study execution directory was created
         study_dir = self.artifacts_dir / "component_phenotype_study"
-        self.assertTrue(study_dir.exists(), "component_phenotype_study directory should exist")
+        self.assertTrue(
+            study_dir.exists(), "component_phenotype_study directory should exist"
+        )
 
         study_dirs = [
-            d for d in study_dir.iterdir()
-            if d.is_dir() and d.name.startswith("D20")
+            d for d in study_dir.iterdir() if d.is_dir() and d.name.startswith("D20")
         ]
-        self.assertGreater(len(study_dirs), 0, "Should create at least one execution directory")
+        self.assertGreater(
+            len(study_dirs), 0, "Should create at least one execution directory"
+        )
 
         study_exec_dir = max(study_dirs, key=lambda x: x.stat().st_mtime)
 
         # Verify study_results.xlsx exists
         study_results_file = study_exec_dir / "study_results.xlsx"
-        self.assertTrue(study_results_file.exists(), "study_results.xlsx should be created")
+        self.assertTrue(
+            study_results_file.exists(), "study_results.xlsx should be created"
+        )
 
         # Verify waterfall_detailed sheet contains component phenotype rows
         wb = openpyxl.load_workbook(study_results_file)
-        self.assertIn("waterfall_detailed", wb.sheetnames,
-                      "study_results.xlsx should have waterfall_detailed sheet")
+        self.assertIn(
+            "waterfall_detailed",
+            wb.sheetnames,
+            "study_results.xlsx should have waterfall_detailed sheet",
+        )
 
         detailed_sheet = wb["waterfall_detailed"]
 

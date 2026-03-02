@@ -114,4 +114,6 @@ class Subcohort(Cohort):
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
-            self.waterfall_detailed_node.to_excel(os.path.join(path, "waterfall_detailed.xlsx"))
+            self.waterfall_detailed_node.to_excel(
+                os.path.join(path, "waterfall_detailed.xlsx")
+            )

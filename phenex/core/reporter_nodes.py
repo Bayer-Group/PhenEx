@@ -103,9 +103,17 @@ class WaterfallNode(Reporter):
     The pandas DataFrame report can be accessed via the waterfall property.
     """
 
-    def __init__(self, name: str, cohort: "Cohort", index_table_node: "Node", include_component_phenotypes_level: int = None):
+    def __init__(
+        self,
+        name: str,
+        cohort: "Cohort",
+        index_table_node: "Node",
+        include_component_phenotypes_level: int = None,
+    ):
         super(WaterfallNode, self).__init__(name=name, cohort=cohort)
-        self.reporter = Waterfall(include_component_phenotypes_level=include_component_phenotypes_level)
+        self.reporter = Waterfall(
+            include_component_phenotypes_level=include_component_phenotypes_level
+        )
 
         # Add dependency on index_table_node to ensure it executes first
         self.add_children([index_table_node])
@@ -122,4 +130,3 @@ class WaterfallNode(Reporter):
             result = self.reporter.get_pretty_display(color=False)
             return result.drop(columns=["_color"], errors="ignore")
         return None
-

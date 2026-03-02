@@ -93,7 +93,7 @@ class Study:
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
 
-        self.custom_reporters =  self.custom_reporters or []
+        self.custom_reporters = self.custom_reporters or []
 
         for _cohort in self.cohorts:
             path_exec_dir_cohort = self._prepare_cohort_execution_directory(

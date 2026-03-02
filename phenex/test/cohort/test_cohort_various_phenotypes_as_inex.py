@@ -998,9 +998,7 @@ class CohortWithLogicPhenotypeAsInclusionTestGenerator(CohortTestGenerator):
             )
         )
 
-        df_drug_exposure = pd.DataFrame(
-            df_allvalues[["PATID", "entry", "entry_date"]]
-        )
+        df_drug_exposure = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
         df_drug_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         schema_drug_exposure = {
             "PATID": str,
