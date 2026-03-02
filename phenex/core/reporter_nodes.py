@@ -55,7 +55,7 @@ class Reporter(Node):
 
     @property
     def df_report(self):
-        """Get the generated Table1 DataFrame with pretty formatting."""
+        """Get the generated report DataFrame with pretty formatting."""
         if self.table is not None:
             # If table is an Ibis table, convert to pandas
             if hasattr(self.table, "execute"):
@@ -68,6 +68,12 @@ class Reporter(Node):
             self.reporter.df = df
             return self.reporter.get_pretty_display()
         return None
+
+    def to_excel(self, path: str):
+        """Export to Excel. Ensures reporter.df is populated (handles cached/lazy nodes)."""
+        if self.table is not None:
+            _ = self.df_report  # populates self.reporter.df from self.table
+            self.reporter.to_excel(path)
 
 
 class Table1Node(Reporter):
