@@ -105,9 +105,7 @@ class Study:
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            _cohort.table1_node.to_excel(os.path.join(path_exec_dir_cohort, "table1.xlsx"))
-            _cohort.waterfall_node.to_excel(os.path.join(path_exec_dir_cohort, "waterfall.xlsx"))
-            _cohort.waterfall_detailed_node.to_excel(os.path.join(path_exec_dir_cohort, "waterfall_detailed.xlsx"))
+            _cohort.write_reports_to_excel(path_exec_dir_cohort)
 
             if self.custom_reporters is not None:
                 for reporter in self.custom_reporters:

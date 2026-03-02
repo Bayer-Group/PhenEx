@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.node import Node, NodeGroup
@@ -584,13 +585,22 @@ class Cohort:
         if self.waterfall_node:
             return self.waterfall_node.df_report
         return None
-    
+
     @property
     def waterfall_detailed(self):
         """Get the detailed Waterfall report DataFrame from the waterfall_node if it exists."""
         if self.waterfall_detailed_node:
             return self.waterfall_detailed_node.df_report
         return None
+
+    def write_reports_to_excel(self, path: str):
+        """Write all available reports (table1, waterfall, waterfall_detailed) to Excel files in the given directory."""
+        if self.table1_node:
+            self.table1_node.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.waterfall_node:
+            self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_excel(os.path.join(path, "waterfall_detailed.xlsx"))
 
     def to_dict(self):
         """

@@ -1,4 +1,5 @@
 from typing import List, Optional
+import os
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.core.cohort import Cohort
 from phenex.reporting import Table1
@@ -82,6 +83,15 @@ class Subcohort(Cohort):
         )
         self.cohort = cohort
 
+    def _make_table1_reporter(self) -> Optional["Table1"]:
+        """Build and execute a Table1 reporter for the subcohort population."""
+        if not self.cohort.characteristics:
+            return None
+        reporter = Table1()
+        proxy = _CohortViewForTable1(self.cohort, self.index_table)
+        reporter.execute(proxy)
+        return reporter
+
     @property
     def table1(self) -> Optional["pd.DataFrame"]:
         """
@@ -92,9 +102,16 @@ class Subcohort(Cohort):
         a formatted Table1 DataFrame. Returns ``None`` if the parent cohort has
         no characteristics or if the subcohort has not yet been executed.
         """
-        if not self.cohort.characteristics:
-            return None
-        reporter = Table1()
-        proxy = _CohortViewForTable1(self.cohort, self.index_table)
-        reporter.execute(proxy)
-        return reporter.get_pretty_display()
+        reporter = self._make_table1_reporter()
+        return reporter.get_pretty_display() if reporter else None
+
+    def write_reports_to_excel(self, path: str):
+        """Write all available reports to Excel. Table1 is computed from the
+        parent cohort's characteristics subset to this subcohort's patients."""
+        reporter = self._make_table1_reporter()
+        if reporter:
+            reporter.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.waterfall_node:
+            self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_excel(os.path.join(path, "waterfall_detailed.xlsx"))
