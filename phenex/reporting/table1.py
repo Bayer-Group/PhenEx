@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 
 from phenex.reporting.reporter import Reporter
@@ -170,7 +171,14 @@ class Table1(Reporter):
             cat_counts = (
                 _table.distinct().group_by("VALUE").aggregate(N=_.count()).execute()
             )
-            cat_counts.index = [f"{name}={v}" for v in cat_counts["VALUE"]]
+            # Sort by the VALUE column so that BinPhenotype's "NNNN_" sort-order
+            # prefixes put categories in logical order (under-range → ranges → over-range).
+            cat_counts = cat_counts.sort_values("VALUE").reset_index(drop=True)
+            # Strip the optional "NNNN_" sort-order prefix added by BinPhenotype.
+            display_values = [
+                re.sub(r"^\d{4}_", "", str(v)) for v in cat_counts["VALUE"]
+            ]
+            cat_counts.index = [f"{name}={v}" for v in display_values]
             _df = pd.DataFrame(cat_counts["N"])
             _df["inex_order"] = self.cohort_names_in_order.index(phenotype.name)
             dfs.append(_df)

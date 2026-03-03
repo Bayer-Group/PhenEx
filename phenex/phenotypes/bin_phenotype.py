@@ -194,18 +194,20 @@ class BinPhenotype(Phenotype):
 
     def _execute_continuous_binning(self, table) -> PhenotypeTable:
         """Handle continuous value binning with numeric ranges."""
-        # Create bin labels
+        # Create bin labels with zero-padded sort-order prefix so that reporters
+        # can sort categories in logical order (under-range, ranges, over-range).
+        # The prefix format is "NNNN_" and is stripped by Table1 before display.
         bin_labels = []
 
-        # Add a bin for values < first bin edge
-        bin_labels.append(f"<{self.bins[0]}")
+        # Add a bin for values < first bin edge (index 0)
+        bin_labels.append(f"0000_<{self.bins[0]}")
 
-        # Add bins for each range
+        # Add bins for each range (indices 1..n-1)
         for i in range(len(self.bins) - 1):
-            bin_labels.append(f"[{self.bins[i]}-{self.bins[i+1]})")
+            bin_labels.append(f"{i+1:04d}_[{self.bins[i]}-{self.bins[i+1]})")
 
-        # Add a final bin for values >= last bin edge
-        bin_labels.append(f">={self.bins[-1]}")
+        # Add a final bin for values >= last bin edge (index n)
+        bin_labels.append(f"{len(self.bins):04d}_>={self.bins[-1]}")
 
         # Create binning logic using Ibis case statements
         value_col = table.VALUE
@@ -241,8 +243,11 @@ class BinPhenotype(Phenotype):
         # Start with the case expression
         case_expr = ibis.case()
 
-        # Add conditions for each bin and its associated values
-        for bin_name, values in self.value_mapping.items():
+        # Add conditions for each bin and its associated values.
+        # Labels are prefixed with a zero-padded index to preserve dict insertion order
+        # so that reporters can sort categories correctly. The prefix is stripped by
+        # Table1 before display.
+        for idx, (bin_name, values) in enumerate(self.value_mapping.items()):
             # Check if values is a Codelist and convert to list, otherwise use as list
             if isinstance(values, Codelist):
                 values_list = values.to_list()
@@ -251,7 +256,7 @@ class BinPhenotype(Phenotype):
 
             # Create condition that checks if value is in the list of values for this bin
             condition = value_col.isin(values_list)
-            case_expr = case_expr.when(condition, bin_name)
+            case_expr = case_expr.when(condition, f"{idx:04d}_{bin_name}")
 
         # Handle unmapped values as null
         case_expr = case_expr.else_(None)

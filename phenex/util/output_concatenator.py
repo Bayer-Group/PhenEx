@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from typing import List, Dict
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from phenex.util import create_logger
 
@@ -177,10 +177,15 @@ class OutputConcatenator:
                         if height:
                             output_sheet.row_dimensions[row_idx + 1].height = height
 
+                # Apply a right border to the last column of this cohort block
+                self._apply_right_border_to_column(
+                    output_sheet, current_col + max_col - 1, max_row + 1
+                )
+
                 source_wb.close()
 
-                # Move to next position (add 1 for empty column separator)
-                current_col += max_col + 1
+                # Move to next position (no blank separator; right border is the divider)
+                current_col += max_col
 
             except Exception as e:
                 logger.warning(f"Failed to process {report_file}: {e}")
@@ -245,6 +250,8 @@ class OutputConcatenator:
         output_sheet.column_dimensions[get_column_letter(1)].width = max(
             max_name_len * 1.2, 14
         )
+        # Apply a right border to the Name column so it acts as a visual divider
+        self._apply_right_border_to_column(output_sheet, 1, 2 + len(master_names))
         # Freeze column A so it remains visible while scrolling right
         output_sheet.freeze_panes = output_sheet.cell(row=1, column=2)
 
@@ -311,12 +318,33 @@ class OutputConcatenator:
                     source_sheet, output_sheet, 2, current_col, num_value_cols
                 )
 
+                # Apply a right border to the last column of this cohort block
+                self._apply_right_border_to_column(
+                    output_sheet, current_col + num_value_cols - 1, 2 + len(master_names)
+                )
+
                 source_wb.close()
-                current_col += num_value_cols + 1  # +1 blank separator column
+                current_col += num_value_cols  # no blank separator; right border is the divider
 
             except Exception as e:
                 logger.warning(f"Failed to process {report_file}: {e}")
                 continue
+
+    def _apply_right_border_to_column(self, sheet, col: int, max_row: int):
+        """Apply a medium right border to every cell in *col* from row 1 to *max_row*.
+
+        Preserves any existing left/top/bottom border on each cell.
+        """
+        right_side = Side(style="medium")
+        for row in range(1, max_row + 1):
+            cell = sheet.cell(row=row, column=col)
+            existing = cell.border
+            cell.border = Border(
+                left=existing.left,
+                right=right_side,
+                top=existing.top,
+                bottom=existing.bottom,
+            )
 
     def _add_header(self, sheet, text: str, start_col: int, num_cols: int):
         """
