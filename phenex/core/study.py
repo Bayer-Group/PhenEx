@@ -170,5 +170,7 @@ class Study:
 
     def _concatenate_reports(self, path_exec_dir_study):
         """Concatenate all cohort reports into a single Excel file."""
-        concatenator = OutputConcatenator(path_exec_dir_study)
+        concatenator = OutputConcatenator(
+            path_exec_dir_study
+        )
         concatenator.concatenate_all_reports()

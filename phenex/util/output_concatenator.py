@@ -24,7 +24,9 @@ class OutputConcatenator:
     report is placed side-by-side.
     """
 
-    def __init__(self, study_execution_path: str):
+    def __init__(
+        self, study_execution_path: str
+    ):
         """
         Initialize the OutputConcatenator.
 
@@ -70,7 +72,10 @@ class OutputConcatenator:
             # Create sheet for this report type
             sheet = output_wb.create_sheet(title=report_type)
             sheet.sheet_view.showGridLines = False
-            self._concatenate_reports_horizontally(sheet, report_files)
+            if report_type == "Table1":
+                self._concatenate_table1_aligned(sheet, report_files)
+            else:
+                self._concatenate_reports_horizontally(sheet, report_files)
 
         # Save output file
         output_wb.save(self.output_file)
@@ -176,6 +181,138 @@ class OutputConcatenator:
 
                 # Move to next position (add 1 for empty column separator)
                 current_col += max_col + 1
+
+            except Exception as e:
+                logger.warning(f"Failed to process {report_file}: {e}")
+                continue
+
+    def _build_master_name_list(self, report_files: List[Path]) -> List[str]:
+        """Return an ordered, deduplicated list of all Name-column values across files.
+
+        Reads column A from each Table1 source file (rows 2+, skipping the header),
+        collecting names in first-seen order.  This captures display names and
+        categorical sub-rows (e.g. ``"Diagnosis=yes"``) exactly as Table1 renders them.
+        """
+        seen: Dict[str, None] = {}  # ordered-dict trick for deduplication
+        for report_file in report_files:
+            try:
+                wb = openpyxl.load_workbook(report_file, data_only=True, read_only=True)
+                ws = wb.active
+                for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
+                    val = row[0]
+                    if val is not None:
+                        seen[str(val)] = None
+                wb.close()
+            except Exception as e:
+                logger.warning(f"Could not read name list from {report_file}: {e}")
+        return list(seen.keys())
+
+    def _build_name_to_source_row(self, source_sheet) -> Dict[str, int]:
+        """Return ``{name_value: 1-based row index}`` for data rows (row 2+) of a sheet."""
+        mapping: Dict[str, int] = {}
+        for row_idx in range(2, source_sheet.max_row + 1):
+            val = source_sheet.cell(row=row_idx, column=1).value
+            if val is not None:
+                mapping[str(val)] = row_idx
+        return mapping
+
+    def _write_table1_name_column(self, output_sheet, master_names: List[str]):
+        """Write the frozen Name column (col A) for the aligned Table1 sheet.
+
+        Row 1 is left blank (cohort-name headers occupy it for the value columns).
+        Row 2 holds the ``"Name"`` column label.
+        Rows 3+ hold each entry from *master_names*; the ``"Cohort"`` row is bold/grey.
+        Column width is set to fit the longest name.
+        """
+        header_cell = output_sheet.cell(row=2, column=1)
+        header_cell.value = "Name"
+        header_cell.font = Font(bold=True, size=11)
+        header_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        for i, name in enumerate(master_names):
+            cell = output_sheet.cell(row=3 + i, column=1)
+            cell.value = name
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+            if name == "Cohort":
+                cell.font = Font(bold=True, size=11)
+                cell.fill = PatternFill(
+                    start_color="D3D3D3", end_color="D3D3D3", fill_type="solid"
+                )
+            else:
+                cell.font = Font(size=11)
+
+        max_name_len = max((len(n) for n in master_names), default=10)
+        output_sheet.column_dimensions[get_column_letter(1)].width = max(
+            max_name_len * 1.2, 14
+        )
+        # Freeze column A so it remains visible while scrolling right
+        output_sheet.freeze_panes = output_sheet.cell(row=1, column=2)
+
+    def _concatenate_table1_aligned(self, output_sheet, report_files: List[Path]):
+        """Concatenate Table1 files into a single sheet with a shared frozen Name column.
+
+        Layout::
+
+            Row 1 : merged, grey cohort-name header per cohort block
+            Row 2 : "Name" in col A  +  column labels (N, Pct, Mean…) per cohort block
+            Row 3+: characteristic / category name in col A  +  values per cohort;
+                    cells are blank where a cohort does not have that row
+
+        The master Name list is derived from the source files themselves (not from
+        ``baseline_characteristics``), so display names and categorical sub-rows
+        such as ``"Diagnosis=yes"`` are matched exactly.
+        """
+        master_names = self._build_master_name_list(report_files)
+        if not master_names:
+            return
+
+        self._write_table1_name_column(output_sheet, master_names)
+
+        current_col = 2  # col B onwards; col A is the frozen Name column
+
+        for report_file in report_files:
+            try:
+                source_wb = openpyxl.load_workbook(report_file, data_only=False)
+                source_sheet = source_wb.active
+
+                max_col = source_sheet.max_column
+                # Source col 1 = "Name"; cols 2..max_col are the value columns
+                num_value_cols = max_col - 1
+
+                # Row 1: cohort-name header merged across the value columns
+                self._add_header(
+                    output_sheet, report_file.parent.name, current_col, num_value_cols
+                )
+
+                # Row 2: column labels (N, Pct, Mean, …) — source row 1, skip col 1
+                for offset in range(num_value_cols):
+                    src_cell = source_sheet.cell(row=1, column=2 + offset)
+                    tgt_cell = output_sheet.cell(row=2, column=current_col + offset)
+                    self._copy_cell(src_cell, tgt_cell)
+                    tgt_cell.font = Font(bold=True, size=11)
+
+                # Rows 3+: values aligned to master_names; blank if name absent
+                name_to_row = self._build_name_to_source_row(source_sheet)
+                for i, name in enumerate(master_names):
+                    src_row = name_to_row.get(name)
+                    out_row = 3 + i
+                    for offset in range(num_value_cols):
+                        tgt_cell = output_sheet.cell(
+                            row=out_row, column=current_col + offset
+                        )
+                        if src_row is not None:
+                            self._copy_cell(
+                                source_sheet.cell(row=src_row, column=2 + offset),
+                                tgt_cell,
+                            )
+
+                # Preserve value column widths
+                self._copy_column_widths(
+                    source_sheet, output_sheet, 2, current_col, num_value_cols
+                )
+
+                source_wb.close()
+                current_col += num_value_cols + 1  # +1 blank separator column
 
             except Exception as e:
                 logger.warning(f"Failed to process {report_file}: {e}")
