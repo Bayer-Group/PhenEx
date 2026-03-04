@@ -7,6 +7,8 @@ Concatenates cohort reports horizontally into a single multi-sheet Excel file.
 import os
 from pathlib import Path
 from typing import List, Dict
+import re
+import zipfile
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -79,7 +81,44 @@ class OutputConcatenator:
 
         # Save output file
         output_wb.save(self.output_file)
+        self._suppress_number_as_text_warnings(self.output_file)
         logger.info(f"✓ Successfully created: {self.output_file}")
+
+    def _suppress_number_as_text_warnings(self, xlsx_path: Path):
+        """Patch each sheet's XML to add <ignoredErrors> so Excel does not show
+        the 'number stored as text' green-triangle warning.
+
+        This works by reopening the saved .xlsx (which is a zip archive) and
+        injecting the element before </worksheet> in every sheet file.
+        """
+        tmp_path = xlsx_path.with_suffix(".tmp.xlsx")
+        try:
+            with zipfile.ZipFile(xlsx_path, "r") as zin:
+                with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
+                    for item in zin.infolist():
+                        data = zin.read(item.filename)
+                        if (
+                            item.filename.startswith("xl/worksheets/sheet")
+                            and item.filename.endswith(".xml")
+                        ):
+                            text = data.decode("utf-8")
+                            if "<ignoredErrors>" not in text:
+                                # Use the dimension ref if present; fall back to a wide range
+                                m = re.search(r'<dimension ref="([^"]+)"', text)
+                                ref = m.group(1) if m else "A1:XFD1048576"
+                                snippet = (
+                                    f'<ignoredErrors>'
+                                    f'<ignoredError sqref="{ref}" numberStoredAsText="1"/>'
+                                    f'</ignoredErrors>'
+                                )
+                                text = text.replace("</worksheet>", snippet + "</worksheet>")
+                                data = text.encode("utf-8")
+                        zout.writestr(item, data)
+            tmp_path.replace(xlsx_path)
+        except Exception as e:
+            logger.warning(f"Could not suppress number-as-text warnings: {e}")
+            if tmp_path.exists():
+                tmp_path.unlink()
 
     def _get_cohort_directories(self) -> List[Path]:
         """Get all cohort subdirectories in the study execution path."""
@@ -253,7 +292,7 @@ class OutputConcatenator:
             max_name_len * 1.2, 14
         )
         # Freeze column A and rows 1-2 so both remain visible while scrolling
-        output_sheet.freeze_panes = output_sheet.cell(row=3, column=2)
+        output_sheet.freeze_panes = output_sheet.cell(row=4, column=2)
 
     def _concatenate_table1_aligned(self, output_sheet, report_files: List[Path]):
         """Concatenate Table1 files into a single sheet with a shared frozen Name column.
