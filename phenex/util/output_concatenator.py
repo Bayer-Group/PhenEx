@@ -141,6 +141,7 @@ class OutputConcatenator:
             report_files: List of Excel file paths to concatenate
         """
         current_col = 1
+        border_cols = []  # collect divider columns; borders applied after full height is known
 
         for report_file in report_files:
             try:
@@ -177,19 +178,20 @@ class OutputConcatenator:
                         if height:
                             output_sheet.row_dimensions[row_idx + 1].height = height
 
-                # Apply a right border to the last column of this cohort block
-                self._apply_right_border_to_column(
-                    output_sheet, current_col + max_col - 1, max_row + 1
-                )
-
                 source_wb.close()
-
-                # Move to next position (no blank separator; right border is the divider)
+                border_cols.append(current_col + max_col - 1)
                 current_col += max_col
 
             except Exception as e:
                 logger.warning(f"Failed to process {report_file}: {e}")
                 continue
+
+        # Apply right borders and a bottom border using the full sheet dimensions
+        sheet_max_row = output_sheet.max_row
+        sheet_max_col = output_sheet.max_column
+        for col in border_cols:
+            self._apply_right_border_to_column(output_sheet, col, sheet_max_row)
+        self._apply_bottom_border_to_row(output_sheet, sheet_max_row, sheet_max_col)
 
     def _build_master_name_list(self, report_files: List[Path]) -> List[str]:
         """Return an ordered, deduplicated list of all Name-column values across files.
@@ -250,10 +252,8 @@ class OutputConcatenator:
         output_sheet.column_dimensions[get_column_letter(1)].width = max(
             max_name_len * 1.2, 14
         )
-        # Apply a right border to the Name column so it acts as a visual divider
-        self._apply_right_border_to_column(output_sheet, 1, 2 + len(master_names))
-        # Freeze column A so it remains visible while scrolling right
-        output_sheet.freeze_panes = output_sheet.cell(row=1, column=2)
+        # Freeze column A and rows 1-2 so both remain visible while scrolling
+        output_sheet.freeze_panes = output_sheet.cell(row=3, column=2)
 
     def _concatenate_table1_aligned(self, output_sheet, report_files: List[Path]):
         """Concatenate Table1 files into a single sheet with a shared frozen Name column.
@@ -276,6 +276,7 @@ class OutputConcatenator:
         self._write_table1_name_column(output_sheet, master_names)
 
         current_col = 2  # col B onwards; col A is the frozen Name column
+        border_cols = []  # collect divider columns; borders applied after full height is known
 
         for report_file in report_files:
             try:
@@ -318,24 +319,28 @@ class OutputConcatenator:
                     source_sheet, output_sheet, 2, current_col, num_value_cols
                 )
 
-                # Apply a right border to the last column of this cohort block
-                self._apply_right_border_to_column(
-                    output_sheet, current_col + num_value_cols - 1, 2 + len(master_names)
-                )
-
                 source_wb.close()
+                border_cols.append(current_col + num_value_cols - 1)
                 current_col += num_value_cols  # no blank separator; right border is the divider
 
             except Exception as e:
                 logger.warning(f"Failed to process {report_file}: {e}")
                 continue
 
+        # Apply right borders (including the Name column) and a bottom border
+        sheet_max_row = output_sheet.max_row
+        sheet_max_col = output_sheet.max_column
+        self._apply_right_border_to_column(output_sheet, 1, sheet_max_row)
+        for col in border_cols:
+            self._apply_right_border_to_column(output_sheet, col, sheet_max_row)
+        self._apply_bottom_border_to_row(output_sheet, sheet_max_row, sheet_max_col)
+
     def _apply_right_border_to_column(self, sheet, col: int, max_row: int):
-        """Apply a medium right border to every cell in *col* from row 1 to *max_row*.
+        """Apply a thin right border to every cell in *col* from row 1 to *max_row*.
 
         Preserves any existing left/top/bottom border on each cell.
         """
-        right_side = Side(style="medium")
+        right_side = Side(style="thin")
         for row in range(1, max_row + 1):
             cell = sheet.cell(row=row, column=col)
             existing = cell.border
@@ -344,6 +349,22 @@ class OutputConcatenator:
                 right=right_side,
                 top=existing.top,
                 bottom=existing.bottom,
+            )
+
+    def _apply_bottom_border_to_row(self, sheet, row: int, max_col: int):
+        """Apply a thin bottom border to every cell in *row* from col 1 to *max_col*.
+
+        Preserves any existing left/right/top border on each cell.
+        """
+        bottom_side = Side(style="thin")
+        for col in range(1, max_col + 1):
+            cell = sheet.cell(row=row, column=col)
+            existing = cell.border
+            cell.border = Border(
+                left=existing.left,
+                right=existing.right,
+                top=existing.top,
+                bottom=bottom_side,
             )
 
     def _add_header(self, sheet, text: str, start_col: int, num_cols: int):

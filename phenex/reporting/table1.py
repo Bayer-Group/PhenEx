@@ -1,4 +1,3 @@
-import re
 import pandas as pd
 
 from phenex.reporting.reporter import Reporter
@@ -66,6 +65,11 @@ class Table1(Reporter):
         self.df = self.df.reset_index()[
             [x for x in self.df.columns if x not in ["index", "inex_order"]]
         ]
+        # Strip the "NNNN_" sort-order prefix that BinPhenotype embeds in bin
+        # labels (e.g. "Age group=0003_[30-40)" → "Age group=[30-40)").
+        self.df["Name"] = self.df["Name"].str.replace(
+            r"=\d{4}_", "=", regex=True
+        )
         return self.df
 
     def _get_boolean_characteristics(self):
@@ -167,18 +171,16 @@ class Table1(Reporter):
         for phenotype in categorical_phenotypes:
             name = phenotype.display_name
             _table = phenotype.table.select(["PERSON_ID", "VALUE"])
-            # Get counts for each category
+            # Get counts for each category.
+            # Keep the raw VALUE (which may carry a "NNNN_" sort prefix from
+            # BinPhenotype) in the index so that the final sort_values("Name")
+            # in execute() orders bins correctly. The prefix is stripped there.
             cat_counts = (
                 _table.distinct().group_by("VALUE").aggregate(N=_.count()).execute()
             )
-            # Sort by the VALUE column so that BinPhenotype's "NNNN_" sort-order
-            # prefixes put categories in logical order (under-range → ranges → over-range).
-            cat_counts = cat_counts.sort_values("VALUE").reset_index(drop=True)
-            # Strip the optional "NNNN_" sort-order prefix added by BinPhenotype.
-            display_values = [
-                re.sub(r"^\d{4}_", "", str(v)) for v in cat_counts["VALUE"]
+            cat_counts.index = [
+                f"{name}={v if v is not None else 'None'}" for v in cat_counts["VALUE"]
             ]
-            cat_counts.index = [f"{name}={v}" for v in display_values]
             _df = pd.DataFrame(cat_counts["N"])
             _df["inex_order"] = self.cohort_names_in_order.index(phenotype.name)
             dfs.append(_df)
