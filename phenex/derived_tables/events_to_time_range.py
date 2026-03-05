@@ -72,9 +72,14 @@ class EventsToTimeRange(Node):
         ```
     """
 
-    def __init__(self, domain: str, codelist: "Codelist", max_days: "Value", **kwargs):
+    def __init__(
+        self, domain: str, max_days: "Value", codelist: "Codelist" = None, **kwargs
+    ):
         self.domain = domain
-        self.codelist_filter = CodelistFilter(codelist)
+        if codelist is not None:
+            if not isinstance(codelist, Codelist):
+                raise ValueError("codelist must be an instance of Codelist or None")
+            self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
 
         assert max_days.operator in [
@@ -101,6 +106,8 @@ class EventsToTimeRange(Node):
         Returns:
             Source DataFrame with all original columns:
         """
+        if self.codelist is None:
+            return table
         assert is_phenex_code_table(table)
         table = self.codelist_filter.filter(table)
         return table

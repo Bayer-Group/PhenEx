@@ -37,7 +37,8 @@ nav:
               - CHADSVASCPhenotype: api/phenotypes/factory/chadsvasc.md
               - ISTHMajorBleed: api/phenotypes/factory/isth_major_bleed.md
               - StackableRegimen: api/phenotypes/factory/stackable_regimen.md
-              - one_inpatient_two_outpatient: api/phenotypes/factory/one_inpatient_two_outpatient.md
+              - OneInpatientTwoOutpatientPhenotype: api/phenotypes/factory/one_inpatient_two_outpatient.md
+              - SmartCodelistPhenotype: api/phenotypes/factory/smart_codelist_phenotype.md
       - Filters:
           - Filter: api/filters/filter.md
           - ValueFilter: api/filters/value_filter.md
@@ -48,6 +49,7 @@ nav:
       - Codelists:
           - Codelist: api/codelists/codelists.md
           - LocalCSVCodelistFactory: api/codelists/local_csv_codelist_factory.md
+          - MedConBCollection: api/codelists/medconb_collection.md
       - Database connections mappers and tables:
           - Table: api/tables.md
       - DerivedTables:

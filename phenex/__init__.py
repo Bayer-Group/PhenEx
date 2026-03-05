@@ -2,12 +2,16 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
-from .core import Cohort, Subcohort, Database
+from .core import Cohort, Subcohort, Database, Study
+
+from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 
 # Phenotype classes - the main public API
 from .phenotypes import (
     Phenotype,
     CodelistPhenotype,
+    SmartCodelistPhenotype,
+    CODETYPE_INFO,
     MeasurementPhenotype,
     MeasurementChangePhenotype,
     AgePhenotype,
@@ -83,6 +87,7 @@ from .codelists import (
     Codelist,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
+    MedConBCollection,
 )
 
 # Derived Tables
@@ -97,15 +102,22 @@ from .util.serialization.json import dump, dumps, load, loads
 __version__ = "v0.8.0"
 
 __all__ = [
+    # Connectors
+    "SnowflakeConnector",
+    "DuckDBConnector",
+    "PostgresConnector",
     # Core
     "Node",
     "NodeGroup",
     "Cohort",
     "Subcohort",
     "Database",
+    "Study",
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
+    "SmartCodelistPhenotype",
+    "CODETYPE_INFO",
     "MeasurementPhenotype",
     "MeasurementChangePhenotype",
     "AgePhenotype",
@@ -169,7 +181,7 @@ __all__ = [
     "Codelist",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
-    # Derived Tables
+    "MedConBCollection",
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     # Serialization

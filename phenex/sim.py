@@ -125,13 +125,14 @@ class DomainsMocker:
         )
 
         # Use vectorized date generation with per-record ranges
-        generated_dates, generated_datetimes = (
-            self._generate_random_datetimes_vectorized(
-                count,
-                start_dates=record_min_dates,
-                end_dates=record_max_dates,
-                hour_range=hour_range,
-            )
+        (
+            generated_dates,
+            generated_datetimes,
+        ) = self._generate_random_datetimes_vectorized(
+            count,
+            start_dates=record_min_dates,
+            end_dates=record_max_dates,
+            hour_range=hour_range,
         )
 
         # Additional safety check: ensure no generated dates violate death constraints
@@ -440,14 +441,15 @@ class DomainsMocker:
         )
 
         # Generate dates - condition start dates must be after birth and before death (vectorized)
-        condition_start_dates, condition_start_datetimes = (
-            self._generate_dates_within_lifespan(
-                person_ids=person_ids,
-                count=total_conditions,
-                min_year=2014,
-                max_year=2024,
-                hour_range=(0, 24),
-            )
+        (
+            condition_start_dates,
+            condition_start_datetimes,
+        ) = self._generate_dates_within_lifespan(
+            person_ids=person_ids,
+            count=total_conditions,
+            min_year=2014,
+            max_year=2024,
+            hour_range=(0, 24),
         )
 
         # End dates - 70% have end dates, rest are ongoing (VECTORIZED)
