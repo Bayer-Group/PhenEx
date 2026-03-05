@@ -19,6 +19,8 @@ class Table1(Reporter):
             return pd.DataFrame()
 
         self.cohort = cohort
+        # Preserve section structure for serialization (None if cohort uses a flat list)
+        self.characteristic_sections = getattr(cohort, "characteristic_sections", None)
         self.cohort_names_in_order = [x.name for x in self.cohort.characteristics]
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
@@ -228,3 +230,30 @@ class Table1(Reporter):
         pretty_df = pretty_df.replace("<NA>", "").replace("nan", "")
 
         return pretty_df
+
+    def to_json(self, filename: str) -> str:
+        """Export Table1 to JSON, including section metadata when available."""
+        import json
+        from pathlib import Path
+
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                "Call execute() first before calling to_json()."
+            )
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": self.df.to_dict(orient="records"),
+        }
+        if self.characteristic_sections:
+            payload["sections"] = self.characteristic_sections
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())

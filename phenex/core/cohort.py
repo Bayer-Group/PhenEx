@@ -69,7 +69,20 @@ class Cohort:
         self.entry_criterion = entry_criterion
         self.inclusions = inclusions or []
         self.exclusions = exclusions or []
-        self.characteristics = characteristics or []
+
+        # characteristics may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(characteristics, dict):
+            self.characteristic_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in characteristics.items()
+            }
+            self.characteristics = [
+                p for phenos in characteristics.values() for p in phenos
+            ]
+        else:
+            self.characteristic_sections = None
+            self.characteristics = characteristics or []
+
         self.derived_tables = derived_tables or []
         self.derived_tables_post_entry = derived_tables_post_entry or []
         self.outcomes = outcomes or []
@@ -601,6 +614,17 @@ class Cohort:
         if self.waterfall_detailed_node:
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
+            )
+
+    def write_reports_to_json(self, path: str):
+        """Write all available reports as JSON files (machine-readable intermediate format)."""
+        if self.table1_node:
+            self.table1_node.to_json(os.path.join(path, "table1.json"))
+        if self.waterfall_node:
+            self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_json(
+                os.path.join(path, "waterfall_detailed.json")
             )
 
     def to_dict(self):

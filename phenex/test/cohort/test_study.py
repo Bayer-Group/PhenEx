@@ -88,15 +88,15 @@ class TestStudyExecution(unittest.TestCase):
         for cohort_dir in cohort_dirs:
             # Check that basic reports exist
             self.assertTrue(
-                (cohort_dir / "table1.xlsx").exists(),
-                f"table1.xlsx should exist in {cohort_dir.name}",
+                (cohort_dir / "table1.json").exists(),
+                f"table1.json should exist in {cohort_dir.name}",
             )
             self.assertTrue(
-                (cohort_dir / "Waterfall.xlsx").exists(),
-                f"Waterfall.xlsx should exist in {cohort_dir.name}",
+                (cohort_dir / "Waterfall.json").exists(),
+                f"Waterfall.json should exist in {cohort_dir.name}",
             )
             self.assertTrue(
-                (cohort_dir / f"{cohort_dir.name}.json").exists(),
+                (cohort_dir / f"frozen_{cohort_dir.name}.json").exists(),
                 f"Cohort JSON should exist in {cohort_dir.name}",
             )
 

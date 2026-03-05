@@ -117,3 +117,19 @@ class Subcohort(Cohort):
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
+
+    def write_reports_to_json(self, path: str):
+        """Write all available reports as JSON files. Table1 is computed from
+        the parent cohort's characteristics subset to this subcohort's patients."""
+        reporter = self._make_table1_reporter()
+        if reporter:
+            reporter.characteristic_sections = getattr(
+                self.cohort, "characteristic_sections", None
+            )
+            reporter.to_json(os.path.join(path, "table1.json"))
+        if self.waterfall_node:
+            self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_json(
+                os.path.join(path, "waterfall_detailed.json")
+            )

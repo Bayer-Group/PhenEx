@@ -105,15 +105,14 @@ class Study:
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            _cohort.write_reports_to_excel(path_exec_dir_cohort)
+            _cohort.write_reports_to_json(path_exec_dir_cohort)
 
             if self.custom_reporters is not None:
                 for reporter in self.custom_reporters:
                     reporter.execute(_cohort)
                     report_filename = reporter.__class__.__name__
-                    print("executing reporter", report_filename, reporter.df)
-                    reporter.to_excel(
-                        os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
+                    reporter.to_json(
+                        os.path.join(path_exec_dir_cohort, report_filename + ".json")
                     )
 
         self._concatenate_reports(path_exec_dir_study)
@@ -164,7 +163,7 @@ class Study:
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
         from phenex import dump
 
-        _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
+        _path = os.path.join(path_exec_dir_cohort, "frozen_" + cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
 

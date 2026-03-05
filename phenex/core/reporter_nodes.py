@@ -75,6 +75,12 @@ class Reporter(Node):
             _ = self.df_report  # populates self.reporter.df from self.table
             self.reporter.to_excel(path)
 
+    def to_json(self, path: str):
+        """Export to JSON. Ensures reporter.df is populated (handles cached/lazy nodes)."""
+        if self.table is not None:
+            _ = self.df_report  # populates self.reporter.df from self.table
+            self.reporter.to_json(path)
+
 
 class Table1Node(Reporter):
     """
@@ -92,6 +98,16 @@ class Table1Node(Reporter):
         # Add dependencies on characteristics if they exist
         if cohort.characteristics:
             self.add_children(cohort.characteristics)
+
+    def to_json(self, path: str):
+        """Export Table1 to JSON, propagating section metadata from the cohort."""
+        if self.table is not None:
+            _ = self.df_report  # populates self.reporter.df
+            # Ensure section metadata is available even for cached/lazy nodes
+            self.reporter.characteristic_sections = getattr(
+                self.cohort, "characteristic_sections", None
+            )
+            self.reporter.to_json(path)
 
 
 class WaterfallNode(Reporter):
