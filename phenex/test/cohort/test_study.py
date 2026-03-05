@@ -122,12 +122,12 @@ class TestStudyExecution(unittest.TestCase):
         wb = openpyxl.load_workbook(filepath)
 
         # Verify expected sheets exist
-        expected_sheets = ["Waterfall", "Table1", "waterfall_detailed"]
+        expected_sheets = ["Waterfall", "WaterfallDetailed","Table1"]
         actual_sheets = wb.sheetnames
         self.assertEqual(
             actual_sheets,
             expected_sheets,
-            "Should have sheets in correct order: Waterfall, Table1, waterfall_detailed",
+            "Should have sheets in correct order: Waterfall, Table1, WaterfallDetailed",
         )
 
         # Verify Waterfall sheet
@@ -146,12 +146,12 @@ class TestStudyExecution(unittest.TestCase):
             sheet_name="Table1",
         )
 
-        # Verify waterfall_detailed sheet
-        waterfall_detailed_sheet = wb["waterfall_detailed"]
+    # Verify WaterfallDetailed sheet
+        WaterfallDetailed_sheet = wb["WaterfallDetailed"]
         self._verify_concatenated_sheet(
-            waterfall_detailed_sheet,
+            WaterfallDetailed_sheet,
             expected_cohorts=["CohortWithExclusion", "CohortWithoutExclusion"],
-            sheet_name="waterfall_detailed",
+            sheet_name="WaterfallDetailed",
         )
 
         wb.close()
@@ -234,7 +234,7 @@ class TestStudyExecution(unittest.TestCase):
         """Test that Study correctly handles cohorts with LogicPhenotype (composite) inclusions.
 
         A LogicPhenotype has component phenotypes as children. This test verifies that
-        the study executes successfully and that the waterfall_detailed sheet contains
+        the study executes successfully and that the WaterfallDetailed sheet contains
         rows for those component phenotypes.
         """
         gen = CohortWithLogicPhenotypeAsInclusionTestGenerator()
@@ -271,15 +271,15 @@ class TestStudyExecution(unittest.TestCase):
             study_results_file.exists(), "study_results.xlsx should be created"
         )
 
-        # Verify waterfall_detailed sheet contains component phenotype rows
+        # Verify WaterfallDetailed sheet contains component phenotype rows
         wb = openpyxl.load_workbook(study_results_file)
         self.assertIn(
-            "waterfall_detailed",
+            "WaterfallDetailed",
             wb.sheetnames,
-            "study_results.xlsx should have waterfall_detailed sheet",
+            "study_results.xlsx should have WaterfallDetailed sheet",
         )
 
-        detailed_sheet = wb["waterfall_detailed"]
+        detailed_sheet = wb["WaterfallDetailed"]
 
         # Collect all non-empty cell values from the sheet
         all_values = set()
@@ -295,17 +295,17 @@ class TestStudyExecution(unittest.TestCase):
         # The LogicPhenotype 'combined_cc_and_prior_drug' should appear
         self.assertTrue(
             any("combined cc and prior drug" in v for v in all_values_lower),
-            "waterfall_detailed should contain the LogicPhenotype inclusion name",
+            "WaterfallDetailed should contain the LogicPhenotype inclusion name",
         )
 
-        # Its component phenotypes (children) should also appear in waterfall_detailed
+        # Its component phenotypes (children) should also appear in WaterfallDetailed
         self.assertTrue(
             any("continuous coverage" in v for v in all_values_lower),
-            "waterfall_detailed should contain component phenotype 'continuous_coverage'",
+            "WaterfallDetailed should contain component phenotype 'continuous_coverage'",
         )
         self.assertTrue(
             any("prior drug d1" in v for v in all_values_lower),
-            "waterfall_detailed should contain component phenotype 'prior_drug_d1'",
+            "WaterfallDetailed should contain component phenotype 'prior_drug_d1'",
         )
 
         wb.close()
