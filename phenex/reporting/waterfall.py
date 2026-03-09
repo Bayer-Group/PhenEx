@@ -153,6 +153,49 @@ class Waterfall(Reporter):
 
         return self.df
 
+    def to_json(self, filename: str) -> str:
+        """Serialise waterfall results to JSON.
+
+        Compared to the base implementation:
+        - Drops the internal ``Level`` column (used only for visual indentation)
+        - Stores N / Remaining / Delta as integers (not floats)
+        - Serialises NaN cells as JSON ``null``
+        """
+        import json
+        import math
+        from pathlib import Path
+
+        df = self.df.drop(columns=["Level"], errors="ignore").copy()
+
+        COUNT_COLS = {"N", "Remaining", "Delta"}
+
+        records = []
+        for row in df.to_dict(orient="records"):
+            clean = {}
+            for k, v in row.items():
+                if isinstance(v, float) and math.isnan(v):
+                    clean[k] = None
+                elif k in COUNT_COLS and isinstance(v, float):
+                    clean[k] = int(v)
+                else:
+                    clean[k] = v
+            records.append(clean)
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": records,
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())
+
     def _append_components_recursively(
         self, current_phenotype, table, level=1, parent_index=""
     ):

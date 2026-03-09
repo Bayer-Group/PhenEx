@@ -418,12 +418,10 @@ class Table1SheetWriter(_BaseSheetWriter):
     def _set_value_column_widths(
         self, sheet, rows, columns: List[str], start_col: int
     ):
-        for offset, col_name in enumerate(columns):
-            values = [str(r.get(col_name, "")) for r in rows] + [col_name]
-            width = max((len(v) for v in values if v), default=8) + 2
+        for offset in range(len(columns)):
             sheet.column_dimensions[
                 get_column_letter(start_col + offset)
-            ].width = min(width, 20)
+            ].width = 8
 
 
 # ---------------------------------------------------------------------------
@@ -442,9 +440,10 @@ class OutputConcatenator:
     _SHEET_ORDER_PREFIX = ["Waterfall", "WaterfallDetailed", "Table1"]
     _CANONICAL_NAMES = {"waterfall": "Waterfall", "waterfall_detailed": "WaterfallDetailed", "table1": "Table1"}
 
-    def __init__(self, study_execution_path: str) -> None:
+    def __init__(self, study_execution_path: str, study_name: str = "study") -> None:
         self.study_path = Path(study_execution_path)
-        self.output_file = self.study_path / "study_results.xlsx"
+        timestamp = self.study_path.name
+        self.output_file = self.study_path / f"results_{study_name}_{timestamp}.xlsx"
         self._generic_writer = GenericSheetWriter()
         self._table1_writer = Table1SheetWriter()
 

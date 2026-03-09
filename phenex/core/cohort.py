@@ -454,8 +454,8 @@ class Cohort:
                 lazy_execution=lazy_execution,
             )
             # Update tables with filtered versions
-            for node in self.data_period_filter_stage.nodes:
-                tables[node.domain] = PhenexTable(node.table)
+            for node in self.data_period_filter_stage.children:
+                tables[node.domain] = node.table
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:

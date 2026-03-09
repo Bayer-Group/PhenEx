@@ -209,7 +209,7 @@ class DataPeriodFilterNode(Node):
                     )
 
                 mutations[col] = (
-                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
+                    ibis.case().when(condition, ibis.null().cast(table[col].type())).else_(table[col]).end()
                 )
 
         # 2c. Handle DATE_OF_DEATH fields - set to NULL if outside max_date boundary
@@ -232,7 +232,7 @@ class DataPeriodFilterNode(Node):
                     )
 
                 mutations[col] = (
-                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
+                    ibis.case().when(condition, ibis.null().cast(table[col].type())).else_(table[col]).end()
                 )
 
         # Apply all mutations if any exist
