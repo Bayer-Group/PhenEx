@@ -224,7 +224,9 @@ class Codelist:
         rows = []
         for code_type, codes in self.codelist.items():
             for code in codes:
-                rows.append({"code": code, "code_type": code_type, "codelist": self.name})
+                rows.append(
+                    {"code": code, "code_type": code_type, "codelist": self.name}
+                )
         return pd.DataFrame(rows, columns=["code", "code_type", "codelist"])
 
     @property

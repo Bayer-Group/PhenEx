@@ -596,11 +596,11 @@ class Cohort:
         codelists = {
             pt.display_name: pt.codelist
             for pt in all_nodes
-            if getattr(pt, "codelist", None)
-            is not None
+            if getattr(pt, "codelist", None) is not None
         }
         if as_dataframe:
             import pandas as pd
+
             _dfs = []
             for name_pt, codelist in codelists.items():
                 codelist_df = codelist.df
