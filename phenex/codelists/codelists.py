@@ -214,6 +214,20 @@ class Codelist:
         )
 
     @property
+    def df(self) -> pd.DataFrame:
+        """
+        Convert the codelist dictionary to a pandas DataFrame.
+
+        Returns:
+            DataFrame with columns 'code', 'code_type', and 'codelist'.
+        """
+        rows = []
+        for code_type, codes in self.codelist.items():
+            for code in codes:
+                rows.append({"code": code, "code_type": code_type, "codelist": self.name})
+        return pd.DataFrame(rows, columns=["code", "code_type", "codelist"])
+
+    @property
     def resolved_codelist(self):
         """
         Retrieve the actual codelists used for filtering after processing for punctuation and code type options (see __init__()).
