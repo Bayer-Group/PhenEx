@@ -453,9 +453,11 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
-            # Update tables with filtered versions
+            # Update tables with filtered versions (only when the node actually modified the table;
+            # nodes with no relevant date columns return None and the original table is kept)
             for node in self.data_period_filter_stage.children:
-                tables[node.domain] = node.table
+                if node.table is not None:
+                    tables[node.domain] = node.table
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:

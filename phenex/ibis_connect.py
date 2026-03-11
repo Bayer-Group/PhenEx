@@ -325,6 +325,14 @@ class SnowflakeConnector:
         if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
 
+        # Unwrap PhenexTable so ibis sees a proper ir.Expr and performs a
+        # server-side CTAS instead of falling back to the memtable/pandas path
+        # (which triggers client-side query execution and can produce NULL syntax
+        # errors or Arrow schema-mismatch failures on multi-batch Snowflake results).
+        from phenex.tables import PhenexTable
+        if isinstance(table, PhenexTable):
+            table = table.table
+
         return self.dest_connection.create_table(
             name=name_table.upper(),
             database=self.SNOWFLAKE_DEST_DATABASE,
@@ -565,6 +573,10 @@ class DuckDBConnector:
                 raise ValueError(
                     "name_table must be provided if the table doesn't have a name."
                 )
+        from phenex.tables import PhenexTable
+        if isinstance(table, PhenexTable):
+            table = table.table
+
         return self.dest_connection.create_table(
             name_table, obj=table, overwrite=overwrite
         )
@@ -834,6 +846,10 @@ class PostgresConnector:
             )
 
         name_table = self._get_output_table_name(table, name_table)
+
+        from phenex.tables import PhenexTable
+        if isinstance(table, PhenexTable):
+            table = table.table
 
         return self.dest_connection.create_table(
             name=name_table.lower(),  # Postgres names are typically lowercase
