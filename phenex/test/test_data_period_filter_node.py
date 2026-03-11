@@ -168,12 +168,8 @@ def test_no_relevant_columns():
     )
     filtered_table = node._execute({"TEST": table})
 
-    result = filtered_table.to_pandas()
-
-    # Table should be unchanged since no relevant date columns exist
-    pd.testing.assert_frame_equal(
-        result.sort_values("PERSON_ID"), df.sort_values("PERSON_ID")
-    )
+    # When no relevant date columns exist, _execute returns None (no write needed)
+    assert filtered_table is None, "Expected None when no date columns require filtering"
 
 
 def test_edge_case_boundary_dates():
