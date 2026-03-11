@@ -1058,7 +1058,9 @@ class CohortWithNoneMinDateDataPeriodTestGenerator(CohortTestGenerator):
                 min_days=GreaterThanOrEqualTo(365)
             ),
         )
-        db = Database(data_period=DateFilter(min_date=None, max_date=BeforeOrOn("2021-01-01")))
+        db = Database(
+            data_period=DateFilter(min_date=None, max_date=BeforeOrOn("2021-01-01"))
+        )
         return Cohort(
             name="test_none_min_date_data_period",
             entry_criterion=entry,
@@ -1071,8 +1073,14 @@ class CohortWithNoneMinDateDataPeriodTestGenerator(CohortTestGenerator):
         values = [
             {"name": "entry", "values": ["d1", "d4"]},
             {"name": "entry_date", "values": [datetime.date(2020, 1, 1)]},
-            {"name": "obs_start", "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name": "obs_end", "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
         ]
         df_allvalues = generate_dummy_cohort_data(values)
 
@@ -1081,21 +1089,41 @@ class CohortWithNoneMinDateDataPeriodTestGenerator(CohortTestGenerator):
         df_person["GENDER"] = 1
         df_person["ACCEPTABLE"] = 1
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int})
+            self.con.dest_connection.create_table(
+                "PERSON",
+                df_person,
+                schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
+            )
         )
 
         df_drug = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
         df_drug.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         drug_table = DrugExposureTableForTests(
-            self.con.dest_connection.create_table("DRUG_EXPOSURE", df_drug, schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date})
+            self.con.dest_connection.create_table(
+                "DRUG_EXPOSURE",
+                df_drug,
+                schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
+            )
         )
 
         df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
         df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema={"PATID": str, "REGSTARTDATE": datetime.date, "REGENDDATE": datetime.date})
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD",
+                df_obs,
+                schema={
+                    "PATID": str,
+                    "REGSTARTDATE": datetime.date,
+                    "REGENDDATE": datetime.date,
+                },
+            )
         )
-        return {"PERSON": person_table, "DRUG_EXPOSURE": drug_table, "OBSERVATION_PERIOD": obs_table}
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
 
     def define_expected_output(self):
         df = pd.DataFrame()
@@ -1124,7 +1152,9 @@ class CohortWithNoneMaxDateDataPeriodTestGenerator(CohortTestGenerator):
                 min_days=GreaterThanOrEqualTo(365)
             ),
         )
-        db = Database(data_period=DateFilter(min_date=AfterOrOn("2015-01-01"), max_date=None))
+        db = Database(
+            data_period=DateFilter(min_date=AfterOrOn("2015-01-01"), max_date=None)
+        )
         return Cohort(
             name="test_none_max_date_data_period",
             entry_criterion=entry,
@@ -1137,8 +1167,14 @@ class CohortWithNoneMaxDateDataPeriodTestGenerator(CohortTestGenerator):
         values = [
             {"name": "entry", "values": ["d1", "d4"]},
             {"name": "entry_date", "values": [datetime.date(2020, 1, 1)]},
-            {"name": "obs_start", "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)]},
-            {"name": "obs_end", "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)]},
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
         ]
         df_allvalues = generate_dummy_cohort_data(values)
 
@@ -1147,21 +1183,41 @@ class CohortWithNoneMaxDateDataPeriodTestGenerator(CohortTestGenerator):
         df_person["GENDER"] = 1
         df_person["ACCEPTABLE"] = 1
         person_table = PersonTableForTests(
-            self.con.dest_connection.create_table("PERSON", df_person, schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int})
+            self.con.dest_connection.create_table(
+                "PERSON",
+                df_person,
+                schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
+            )
         )
 
         df_drug = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
         df_drug.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
         drug_table = DrugExposureTableForTests(
-            self.con.dest_connection.create_table("DRUG_EXPOSURE", df_drug, schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date})
+            self.con.dest_connection.create_table(
+                "DRUG_EXPOSURE",
+                df_drug,
+                schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
+            )
         )
 
         df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
         df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
         obs_table = ObservationPeriodTableForTests(
-            self.con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema={"PATID": str, "REGSTARTDATE": datetime.date, "REGENDDATE": datetime.date})
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD",
+                df_obs,
+                schema={
+                    "PATID": str,
+                    "REGSTARTDATE": datetime.date,
+                    "REGENDDATE": datetime.date,
+                },
+            )
         )
-        return {"PERSON": person_table, "DRUG_EXPOSURE": drug_table, "OBSERVATION_PERIOD": obs_table}
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
 
     def define_expected_output(self):
         df = pd.DataFrame()

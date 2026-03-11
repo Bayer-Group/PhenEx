@@ -330,6 +330,7 @@ class SnowflakeConnector:
         # (which triggers client-side query execution and can produce NULL syntax
         # errors or Arrow schema-mismatch failures on multi-batch Snowflake results).
         from phenex.tables import PhenexTable
+
         if isinstance(table, PhenexTable):
             table = table.table
 
@@ -574,6 +575,7 @@ class DuckDBConnector:
                     "name_table must be provided if the table doesn't have a name."
                 )
         from phenex.tables import PhenexTable
+
         if isinstance(table, PhenexTable):
             table = table.table
 
@@ -848,6 +850,7 @@ class PostgresConnector:
         name_table = self._get_output_table_name(table, name_table)
 
         from phenex.tables import PhenexTable
+
         if isinstance(table, PhenexTable):
             table = table.table
 

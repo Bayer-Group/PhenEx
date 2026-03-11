@@ -51,7 +51,13 @@ class BinnedAgePhenotypeTestGenerator(PhenotypeTestGenerator):
         t1 = {
             "name": "bins",
             "persons": [f"P{x}" for x in ages_matching],
-            "values": ["0001_[0-10)", "0001_[0-10)", "0002_[10-20)", "0002_[10-20)", "0003_[20-30)"],
+            "values": [
+                "0001_[0-10)",
+                "0001_[0-10)",
+                "0002_[10-20)",
+                "0002_[10-20)",
+                "0003_[20-30)",
+            ],
             "phenotype": BinPhenotype(
                 phenotype=agept,
             ),
@@ -60,8 +66,13 @@ class BinnedAgePhenotypeTestGenerator(PhenotypeTestGenerator):
         t2 = {
             "name": "bins_out_of_range",
             "persons": [f"P{x}" for x in ages_matching],
-            "values": ["0000_<10", "0000_<10", "0001_[10-20)", "0001_[10-20)", "0002_>=20"],
-
+            "values": [
+                "0000_<10",
+                "0000_<10",
+                "0001_[10-20)",
+                "0001_[10-20)",
+                "0002_>=20",
+            ],
             "phenotype": BinPhenotype(phenotype=agept, bins=[10, 20]),
         }
         test_infos = [t1, t2]

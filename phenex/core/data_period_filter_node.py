@@ -243,7 +243,10 @@ class DataPeriodFilterNode(Node):
                     f"[{self.domain}] '{col}': setting to NULL where value is after {self.date_filter.max_value}"
                 )
                 mutations[col] = (
-                    ibis.case().when(condition, ibis.null().cast(table[col].type())).else_(table[col]).end()
+                    ibis.case()
+                    .when(condition, ibis.null().cast(table[col].type()))
+                    .else_(table[col])
+                    .end()
                 )
                 modified = True
 
@@ -269,7 +272,10 @@ class DataPeriodFilterNode(Node):
                     f"[{self.domain}] '{col}': setting to NULL where death occurred after {self.date_filter.max_value}"
                 )
                 mutations[col] = (
-                    ibis.case().when(condition, ibis.null().cast(table[col].type())).else_(table[col]).end()
+                    ibis.case()
+                    .when(condition, ibis.null().cast(table[col].type()))
+                    .else_(table[col])
+                    .end()
                 )
                 modified = True
         elif death_date_columns:
@@ -279,11 +285,15 @@ class DataPeriodFilterNode(Node):
 
         # Apply all mutations if any exist
         if mutations:
-            logger.debug(f"[{self.domain}] Applying mutations to columns: {list(mutations.keys())}")
+            logger.debug(
+                f"[{self.domain}] Applying mutations to columns: {list(mutations.keys())}"
+            )
             table = table.mutate(**mutations)
 
         if not modified:
-            logger.debug(f"[{self.domain}] No date filtering or mutations required — skipping write")
+            logger.debug(
+                f"[{self.domain}] No date filtering or mutations required — skipping write"
+            )
             return None
 
         return table

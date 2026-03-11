@@ -69,9 +69,7 @@ class Table1(Reporter):
         ]
         # Strip the "NNNN_" sort-order prefix that BinPhenotype embeds in bin
         # labels (e.g. "Age group=0003_[30-40)" → "Age group=[30-40)").
-        self.df["Name"] = self.df["Name"].str.replace(
-            r"=\d{4}_", "=", regex=True
-        )
+        self.df["Name"] = self.df["Name"].str.replace(r"=\d{4}_", "=", regex=True)
         return self.df
 
     def _get_boolean_characteristics(self):
@@ -237,9 +235,7 @@ class Table1(Reporter):
         from pathlib import Path
 
         if not hasattr(self, "df"):
-            raise AttributeError(
-                "Call execute() first before calling to_json()."
-            )
+            raise AttributeError("Call execute() first before calling to_json().")
 
         filepath = Path(filename)
         if filepath.suffix != ".json":

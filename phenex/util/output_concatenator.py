@@ -30,8 +30,8 @@ class _BaseSheetWriter:
 
     # Row type -> background fill colour (ARGB hex, no leading #)
     _WATERFALL_COLORS: Dict[str, str] = {
-        "info":      "DCDCDC",
-        "entry":     "9DC3E6",
+        "info": "DCDCDC",
+        "entry": "9DC3E6",
         "inclusion": "C5E0B4",
         "exclusion": "F4B8A0",
         "component": "E2EFD9",
@@ -69,15 +69,23 @@ class _BaseSheetWriter:
     ):
         """Grey italic banner in row 1 spanning num_cols columns."""
         cell = self._write_cell(
-            sheet, 1, start_col, cohort_name,
-            italic=True, size=18, horizontal="left", indent=2,
+            sheet,
+            1,
+            start_col,
+            cohort_name,
+            italic=True,
+            size=18,
+            horizontal="left",
+            indent=2,
             fill_color="D3D3D3",
         )
         cell.border = Border()
         if num_cols > 1:
             sheet.merge_cells(
-                start_row=1, start_column=start_col,
-                end_row=1, end_column=start_col + num_cols - 1,
+                start_row=1,
+                start_column=start_col,
+                end_row=1,
+                end_column=start_col + num_cols - 1,
             )
 
     def _apply_right_border_to_column(
@@ -88,8 +96,10 @@ class _BaseSheetWriter:
             cell = sheet.cell(row=row, column=col)
             existing = cell.border
             cell.border = Border(
-                left=existing.left, right=right_side,
-                top=existing.top, bottom=existing.bottom,
+                left=existing.left,
+                right=right_side,
+                top=existing.top,
+                bottom=existing.bottom,
             )
 
     def _apply_bottom_border_to_row(self, sheet, row: int, max_col: int):
@@ -98,8 +108,10 @@ class _BaseSheetWriter:
             cell = sheet.cell(row=row, column=col)
             existing = cell.border
             cell.border = Border(
-                left=existing.left, right=existing.right,
-                top=existing.top, bottom=bottom_side,
+                left=existing.left,
+                right=existing.right,
+                top=existing.top,
+                bottom=bottom_side,
             )
 
     @staticmethod
@@ -177,8 +189,13 @@ class GenericSheetWriter(_BaseSheetWriter):
         for offset, col_name in enumerate(columns):
             col = start_col + offset
             cell = self._write_cell(
-                sheet, 2, col, col_name,
-                bold=True, size=11, horizontal="center",
+                sheet,
+                2,
+                col,
+                col_name,
+                bold=True,
+                size=11,
+                horizontal="center",
                 fill_color="366092",
             )
             cell.font = Font(bold=True, size=11, color="FFFFFF")
@@ -191,8 +208,12 @@ class GenericSheetWriter(_BaseSheetWriter):
                 value = row_data.get(col_name)
                 fmt = self._number_format_for_value(value)
                 self._write_cell(
-                    sheet, row_idx, start_col + offset, value,
-                    size=11, horizontal="center",
+                    sheet,
+                    row_idx,
+                    start_col + offset,
+                    value,
+                    size=11,
+                    horizontal="center",
                     fill_color=fill_color,
                     number_format=fmt,
                 )
@@ -201,9 +222,9 @@ class GenericSheetWriter(_BaseSheetWriter):
         for offset, col_name in enumerate(columns):
             values = [str(r.get(col_name, "")) for r in rows] + [col_name]
             width = max((len(v) for v in values if v), default=8) + 2
-            sheet.column_dimensions[
-                get_column_letter(start_col + offset)
-            ].width = min(width, 40)
+            sheet.column_dimensions[get_column_letter(start_col + offset)].width = min(
+                width, 40
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -327,28 +348,44 @@ class Table1SheetWriter(_BaseSheetWriter):
     def _write_name_column(self, sheet, expanded: List[Tuple[str, str]]):
         """Populate col A: row-2 label, then data and section rows."""
         self._write_cell(
-            sheet, 2, 1, "Name",
-            bold=True, size=11, horizontal="right", indent=4,
+            sheet,
+            2,
+            1,
+            "Name",
+            bold=True,
+            size=11,
+            horizontal="right",
+            indent=4,
         )
         for i, (row_type, value) in enumerate(expanded):
             out_row = 3 + i
             if row_type == "section":
                 self._write_cell(
-                    sheet, out_row, 1, value,
-                    bold=True, size=11, horizontal="left", indent=2,
+                    sheet,
+                    out_row,
+                    1,
+                    value,
+                    bold=True,
+                    size=11,
+                    horizontal="left",
+                    indent=2,
                     fill_color="B8CCE4",
                 )
             else:
                 is_cohort = value == "Cohort"
                 self._write_cell(
-                    sheet, out_row, 1, value,
-                    bold=is_cohort, size=11, horizontal="right", indent=4,
+                    sheet,
+                    out_row,
+                    1,
+                    value,
+                    bold=is_cohort,
+                    size=11,
+                    horizontal="right",
+                    indent=4,
                     fill_color="D3D3D3" if is_cohort else None,
                 )
 
-        max_name_len = max(
-            (len(t[1]) for t in expanded if t[0] == "row"), default=10
-        )
+        max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
         sheet.column_dimensions["A"].width = max(max_name_len * 1.2, 14)
         sheet.freeze_panes = sheet.cell(row=4, column=2)
 
@@ -362,8 +399,13 @@ class Table1SheetWriter(_BaseSheetWriter):
             if is_pct:
                 pct_offset = offset
             cell = self._write_cell(
-                sheet, 2, start_col + offset, col_name,
-                bold=is_pct, size=11, horizontal="center",
+                sheet,
+                2,
+                start_col + offset,
+                col_name,
+                bold=is_pct,
+                size=11,
+                horizontal="center",
             )
             cell.border = Border()
         return pct_offset
@@ -383,7 +425,10 @@ class Table1SheetWriter(_BaseSheetWriter):
             if row_type == "section":
                 for offset in range(len(columns)):
                     self._write_cell(
-                        sheet, out_row, start_col + offset, None,
+                        sheet,
+                        out_row,
+                        start_col + offset,
+                        None,
                         fill_color="B8CCE4",
                     )
                 continue
@@ -395,8 +440,13 @@ class Table1SheetWriter(_BaseSheetWriter):
                 is_pct_col = offset == pct_offset
                 fmt = self._number_format_for_value(raw_value)
                 self._write_cell(
-                    sheet, out_row, start_col + offset, raw_value,
-                    bold=is_pct_col, size=11, horizontal="center",
+                    sheet,
+                    out_row,
+                    start_col + offset,
+                    raw_value,
+                    bold=is_pct_col,
+                    size=11,
+                    horizontal="center",
                     fill_color="D3D3D3" if is_cohort else None,
                     number_format=fmt,
                 )
@@ -411,17 +461,15 @@ class Table1SheetWriter(_BaseSheetWriter):
             if row_type == "section":
                 out_row = 3 + i
                 sheet.merge_cells(
-                    start_row=out_row, start_column=1,
-                    end_row=out_row, end_column=max_col,
+                    start_row=out_row,
+                    start_column=1,
+                    end_row=out_row,
+                    end_column=max_col,
                 )
 
-    def _set_value_column_widths(
-        self, sheet, rows, columns: List[str], start_col: int
-    ):
+    def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
         for offset in range(len(columns)):
-            sheet.column_dimensions[
-                get_column_letter(start_col + offset)
-            ].width = 8
+            sheet.column_dimensions[get_column_letter(start_col + offset)].width = 8
 
 
 # ---------------------------------------------------------------------------
@@ -438,7 +486,11 @@ class OutputConcatenator:
     """
 
     _SHEET_ORDER_PREFIX = ["Waterfall", "WaterfallDetailed", "Table1"]
-    _CANONICAL_NAMES = {"waterfall": "Waterfall", "waterfall_detailed": "WaterfallDetailed", "table1": "Table1"}
+    _CANONICAL_NAMES = {
+        "waterfall": "Waterfall",
+        "waterfall_detailed": "WaterfallDetailed",
+        "table1": "Table1",
+    }
 
     def __init__(self, study_execution_path: str, study_name: str = "study") -> None:
         self.study_path = Path(study_execution_path)
@@ -480,9 +532,7 @@ class OutputConcatenator:
         rest = sorted(k for k in reports_by_type if k not in self._SHEET_ORDER_PREFIX)
         return prefix + rest
 
-    def _write_sheet(
-        self, sheet, report_type: str, report_files: List[Path]
-    ) -> None:
+    def _write_sheet(self, sheet, report_type: str, report_files: List[Path]) -> None:
         if report_type == "Table1":
             self._table1_writer.write(sheet, report_files)
         else:
@@ -490,17 +540,20 @@ class OutputConcatenator:
 
     def _get_cohort_directories(self) -> List[Path]:
         dirs = [
-            d for d in self.study_path.iterdir()
+            d
+            for d in self.study_path.iterdir()
             if d.is_dir() and not d.name.startswith(".")
         ]
         return sorted(dirs, key=lambda x: x.name)
 
-    def _group_reports_by_type(
-        self, cohort_dirs: List[Path]
-    ) -> Dict[str, List[Path]]:
+    def _group_reports_by_type(self, cohort_dirs: List[Path]) -> Dict[str, List[Path]]:
         reports_by_type: Dict[str, List[Path]] = {}
         for cohort_dir in cohort_dirs:
-            json_files = [x for x in list(cohort_dir.glob("*.json")) if not x.name.startswith("frozen_")]
+            json_files = [
+                x
+                for x in list(cohort_dir.glob("*.json"))
+                if not x.name.startswith("frozen_")
+            ]
             for json_file in json_files:
                 report_type = self._CANONICAL_NAMES.get(
                     json_file.stem.lower(), json_file.stem
@@ -518,10 +571,9 @@ class OutputConcatenator:
                 with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
                     for item in zin.infolist():
                         data = zin.read(item.filename)
-                        if (
-                            item.filename.startswith("xl/worksheets/sheet")
-                            and item.filename.endswith(".xml")
-                        ):
+                        if item.filename.startswith(
+                            "xl/worksheets/sheet"
+                        ) and item.filename.endswith(".xml"):
                             data = self._inject_ignored_errors(data)
                         zout.writestr(item, data)
             tmp_path.replace(xlsx_path)
@@ -539,7 +591,7 @@ class OutputConcatenator:
         ref = m.group(1) if m else "A1:XFD1048576"
         snippet = (
             f"<ignoredErrors>"
-            f'<ignoredError sqref="{ref}" numberStoredAsText="1"/>' 
+            f'<ignoredError sqref="{ref}" numberStoredAsText="1"/>'
             f"</ignoredErrors>"
         )
         return text.replace("</worksheet>", snippet + "</worksheet>").encode("utf-8")

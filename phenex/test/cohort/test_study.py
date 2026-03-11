@@ -51,7 +51,11 @@ def _latest_exec_dir(study_dir: Path) -> Path:
 class TestStudyOutput(unittest.TestCase):
     """Verify files written to the correct locations with correct names."""
 
-    COHORT_NAMES = ("CohortWithExclusion", "CohortWithoutExclusion", "CohortWithComponents")
+    COHORT_NAMES = (
+        "CohortWithExclusion",
+        "CohortWithoutExclusion",
+        "CohortWithComponents",
+    )
     STUDY_NAME = "output_test"
 
     @classmethod
@@ -216,7 +220,8 @@ class TestWaterfallJsonContent(unittest.TestCase):
                     val = row.get(col)
                     if val is not None:
                         self.assertIsInstance(
-                            val, int,
+                            val,
+                            int,
                             f"{name} waterfall '{col}' = {val!r} should be int",
                         )
 
@@ -246,9 +251,7 @@ class TestWaterfallDetailedComponents(unittest.TestCase):
             CohortWithLogicPhenotypeAsInclusionTestGenerator,
             "CohortWithComponents",
         )
-        study = Study(
-            name="components_test", path=str(artifacts), cohorts=[cohort]
-        )
+        study = Study(name="components_test", path=str(artifacts), cohorts=[cohort])
         study.execute(overwrite=True)
 
         cls.exec_dir = _latest_exec_dir(artifacts / "components_test")
@@ -294,5 +297,3 @@ class TestWaterfallDetailedComponents(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
