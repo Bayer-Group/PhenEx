@@ -15,6 +15,7 @@ from phenex.filters.value import *
 class TimeRangePhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "ccpt"
     test_values = True
+
     def define_input_tables(self):
         oneday = datetime.timedelta(days=1)
         index_date = datetime.date(2022, 1, 1)
@@ -250,9 +251,20 @@ class TimeRangePhenotypeWithDateRangeBeforeReducedDaysTestGenerator(
         t1 = {
             "name": "min_date_reduces_coverage_days",
             "persons": [
-                "P7", "P10", "P11", "P12", "P14", "P15",
-                "P16", "P17", "P18", "P19",
-                "P20", "P21", "P22", "P23",
+                "P7",
+                "P10",
+                "P11",
+                "P12",
+                "P14",
+                "P15",
+                "P16",
+                "P17",
+                "P18",
+                "P19",
+                "P20",
+                "P21",
+                "P22",
+                "P23",
             ],
             # P7 was 180 days, P10/P11 were 91, P12/P14/P15 were 90,
             # P16-P19 were 89 – all clipped to 61. P20-P23 start on INDEX_DATE -> 0.
@@ -323,9 +335,20 @@ class TimeRangePhenotypeWithDateRangeAfterReducedDaysTestGenerator(
         t1 = {
             "name": "max_date_reduces_coverage_days",
             "persons": [
-                "P7", "P10", "P11", "P12", "P14", "P15",
-                "P16", "P17", "P18", "P19",
-                "P20", "P21", "P22", "P23",
+                "P7",
+                "P10",
+                "P11",
+                "P12",
+                "P14",
+                "P15",
+                "P16",
+                "P17",
+                "P18",
+                "P19",
+                "P20",
+                "P21",
+                "P22",
+                "P23",
             ],
             "values": [0, 0, 45, 0, 1, 45, 1, 0, 2, 45, 45, 45, 45, 45],
         }

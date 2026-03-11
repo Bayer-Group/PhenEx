@@ -102,7 +102,7 @@ class TimeRangePhenotype(Phenotype):
         )
         self._reference_column = reference_column
         return table
-    
+
     def _perform_date_range_clipping(self, table):
         """Clip START_DATE to min_date and END_DATE to max_date, then exclude periods that fall entirely outside the range."""
         if self.date_range is None:
@@ -127,14 +127,15 @@ class TimeRangePhenotype(Phenotype):
                 (table.START_DATE <= ref)
                 & ((ref <= table.END_DATE) | table.END_DATE.isnull())
             )
-        return table.filter(
-            (table.START_DATE <= ref) & (ref <= table.END_DATE)
-        )
+        return table.filter((table.START_DATE <= ref) & (ref <= table.END_DATE))
 
     def _perform_value_date_assignment(self, table):
         """Assign VALUE (coverage days) and EVENT_DATE based on the direction of the relative time range."""
         ref = self._reference_column
-        if self.relative_time_range is None or self.relative_time_range.when == "before":
+        if (
+            self.relative_time_range is None
+            or self.relative_time_range.when == "before"
+        ):
             value = ref.delta(table.START_DATE, "day")
             event_date = table.START_DATE
         else:
