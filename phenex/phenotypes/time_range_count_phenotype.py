@@ -32,6 +32,7 @@ class TimeRangeCountPhenotype(Phenotype):
     Parameters:
         domain: The domain of the phenotype.
         name: The name of the phenotype. Optional. If not passed the name will be TimeRangeCountPhenotype.
+        date_range: A DateFilter to apply. Periods must fall entirely within the date range (min_date <= START_DATE and END_DATE <= max_date); periods crossing a boundary are excluded.
         relative_time_range: A relative time range filter or a list of filters to apply.
         value_filter: Filter persons by number of time ranges determined
         allow_null_end_date: If True, allows time ranges with null END_DATE (ongoing periods). If False, removes such rows. Default is True.
@@ -74,7 +75,7 @@ class TimeRangeCountPhenotype(Phenotype):
         self,
         domain: str,
         name: Optional[str] = None,
-        date_range: DateFilter = None,  # TODO implement date_range
+        date_range: DateFilter = None,
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
@@ -101,50 +102,64 @@ class TimeRangeCountPhenotype(Phenotype):
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         table = tables[self.domain]
+        table = self._perform_null_filtering(table)
+        table = self._perform_date_range_filtering(table)
+        table = self._perform_time_filtering(table)
+        table = self._perform_count_aggregation(table)
+        table = self._perform_value_filtering(table)
+        table = select_phenotype_columns(
+            table.mutate(EVENT_DATE=ibis.null(date), BOOLEAN=True)
+        )
+        table = self._perform_zero_fill(table, tables)
+        return self._perform_final_processing(table)
 
-        # Filter out null values in START_DATE and END_DATE based on allow_null_end_date setting
-        # Always remove rows with null START_DATE
+    def _perform_null_filtering(self, table):
+        """Remove rows with null START_DATE. Remove rows with null END_DATE unless allow_null_end_date is True."""
         table = table.filter(table.START_DATE.notnull())
-
-        # Remove rows with null END_DATE only if allow_null_end_date is False
         if not self.allow_null_end_date:
             table = table.filter(table.END_DATE.notnull())
+        return table
 
-        # Apply time filtering first if we have relative time ranges
-        if self.relative_time_range is not None:
-            time_filter = TimeRangeFilter(
-                relative_time_range=self.relative_time_range,
-                include_clipped_periods=False,  # Exclude periods that cross boundaries
-                clip_periods=False,
-            )
-            table = time_filter.filter(table)
+    def _perform_date_range_filtering(self, table):
+        """Keep only periods that fall entirely within the date range (no clipping; partial periods are excluded)."""
+        if self.date_range is None:
+            return table
+        if self.date_range.min_value is not None:
+            min_date = self.date_range.min_value.value
+            table = table.filter(table.START_DATE >= ibis.literal(min_date))
+        if self.date_range.max_value is not None:
+            max_date = self.date_range.max_value.value
+            table = table.filter(table.END_DATE <= ibis.literal(max_date))
+        return table
 
-        # Count distinct time ranges per person
-        # Each row represents a distinct time range (START_DATE, END_DATE combination)
-        count_table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
-        count_table = count_table.group_by("PERSON_ID").aggregate(VALUE=_.count())
+    def _perform_time_filtering(self, table):
+        """Apply relative time range filtering, excluding periods that cross boundaries."""
+        if self.relative_time_range is None:
+            return table
+        time_filter = TimeRangeFilter(
+            relative_time_range=self.relative_time_range,
+            include_clipped_periods=False,
+            clip_periods=False,
+        )
+        return time_filter.filter(table)
 
-        # Apply value filtering if specified
+    def _perform_count_aggregation(self, table):
+        """Count the number of distinct time periods per person."""
+        table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
+        return table.group_by("PERSON_ID").aggregate(VALUE=_.count())
+
+    def _perform_value_filtering(self, table):
+        """Filter persons by period count using value_filter."""
         if self.value_filter is not None:
-            count_table = self.value_filter.filter(count_table)
+            table = self.value_filter.filter(table)
+        return table
 
-        # Create the final phenotype table with DATE as null (as specified in docstring)
-        result_table = count_table.mutate(EVENT_DATE=ibis.null(date), BOOLEAN=True)
-
-        # Select only the required phenotype columns
-        result_table = select_phenotype_columns(result_table)
-
-        if (
-            self.value_filter is None
-        ):  # only join on PERSON table if value filter is None
-            # if persons table exist, join to get the persons with 0 time ranges
-            if "PERSON" in tables.keys():
-                table_persons = tables["PERSON"].select("PERSON_ID").distinct()
-                result_table = table_persons.join(
-                    result_table,
-                    table_persons.PERSON_ID == result_table.PERSON_ID,
-                    how="left",
-                ).drop("PERSON_ID_right")
-                # fill null VALUES with 0 for persons with no time ranges
-                result_table = result_table.mutate(VALUE=result_table.VALUE.fillna(0))
-        return self._perform_final_processing(result_table)
+    def _perform_zero_fill(self, table, tables):
+        """Left-join against the PERSON table to include persons with 0 periods (only when no value_filter is set)."""
+        if self.value_filter is not None or "PERSON" not in tables:
+            return table
+        persons = tables["PERSON"].select("PERSON_ID").distinct()
+        table = persons.join(
+            table, persons.PERSON_ID == table.PERSON_ID, how="left"
+        ).drop("PERSON_ID_right")
+        return table.mutate(VALUE=table.VALUE.fillna(0))
