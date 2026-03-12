@@ -15,7 +15,7 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
-from phenex.core.reporter_nodes import WaterfallNode, Table1Node, Table1OutcomesNode
+from phenex.core.reporter_nodes import WaterfallNode, Table1Node, Table1OutcomesNode, CustomReporterNode
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -122,6 +122,7 @@ class Cohort:
         self.table1_outcomes_node = None
         self.waterfall_node = None
         self.waterfall_detailed_node = None
+        self.custom_reporter_nodes = []
 
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
@@ -314,6 +315,17 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_outcomes_node)
+
+        # Add CustomReporterNodes for each custom reporter
+        self.custom_reporter_nodes = []
+        for reporter in self.custom_reporters:
+            node = CustomReporterNode(
+                name=f"{self.name}__custom__{reporter.name}".upper(),
+                cohort=self,
+                reporter=reporter,
+            )
+            self.custom_reporter_nodes.append(node)
+            reporting_nodes.append(node)
 
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
@@ -575,10 +587,6 @@ class Cohort:
                 lazy_execution=lazy_execution,
             )
 
-        # TODO add custom reporters to execution graph; currently they execute every time a study is executed and study results are not saved to backend. This is not ideal since some custom reporters may be expensive to compute and we may want to save their results to the database, but for now this is a simple way to allow custom reporters without having to modify the execution graph building logic. Add ability to specify on which node they depend on, i.e. waterfall currently depends on index_table, while table1 depends on characteristics_table, but currently we just execute all custom reporters at the end and they can pull whatever tables they need from the cohort.
-        for reporter in self.custom_reporters:
-            reporter.execute(self)
-
         return self.index_table
 
     def _prepare_database_connector_for_execution(self, con):
@@ -660,9 +668,9 @@ class Cohort:
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
-        for custom_reporter in self.custom_reporters:
-            report_filename = custom_reporter.name
-            custom_reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
+        for custom_reporter_node in self.custom_reporter_nodes:
+            report_filename = custom_reporter_node.reporter.name
+            custom_reporter_node.to_excel(os.path.join(path, report_filename + ".xlsx"))
 
     def write_reports_to_json(self, path: str):
         """Write all available reports as JSON files (machine-readable intermediate format)."""
@@ -676,9 +684,9 @@ class Cohort:
             self.waterfall_detailed_node.to_json(
                 os.path.join(path, "waterfall_detailed.json")
             )
-        for custom_reporter in self.custom_reporters:
-            report_filename = custom_reporter.name
-            custom_reporter.to_json(os.path.join(path, report_filename + ".json"))
+        for custom_reporter_node in self.custom_reporter_nodes:
+            report_filename = custom_reporter_node.reporter.name
+            custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
 
     def to_dict(self):
         """

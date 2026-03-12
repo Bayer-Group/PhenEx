@@ -170,3 +170,59 @@ class WaterfallNode(Reporter):
             result = self.reporter.get_pretty_display(color=False)
             return result.drop(columns=["_color"], errors="ignore")
         return None
+
+
+class CustomReporterNode(Reporter):
+    """
+    A compute node that wraps a custom reporter for inclusion in the cohort execution graph.
+
+    The node depends on both characteristics and outcomes (if present), ensuring the
+    reporter executes after all phenotypes are computed.
+    """
+
+    def __init__(self, name: str, cohort: "Cohort", reporter):
+        super(CustomReporterNode, self).__init__(name=name, cohort=cohort)
+        self.reporter = reporter
+
+        # Add characteristics and outcomes as children so they execute first
+        children = list(cohort.characteristics or []) + list(cohort.outcomes or [])
+        if children:
+            self.add_children(children)
+
+    def _execute(self, tables: Dict[str, Table]):
+        logger.debug(
+            f"Generating custom report '{self.reporter.name}' for cohort '{self.cohort.name}'..."
+        )
+        self.reporter.execute(self.cohort)
+        logger.debug(
+            f"Custom report '{self.reporter.name}' generated for cohort '{self.cohort.name}'."
+        )
+        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+            return ibis.memtable(self._normalize_df(self.reporter.df.copy()))
+        return ibis.memtable({"result": []})
+
+    @property
+    def df_report(self):
+        """Get the formatted report DataFrame."""
+        if self.table is not None:
+            if hasattr(self.reporter, "get_pretty_display"):
+                return self.reporter.get_pretty_display()
+            if hasattr(self.table, "execute"):
+                return self.table.execute()
+            return self.table
+        return None
+
+    def _ensure_reporter_executed(self):
+        """Run reporter.execute() if the reporter has not yet produced results (e.g. lazy/cached execution)."""
+        if not hasattr(self.reporter, "df") or self.reporter.df is None:
+            self.reporter.execute(self.cohort)
+
+    def to_excel(self, path: str):
+        """Delegate to the wrapped reporter's to_excel."""
+        self._ensure_reporter_executed()
+        self.reporter.to_excel(path)
+
+    def to_json(self, path: str):
+        """Delegate to the wrapped reporter's to_json."""
+        self._ensure_reporter_executed()
+        self.reporter.to_json(path)
