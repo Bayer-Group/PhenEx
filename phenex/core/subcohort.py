@@ -48,8 +48,8 @@ class Subcohort(Cohort):
     """
     A Subcohort derives from a parent cohort and applies additional inclusion /
     exclusion criteria. The subcohort inherits the entry criterion, inclusions,
-    and exclusions from the parent cohort but can add additional filtering
-    criteria.
+    exclusions, and outcomes from the parent cohort but can add additional
+    filtering criteria and outcomes.
 
     Like ``Cohort``, a ``Subcohort`` exposes a ``table1`` property that reports
     baseline characteristics for the subcohort population. The characteristics
@@ -63,6 +63,10 @@ class Subcohort(Cohort):
             patients to be included in the subcohort.
         exclusions: Additional phenotypes that must evaluate to False for
             patients to be included in the subcohort.
+        additional_outcomes: Additional outcome phenotypes beyond those
+            inherited from the parent cohort.
+        custom_reporters: Reporter instances to run on this subcohort only,
+            in addition to the default Waterfall and Table1 reporters.
     """
 
     def __init__(
@@ -71,15 +75,23 @@ class Subcohort(Cohort):
         cohort: "Cohort",
         inclusions: Optional[List[Phenotype]] = None,
         exclusions: Optional[List[Phenotype]] = None,
+        outcomes: Optional[List[Phenotype]] = None,
+        custom_reporters: Optional[List] = None,
     ):
         additional_inclusions = inclusions or []
         additional_exclusions = exclusions or []
+        additional_outcomes = outcomes or []
+
         super(Subcohort, self).__init__(
             name=name,
             entry_criterion=cohort.entry_criterion,
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,
+            outcomes=cohort.outcomes + additional_outcomes,
+            derived_tables=cohort.derived_tables,
+            derived_tables_post_entry=cohort.derived_tables_post_entry,
             database=cohort.database,
+            custom_reporters=custom_reporters,
         )
         self.cohort = cohort
 

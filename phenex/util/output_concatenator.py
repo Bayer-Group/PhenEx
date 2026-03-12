@@ -142,7 +142,7 @@ class GenericSheetWriter(_BaseSheetWriter):
     For Waterfall reports the ``Type`` column drives row background colours.
     """
 
-    def write(self, sheet, report_files: List[Path]):
+    def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
         columns = self._get_column_order(report_files)
         if not columns:
             return
@@ -150,23 +150,25 @@ class GenericSheetWriter(_BaseSheetWriter):
         current_col = 1
         border_cols: List[int] = []
 
-        for report_file in report_files:
-            try:
-                data = self._load_json(report_file)
-                rows = data.get("rows", [])
-                cohort_name = report_file.parent.name
-                num_cols = len(columns)
-
-                self._add_cohort_header(sheet, cohort_name, current_col, num_cols)
+        for cohort_dir, report_file in zip(cohort_dirs, report_files):
+            cohort_name = cohort_dir.name
+            num_cols = len(columns)
+            self._add_cohort_header(sheet, cohort_name, current_col, num_cols)
+            if report_file is None:
                 self._write_column_headers(sheet, columns, current_col)
-                self._write_data_rows(sheet, rows, columns, current_col)
-                self._set_column_widths(sheet, rows, columns, current_col)
+            else:
+                try:
+                    data = self._load_json(report_file)
+                    rows = data.get("rows", [])
 
-                border_cols.append(current_col + num_cols - 1)
-                current_col += num_cols
+                    self._write_column_headers(sheet, columns, current_col)
+                    self._write_data_rows(sheet, rows, columns, current_col)
+                    self._set_column_widths(sheet, rows, columns, current_col)
+                except Exception as e:
+                    logger.warning(f"Failed to process {report_file}: {e}")
 
-            except Exception as e:
-                logger.warning(f"Failed to process {report_file}: {e}")
+            border_cols.append(current_col + num_cols - 1)
+            current_col += num_cols
 
         max_row = sheet.max_row
         max_col = sheet.max_column
@@ -174,8 +176,10 @@ class GenericSheetWriter(_BaseSheetWriter):
             self._apply_right_border_to_column(sheet, col, max_row)
         self._apply_bottom_border_to_row(sheet, max_row, max_col)
 
-    def _get_column_order(self, report_files: List[Path]) -> List[str]:
+    def _get_column_order(self, report_files: List[Optional[Path]]) -> List[str]:
         for f in report_files:
+            if f is None:
+                continue
             try:
                 data = self._load_json(f)
                 rows = data.get("rows", [])
@@ -246,7 +250,7 @@ class Table1SheetWriter(_BaseSheetWriter):
     display names.
     """
 
-    def write(self, sheet, report_files: List[Path]):
+    def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
         master_names, sections = self._build_master_names_and_sections(report_files)
         if not master_names:
             return
@@ -257,7 +261,14 @@ class Table1SheetWriter(_BaseSheetWriter):
         current_col = 2
         border_cols: List[int] = []
 
-        for report_file in report_files:
+        for cohort_dir, report_file in zip(cohort_dirs, report_files):
+            cohort_name = cohort_dir.name
+            if report_file is None:
+                # Write cohort header with no data columns (single empty placeholder)
+                self._add_cohort_header(sheet, cohort_name, current_col, 1)
+                border_cols.append(current_col)
+                current_col += 1
+                continue
             try:
                 data = self._load_json(report_file)
                 rows = data.get("rows", [])
@@ -266,9 +277,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     continue
                 num_value_cols = len(columns)
 
-                self._add_cohort_header(
-                    sheet, report_file.parent.name, current_col, num_value_cols
-                )
+                self._add_cohort_header(sheet, cohort_name, current_col, num_value_cols)
                 pct_offset = self._write_column_labels(sheet, columns, current_col)
                 self._write_value_rows(
                     sheet, rows, columns, expanded, current_col, pct_offset
@@ -294,12 +303,14 @@ class Table1SheetWriter(_BaseSheetWriter):
     # ------------------------------------------------------------------
 
     def _build_master_names_and_sections(
-        self, report_files: List[Path]
+        self, report_files: List[Optional[Path]]
     ) -> Tuple[List[str], Optional[Dict]]:
         """Return (master_names, sections) aggregated across all JSON files."""
         seen: Dict[str, None] = {}  # insertion-ordered set
         sections = None
         for report_file in report_files:
+            if report_file is None:
+                continue
             try:
                 data = self._load_json(report_file)
                 if sections is None:
@@ -519,7 +530,7 @@ class OutputConcatenator:
             logger.info(f"Concatenating {report_type} reports...")
             sheet = output_wb.create_sheet(title=report_type)
             sheet.sheet_view.showGridLines = False
-            self._write_sheet(sheet, report_type, reports_by_type[report_type])
+            self._write_sheet(sheet, report_type, reports_by_type[report_type], cohort_dirs)
 
         output_wb.save(self.output_file)
         self._suppress_number_as_text_warnings(self.output_file)
@@ -532,11 +543,11 @@ class OutputConcatenator:
         rest = sorted(k for k in reports_by_type if k not in self._SHEET_ORDER_PREFIX)
         return prefix + rest
 
-    def _write_sheet(self, sheet, report_type: str, report_files: List[Path]) -> None:
+    def _write_sheet(self, sheet, report_type: str, report_files: List[Optional[Path]], cohort_dirs: List[Path]) -> None:
         if report_type == "Table1":
-            self._table1_writer.write(sheet, report_files)
+            self._table1_writer.write(sheet, report_files, cohort_dirs)
         else:
-            self._generic_writer.write(sheet, report_files)
+            self._generic_writer.write(sheet, report_files, cohort_dirs)
 
     def _get_cohort_directories(self) -> List[Path]:
         dirs = [
@@ -546,22 +557,27 @@ class OutputConcatenator:
         ]
         return sorted(dirs, key=lambda x: x.name)
 
-    def _group_reports_by_type(self, cohort_dirs: List[Path]) -> Dict[str, List[Path]]:
-        reports_by_type: Dict[str, List[Path]] = {}
+    def _group_reports_by_type(self, cohort_dirs: List[Path]) -> Dict[str, List[Optional[Path]]]:
+        """Group report files by type, aligned to cohort_dirs.
+
+        Returns a dict mapping report type name to a list of Optional[Path] with
+        one entry per cohort dir (None when that cohort has no file of that type).
+        """
+        # {report_type: {cohort_dir: path}}
+        type_to_cohort_path: Dict[str, Dict[Path, Path]] = {}
         for cohort_dir in cohort_dirs:
-            json_files = [
-                x
-                for x in list(cohort_dir.glob("*.json"))
-                if not x.name.startswith("frozen_")
-            ]
-            for json_file in json_files:
+            for json_file in sorted(cohort_dir.glob("*.json")):
+                if json_file.name.startswith("frozen_"):
+                    continue
                 report_type = self._CANONICAL_NAMES.get(
                     json_file.stem.lower(), json_file.stem
                 )
-                reports_by_type.setdefault(report_type, []).append(json_file)
-        for report_type in reports_by_type:
-            reports_by_type[report_type].sort(key=lambda x: x.parent.name)
-        return reports_by_type
+                type_to_cohort_path.setdefault(report_type, {})[cohort_dir] = json_file
+        # Build aligned lists; None where a cohort has no file for a given type
+        return {
+            report_type: [cohort_paths.get(d) for d in cohort_dirs]
+            for report_type, cohort_paths in type_to_cohort_path.items()
+        }
 
     def _suppress_number_as_text_warnings(self, xlsx_path: Path) -> None:
         """Inject <ignoredErrors> into each sheet XML to suppress green triangles."""

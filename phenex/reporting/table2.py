@@ -398,6 +398,33 @@ class Table2(Reporter):
 
         return result
 
+    def to_json(self, filename: str) -> str:
+        """
+        Export Table2 results to JSON in the standard PhenEx reporter format
+        ``{"reporter_type": ..., "rows": [...]}``, which is consumed by
+        ``OutputConcatenator`` to build the study Excel file.
+        """
+        import json
+        from pathlib import Path
+
+        if not hasattr(self, "df"):
+            raise AttributeError("Call execute() before to_json().")
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": self.df.to_dict(orient="records"),
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())
+
     def get_pretty_display(self) -> pd.DataFrame:
         """
         Return a formatted version of the Table2 results for display.

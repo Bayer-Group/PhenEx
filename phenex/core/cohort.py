@@ -36,6 +36,7 @@ class Cohort:
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
+        custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -59,6 +60,7 @@ class Cohort:
         outcomes: Optional[List[Phenotype]] = None,
         description: Optional[str] = None,
         database: Optional[Database] = None,
+        custom_reporters: Optional[List] = None,
     ):
         self.name = name
         self.description = description
@@ -67,8 +69,8 @@ class Cohort:
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
-        self.inclusions = inclusions or []
-        self.exclusions = exclusions or []
+        self.inclusions = self._flatten(inclusions)
+        self.exclusions = self._flatten(exclusions)
 
         # characteristics may be a flat list or a dict of {section_name: [phenotypes]}
         if isinstance(characteristics, dict):
@@ -81,11 +83,12 @@ class Cohort:
             ]
         else:
             self.characteristic_sections = None
-            self.characteristics = characteristics or []
+            self.characteristics = self._flatten(characteristics)
 
-        self.derived_tables = derived_tables or []
-        self.derived_tables_post_entry = derived_tables_post_entry or []
-        self.outcomes = outcomes or []
+        self.derived_tables = derived_tables
+        self.derived_tables_post_entry = derived_tables_post_entry
+        self.outcomes = self._flatten(outcomes)
+        self.custom_reporters = custom_reporters or []
         self.n_persons_in_source_database = None
 
         self.phenotypes = (
@@ -123,6 +126,19 @@ class Cohort:
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
 
+    @staticmethod
+    def _flatten(items: Optional[List]) -> List:
+        """Flatten one level of nesting, so both [p1, p2] and [[p1, p2]] work."""
+        if not items:
+            return []
+        result = []
+        for item in items:
+            if isinstance(item, list):
+                result.extend(item)
+            else:
+                result.append(item)
+        return result
+
     def _validate_node_uniqueness(self):
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
         Node().add_children(self.phenotypes)
@@ -159,7 +175,7 @@ class Cohort:
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
         # Filter out None tables (tables not found in source data)
         available_tables = {k: v for k, v in tables.items() if v is not None}
-        domains = list(available_tables.keys()) + [x.name for x in self.derived_tables]
+        domains = list(available_tables.keys())
         required_domains = self._get_domains()
 
         missing_domains = [d for d in required_domains if d not in domains]
@@ -490,6 +506,7 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
 
+
         if self.derived_tables_post_entry_stage:
             logger.info(
                 f"Cohort '{self.name}': executing derived tables post-entry stage ..."
@@ -507,6 +524,7 @@ class Cohort:
             entry_dates = self.entry_criterion.table.select(
                 "PERSON_ID", "EVENT_DATE"
             ).rename({"INDEX_DATE": "EVENT_DATE"})
+            #TODO this is a bit hacky, consider a cleaner way to handle this if we want to support post-entry derived tables in the long term i.e. a DERIVED_TABLES class that adds index table automatically if present in the source derived table.
             for node in self.derived_tables_post_entry:
                 table_with_index = node.table.join(entry_dates, "PERSON_ID")
                 self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
@@ -528,6 +546,16 @@ class Cohort:
 
         self.subset_tables_index = self.get_subset_tables_index(tables)
 
+        # Also add derived post-entry tables to subset_tables_index, further filtered
+        # to only include persons that passed all inclusion/exclusion criteria.
+        if self.derived_tables_post_entry:
+            index_person_ids = self.index_table_node.table.select("PERSON_ID")
+            for node in self.derived_tables_post_entry:
+                if node.name in self.subset_tables_entry:
+                    entry_tbl = self.subset_tables_entry[node.name]
+                    filtered_ibis = entry_tbl.table.semi_join(index_person_ids, "PERSON_ID")
+                    self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
+
         if self.reporting_stage:
             logger.info("Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
@@ -537,6 +565,9 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
+
+        for reporter in self.custom_reporters:
+            reporter.execute(self)
 
         return self.index_table
 
@@ -628,9 +659,16 @@ class Cohort:
             self.waterfall_detailed_node.to_json(
                 os.path.join(path, "waterfall_detailed.json")
             )
+        for reporter in self.custom_reporters:
+            report_filename = reporter.__class__.__name__
+            reporter.to_json(os.path.join(path, report_filename + ".json"))
 
     def to_dict(self):
         """
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
-        return to_dict(self)
+        d = to_dict(self)
+        # custom_reporters are runtime execution objects and cannot be meaningfully
+        # serialized; drop them from the frozen cohort definition.
+        d.pop("custom_reporters", None)
+        return d
