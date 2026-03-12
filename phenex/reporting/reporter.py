@@ -30,8 +30,15 @@ class Reporter:
     def __init__(
         self,
         decimal_places: int = 1,
+        name: str = None,
     ):
         self.decimal_places = decimal_places
+        self._name = name
+
+    @property
+    def name(self):
+        """Name of the reporter, used for identification and output file naming."""
+        return self._name or self.__class__.__name__
 
     def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
         """

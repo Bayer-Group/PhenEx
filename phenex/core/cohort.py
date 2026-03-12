@@ -15,7 +15,7 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
-from phenex.core.reporter_nodes import WaterfallNode, Table1Node
+from phenex.core.reporter_nodes import WaterfallNode, Table1Node, Table1OutcomesNode
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -119,6 +119,7 @@ class Cohort:
         self.subset_tables_entry_nodes = None
         self.subset_tables_index_nodes = None
         self.table1_node = None
+        self.table1_outcomes_node = None
         self.waterfall_node = None
         self.waterfall_detailed_node = None
 
@@ -305,6 +306,14 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_node)
+
+        # Add Table1OutcomesNode if there are outcomes
+        if self.outcomes:
+            self.table1_outcomes_node = Table1OutcomesNode(
+                name=f"{self.name}__table1_outcomes".upper(),
+                cohort=self,
+            )
+            reporting_nodes.append(self.table1_outcomes_node)
 
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
@@ -643,29 +652,33 @@ class Cohort:
         """Write all available reports (table1, waterfall, waterfall_detailed) to Excel files in the given directory."""
         if self.table1_node:
             self.table1_node.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
-        for reporter in self.custom_reporters:
-            report_filename = reporter.__class__.__name__
-            reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
+        for custom_reporter in self.custom_reporters:
+            report_filename = custom_reporter.name
+            custom_reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
 
     def write_reports_to_json(self, path: str):
         """Write all available reports as JSON files (machine-readable intermediate format)."""
         if self.table1_node:
             self.table1_node.to_json(os.path.join(path, "table1.json"))
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:
             self.waterfall_detailed_node.to_json(
                 os.path.join(path, "waterfall_detailed.json")
             )
-        for reporter in self.custom_reporters:
-            report_filename = reporter.__class__.__name__
-            reporter.to_json(os.path.join(path, report_filename + ".json"))
+        for custom_reporter in self.custom_reporters:
+            report_filename = custom_reporter.name
+            custom_reporter.to_json(os.path.join(path, report_filename + ".json"))
 
     def to_dict(self):
         """

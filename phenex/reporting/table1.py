@@ -11,17 +11,33 @@ class Table1(Reporter):
     """
     Table1 is a common term used in epidemiology to describe a table that shows an overview of the baseline characteristics of a cohort. It contains the counts and percentages of the cohort that have each characteristic, for both boolean and value characteristics. In addition, summary statistics are provided for value characteristics (mean, std, median, min, max).
 
+    Table1 by default reports on all phenotypes in the cohort's characteristics, but a custom list of phenotypes can be provided to the execute() method. When using the default cohort.characteristics, the section structure defined on the cohort is preserved in the Table1 output for better organization and display.
+
+    Parameters:
+        decimal_places: Number of decimal places to round to. Default: 1
     """
 
-    def execute(self, cohort: "Cohort") -> pd.DataFrame:
-        if len(cohort.characteristics) == 0:
-            logger.info("No characteristics. table1 is empty")
+    def execute(self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None) -> pd.DataFrame:
+        self.cohort = cohort
+
+        if phenotypes is None:
+            self._phenotypes = cohort.characteristics
+            self.characteristic_sections = getattr(cohort, "characteristic_sections", None)
+        elif isinstance(phenotypes, dict):
+            self.characteristic_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in phenotypes.items()
+            }
+            self._phenotypes = [p for phenos in phenotypes.values() for p in phenos]
+        else:
+            self._phenotypes = phenotypes
+            self.characteristic_sections = None
+
+        if len(self._phenotypes) == 0:
+            logger.info("No phenotypes. table1 is empty")
             return pd.DataFrame()
 
-        self.cohort = cohort
-        # Preserve section structure for serialization (None if cohort uses a flat list)
-        self.characteristic_sections = getattr(cohort, "characteristic_sections", None)
-        self.cohort_names_in_order = [x.name for x in self.cohort.characteristics]
+        self.cohort_names_in_order = [x.name for x in self._phenotypes]
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
             .select("PERSON_ID")
@@ -73,21 +89,13 @@ class Table1(Reporter):
         return self.df
 
     def _get_boolean_characteristics(self):
-        return [
-            x for x in self.cohort.characteristics if x.output_display_type == "boolean"
-        ]
+        return [x for x in self._phenotypes if x.output_display_type == "boolean"]
 
     def _get_value_characteristics(self):
-        return [
-            x for x in self.cohort.characteristics if x.output_display_type == "value"
-        ]
+        return [x for x in self._phenotypes if x.output_display_type == "value"]
 
     def _get_categorical_characteristics(self):
-        return [
-            x
-            for x in self.cohort.characteristics
-            if x.output_display_type == "categorical"
-        ]
+        return [x for x in self._phenotypes if x.output_display_type == "categorical"]
 
     def _get_boolean_count_for_phenotype(self, phenotype):
         result = (
@@ -104,7 +112,6 @@ class Table1(Reporter):
         )
 
     def _report_boolean_columns(self):
-        table = self.cohort.characteristics_table
         # get list of all boolean columns
         boolean_phenotypes = self._get_boolean_characteristics()
         logger.debug(

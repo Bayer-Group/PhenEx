@@ -68,6 +68,7 @@ class TimeRangeDayCountPhenotype(Phenotype):
         result = post_index_hospitalization_days.execute(tables)
         ```
     """
+    output_display_type = "value"
 
     def __init__(
         self,

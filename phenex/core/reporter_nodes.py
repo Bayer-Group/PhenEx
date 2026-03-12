@@ -37,21 +37,20 @@ class Reporter(Node):
         self.reporter.execute(self.cohort)
         df = self.reporter.df
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
+        table = ibis.memtable(self._normalize_df(df))
+        return table
 
-        # Ensure all columns have explicit types for Ibis conversion
-        # Convert object columns to strings and handle NaN values
+    @staticmethod
+    def _normalize_df(df):
+        """Normalize DataFrame column types for Ibis compatibility."""
         for col in df.columns:
             if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str)
             elif df[col].dtype == "float64":
-                # Keep as float but replace NaN with None for Ibis
                 df[col] = df[col].where(df[col].notna(), None)
             elif df[col].dtype == "int64":
-                # Convert to nullable Int64 to handle NaN
                 df[col] = df[col].astype("Int64")
-
-        table = ibis.memtable(df)
-        return table
+        return df
 
     @property
     def df_report(self):
@@ -108,6 +107,31 @@ class Table1Node(Reporter):
                 self.cohort, "characteristic_sections", None
             )
             self.reporter.to_json(path)
+
+
+class Table1OutcomesNode(Reporter):
+    """
+    A compute node that generates a Table1 report for a cohort's outcomes.
+
+    Identical to Table1Node but operates on cohort.outcomes instead of
+    cohort.characteristics.
+    """
+
+    def __init__(self, name: str, cohort: "Cohort"):
+        super(Table1OutcomesNode, self).__init__(name=name, cohort=cohort)
+        self.reporter = Table1(name="Table1Outcomes")
+
+        if cohort.outcomes:
+            self.add_children(cohort.outcomes)
+
+    def _execute(self, tables: Dict[str, Table]):
+        logger.debug(
+            f"Generating {self.name} outcomes report for cohort '{self.cohort.name}'..."
+        )
+        self.reporter.execute(self.cohort, phenotypes=self.cohort.outcomes)
+        df = self.reporter.df
+        logger.debug(f"{self.name} outcomes report generated for cohort '{self.cohort.name}'.")
+        return ibis.memtable(self._normalize_df(df))
 
 
 class WaterfallNode(Reporter):

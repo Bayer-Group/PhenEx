@@ -123,6 +123,8 @@ class Subcohort(Cohort):
         reporter = self._make_table1_reporter()
         if reporter:
             reporter.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
@@ -130,7 +132,7 @@ class Subcohort(Cohort):
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
         for custom_reporter in self.custom_reporters:
-            report_filename = custom_reporter.__class__.__name__
+            report_filename = custom_reporter.name
             custom_reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
 
     def write_reports_to_json(self, path: str):
@@ -142,6 +144,8 @@ class Subcohort(Cohort):
                 self.cohort, "characteristic_sections", None
             )
             reporter.to_json(os.path.join(path, "table1.json"))
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:
@@ -149,5 +153,5 @@ class Subcohort(Cohort):
                 os.path.join(path, "waterfall_detailed.json")
             )
         for custom_reporter in self.custom_reporters:
-            report_filename = custom_reporter.__class__.__name__
+            report_filename = custom_reporter.name
             custom_reporter.to_json(os.path.join(path, report_filename + ".json"))
