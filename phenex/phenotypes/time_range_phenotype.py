@@ -136,10 +136,10 @@ class TimeRangePhenotype(Phenotype):
             self.relative_time_range is None
             or self.relative_time_range.when == "before"
         ):
-            value = ref.delta(table.START_DATE, "day")
+            value = ref.cast("date").delta(table.START_DATE.cast("date"), "day")
             event_date = table.START_DATE
         else:
-            value = table.END_DATE.delta(ref, "day")
+            value = table.END_DATE.cast("date").delta(ref.cast("date"), "day")
             event_date = table.END_DATE
         return table.mutate(VALUE=value, EVENT_DATE=event_date)
 
