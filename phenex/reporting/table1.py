@@ -17,6 +17,10 @@ class Table1(Reporter):
         decimal_places: Number of decimal places to round to. Default: 1
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.characteristic_sections = None
+
     def execute(self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None) -> pd.DataFrame:
         self.cohort = cohort
 
