@@ -150,6 +150,10 @@ class TimeRangeDayCountPhenotype(Phenotype):
         """Count the total number of days across all distinct time periods per person."""
         table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
         table = table.mutate(
+            START_DATE=table.START_DATE.cast("date"),
+            END_DATE=table.END_DATE.cast("date"),
+        )
+        table = table.mutate(
             DAYS_IN_RANGE=table.END_DATE.delta(table.START_DATE, "day") + 1
         )
         return table.group_by("PERSON_ID").aggregate(VALUE=_.DAYS_IN_RANGE.sum())

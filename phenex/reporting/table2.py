@@ -158,6 +158,9 @@ class Table2(Reporter):
             return None
 
         row = summary_df.iloc[0]
+        if pd.isna(row["N_Events"]) or pd.isna(row["N_Censored"]):
+            logger.warning(f"No patients for {outcome.name} at {time_point} days")
+            return None
         n_events = int(row["N_Events"])
         n_censored = int(row["N_Censored"])
         total_followup_days = float(row["Total_Followup_Days"])
