@@ -129,6 +129,9 @@ class Subcohort(Cohort):
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
+        for custom_reporter in self.custom_reporters:
+            report_filename = custom_reporter.__class__.__name__
+            custom_reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
 
     def write_reports_to_json(self, path: str):
         """Write all available reports as JSON files. Table1 is computed from
@@ -145,3 +148,6 @@ class Subcohort(Cohort):
             self.waterfall_detailed_node.to_json(
                 os.path.join(path, "waterfall_detailed.json")
             )
+        for custom_reporter in self.custom_reporters:
+            report_filename = custom_reporter.__class__.__name__
+            custom_reporter.to_json(os.path.join(path, report_filename + ".json"))

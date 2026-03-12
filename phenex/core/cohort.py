@@ -566,6 +566,7 @@ class Cohort:
                 lazy_execution=lazy_execution,
             )
 
+        # TODO add custom reporters to execution graph; currently they execute every time a study is executed and study results are not saved to backend. This is not ideal since some custom reporters may be expensive to compute and we may want to save their results to the database, but for now this is a simple way to allow custom reporters without having to modify the execution graph building logic. Add ability to specify on which node they depend on, i.e. waterfall currently depends on index_table, while table1 depends on characteristics_table, but currently we just execute all custom reporters at the end and they can pull whatever tables they need from the cohort.
         for reporter in self.custom_reporters:
             reporter.execute(self)
 
@@ -648,6 +649,9 @@ class Cohort:
             self.waterfall_detailed_node.to_excel(
                 os.path.join(path, "waterfall_detailed.xlsx")
             )
+        for reporter in self.custom_reporters:
+            report_filename = reporter.__class__.__name__
+            reporter.to_excel(os.path.join(path, report_filename + ".xlsx"))
 
     def write_reports_to_json(self, path: str):
         """Write all available reports as JSON files (machine-readable intermediate format)."""
