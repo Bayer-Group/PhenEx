@@ -151,24 +151,23 @@ class GenericSheetWriter(_BaseSheetWriter):
         border_cols: List[int] = []
 
         for cohort_dir, report_file in zip(cohort_dirs, report_files):
+            if report_file is None:
+                continue
             cohort_name = cohort_dir.name
             num_cols = len(columns)
-            self._add_cohort_header(sheet, cohort_name, current_col, num_cols)
-            if report_file is None:
+            try:
+                data = self._load_json(report_file)
+                rows = data.get("rows", [])
+
+                self._add_cohort_header(sheet, cohort_name, current_col, num_cols)
                 self._write_column_headers(sheet, columns, current_col)
-            else:
-                try:
-                    data = self._load_json(report_file)
-                    rows = data.get("rows", [])
+                self._write_data_rows(sheet, rows, columns, current_col)
+                self._set_column_widths(sheet, rows, columns, current_col)
 
-                    self._write_column_headers(sheet, columns, current_col)
-                    self._write_data_rows(sheet, rows, columns, current_col)
-                    self._set_column_widths(sheet, rows, columns, current_col)
-                except Exception as e:
-                    logger.warning(f"Failed to process {report_file}: {e}")
-
-            border_cols.append(current_col + num_cols - 1)
-            current_col += num_cols
+                border_cols.append(current_col + num_cols - 1)
+                current_col += num_cols
+            except Exception as e:
+                logger.warning(f"Failed to process {report_file}: {e}")
 
         max_row = sheet.max_row
         max_col = sheet.max_column
@@ -262,13 +261,9 @@ class Table1SheetWriter(_BaseSheetWriter):
         border_cols: List[int] = []
 
         for cohort_dir, report_file in zip(cohort_dirs, report_files):
-            cohort_name = cohort_dir.name
             if report_file is None:
-                # Write cohort header with no data columns (single empty placeholder)
-                self._add_cohort_header(sheet, cohort_name, current_col, 1)
-                border_cols.append(current_col)
-                current_col += 1
                 continue
+            cohort_name = cohort_dir.name
             try:
                 data = self._load_json(report_file)
                 rows = data.get("rows", [])
