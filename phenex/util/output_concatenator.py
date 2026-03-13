@@ -527,8 +527,9 @@ class OutputConcatenator:
         "table1_outcomes_detailed": "Table1OutcomesDetailed",
     }
 
-    def __init__(self, study_execution_path: str, study_name: str = "study") -> None:
+    def __init__(self, study_execution_path: str, study_name: str = "study", cohort_names: Optional[List[str]] = None) -> None:
         self.study_path = Path(study_execution_path)
+        self.cohort_names = cohort_names
         timestamp = self.study_path.name
         self.output_file = self.study_path / f"results_{study_name}_{timestamp}.xlsx"
         self._generic_writer = GenericSheetWriter()
@@ -574,12 +575,14 @@ class OutputConcatenator:
             self._generic_writer.write(sheet, report_files, cohort_dirs)
 
     def _get_cohort_directories(self) -> List[Path]:
-        dirs = [
-            d
+        dirs = {
+            d.name: d
             for d in self.study_path.iterdir()
             if d.is_dir() and not d.name.startswith(".")
-        ]
-        return sorted(dirs, key=lambda x: x.name)
+        }
+        if self.cohort_names:
+            return [dirs[name] for name in self.cohort_names if name in dirs]
+        return sorted(dirs.values(), key=lambda x: x.name)
 
     def _group_reports_by_type(self, cohort_dirs: List[Path]) -> Dict[str, List[Optional[Path]]]:
         """Group report files by type, aligned to cohort_dirs.
