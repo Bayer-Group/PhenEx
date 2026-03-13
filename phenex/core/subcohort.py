@@ -83,7 +83,7 @@ class Subcohort(Cohort):
         additional_outcomes = outcomes or []
 
         super(Subcohort, self).__init__(
-            name=name,
+            name=f"{cohort.name}__{name}",
             entry_criterion=cohort.entry_criterion,
             inclusions=cohort.inclusions + additional_inclusions,
             exclusions=cohort.exclusions + additional_exclusions,

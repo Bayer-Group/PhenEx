@@ -197,9 +197,9 @@ class CustomReporterNode(Reporter):
         logger.debug(
             f"Custom report '{self.reporter.name}' generated for cohort '{self.cohort.name}'."
         )
-        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+        if hasattr(self.reporter, "df") and self.reporter.df is not None and len(self.reporter.df) > 0:
             return ibis.memtable(self._normalize_df(self.reporter.df.copy()))
-        return ibis.memtable({"result": []})
+        return None
 
     @property
     def df_report(self):

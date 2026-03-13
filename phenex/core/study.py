@@ -101,19 +101,14 @@ class Study:
             )
             self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
+            # Merge study-level custom reporters into the cohort before execution
+            _cohort.custom_reporters = (_cohort.custom_reporters or []) + self.custom_reporters
+
             _cohort.execute(
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
             _cohort.write_reports_to_json(path_exec_dir_cohort)
-
-            if self.custom_reporters is not None:
-                for reporter in self.custom_reporters:
-                    reporter.execute(_cohort)
-                    report_filename = reporter.__class__.__name__
-                    reporter.to_json(
-                        os.path.join(path_exec_dir_cohort, report_filename + ".json")
-                    )
 
         self._concatenate_reports(path_exec_dir_study)
 

@@ -85,6 +85,7 @@ from .reporting import (
 # Codelists
 from .codelists import (
     Codelist,
+    LocalFileCodelistFactory,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
     MedConBCollection,
@@ -179,6 +180,7 @@ __all__ = [
     "ReportDrafter",
     # Codelists
     "Codelist",
+    "LocalFileCodelistFactory",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
     "MedConBCollection",
