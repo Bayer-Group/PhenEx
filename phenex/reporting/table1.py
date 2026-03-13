@@ -7,6 +7,31 @@ from ibis import _
 logger = create_logger(__name__)
 
 
+class _ComponentPhenotypeView:
+    """
+    Wraps a phenotype to override its ``display_name`` for indented display inside
+    Table1 when ``include_component_phenotypes_level`` is set.  All other
+    attributes are delegated to the underlying phenotype unchanged.
+    """
+
+    def __init__(self, phenotype, display_name: str, level: int = 0):
+        # Store directly in __dict__ to avoid triggering __getattr__
+        object.__setattr__(self, "_phenotype", phenotype)
+        object.__setattr__(self, "_display_name", display_name)
+        object.__setattr__(self, "_component_level", level)
+
+    @property
+    def display_name(self) -> str:
+        return object.__getattribute__(self, "_display_name")
+
+    @property
+    def _level(self) -> int:
+        return object.__getattribute__(self, "_component_level")
+
+    def __getattr__(self, name: str):
+        return getattr(object.__getattribute__(self, "_phenotype"), name)
+
+
 class Table1(Reporter):
     """
     Table1 is a common term used in epidemiology to describe a table that shows an overview of the baseline characteristics of a cohort. It contains the counts and percentages of the cohort that have each characteristic, for both boolean and value characteristics. In addition, summary statistics are provided for value characteristics (mean, std, median, min, max).
@@ -15,11 +40,45 @@ class Table1(Reporter):
 
     Parameters:
         decimal_places: Number of decimal places to round to. Default: 1
+        include_component_phenotypes_level: When set to an integer, component
+            (child) phenotypes are expanded inline beneath each parent phenotype,
+            indented according to their nesting depth.  ``None`` (default) disables
+            expansion.  Set to a large number (e.g. 100) to include all levels.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, include_component_phenotypes_level=None, **kwargs):
         super().__init__(**kwargs)
+        self.include_component_phenotypes_level = include_component_phenotypes_level
         self.characteristic_sections = None
+
+    # ------------------------------------------------------------------
+    # Component-phenotype expansion helpers
+    # ------------------------------------------------------------------
+
+    def _expand_with_components(self, phenotypes):
+        """Return a flat, ordered list that interleaves component phenotypes.
+
+        Each top-level phenotype is followed (depth-first) by its children up
+        to *include_component_phenotypes_level* levels deep.  Component phenotypes
+        are wrapped in a :class:`_ComponentPhenotypeView` whose ``display_name``
+        is prefixed with two spaces per nesting level so the hierarchy is visible
+        in the final table.
+        """
+        result = []
+        for p in phenotypes:
+            result.append(p)
+            self._collect_components(p, result, level=1)
+        return result
+
+    def _collect_components(self, phenotype, result, level):
+        if level > self.include_component_phenotypes_level:
+            return
+        children = getattr(phenotype, "children", None) or []
+        for child in children:
+            indent = "\u00a0\u00a0" * level  # non-breaking spaces for visual indent
+            view = _ComponentPhenotypeView(child, f"{indent}{child.display_name}", level=level)
+            result.append(view)
+            self._collect_components(child, result, level + 1)
 
     def execute(self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None) -> pd.DataFrame:
         self.cohort = cohort
@@ -41,6 +100,10 @@ class Table1(Reporter):
             logger.info("No phenotypes. table1 is empty")
             return pd.DataFrame()
 
+        # Optionally expand each phenotype with its component children
+        if self.include_component_phenotypes_level is not None:
+            self._phenotypes = self._expand_with_components(self._phenotypes)
+
         self.cohort_names_in_order = [x.name for x in self._phenotypes]
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
@@ -57,7 +120,7 @@ class Table1(Reporter):
         self.df_values = self._report_value_columns()
 
         # add the full cohort size as the first row
-        df_n = pd.DataFrame({"N": [self.N], "inex_order": [-1]}, index=["Cohort"])
+        df_n = pd.DataFrame({"N": [self.N], "inex_order": [-1], "_level": [0]}, index=["Cohort"])
         # add percentage column
         dfs = [
             df
@@ -133,6 +196,7 @@ class Table1(Reporter):
         df_t1["inex_order"] = [
             self.cohort_names_in_order.index(x.name) for x in boolean_phenotypes
         ]
+        df_t1["_level"] = [getattr(x, "_level", 0) for x in boolean_phenotypes]
         return df_t1
 
     def _report_value_columns(self):
@@ -160,6 +224,7 @@ class Table1(Reporter):
                 "P90": _table["VALUE"].quantile(0.90).execute(),
                 "Max": _table["VALUE"].max().execute(),
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
+                "_level": getattr(phenotype, "_level", 0),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
             names.append(phenotype.display_name)
@@ -194,6 +259,7 @@ class Table1(Reporter):
             ]
             _df = pd.DataFrame(cat_counts["N"])
             _df["inex_order"] = self.cohort_names_in_order.index(phenotype.name)
+            _df["_level"] = getattr(phenotype, "_level", 0)
             dfs.append(_df)
             names.extend(cat_counts.index)
         if len(dfs) == 1:
@@ -214,6 +280,9 @@ class Table1(Reporter):
         """
         # Create a copy to avoid modifying the original
         pretty_df = self.df.copy()
+
+        # Drop the internal _level column from display output
+        pretty_df = pretty_df.drop(columns=["_level"], errors="ignore")
 
         # cast counts to integer and to str, so that we can display without 'NaNs'
         pretty_df["N"] = pretty_df["N"].astype("Int64").astype(str)
@@ -264,3 +333,48 @@ class Table1(Reporter):
             json.dump(payload, f, indent=2, default=str)
 
         return str(filepath.absolute())
+
+    def to_excel(self, filename: str) -> str:
+        """Export Table1 to Excel, applying progressive gray fills for component rows."""
+        import openpyxl
+        from openpyxl.styles import PatternFill
+        from pathlib import Path
+
+        if not hasattr(self, "df"):
+            raise AttributeError("Call execute() first before calling to_excel().")
+
+        filepath = Path(filename)
+        if filepath.suffix != ".xlsx":
+            filepath = filepath.with_suffix(".xlsx")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write pretty display (strips _level)
+        pretty_df = self.get_pretty_display()
+        pretty_df.to_excel(filepath, index=False)
+
+        # Apply gray fills based on _level if present
+        if "_level" in self.df.columns:
+            wb = openpyxl.load_workbook(filepath)
+            ws = wb.active
+            # header row is row 1; data starts at row 2
+            for row_idx, level in enumerate(
+                self.df["_level"].fillna(0).astype(int).values, start=2
+            ):
+                hex_color = self._level_to_gray_hex(level)
+                if hex_color:
+                    fill = PatternFill(
+                        start_color=hex_color, end_color=hex_color, fill_type="solid"
+                    )
+                    for cell in ws[row_idx]:
+                        cell.fill = fill
+            wb.save(filepath)
+
+        return str(filepath.absolute())
+
+    @staticmethod
+    def _level_to_gray_hex(level: int) -> str:
+        """Return a 6-char hex fill color for a component nesting level (empty = no fill)."""
+        if level <= 0:
+            return ""
+        value = max(235 - 20 * (level - 1), 100)
+        return f"{value:02X}{value:02X}{value:02X}"

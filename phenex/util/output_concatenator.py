@@ -126,6 +126,18 @@ class _BaseSheetWriter:
         return None
 
     @staticmethod
+    def _level_to_gray_hex(level) -> Optional[str]:
+        """Return a 6-char ARGB hex fill colour for a component nesting level, or None."""
+        try:
+            lvl = int(level)
+        except (TypeError, ValueError):
+            return None
+        if lvl <= 0:
+            return None
+        value = max(235 - 20 * (lvl - 1), 100)
+        return f"{value:02X}{value:02X}{value:02X}"
+
+    @staticmethod
     def _load_json(path: Path) -> Dict:
         with path.open() as f:
             return json.load(f)
@@ -250,12 +262,12 @@ class Table1SheetWriter(_BaseSheetWriter):
     """
 
     def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
-        master_names, sections = self._build_master_names_and_sections(report_files)
+        master_names, sections, name_to_level = self._build_master_names_and_sections(report_files)
         if not master_names:
             return
 
         expanded = self._build_expanded_rows(master_names, sections)
-        self._write_name_column(sheet, expanded)
+        self._write_name_column(sheet, expanded, name_to_level)
 
         current_col = 2
         border_cols: List[int] = []
@@ -267,7 +279,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             try:
                 data = self._load_json(report_file)
                 rows = data.get("rows", [])
-                columns = [c for c in (rows[0].keys() if rows else []) if c != "Name"]
+                columns = [c for c in (rows[0].keys() if rows else []) if c not in ("Name", "_level")]
                 if not columns:
                     continue
                 num_value_cols = len(columns)
@@ -275,7 +287,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 self._add_cohort_header(sheet, cohort_name, current_col, num_value_cols)
                 pct_offset = self._write_column_labels(sheet, columns, current_col)
                 self._write_value_rows(
-                    sheet, rows, columns, expanded, current_col, pct_offset
+                    sheet, rows, columns, expanded, current_col, pct_offset, name_to_level
                 )
                 self._set_value_column_widths(sheet, rows, columns, current_col)
 
@@ -299,10 +311,11 @@ class Table1SheetWriter(_BaseSheetWriter):
 
     def _build_master_names_and_sections(
         self, report_files: List[Optional[Path]]
-    ) -> Tuple[List[str], Optional[Dict]]:
-        """Return (master_names, sections) aggregated across all JSON files."""
+    ) -> Tuple[List[str], Optional[Dict], Dict[str, int]]:
+        """Return (master_names, sections, name_to_level) aggregated across all JSON files."""
         seen: Dict[str, None] = {}  # insertion-ordered set
         sections = None
+        name_to_level: Dict[str, int] = {}
         for report_file in report_files:
             if report_file is None:
                 continue
@@ -313,10 +326,14 @@ class Table1SheetWriter(_BaseSheetWriter):
                 for row in data.get("rows", []):
                     name = row.get("Name")
                     if name is not None:
-                        seen[str(name)] = None
+                        name_str = str(name)
+                        seen[name_str] = None
+                        level = row.get("_level", 0)
+                        if name_str not in name_to_level and level:
+                            name_to_level[name_str] = int(level)
             except Exception as e:
                 logger.warning(f"Could not read {report_file}: {e}")
-        return list(seen.keys()), sections
+        return list(seen.keys()), sections, name_to_level
 
     def _build_expanded_rows(
         self, master_names: List[str], sections: Optional[Dict]
@@ -351,8 +368,9 @@ class Table1SheetWriter(_BaseSheetWriter):
                 return True
         return False
 
-    def _write_name_column(self, sheet, expanded: List[Tuple[str, str]]):
+    def _write_name_column(self, sheet, expanded: List[Tuple[str, str]], name_to_level: Dict[str, int] = None):
         """Populate col A: row-2 label, then data and section rows."""
+        name_to_level = name_to_level or {}
         self._write_cell(
             sheet,
             2,
@@ -379,6 +397,9 @@ class Table1SheetWriter(_BaseSheetWriter):
                 )
             else:
                 is_cohort = value == "Cohort"
+                level = name_to_level.get(value, 0)
+                gray = self._level_to_gray_hex(level)
+                fill = gray if gray else ("D3D3D3" if is_cohort else None)
                 self._write_cell(
                     sheet,
                     out_row,
@@ -388,7 +409,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     size=11,
                     horizontal="right",
                     indent=4,
-                    fill_color="D3D3D3" if is_cohort else None,
+                    fill_color=fill,
                 )
 
         max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
@@ -424,7 +445,9 @@ class Table1SheetWriter(_BaseSheetWriter):
         expanded: List[Tuple[str, str]],
         start_col: int,
         pct_offset: Optional[int],
+        name_to_level: Dict[str, int] = None,
     ):
+        name_to_level = name_to_level or {}
         name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
         for i, (row_type, value) in enumerate(expanded):
             out_row = 3 + i
@@ -441,6 +464,9 @@ class Table1SheetWriter(_BaseSheetWriter):
 
             row_data = name_to_row.get(value)
             is_cohort = value == "Cohort"
+            level = name_to_level.get(value, 0)
+            gray = self._level_to_gray_hex(level)
+            row_fill = gray if gray else ("D3D3D3" if is_cohort else None)
             for offset, col_name in enumerate(columns):
                 raw_value = row_data.get(col_name) if row_data else None
                 is_pct_col = offset == pct_offset
@@ -453,7 +479,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     bold=is_pct_col,
                     size=11,
                     horizontal="center",
-                    fill_color="D3D3D3" if is_cohort else None,
+                    fill_color=row_fill,
                     number_format=fmt,
                 )
 
@@ -491,11 +517,14 @@ class OutputConcatenator:
     ``study_results.xlsx``.
     """
 
-    _SHEET_ORDER_PREFIX = ["Waterfall", "WaterfallDetailed", "Table1"]
+    _SHEET_ORDER_PREFIX = ["Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"]
     _CANONICAL_NAMES = {
         "waterfall": "Waterfall",
         "waterfall_detailed": "WaterfallDetailed",
         "table1": "Table1",
+        "table1_detailed": "Table1Detailed",
+        "table1_outcomes": "Table1Outcomes",
+        "table1_outcomes_detailed": "Table1OutcomesDetailed",
     }
 
     def __init__(self, study_execution_path: str, study_name: str = "study") -> None:
@@ -539,7 +568,7 @@ class OutputConcatenator:
         return prefix + rest
 
     def _write_sheet(self, sheet, report_type: str, report_files: List[Optional[Path]], cohort_dirs: List[Path]) -> None:
-        if report_type == "Table1":
+        if report_type in ("Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"):
             self._table1_writer.write(sheet, report_files, cohort_dirs)
         else:
             self._generic_writer.write(sheet, report_files, cohort_dirs)

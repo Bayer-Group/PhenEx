@@ -88,11 +88,15 @@ class Table1Node(Reporter):
     This node depends on the cohort's characteristics being computed and produces an
     Ibis table that can be materialized to the database. The pandas DataFrame report
     can be accessed via the table1 property.
+
+    Parameters:
+        include_component_phenotypes_level: Passed through to :class:`Table1`.  When
+            set, component child phenotypes are expanded inline in the report.
     """
 
-    def __init__(self, name: str, cohort: "Cohort"):
+    def __init__(self, name: str, cohort: "Cohort", include_component_phenotypes_level=None):
         super(Table1Node, self).__init__(name=name, cohort=cohort)
-        self.reporter = Table1()
+        self.reporter = Table1(include_component_phenotypes_level=include_component_phenotypes_level)
 
         # Add dependencies on characteristics if they exist
         if cohort.characteristics:
@@ -115,11 +119,15 @@ class Table1OutcomesNode(Reporter):
 
     Identical to Table1Node but operates on cohort.outcomes instead of
     cohort.characteristics.
+
+    Parameters:
+        include_component_phenotypes_level: Passed through to :class:`Table1`.  When
+            set, component child phenotypes are expanded inline in the report.
     """
 
-    def __init__(self, name: str, cohort: "Cohort"):
+    def __init__(self, name: str, cohort: "Cohort", include_component_phenotypes_level=None):
         super(Table1OutcomesNode, self).__init__(name=name, cohort=cohort)
-        self.reporter = Table1(name="Table1Outcomes")
+        self.reporter = Table1(name="Table1Outcomes", include_component_phenotypes_level=include_component_phenotypes_level)
 
         if cohort.outcomes:
             self.add_children(cohort.outcomes)

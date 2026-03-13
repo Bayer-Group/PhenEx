@@ -119,7 +119,9 @@ class Cohort:
         self.subset_tables_entry_nodes = None
         self.subset_tables_index_nodes = None
         self.table1_node = None
+        self.table1_detailed_node = None
         self.table1_outcomes_node = None
+        self.table1_outcomes_detailed_node = None
         self.waterfall_node = None
         self.waterfall_detailed_node = None
         self.custom_reporter_nodes = []
@@ -307,6 +309,12 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_node)
+            self.table1_detailed_node = Table1Node(
+                name=f"{self.name}__table1_detailed".upper(),
+                cohort=self,
+                include_component_phenotypes_level=100,
+            )
+            reporting_nodes.append(self.table1_detailed_node)
 
         # Add Table1OutcomesNode if there are outcomes
         if self.outcomes:
@@ -315,6 +323,12 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_outcomes_node)
+            self.table1_outcomes_detailed_node = Table1OutcomesNode(
+                name=f"{self.name}__table1_outcomes_detailed".upper(),
+                cohort=self,
+                include_component_phenotypes_level=100,
+            )
+            reporting_nodes.append(self.table1_outcomes_detailed_node)
 
         # Add CustomReporterNodes for each custom reporter
         self.custom_reporter_nodes = []
@@ -660,8 +674,12 @@ class Cohort:
         """Write all available reports (table1, waterfall, waterfall_detailed) to Excel files in the given directory."""
         if self.table1_node:
             self.table1_node.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.table1_detailed_node:
+            self.table1_detailed_node.to_excel(os.path.join(path, "table1_detailed.xlsx"))
         if self.table1_outcomes_node:
             self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_excel(os.path.join(path, "table1_outcomes_detailed.xlsx"))
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
@@ -676,8 +694,12 @@ class Cohort:
         """Write all available reports as JSON files (machine-readable intermediate format)."""
         if self.table1_node:
             self.table1_node.to_json(os.path.join(path, "table1.json"))
+        if self.table1_detailed_node:
+            self.table1_detailed_node.to_json(os.path.join(path, "table1_detailed.json"))
         if self.table1_outcomes_node:
             self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_json(os.path.join(path, "table1_outcomes_detailed.json"))
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:

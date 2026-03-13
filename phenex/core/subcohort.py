@@ -9,7 +9,9 @@ class _FilteredPhenotypeView:
     """
     Wraps a phenotype and presents a filtered view of its table restricted to
     patients present in a given index table. All other attributes are delegated
-    to the underlying phenotype unchanged.
+    to the underlying phenotype unchanged.  ``children`` are themselves wrapped
+    in :class:`_FilteredPhenotypeView` so that component-phenotype counts in a
+    detailed Table1 are also scoped to the subcohort population.
     """
 
     def __init__(self, phenotype: Phenotype, index_patient_ids):
@@ -19,6 +21,13 @@ class _FilteredPhenotypeView:
     @property
     def table(self):
         return self._phenotype.table.semi_join(self._index_patient_ids, "PERSON_ID")
+
+    @property
+    def children(self):
+        raw_children = getattr(self._phenotype, "children", None) or []
+        return [
+            _FilteredPhenotypeView(c, self._index_patient_ids) for c in raw_children
+        ]
 
     def __getattr__(self, name: str):
         return getattr(self._phenotype, name)
@@ -104,6 +113,15 @@ class Subcohort(Cohort):
         reporter.execute(proxy)
         return reporter
 
+    def _make_table1_detailed_reporter(self) -> Optional["Table1"]:
+        """Build and execute a detailed Table1 reporter (with component phenotypes expanded)."""
+        if not self.cohort.characteristics:
+            return None
+        reporter = Table1(include_component_phenotypes_level=100)
+        proxy = _CohortViewForTable1(self.cohort, self.index_table)
+        reporter.execute(proxy)
+        return reporter
+
     @property
     def table1(self) -> Optional["pd.DataFrame"]:
         """
@@ -123,8 +141,13 @@ class Subcohort(Cohort):
         reporter = self._make_table1_reporter()
         if reporter:
             reporter.to_excel(os.path.join(path, "table1.xlsx"))
+        detailed_reporter = self._make_table1_detailed_reporter()
+        if detailed_reporter:
+            detailed_reporter.to_excel(os.path.join(path, "table1_detailed.xlsx"))
         if self.table1_outcomes_node:
             self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_excel(os.path.join(path, "table1_outcomes_detailed.xlsx"))
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
@@ -144,8 +167,16 @@ class Subcohort(Cohort):
                 self.cohort, "characteristic_sections", None
             )
             reporter.to_json(os.path.join(path, "table1.json"))
+        detailed_reporter = self._make_table1_detailed_reporter()
+        if detailed_reporter:
+            detailed_reporter.characteristic_sections = getattr(
+                self.cohort, "characteristic_sections", None
+            )
+            detailed_reporter.to_json(os.path.join(path, "table1_detailed.json"))
         if self.table1_outcomes_node:
             self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_json(os.path.join(path, "table1_outcomes_detailed.json"))
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:
