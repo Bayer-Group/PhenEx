@@ -48,11 +48,13 @@ class Study:
         name: str,
         cohorts: List[Cohort],
         custom_reporters: List["Reporter"] = None,
+        description: Optional[str] = None,
     ):
         self.path = path
         self.name = name
         self.cohorts = cohorts
         self.custom_reporters = custom_reporters
+        self.description = description
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
@@ -165,5 +167,10 @@ class Study:
     def _concatenate_reports(self, path_exec_dir_study):
         """Concatenate all cohort reports into a single Excel file."""
         cohort_names = [c.name for c in self.cohorts]
-        concatenator = OutputConcatenator(path_exec_dir_study, study_name=self.name, cohort_names=cohort_names)
+        concatenator = OutputConcatenator(
+            path_exec_dir_study,
+            study_name=self.name,
+            cohort_names=cohort_names,
+            description=self.description,
+        )
         concatenator.concatenate_all_reports()

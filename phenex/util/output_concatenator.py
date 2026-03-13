@@ -509,6 +509,138 @@ class Table1SheetWriter(_BaseSheetWriter):
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Info sheet writer
+# ---------------------------------------------------------------------------
+
+
+class InfoSheetWriter(_BaseSheetWriter):
+    """Writes the Info sheet: PhenEx version, cohort sizes, and study description.
+
+    Layout::
+
+        Row 1  : "Executed with PhenEx v<version>"
+        Row 2  : blank
+        Row 3  : column headers  Cohort | Final N
+        Row 4+ : one row per cohort
+        blank row
+        description lines starting in col B, one row per line;
+        Markdown # / ## / ### headers are rendered with larger font.
+    """
+
+    _HEADER_SIZES: Dict[int, int] = {1: 18, 2: 14, 3: 12}
+
+    def write(
+        self,
+        sheet,
+        cohort_dirs: List[Path],
+        study_path: Path,
+        description: Optional[str],
+    ) -> None:
+        sheet.column_dimensions["A"].width = 30
+        sheet.column_dimensions["B"].width = 50
+
+        current_row = 1
+
+        # PhenEx version
+        phenex_version = self._read_phenex_version(study_path)
+        self._write_cell(
+            sheet, current_row, 1,
+            f"Executed with PhenEx v{phenex_version}",
+            bold=True, size=13,
+        )
+        current_row += 2  # blank row
+
+        # Cohort table headers
+        self._write_cell(sheet, current_row, 1, "Cohort", bold=True, size=11)
+        self._write_cell(sheet, current_row, 2, "Final N", bold=True, size=11, horizontal="right")
+        current_row += 1
+
+        # One row per cohort
+        for cohort_dir in cohort_dirs:
+            final_n = self._read_final_n(cohort_dir)
+            self._write_cell(sheet, current_row, 1, cohort_dir.name, size=11)
+            self._write_cell(
+                sheet, current_row, 2, final_n, size=11, horizontal="right",
+                number_format="#,##0" if isinstance(final_n, int) else None,
+            )
+            current_row += 1
+
+        current_row += 1  # blank row before description
+
+        # Description
+        if description:
+            for line in description.splitlines():
+                text, font_size, bold = self._parse_markdown_line(line)
+                if text is not None:
+                    self._write_cell(
+                        sheet, current_row, 2, text,
+                        bold=bold, size=font_size,
+                    )
+                current_row += 1
+
+    # ------------------------------------------------------------------
+
+    def _read_phenex_version(self, study_path: Path) -> str:
+        info_file = study_path / "info.txt"
+        if info_file.exists():
+            for line in info_file.read_text().splitlines():
+                if line.startswith("PhenEx Version:"):
+                    return line.split(":", 1)[1].strip()
+        return "unknown"
+
+    def _read_final_n(self, cohort_dir: Path):
+        """Return the final cohort N from the Waterfall JSON, or '-' if unavailable."""
+        for stem in ("Waterfall", "waterfall", "WaterfallDetailed", "waterfall_detailed"):
+            json_file = cohort_dir / f"{stem}.json"
+            if json_file.exists():
+                try:
+                    data = self._load_json(json_file)
+                    rows = [
+                        r for r in data.get("rows", [])
+                        if str(r.get("Type", "")).lower() != "component"
+                    ]
+                    if rows:
+                        n = rows[-1].get("N")
+                        if n is not None:
+                            return n
+                except Exception:
+                    pass
+        return "-"
+
+    def _parse_markdown_line(self, line: str):
+        """Return (text, font_size, bold) for a single markdown line.
+
+        Returns (None, ...) for blank lines to signal an empty row.
+        """
+        # ATX headers: up to three levels
+        for level in (3, 2, 1):
+            prefix = "#" * level + " "
+            if line.startswith(prefix):
+                return line[len(prefix):], self._HEADER_SIZES.get(level, 11), True
+
+        # Unordered list
+        if line.startswith("- ") or line.startswith("* "):
+            return "\u2022 " + line[2:], 11, False
+
+        # Ordered list
+        m = re.match(r"^\d+\.\s+(.*)", line)
+        if m:
+            return line, 11, False
+
+        # Blank line
+        if not line.strip():
+            return None, 11, False
+
+        # Plain text
+        return line, 11, False
+
+
+# ---------------------------------------------------------------------------
+# Top-level orchestrator
+# ---------------------------------------------------------------------------
+
+
 class OutputConcatenator:
     """Concatenates per-cohort JSON reports into a single multi-sheet study file.
 
@@ -517,7 +649,7 @@ class OutputConcatenator:
     ``study_results.xlsx``.
     """
 
-    _SHEET_ORDER_PREFIX = ["Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"]
+    _SHEET_ORDER_PREFIX = ["Info", "Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"]
     _CANONICAL_NAMES = {
         "waterfall": "Waterfall",
         "waterfall_detailed": "WaterfallDetailed",
@@ -527,11 +659,13 @@ class OutputConcatenator:
         "table1_outcomes_detailed": "Table1OutcomesDetailed",
     }
 
-    def __init__(self, study_execution_path: str, study_name: str = "study", cohort_names: Optional[List[str]] = None) -> None:
+    def __init__(self, study_execution_path: str, study_name: str = "study", cohort_names: Optional[List[str]] = None, description: Optional[str] = None) -> None:
         self.study_path = Path(study_execution_path)
         self.cohort_names = cohort_names
+        self.description = description
         timestamp = self.study_path.name
         self.output_file = self.study_path / f"results_{study_name}_{timestamp}.xlsx"
+        self._info_writer = InfoSheetWriter()
         self._generic_writer = GenericSheetWriter()
         self._table1_writer = Table1SheetWriter()
 
@@ -550,6 +684,11 @@ class OutputConcatenator:
 
         output_wb = openpyxl.Workbook()
         output_wb.remove(output_wb.active)
+
+        # Info sheet is always first
+        info_sheet = output_wb.create_sheet(title="Info")
+        info_sheet.sheet_view.showGridLines = False
+        self._info_writer.write(info_sheet, cohort_dirs, self.study_path, self.description)
 
         for report_type in self._sheet_order(reports_by_type):
             logger.info(f"Concatenating {report_type} reports...")
