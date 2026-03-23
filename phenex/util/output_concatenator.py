@@ -590,22 +590,16 @@ class InfoSheetWriter(_BaseSheetWriter):
         return "unknown"
 
     def _read_final_n(self, cohort_dir: Path):
-        """Return the final cohort N from the Waterfall JSON, or '-' if unavailable."""
-        for stem in ("Waterfall", "waterfall", "WaterfallDetailed", "waterfall_detailed"):
-            json_file = cohort_dir / f"{stem}.json"
-            if json_file.exists():
-                try:
-                    data = self._load_json(json_file)
-                    rows = [
-                        r for r in data.get("rows", [])
-                        if str(r.get("Type", "")).lower() != "component"
-                    ]
-                    if rows:
-                        n = rows[-1].get("N")
-                        if n is not None:
-                            return n
-                except Exception:
-                    pass
+        """Return the final cohort size from Waterfall.json ('Remaining' of last row)."""
+        json_file = cohort_dir / "Waterfall.json"
+        if json_file.exists():
+            try:
+                data = self._load_json(json_file)
+                rows = data.get("rows", [])
+                if rows:
+                    return rows[-1].get("Remaining", "-")
+            except Exception:
+                pass
         return "-"
 
     def _parse_markdown_line(self, line: str):
