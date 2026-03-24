@@ -577,16 +577,17 @@ class NodeGroup(Node):
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
-        Execute all children nodes and return a table with information about dependencies.
-        The execution logic is handled by the parent Node class.
+        NodeGroup is a coordinator node only. Children are executed by the parent Node
+        execution engine; there is no table to produce here.
         """
-        # Create a table with NODE_NAME and NODE_PARAMS for each dependency
-        data = []
-        for node in self.dependencies:
-            data.append(
-                {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
-            )
+        return None
+        # # Create a table with NODE_NAME and NODE_PARAMS for each dependency
+        # data = []
+        # for node in self.dependencies:
+        #     data.append(
+        #         {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
+        #     )
 
-        # Create a pandas DataFrame and convert to ibis memtable
-        df = pd.DataFrame(data)
-        return ibis.memtable(df)
+        # # Create a pandas DataFrame and convert to ibis memtable
+        # df = pd.DataFrame(data)
+        # return ibis.memtable(df)
