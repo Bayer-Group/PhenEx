@@ -179,6 +179,19 @@ class Cohort:
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
         # Filter out None tables (tables not found in source data)
         available_tables = {k: v for k, v in tables.items() if v is not None}
+
+        # If a derived table has the same name as a mapped table, the mapped table must be
+        # discarded — otherwise _get_subset_tables_nodes would produce two SubsetTable nodes
+        # with identical names, causing a duplicate-node error in the execution graph.
+        all_derived = list(self.derived_tables or []) + list(self.derived_tables_post_entry or [])
+        for dt in all_derived:
+            if dt.name in available_tables:
+                logger.warning(
+                    f"Derived table '{dt.name}' has the same name as a provided mapped table. "
+                    f"The mapped table will be discarded and the derived table will be used for domain '{dt.name}'."
+                )
+                del available_tables[dt.name]
+
         domains = list(available_tables.keys())
         required_domains = self._get_domains()
 
