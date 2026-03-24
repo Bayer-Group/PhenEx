@@ -88,12 +88,12 @@ class SnowflakeConnector:
             "SNOWFLAKE_PASSWORD"
         )
         self.SNOWFLAKE_PKEY = SNOWFLAKE_PKEY or os.environ.get("SNOWFLAKE_PKEY")
-        self.SNOWFLAKE_SOURCE_DATABASE = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
+        source_db = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
             "SNOWFLAKE_SOURCE_DATABASE"
         )
-        self.SNOWFLAKE_DEST_DATABASE = SNOWFLAKE_DEST_DATABASE or os.environ.get(
-            "SNOWFLAKE_DEST_DATABASE"
-        )
+        self.SNOWFLAKE_SOURCE_DATABASE = source_db.upper() if source_db else None
+        dest_db = SNOWFLAKE_DEST_DATABASE or os.environ.get("SNOWFLAKE_DEST_DATABASE")
+        self.SNOWFLAKE_DEST_DATABASE = dest_db.upper() if dest_db else None
 
         try:
             _, _ = self.SNOWFLAKE_SOURCE_DATABASE.split(".")
