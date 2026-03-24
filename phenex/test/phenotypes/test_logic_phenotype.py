@@ -44,8 +44,8 @@ class LogicPhenotypeTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(path=
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
         c1 = {
@@ -203,8 +203,8 @@ class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(path=
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -395,8 +395,8 @@ class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(path=
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -538,8 +538,8 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
     test_date = True
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(path=
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -765,8 +765,8 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(path=
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
