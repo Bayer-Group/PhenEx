@@ -49,7 +49,7 @@ class CodelistPhenotypeTestGenerator(PhenotypeTestGenerator):
         }
 
         test_infos = [c1, c2, c3, c1c2, c1c3, c2c3, c1c2c3]
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         for test_info in test_infos:
@@ -167,7 +167,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerat
         }
 
         test_infos = [t1, t2, t3, t4, t5, t6, t7]
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         for test_info in test_infos:
@@ -259,7 +259,7 @@ class CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator(
 
     def define_phenotype_tests(self):
         # INDEX PHENOTYPES
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -509,7 +509,7 @@ class CodelistPhenotypeReturnDateFilterTestGenerator(PhenotypeTestGenerator):
         }
 
         test_infos = [t1, t2, t3, t4, t5, t6, t7, t8, t9]  # , t10, t11]
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         for test_info in test_infos:
@@ -607,7 +607,7 @@ class CodelistPhenotypeCategoricalFilterTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -694,7 +694,7 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator(
         return [{"name": "condition_occurrence", "df": df, "column_types": {}}]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -800,7 +800,7 @@ class CodelistPhenotypeCategoricalFilterIsNullTestGenerator(PhenotypeTestGenerat
         return [{"name": "condition_occurrence", "df": df, "column_types": {}}]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -990,7 +990,7 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 

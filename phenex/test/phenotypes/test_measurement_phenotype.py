@@ -36,7 +36,7 @@ class MeasurementPhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
         return [{"name": "MEASUREMENT", "df": df}]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
@@ -87,7 +87,7 @@ class MeasurementPhenotypeReturnAllValueFilterTestGenerator(PhenotypeTestGenerat
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
@@ -150,7 +150,7 @@ class MeasurementPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGene
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
@@ -273,7 +273,7 @@ class MeasurementPhenotypeValueDailyAggregationTestGenerator(PhenotypeTestGenera
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -559,7 +559,7 @@ class MeasurementPhenotypeValueAllAggregationTestGenerator(
     test_date = False
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
@@ -759,7 +759,7 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
@@ -897,7 +897,7 @@ class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
         ]
 
     def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         phenotype_to_filter_further = MeasurementPhenotype(

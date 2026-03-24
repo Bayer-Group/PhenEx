@@ -106,11 +106,13 @@ class TestStudyOutput(unittest.TestCase):
     def test_sheet_names_and_order(self):
         self.assertEqual(
             self.wb.sheetnames,
-            ["Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed"],
+            ["Info", "Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed"],
         )
 
     def test_each_sheet_has_both_cohort_headers(self):
         for sheet_name in self.wb.sheetnames:
+            if sheet_name == "Info":
+                continue
             sheet = self.wb[sheet_name]
             row1 = {
                 sheet.cell(row=1, column=c).value

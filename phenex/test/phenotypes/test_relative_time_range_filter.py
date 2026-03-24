@@ -125,7 +125,7 @@ class CodelistPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerat
         }
 
         test_infos = [t1, t2, t3, t4, t5, t6, t7]
-        codelist_factory = LocalCSVCodelistFactory(
+        codelist_factory = LocalCSVCodelistFactory(path=
             os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         for test_info in test_infos:
