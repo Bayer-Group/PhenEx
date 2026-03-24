@@ -262,7 +262,9 @@ class Table1SheetWriter(_BaseSheetWriter):
     """
 
     def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
-        master_names, sections, name_to_level = self._build_master_names_and_sections(report_files)
+        master_names, sections, name_to_level = self._build_master_names_and_sections(
+            report_files
+        )
         if not master_names:
             return
 
@@ -279,7 +281,11 @@ class Table1SheetWriter(_BaseSheetWriter):
             try:
                 data = self._load_json(report_file)
                 rows = data.get("rows", [])
-                columns = [c for c in (rows[0].keys() if rows else []) if c not in ("Name", "_level")]
+                columns = [
+                    c
+                    for c in (rows[0].keys() if rows else [])
+                    if c not in ("Name", "_level")
+                ]
                 if not columns:
                     continue
                 num_value_cols = len(columns)
@@ -287,7 +293,13 @@ class Table1SheetWriter(_BaseSheetWriter):
                 self._add_cohort_header(sheet, cohort_name, current_col, num_value_cols)
                 pct_offset = self._write_column_labels(sheet, columns, current_col)
                 self._write_value_rows(
-                    sheet, rows, columns, expanded, current_col, pct_offset, name_to_level
+                    sheet,
+                    rows,
+                    columns,
+                    expanded,
+                    current_col,
+                    pct_offset,
+                    name_to_level,
                 )
                 self._set_value_column_widths(sheet, rows, columns, current_col)
 
@@ -368,7 +380,12 @@ class Table1SheetWriter(_BaseSheetWriter):
                 return True
         return False
 
-    def _write_name_column(self, sheet, expanded: List[Tuple[str, str]], name_to_level: Dict[str, int] = None):
+    def _write_name_column(
+        self,
+        sheet,
+        expanded: List[Tuple[str, str]],
+        name_to_level: Dict[str, int] = None,
+    ):
         """Populate col A: row-2 label, then data and section rows."""
         name_to_level = name_to_level or {}
         self._write_cell(
@@ -545,15 +562,20 @@ class InfoSheetWriter(_BaseSheetWriter):
         # PhenEx version
         phenex_version = self._read_phenex_version(study_path)
         self._write_cell(
-            sheet, current_row, 1,
+            sheet,
+            current_row,
+            1,
             f"Executed with PhenEx v{phenex_version}",
-            bold=True, size=13,
+            bold=True,
+            size=13,
         )
         current_row += 2  # blank row
 
         # Cohort table headers
         self._write_cell(sheet, current_row, 1, "Cohort", bold=True, size=11)
-        self._write_cell(sheet, current_row, 2, "Final N", bold=True, size=11, horizontal="right")
+        self._write_cell(
+            sheet, current_row, 2, "Final N", bold=True, size=11, horizontal="right"
+        )
         current_row += 1
 
         # One row per cohort
@@ -561,7 +583,12 @@ class InfoSheetWriter(_BaseSheetWriter):
             final_n = self._read_final_n(cohort_dir)
             self._write_cell(sheet, current_row, 1, cohort_dir.name, size=11)
             self._write_cell(
-                sheet, current_row, 2, final_n, size=11, horizontal="right",
+                sheet,
+                current_row,
+                2,
+                final_n,
+                size=11,
+                horizontal="right",
                 number_format="#,##0" if isinstance(final_n, int) else None,
             )
             current_row += 1
@@ -574,8 +601,12 @@ class InfoSheetWriter(_BaseSheetWriter):
                 text, font_size, bold = self._parse_markdown_line(line)
                 if text is not None:
                     self._write_cell(
-                        sheet, current_row, 2, text,
-                        bold=bold, size=font_size,
+                        sheet,
+                        current_row,
+                        2,
+                        text,
+                        bold=bold,
+                        size=font_size,
                     )
                 current_row += 1
 
@@ -611,7 +642,7 @@ class InfoSheetWriter(_BaseSheetWriter):
         for level in (3, 2, 1):
             prefix = "#" * level + " "
             if line.startswith(prefix):
-                return line[len(prefix):], self._HEADER_SIZES.get(level, 11), True
+                return line[len(prefix) :], self._HEADER_SIZES.get(level, 11), True
 
         # Unordered list
         if line.startswith("- ") or line.startswith("* "):
@@ -643,7 +674,15 @@ class OutputConcatenator:
     ``study_results.xlsx``.
     """
 
-    _SHEET_ORDER_PREFIX = ["Info", "Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"]
+    _SHEET_ORDER_PREFIX = [
+        "Info",
+        "Waterfall",
+        "WaterfallDetailed",
+        "Table1",
+        "Table1Detailed",
+        "Table1Outcomes",
+        "Table1OutcomesDetailed",
+    ]
     _CANONICAL_NAMES = {
         "waterfall": "Waterfall",
         "waterfall_detailed": "WaterfallDetailed",
@@ -653,7 +692,13 @@ class OutputConcatenator:
         "table1_outcomes_detailed": "Table1OutcomesDetailed",
     }
 
-    def __init__(self, study_execution_path: str, study_name: str = "study", cohort_names: Optional[List[str]] = None, description: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        study_execution_path: str,
+        study_name: str = "study",
+        cohort_names: Optional[List[str]] = None,
+        description: Optional[str] = None,
+    ) -> None:
         self.study_path = Path(study_execution_path)
         self.cohort_names = cohort_names
         self.description = description
@@ -682,13 +727,17 @@ class OutputConcatenator:
         # Info sheet is always first
         info_sheet = output_wb.create_sheet(title="Info")
         info_sheet.sheet_view.showGridLines = False
-        self._info_writer.write(info_sheet, cohort_dirs, self.study_path, self.description)
+        self._info_writer.write(
+            info_sheet, cohort_dirs, self.study_path, self.description
+        )
 
         for report_type in self._sheet_order(reports_by_type):
             logger.info(f"Concatenating {report_type} reports...")
             sheet = output_wb.create_sheet(title=report_type)
             sheet.sheet_view.showGridLines = False
-            self._write_sheet(sheet, report_type, reports_by_type[report_type], cohort_dirs)
+            self._write_sheet(
+                sheet, report_type, reports_by_type[report_type], cohort_dirs
+            )
 
         output_wb.save(self.output_file)
         self._suppress_number_as_text_warnings(self.output_file)
@@ -701,8 +750,19 @@ class OutputConcatenator:
         rest = sorted(k for k in reports_by_type if k not in self._SHEET_ORDER_PREFIX)
         return prefix + rest
 
-    def _write_sheet(self, sheet, report_type: str, report_files: List[Optional[Path]], cohort_dirs: List[Path]) -> None:
-        if report_type in ("Table1", "Table1Detailed", "Table1Outcomes", "Table1OutcomesDetailed"):
+    def _write_sheet(
+        self,
+        sheet,
+        report_type: str,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+    ) -> None:
+        if report_type in (
+            "Table1",
+            "Table1Detailed",
+            "Table1Outcomes",
+            "Table1OutcomesDetailed",
+        ):
             self._table1_writer.write(sheet, report_files, cohort_dirs)
         else:
             self._generic_writer.write(sheet, report_files, cohort_dirs)
@@ -717,7 +777,9 @@ class OutputConcatenator:
             return [dirs[name] for name in self.cohort_names if name in dirs]
         return sorted(dirs.values(), key=lambda x: x.name)
 
-    def _group_reports_by_type(self, cohort_dirs: List[Path]) -> Dict[str, List[Optional[Path]]]:
+    def _group_reports_by_type(
+        self, cohort_dirs: List[Path]
+    ) -> Dict[str, List[Optional[Path]]]:
         """Group report files by type, aligned to cohort_dirs.
 
         Returns a dict mapping report type name to a list of Optional[Path] with

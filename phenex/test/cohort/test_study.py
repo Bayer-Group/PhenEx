@@ -105,7 +105,8 @@ class TestStudyOutput(unittest.TestCase):
 
     def test_sheet_names_and_order(self):
         self.assertEqual(
-            self.wb.sheetnames, ["Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed"]
+            self.wb.sheetnames,
+            ["Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed"],
         )
 
     def test_each_sheet_has_both_cohort_headers(self):
@@ -129,7 +130,12 @@ class TestStudyOutput(unittest.TestCase):
 
     def test_json_reports_written_per_cohort(self):
         for name in self.COHORT_NAMES:
-            for fname in ("table1.json", "table1_detailed.json", "waterfall.json", "waterfall_detailed.json"):
+            for fname in (
+                "table1.json",
+                "table1_detailed.json",
+                "waterfall.json",
+                "waterfall_detailed.json",
+            ):
                 self.assertTrue(
                     (self.exec_dir / name / fname).exists(),
                     f"{name}/{fname} missing",

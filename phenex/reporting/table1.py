@@ -76,16 +76,22 @@ class Table1(Reporter):
         children = getattr(phenotype, "children", None) or []
         for child in children:
             indent = "\u00a0\u00a0" * level  # non-breaking spaces for visual indent
-            view = _ComponentPhenotypeView(child, f"{indent}{child.display_name}", level=level)
+            view = _ComponentPhenotypeView(
+                child, f"{indent}{child.display_name}", level=level
+            )
             result.append(view)
             self._collect_components(child, result, level + 1)
 
-    def execute(self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None) -> pd.DataFrame:
+    def execute(
+        self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None
+    ) -> pd.DataFrame:
         self.cohort = cohort
 
         if phenotypes is None:
             self._phenotypes = cohort.characteristics
-            self.characteristic_sections = getattr(cohort, "characteristic_sections", None)
+            self.characteristic_sections = getattr(
+                cohort, "characteristic_sections", None
+            )
         elif isinstance(phenotypes, dict):
             self.characteristic_sections = {
                 section: [p.display_name for p in phenos]
@@ -120,7 +126,9 @@ class Table1(Reporter):
         self.df_values = self._report_value_columns()
 
         # add the full cohort size as the first row
-        df_n = pd.DataFrame({"N": [self.N], "inex_order": [-1], "_level": [0]}, index=["Cohort"])
+        df_n = pd.DataFrame(
+            {"N": [self.N], "inex_order": [-1], "_level": [0]}, index=["Cohort"]
+        )
         # add percentage column
         dfs = [
             df

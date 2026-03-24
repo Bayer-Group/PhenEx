@@ -145,9 +145,13 @@ class Subcohort(Cohort):
         if detailed_reporter:
             detailed_reporter.to_excel(os.path.join(path, "table1_detailed.xlsx"))
         if self.table1_outcomes_node:
-            self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
+            self.table1_outcomes_node.to_excel(
+                os.path.join(path, "table1_outcomes.xlsx")
+            )
         if self.table1_outcomes_detailed_node:
-            self.table1_outcomes_detailed_node.to_excel(os.path.join(path, "table1_outcomes_detailed.xlsx"))
+            self.table1_outcomes_detailed_node.to_excel(
+                os.path.join(path, "table1_outcomes_detailed.xlsx")
+            )
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
@@ -174,9 +178,13 @@ class Subcohort(Cohort):
             )
             detailed_reporter.to_json(os.path.join(path, "table1_detailed.json"))
         if self.table1_outcomes_node:
-            self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
+            self.table1_outcomes_node.to_json(
+                os.path.join(path, "table1_outcomes.json")
+            )
         if self.table1_outcomes_detailed_node:
-            self.table1_outcomes_detailed_node.to_json(os.path.join(path, "table1_outcomes_detailed.json"))
+            self.table1_outcomes_detailed_node.to_json(
+                os.path.join(path, "table1_outcomes_detailed.json")
+            )
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:

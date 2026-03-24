@@ -94,9 +94,13 @@ class Table1Node(Reporter):
             set, component child phenotypes are expanded inline in the report.
     """
 
-    def __init__(self, name: str, cohort: "Cohort", include_component_phenotypes_level=None):
+    def __init__(
+        self, name: str, cohort: "Cohort", include_component_phenotypes_level=None
+    ):
         super(Table1Node, self).__init__(name=name, cohort=cohort)
-        self.reporter = Table1(include_component_phenotypes_level=include_component_phenotypes_level)
+        self.reporter = Table1(
+            include_component_phenotypes_level=include_component_phenotypes_level
+        )
 
         # Add dependencies on characteristics if they exist
         if cohort.characteristics:
@@ -125,9 +129,14 @@ class Table1OutcomesNode(Reporter):
             set, component child phenotypes are expanded inline in the report.
     """
 
-    def __init__(self, name: str, cohort: "Cohort", include_component_phenotypes_level=None):
+    def __init__(
+        self, name: str, cohort: "Cohort", include_component_phenotypes_level=None
+    ):
         super(Table1OutcomesNode, self).__init__(name=name, cohort=cohort)
-        self.reporter = Table1(name="Table1Outcomes", include_component_phenotypes_level=include_component_phenotypes_level)
+        self.reporter = Table1(
+            name="Table1Outcomes",
+            include_component_phenotypes_level=include_component_phenotypes_level,
+        )
 
         if cohort.outcomes:
             self.add_children(cohort.outcomes)
@@ -138,7 +147,9 @@ class Table1OutcomesNode(Reporter):
         )
         self.reporter.execute(self.cohort, phenotypes=self.cohort.outcomes)
         df = self.reporter.df
-        logger.debug(f"{self.name} outcomes report generated for cohort '{self.cohort.name}'.")
+        logger.debug(
+            f"{self.name} outcomes report generated for cohort '{self.cohort.name}'."
+        )
         return ibis.memtable(self._normalize_df(df))
 
 
@@ -205,7 +216,11 @@ class CustomReporterNode(Reporter):
         logger.debug(
             f"Custom report '{self.reporter.name}' generated for cohort '{self.cohort.name}'."
         )
-        if hasattr(self.reporter, "df") and self.reporter.df is not None and len(self.reporter.df) > 0:
+        if (
+            hasattr(self.reporter, "df")
+            and self.reporter.df is not None
+            and len(self.reporter.df) > 0
+        ):
             return ibis.memtable(self._normalize_df(self.reporter.df.copy()))
         return None
 

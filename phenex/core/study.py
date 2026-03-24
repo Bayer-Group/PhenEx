@@ -104,7 +104,9 @@ class Study:
             self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
             # Merge study-level custom reporters into the cohort before execution
-            _cohort.custom_reporters = (_cohort.custom_reporters or []) + self.custom_reporters
+            _cohort.custom_reporters = (
+                _cohort.custom_reporters or []
+            ) + self.custom_reporters
 
             _cohort.execute(
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads

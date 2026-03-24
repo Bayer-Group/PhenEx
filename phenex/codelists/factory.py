@@ -32,12 +32,14 @@ class LocalFileCodelistFactory:
         self.name_codelist_column = name_codelist_column
         self.name_code_type_column = name_code_type_column
         try:
-            if '.csv' in path:
+            if ".csv" in path:
                 self.df = pd.read_csv(path)
-            elif '.xlsx' in path:
+            elif ".xlsx" in path:
                 self.df = pd.read_excel(path)
             else:
-                raise ValueError("Unsupported file format. Only CSV and Excel are supported.")
+                raise ValueError(
+                    "Unsupported file format. Only CSV and Excel are supported."
+                )
         except:
             raise ValueError("Could not read the file at the given path.")
 
@@ -81,12 +83,14 @@ class LocalCSVCodelistFactory(LocalFileCodelistFactory):
     """
     Deprecated : LocalCSVCodelistFactory has been replaced by LocalFileCodelistFactory for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
     """
+
     def __init__(self, **kwargs):
         warnings.warn(
             "LocalCSVCodelistFactory is deprecated and will be removed in a future release. Please use LocalFileCodelistFactory instead.",
             DeprecationWarning,
         )
         super(LocalCSVCodelistFactory, self).__init__(**kwargs)
+
 
 class MedConBCodelistFactory:
     """

@@ -15,7 +15,12 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
-from phenex.core.reporter_nodes import WaterfallNode, Table1Node, Table1OutcomesNode, CustomReporterNode
+from phenex.core.reporter_nodes import (
+    WaterfallNode,
+    Table1Node,
+    Table1OutcomesNode,
+    CustomReporterNode,
+)
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -183,7 +188,9 @@ class Cohort:
         # If a derived table has the same name as a mapped table, the mapped table must be
         # discarded — otherwise _get_subset_tables_nodes would produce two SubsetTable nodes
         # with identical names, causing a duplicate-node error in the execution graph.
-        all_derived = list(self.derived_tables or []) + list(self.derived_tables_post_entry or [])
+        all_derived = list(self.derived_tables or []) + list(
+            self.derived_tables_post_entry or []
+        )
         for dt in all_derived:
             if dt.name in available_tables:
                 logger.warning(
@@ -554,7 +561,6 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
 
-
         if self.derived_tables_post_entry_stage:
             logger.info(
                 f"Cohort '{self.name}': executing derived tables post-entry stage ..."
@@ -572,7 +578,7 @@ class Cohort:
             entry_dates = self.entry_criterion.table.select(
                 "PERSON_ID", "EVENT_DATE"
             ).rename({"INDEX_DATE": "EVENT_DATE"})
-            #TODO this is a bit hacky, consider a cleaner way to handle this if we want to support post-entry derived tables in the long term i.e. a DERIVED_TABLES class that adds index table automatically if present in the source derived table.
+            # TODO this is a bit hacky, consider a cleaner way to handle this if we want to support post-entry derived tables in the long term i.e. a DERIVED_TABLES class that adds index table automatically if present in the source derived table.
             for node in self.derived_tables_post_entry:
                 table_with_index = node.table.join(entry_dates, "PERSON_ID")
                 self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
@@ -601,7 +607,9 @@ class Cohort:
             for node in self.derived_tables_post_entry:
                 if node.name in self.subset_tables_entry:
                     entry_tbl = self.subset_tables_entry[node.name]
-                    filtered_ibis = entry_tbl.table.semi_join(index_person_ids, "PERSON_ID")
+                    filtered_ibis = entry_tbl.table.semi_join(
+                        index_person_ids, "PERSON_ID"
+                    )
                     self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
 
         if self.reporting_stage:
@@ -688,11 +696,17 @@ class Cohort:
         if self.table1_node:
             self.table1_node.to_excel(os.path.join(path, "table1.xlsx"))
         if self.table1_detailed_node:
-            self.table1_detailed_node.to_excel(os.path.join(path, "table1_detailed.xlsx"))
+            self.table1_detailed_node.to_excel(
+                os.path.join(path, "table1_detailed.xlsx")
+            )
         if self.table1_outcomes_node:
-            self.table1_outcomes_node.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
+            self.table1_outcomes_node.to_excel(
+                os.path.join(path, "table1_outcomes.xlsx")
+            )
         if self.table1_outcomes_detailed_node:
-            self.table1_outcomes_detailed_node.to_excel(os.path.join(path, "table1_outcomes_detailed.xlsx"))
+            self.table1_outcomes_detailed_node.to_excel(
+                os.path.join(path, "table1_outcomes_detailed.xlsx")
+            )
         if self.waterfall_node:
             self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
         if self.waterfall_detailed_node:
@@ -708,11 +722,17 @@ class Cohort:
         if self.table1_node:
             self.table1_node.to_json(os.path.join(path, "table1.json"))
         if self.table1_detailed_node:
-            self.table1_detailed_node.to_json(os.path.join(path, "table1_detailed.json"))
+            self.table1_detailed_node.to_json(
+                os.path.join(path, "table1_detailed.json")
+            )
         if self.table1_outcomes_node:
-            self.table1_outcomes_node.to_json(os.path.join(path, "table1_outcomes.json"))
+            self.table1_outcomes_node.to_json(
+                os.path.join(path, "table1_outcomes.json")
+            )
         if self.table1_outcomes_detailed_node:
-            self.table1_outcomes_detailed_node.to_json(os.path.join(path, "table1_outcomes_detailed.json"))
+            self.table1_outcomes_detailed_node.to_json(
+                os.path.join(path, "table1_outcomes_detailed.json")
+            )
         if self.waterfall_node:
             self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
         if self.waterfall_detailed_node:

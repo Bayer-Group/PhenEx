@@ -386,7 +386,10 @@ class Table2(Reporter):
                 days_column_name: ibis.case()
                 .when(first_event.first_event_date.isnull(), None)
                 .else_(
-                    (first_event.first_event_date.cast("date") - first_event.INDEX_DATE.cast("date")).cast(int)
+                    (
+                        first_event.first_event_date.cast("date")
+                        - first_event.INDEX_DATE.cast("date")
+                    ).cast(int)
                 )
                 .end(),
             }
