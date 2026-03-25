@@ -752,3 +752,33 @@ class Cohort:
         # serialized; drop them from the frozen cohort definition.
         d.pop("custom_reporters", None)
         return d
+
+    def get_codelists(self, as_dataframe=False):
+        """
+        Get a dictionary of all codelists used in any phenotype in this cohort. The keys are the codelist names and the values are the codelist objects.
+        """
+        top_level_nodes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
+        all_nodes = top_level_nodes + sum([t.dependencies for t in top_level_nodes], [])
+        codelists = {
+            pt.display_name: pt.codelist
+            for pt in all_nodes
+            if getattr(pt, "codelist", None) is not None
+        }
+        if as_dataframe:
+            import pandas as pd
+
+            _dfs = []
+            for name_pt, codelist in codelists.items():
+                codelist_df = codelist.df
+                codelist_df["phenotype"] = name_pt
+                _dfs.append(codelist_df)
+            codelists_df = pd.concat(_dfs, ignore_index=True)
+            return codelists_df
+
+        return codelists
