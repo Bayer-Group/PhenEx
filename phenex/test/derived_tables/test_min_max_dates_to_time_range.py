@@ -19,7 +19,7 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
         # P3: Multiple events on the same day in DRUG_EXPOSURE
         # P4: Event found only in CONDITION_OCCURRENCE
         # P5: Events found across both DRUG_EXPOSURE and CONDITION_OCCURRENCE
-        
+
         df_drug = pd.DataFrame.from_records(
             [
                 ("P1", "c1", "2020-01-01"),  # Global min for P1
@@ -43,13 +43,13 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
             columns=["PERSON_ID", "CODE", "EVENT_DATE"],
         )
         df_condition["EVENT_DATE"] = pd.to_datetime(df_condition["EVENT_DATE"])
-        
+
         # An invalid table without EVENT_DATE
         df_visit = pd.DataFrame.from_records(
             [
                 ("P1", "V1", "c1"),
             ],
-            columns=["PERSON_ID", "VISIT_ID", "CODE"]
+            columns=["PERSON_ID", "VISIT_ID", "CODE"],
         )
 
         return [
@@ -64,7 +64,7 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
             {
                 "name": "VISIT_OCCURRENCE",
                 "df": df_visit,
-            }
+            },
         ]
 
     def define_derived_table_tests(self):
@@ -94,6 +94,7 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
                 "join_on": ["PERSON_ID", "start_date", "end_date"],
             }
         ]
+
 
 def test_min_max_dates_to_time_range():
     test_generator = MinMaxDatesToTimeRangeTestGenerator()
