@@ -116,7 +116,7 @@ class MeasurementChangePhenotypeTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         measurement_phenotype = MeasurementPhenotype(
             name="measurement",
