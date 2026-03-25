@@ -55,6 +55,7 @@ nav:
       - DerivedTables:
           - CombineOverlappingPeriods: api/derived_tables/combine_overlapping_periods.md
           - EventsToTimeRange: api/derived_tables/events_to_time_range.md
+          - MinMaxDatesToTimeRange: api/derived_tables/min_max_dates_to_time_range.md
       - Connectors:
           - Connectors: api/ibis_connect.md
           - Mappers: api/mappers.md

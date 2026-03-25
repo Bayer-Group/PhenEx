@@ -94,6 +94,7 @@ from .codelists import (
 from .derived_tables import (
     CombineOverlappingPeriods,
     EventsToTimeRange,
+    MinMaxDatesToTimeRange,
 )
 
 # Serialization utilities
@@ -182,8 +183,10 @@ __all__ = [
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
     "MedConBCollection",
+    # Derived Tables
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
+    "MinMaxDatesToTimeRange",
     # Serialization
     "dump",
     "dumps",
