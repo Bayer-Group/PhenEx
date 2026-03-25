@@ -1,3 +1,3 @@
 # LocalCSVCodelistFactory
 
-::: phenex.codelists.codelists.LocalCSVCodelistFactory
+::: phenex.codelists.factory.LocalCSVCodelistFactory
