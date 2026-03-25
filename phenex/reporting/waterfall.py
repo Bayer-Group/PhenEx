@@ -44,7 +44,7 @@ class Waterfall(Reporter):
         # create info dictionaries for each phenotype containing counts
         self.ds = []
         table = cohort.entry_criterion.table
-        N_entry = table.count().execute()
+        N_entry = table.select("PERSON_ID").distinct().count().execute()
         index = 1
         self.ds.append(
             {
@@ -53,7 +53,7 @@ class Waterfall(Reporter):
                 "Index": str(index),
                 "Name": (cohort.entry_criterion.display_name),
                 "N": N_entry,
-                "Remaining": table.count().execute(),
+                "Remaining": N_entry,
             }
         )
 
