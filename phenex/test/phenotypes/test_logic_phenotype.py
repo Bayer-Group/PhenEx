@@ -45,7 +45,7 @@ class LogicPhenotypeTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
         c1 = {
@@ -204,7 +204,7 @@ class LogicPhenotypeReturnDateLastTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -396,7 +396,7 @@ class LogicPhenotypeReturnDateAllTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -539,7 +539,7 @@ class LogicPhenotypeInverseReturnDateLastTestGenerator(
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -766,7 +766,7 @@ class LogicPhenotypeReturnDateFirstTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
         c1 = {
             "name": "c1",
@@ -966,7 +966,7 @@ class LogicPhenotypeValueTestGenerator(PhenotypeTestGenerator):
         )
         codelist_df.to_csv(test_codelist_path, index=False)
 
-        codelist_factory = LocalCSVCodelistFactory(test_codelist_path)
+        codelist_factory = LocalCSVCodelistFactory(path=test_codelist_path)
 
         m1 = {
             "name": "m1",
