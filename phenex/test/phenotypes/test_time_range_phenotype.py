@@ -1,17 +1,20 @@
 import datetime, os
 import pandas as pd
 
+from phenex.filters.date_filter import After
 from phenex.phenotypes.time_range_phenotype import TimeRangePhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
+from phenex.filters import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.value import *
 
 
 class TimeRangePhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "ccpt"
+    test_values = True
 
     def define_input_tables(self):
         oneday = datetime.timedelta(days=1)
@@ -68,11 +71,13 @@ class TimeRangePhenotypeTestGenerator(PhenotypeTestGenerator):
             "name": "coverage_min_geq_90",
             "coverage_period_min": Value(value=90, operator=">="),
             "persons": ["P7", "P10", "P11", "P12", "P14", "P15"],
+            "values": [180, 91, 91, 90, 90, 90],
         }
         t2 = {
             "name": "coverage_min_gt_90",
             "coverage_period_min": Value(value=90, operator=">"),
             "persons": ["P7", "P10", "P11"],
+            "values": [180, 91, 91],
         }
         test_infos = [t1, t2]
 
@@ -100,6 +105,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "name": "coverage_min_geq_90",
             "coverage_period_min": Value(value=90, operator=">="),
             "persons": persons,
+            "values": [90, 91, 90, 91, 180],
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
                     "END_DATE"
@@ -112,6 +118,7 @@ class ContinuousCoverageReturnLastPhenotypeTestGenerator(
             "name": "coverage_min_gt_90",
             "coverage_period_min": Value(value=90, operator=">"),
             "persons": persons,
+            "values": [91, 91, 180],
             "dates": list(
                 self.df_input[self.df_input["PERSON_ID"].isin(persons)][
                     "END_DATE"
@@ -167,6 +174,7 @@ class ContinuousCoverageWithAnchorPhenotype(TimeRangePhenotypeTestGenerator):
         t1 = {
             "name": "coverage_min_geq_90",
             "persons": persons,
+            "values": [180, 91, 91],
             "phenotype": cc1,
         }
 
@@ -189,7 +197,196 @@ def test_continuous_coverage_with_anchor_phenotype():
     spg.run_tests()
 
 
+class TimeRangePhenotypeWithDateRangeBeforeAllExcludedTestGenerator(
+    TimeRangePhenotypeTestGenerator
+):
+    """
+    Tests that min_date AFTER the index date excludes ALL patients.
+
+    AfterOrOn("2022-01-02") clips START_DATE to 2022-01-02, which is strictly
+    after INDEX_DATE (2022-01-01). The anchor-containment filter requires
+    START_DATE <= INDEX_DATE, so every patient is excluded.
+    """
+
+    name_space = "ccpt_daterange_before_all_excluded"
+    test_values = False
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "min_date_after_index_excludes_all",
+            "persons": [],
+        }
+
+        for test_info in [t1]:
+            test_info["phenotype"] = TimeRangePhenotype(
+                name=test_info["name"],
+                relative_time_range=RelativeTimeRangeFilter(when="before"),
+                date_range=DateFilter(min_date=AfterOrOn("2022-01-02")),
+            )
+
+        return [t1]
+
+
+class TimeRangePhenotypeWithDateRangeBeforeReducedDaysTestGenerator(
+    TimeRangePhenotypeTestGenerator
+):
+    """
+    Tests that min_date before the index date clips START_DATE, excludes patients
+    whose entire period precedes the clipped start, and reduces VALUE (coverage
+    days) for the remaining patients.
+
+    AfterOrOn("2021-11-01") clips START_DATE to max(original, 2021-11-01):
+      - Patients whose original END_DATE < 2021-11-01 are excluded (clipped
+        START > END): P0-P6, P8, P9, P13.
+      - Patients whose END_DATE < INDEX_DATE are excluded by anchor containment.
+      - Remaining patients (P7, P10-P12, P14-P23) all get VALUE = 61 days
+        (2022-01-01 - 2021-11-01) except P20-P23 whose original start date
+        (2022-01-01) is already >= 2021-11-01, giving VALUE = 0.
+    """
+
+    name_space = "ccpt_daterange_before_reduced_days"
+    test_values = True
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "min_date_reduces_coverage_days",
+            "persons": [
+                "P7",
+                "P10",
+                "P11",
+                "P12",
+                "P14",
+                "P15",
+                "P16",
+                "P17",
+                "P18",
+                "P19",
+                "P20",
+                "P21",
+                "P22",
+                "P23",
+            ],
+            # P7 was 180 days, P10/P11 were 91, P12/P14/P15 were 90,
+            # P16-P19 were 89 – all clipped to 61. P20-P23 start on INDEX_DATE -> 0.
+            "values": [61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 0, 0, 0, 0],
+        }
+
+        t1["phenotype"] = TimeRangePhenotype(
+            name=t1["name"],
+            relative_time_range=RelativeTimeRangeFilter(when="before"),
+            date_range=DateFilter(min_date=AfterOrOn("2021-11-01")),
+        )
+
+        return [t1]
+
+
+class TimeRangePhenotypeWithDateRangeAfterAllExcludedTestGenerator(
+    TimeRangePhenotypeTestGenerator
+):
+    """
+    Tests that max_date BEFORE the index date excludes ALL patients.
+
+    BeforeOrOn("2021-12-31") clips END_DATE to 2021-12-31, which is strictly
+    before INDEX_DATE (2022-01-01). The anchor-containment filter requires
+    INDEX_DATE <= END_DATE, so every patient is excluded.
+    """
+
+    name_space = "ccpt_daterange_after_all_excluded"
+    test_values = False
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "max_date_before_index_excludes_all",
+            "persons": [],
+        }
+
+        t1["phenotype"] = TimeRangePhenotype(
+            name=t1["name"],
+            relative_time_range=RelativeTimeRangeFilter(when="after"),
+            date_range=DateFilter(max_date=BeforeOrOn("2021-12-31")),
+        )
+
+        return [t1]
+
+
+class TimeRangePhenotypeWithDateRangeAfterReducedDaysTestGenerator(
+    TimeRangePhenotypeTestGenerator
+):
+    """
+    Tests that max_date after the index date clips END_DATE, excludes patients
+    whose entire period ends before INDEX_DATE, and reduces VALUE (coverage days)
+    for patients whose original END_DATE exceeded the cap.
+
+    BeforeOrOn("2022-02-15") clips END_DATE to min(original, 2022-02-15):
+      - Patients with END_DATE < INDEX_DATE (P0-P6, P8, P9, P13) are excluded
+        by anchor containment (END_DATE < INDEX_DATE after clipping).
+      - Patients with START_DATE > INDEX_DATE (P24-P27) are excluded by
+        anchor containment (START_DATE > INDEX_DATE).
+      - P7/P10/P12/P17 have END_DATE = INDEX_DATE -> VALUE = 0.
+      - P14/P16/P18 have END_DATE = INDEX_DATE+1/+2 -> VALUE = 1/1/2.
+      - P11/P15/P19/P20/P21/P22/P23 have END_DATE > 2022-02-15 -> clipped
+        to 2022-02-15 -> VALUE = 45.
+    """
+
+    name_space = "ccpt_daterange_after_reduced_days"
+    test_values = True
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "max_date_reduces_coverage_days",
+            "persons": [
+                "P7",
+                "P10",
+                "P11",
+                "P12",
+                "P14",
+                "P15",
+                "P16",
+                "P17",
+                "P18",
+                "P19",
+                "P20",
+                "P21",
+                "P22",
+                "P23",
+            ],
+            "values": [0, 0, 45, 0, 1, 45, 1, 0, 2, 45, 45, 45, 45, 45],
+        }
+
+        t1["phenotype"] = TimeRangePhenotype(
+            name=t1["name"],
+            relative_time_range=RelativeTimeRangeFilter(when="after"),
+            date_range=DateFilter(max_date=BeforeOrOn("2022-02-15")),
+        )
+
+        return [t1]
+
+
+def test_time_range_phenotype_date_range_before_all_excluded():
+    spg = TimeRangePhenotypeWithDateRangeBeforeAllExcludedTestGenerator()
+    spg.run_tests()
+
+
+def test_time_range_phenotype_date_range_before_reduced_days():
+    spg = TimeRangePhenotypeWithDateRangeBeforeReducedDaysTestGenerator()
+    spg.run_tests()
+
+
+def test_time_range_phenotype_date_range_after_all_excluded():
+    spg = TimeRangePhenotypeWithDateRangeAfterAllExcludedTestGenerator()
+    spg.run_tests()
+
+
+def test_time_range_phenotype_date_range_after_reduced_days():
+    spg = TimeRangePhenotypeWithDateRangeAfterReducedDaysTestGenerator()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_time_range_phenotypes()
     test_continuous_coverage_return_last()
     test_continuous_coverage_with_anchor_phenotype()
+    test_time_range_phenotype_date_range_before_all_excluded()
+    test_time_range_phenotype_date_range_before_reduced_days()
+    test_time_range_phenotype_date_range_after_all_excluded()
+    test_time_range_phenotype_date_range_after_reduced_days()

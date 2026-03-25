@@ -158,6 +158,9 @@ class Table2(Reporter):
             return None
 
         row = summary_df.iloc[0]
+        if pd.isna(row["N_Events"]) or pd.isna(row["N_Censored"]):
+            logger.warning(f"No patients for {outcome.name} at {time_point} days")
+            return None
         n_events = int(row["N_Events"])
         n_censored = int(row["N_Censored"])
         total_followup_days = float(row["Total_Followup_Days"])
@@ -383,7 +386,10 @@ class Table2(Reporter):
                 days_column_name: ibis.case()
                 .when(first_event.first_event_date.isnull(), None)
                 .else_(
-                    (first_event.first_event_date - first_event.INDEX_DATE).cast(int)
+                    (
+                        first_event.first_event_date.cast("date")
+                        - first_event.INDEX_DATE.cast("date")
+                    ).cast(int)
                 )
                 .end(),
             }
@@ -397,6 +403,33 @@ class Table2(Reporter):
             )
 
         return result
+
+    def to_json(self, filename: str) -> str:
+        """
+        Export Table2 results to JSON in the standard PhenEx reporter format
+        ``{"reporter_type": ..., "rows": [...]}``, which is consumed by
+        ``OutputConcatenator`` to build the study Excel file.
+        """
+        import json
+        from pathlib import Path
+
+        if not hasattr(self, "df"):
+            raise AttributeError("Call execute() before to_json().")
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": self.df.to_dict(orient="records"),
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())
 
     def get_pretty_display(self) -> pd.DataFrame:
         """
