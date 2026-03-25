@@ -38,7 +38,7 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
         c1 = {
@@ -155,7 +155,7 @@ class ScorePhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
 
     def define_phenotype_tests(self):
         codelist_factory = LocalCSVCodelistFactory(
-            os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
         )
 
         c1 = CodelistPhenotype(
