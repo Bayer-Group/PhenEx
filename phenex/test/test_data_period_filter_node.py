@@ -168,12 +168,10 @@ def test_no_relevant_columns():
     )
     filtered_table = node._execute({"TEST": table})
 
-    result = filtered_table.to_pandas()
-
-    # Table should be unchanged since no relevant date columns exist
-    pd.testing.assert_frame_equal(
-        result.sort_values("PERSON_ID"), df.sort_values("PERSON_ID")
-    )
+    # When no relevant date columns exist, _execute returns None (no write needed)
+    assert (
+        filtered_table is None
+    ), "Expected None when no date columns require filtering"
 
 
 def test_edge_case_boundary_dates():
@@ -757,3 +755,134 @@ def test_row_exclusion_start_date_after_max():
     assert 1 in person_ids
     assert 2 in person_ids
     assert 3 in person_ids
+
+
+def test_none_min_date_event_date_filtering():
+    """
+    Test that DateFilter with min_date=None only applies max_date filtering.
+    Regression test for SQL error when min_date is None causing untyped NULL in Snowflake.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "EVENT_DATE": [
+            date(2019, 6, 1),  # Before max_date - should be KEPT (no min_date filter)
+            date(2020, 1, 1),  # Before max_date - should be KEPT
+            date(2020, 12, 31),  # On max_date - should be KEPT (BeforeOrOn)
+            date(2021, 1, 1),  # After max_date - should be EXCLUDED
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(min_date=None, max_date=BeforeOrOn("2020-12-31"))
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    person_ids = result["PERSON_ID"].tolist()
+
+    assert (
+        1 in person_ids
+    ), "Row with EVENT_DATE before max_date should be kept when min_date is None"
+    assert 2 in person_ids
+    assert 3 in person_ids
+    assert 4 not in person_ids, "Row with EVENT_DATE after max_date should be excluded"
+
+
+def test_none_min_date_death_date_nulled():
+    """
+    Test that DATE_OF_DEATH is set to NULL for dates beyond max_date even when min_date is None.
+    Regression test: ibis.null() must be typed to avoid Snowflake SQL compilation errors.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "DATE_OF_DEATH": [
+            date(2019, 5, 1),  # Before max_date - should be KEPT
+            date(2020, 7, 15),  # Within max_date - should be KEPT
+            date(2021, 3, 1),  # After max_date - should be set to NULL
+            None,  # NULL - should remain NULL
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(min_date=None, max_date=BeforeOrOn("2020-12-31"))
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    assert result.loc[result["PERSON_ID"] == 1, "DATE_OF_DEATH"].values[0] == date(
+        2019, 5, 1
+    )
+    assert result.loc[result["PERSON_ID"] == 2, "DATE_OF_DEATH"].values[0] == date(
+        2020, 7, 15
+    )
+    assert pd.isna(
+        result.loc[result["PERSON_ID"] == 3, "DATE_OF_DEATH"].values[0]
+    ), "DATE_OF_DEATH after max_date should be NULL"
+    assert pd.isna(result.loc[result["PERSON_ID"] == 4, "DATE_OF_DEATH"].values[0])
+
+
+def test_none_max_date_event_date_filtering():
+    """
+    Test that DateFilter with max_date=None only applies min_date filtering.
+    """
+    data = {
+        "PERSON_ID": [1, 2, 3, 4],
+        "EVENT_DATE": [
+            date(2019, 12, 31),  # Before min_date - should be EXCLUDED
+            date(2020, 1, 1),  # On min_date - should be KEPT (AfterOrOn)
+            date(2020, 6, 1),  # After min_date - should be KEPT
+            date(2025, 1, 1),  # Far in future - should be KEPT (no max_date filter)
+        ],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(min_date=AfterOrOn("2020-01-01"), max_date=None)
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    person_ids = result["PERSON_ID"].tolist()
+
+    assert 1 not in person_ids, "Row with EVENT_DATE before min_date should be excluded"
+    assert 2 in person_ids
+    assert 3 in person_ids
+    assert (
+        4 in person_ids
+    ), "Row with EVENT_DATE far in future should be kept when max_date is None"
+
+
+def test_none_max_date_end_date_not_nulled():
+    """
+    Test that END_DATE is not modified when max_date is None.
+    """
+    data = {
+        "PERSON_ID": [1, 2],
+        "START_DATE": [date(2020, 1, 1), date(2020, 6, 1)],
+        "END_DATE": [date(2025, 1, 1), date(2030, 12, 31)],
+    }
+
+    df = pd.DataFrame(data)
+    table = ibis.memtable(df)
+
+    date_filter = DateFilter(min_date=AfterOrOn("2020-01-01"), max_date=None)
+    node = DataPeriodFilterNode(
+        name="test_node", domain="TEST", date_filter=date_filter
+    )
+    result = node._execute({"TEST": table}).to_pandas()
+
+    # END_DATE should not be nulled since there is no max_date
+    assert result.loc[result["PERSON_ID"] == 1, "END_DATE"].values[0] == date(
+        2025, 1, 1
+    )
+    assert result.loc[result["PERSON_ID"] == 2, "END_DATE"].values[0] == date(
+        2030, 12, 31
+    )
