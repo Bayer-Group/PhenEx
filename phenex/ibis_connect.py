@@ -88,12 +88,12 @@ class SnowflakeConnector:
             "SNOWFLAKE_PASSWORD"
         )
         self.SNOWFLAKE_PKEY = SNOWFLAKE_PKEY or os.environ.get("SNOWFLAKE_PKEY")
-        self.SNOWFLAKE_SOURCE_DATABASE = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
+        source_db = SNOWFLAKE_SOURCE_DATABASE or os.environ.get(
             "SNOWFLAKE_SOURCE_DATABASE"
         )
-        self.SNOWFLAKE_DEST_DATABASE = SNOWFLAKE_DEST_DATABASE or os.environ.get(
-            "SNOWFLAKE_DEST_DATABASE"
-        )
+        self.SNOWFLAKE_SOURCE_DATABASE = source_db.upper() if source_db else None
+        dest_db = SNOWFLAKE_DEST_DATABASE or os.environ.get("SNOWFLAKE_DEST_DATABASE")
+        self.SNOWFLAKE_DEST_DATABASE = dest_db.upper() if dest_db else None
 
         try:
             _, _ = self.SNOWFLAKE_SOURCE_DATABASE.split(".")
@@ -324,6 +324,15 @@ class SnowflakeConnector:
         catalog, database = self.SNOWFLAKE_DEST_DATABASE.split(".")
         if not database in self.dest_connection.list_databases(catalog=catalog):
             self.dest_connection.create_database(name=database, catalog=catalog)
+
+        # Unwrap PhenexTable so ibis sees a proper ir.Expr and performs a
+        # server-side CTAS instead of falling back to the memtable/pandas path
+        # (which triggers client-side query execution and can produce NULL syntax
+        # errors or Arrow schema-mismatch failures on multi-batch Snowflake results).
+        from phenex.tables import PhenexTable
+
+        if isinstance(table, PhenexTable):
+            table = table.table
 
         return self.dest_connection.create_table(
             name=name_table.upper(),
@@ -565,6 +574,11 @@ class DuckDBConnector:
                 raise ValueError(
                     "name_table must be provided if the table doesn't have a name."
                 )
+        from phenex.tables import PhenexTable
+
+        if isinstance(table, PhenexTable):
+            table = table.table
+
         return self.dest_connection.create_table(
             name_table, obj=table, overwrite=overwrite
         )
@@ -834,6 +848,11 @@ class PostgresConnector:
             )
 
         name_table = self._get_output_table_name(table, name_table)
+
+        from phenex.tables import PhenexTable
+
+        if isinstance(table, PhenexTable):
+            table = table.table
 
         return self.dest_connection.create_table(
             name=name_table.lower(),  # Postgres names are typically lowercase

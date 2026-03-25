@@ -331,6 +331,20 @@ class Node:
             if degree == 0:
                 ready_queue.put(node_name)
 
+        def _run_and_materialise(node, node_name):
+            """Execute *node*, materialise the result, record timing, and update the run hash."""
+            node.lastexecution_start_time = datetime.now()
+            table = node._execute(tables)
+            if table is not None:
+                con.create_table(table, node_name, overwrite=overwrite)
+                table = con.get_dest_table(node_name)
+            node.lastexecution_end_time = datetime.now()
+            node.lastexecution_duration = (
+                node.lastexecution_end_time - node.lastexecution_start_time
+            ).total_seconds()
+            Node._node_manager.update_run_params(node, con)
+            return table
+
         def worker():
             """Worker function for thread pool"""
             while not stop_all_workers.is_set():
@@ -360,25 +374,16 @@ class Node:
                             )
 
                         if Node._node_manager.should_rerun(node, con):
-                            # Time the execution
-                            node.lastexecution_start_time = datetime.now()
-                            table = node._execute(tables)
-
-                            if (
-                                table is not None
-                            ):  # Only create table if _execute returns something
-                                con.create_table(table, node_name, overwrite=overwrite)
-                                table = con.get_dest_table(node_name)
-
-                            node.lastexecution_end_time = datetime.now()
-                            node.lastexecution_duration = (
-                                node.lastexecution_end_time
-                                - node.lastexecution_start_time
-                            ).total_seconds()
-
-                            Node._node_manager.update_run_params(node, con)
+                            table = _run_and_materialise(node, node_name)
                         else:
-                            table = con.get_dest_table(node_name)
+                            try:
+                                table = con.get_dest_table(node_name)
+                            except Exception:
+                                # Cached table was dropped or is inaccessible; recompute.
+                                logger.warning(
+                                    f"Cached table for '{node_name}' not found; recomputing."
+                                )
+                                table = _run_and_materialise(node, node_name)
                     else:
                         # Time the execution
                         node.lastexecution_start_time = datetime.now()
@@ -572,16 +577,17 @@ class NodeGroup(Node):
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
-        Execute all children nodes and return a table with information about dependencies.
-        The execution logic is handled by the parent Node class.
+        NodeGroup is a coordinator node only. Children are executed by the parent Node
+        execution engine; there is no table to produce here.
         """
-        # Create a table with NODE_NAME and NODE_PARAMS for each dependency
-        data = []
-        for node in self.dependencies:
-            data.append(
-                {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
-            )
+        return None
+        # # Create a table with NODE_NAME and NODE_PARAMS for each dependency
+        # data = []
+        # for node in self.dependencies:
+        #     data.append(
+        #         {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
+        #     )
 
-        # Create a pandas DataFrame and convert to ibis memtable
-        df = pd.DataFrame(data)
-        return ibis.memtable(df)
+        # # Create a pandas DataFrame and convert to ibis memtable
+        # df = pd.DataFrame(data)
+        # return ibis.memtable(df)
