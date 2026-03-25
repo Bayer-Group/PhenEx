@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.node import Node, NodeGroup
@@ -14,7 +15,12 @@ from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
 from phenex.core.exclusions_table_node import ExclusionsTableNode
 from phenex.core.index_phenotype import IndexPhenotype
-from phenex.core.reporter_nodes import WaterfallNode, Table1Node
+from phenex.core.reporter_nodes import (
+    WaterfallNode,
+    Table1Node,
+    Table1OutcomesNode,
+    CustomReporterNode,
+)
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
@@ -35,6 +41,7 @@ class Cohort:
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
+        custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -58,6 +65,7 @@ class Cohort:
         outcomes: Optional[List[Phenotype]] = None,
         description: Optional[str] = None,
         database: Optional[Database] = None,
+        custom_reporters: Optional[List] = None,
     ):
         self.name = name
         self.description = description
@@ -66,12 +74,26 @@ class Cohort:
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
         self.entry_criterion = entry_criterion
-        self.inclusions = inclusions or []
-        self.exclusions = exclusions or []
-        self.characteristics = characteristics or []
-        self.derived_tables = derived_tables or []
-        self.derived_tables_post_entry = derived_tables_post_entry or []
-        self.outcomes = outcomes or []
+        self.inclusions = self._flatten(inclusions)
+        self.exclusions = self._flatten(exclusions)
+
+        # characteristics may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(characteristics, dict):
+            self.characteristic_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in characteristics.items()
+            }
+            self.characteristics = [
+                p for phenos in characteristics.values() for p in phenos
+            ]
+        else:
+            self.characteristic_sections = None
+            self.characteristics = self._flatten(characteristics)
+
+        self.derived_tables = derived_tables
+        self.derived_tables_post_entry = derived_tables_post_entry
+        self.outcomes = self._flatten(outcomes)
+        self.custom_reporters = custom_reporters or []
         self.n_persons_in_source_database = None
 
         self.phenotypes = (
@@ -102,11 +124,29 @@ class Cohort:
         self.subset_tables_entry_nodes = None
         self.subset_tables_index_nodes = None
         self.table1_node = None
+        self.table1_detailed_node = None
+        self.table1_outcomes_node = None
+        self.table1_outcomes_detailed_node = None
         self.waterfall_node = None
+        self.waterfall_detailed_node = None
+        self.custom_reporter_nodes = []
 
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
+
+    @staticmethod
+    def _flatten(items: Optional[List]) -> List:
+        """Flatten one level of nesting, so both [p1, p2] and [[p1, p2]] work."""
+        if not items:
+            return []
+        result = []
+        for item in items:
+            if isinstance(item, list):
+                result.extend(item)
+            else:
+                result.append(item)
+        return result
 
     def _validate_node_uniqueness(self):
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
@@ -144,7 +184,22 @@ class Cohort:
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
         # Filter out None tables (tables not found in source data)
         available_tables = {k: v for k, v in tables.items() if v is not None}
-        domains = list(available_tables.keys()) + [x.name for x in self.derived_tables]
+
+        # If a derived table has the same name as a mapped table, the mapped table must be
+        # discarded — otherwise _get_subset_tables_nodes would produce two SubsetTable nodes
+        # with identical names, causing a duplicate-node error in the execution graph.
+        all_derived = list(self.derived_tables or []) + list(
+            self.derived_tables_post_entry or []
+        )
+        for dt in all_derived:
+            if dt.name in available_tables:
+                logger.warning(
+                    f"Derived table '{dt.name}' has the same name as a provided mapped table. "
+                    f"The mapped table will be discarded and the derived table will be used for domain '{dt.name}'."
+                )
+                del available_tables[dt.name]
+
+        domains = list(available_tables.keys())
         required_domains = self._get_domains()
 
         missing_domains = [d for d in required_domains if d not in domains]
@@ -184,8 +239,11 @@ class Cohort:
         #
         # Entry stage: REQUIRED
         #
+        # Pre-entry derived table outputs become new domains available from the entry stage onward.
+        pre_entry_derived_domains = [x.name for x in (self.derived_tables or [])]
+        entry_domains = domains + pre_entry_derived_domains
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
-            stage="subset_entry", domains=domains, index_phenotype=self.entry_criterion
+            stage="subset_entry", domains=entry_domains, index_phenotype=self.entry_criterion
         )
         self.entry_stage = NodeGroup(
             name="entry_stage", nodes=self.subset_tables_entry_nodes
@@ -234,9 +292,16 @@ class Cohort:
             index_table_node=self.index_table_node,
         )
         index_nodes.append(self.waterfall_node)
+        self.waterfall_detailed_node = WaterfallNode(
+            name=f"{self.name}__waterfall_detailed".upper(),
+            cohort=self,
+            index_table_node=self.index_table_node,
+            include_component_phenotypes_level=100,  # include all component phenotypes in the detailed waterfall report
+        )
+        index_nodes.append(self.waterfall_detailed_node)
 
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
-            stage="subset_index", domains=domains, index_phenotype=self.index_table_node
+            stage="subset_index", domains=entry_domains, index_phenotype=self.index_table_node
         )
         self.index_stage = NodeGroup(
             name="index_stage",
@@ -267,6 +332,37 @@ class Cohort:
                 cohort=self,
             )
             reporting_nodes.append(self.table1_node)
+            self.table1_detailed_node = Table1Node(
+                name=f"{self.name}__table1_detailed".upper(),
+                cohort=self,
+                include_component_phenotypes_level=100,
+            )
+            reporting_nodes.append(self.table1_detailed_node)
+
+        # Add Table1OutcomesNode if there are outcomes
+        if self.outcomes:
+            self.table1_outcomes_node = Table1OutcomesNode(
+                name=f"{self.name}__table1_outcomes".upper(),
+                cohort=self,
+            )
+            reporting_nodes.append(self.table1_outcomes_node)
+            self.table1_outcomes_detailed_node = Table1OutcomesNode(
+                name=f"{self.name}__table1_outcomes_detailed".upper(),
+                cohort=self,
+                include_component_phenotypes_level=100,
+            )
+            reporting_nodes.append(self.table1_outcomes_detailed_node)
+
+        # Add CustomReporterNodes for each custom reporter
+        self.custom_reporter_nodes = []
+        for reporter in self.custom_reporters:
+            node = CustomReporterNode(
+                name=f"{self.name}__custom__{reporter.name}".upper(),
+                cohort=self,
+                reporter=reporter,
+            )
+            self.custom_reporter_nodes.append(node)
+            reporting_nodes.append(node)
 
         if reporting_nodes:
             self.reporting_stage = NodeGroup(
@@ -431,9 +527,11 @@ class Cohort:
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
             )
-            # Update tables with filtered versions
-            for node in self.data_period_filter_stage.nodes:
-                tables[node.domain] = PhenexTable(node.table)
+            # Update tables with filtered versions (only when the node actually modified the table;
+            # nodes with no relevant date columns return None and the original table is kept)
+            for node in self.data_period_filter_stage.children:
+                if node.table is not None:
+                    tables[node.domain] = node.table
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:
@@ -483,6 +581,7 @@ class Cohort:
             entry_dates = self.entry_criterion.table.select(
                 "PERSON_ID", "EVENT_DATE"
             ).rename({"INDEX_DATE": "EVENT_DATE"})
+            # TODO this is a bit hacky, consider a cleaner way to handle this if we want to support post-entry derived tables in the long term i.e. a DERIVED_TABLES class that adds index table automatically if present in the source derived table.
             for node in self.derived_tables_post_entry:
                 table_with_index = node.table.join(entry_dates, "PERSON_ID")
                 self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
@@ -504,7 +603,20 @@ class Cohort:
 
         self.subset_tables_index = self.get_subset_tables_index(tables)
 
+        # Also add derived post-entry tables to subset_tables_index, further filtered
+        # to only include persons that passed all inclusion/exclusion criteria.
+        if self.derived_tables_post_entry:
+            index_person_ids = self.index_table_node.table.select("PERSON_ID")
+            for node in self.derived_tables_post_entry:
+                if node.name in self.subset_tables_entry:
+                    entry_tbl = self.subset_tables_entry[node.name]
+                    filtered_ibis = entry_tbl.table.semi_join(
+                        index_person_ids, "PERSON_ID"
+                    )
+                    self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
+
         if self.reporting_stage:
+            logger.info("Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
                 con=con,
@@ -575,11 +687,74 @@ class Cohort:
             return self.waterfall_node.df_report
         return None
 
+    @property
+    def waterfall_detailed(self):
+        """Get the detailed Waterfall report DataFrame from the waterfall_node if it exists."""
+        if self.waterfall_detailed_node:
+            return self.waterfall_detailed_node.df_report
+        return None
+
+    def write_reports_to_excel(self, path: str):
+        """Write all available reports (table1, waterfall, waterfall_detailed) to Excel files in the given directory."""
+        if self.table1_node:
+            self.table1_node.to_excel(os.path.join(path, "table1.xlsx"))
+        if self.table1_detailed_node:
+            self.table1_detailed_node.to_excel(
+                os.path.join(path, "table1_detailed.xlsx")
+            )
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_excel(
+                os.path.join(path, "table1_outcomes.xlsx")
+            )
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_excel(
+                os.path.join(path, "table1_outcomes_detailed.xlsx")
+            )
+        if self.waterfall_node:
+            self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_excel(
+                os.path.join(path, "waterfall_detailed.xlsx")
+            )
+        for custom_reporter_node in self.custom_reporter_nodes:
+            report_filename = custom_reporter_node.reporter.name
+            custom_reporter_node.to_excel(os.path.join(path, report_filename + ".xlsx"))
+
+    def write_reports_to_json(self, path: str):
+        """Write all available reports as JSON files (machine-readable intermediate format)."""
+        if self.table1_node:
+            self.table1_node.to_json(os.path.join(path, "table1.json"))
+        if self.table1_detailed_node:
+            self.table1_detailed_node.to_json(
+                os.path.join(path, "table1_detailed.json")
+            )
+        if self.table1_outcomes_node:
+            self.table1_outcomes_node.to_json(
+                os.path.join(path, "table1_outcomes.json")
+            )
+        if self.table1_outcomes_detailed_node:
+            self.table1_outcomes_detailed_node.to_json(
+                os.path.join(path, "table1_outcomes_detailed.json")
+            )
+        if self.waterfall_node:
+            self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
+        if self.waterfall_detailed_node:
+            self.waterfall_detailed_node.to_json(
+                os.path.join(path, "waterfall_detailed.json")
+            )
+        for custom_reporter_node in self.custom_reporter_nodes:
+            report_filename = custom_reporter_node.reporter.name
+            custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
+
     def to_dict(self):
         """
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
         """
-        return to_dict(self)
+        d = to_dict(self)
+        # custom_reporters are runtime execution objects and cannot be meaningfully
+        # serialized; drop them from the frozen cohort definition.
+        d.pop("custom_reporters", None)
+        return d
 
     def get_codelists(self, as_dataframe=False):
         """

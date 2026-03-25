@@ -48,11 +48,13 @@ class Study:
         name: str,
         cohorts: List[Cohort],
         custom_reporters: List["Reporter"] = None,
+        description: Optional[str] = None,
     ):
         self.path = path
         self.name = name
         self.cohorts = cohorts
         self.custom_reporters = custom_reporters
+        self.description = description
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
@@ -93,8 +95,7 @@ class Study:
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
 
-        waterfall_reporter = Waterfall()
-        self.custom_reporters = [waterfall_reporter] + (self.custom_reporters or [])
+        self.custom_reporters = self.custom_reporters or []
 
         for _cohort in self.cohorts:
             path_exec_dir_cohort = self._prepare_cohort_execution_directory(
@@ -102,21 +103,16 @@ class Study:
             )
             self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
+            # Merge study-level custom reporters into the cohort before execution
+            _cohort.custom_reporters = (
+                _cohort.custom_reporters or []
+            ) + self.custom_reporters
+
             _cohort.execute(
                 overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
             )
 
-            path_table = os.path.join(path_exec_dir_cohort, "table1.xlsx")
-            _cohort.table1.to_excel(path_table)
-
-            if self.custom_reporters is not None:
-                for reporter in self.custom_reporters:
-                    reporter.execute(_cohort)
-                    report_filename = reporter.__class__.__name__
-                    print("executing reporter", report_filename, reporter.df)
-                    reporter.to_excel(
-                        os.path.join(path_exec_dir_cohort, report_filename + ".xlsx")
-                    )
+            _cohort.write_reports_to_json(path_exec_dir_cohort)
 
         self._concatenate_reports(path_exec_dir_study)
 
@@ -166,11 +162,17 @@ class Study:
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
         from phenex import dump
 
-        _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
+        _path = os.path.join(path_exec_dir_cohort, "frozen_" + cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
 
     def _concatenate_reports(self, path_exec_dir_study):
         """Concatenate all cohort reports into a single Excel file."""
-        concatenator = OutputConcatenator(path_exec_dir_study)
+        cohort_names = [c.name for c in self.cohorts]
+        concatenator = OutputConcatenator(
+            path_exec_dir_study,
+            study_name=self.name,
+            cohort_names=cohort_names,
+            description=self.description,
+        )
         concatenator.concatenate_all_reports()

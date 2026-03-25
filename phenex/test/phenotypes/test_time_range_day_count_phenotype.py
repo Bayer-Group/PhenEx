@@ -7,6 +7,7 @@ from phenex.codelists import Codelist
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
+from phenex.filters import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.value import *
 
 # Use the same time ranges as TimeRangeFilter tests for consistency
@@ -167,7 +168,45 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             "values": [60, 30],
         }
 
-        test_infos = [t1, t2, t3, t4, t5, t6, t7, t8]
+        # Test 9: date_range with only max_date, cutoff in middle of p2 (Mar1-Mar30)
+        # max_date=BeforeOrOn("2020-03-15") clips END_DATE of p2 to Mar15
+        # p1: Jan1-Jan30 fully inside → 30 days
+        # p2: Mar1-Mar30 → END clipped to Mar15 → Mar1-Mar15 = 15 days
+        # p3/p4/p5: START_DATE > Mar15 → after clip END=Mar15, START>END → excluded
+        # P1: 30 + 15 = 45 days, P2: 30 days (only has p1)
+        t9 = {
+            "name": "date_range_max_end_date",
+            "persons": ["P1", "P2"],
+            "values": [45, 30],
+        }
+
+        # Test 10: date_range with only min_date, cutoff in middle of p4 (Jul1-Jul30)
+        # min_date=AfterOrOn("2020-07-15") clips START_DATE of p4 to Jul15
+        # p1/p2/p3: END_DATE < Jul15 → after clip START=Jul15, START>END → excluded
+        # p4: Jul1-Jul30 → START clipped to Jul15 → Jul15-Jul30 = 16 days
+        # p5: Sep1-Sep30 fully inside → 30 days
+        # P1: 16 + 30 = 46 days, P2: 0 days
+        t10 = {
+            "name": "date_range_min_start_date",
+            "persons": ["P1", "P2"],
+            "values": [46, 0],
+        }
+
+        # Test 11: date_range with both min_date and max_date, each cutting inside a period
+        # min_date=AfterOrOn("2020-03-15"), max_date=BeforeOrOn("2020-07-15")
+        # p1: END=Jan30 < Mar15 → after clip START=Mar15, START>END → excluded
+        # p2: Mar1-Mar30 → START clipped to Mar15 → Mar15-Mar30 = 16 days
+        # p3: May1-May30 fully inside → 30 days
+        # p4: Jul1-Jul30 → END clipped to Jul15 → Jul1-Jul15 = 15 days
+        # p5: START=Sep1 > Jul15 → after clip END=Jul15, START>END → excluded
+        # P1: 16 + 30 + 15 = 61 days, P2: 0 days (p1 excluded)
+        t11 = {
+            "name": "date_range_combined_start_and_end",
+            "persons": ["P1", "P2"],
+            "values": [61, 0],
+        }
+
+        test_infos = [t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11]
 
         # Create phenotypes for each test
         t1["phenotype"] = TimeRangeDayCountPhenotype(
@@ -228,6 +267,31 @@ class TimeRangeDayCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             relative_time_range=RelativeTimeRangeFilter(
                 when="before",
                 min_days=GreaterThanOrEqualTo(30),  # At least 30 days before index
+            ),
+        )
+
+        t9["phenotype"] = TimeRangeDayCountPhenotype(
+            name=t9["name"],
+            domain="VISIT_OCCURRENCE",
+            date_range=DateFilter(
+                max_date=BeforeOrOn("2020-03-15"),
+            ),
+        )
+
+        t10["phenotype"] = TimeRangeDayCountPhenotype(
+            name=t10["name"],
+            domain="VISIT_OCCURRENCE",
+            date_range=DateFilter(
+                min_date=AfterOrOn("2020-07-15"),
+            ),
+        )
+
+        t11["phenotype"] = TimeRangeDayCountPhenotype(
+            name=t11["name"],
+            domain="VISIT_OCCURRENCE",
+            date_range=DateFilter(
+                min_date=AfterOrOn("2020-03-15"),
+                max_date=BeforeOrOn("2020-07-15"),
             ),
         )
 

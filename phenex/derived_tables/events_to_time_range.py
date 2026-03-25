@@ -94,12 +94,12 @@ class EventsToTimeRange(Node):
         tables: Dict[str, Table],
     ) -> "Table":
         table = tables[self.domain]
-        table = self._perform_codelist_filtering(table)
+        table = self._perform_codelist_filtering(table, tables)
         table = self._create_start_end_date_table(table)
         table = self._combine_overlapping_periods(table)
         return table
 
-    def _perform_codelist_filtering(self, table):
+    def _perform_codelist_filtering(self, table, tables):
         """
         Filter source table to codelist events of interest i.e. drug x events only
 
@@ -109,7 +109,7 @@ class EventsToTimeRange(Node):
         if self.codelist is None:
             return table
         assert is_phenex_code_table(table)
-        table = self.codelist_filter.filter(table)
+        table = self.codelist_filter.autojoin_filter(table, tables)
         return table
 
     def _create_start_end_date_table(self, table):
