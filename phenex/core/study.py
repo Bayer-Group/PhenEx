@@ -162,7 +162,7 @@ class Study:
     def _save_serialized_cohort(self, cohort, path_exec_dir_cohort):
         from phenex import dump
 
-        _path = os.path.join(path_exec_dir_cohort, "frozen_" + cohort.name + ".json")
+        _path = os.path.join(path_exec_dir_cohort, cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
 
