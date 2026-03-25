@@ -1,11 +1,9 @@
 import datetime
-import pytest
 import ibis
 import pandas as pd
 from phenex.core.cohort import Cohort
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
-from phenex.tables import PhenexTable
 from phenex.derived_tables import EventsToTimeRange
 from phenex.filters.value import LessThanOrEqualTo
 from phenex.test.cohort.test_mappings import (
