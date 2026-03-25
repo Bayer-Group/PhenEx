@@ -51,7 +51,13 @@ class BinnedAgePhenotypeTestGenerator(PhenotypeTestGenerator):
         t1 = {
             "name": "bins",
             "persons": [f"P{x}" for x in ages_matching],
-            "values": ["[0-10)", "[0-10)", "[10-20)", "[10-20)", "[20-30)"],
+            "values": [
+                "0001_[0-10)",
+                "0001_[0-10)",
+                "0002_[10-20)",
+                "0002_[10-20)",
+                "0003_[20-30)",
+            ],
             "phenotype": BinPhenotype(
                 phenotype=agept,
             ),
@@ -60,7 +66,13 @@ class BinnedAgePhenotypeTestGenerator(PhenotypeTestGenerator):
         t2 = {
             "name": "bins_out_of_range",
             "persons": [f"P{x}" for x in ages_matching],
-            "values": ["<10", "<10", "[10-20)", "[10-20)", ">=20"],
+            "values": [
+                "0000_<10",
+                "0000_<10",
+                "0001_[10-20)",
+                "0001_[10-20)",
+                "0002_>=20",
+            ],
             "phenotype": BinPhenotype(phenotype=agept, bins=[10, 20]),
         }
         test_infos = [t1, t2]
@@ -158,19 +170,19 @@ class DiscreteBinPhenotypeTestGenerator(PhenotypeTestGenerator):
                 "P8",
             ],
             "values": [
-                "Acute MI",
-                "Acute MI",
-                "MI Complications",
-                "Acute MI",
-                "Acute MI",
-                "Acute MI",
-                "MI Complications",
-                "Acute MI",
-                "Acute MI",
-                "MI Complications",
-                "Acute MI",
-                "MI Complications",
-                "Diabetes",
+                "0000_Acute MI",
+                "0000_Acute MI",
+                "0001_MI Complications",
+                "0000_Acute MI",
+                "0000_Acute MI",
+                "0000_Acute MI",
+                "0001_MI Complications",
+                "0000_Acute MI",
+                "0000_Acute MI",
+                "0001_MI Complications",
+                "0000_Acute MI",
+                "0001_MI Complications",
+                "0002_Diabetes",
             ],
             "phenotype": BinPhenotype(
                 phenotype=diagnosis_codes,
@@ -258,18 +270,18 @@ class DiscreteBinPhenotypeWithCodelistsTestGenerator(PhenotypeTestGenerator):
                 "P7",  # P7 has I23
             ],
             "values": [
-                "Acute MI",
-                "Acute MI",
-                "MI Complications",  # P1
-                "Acute MI",
-                "Acute MI",  # P2
-                "Acute MI",
-                "MI Complications",  # P3
-                "Acute MI",  # P4
-                "Acute MI",
-                "MI Complications",  # P5
-                "Acute MI",  # P6
-                "MI Complications",  # P7
+                "0000_Acute MI",
+                "0000_Acute MI",
+                "0001_MI Complications",  # P1
+                "0000_Acute MI",
+                "0000_Acute MI",  # P2
+                "0000_Acute MI",
+                "0001_MI Complications",  # P3
+                "0000_Acute MI",  # P4
+                "0000_Acute MI",
+                "0001_MI Complications",  # P5
+                "0000_Acute MI",  # P6
+                "0001_MI Complications",  # P7
             ],
             "phenotype": BinPhenotype(
                 phenotype=diagnosis_codes,
