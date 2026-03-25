@@ -239,8 +239,11 @@ class Cohort:
         #
         # Entry stage: REQUIRED
         #
+        # Pre-entry derived table outputs become new domains available from the entry stage onward.
+        pre_entry_derived_domains = [x.name for x in (self.derived_tables or [])]
+        entry_domains = domains + pre_entry_derived_domains
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
-            stage="subset_entry", domains=domains, index_phenotype=self.entry_criterion
+            stage="subset_entry", domains=entry_domains, index_phenotype=self.entry_criterion
         )
         self.entry_stage = NodeGroup(
             name="entry_stage", nodes=self.subset_tables_entry_nodes
@@ -298,7 +301,7 @@ class Cohort:
         index_nodes.append(self.waterfall_detailed_node)
 
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
-            stage="subset_index", domains=domains, index_phenotype=self.index_table_node
+            stage="subset_index", domains=entry_domains, index_phenotype=self.index_table_node
         )
         self.index_stage = NodeGroup(
             name="index_stage",
@@ -752,3 +755,33 @@ class Cohort:
         # serialized; drop them from the frozen cohort definition.
         d.pop("custom_reporters", None)
         return d
+
+    def get_codelists(self, as_dataframe=False):
+        """
+        Get a dictionary of all codelists used in any phenotype in this cohort. The keys are the codelist names and the values are the codelist objects.
+        """
+        top_level_nodes = (
+            [self.entry_criterion]
+            + self.inclusions
+            + self.exclusions
+            + self.characteristics
+            + self.outcomes
+        )
+        all_nodes = top_level_nodes + sum([t.dependencies for t in top_level_nodes], [])
+        codelists = {
+            pt.display_name: pt.codelist
+            for pt in all_nodes
+            if getattr(pt, "codelist", None) is not None
+        }
+        if as_dataframe:
+            import pandas as pd
+
+            _dfs = []
+            for name_pt, codelist in codelists.items():
+                codelist_df = codelist.df
+                codelist_df["phenotype"] = name_pt
+                _dfs.append(codelist_df)
+            codelists_df = pd.concat(_dfs, ignore_index=True)
+            return codelists_df
+
+        return codelists
