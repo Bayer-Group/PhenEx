@@ -243,7 +243,9 @@ class Cohort:
         pre_entry_derived_domains = [x.name for x in (self.derived_tables or [])]
         entry_domains = domains + pre_entry_derived_domains
         self.subset_tables_entry_nodes = self._get_subset_tables_nodes(
-            stage="subset_entry", domains=entry_domains, index_phenotype=self.entry_criterion
+            stage="subset_entry",
+            domains=entry_domains,
+            index_phenotype=self.entry_criterion,
         )
         self.entry_stage = NodeGroup(
             name="entry_stage", nodes=self.subset_tables_entry_nodes
@@ -301,7 +303,9 @@ class Cohort:
         index_nodes.append(self.waterfall_detailed_node)
 
         self.subset_tables_index_nodes = self._get_subset_tables_nodes(
-            stage="subset_index", domains=entry_domains, index_phenotype=self.index_table_node
+            stage="subset_index",
+            domains=entry_domains,
+            index_phenotype=self.index_table_node,
         )
         self.index_stage = NodeGroup(
             name="index_stage",
