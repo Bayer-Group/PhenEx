@@ -2,7 +2,7 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
-from .core import Cohort, Subcohort, Database
+from .core import Cohort, Subcohort, Database, Study
 
 from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 
@@ -10,6 +10,8 @@ from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 from .phenotypes import (
     Phenotype,
     CodelistPhenotype,
+    SmartCodelistPhenotype,
+    CODETYPE_INFO,
     MeasurementPhenotype,
     MeasurementChangePhenotype,
     AgePhenotype,
@@ -83,8 +85,10 @@ from .reporting import (
 # Codelists
 from .codelists import (
     Codelist,
+    LocalFileCodelistFactory,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
+    MedConBCollection,
 )
 
 # Derived Tables
@@ -109,9 +113,12 @@ __all__ = [
     "Cohort",
     "Subcohort",
     "Database",
+    "Study",
     # Phenotypes
     "Phenotype",
     "CodelistPhenotype",
+    "SmartCodelistPhenotype",
+    "CODETYPE_INFO",
     "MeasurementPhenotype",
     "MeasurementChangePhenotype",
     "AgePhenotype",
@@ -173,9 +180,10 @@ __all__ = [
     "ReportDrafter",
     # Codelists
     "Codelist",
+    "LocalFileCodelistFactory",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
-    # Derived Tables
+    "MedConBCollection",
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     # Serialization
