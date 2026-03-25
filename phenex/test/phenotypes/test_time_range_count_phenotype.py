@@ -7,6 +7,7 @@ from phenex.codelists import Codelist
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
+from phenex.filters import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.value import *
 
 
@@ -166,7 +167,17 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             "values": [5],  # Expected visit counts
         }
 
-        test_infos = [t1, t2, t3, t4, t5, t6, t7]
+        # Test 8: date_range spanning only p2, p3, p4 (wholly inside 2020-02-01 to 2020-08-31)
+        # p1 (END=Jan30) ends before min_date -> excluded
+        # p5 (START=Sep1) starts after max_date -> excluded
+        # P1: 3 ranges, P2: 0 ranges (P2 only has p1 which is excluded)
+        t8 = {
+            "name": "date_range_filter",
+            "persons": ["P1", "P2"],
+            "values": [3, 0],
+        }
+
+        test_infos = [t1, t2, t3, t4, t5, t6, t7, t8]
 
         # Create phenotypes for each test
         t1["phenotype"] = TimeRangeCountPhenotype(
@@ -225,6 +236,15 @@ class TimeRangeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             value_filter=ValueFilter(
                 min_value=GreaterThan(2),  # More than 2 total ranges
+            ),
+        )
+
+        t8["phenotype"] = TimeRangeCountPhenotype(
+            name=t8["name"],
+            domain="VISIT_OCCURRENCE",
+            date_range=DateFilter(
+                min_date=AfterOrOn("2020-02-01"),
+                max_date=BeforeOrOn("2020-08-31"),
             ),
         )
 

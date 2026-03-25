@@ -30,8 +30,15 @@ class Reporter:
     def __init__(
         self,
         decimal_places: int = 1,
+        name: str = None,
     ):
         self.decimal_places = decimal_places
+        self._name = name
+
+    @property
+    def name(self):
+        """Name of the reporter, used for identification and output file naming."""
+        return self._name or self.__class__.__name__
 
     def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
         """
@@ -128,6 +135,43 @@ class Reporter:
 
         # Export to Excel
         df_to_export.to_excel(filepath, index=False)
+
+        return str(filepath.absolute())
+
+    def to_json(self, filename: str) -> str:
+        """
+        Export reporter results to JSON (machine-readable intermediate format).
+
+        Stores raw (unformatted) data so downstream tools can apply their own
+        formatting.  Subclasses may override to include additional metadata
+        (e.g. Table1 adds section information).
+
+        Args:
+            filename: Path to the output file (with or without .json extension)
+
+        Returns:
+            str: Full path to the created file
+        """
+        import json
+
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_json() method."
+            )
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": self.df.to_dict(orient="records"),
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
 
         return str(filepath.absolute())
 
