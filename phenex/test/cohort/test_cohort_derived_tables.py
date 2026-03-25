@@ -8,7 +8,10 @@ from phenex.codelists import Codelist
 from phenex.tables import PhenexTable
 from phenex.derived_tables import EventsToTimeRange
 from phenex.filters.value import LessThanOrEqualTo
-from phenex.test.cohort.test_mappings import PersonTableForTests, DrugExposureTableForTests
+from phenex.test.cohort.test_mappings import (
+    PersonTableForTests,
+    DrugExposureTableForTests,
+)
 
 
 def _make_tables(con):
