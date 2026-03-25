@@ -3,6 +3,9 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.node import Node
 from phenex.filters import DateFilter
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 class DataPeriodFilterNode(Node):
@@ -140,18 +143,40 @@ class DataPeriodFilterNode(Node):
     def _execute(self, tables: Dict[str, Table]) -> Table:
         table = tables[self.domain]
         columns = table.columns
+        modified = False
+        logger.debug(
+            f"[{self.domain}] DataPeriodFilter: applying date range "
+            f"{self.date_filter.min_value} to {self.date_filter.max_value} "
+            f"| columns: {columns}"
+        )
 
         # 1. Filter rows that fall entirely outside data period
         # These need to be evaluated on the original table BEFORE mutations
 
         # 1a. Filter self.date_filter.column_name if it exists
         if self.date_filter.column_name in columns:
+            logger.debug(
+                f"[{self.domain}] Found EVENT_DATE column '{self.date_filter.column_name}': "
+                f"removing rows outside [{self.date_filter.min_value}, {self.date_filter.max_value}]"
+            )
             table = self.date_filter.filter(table)
+            modified = True
+        else:
+            logger.debug(
+                f"[{self.domain}] No EVENT_DATE column ('{self.date_filter.column_name}') found — skipping row filter on EVENT_DATE"
+            )
 
         # 1b. Check for exact column name matches (no substring matching)
         start_date_columns = [col for col in ["START_DATE"] if col in columns]
         end_date_columns = [col for col in ["END_DATE"] if col in columns]
         death_date_columns = [col for col in ["DATE_OF_DEATH"] if col in columns]
+
+        logger.debug(
+            f"[{self.domain}] Date columns detected — "
+            f"START_DATE: {start_date_columns or 'none'}, "
+            f"END_DATE: {end_date_columns or 'none'}, "
+            f"DATE_OF_DEATH: {death_date_columns or 'none'}"
+        )
 
         # 1b. Filter ranges that fall entirely outside the data period:
         #   START_DATE fields that are strictly after max_date
@@ -165,7 +190,11 @@ class DataPeriodFilterNode(Node):
             for col in end_date_columns
         ]
         for date_filter in date_filters:
+            logger.debug(
+                f"[{self.domain}] Removing rows where '{date_filter.column_name}' falls entirely outside data period"
+            )
             table = date_filter.filter(table)
+            modified = True
 
         # 2. Build mutations dictionary for column updates
         mutations = {}
@@ -186,8 +215,11 @@ class DataPeriodFilterNode(Node):
                     raise ValueError(
                         f"Unsupported min_value operator: {self.date_filter.min_value.operator}"
                     )
-
+                logger.debug(
+                    f"[{self.domain}] '{col}': clipping to max(original, {self.date_filter.min_value})"
+                )
                 mutations[col] = ibis.greatest(table[col], min_date_literal)
+                modified = True
 
         # 2b. Handle END_DATE fields - set to NULL if outside max_date boundary
         if end_date_columns and self.date_filter.max_value is not None:
@@ -207,10 +239,16 @@ class DataPeriodFilterNode(Node):
                     raise ValueError(
                         f"Unsupported max_value operator: {self.date_filter.max_value.operator}"
                     )
-
-                mutations[col] = (
-                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
+                logger.debug(
+                    f"[{self.domain}] '{col}': setting to NULL where value is after {self.date_filter.max_value}"
                 )
+                mutations[col] = (
+                    ibis.case()
+                    .when(condition, ibis.null().cast(table[col].type()))
+                    .else_(table[col])
+                    .end()
+                )
+                modified = True
 
         # 2c. Handle DATE_OF_DEATH fields - set to NULL if outside max_date boundary
         if death_date_columns and self.date_filter.max_value is not None:
@@ -230,13 +268,32 @@ class DataPeriodFilterNode(Node):
                     raise ValueError(
                         f"Unsupported max_value operator: {self.date_filter.max_value.operator}"
                     )
-
-                mutations[col] = (
-                    ibis.case().when(condition, ibis.null()).else_(table[col]).end()
+                logger.debug(
+                    f"[{self.domain}] '{col}': setting to NULL where death occurred after {self.date_filter.max_value}"
                 )
+                mutations[col] = (
+                    ibis.case()
+                    .when(condition, ibis.null().cast(table[col].type()))
+                    .else_(table[col])
+                    .end()
+                )
+                modified = True
+        elif death_date_columns:
+            logger.debug(
+                f"[{self.domain}] '{death_date_columns}' found but no max_date specified — DATE_OF_DEATH left unchanged"
+            )
 
         # Apply all mutations if any exist
         if mutations:
+            logger.debug(
+                f"[{self.domain}] Applying mutations to columns: {list(mutations.keys())}"
+            )
             table = table.mutate(**mutations)
+
+        if not modified:
+            logger.debug(
+                f"[{self.domain}] No date filtering or mutations required — skipping write"
+            )
+            return None
 
         return table

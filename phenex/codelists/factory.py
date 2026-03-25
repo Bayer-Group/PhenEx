@@ -6,9 +6,9 @@ from .codelists import Codelist
 from phenex.util.serialization.to_dict import to_dict
 
 
-class LocalCSVCodelistFactory:
+class LocalFileCodelistFactory:
     """
-    LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
+    LocalFileCodelistFactory allows for the creation of multiple codelists from a single CSV or Excel file. Use this class when you have a single CSV or Excel file that contains multiple codelists.
 
     To use, create an instance of the class and then call the `get_codelist` method with the name of the codelist you want to retrieve; this codelist name must be an entry in the name_codelist_column.
     """
@@ -22,7 +22,7 @@ class LocalCSVCodelistFactory:
     ) -> None:
         """
         Parameters:
-            path: Path to the CSV file.
+            path: Path to the CSV or Excel file.
             name_code_column: The name of the column containing the codes.
             name_codelist_column: The name of the column containing the codelist names.
             name_code_type_column: The name of the column containing the code types.
@@ -32,7 +32,14 @@ class LocalCSVCodelistFactory:
         self.name_codelist_column = name_codelist_column
         self.name_code_type_column = name_code_type_column
         try:
-            self.df = pd.read_csv(path)
+            if ".csv" in path:
+                self.df = pd.read_csv(path)
+            elif ".xlsx" in path:
+                self.df = pd.read_excel(path)
+            else:
+                raise ValueError(
+                    "Unsupported file format. Only CSV and Excel are supported."
+                )
         except:
             raise ValueError("Could not read the file at the given path.")
 
@@ -70,6 +77,19 @@ class LocalCSVCodelistFactory:
             return Codelist(name=name, codelist=code_dict)
         except:
             raise ValueError("Could not find the codelist with the given name.")
+
+
+class LocalCSVCodelistFactory(LocalFileCodelistFactory):
+    """
+    Deprecated : LocalCSVCodelistFactory has been replaced by LocalFileCodelistFactory for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
+    """
+
+    def __init__(self, **kwargs):
+        warnings.warn(
+            "LocalCSVCodelistFactory is deprecated and will be removed in a future release. Please use LocalFileCodelistFactory instead.",
+            DeprecationWarning,
+        )
+        super(LocalCSVCodelistFactory, self).__init__(**kwargs)
 
 
 class MedConBCodelistFactory:
