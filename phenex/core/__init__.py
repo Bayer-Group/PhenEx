@@ -1,5 +1,6 @@
 from .cohort import Cohort
 from .subcohort import Subcohort
+from .study import Study
 from .data_period_filter_node import DataPeriodFilterNode
 from .hstack_node import HStackNode
 from .subset_table import SubsetTable
@@ -11,6 +12,7 @@ from .database import Database
 __all__ = [
     "Cohort",
     "Subcohort",
+    "Study",
     "DataPeriodFilterNode",
     "HStackNode",
     "SubsetTable",

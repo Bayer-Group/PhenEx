@@ -4,11 +4,13 @@ import ibis
 from phenex.ibis_connect import DuckDBConnector
 from phenex.test.cohort_test_generator import CohortTestGenerator
 from phenex.codelists import Codelist
-from phenex.core import Cohort
+from phenex.core import Cohort, Database
+from phenex.filters.date_filter import AfterOrOn, BeforeOrOn
 from phenex.phenotypes import (
     AgePhenotype,
     CategoricalPhenotype,
     CodelistPhenotype,
+    LogicPhenotype,
     TimeRangePhenotype,
     SexPhenotype,
     UserDefinedPhenotype,
@@ -908,6 +910,321 @@ class CohortWithUDPTestGenerator(CohortTestGenerator):
         return test_infos
 
 
+class CohortWithLogicPhenotypeAsInclusionTestGenerator(CohortTestGenerator):
+    """
+    Cohort where the inclusion criterion is a LogicPhenotype combining two component
+    phenotypes (continuous_coverage AND prior_drug_d1). This exercises composite
+    phenotypes with child component phenotypes in the waterfall detailed report.
+
+    | **PATID** | **entry** | **entry_date** | **obs_start** | **obs_end** | **Expected** |
+    | --- | --- | --- | --- | --- | --- |
+    | **P0** | d1 | 2020-01-01 | 2018-12-30 | 2020-01-10 | COHORT (cc passes, prior drug passes) |
+    | **P2** | d1 | 2020-01-01 | 2019-01-03 | 2020-01-10 | EXCLUDED (cc fails: obs_start <365d prior) |
+    | **P4** | d1 | 2020-01-01 | 2018-12-30 | 2019-12-31 | EXCLUDED (cc fails: obs_end before entry) |
+    | **P6** | d1 | 2020-01-01 | 2019-01-03 | 2019-12-31 | EXCLUDED (cc fails: both) |
+    """
+
+    def define_cohort(self):
+        entry = CodelistPhenotype(
+            name="entry_drug_d1",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+
+        cc = TimeRangePhenotype(
+            name="continuous_coverage",
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            ),
+        )
+
+        prior_drug_d1 = CodelistPhenotype(
+            name="prior_drug_d1",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
+        )
+
+        combined_inclusion = LogicPhenotype(
+            name="combined_cc_and_prior_drug",
+            expression=cc & prior_drug_d1,
+        )
+
+        age = AgePhenotype(name="age")
+        sex = SexPhenotype(name="sex")
+
+        return Cohort(
+            name="cohort_with_logic_phenotype",
+            entry_criterion=entry,
+            inclusions=[combined_inclusion],
+            characteristics=[age, sex],
+        )
+
+    def generate_dummy_input_data(self):
+        values = [
+            {
+                "name": "entry",
+                "values": ["d1", "d4"],
+            },
+            {
+                "name": "entry_date",
+                "values": [datetime.date(2020, 1, 1)],
+            },
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+        ]
+        return generate_dummy_cohort_data(values)
+
+    def define_mapped_tables(self):
+        self.con = DuckDBConnector()
+        df_allvalues = self.generate_dummy_input_data()
+
+        df_person = pd.DataFrame(df_allvalues[["PATID"]])
+        df_person["YOB"] = 1980
+        df_person["GENDER"] = df_person.index % 2 + 1
+        df_person["ACCEPTABLE"] = 1
+        schema_person = {"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int}
+        person_table = PersonTableForTests(
+            self.con.dest_connection.create_table(
+                "PERSON", df_person, schema=schema_person
+            )
+        )
+
+        df_drug_exposure = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
+        df_drug_exposure.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        schema_drug_exposure = {
+            "PATID": str,
+            "PRODCODEID": str,
+            "ISSUEDATE": datetime.date,
+        }
+        drug_exposure_table = DrugExposureTableForTests(
+            self.con.dest_connection.create_table(
+                "DRUG_EXPOSURE", df_drug_exposure, schema=schema_drug_exposure
+            )
+        )
+
+        df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
+        df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
+        schema_obs = {
+            "PATID": str,
+            "REGSTARTDATE": datetime.date,
+            "REGENDDATE": datetime.date,
+        }
+        obs_table = ObservationPeriodTableForTests(
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD", df_obs, schema=schema_obs
+            )
+        )
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_exposure_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
+
+    def define_expected_output(self):
+        df_expected_index = pd.DataFrame()
+        df_expected_index["PERSON_ID"] = ["P0"]
+        return {"index": df_expected_index}
+
+
+class CohortWithNoneMinDateDataPeriodTestGenerator(CohortTestGenerator):
+    """
+    Regression test: Cohort with Database(data_period=DateFilter(min_date=None, max_date=...)).
+    When min_date is None, the DataPeriodFilterNode still NULLs END_DATE values beyond
+    max_date using ibis.null().cast(...) — this must produce typed NULL SQL to avoid
+    Snowflake compilation errors. Expected output is identical to the basic continuous
+    coverage test since max_date is well after all test data dates.
+    """
+
+    def define_cohort(self):
+        entry = CodelistPhenotype(
+            name="entry_CohortWithNoneMinDateDataPeriodTestGenerator",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        cc = TimeRangePhenotype(
+            name="cc_CohortWithNoneMinDateDataPeriodTestGenerator",
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            ),
+        )
+        db = Database(
+            data_period=DateFilter(min_date=None, max_date=BeforeOrOn("2021-01-01"))
+        )
+        return Cohort(
+            name="test_none_min_date_data_period",
+            entry_criterion=entry,
+            inclusions=[cc],
+            database=db,
+        )
+
+    def define_mapped_tables(self):
+        self.con = DuckDBConnector()
+        values = [
+            {"name": "entry", "values": ["d1", "d4"]},
+            {"name": "entry_date", "values": [datetime.date(2020, 1, 1)]},
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+        ]
+        df_allvalues = generate_dummy_cohort_data(values)
+
+        df_person = pd.DataFrame(df_allvalues[["PATID"]])
+        df_person["YOB"] = 1980
+        df_person["GENDER"] = 1
+        df_person["ACCEPTABLE"] = 1
+        person_table = PersonTableForTests(
+            self.con.dest_connection.create_table(
+                "PERSON",
+                df_person,
+                schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
+            )
+        )
+
+        df_drug = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
+        df_drug.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        drug_table = DrugExposureTableForTests(
+            self.con.dest_connection.create_table(
+                "DRUG_EXPOSURE",
+                df_drug,
+                schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
+            )
+        )
+
+        df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
+        df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
+        obs_table = ObservationPeriodTableForTests(
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD",
+                df_obs,
+                schema={
+                    "PATID": str,
+                    "REGSTARTDATE": datetime.date,
+                    "REGENDDATE": datetime.date,
+                },
+            )
+        )
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
+
+    def define_expected_output(self):
+        df = pd.DataFrame()
+        df["PERSON_ID"] = ["P0"]
+        return {"index": df}
+
+
+class CohortWithNoneMaxDateDataPeriodTestGenerator(CohortTestGenerator):
+    """
+    Regression test: Cohort with Database(data_period=DateFilter(min_date=..., max_date=None)).
+    When max_date is None, no END_DATE/DATE_OF_DEATH NULLing occurs. The min_date filter
+    adjusts START_DATE values. Expected output is identical to the basic continuous
+    coverage test since min_date is well before all test data dates.
+    """
+
+    def define_cohort(self):
+        entry = CodelistPhenotype(
+            name="entry_CohortWithNoneMaxDateDataPeriodTestGenerator",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        cc = TimeRangePhenotype(
+            name="cc_CohortWithNoneMaxDateDataPeriodTestGenerator",
+            relative_time_range=RelativeTimeRangeFilter(
+                min_days=GreaterThanOrEqualTo(365)
+            ),
+        )
+        db = Database(
+            data_period=DateFilter(min_date=AfterOrOn("2015-01-01"), max_date=None)
+        )
+        return Cohort(
+            name="test_none_max_date_data_period",
+            entry_criterion=entry,
+            inclusions=[cc],
+            database=db,
+        )
+
+    def define_mapped_tables(self):
+        self.con = DuckDBConnector()
+        values = [
+            {"name": "entry", "values": ["d1", "d4"]},
+            {"name": "entry_date", "values": [datetime.date(2020, 1, 1)]},
+            {
+                "name": "obs_start",
+                "values": [datetime.date(2018, 12, 30), datetime.date(2019, 1, 3)],
+            },
+            {
+                "name": "obs_end",
+                "values": [datetime.date(2020, 1, 10), datetime.date(2019, 12, 31)],
+            },
+        ]
+        df_allvalues = generate_dummy_cohort_data(values)
+
+        df_person = pd.DataFrame(df_allvalues[["PATID"]])
+        df_person["YOB"] = 1980
+        df_person["GENDER"] = 1
+        df_person["ACCEPTABLE"] = 1
+        person_table = PersonTableForTests(
+            self.con.dest_connection.create_table(
+                "PERSON",
+                df_person,
+                schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
+            )
+        )
+
+        df_drug = pd.DataFrame(df_allvalues[["PATID", "entry", "entry_date"]])
+        df_drug.columns = ["PATID", "PRODCODEID", "ISSUEDATE"]
+        drug_table = DrugExposureTableForTests(
+            self.con.dest_connection.create_table(
+                "DRUG_EXPOSURE",
+                df_drug,
+                schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
+            )
+        )
+
+        df_obs = pd.DataFrame(df_allvalues[["PATID", "obs_start", "obs_end"]])
+        df_obs.columns = ["PATID", "REGSTARTDATE", "REGENDDATE"]
+        obs_table = ObservationPeriodTableForTests(
+            self.con.dest_connection.create_table(
+                "OBSERVATION_PERIOD",
+                df_obs,
+                schema={
+                    "PATID": str,
+                    "REGSTARTDATE": datetime.date,
+                    "REGENDDATE": datetime.date,
+                },
+            )
+        )
+        return {
+            "PERSON": person_table,
+            "DRUG_EXPOSURE": drug_table,
+            "OBSERVATION_PERIOD": obs_table,
+        }
+
+    def define_expected_output(self):
+        df = pd.DataFrame()
+        df["PERSON_ID"] = ["P0"]
+        return {"index": df}
+
+
 def test_time_range_phenotype():
     g = CohortWithContinuousCoverageTestGenerator()
     g.run_tests()
@@ -938,5 +1255,25 @@ def test_udp_entry():
     g.run_tests()
 
 
+def test_logic_phenotype_as_inclusion():
+    g = CohortWithLogicPhenotypeAsInclusionTestGenerator()
+    g.run_tests()
+
+
+def test_data_period_none_min_date():
+    """Regression test: DateFilter with min_date=None must not produce untyped NULL in SQL.
+    The data period filter NULLs END_DATE values beyond max_date; without a typed null cast
+    this fails on Snowflake with 'unexpected NULL' syntax errors."""
+    g = CohortWithNoneMinDateDataPeriodTestGenerator()
+    g.run_tests()
+
+
+def test_data_period_none_max_date():
+    """Regression test: DateFilter with max_date=None must not produce untyped NULL in SQL."""
+    g = CohortWithNoneMaxDateDataPeriodTestGenerator()
+    g.run_tests()
+
+
 if __name__ == "__main__":
-    test_udp_entry()
+    test_data_period_none_min_date()
+    test_data_period_none_max_date()
