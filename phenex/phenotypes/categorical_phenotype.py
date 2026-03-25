@@ -115,7 +115,7 @@ class CategoricalPhenotype(Phenotype):
                 categorical_filter, self.domain
             ):
                 logger.info(
-                    f"CategoricalPhenotype {self.name} operates on multiple tables {self.domain} and {self.categorical_filter.domain}."
+                    f"CategoricalPhenotype {self.name} operates on multiple tables {self.domain} and {categorical_filter.domain}."
                 )
         self.categorical_filter = categorical_filter
         self.date_range = date_range
