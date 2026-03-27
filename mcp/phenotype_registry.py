@@ -60,46 +60,54 @@ except ImportError:
 
 
 # Ordered list of phenotype classes to expose
-PHENOTYPE_CLASSES: List = [
-    CodelistPhenotype,
-    AgePhenotype,
-    SexPhenotype,
-    MeasurementPhenotype,
-    MeasurementChangePhenotype,
-    EventCountPhenotype,
-    TimeRangePhenotype,
-    TimeRangeCountPhenotype,
-    TimeRangeDayCountPhenotype,
-    TimeRangeDaysToNextRange,
-    DeathPhenotype,
-    CategoricalPhenotype,
-    BinPhenotype,
-    ScorePhenotype,
-    ArithmeticPhenotype,
-    LogicPhenotype,
-    WithinSameEncounterPhenotype,
-    UserDefinedPhenotype,
-] if PHENEX_AVAILABLE else []
+PHENOTYPE_CLASSES: List = (
+    [
+        CodelistPhenotype,
+        AgePhenotype,
+        SexPhenotype,
+        MeasurementPhenotype,
+        MeasurementChangePhenotype,
+        EventCountPhenotype,
+        TimeRangePhenotype,
+        TimeRangeCountPhenotype,
+        TimeRangeDayCountPhenotype,
+        TimeRangeDaysToNextRange,
+        DeathPhenotype,
+        CategoricalPhenotype,
+        BinPhenotype,
+        ScorePhenotype,
+        ArithmeticPhenotype,
+        LogicPhenotype,
+        WithinSameEncounterPhenotype,
+        UserDefinedPhenotype,
+    ]
+    if PHENEX_AVAILABLE
+    else []
+)
 
 # Supporting classes whose dict schema should be included when
 # they appear as a phenotype parameter type.
-SUPPORTING_CLASSES: Dict[str, Any] = {
-    "RelativeTimeRangeFilter": RelativeTimeRangeFilter,
-    "CategoricalFilter": CategoricalFilter,
-    "ValueFilter": ValueFilter,
-    "DateFilter": DateFilter,
-    "Value": Value,
-    "GreaterThan": GreaterThan,
-    "GreaterThanOrEqualTo": GreaterThanOrEqualTo,
-    "LessThan": LessThan,
-    "LessThanOrEqualTo": LessThanOrEqualTo,
-    "EqualTo": EqualTo,
-    "After": After,
-    "AfterOrOn": AfterOrOn,
-    "Before": Before,
-    "BeforeOrOn": BeforeOrOn,
-    "Codelist": Codelist,
-} if PHENEX_AVAILABLE else {}
+SUPPORTING_CLASSES: Dict[str, Any] = (
+    {
+        "RelativeTimeRangeFilter": RelativeTimeRangeFilter,
+        "CategoricalFilter": CategoricalFilter,
+        "ValueFilter": ValueFilter,
+        "DateFilter": DateFilter,
+        "Value": Value,
+        "GreaterThan": GreaterThan,
+        "GreaterThanOrEqualTo": GreaterThanOrEqualTo,
+        "LessThan": LessThan,
+        "LessThanOrEqualTo": LessThanOrEqualTo,
+        "EqualTo": EqualTo,
+        "After": After,
+        "AfterOrOn": AfterOrOn,
+        "Before": Before,
+        "BeforeOrOn": BeforeOrOn,
+        "Codelist": Codelist,
+    }
+    if PHENEX_AVAILABLE
+    else {}
+)
 
 
 def _get_supporting_class_spec(cls, _seen: Optional[set] = None) -> Dict[str, Any]:
@@ -116,7 +124,13 @@ def _get_supporting_class_spec(cls, _seen: Optional[set] = None) -> Dict[str, An
     # For classes with to_dict, show an example of the serialized form
     example_dict = None
     try:
-        if cls in (GreaterThan, LessThan, GreaterThanOrEqualTo, LessThanOrEqualTo, EqualTo):
+        if cls in (
+            GreaterThan,
+            LessThan,
+            GreaterThanOrEqualTo,
+            LessThanOrEqualTo,
+            EqualTo,
+        ):
             example_dict = cls(0).to_dict()
         elif cls in (After, AfterOrOn, Before, BeforeOrOn):
             example_dict = cls("2020-01-01").to_dict()
@@ -132,7 +146,9 @@ def _get_supporting_class_spec(cls, _seen: Optional[set] = None) -> Dict[str, An
         for class_name, supporting_cls in SUPPORTING_CLASSES.items():
             if class_name in type_str and class_name not in _seen:
                 _seen.add(class_name)
-                param_nested[class_name] = _get_supporting_class_spec(supporting_cls, _seen)
+                param_nested[class_name] = _get_supporting_class_spec(
+                    supporting_cls, _seen
+                )
         if param_nested:
             param_info["nested_specs"] = param_nested
 
@@ -146,7 +162,9 @@ def _get_supporting_class_spec(cls, _seen: Optional[set] = None) -> Dict[str, An
     return spec
 
 
-def _collect_referenced_classes(params: Dict[str, Dict[str, Any]], _seen: Optional[set] = None) -> Dict[str, Dict[str, Any]]:
+def _collect_referenced_classes(
+    params: Dict[str, Dict[str, Any]], _seen: Optional[set] = None
+) -> Dict[str, Dict[str, Any]]:
     """Find all supporting classes referenced in a parameter list and return their specs.
 
     Recurses into nested class parameters so transitive references
@@ -190,6 +208,7 @@ def _clean_type_str(annotation) -> str:
     s = s.replace("<function ", "").replace(">", "")
     # Remove memory addresses (e.g. "DateFilter at 0x1198fa020")
     import re
+
     s = re.sub(r"\s+at\s+0x[0-9a-fA-F]+", "", s)
     return s
 
@@ -236,7 +255,11 @@ def _extract_docstring_sections(cls) -> Dict[str, str]:
             rest_start = i + 1
             break
         # Stop at known section headers
-        if stripped.startswith("Parameters:") or stripped.startswith("Attributes:") or stripped.startswith("Example"):
+        if (
+            stripped.startswith("Parameters:")
+            or stripped.startswith("Attributes:")
+            or stripped.startswith("Example")
+        ):
             rest_start = i
             break
         desc_lines.append(stripped)
@@ -265,19 +288,26 @@ def _extract_docstring_sections(cls) -> Dict[str, str]:
 def get_available_phenotypes() -> List[Dict[str, Any]]:
     """Get list of all available PhenEx phenotype types, derived from actual class docs."""
     if not PHENEX_AVAILABLE:
-        return [{"error": "PhenEx library not available. Install with: pip install phenex", "phenotypes": []}]
+        return [
+            {
+                "error": "PhenEx library not available. Install with: pip install phenex",
+                "phenotypes": [],
+            }
+        ]
 
     phenotypes = []
     for cls in PHENOTYPE_CLASSES:
         sections = _extract_docstring_sections(cls)
         params = _extract_parameters(cls)
 
-        phenotypes.append({
-            "name": cls.__name__,
-            "description": sections["description"],
-            "parameters": params,
-            "example": sections.get("example", ""),
-        })
+        phenotypes.append(
+            {
+                "name": cls.__name__,
+                "description": sections["description"],
+                "parameters": params,
+                "example": sections.get("example", ""),
+            }
+        )
     return phenotypes
 
 
@@ -289,7 +319,9 @@ def get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
     all derived from the actual class, nothing hardcoded.
     """
     if not PHENEX_AVAILABLE:
-        return {"error": "PhenEx library not available. Install with: pip install phenex"}
+        return {
+            "error": "PhenEx library not available. Install with: pip install phenex"
+        }
 
     cls_map = {cls.__name__: cls for cls in PHENOTYPE_CLASSES}
     if phenotype_class not in cls_map:
@@ -310,7 +342,9 @@ def get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
         for class_name, supporting_cls in SUPPORTING_CLASSES.items():
             if class_name in type_str and class_name not in seen:
                 seen.add(class_name)
-                param_nested[class_name] = _get_supporting_class_spec(supporting_cls, seen)
+                param_nested[class_name] = _get_supporting_class_spec(
+                    supporting_cls, seen
+                )
         if param_nested:
             param_info["nested_specs"] = param_nested
 
@@ -328,7 +362,9 @@ def get_codelist_spec() -> Dict[str, Any]:
     try:
         from phenex.codelists import Codelist
     except ImportError:
-        return {"error": "PhenEx library not available. Install with: pip install phenex"}
+        return {
+            "error": "PhenEx library not available. Install with: pip install phenex"
+        }
 
     sections = _extract_docstring_sections(Codelist)
     params = _extract_parameters(Codelist)

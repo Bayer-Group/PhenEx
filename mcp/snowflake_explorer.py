@@ -51,8 +51,17 @@ def _sanitize_where(where: str) -> str:
         raise ValueError("WHERE clause cannot contain SQL comments")
 
     dangerous_keywords = [
-        "DROP", "DELETE", "INSERT", "UPDATE", "ALTER", "CREATE",
-        "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "EXEC",
+        "DROP",
+        "DELETE",
+        "INSERT",
+        "UPDATE",
+        "ALTER",
+        "CREATE",
+        "TRUNCATE",
+        "GRANT",
+        "REVOKE",
+        "EXECUTE",
+        "EXEC",
     ]
     where_upper = where.upper()
     for keyword in dangerous_keywords:
@@ -100,7 +109,9 @@ def _get_connection():
     )
 
 
-def list_databases(pattern: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+def list_databases(
+    pattern: Optional[str] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     """List all databases in Snowflake, optionally filtered by pattern."""
     from snowflake.connector import DictCursor
 
@@ -129,7 +140,9 @@ def list_databases(pattern: Optional[str] = None, limit: int = 100) -> List[Dict
         conn.close()
 
 
-def list_schemas(database: str, pattern: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+def list_schemas(
+    database: str, pattern: Optional[str] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     """List all schemas in a Snowflake database, optionally filtered by pattern."""
     from snowflake.connector import DictCursor
 
@@ -158,7 +171,9 @@ def list_schemas(database: str, pattern: Optional[str] = None, limit: int = 100)
         conn.close()
 
 
-def list_tables(schema: str, database: str, pattern: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+def list_tables(
+    schema: str, database: str, pattern: Optional[str] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     """List all tables in a Snowflake schema, optionally filtered by pattern."""
     from snowflake.connector import DictCursor
 
@@ -190,7 +205,9 @@ def list_tables(schema: str, database: str, pattern: Optional[str] = None, limit
         conn.close()
 
 
-def get_table_columns(table: str, schema: str, database: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_table_columns(
+    table: str, schema: str, database: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """Get column information for a table."""
     from snowflake.connector import DictCursor
 
@@ -219,7 +236,9 @@ def get_table_columns(table: str, schema: str, database: Optional[str] = None) -
         conn.close()
 
 
-def preview_table(table: str, schema: str, database: str, limit: int = 10) -> Dict[str, Any]:
+def preview_table(
+    table: str, schema: str, database: str, limit: int = 10
+) -> Dict[str, Any]:
     """Preview rows from a table."""
     from snowflake.connector import DictCursor
 

@@ -31,7 +31,11 @@ logging.basicConfig(
 logger = logging.getLogger("phenex-mcp")
 logger.setLevel(getattr(logging, log_level, logging.INFO))
 
-from phenotype_registry import get_available_phenotypes, get_phenotype_spec, get_codelist_spec
+from phenotype_registry import (
+    get_available_phenotypes,
+    get_phenotype_spec,
+    get_codelist_spec,
+)
 import snowflake_explorer as sf_explorer
 from cohort_tools import validate_phenotype, validate_cohort, execute_cohort
 import codelist_store
@@ -353,12 +357,23 @@ def snowflake_list_databases(
     """
     try:
         databases = sf_explorer.list_databases(pattern, limit)
-        result = {"success": True, "databases": databases, "count": len(databases), "limit": limit}
+        result = {
+            "success": True,
+            "databases": databases,
+            "count": len(databases),
+            "limit": limit,
+        }
         if pattern:
             result["pattern"] = pattern
         return result
     except Exception as e:
-        return {"success": False, "error": str(e), "databases": [], "count": 0, "limit": limit}
+        return {
+            "success": False,
+            "error": str(e),
+            "databases": [],
+            "count": 0,
+            "limit": limit,
+        }
 
 
 @mcp.tool()
@@ -382,12 +397,23 @@ def snowflake_list_schemas(
     """
     try:
         schemas = sf_explorer.list_schemas(database, pattern, limit)
-        result = {"success": True, "schemas": schemas, "count": len(schemas), "limit": limit}
+        result = {
+            "success": True,
+            "schemas": schemas,
+            "count": len(schemas),
+            "limit": limit,
+        }
         if pattern:
             result["pattern"] = pattern
         return result
     except Exception as e:
-        return {"success": False, "error": str(e), "schemas": [], "count": 0, "limit": limit}
+        return {
+            "success": False,
+            "error": str(e),
+            "schemas": [],
+            "count": 0,
+            "limit": limit,
+        }
 
 
 @mcp.tool()
@@ -414,12 +440,25 @@ def snowflake_list_tables(
     """
     try:
         tables = sf_explorer.list_tables(schema, database, pattern, limit)
-        result = {"success": True, "tables": tables, "count": len(tables), "limit": limit, "schema": schema}
+        result = {
+            "success": True,
+            "tables": tables,
+            "count": len(tables),
+            "limit": limit,
+            "schema": schema,
+        }
         if pattern:
             result["pattern"] = pattern
         return result
     except Exception as e:
-        return {"success": False, "error": str(e), "tables": [], "count": 0, "limit": limit, "schema": schema}
+        return {
+            "success": False,
+            "error": str(e),
+            "tables": [],
+            "count": 0,
+            "limit": limit,
+            "schema": schema,
+        }
 
 
 @mcp.tool()
@@ -444,9 +483,22 @@ def snowflake_get_table_columns(
     """
     try:
         columns = sf_explorer.get_table_columns(table, schema, database)
-        return {"success": True, "columns": columns, "count": len(columns), "table": table, "schema": schema}
+        return {
+            "success": True,
+            "columns": columns,
+            "count": len(columns),
+            "table": table,
+            "schema": schema,
+        }
     except Exception as e:
-        return {"success": False, "error": str(e), "columns": [], "count": 0, "table": table, "schema": schema}
+        return {
+            "success": False,
+            "error": str(e),
+            "columns": [],
+            "count": 0,
+            "table": table,
+            "schema": schema,
+        }
 
 
 @mcp.tool()
@@ -473,8 +525,14 @@ def snowflake_preview_table(
         return {"success": True, **result, "table": table, "schema": schema}
     except Exception as e:
         return {
-            "success": False, "error": str(e), "columns": [], "rows": [],
-            "row_count": 0, "limit": limit, "table": table, "schema": schema,
+            "success": False,
+            "error": str(e),
+            "columns": [],
+            "rows": [],
+            "row_count": 0,
+            "limit": limit,
+            "table": table,
+            "schema": schema,
         }
 
 
@@ -503,11 +561,21 @@ def snowflake_select_rows(
     """
     try:
         return sf_explorer.select_rows(
-            database=database, schema=schema, table=table,
-            columns=columns, where=where, limit=limit,
+            database=database,
+            schema=schema,
+            table=table,
+            columns=columns,
+            where=where,
+            limit=limit,
         )
     except Exception as e:
-        return {"error": str(e), "columns": [], "rows": [], "row_count": 0, "limit": limit}
+        return {
+            "error": str(e),
+            "columns": [],
+            "rows": [],
+            "row_count": 0,
+            "limit": limit,
+        }
 
 
 @mcp.tool()
@@ -537,11 +605,21 @@ def snowflake_get_distinct_values(
     """
     try:
         return sf_explorer.get_distinct_values(
-            database=database, schema=schema, table=table,
-            column=column, where=where, limit=limit,
+            database=database,
+            schema=schema,
+            table=table,
+            column=column,
+            where=where,
+            limit=limit,
         )
     except Exception as e:
-        return {"error": str(e), "column": column, "values": [], "count": 0, "limit": limit}
+        return {
+            "error": str(e),
+            "column": column,
+            "values": [],
+            "count": 0,
+            "limit": limit,
+        }
 
 
 @mcp.tool()
@@ -564,9 +642,15 @@ def snowflake_count_rows(
         Dictionary with count, table.
     """
     try:
-        return sf_explorer.count_rows(database=database, schema=schema, table=table, where=where)
+        return sf_explorer.count_rows(
+            database=database, schema=schema, table=table, where=where
+        )
     except Exception as e:
-        return {"error": str(e), "count": 0, "table": f'"{database}"."{schema}"."{table}"'}
+        return {
+            "error": str(e),
+            "count": 0,
+            "table": f'"{database}"."{schema}"."{table}"',
+        }
 
 
 # ============================================================
@@ -623,7 +707,12 @@ def run_server():
     if transport in ("http", "streamable-http"):
         port = int(os.getenv("MCP_PORT", "9000"))
         host = os.getenv("MCP_HOST", "0.0.0.0")
-        mcp.run(transport="streamable-http", host=host, port=port, log_level=log_level.lower())
+        mcp.run(
+            transport="streamable-http",
+            host=host,
+            port=port,
+            log_level=log_level.lower(),
+        )
     elif transport == "sse":
         port = int(os.getenv("MCP_PORT", "9000"))
         host = os.getenv("MCP_HOST", "0.0.0.0")

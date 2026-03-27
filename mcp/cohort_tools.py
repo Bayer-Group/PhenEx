@@ -29,11 +29,19 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
         native["class_name"] = native.pop("type")
 
     # Convert flat codelist dict to wrapped Codelist object
-    if "codelist" in native and isinstance(native["codelist"], dict) and "class_name" not in native["codelist"]:
+    if (
+        "codelist" in native
+        and isinstance(native["codelist"], dict)
+        and "class_name" not in native["codelist"]
+    ):
         codelist_dict = native["codelist"]
         # These belong on the Codelist, not the phenotype — pull them from BOTH locations
-        remove_punctuation = codelist_dict.pop("remove_punctuation", native.pop("remove_punctuation", False))
-        use_code_type = codelist_dict.pop("use_code_type", native.pop("use_code_type", True))
+        remove_punctuation = codelist_dict.pop(
+            "remove_punctuation", native.pop("remove_punctuation", False)
+        )
+        use_code_type = codelist_dict.pop(
+            "use_code_type", native.pop("use_code_type", True)
+        )
         native["codelist"] = {
             "class_name": "Codelist",
             "name": native.get("name", "codelist") + "_codes",
@@ -43,12 +51,16 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Recursively translate anchor_phenotype in relative_time_range if present
-    if "relative_time_range" in native and isinstance(native["relative_time_range"], dict):
+    if "relative_time_range" in native and isinstance(
+        native["relative_time_range"], dict
+    ):
         rtrf = native["relative_time_range"]
         if "class_name" not in rtrf:
             rtrf["class_name"] = "RelativeTimeRangeFilter"
         if "anchor_phenotype" in rtrf and isinstance(rtrf["anchor_phenotype"], dict):
-            rtrf["anchor_phenotype"] = translate_phenotype_to_native(rtrf["anchor_phenotype"])
+            rtrf["anchor_phenotype"] = translate_phenotype_to_native(
+                rtrf["anchor_phenotype"]
+            )
 
     # Translate date_range if present
     if "date_range" in native and isinstance(native["date_range"], dict):
@@ -57,7 +69,9 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
             dr["class_name"] = "DateFilter"
 
     # Translate categorical_filter if present
-    if "categorical_filter" in native and isinstance(native["categorical_filter"], dict):
+    if "categorical_filter" in native and isinstance(
+        native["categorical_filter"], dict
+    ):
         cf = native["categorical_filter"]
         if "class_name" not in cf:
             cf["class_name"] = "CategoricalFilter"
@@ -65,7 +79,9 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
     return native
 
 
-def translate_to_phenex_native(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict[str, Any]:
+def translate_to_phenex_native(
+    cohort_definition: Dict[str, Any], cohort_name: str
+) -> Dict[str, Any]:
     """
     Translate the simplified cohort format (shown in tool docs) to PhenEx's native
     from_dict() Cohort format.
@@ -147,7 +163,9 @@ def validate_phenotype(phenotype_definition: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Must have a type/class_name
-    pheno_type = phenotype_definition.get("type") or phenotype_definition.get("class_name")
+    pheno_type = phenotype_definition.get("type") or phenotype_definition.get(
+        "class_name"
+    )
     if not pheno_type:
         return {
             "valid": False,
@@ -183,7 +201,9 @@ def validate_phenotype(phenotype_definition: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 
-def validate_cohort(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict[str, Any]:
+def validate_cohort(
+    cohort_definition: Dict[str, Any], cohort_name: str
+) -> Dict[str, Any]:
     """
     Validate a cohort definition without executing it.
 
@@ -218,7 +238,9 @@ def validate_cohort(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict
             if "name" not in cohort_definition:
                 errors.append("Cohort definition missing required field: 'name'")
             if "entry_criterion" not in cohort_definition:
-                errors.append("Cohort definition missing required field: 'entry_criterion'")
+                errors.append(
+                    "Cohort definition missing required field: 'entry_criterion'"
+                )
             else:
                 entry = cohort_definition["entry_criterion"]
                 if isinstance(entry, dict) and "class_name" in entry:
@@ -245,14 +267,18 @@ def validate_cohort(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict
             elif not isinstance(cohort_definition["phenotypes"], list):
                 errors.append("'phenotypes' must be a list")
             elif len(cohort_definition["phenotypes"]) == 0:
-                errors.append("'phenotypes' list is empty - must have at least one phenotype")
+                errors.append(
+                    "'phenotypes' list is empty - must have at least one phenotype"
+                )
             else:
                 for i, pheno in enumerate(cohort_definition["phenotypes"]):
                     if not isinstance(pheno, dict):
                         errors.append(f"Phenotype {i} is not a dictionary")
                         continue
                     if "type" not in pheno and "class_name" not in pheno:
-                        errors.append(f"Phenotype {i} missing required field 'type' or 'class_name'")
+                        errors.append(
+                            f"Phenotype {i} missing required field 'type' or 'class_name'"
+                        )
                     else:
                         pheno_type = pheno.get("type") or pheno.get("class_name")
                         phenotypes_used.append(pheno_type)
@@ -270,10 +296,14 @@ def validate_cohort(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict
             try:
                 from phenex.util.serialization.from_dict import from_dict
 
-                native_def = translate_to_phenex_native(cohort_definition.copy(), cohort_name)
+                native_def = translate_to_phenex_native(
+                    cohort_definition.copy(), cohort_name
+                )
                 _compiled = from_dict(native_def)
             except Exception as compile_err:
-                errors.append(f"Compilation error (from_dict): {type(compile_err).__name__}: {str(compile_err)}")
+                errors.append(
+                    f"Compilation error (from_dict): {type(compile_err).__name__}: {str(compile_err)}"
+                )
 
         is_valid = len(errors) == 0
 
@@ -285,7 +315,11 @@ def validate_cohort(cohort_definition: Dict[str, Any], cohort_name: str) -> Dict
             "target_schema": target_schema,
             "phenotypes_used": list(set(phenotypes_used)),
             "phenotype_count": phenotype_count,
-            "message": "Cohort definition is valid" if is_valid else f"Validation failed with {len(errors)} error(s)",
+            "message": (
+                "Cohort definition is valid"
+                if is_valid
+                else f"Validation failed with {len(errors)} error(s)"
+            ),
         }
 
     except Exception as e:
@@ -329,18 +363,26 @@ def execute_cohort(
         }
 
     # Step 2: Parse database configuration
-    source_database = SNOWFLAKE_SOURCE_DATABASE or os.getenv("SNOWFLAKE_SOURCE_DATABASE")
+    source_database = SNOWFLAKE_SOURCE_DATABASE or os.getenv(
+        "SNOWFLAKE_SOURCE_DATABASE"
+    )
     source_schema = SNOWFLAKE_SOURCE_SCHEMA or os.getenv("SNOWFLAKE_SOURCE_SCHEMA")
     dest_database = SNOWFLAKE_DEST_DATABASE or os.getenv("SNOWFLAKE_DEST_DATABASE")
     dest_schema = f"PHENEX_AI__{cohort_name.upper()}"
 
     config_errors = []
     if not source_database:
-        config_errors.append("SNOWFLAKE_SOURCE_DATABASE not provided as parameter or env var")
+        config_errors.append(
+            "SNOWFLAKE_SOURCE_DATABASE not provided as parameter or env var"
+        )
     if not source_schema:
-        config_errors.append("SNOWFLAKE_SOURCE_SCHEMA not provided as parameter or env var")
+        config_errors.append(
+            "SNOWFLAKE_SOURCE_SCHEMA not provided as parameter or env var"
+        )
     if not dest_database:
-        config_errors.append("SNOWFLAKE_DEST_DATABASE not provided as parameter or env var")
+        config_errors.append(
+            "SNOWFLAKE_DEST_DATABASE not provided as parameter or env var"
+        )
 
     if config_errors:
         return {
@@ -398,15 +440,21 @@ def execute_cohort(
             SNOWFLAKE_SOURCE_DATABASE=source_db_qualified,
             SNOWFLAKE_DEST_DATABASE=dest_db_qualified,
         )
-        logger_info.append(f"Connected to Snowflake: {source_db_qualified} -> {dest_db_qualified}")
+        logger_info.append(
+            f"Connected to Snowflake: {source_db_qualified} -> {dest_db_qualified}"
+        )
 
         # 3c: Compile cohort from dict
         logger_info.append("Compiling cohort definition...")
         try:
             cohort = from_dict(cohort_definition)
-            logger_info.append(f"Compiled cohort: {getattr(cohort, 'name', type(cohort).__name__)}")
+            logger_info.append(
+                f"Compiled cohort: {getattr(cohort, 'name', type(cohort).__name__)}"
+            )
         except Exception as from_dict_error:
-            logger_info.append(f"from_dict() failed: {type(from_dict_error).__name__}: {str(from_dict_error)}")
+            logger_info.append(
+                f"from_dict() failed: {type(from_dict_error).__name__}: {str(from_dict_error)}"
+            )
             raise
 
         # 3d: Get source tables using OMOP mapper

@@ -32,7 +32,9 @@ def _get_codelist_dir() -> Path:
         )
     p = Path(codelist_dir)
     if not p.is_dir():
-        raise ValueError(f"PHENEX_CODELIST_DIR '{codelist_dir}' is not a directory or does not exist.")
+        raise ValueError(
+            f"PHENEX_CODELIST_DIR '{codelist_dir}' is not a directory or does not exist."
+        )
     return p
 
 
@@ -41,7 +43,9 @@ def _get_column_config() -> dict:
     return {
         "name_code_column": os.getenv("PHENEX_CODELIST_CODE_COLUMN", "code"),
         "name_codelist_column": os.getenv("PHENEX_CODELIST_NAME_COLUMN", "codelist"),
-        "name_code_type_column": os.getenv("PHENEX_CODELIST_CODE_TYPE_COLUMN", "code_type"),
+        "name_code_type_column": os.getenv(
+            "PHENEX_CODELIST_CODE_TYPE_COLUMN", "code_type"
+        ),
     }
 
 
@@ -55,7 +59,11 @@ def _load_factories() -> List[LocalFileCodelistFactory]:
     col_cfg = _get_column_config()
 
     extensions = {".csv", ".xlsx"}
-    files = sorted(f for f in codelist_dir.iterdir() if f.suffix.lower() in extensions and not f.name.startswith("."))
+    files = sorted(
+        f
+        for f in codelist_dir.iterdir()
+        if f.suffix.lower() in extensions and not f.name.startswith(".")
+    )
 
     if not files:
         raise ValueError(f"No CSV or Excel files found in '{codelist_dir}'.")
