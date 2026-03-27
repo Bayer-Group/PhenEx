@@ -30,16 +30,17 @@ An MCP (Model Context Protocol) server that exposes PhenEx cohort building and S
 
 ## Setup
 
-These instructions must be run from the mcp/ directory:
-
 ```bash
-cd mcp
+git clone https://github.com/Bayer-Group/PhenEx phenex-mcp
+cd phenex-mcp/mcp
 ```
 
-### 1. Install dependencies
+### 1. Create a virtual environment and install dependencies
 
 ```bash
-pip install -r requirements.txt    # Install MCP dependencies
+python -m venv .venv
+source .venv/bin/activate           # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 ### 2. Configure Snowflake credentials
