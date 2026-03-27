@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "phenex": {
+      "command": "bash",
+      "args": ["./mcp/start.sh"],
+      "env": {}
+    }
+  }
+}
