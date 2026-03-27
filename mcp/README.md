@@ -80,6 +80,14 @@ MCP_PORT=8080 bash start_http.sh
 
 ## Client Configuration
 
+### LLM Instructions
+
+The file `mcp/llm-instructions.md` contains detailed guidance for AI assistants on how to use the PhenEx tools effectively. Copy its contents into your client's system prompt or custom instructions:
+
+- **Claude Desktop** — paste into your Project's custom instructions
+- **VS Code (Copilot)** — copy to `.github/copilot-instructions.md` in your workspace
+- **Cursor** — paste into `.cursor/rules`
+
 ### Claude Desktop
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
