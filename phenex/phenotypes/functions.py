@@ -241,16 +241,9 @@ def hstack_pivot(
 
     # Step 3: If a base table was provided, LEFT JOIN to preserve all its rows
     if join_table is not None:
-        logger.info(
-            f"PRIOR TO JOIN {join_table.select('PERSON_ID').distinct().count()}"
-        )
         join_table = join_table.select(
             "PERSON_ID"
         ).distinct()  # Ensure join_table has only one PERSON_ID column
-        logger.info(
-            f"AFTER DISTINCT {join_table.select('PERSON_ID').distinct().count()}"
-        )
-
         result = join_table.join(wide_table, "PERSON_ID", how="left")
         columns = [
             c
@@ -259,7 +252,7 @@ def hstack_pivot(
         ]
         result = result.select(columns)
     else:
-        logger.info("THERE IS NO JOIN TABLE")
+        logger.debug("No join table provided to hstack")
         result = wide_table
 
     logger.info(
