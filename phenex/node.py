@@ -392,7 +392,15 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
+                            logger.info(
+                                f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
+                            )
+                            _t_mat = datetime.now()
                             con.create_table(table, node_name, overwrite=overwrite)
+                            logger.info(
+                                f"Thread {threading.current_thread().name}: materialized '{node_name}' "
+                                f"in {(datetime.now() - _t_mat).total_seconds():.3f}s"
+                            )
                             table = con.get_dest_table(node_name)
 
                         node.lastexecution_end_time = datetime.now()
@@ -448,12 +456,20 @@ class Node:
             threads.append(thread)
 
         # Wait for all nodes to complete or for an error to occur
+        _last_heartbeat = datetime.now()
         while (
             len(completed) < len(nodes)
             and not worker_exceptions
             and not stop_all_workers.is_set()
         ):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
+            _now = datetime.now()
+            if (_now - _last_heartbeat).total_seconds() >= 30:
+                _pending = sorted(set(nodes.keys()) - completed)
+                logger.info(
+                    f"Node '{self.name}': still waiting for {len(_pending)} nodes: {_pending}"
+                )
+                _last_heartbeat = _now
 
         if not stop_all_workers.is_set():
             # Time to stop workers and cleanup
