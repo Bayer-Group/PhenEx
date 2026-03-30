@@ -1,5 +1,6 @@
 from .phenotype import Phenotype
 
+from .event_phenotype import EventPhenotype
 from .codelist_phenotype import CodelistPhenotype
 from .age_phenotype import AgePhenotype
 from .bin_phenotype import BinPhenotype

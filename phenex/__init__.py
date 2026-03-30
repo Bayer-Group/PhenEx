@@ -9,6 +9,7 @@ from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 # Phenotype classes - the main public API
 from .phenotypes import (
     Phenotype,
+    EventPhenotype,
     CodelistPhenotype,
     SmartCodelistPhenotype,
     CODETYPE_INFO,
@@ -117,6 +118,7 @@ __all__ = [
     "Study",
     # Phenotypes
     "Phenotype",
+    "EventPhenotype",
     "CodelistPhenotype",
     "SmartCodelistPhenotype",
     "CODETYPE_INFO",
