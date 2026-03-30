@@ -321,11 +321,13 @@ class Cohort:
             self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
                 phenotypes=self.characteristics,
+                join_table=self.index_table_node,
             )
             reporting_nodes.append(self.characteristics_table_node)
         if self.outcomes:
             self.outcomes_table_node = HStackNode(
-                name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
+                name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes,
+                join_table=self.index_table_node
             )
             reporting_nodes.append(self.outcomes_table_node)
 
@@ -620,7 +622,7 @@ class Cohort:
                     self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
 
         if self.reporting_stage:
-            logger.info("Cohort '{self.name}': executing reporting stage ...")
+            logger.info(f"Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
                 con=con,

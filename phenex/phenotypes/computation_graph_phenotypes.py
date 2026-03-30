@@ -4,7 +4,7 @@ from ibis.expr.types.relations import Table
 import ibis
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
-from phenex.phenotypes.functions import hstack
+from phenex.phenotypes.functions import hstack_pivot
 from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators import First, Last
 
@@ -70,7 +70,7 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+        joined_table = hstack_pivot(self.children, tables["PERSON"].select("PERSON_ID"))
 
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
@@ -409,7 +409,7 @@ class LogicPhenotype(ComputationGraphPhenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+        joined_table = hstack_pivot(self.children, tables["PERSON"].select("PERSON_ID"))
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
