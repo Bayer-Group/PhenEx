@@ -326,8 +326,9 @@ class Cohort:
             reporting_nodes.append(self.characteristics_table_node)
         if self.outcomes:
             self.outcomes_table_node = HStackNode(
-                name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes,
-                join_table=self.index_table_node
+                name=f"{self.name}__outcomes".upper(),
+                phenotypes=self.outcomes,
+                join_table=self.index_table_node,
             )
             reporting_nodes.append(self.outcomes_table_node)
 

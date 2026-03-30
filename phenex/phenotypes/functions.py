@@ -48,7 +48,9 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         logger.info(
             f"hstack: building flat LEFT JOIN chain for {len(phenotypes)} phenotypes (UNION base)"
         )
-        person_id_tables = [pt.namespaced_table.select("PERSON_ID") for pt in phenotypes]
+        person_id_tables = [
+            pt.namespaced_table.select("PERSON_ID") for pt in phenotypes
+        ]
         join_table = ibis.union(*person_id_tables, distinct=True)
     else:
         logger.info(
@@ -66,7 +68,8 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
     # Remove all PERSON_ID_right* columns (key duplicates from each join's right side).
     # Phenotype-specific columns are named {NAME}_BOOLEAN / _EVENT_DATE / _VALUE and are unaffected.
     columns = [
-        c for c in join_table.columns
+        c
+        for c in join_table.columns
         if c == "PERSON_ID" or not c.startswith("PERSON_ID")
     ]
     join_table = join_table.select(columns)
@@ -150,7 +153,8 @@ def hstack_boolean(phenotypes: List["Phenotype"], join_table: Table = None) -> T
         result = join_table.join(wide_table, "PERSON_ID", how="left")
         # Drop duplicated PERSON_ID_right if present
         columns = [
-            c for c in result.columns
+            c
+            for c in result.columns
             if c == "PERSON_ID" or not c.startswith("PERSON_ID")
         ]
         result = result.select(columns)
@@ -164,7 +168,9 @@ def hstack_boolean(phenotypes: List["Phenotype"], join_table: Table = None) -> T
     return result
 
 
-def hstack_pivot(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
+def hstack_pivot(
+    phenotypes: List["Phenotype"], join_table: Table = None, date_agg: str = "max"
+) -> Table:
     """
     Efficiently stacks BOOLEAN, EVENT_DATE, and VALUE from multiple phenotypes into a
     wide table using UNION ALL + GROUP BY with filtered aggregation.
@@ -177,6 +183,12 @@ def hstack_pivot(phenotypes: List["Phenotype"], join_table: Table = None) -> Tab
     Args:
         phenotypes: A list of Phenotype objects to stack.
         join_table: Optional base table whose rows are all preserved via LEFT JOIN.
+        date_agg: Aggregation to apply to EVENT_DATE when a child phenotype has
+            multiple rows per person (e.g. return_date='all'). Use ``"min"`` when
+            the parent wants the first (earliest) date, and ``"max"`` (default)
+            when it wants the last (latest) date. The parent's own
+            ``ibis.least`` / ``ibis.greatest`` call then operates correctly on
+            per-child min/max dates.
 
     Returns:
         Table with PERSON_ID and {name}_BOOLEAN / {name}_EVENT_DATE / {name}_VALUE
@@ -217,7 +229,11 @@ def hstack_pivot(phenotypes: List["Phenotype"], join_table: Table = None) -> Tab
     for pt in phenotypes:
         is_match = long_table._PHENOTYPE == pt.name
         agg_exprs[f"{pt.name}_BOOLEAN"] = bool_col.max(where=is_match).fill_null(False)
-        agg_exprs[f"{pt.name}_EVENT_DATE"] = date_col.max(where=is_match)
+        agg_exprs[f"{pt.name}_EVENT_DATE"] = (
+            date_col.min(where=is_match)
+            if date_agg == "min"
+            else date_col.max(where=is_match)
+        )
         original_type = original_value_types[pt.name]
         agg_exprs[f"{pt.name}_VALUE"] = val_col.max(where=is_match).cast(original_type)
 
@@ -225,13 +241,20 @@ def hstack_pivot(phenotypes: List["Phenotype"], join_table: Table = None) -> Tab
 
     # Step 3: If a base table was provided, LEFT JOIN to preserve all its rows
     if join_table is not None:
-        logger.info(f"PRIOR TO JOIN {join_table.select('PERSON_ID').distinct().count()}")
-        join_table = join_table.select("PERSON_ID").distinct()  # Ensure join_table has only one PERSON_ID column
-        logger.info(f"AFTER DISTINCT {join_table.select('PERSON_ID').distinct().count()}")
+        logger.info(
+            f"PRIOR TO JOIN {join_table.select('PERSON_ID').distinct().count()}"
+        )
+        join_table = join_table.select(
+            "PERSON_ID"
+        ).distinct()  # Ensure join_table has only one PERSON_ID column
+        logger.info(
+            f"AFTER DISTINCT {join_table.select('PERSON_ID').distinct().count()}"
+        )
 
         result = join_table.join(wide_table, "PERSON_ID", how="left")
         columns = [
-            c for c in result.columns
+            c
+            for c in result.columns
             if c == "PERSON_ID" or not c.startswith("PERSON_ID")
         ]
         result = result.select(columns)

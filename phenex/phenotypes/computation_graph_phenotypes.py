@@ -70,7 +70,10 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack_pivot(self.children, tables["PERSON"].select("PERSON_ID"))
+        _date_agg = "min" if self.return_date == "first" else "max"
+        joined_table = hstack_pivot(
+            self.children, tables["PERSON"].select("PERSON_ID"), date_agg=_date_agg
+        )
 
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
@@ -409,7 +412,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack_pivot(self.children, tables["PERSON"].select("PERSON_ID"))
+        _date_agg = "min" if self.return_date == "first" else "max"
+        joined_table = hstack_pivot(
+            self.children, tables["PERSON"].select("PERSON_ID"), date_agg=_date_agg
+        )
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
