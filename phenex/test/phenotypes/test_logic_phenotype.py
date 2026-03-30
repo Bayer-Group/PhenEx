@@ -1260,10 +1260,10 @@ def test_logic_phenotype_mixed_value_types():
 
 
 if __name__ == "__main__":
-    # test_logic_phenotype_1()
-    # test_logic_phenotype_2()
-    # test_logic_phenotype_3()
+    test_logic_phenotype_1()
+    test_logic_phenotype_2()
+    test_logic_phenotype_3()
     test_logic_phenotype_4()
-    # test_logic_phenotype_5()
-    # test_logic_phenotype_value()
-    # test_logic_phenotype_mixed_value_types()
+    test_logic_phenotype_5()
+    test_logic_phenotype_value()
+    test_logic_phenotype_mixed_value_types()
