@@ -439,9 +439,7 @@ class TimeShiftPhenotypeValueTestGenerator(PhenotypeTestGenerator):
             "persons": ["P1", "P2", "P3"],
             "dates": [self.origin] * 3,
             "values": [0.0, 0.0, 0.0],
-            "phenotype": TimeShiftPhenotype(
-                name="value_zero", phenotype=base3, days=0
-            ),
+            "phenotype": TimeShiftPhenotype(name="value_zero", phenotype=base3, days=0),
         }
 
         return [t1, t2, t3]
@@ -465,10 +463,10 @@ class TimeShiftPhenotypeDateRangeClipTestGenerator(PhenotypeTestGenerator):
 
     def define_input_tables(self):
         self.event_dates = [
-            datetime.date(2022, 1, 1),   # P0
-            datetime.date(2022, 6, 1),   # P1
+            datetime.date(2022, 1, 1),  # P0
+            datetime.date(2022, 6, 1),  # P1
             datetime.date(2022, 10, 1),  # P2
-            datetime.date(2022, 1, 1),   # P3 (backward clip test)
+            datetime.date(2022, 1, 1),  # P3 (backward clip test)
         ]
         df = pd.DataFrame(
             {
@@ -579,6 +577,78 @@ class TimeShiftPhenotypeDateRangeClipTestGenerator(PhenotypeTestGenerator):
         return [t1, t2, t3]
 
 
+class TimeShiftPhenotypeIndexDateTestGenerator(PhenotypeTestGenerator):
+    """Test TimeShiftPhenotype using INDEX_DATE from domain table (no phenotype provided)."""
+
+    name_space = "tspt_index_date"
+    test_values = True
+    test_date = True
+    value_datatype = float
+
+    def define_input_tables(self):
+        self.index_dates = [
+            datetime.date(2022, 3, 1),
+            datetime.date(2022, 6, 1),
+            datetime.date(2022, 10, 1),
+        ]
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2", "P3"],
+                "INDEX_DATE": self.index_dates,
+            }
+        )
+        return [{"name": "PERSON", "df": df}]
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "index_date_forward_90",
+            "persons": ["P1", "P2", "P3"],
+            "dates": [d + datetime.timedelta(days=90) for d in self.index_dates],
+            "values": [90.0, 90.0, 90.0],
+            "phenotype": TimeShiftPhenotype(
+                name="index_date_forward_90",
+                domain="PERSON",
+                days=90,
+            ),
+        }
+
+        t2 = {
+            "name": "index_date_backward_30",
+            "persons": ["P1", "P2", "P3"],
+            "dates": [d - datetime.timedelta(days=30) for d in self.index_dates],
+            "values": [-30.0, -30.0, -30.0],
+            "phenotype": TimeShiftPhenotype(
+                name="index_date_backward_30",
+                domain="PERSON",
+                days=-30,
+            ),
+        }
+
+        # Shift forward +365 days, clipped to max 2022-12-31.
+        # P1: 2022-03-01 +365 = 2023-03-01 → clipped to 2022-12-31, value = (2022-12-31 - 2022-03-01).days = 305
+        # P2: 2022-06-01 +365 = 2023-06-01 → clipped to 2022-12-31, value = (2022-12-31 - 2022-06-01).days = 213
+        # P3: 2022-10-01 +365 = 2023-10-01 → clipped to 2022-12-31, value = (2022-12-31 - 2022-10-01).days = 91
+        clip_max = datetime.date(2022, 12, 31)
+        t3 = {
+            "name": "index_date_forward_clipped",
+            "persons": ["P1", "P2", "P3"],
+            "dates": [clip_max, clip_max, clip_max],
+            "values": [
+                float((clip_max - self.index_dates[0]).days),
+                float((clip_max - self.index_dates[1]).days),
+                float((clip_max - self.index_dates[2]).days),
+            ],
+            "phenotype": TimeShiftPhenotype(
+                name="index_date_forward_clipped",
+                domain="PERSON",
+                days=365,
+                date_range=DateFilter(max_date=BeforeOrOn(clip_max)),
+            ),
+        }
+
+        return [t1, t2, t3]
+
+
 def test_basic_time_shift():
     """Test basic time shifting functionality"""
     tg = TimeShiftPhenotypeBasicTestGenerator()
@@ -609,9 +679,16 @@ def test_date_range_clipping():
     tg.run_tests()
 
 
+def test_index_date():
+    """Test TimeShiftPhenotype using INDEX_DATE from domain table"""
+    tg = TimeShiftPhenotypeIndexDateTestGenerator()
+    tg.run_tests()
+
+
 if __name__ == "__main__":
     test_basic_time_shift()
     test_multiple_events_time_shift()
     test_large_shift()
     test_value()
     test_date_range_clipping()
+    test_index_date()
