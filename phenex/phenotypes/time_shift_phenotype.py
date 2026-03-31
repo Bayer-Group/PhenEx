@@ -124,4 +124,3 @@ class TimeShiftPhenotype(Phenotype):
         table = table.drop("_BASE_DATE")
         table = select_phenotype_columns(table)
         return self._perform_final_processing(table)
-
