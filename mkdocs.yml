@@ -17,6 +17,7 @@ nav:
           - Study: api/core/study.md
       - Phenotypes:
           - Phenotype: api/phenotypes/phenotype.md
+          - EventPhenotype: api/phenotypes/event_phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
