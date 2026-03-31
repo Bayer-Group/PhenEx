@@ -159,6 +159,7 @@ class EventPhenotypeRelativeTimeRangeFilterTestGenerator(PhenotypeTestGenerator)
 
 class EventPhoenotypeDateRangeFilterTestGenerator(PhenotypeTestGenerator):
     name_space = "evpt_daterangefilter"
+    test_date = True
 
     def define_input_tables(self):
         one_day = datetime.timedelta(days=1)
@@ -188,21 +189,25 @@ class EventPhoenotypeDateRangeFilterTestGenerator(PhenotypeTestGenerator):
             "name": "before_cutoff",
             "date_range": DateFilter(max_date=Before(cutoff)),
             "persons": ["P0", "P1"],
+            "dates": [self.event_dates[0], self.event_dates[1]],
         }
         t2 = {
             "name": "before_or_on_cutoff",
             "date_range": DateFilter(max_date=BeforeOrOn(cutoff)),
             "persons": ["P0", "P1", "P2"],
+            "dates": [self.event_dates[0], self.event_dates[1], self.event_dates[2]],
         }
         t3 = {
             "name": "after_cutoff",
             "date_range": DateFilter(min_date=After(cutoff)),
             "persons": ["P3", "P4"],
+            "dates": [self.event_dates[3], self.event_dates[4]],
         }
         t4 = {
             "name": "after_or_on_cutoff",
             "date_range": DateFilter(min_date=AfterOrOn(cutoff)),
             "persons": ["P2", "P3", "P4"],
+            "dates": [self.event_dates[2], self.event_dates[3], self.event_dates[4]],
         }
 
         one_day = datetime.timedelta(days=1)
@@ -213,6 +218,7 @@ class EventPhoenotypeDateRangeFilterTestGenerator(PhenotypeTestGenerator):
                 max_date=BeforeOrOn(cutoff + one_day),
             ),
             "persons": ["P1", "P2", "P3"],
+            "dates": [self.event_dates[1], self.event_dates[2], self.event_dates[3]],
         }
 
         test_infos = [t1, t2, t3, t4, t5]
@@ -332,6 +338,7 @@ class EventPhenotypeReturnDateTestGenerator(PhenotypeTestGenerator):
 
 class EventPhenotypeAnchorPhenotypeTestGenerator(PhenotypeTestGenerator):
     name_space = "evpt_anchor_phenotype"
+    test_date = True
 
     def define_input_tables(self):
         min_days = datetime.timedelta(days=90)
@@ -361,12 +368,12 @@ class EventPhenotypeAnchorPhenotypeTestGenerator(PhenotypeTestGenerator):
             one_day,  # P3: 1 day after anchor
             min_days,  # P4: 90 days after anchor
         ]
-        event_dates = [anchor_date + offset for offset in event_offsets]
+        self.event_dates = [anchor_date + offset for offset in event_offsets]
 
         events_df = pd.DataFrame(
             {
                 "PERSON_ID": persons,
-                "EVENT_DATE": event_dates,
+                "EVENT_DATE": self.event_dates,
                 "INDEX_DATE": [index_date] * N_patients,
             }
         )
@@ -392,6 +399,7 @@ class EventPhenotypeAnchorPhenotypeTestGenerator(PhenotypeTestGenerator):
         t1 = {
             "name": "after_anchor_leq90",
             "persons": ["P3", "P4"],
+            "dates": [self.event_dates[3], self.event_dates[4]],
             "phenotype": EventPhenotype(
                 name="after_anchor_leq90",
                 domain="events",
@@ -407,6 +415,7 @@ class EventPhenotypeAnchorPhenotypeTestGenerator(PhenotypeTestGenerator):
         t2 = {
             "name": "before_anchor_leq90",
             "persons": ["P1", "P2"],
+            "dates": [self.event_dates[1], self.event_dates[2]],
             "phenotype": EventPhenotype(
                 name="before_anchor_leq90",
                 domain="events",
@@ -422,6 +431,7 @@ class EventPhenotypeAnchorPhenotypeTestGenerator(PhenotypeTestGenerator):
         t3 = {
             "name": "before_anchor_gt90",
             "persons": ["P0"],
+            "dates": [self.event_dates[0]],
             "phenotype": EventPhenotype(
                 name="before_anchor_gt90",
                 domain="events",
