@@ -14,6 +14,7 @@ from .time_range_count_phenotype import TimeRangeCountPhenotype
 from .time_range_day_count_phenotype import TimeRangeDayCountPhenotype
 from .time_range_days_to_next_range_phenotype import TimeRangeDaysToNextRange
 from .time_range_phenotype import TimeRangePhenotype
+from .time_shift_phenotype import TimeShiftPhenotype
 from .user_defined_phenotype import UserDefinedPhenotype
 from .computation_graph_phenotypes import (
     ScorePhenotype,
