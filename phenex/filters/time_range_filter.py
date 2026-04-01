@@ -125,39 +125,44 @@ class TimeRangeFilter(Filter):
         return table
 
     def _filter_before(self, table: Table, reference_column) -> Table:
-        """Apply 'before' filtering logic."""
+        """Apply 'before' filtering logic. Null reference_column means no upper bound."""
         if self.include_clipped_periods:
-            # Include time ranges that START before or on the anchor date
-            # INCLUDING periods that contain the anchor date
-            table = table.filter(table.START_DATE <= reference_column)
-
+            # Include time ranges that START before or on the anchor date.
+            # Null reference (no anchor match) → no upper bound, include all.
+            table = table.filter(
+                reference_column.isnull() | (table.START_DATE <= reference_column)
+            )
             if self.clip_periods:
-                # Clip END_DATE to reference_column if it extends beyond
                 table = table.mutate(
-                    END_DATE=ibis.least(table.END_DATE, reference_column)
+                    END_DATE=reference_column.isnull().ifelse(
+                        table.END_DATE, ibis.least(table.END_DATE, reference_column)
+                    )
                 )
         else:
-            # Exclude periods that cross the boundary - only include periods that END before anchor
-            table = table.filter(table.END_DATE < reference_column)
-
+            table = table.filter(
+                reference_column.isnull() | (table.END_DATE < reference_column)
+            )
         return table
 
     def _filter_after(self, table: Table, reference_column) -> Table:
-        """Apply 'after' filtering logic."""
+        """Apply 'after' filtering logic. Null reference_column means no lower bound."""
         if self.include_clipped_periods:
-            # Include time ranges that END on or after the anchor date
-            # INCLUDING periods that contain the anchor date
-            table = table.filter(table.END_DATE >= reference_column)
-
+            # Include time ranges that END on or after the anchor date.
+            # Null reference (no anchor match) → no lower bound, include all.
+            table = table.filter(
+                reference_column.isnull() | (table.END_DATE >= reference_column)
+            )
             if self.clip_periods:
-                # Clip START_DATE to reference_column if it starts before
                 table = table.mutate(
-                    START_DATE=ibis.greatest(table.START_DATE, reference_column)
+                    START_DATE=reference_column.isnull().ifelse(
+                        table.START_DATE,
+                        ibis.greatest(table.START_DATE, reference_column),
+                    )
                 )
         else:
-            # Exclude periods that cross the boundary - only include periods that START after anchor
-            table = table.filter(table.START_DATE > reference_column)
-
+            table = table.filter(
+                reference_column.isnull() | (table.START_DATE > reference_column)
+            )
         return table
 
     def _apply_min_days_filter(
@@ -165,56 +170,51 @@ class TimeRangeFilter(Filter):
     ) -> Table:
         """Apply min_days constraint."""
         if when == "before":
-            # Calculate the min boundary date
             if min_days.operator == ">=":
-                min_boundary_date = reference_column - ibis.interval(
-                    days=min_days.value
-                )
+                min_boundary_date = reference_column - ibis.interval(days=min_days.value)
             elif min_days.operator == ">":
-                min_boundary_date = reference_column - ibis.interval(
-                    days=min_days.value + 1
-                )
+                min_boundary_date = reference_column - ibis.interval(days=min_days.value + 1)
             else:
                 raise ValueError(f"Unsupported min_days operator: {min_days.operator}")
 
             if self.include_clipped_periods:
-                # Include periods that overlap with the min boundary
-                table = table.filter(table.START_DATE <= min_boundary_date)
-
+                table = table.filter(
+                    reference_column.isnull() | (table.START_DATE <= min_boundary_date)
+                )
                 if self.clip_periods:
-                    # Clip END_DATE to boundary if it extends beyond
                     table = table.mutate(
-                        END_DATE=ibis.least(table.END_DATE, min_boundary_date)
+                        END_DATE=reference_column.isnull().ifelse(
+                            table.END_DATE, ibis.least(table.END_DATE, min_boundary_date)
+                        )
                     )
             else:
-                # Exclude periods that cross the boundary
-                table = table.filter(table.END_DATE <= min_boundary_date)
+                table = table.filter(
+                    reference_column.isnull() | (table.END_DATE <= min_boundary_date)
+                )
 
         elif when == "after":
-            # Calculate the min boundary date
             if min_days.operator == ">=":
-                min_boundary_date = reference_column + ibis.interval(
-                    days=min_days.value
-                )
+                min_boundary_date = reference_column + ibis.interval(days=min_days.value)
             elif min_days.operator == ">":
-                min_boundary_date = reference_column + ibis.interval(
-                    days=min_days.value + 1
-                )
+                min_boundary_date = reference_column + ibis.interval(days=min_days.value + 1)
             else:
                 raise ValueError(f"Unsupported min_days operator: {min_days.operator}")
 
             if self.include_clipped_periods:
-                # Include periods that overlap with the min boundary
-                table = table.filter(table.END_DATE >= min_boundary_date)
-
+                table = table.filter(
+                    reference_column.isnull() | (table.END_DATE >= min_boundary_date)
+                )
                 if self.clip_periods:
-                    # Clip START_DATE to boundary if it starts before
                     table = table.mutate(
-                        START_DATE=ibis.greatest(table.START_DATE, min_boundary_date)
+                        START_DATE=reference_column.isnull().ifelse(
+                            table.START_DATE,
+                            ibis.greatest(table.START_DATE, min_boundary_date),
+                        )
                     )
             else:
-                # Exclude periods that cross the boundary
-                table = table.filter(table.START_DATE >= min_boundary_date)
+                table = table.filter(
+                    reference_column.isnull() | (table.START_DATE >= min_boundary_date)
+                )
 
         return table
 
@@ -223,55 +223,50 @@ class TimeRangeFilter(Filter):
     ) -> Table:
         """Apply max_days constraint."""
         if when == "before":
-            # Calculate the max boundary date
             if max_days.operator == "<=":
-                max_boundary_date = reference_column - ibis.interval(
-                    days=max_days.value
-                )
+                max_boundary_date = reference_column - ibis.interval(days=max_days.value)
             elif max_days.operator == "<":
-                max_boundary_date = reference_column - ibis.interval(
-                    days=max_days.value - 1
-                )
+                max_boundary_date = reference_column - ibis.interval(days=max_days.value - 1)
             else:
                 raise ValueError(f"Unsupported max_days operator: {max_days.operator}")
 
             if self.include_clipped_periods:
-                # Include periods that overlap with the max boundary
-                table = table.filter(table.END_DATE >= max_boundary_date)
-
+                table = table.filter(
+                    reference_column.isnull() | (table.END_DATE >= max_boundary_date)
+                )
                 if self.clip_periods:
-                    # Clip START_DATE to boundary if it starts before
                     table = table.mutate(
-                        START_DATE=ibis.greatest(table.START_DATE, max_boundary_date)
+                        START_DATE=reference_column.isnull().ifelse(
+                            table.START_DATE,
+                            ibis.greatest(table.START_DATE, max_boundary_date),
+                        )
                     )
             else:
-                # Exclude periods that cross the boundary
-                table = table.filter(table.START_DATE >= max_boundary_date)
+                table = table.filter(
+                    reference_column.isnull() | (table.START_DATE >= max_boundary_date)
+                )
 
         elif when == "after":
-            # Calculate the max boundary date
             if max_days.operator == "<=":
-                max_boundary_date = reference_column + ibis.interval(
-                    days=max_days.value
-                )
+                max_boundary_date = reference_column + ibis.interval(days=max_days.value)
             elif max_days.operator == "<":
-                max_boundary_date = reference_column + ibis.interval(
-                    days=max_days.value - 1
-                )
+                max_boundary_date = reference_column + ibis.interval(days=max_days.value - 1)
             else:
                 raise ValueError(f"Unsupported max_days operator: {max_days.operator}")
 
             if self.include_clipped_periods:
-                # Include periods that overlap with the max boundary
-                table = table.filter(table.START_DATE <= max_boundary_date)
-
+                table = table.filter(
+                    reference_column.isnull() | (table.START_DATE <= max_boundary_date)
+                )
                 if self.clip_periods:
-                    # Clip END_DATE to boundary if it extends beyond
                     table = table.mutate(
-                        END_DATE=ibis.least(table.END_DATE, max_boundary_date)
+                        END_DATE=reference_column.isnull().ifelse(
+                            table.END_DATE, ibis.least(table.END_DATE, max_boundary_date)
+                        )
                     )
             else:
-                # Exclude periods that cross the boundary
-                table = table.filter(table.END_DATE <= max_boundary_date)
+                table = table.filter(
+                    reference_column.isnull() | (table.END_DATE <= max_boundary_date)
+                )
 
         return table
