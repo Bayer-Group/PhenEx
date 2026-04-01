@@ -8,6 +8,7 @@ import ibis
 
 from phenex.filters.date_filter import DateFilter
 
+
 class DeathPhenotype(Phenotype):
     """
     DeathPhenotype is a class that represents a death-based phenotype. It filters individuals
@@ -53,7 +54,7 @@ class DeathPhenotype(Phenotype):
         death_table = person_table.filter(person_table.DATE_OF_DEATH.notnull())
         if self.date_range is not None:
             death_table = self.date_range.filter(death_table)
-        
+
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
@@ -64,13 +65,16 @@ class DeathPhenotype(Phenotype):
             # NOTE: Filter.filter() strips any columns added during filtering (e.g.
             # DAYS_FROM_ANCHOR), so we must compute the day diff explicitly here.
             from phenex.phenotypes.functions import attach_anchor_and_get_reference_date
+
             rtr0 = self.relative_time_range[0]
             death_table, reference_column = attach_anchor_and_get_reference_date(
                 death_table, anchor_phenotype=rtr0.anchor_phenotype
             )
             # reference_column.delta(b) = reference - b  (anchor - death)
             # We want death - anchor, so negate.
-            day_diff = (-reference_column.delta(death_table.EVENT_DATE, "day")).cast("float64")
+            day_diff = (-reference_column.delta(death_table.EVENT_DATE, "day")).cast(
+                "float64"
+            )
             death_table = death_table.mutate(VALUE=day_diff)
         else:
             death_table = death_table.mutate(VALUE=ibis.null("float64"))

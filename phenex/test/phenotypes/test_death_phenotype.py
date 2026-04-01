@@ -208,30 +208,34 @@ class DeathPhenotypeDateRangeTestGenerator(PhenotypeTestGenerator):
             "name": "death_daterange_and_after",
             "phenotype": DeathPhenotype(
                 name="test_death1",
-                date_range=DateFilter(min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)),
-                relative_time_range=RelativeTimeRangeFilter(when="after")
+                date_range=DateFilter(
+                    min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)
+                ),
+                relative_time_range=RelativeTimeRangeFilter(when="after"),
             ),
             "persons": ["P2", "P3"],
             "dates": [
                 self.input_table["DATE_OF_DEATH"][2],
-                self.input_table["DATE_OF_DEATH"][3]
+                self.input_table["DATE_OF_DEATH"][3],
             ],
-            "values": [0, 15]
+            "values": [0, 15],
         }
 
         t2 = {
             "name": "death_daterange_and_before",
             "phenotype": DeathPhenotype(
                 name="test_death2",
-                date_range=DateFilter(min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)),
-                relative_time_range=RelativeTimeRangeFilter(when="before")
+                date_range=DateFilter(
+                    min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)
+                ),
+                relative_time_range=RelativeTimeRangeFilter(when="before"),
             ),
             "persons": ["P1", "P2"],
             "dates": [
                 self.input_table["DATE_OF_DEATH"][1],
-                self.input_table["DATE_OF_DEATH"][2]
+                self.input_table["DATE_OF_DEATH"][2],
             ],
-            "values": [-10, 0]
+            "values": [-10, 0],
         }
 
         return [t1, t2]
