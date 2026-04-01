@@ -3,7 +3,7 @@ import pandas as pd
 
 from phenex.phenotypes.death_phenotype import DeathPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
-from phenex.filters.date_filter import DateFilter
+from phenex.filters.date_filter import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
@@ -177,5 +177,71 @@ def test_death_phenotype():
     spg.run_tests()
 
 
+class DeathPhenotypeDateRangeTestGenerator(PhenotypeTestGenerator):
+    name_space = "dtpt_dr_val"
+    test_date = True
+    test_values = True
+
+    def define_input_tables(self):
+        index_date = datetime.datetime.strptime("01-01-2022", "%m-%d-%Y")
+
+        death_dates = [
+            None,
+            index_date - datetime.timedelta(days=10),  # P1: 2021-12-22
+            index_date,  # P2: 2022-01-01
+            index_date + datetime.timedelta(days=15),  # P3: 2022-01-16
+            index_date + datetime.timedelta(days=40),  # P4: 2022-02-10
+        ]
+
+        self.input_table = pd.DataFrame()
+        self.input_table["PERSON_ID"] = [f"P{x}" for x in range(len(death_dates))]
+        self.input_table["DATE_OF_DEATH"] = death_dates
+        self.input_table["INDEX_DATE"] = index_date
+
+        return [{"name": "PERSON", "df": self.input_table}]
+
+    def define_phenotype_tests(self):
+        dt_start = "2021-12-01"
+        dt_end = "2022-01-31"
+
+        t1 = {
+            "name": "death_daterange_and_after",
+            "phenotype": DeathPhenotype(
+                name="test_death1",
+                date_range=DateFilter(min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)),
+                relative_time_range=RelativeTimeRangeFilter(when="after")
+            ),
+            "persons": ["P2", "P3"],
+            "dates": [
+                self.input_table["DATE_OF_DEATH"][2],
+                self.input_table["DATE_OF_DEATH"][3]
+            ],
+            "values": [0, 15]
+        }
+
+        t2 = {
+            "name": "death_daterange_and_before",
+            "phenotype": DeathPhenotype(
+                name="test_death2",
+                date_range=DateFilter(min_date=AfterOrOn(dt_start), max_date=BeforeOrOn(dt_end)),
+                relative_time_range=RelativeTimeRangeFilter(when="before")
+            ),
+            "persons": ["P1", "P2"],
+            "dates": [
+                self.input_table["DATE_OF_DEATH"][1],
+                self.input_table["DATE_OF_DEATH"][2]
+            ],
+            "values": [-10, 0]
+        }
+
+        return [t1, t2]
+
+
+def test_death_phenotype_date_range_and_value():
+    spg = DeathPhenotypeDateRangeTestGenerator()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_death_phenotype()
+    test_death_phenotype_date_range_and_value()
