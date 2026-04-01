@@ -332,8 +332,8 @@ class TimeRangeDayCountDeathAnchorTestGenerator(PhenotypeTestGenerator):
             datetime.date(2020, 9, 15),  # P1: death after index
             datetime.date(2020, 7, 15),  # P2: death after index
             datetime.date(2020, 3, 15),  # P3: death before index
-            None,                         # P4: no death
-            None,                         # P5: no death
+            None,  # P4: no death
+            None,  # P5: no death
         ]
 
         df_person = pd.DataFrame(
@@ -377,7 +377,9 @@ class TimeRangeDayCountDeathAnchorTestGenerator(PhenotypeTestGenerator):
             domain="VISIT_OCCURRENCE",
             relative_time_range=[
                 RelativeTimeRangeFilter(when="after"),
-                RelativeTimeRangeFilter(when="before", anchor_phenotype=death_phenotype),
+                RelativeTimeRangeFilter(
+                    when="before", anchor_phenotype=death_phenotype
+                ),
             ],
         )
         return [t]

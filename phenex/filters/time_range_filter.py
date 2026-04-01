@@ -171,9 +171,13 @@ class TimeRangeFilter(Filter):
         """Apply min_days constraint."""
         if when == "before":
             if min_days.operator == ">=":
-                min_boundary_date = reference_column - ibis.interval(days=min_days.value)
+                min_boundary_date = reference_column - ibis.interval(
+                    days=min_days.value
+                )
             elif min_days.operator == ">":
-                min_boundary_date = reference_column - ibis.interval(days=min_days.value + 1)
+                min_boundary_date = reference_column - ibis.interval(
+                    days=min_days.value + 1
+                )
             else:
                 raise ValueError(f"Unsupported min_days operator: {min_days.operator}")
 
@@ -184,7 +188,8 @@ class TimeRangeFilter(Filter):
                 if self.clip_periods:
                     table = table.mutate(
                         END_DATE=reference_column.isnull().ifelse(
-                            table.END_DATE, ibis.least(table.END_DATE, min_boundary_date)
+                            table.END_DATE,
+                            ibis.least(table.END_DATE, min_boundary_date),
                         )
                     )
             else:
@@ -194,9 +199,13 @@ class TimeRangeFilter(Filter):
 
         elif when == "after":
             if min_days.operator == ">=":
-                min_boundary_date = reference_column + ibis.interval(days=min_days.value)
+                min_boundary_date = reference_column + ibis.interval(
+                    days=min_days.value
+                )
             elif min_days.operator == ">":
-                min_boundary_date = reference_column + ibis.interval(days=min_days.value + 1)
+                min_boundary_date = reference_column + ibis.interval(
+                    days=min_days.value + 1
+                )
             else:
                 raise ValueError(f"Unsupported min_days operator: {min_days.operator}")
 
@@ -224,9 +233,13 @@ class TimeRangeFilter(Filter):
         """Apply max_days constraint."""
         if when == "before":
             if max_days.operator == "<=":
-                max_boundary_date = reference_column - ibis.interval(days=max_days.value)
+                max_boundary_date = reference_column - ibis.interval(
+                    days=max_days.value
+                )
             elif max_days.operator == "<":
-                max_boundary_date = reference_column - ibis.interval(days=max_days.value - 1)
+                max_boundary_date = reference_column - ibis.interval(
+                    days=max_days.value - 1
+                )
             else:
                 raise ValueError(f"Unsupported max_days operator: {max_days.operator}")
 
@@ -248,9 +261,13 @@ class TimeRangeFilter(Filter):
 
         elif when == "after":
             if max_days.operator == "<=":
-                max_boundary_date = reference_column + ibis.interval(days=max_days.value)
+                max_boundary_date = reference_column + ibis.interval(
+                    days=max_days.value
+                )
             elif max_days.operator == "<":
-                max_boundary_date = reference_column + ibis.interval(days=max_days.value - 1)
+                max_boundary_date = reference_column + ibis.interval(
+                    days=max_days.value - 1
+                )
             else:
                 raise ValueError(f"Unsupported max_days operator: {max_days.operator}")
 
@@ -261,7 +278,8 @@ class TimeRangeFilter(Filter):
                 if self.clip_periods:
                     table = table.mutate(
                         END_DATE=reference_column.isnull().ifelse(
-                            table.END_DATE, ibis.least(table.END_DATE, max_boundary_date)
+                            table.END_DATE,
+                            ibis.least(table.END_DATE, max_boundary_date),
                         )
                     )
             else:
