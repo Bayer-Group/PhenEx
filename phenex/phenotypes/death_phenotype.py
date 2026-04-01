@@ -24,6 +24,7 @@ class DeathPhenotype(Phenotype):
         table (PhenotypeTable): The resulting phenotype table after filtering (None until execute is called)
         VALUE: The number of days from the anchor date to the death date (day difference). Negative values indicate death before the anchor date.
     """
+    output_display_type = "value"
 
     def __init__(
         self,
