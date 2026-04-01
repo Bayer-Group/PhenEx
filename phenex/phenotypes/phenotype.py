@@ -30,8 +30,15 @@ class Phenotype(Node):
 
     output_display_type = "boolean"
 
-    def __init__(self, description: str = None, **kwargs):
+    def __init__(
+        self,
+        description: str = None,
+        output_display_type: Optional[str] = None,
+        **kwargs,
+    ):
         self.description = description
+        if output_display_type is not None:
+            self.output_display_type = output_display_type
         super(Phenotype, self).__init__(**kwargs)
 
     def _perform_final_processing(self, table: Table) -> Table:
