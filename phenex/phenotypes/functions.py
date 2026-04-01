@@ -211,6 +211,7 @@ def hstack_pivot(
     for pt in phenotypes:
         base = pt.table.select("PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE")
         t = base.mutate(
+            EVENT_DATE=base.EVENT_DATE.cast("date"),
             VALUE=base.VALUE.cast("str"),
             _PHENOTYPE=ibis.literal(pt.name),
         )

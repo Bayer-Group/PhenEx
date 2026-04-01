@@ -123,6 +123,8 @@ class EventsToTimeRange(Node):
             END_DATE : START_DATE + max_days
         """
         table = table.select("PERSON_ID", "EVENT_DATE")
+        table = table.mutate(EVENT_DATE=table.EVENT_DATE.cast("date"))
+        table = table.distinct()
         table = table.mutate(START_DATE=table.EVENT_DATE)
         if self.max_days.operator == "<":
             days_to_add = self.max_days.value - 1
