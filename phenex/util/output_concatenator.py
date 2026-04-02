@@ -45,7 +45,7 @@ class _BaseSheetWriter:
         value,
         bold: bool = False,
         italic: bool = False,
-        size: int = 11,
+        size: int = 14,
         horizontal: str = "left",
         indent: int = 0,
         fill_color: Optional[str] = None,
@@ -137,6 +137,10 @@ class _BaseSheetWriter:
         value = max(235 - 20 * (lvl - 1), 100)
         return f"{value:02X}{value:02X}{value:02X}"
 
+    def _set_default_row_height(self, sheet, height: float = 24.0) -> None:
+        sheet.sheet_format.defaultRowHeight = height
+        sheet.sheet_format.customHeight = True
+
     @staticmethod
     def _load_json(path: Path) -> Dict:
         with path.open() as f:
@@ -155,6 +159,7 @@ class GenericSheetWriter(_BaseSheetWriter):
     """
 
     def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
+        self._set_default_row_height(sheet)
         columns = self._get_column_order(report_files)
         if not columns:
             return
@@ -209,29 +214,45 @@ class GenericSheetWriter(_BaseSheetWriter):
                 col,
                 col_name,
                 bold=True,
-                size=11,
+                size=14,
                 horizontal="center",
                 fill_color="366092",
             )
-            cell.font = Font(bold=True, size=11, color="FFFFFF")
+            cell.font = Font(bold=True, size=14, color="FFFFFF")
 
     def _write_data_rows(self, sheet, rows, columns, start_col: int):
-        for row_idx, row_data in enumerate(rows, start=3):
-            row_type = str(row_data.get("Type", "")).lower()
+        display_rows = self._sparsify_type(rows) if "Type" in columns else rows
+        for row_idx, (orig_row, disp_row) in enumerate(zip(rows, display_rows), start=3):
+            row_type = str(orig_row.get("Type", "")).lower()
             fill_color = self._WATERFALL_COLORS.get(row_type)
             for offset, col_name in enumerate(columns):
-                value = row_data.get(col_name)
+                value = disp_row.get(col_name)
                 fmt = self._number_format_for_value(value)
                 self._write_cell(
                     sheet,
                     row_idx,
                     start_col + offset,
                     value,
-                    size=11,
+                    size=14,
                     horizontal="center",
                     fill_color=fill_color,
                     number_format=fmt,
                 )
+
+    @staticmethod
+    def _sparsify_type(rows: list) -> list:
+        """Return a copy of rows with Type showing only on the first row of each group."""
+        previous_type = None
+        result = []
+        for row in rows:
+            row_copy = dict(row)
+            type_val = str(row_copy.get("Type", ""))
+            if type_val and type_val != previous_type and type_val.lower() != "component":
+                previous_type = type_val
+            else:
+                row_copy["Type"] = ""
+            result.append(row_copy)
+        return result
 
     def _set_column_widths(self, sheet, rows, columns, start_col: int):
         for offset, col_name in enumerate(columns):
@@ -262,6 +283,7 @@ class Table1SheetWriter(_BaseSheetWriter):
     """
 
     def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
+        self._set_default_row_height(sheet)
         master_names, sections, name_to_level = self._build_master_names_and_sections(
             report_files
         )
@@ -394,7 +416,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             1,
             "Name",
             bold=True,
-            size=11,
+            size=14,
             horizontal="right",
             indent=4,
         )
@@ -407,7 +429,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     1,
                     value,
                     bold=True,
-                    size=11,
+                    size=14,
                     horizontal="left",
                     indent=2,
                     fill_color="B8CCE4",
@@ -423,7 +445,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     1,
                     value,
                     bold=is_cohort,
-                    size=11,
+                    size=14,
                     horizontal="right",
                     indent=4,
                     fill_color=fill,
@@ -448,7 +470,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 start_col + offset,
                 col_name,
                 bold=is_pct,
-                size=11,
+                size=14,
                 horizontal="center",
             )
             cell.border = Border()
@@ -494,7 +516,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     start_col + offset,
                     raw_value,
                     bold=is_pct_col,
-                    size=11,
+                    size=14,
                     horizontal="center",
                     fill_color=row_fill,
                     number_format=fmt,
@@ -545,7 +567,7 @@ class InfoSheetWriter(_BaseSheetWriter):
         Markdown # / ## / ### headers are rendered with larger font.
     """
 
-    _HEADER_SIZES: Dict[int, int] = {1: 18, 2: 14, 3: 12}
+    _HEADER_SIZES: Dict[int, int] = {1: 20, 2: 16, 3: 14}
 
     def write(
         self,
@@ -554,6 +576,7 @@ class InfoSheetWriter(_BaseSheetWriter):
         study_path: Path,
         description: Optional[str],
     ) -> None:
+        self._set_default_row_height(sheet)
         sheet.column_dimensions["A"].width = 30
         sheet.column_dimensions["B"].width = 50
 
@@ -567,27 +590,27 @@ class InfoSheetWriter(_BaseSheetWriter):
             1,
             f"Executed with PhenEx v{phenex_version}",
             bold=True,
-            size=13,
+            size=16,
         )
         current_row += 2  # blank row
 
         # Cohort table headers
-        self._write_cell(sheet, current_row, 1, "Cohort", bold=True, size=11)
+        self._write_cell(sheet, current_row, 1, "Cohort", bold=True, size=14)
         self._write_cell(
-            sheet, current_row, 2, "Final N", bold=True, size=11, horizontal="right"
+            sheet, current_row, 2, "Final N", bold=True, size=14, horizontal="right"
         )
         current_row += 1
 
         # One row per cohort
         for cohort_dir in cohort_dirs:
             final_n = self._read_final_n(cohort_dir)
-            self._write_cell(sheet, current_row, 1, cohort_dir.name, size=11)
+            self._write_cell(sheet, current_row, 1, cohort_dir.name, size=14)
             self._write_cell(
                 sheet,
                 current_row,
                 2,
                 final_n,
-                size=11,
+                size=14,
                 horizontal="right",
                 number_format="#,##0" if isinstance(final_n, int) else None,
             )
@@ -646,19 +669,19 @@ class InfoSheetWriter(_BaseSheetWriter):
 
         # Unordered list
         if line.startswith("- ") or line.startswith("* "):
-            return "\u2022 " + line[2:], 11, False
+            return "\u2022 " + line[2:], 14, False
 
         # Ordered list
         m = re.match(r"^\d+\.\s+(.*)", line)
         if m:
-            return line, 11, False
+            return line, 14, False
 
         # Blank line
         if not line.strip():
-            return None, 11, False
+            return None, 14, False
 
         # Plain text
-        return line, 11, False
+        return line, 14, False
 
 
 # ---------------------------------------------------------------------------
