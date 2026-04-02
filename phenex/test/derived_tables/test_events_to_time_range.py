@@ -277,8 +277,73 @@ def test_events_to_time_range_days_columnname():
     test_generator.run_tests(verbose=True)
 
 
+class EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange falls back to max_days when days_columnname is null
+    for a given row, while using the column value when it is not null.
+    """
+
+    name_space = "ettr_days_columnname_null_fallback"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: DAYS_SUPPLY present → use column value (7 days)
+                ("P1", "c1", "2022-01-01", 7),
+                # P1: DAYS_SUPPLY null → fall back to max_days (3 days)
+                ("P1", "c1", "2022-01-15", None),
+                # P2: all null → always falls back to max_days (3 days)
+                ("P2", "c1", "2022-01-01", None),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYS_SUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        df_input["DAYS_SUPPLY"] = df_input["DAYS_SUPPLY"].astype("Int64")
+
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # P1 row 1: Jan 1 + 7 = Jan 8   → Jan 1–Jan 8
+        # P1 row 2: Jan 15 + 3 = Jan 18  → Jan 15–Jan 18 (no overlap with Jan 1–Jan 8)
+        # P2 row 1: Jan 1 + 3 = Jan 4    → Jan 1–Jan 4
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-01-08"),
+                ("P1", "2022-01-15", "2022-01-18"),
+                ("P2", "2022-01-01", "2022-01-04"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            days_columnname="DAYS_SUPPLY",
+            max_days=3,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_days_columnname_null_fallback_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_days_columnname_null_fallback():
+    test_generator = EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
     test_events_to_time_range_duplicate_events()
     test_events_to_time_range_days_columnname()
+    test_events_to_time_range_days_columnname_null_fallback()

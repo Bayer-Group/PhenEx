@@ -28,11 +28,12 @@ class EventsToTimeRange(Node):
     Parameters:
         domain: The source domain containing event data.
         codelist: The codelist used to filter events.
-        max_days: Fixed integer number of days used to compute the end date for every row.
-                  Mutually exclusive with ``days_columnname``.
+        max_days: Fixed integer number of days used to compute the end date. Used for every row
+                  when ``days_columnname`` is not provided, or as a fallback when the
+                  ``days_columnname`` value is null for a given row.
         days_columnname: Name of a column in the source table whose integer value is used to
-                         compute the end date, allowing a different duration per row.
-                         Mutually exclusive with ``max_days``.
+                         compute the end date for that row, allowing a different duration per row.
+                         When the column value is null, ``max_days`` is used instead.
         operator: Comparison operator applied to the day count. Use ``'<='`` (default) to add
                   the day value directly, or ``'<'`` to subtract one day first (exclusive upper
                   bound). Applies to both ``max_days`` and ``days_columnname``.
@@ -41,7 +42,7 @@ class EventsToTimeRange(Node):
     Attributes:
         domain: The domain of events to process.
         codelist: The codelist used for filtering events.
-        max_days: Fixed day count (when used).
+        max_days: Fixed day count fallback.
         days_columnname: Column name providing per-row day counts (when used).
         operator: The comparison operator (``'<='`` or ``'<'``).
 
@@ -97,8 +98,6 @@ class EventsToTimeRange(Node):
 
         if max_days is None and days_columnname is None:
             raise ValueError("Either max_days or days_columnname must be provided")
-        if max_days is not None and days_columnname is not None:
-            raise ValueError("Only one of max_days or days_columnname may be provided")
         if operator not in ("<", "<="):
             raise ValueError(f"operator must be '<' or '<=', not {operator!r}")
 
@@ -133,14 +132,14 @@ class EventsToTimeRange(Node):
     def _create_start_end_date_table(self, table):
         """
         Create start and end date columns for the events. Start date is the event
-        date; end date is computed either from the fixed ``max_days`` value or from
-        the per-row integer column ``days_columnname``.
+        date; end date is computed from the per-row ``days_columnname`` value when
+        non-null, falling back to the fixed ``max_days`` value otherwise.
 
         Returns:
             Table with three columns:
             PERSON_ID
             START_DATE : the codelist EVENT_DATE
-            END_DATE   : START_DATE + days (fixed or per-row)
+            END_DATE   : START_DATE + days (per-row or fixed)
         """
         if self.days_columnname is not None:
             table = table.select("PERSON_ID", "EVENT_DATE", self.days_columnname)
@@ -151,7 +150,10 @@ class EventsToTimeRange(Node):
         table = table.mutate(START_DATE=table.EVENT_DATE)
         offset = -1 if self.operator == "<" else 0
         if self.days_columnname is not None:
-            days_col = table[self.days_columnname].cast("int32") + offset
+            days_col = table[self.days_columnname].cast("int32")
+            if self.max_days is not None:
+                days_col = ibis.case().when(days_col.isnull(), self.max_days).else_(days_col).end()
+            days_col = days_col + offset
             table = table.mutate(
                 END_DATE=table.START_DATE + ibis.interval(days=1) * days_col
             )
