@@ -155,7 +155,7 @@ class EventsToTimeRange(Node):
                 days_col = ibis.case().when(days_col.isnull(), self.max_days).else_(days_col).end()
             days_col = days_col + offset
             table = table.mutate(
-                END_DATE=table.START_DATE + ibis.interval(days=1) * days_col
+                END_DATE=table.START_DATE + days_col.as_interval(unit="D")
             )
         else:
             table = table.mutate(
