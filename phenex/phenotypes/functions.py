@@ -17,8 +17,8 @@ def attach_anchor_and_get_reference_date(table, anchor_phenotype=None):
         else:
             anchor_table = anchor_phenotype.table
             reference_column = anchor_table.EVENT_DATE
-            # Note that joins can change column names if the tables have name collisions!
-            table = table.join(anchor_table, "PERSON_ID")
+            # Left join so patients without an anchor record are kept (reference_column=null)
+            table = table.join(anchor_table, "PERSON_ID", how="left")
     else:
         assert (
             "INDEX_DATE" in table.columns

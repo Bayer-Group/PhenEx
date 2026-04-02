@@ -2,6 +2,7 @@ import datetime, os
 import pandas as pd
 
 from phenex.phenotypes.time_range_day_count_phenotype import TimeRangeDayCountPhenotype
+from phenex.phenotypes.death_phenotype import DeathPhenotype
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
@@ -304,7 +305,91 @@ def test_time_range_day_count_phenotypes():
     spg.run_tests()
 
 
+class TimeRangeDayCountDeathAnchorTestGenerator(PhenotypeTestGenerator):
+    """
+    Tests TimeRangeDayCountPhenotype with two relative time ranges applied in
+    sequence: after index AND before death.
+
+    5 patients with the same 5 visit periods (p1–p5). 2 of 5 have death after
+    index; 1 has death before index; 2 have no death.
+
+    Expected window per patient (periods after index, clipped to death date):
+      P1 (death 2020-09-15): p3→May15-May30 (16d) + p4→Jul1-Jul30 (30d)
+                             + p5→Sep1-Sep15 (15d) = 61d
+      P2 (death 2020-07-15): p3→May15-May30 (16d) + p4→Jul1-Jul15 (15d) = 31d
+      P3 (death 2020-03-15, before index): intersection of (after index) and
+                             (before Mar15) is empty → 0d
+      P4, P5 (no death): null anchor → "before death" applies no upper bound
+                         → same as after-index only: 16 + 30 + 30 = 76d
+    """
+
+    name_space = "trdcda"
+    test_values = True
+
+    def define_input_tables(self):
+        all_persons = ["P1", "P2", "P3", "P4", "P5"]
+        death_dates = [
+            datetime.date(2020, 9, 15),  # P1: death after index
+            datetime.date(2020, 7, 15),  # P2: death after index
+            datetime.date(2020, 3, 15),  # P3: death before index
+            None,  # P4: no death
+            None,  # P5: no death
+        ]
+
+        df_person = pd.DataFrame(
+            {
+                "PERSON_ID": all_persons,
+                "INDEX_DATE": [INDEX] * 5,
+                "DATE_OF_DEATH": death_dates,
+            }
+        )
+
+        visit_rows = [
+            {"PERSON_ID": pid, "START_DATE": start, "END_DATE": end}
+            for pid in all_persons
+            for start, end in [
+                (p1_START, p1_END),
+                (p2_START, p2_END),
+                (p3_START, p3_END),
+                (p4_START, p4_END),
+                (p5_START, p5_END),
+            ]
+        ]
+        df_visit = pd.DataFrame(visit_rows).merge(
+            df_person[["PERSON_ID", "INDEX_DATE"]], on="PERSON_ID"
+        )
+
+        return [
+            {"name": "PERSON", "df": df_person},
+            {"name": "VISIT_OCCURRENCE", "df": df_visit},
+        ]
+
+    def define_phenotype_tests(self):
+        death_phenotype = DeathPhenotype(name="death_anchor")
+
+        t = {
+            "name": "count_days_after_index_before_death",
+            "persons": ["P1", "P2", "P3", "P4", "P5"],
+            "values": [61, 31, 0, 76, 76],
+        }
+        t["phenotype"] = TimeRangeDayCountPhenotype(
+            name=t["name"],
+            domain="VISIT_OCCURRENCE",
+            relative_time_range=[
+                RelativeTimeRangeFilter(when="after"),
+                RelativeTimeRangeFilter(
+                    when="before", anchor_phenotype=death_phenotype
+                ),
+            ],
+        )
+        return [t]
+
+
+def test_time_range_day_count_with_death_anchor():
+    """Test time range day counting bounded by death phenotype as upper anchor."""
+    TimeRangeDayCountDeathAnchorTestGenerator().run_tests()
+
+
 if __name__ == "__main__":
     test_time_range_day_count_phenotypes()
-    name_space = "trdcpt"
-    test_values = True
+    test_time_range_day_count_with_death_anchor()
