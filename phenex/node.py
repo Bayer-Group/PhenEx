@@ -336,7 +336,9 @@ class Node:
         def _run_and_materialise(node, node_name):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
             db_name = (
-                f"{table_name_prefix}__{node_name}" if table_name_prefix else node_name
+                f"{table_name_prefix}__{node_name}"
+                if table_name_prefix and not node_name.startswith(table_name_prefix)
+                else node_name
             )
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
@@ -383,7 +385,7 @@ class Node:
                         else:
                             db_name = (
                                 f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix
+                                if table_name_prefix and not node_name.startswith(table_name_prefix)
                                 else node_name
                             )
                             try:
@@ -391,7 +393,7 @@ class Node:
                             except Exception:
                                 # Cached table was dropped or is inaccessible; recompute.
                                 logger.warning(
-                                    f"Cached table for '{node_name}' not found; recomputing."
+                                    f"Cached table for '{node_name}' not found at {db_name}; recomputing."
                                 )
                                 table = _run_and_materialise(node, node_name)
                     else:
@@ -404,7 +406,7 @@ class Node:
                         ):  # Only create table if _execute returns something
                             db_name = (
                                 f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix
+                                if table_name_prefix and not node_name.startswith(table_name_prefix)
                                 else node_name
                             )
                             logger.info(
