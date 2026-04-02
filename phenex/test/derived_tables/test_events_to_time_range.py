@@ -277,7 +277,9 @@ def test_events_to_time_range_days_columnname():
     test_generator.run_tests(verbose=True)
 
 
-class EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator(DerivedTablesTestGenerator):
+class EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator(
+    DerivedTablesTestGenerator
+):
     """
     Test that EventsToTimeRange falls back to max_days when days_columnname is null
     for a given row, while using the column value when it is not null.

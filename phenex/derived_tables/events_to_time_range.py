@@ -152,7 +152,12 @@ class EventsToTimeRange(Node):
         if self.days_columnname is not None:
             days_col = table[self.days_columnname].cast("int32")
             if self.max_days is not None:
-                days_col = ibis.case().when(days_col.isnull(), self.max_days).else_(days_col).end()
+                days_col = (
+                    ibis.case()
+                    .when(days_col.isnull(), self.max_days)
+                    .else_(days_col)
+                    .end()
+                )
             days_col = days_col + offset
             table = table.mutate(
                 END_DATE=table.START_DATE + days_col.as_interval(unit="D")
