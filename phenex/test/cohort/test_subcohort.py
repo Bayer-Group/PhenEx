@@ -123,25 +123,29 @@ class SubcohortTestGenerator(CohortTestGenerator):
                 actual_row = result_df[result_df["Name"] == name]
                 assert len(actual_row) == 1, f"Row '{name}' not found in table1"
                 actual_n = str(actual_row["N"].values[0])
-                assert actual_n == expected_n, (
-                    f"table1 count mismatch for '{name}': expected {expected_n}, got {actual_n}"
-                )
+                assert (
+                    actual_n == expected_n
+                ), f"table1 count mismatch for '{name}': expected {expected_n}, got {actual_n}"
 
         # Test subcohort table1_outcomes counts if defined
         if "subcohort_table1_outcomes" in self.subcohort_test_infos.keys():
             result_t1 = self.subcohort._make_table1_outcomes_reporter()
-            assert result_t1 is not None, "Expected a table1_outcomes reporter but got None"
+            assert (
+                result_t1 is not None
+            ), "Expected a table1_outcomes reporter but got None"
             result_df = result_t1.get_pretty_display()
             expected_df = self.subcohort_test_infos["subcohort_table1_outcomes"]
             for _, row in expected_df.iterrows():
                 name = row["Name"]
                 expected_n = str(row["N"])
                 actual_row = result_df[result_df["Name"] == name]
-                assert len(actual_row) == 1, f"Row '{name}' not found in table1_outcomes"
+                assert (
+                    len(actual_row) == 1
+                ), f"Row '{name}' not found in table1_outcomes"
                 actual_n = str(actual_row["N"].values[0])
-                assert actual_n == expected_n, (
-                    f"table1_outcomes count mismatch for '{name}': expected {expected_n}, got {actual_n}"
-                )
+                assert (
+                    actual_n == expected_n
+                ), f"table1_outcomes count mismatch for '{name}': expected {expected_n}, got {actual_n}"
 
 
 class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
@@ -1011,22 +1015,32 @@ class SubcohortCharacteristicsAndOutcomesTestGenerator(SubcohortTestGenerator):
                 gender = 1  # male
             else:
                 gender = 2  # female
-            person_rows.append({"PATID": pid, "YOB": 1980, "GENDER": gender, "ACCEPTABLE": 1})
+            person_rows.append(
+                {"PATID": pid, "YOB": 1980, "GENDER": gender, "ACCEPTABLE": 1}
+            )
 
             # entry drug d1 for all
-            drug_rows.append({"PATID": pid, "PRODCODEID": "d1", "ISSUEDATE": index_date})
+            drug_rows.append(
+                {"PATID": pid, "PRODCODEID": "d1", "ISSUEDATE": index_date}
+            )
 
             # i1 only for P0-P7
             if i < 8:
-                drug_rows.append({"PATID": pid, "PRODCODEID": "i1", "ISSUEDATE": pre_date})
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "i1", "ISSUEDATE": pre_date}
+                )
 
             # d4 only for P0-P3 (subcohort inclusion)
             if i < 4:
-                drug_rows.append({"PATID": pid, "PRODCODEID": "d4", "ISSUEDATE": pre_date})
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "d4", "ISSUEDATE": pre_date}
+                )
 
             # outcome c1 for P0,P1,P4,P5,P6
             if i in (0, 1, 4, 5, 6):
-                drug_rows.append({"PATID": pid, "PRODCODEID": "c1", "ISSUEDATE": post_date})
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "c1", "ISSUEDATE": post_date}
+                )
 
         return pd.DataFrame(person_rows), pd.DataFrame(drug_rows)
 
@@ -1060,7 +1074,9 @@ class SubcohortCharacteristicsAndOutcomesTestGenerator(SubcohortTestGenerator):
             # Table1: sex=Male N=3 for subcohort (P0,P1,P2)
             "subcohort_table1": pd.DataFrame({"Name": ["Sex=1"], "N": ["3"]}),
             # Table1Outcomes: c1 N=2 for subcohort (P0,P1)
-            "subcohort_table1_outcomes": pd.DataFrame({"Name": ["Outcome c1"], "N": ["2"]}),
+            "subcohort_table1_outcomes": pd.DataFrame(
+                {"Name": ["Outcome c1"], "N": ["2"]}
+            ),
         }
 
 

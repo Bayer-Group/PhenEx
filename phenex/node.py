@@ -385,7 +385,8 @@ class Node:
                         else:
                             db_name = (
                                 f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix and not node_name.startswith(table_name_prefix)
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
                                 else node_name
                             )
                             try:
@@ -406,7 +407,8 @@ class Node:
                         ):  # Only create table if _execute returns something
                             db_name = (
                                 f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix and not node_name.startswith(table_name_prefix)
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
                                 else node_name
                             )
                             logger.info(

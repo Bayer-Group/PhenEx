@@ -249,7 +249,9 @@ class Subcohort(Cohort):
 
     def _make_table1_outcomes_detailed_reporter(self) -> Optional["Table1"]:
         """Build and execute a detailed outcomes Table1 reporter."""
-        return self._make_table1_outcomes_reporter(include_component_phenotypes_level=100)
+        return self._make_table1_outcomes_reporter(
+            include_component_phenotypes_level=100
+        )
 
     @property
     def table1(self) -> Optional["pd.DataFrame"]:
