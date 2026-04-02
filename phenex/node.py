@@ -334,7 +334,9 @@ class Node:
 
         def _run_and_materialise(node, node_name):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
-            db_name = f"{table_name_prefix}__{node_name}" if table_name_prefix else node_name
+            db_name = (
+                f"{table_name_prefix}__{node_name}" if table_name_prefix else node_name
+            )
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
             if table is not None:
@@ -378,7 +380,11 @@ class Node:
                         if Node._node_manager.should_rerun(node, con):
                             table = _run_and_materialise(node, node_name)
                         else:
-                            db_name = f"{table_name_prefix}__{node_name}" if table_name_prefix else node_name
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                else node_name
+                            )
                             try:
                                 table = con.get_dest_table(db_name)
                             except Exception:
@@ -395,7 +401,11 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
-                            db_name = f"{table_name_prefix}__{node_name}" if table_name_prefix else node_name
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                else node_name
+                            )
                             logger.info(
                                 f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
                             )
