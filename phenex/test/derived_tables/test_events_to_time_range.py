@@ -2,7 +2,6 @@ import pandas as pd
 import ibis
 from phenex.derived_tables import EventsToTimeRange
 from phenex.codelists import Codelist
-from phenex.filters.value import LessThan, LessThanOrEqualTo
 
 from phenex.test.derived_tables.derived_tables_test_generator import (
     DerivedTablesTestGenerator,
@@ -66,7 +65,8 @@ class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThan(5),
+            max_days=5,
+            operator="<",
         )
 
         # Return test information
@@ -109,7 +109,7 @@ class EventsToTimeRangeLessThanOrEqualToTestGenerator(
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThanOrEqualTo(5),
+            max_days=5,
         )
 
         # Return test information
@@ -183,7 +183,7 @@ class EventsToTimeRangeDuplicateEventsTestGenerator(DerivedTablesTestGenerator):
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThanOrEqualTo(30),
+            max_days=30,
         )
 
         return [
@@ -211,7 +211,74 @@ def test_events_to_time_range_duplicate_events():
     test_generator.run_tests(verbose=True)
 
 
+class EventsToTimeRangeDaysColumnnameTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange correctly computes per-row end dates when
+    days_columnname is used instead of a fixed max_days value.
+
+    P1: two overlapping periods (different days_supply) that must be merged.
+    P2: two non-overlapping periods that must remain separate.
+    """
+
+    name_space = "ettr_days_columnname"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: Jan 1 + 5 days  → Jan 1–Jan 6
+                #     Jan 4 + 10 days → Jan 4–Jan 14
+                #     Jan 4 ≤ Jan 6+1, so both merge → Jan 1–Jan 14
+                ("P1", "c1", "2022-01-01", 5),
+                ("P1", "c1", "2022-01-04", 10),
+                # P2: Jan 1 + 3 days → Jan 1–Jan 4
+                #     Jan 10 + 3 days → Jan 10–Jan 13
+                #     Jan 10 > Jan 4+1, so they stay separate
+                ("P2", "c1", "2022-01-01", 3),
+                ("P2", "c1", "2022-01-10", 3),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYS_SUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-01-14"),
+                ("P2", "2022-01-01", "2022-01-04"),
+                ("P2", "2022-01-10", "2022-01-13"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            days_columnname="DAYS_SUPPLY",
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_days_columnname_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_days_columnname():
+    test_generator = EventsToTimeRangeDaysColumnnameTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
     test_events_to_time_range_duplicate_events()
+    test_events_to_time_range_days_columnname()
