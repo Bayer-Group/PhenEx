@@ -295,6 +295,7 @@ class Node:
         Raises:
             ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
+        table_name_prefix = table_name_prefix.upper() if table_name_prefix else None
         # Handle None tables
         if tables is None:
             tables = {}
