@@ -59,14 +59,14 @@ def _make_cohort(pre_entry_dt_name, post_entry_dt_name):
         name=pre_entry_dt_name,
         domain="DRUG_EXPOSURE",
         codelist=Codelist(["dt_code"]).copy(use_code_type=False),
-        max_days=LessThanOrEqualTo(30),
+        max_days=30,
     )
 
     post_entry_dt = EventsToTimeRange(
         name=post_entry_dt_name,
         domain="DRUG_EXPOSURE",
         codelist=Codelist(["dt_code"]).copy(use_code_type=False),
-        max_days=LessThanOrEqualTo(30),
+        max_days=30,
     )
 
     return Cohort(
