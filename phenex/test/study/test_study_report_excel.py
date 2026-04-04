@@ -25,9 +25,16 @@ STUDY_EXEC_DIR = ARTIFACTS_DIR / "dummy_study_exec"
 
 COHORT_NAMES = [
     "cohort_a",
+    "cohort_a__female",
+    "cohort_a__male",
     "cohort_b",
+    "cohort_b__female",
+    "cohort_b__male",
     "cohort_c",
     "cohort_d",
+    "cohort_d__age_lt_50",
+    "cohort_d__age_gte_50",
+    "cohort_d__diabetic",
     "cohort_e",
 ]
 
@@ -37,14 +44,21 @@ COHORT_NAMES = [
 
 _N_DB = 6_200_000
 
-# Each cohort gets a slightly different entry / final size
-_COHORT_PARAMS = [
-    dict(n_entry=2_300_000, n_final=840_000, entry_pct=37.1),
-    dict(n_entry=2_150_000, n_final=790_000, entry_pct=34.7),
-    dict(n_entry=2_420_000, n_final=910_000, entry_pct=39.0),
-    dict(n_entry=1_980_000, n_final=720_000, entry_pct=31.9),
-    dict(n_entry=2_560_000, n_final=960_000, entry_pct=41.3),
-]
+# Each cohort/subcohort gets a slightly different entry / final size
+_COHORT_PARAMS = {
+    "cohort_a":              dict(n_entry=2_300_000, n_final=840_000, entry_pct=37.1),
+    "cohort_a__female":      dict(n_entry=1_150_000, n_final=430_000, entry_pct=18.7),
+    "cohort_a__male":        dict(n_entry=1_150_000, n_final=410_000, entry_pct=18.4),
+    "cohort_b":              dict(n_entry=2_150_000, n_final=790_000, entry_pct=34.7),
+    "cohort_b__female":      dict(n_entry=1_080_000, n_final=400_000, entry_pct=17.4),
+    "cohort_b__male":        dict(n_entry=1_070_000, n_final=390_000, entry_pct=17.3),
+    "cohort_c":              dict(n_entry=2_420_000, n_final=910_000, entry_pct=39.0),
+    "cohort_d":              dict(n_entry=1_980_000, n_final=720_000, entry_pct=31.9),
+    "cohort_d__age_lt_50":   dict(n_entry=980_000,  n_final=350_000, entry_pct=15.8),
+    "cohort_d__age_gte_50":  dict(n_entry=1_000_000, n_final=370_000, entry_pct=16.1),
+    "cohort_d__diabetic":    dict(n_entry=240_000,  n_final=86_000,  entry_pct=3.8),
+    "cohort_e":              dict(n_entry=2_560_000, n_final=960_000, entry_pct=41.3),
+}
 
 
 def _waterfall(p: dict) -> dict:
@@ -203,7 +217,8 @@ def build_dummy_study() -> Path:
     study_dir.mkdir(parents=True, exist_ok=True)
     _write_info(study_dir)
 
-    for name, params in zip(COHORT_NAMES, _COHORT_PARAMS):
+    for name in COHORT_NAMES:
+        params = _COHORT_PARAMS[name]
         cohort_dir = study_dir / name
         cohort_dir.mkdir(exist_ok=True)
         _write_json(cohort_dir / "waterfall.json", _waterfall(params))

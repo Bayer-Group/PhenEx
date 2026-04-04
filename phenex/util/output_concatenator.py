@@ -8,6 +8,7 @@ multi-sheet Excel file for cross-cohort comparison.
 import json
 import re
 import zipfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -21,12 +22,47 @@ logger = create_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Cohort grouping
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CohortGroup:
+    """A main cohort and its associated subcohorts."""
+
+    name: str
+    main_dir: Path
+    subcohort_dirs: List[Path] = field(default_factory=list)
+
+    @property
+    def all_dirs(self) -> List[Path]:
+        return [self.main_dir] + self.subcohort_dirs
+
+    def display_name(self, cohort_dir: Path) -> str:
+        if cohort_dir == self.main_dir:
+            return self.name
+        return cohort_dir.name.replace(f"{self.name}__", "")
+
+
+# ---------------------------------------------------------------------------
 # Shared sheet-writing utilities
 # ---------------------------------------------------------------------------
 
 
 class _BaseSheetWriter:
     """Low-level cell and sheet helpers shared by all writers."""
+
+    # Row layout constants (1-indexed Excel rows)
+    _SPACING_ROW = 1
+    _TITLE_ROW = 2
+    _SUBTITLE_ROW = 3
+    _HEADER_ROW = 4
+    _DATA_START_ROW = 5
+
+    _SPACING_SIZE = 3
+    _ROW_BACKGROUND_1 = "D9D9D9"
+    _BOOLEAN_COLUMNS = {"N", "Pct"}
+    _COLUMN_DISPLAY_NAMES = {"Pct": "%"}
 
     # Row type -> background fill colour (ARGB hex, no leading #)
     _WATERFALL_COLORS: Dict[str, str] = {
@@ -47,6 +83,7 @@ class _BaseSheetWriter:
         italic: bool = False,
         size: int = 14,
         horizontal: str = "left",
+        vertical: str = "center",
         indent: int = 0,
         fill_color: Optional[str] = None,
         number_format: Optional[str] = None,
@@ -54,7 +91,7 @@ class _BaseSheetWriter:
         cell = sheet.cell(row=row, column=col, value=value)
         cell.font = Font(bold=bold, italic=italic, size=size)
         cell.alignment = Alignment(
-            horizontal=horizontal, vertical="center", indent=indent
+            horizontal=horizontal, vertical=vertical, indent=indent
         )
         if fill_color:
             cell.fill = PatternFill(
@@ -64,15 +101,13 @@ class _BaseSheetWriter:
             cell.number_format = number_format
         return cell
 
-    def _add_cohort_header(
-        self, sheet, cohort_name: str, start_col: int, num_cols: int
-    ):
-        """Grey italic banner in row 1 spanning num_cols columns."""
+    def _add_group_title(self, sheet, title: str, start_col: int, end_col: int):
+        """Write main cohort name in the title row, merged across group columns."""
         cell = self._write_cell(
             sheet,
-            1,
+            self._TITLE_ROW,
             start_col,
-            cohort_name,
+            title,
             italic=True,
             size=18,
             horizontal="left",
@@ -80,38 +115,71 @@ class _BaseSheetWriter:
             fill_color="D3D3D3",
         )
         cell.border = Border()
+        if end_col > start_col:
+            sheet.merge_cells(
+                start_row=self._TITLE_ROW,
+                start_column=start_col,
+                end_row=self._TITLE_ROW,
+                end_column=end_col,
+            )
+
+    def _add_subcohort_header(
+        self, sheet, name: str, start_col: int, num_cols: int
+    ):
+        """Write individual cohort/subcohort name in the subtitle row."""
+        self._write_cell(
+            sheet,
+            self._SUBTITLE_ROW,
+            start_col,
+            name,
+            italic=True,
+            size=14,
+            horizontal="left",
+            indent=2,
+            fill_color="E8E8E8",
+        )
         if num_cols > 1:
             sheet.merge_cells(
-                start_row=1,
+                start_row=self._SUBTITLE_ROW,
                 start_column=start_col,
-                end_row=1,
+                end_row=self._SUBTITLE_ROW,
                 end_column=start_col + num_cols - 1,
             )
 
-    def _apply_right_border_to_column(
-        self, sheet, col: int, max_row: int, start_row: int = 2
-    ):
-        right_side = Side(style="thin")
-        for row in range(start_row, max_row + 1):
-            cell = sheet.cell(row=row, column=col)
-            existing = cell.border
-            cell.border = Border(
-                left=existing.left,
-                right=right_side,
-                top=existing.top,
-                bottom=existing.bottom,
-            )
+    def _apply_group_border(self, sheet, start_col: int, end_col: int):
+        """Draw a thin border around the cohort group from title row to last data row."""
+        max_row = sheet.max_row
+        top_row = self._TITLE_ROW
+        thin = Side(style="thin")
+        for row in range(top_row, max_row + 1):
+            for col in range(start_col, end_col + 1):
+                cell = sheet.cell(row=row, column=col)
+                existing = cell.border
+                cell.border = Border(
+                    left=thin if col == start_col else existing.left,
+                    right=thin if col == end_col else existing.right,
+                    top=thin if row == top_row else existing.top,
+                    bottom=thin if row == max_row else existing.bottom,
+                )
 
-    def _apply_bottom_border_to_row(self, sheet, row: int, max_col: int):
-        bottom_side = Side(style="thin")
-        for col in range(1, max_col + 1):
+    def _apply_spacing(self, sheet, spacing_col: int):
+        """Set spacing column width and spacing row height."""
+        sheet.column_dimensions[get_column_letter(spacing_col)].width = (
+            self._SPACING_SIZE
+        )
+        sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
+
+    def _apply_left_border_to_column(self, sheet, col: int):
+        """Draw a thin left border on every cell in a column."""
+        thin = Side(style="thin")
+        for row in range(self._TITLE_ROW, sheet.max_row + 1):
             cell = sheet.cell(row=row, column=col)
             existing = cell.border
             cell.border = Border(
-                left=existing.left,
+                left=thin,
                 right=existing.right,
                 top=existing.top,
-                bottom=bottom_side,
+                bottom=existing.bottom,
             )
 
     @staticmethod
@@ -158,39 +226,57 @@ class GenericSheetWriter(_BaseSheetWriter):
     For Waterfall reports the ``Type`` column drives row background colours.
     """
 
-    def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
+    def write(
+        self,
+        sheet,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+        cohort_groups: List["CohortGroup"],
+    ):
         self._set_default_row_height(sheet)
         columns = self._get_column_order(report_files)
         if not columns:
             return
 
+        dir_to_report = dict(zip(cohort_dirs, report_files))
+        num_cols = len(columns)
         current_col = 1
-        border_cols: List[int] = []
 
-        for cohort_dir, report_file in zip(cohort_dirs, report_files):
-            if report_file is None:
-                continue
-            cohort_name = cohort_dir.name
-            num_cols = len(columns)
-            try:
-                data = self._load_json(report_file)
-                rows = data.get("rows", [])
+        for group in cohort_groups:
+            self._apply_spacing(sheet, spacing_col=current_col)
+            current_col += 1
+            group_start_col = current_col
 
-                self._add_cohort_header(sheet, cohort_name, current_col, num_cols)
-                self._write_column_headers(sheet, columns, current_col)
-                self._write_data_rows(sheet, rows, columns, current_col)
-                self._set_column_widths(sheet, rows, columns, current_col)
+            for cohort_dir in group.all_dirs:
+                report_file = dir_to_report.get(cohort_dir)
+                if report_file is None:
+                    continue
+                is_subcohort = cohort_dir != group.main_dir
+                try:
+                    data = self._load_json(report_file)
+                    rows = data.get("rows", [])
 
-                border_cols.append(current_col + num_cols - 1)
-                current_col += num_cols
-            except Exception as e:
-                logger.warning(f"Failed to process {report_file}: {e}")
+                    display_name = group.display_name(cohort_dir)
+                    self._add_subcohort_header(
+                        sheet, display_name, current_col, num_cols
+                    )
+                    self._write_column_headers(sheet, columns, current_col)
+                    self._write_data_rows(sheet, rows, columns, current_col)
+                    self._set_column_widths(sheet, rows, columns, current_col)
 
-        max_row = sheet.max_row
-        max_col = sheet.max_column
-        for col in border_cols:
-            self._apply_right_border_to_column(sheet, col, max_row)
-        self._apply_bottom_border_to_row(sheet, max_row, max_col)
+                    if is_subcohort:
+                        self._apply_left_border_to_column(sheet, current_col)
+
+                    current_col += num_cols
+                except Exception as e:
+                    logger.warning(f"Failed to process {report_file}: {e}")
+
+            group_end_col = current_col - 1
+            if group_end_col >= group_start_col:
+                self._add_group_title(
+                    sheet, group.name, group_start_col, group_end_col
+                )
+                self._apply_group_border(sheet, group_start_col, group_end_col)
 
     def _get_column_order(self, report_files: List[Optional[Path]]) -> List[str]:
         for f in report_files:
@@ -210,7 +296,7 @@ class GenericSheetWriter(_BaseSheetWriter):
             col = start_col + offset
             cell = self._write_cell(
                 sheet,
-                2,
+                self._HEADER_ROW,
                 col,
                 col_name,
                 bold=True,
@@ -222,7 +308,7 @@ class GenericSheetWriter(_BaseSheetWriter):
 
     def _write_data_rows(self, sheet, rows, columns, start_col: int):
         display_rows = self._sparsify_type(rows) if "Type" in columns else rows
-        for row_idx, (orig_row, disp_row) in enumerate(zip(rows, display_rows), start=3):
+        for row_idx, (orig_row, disp_row) in enumerate(zip(rows, display_rows), start=self._DATA_START_ROW):
             row_type = str(orig_row.get("Type", "")).lower()
             fill_color = self._WATERFALL_COLORS.get(row_type)
             for offset, col_name in enumerate(columns):
@@ -273,16 +359,25 @@ class Table1SheetWriter(_BaseSheetWriter):
 
     Layout::
 
-        Row 1  : grey italic cohort-name banner per block (merged)
-        Row 2  : "Name" label in col A  +  column labels per cohort block
-        Row 3+ : characteristic rows; section-header rows interleaved
+        Row 1  : spacing row
+        Row 2  : main cohort name banner per group (merged)
+        Row 3  : individual cohort/subcohort name per block
+        Row 4  : "Name" label in col A  +  column labels per cohort block
+        Row 5+ : characteristic rows; section-header rows interleaved
 
     Section headers appear as full-width blue-grey rows when the first cohort
     JSON contains a ``sections`` dict mapping section names to characteristic
     display names.
     """
 
-    def write(self, sheet, report_files: List[Optional[Path]], cohort_dirs: List[Path]):
+    def write(
+        self,
+        sheet,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+        cohort_groups: List["CohortGroup"],
+        boolean_only: bool = False,
+    ):
         self._set_default_row_height(sheet)
         master_names, sections, name_to_level = self._build_master_names_and_sections(
             report_files
@@ -293,53 +388,70 @@ class Table1SheetWriter(_BaseSheetWriter):
         expanded = self._build_expanded_rows(master_names, sections)
         self._write_name_column(sheet, expanded, name_to_level)
 
+        dir_to_report = dict(zip(cohort_dirs, report_files))
         current_col = 2
-        border_cols: List[int] = []
+        spacing_cols: List[int] = []
 
-        for cohort_dir, report_file in zip(cohort_dirs, report_files):
-            if report_file is None:
-                continue
-            cohort_name = cohort_dir.name
-            try:
-                data = self._load_json(report_file)
-                rows = data.get("rows", [])
-                columns = [
-                    c
-                    for c in (rows[0].keys() if rows else [])
-                    if c not in ("Name", "_level")
-                ]
-                if not columns:
+        for group in cohort_groups:
+            spacing_cols.append(current_col)
+            self._apply_spacing(sheet, spacing_col=current_col)
+            current_col += 1
+            group_start_col = current_col
+
+            for cohort_dir in group.all_dirs:
+                report_file = dir_to_report.get(cohort_dir)
+                if report_file is None:
                     continue
-                num_value_cols = len(columns)
+                is_subcohort = cohort_dir != group.main_dir
+                try:
+                    data = self._load_json(report_file)
+                    rows = data.get("rows", [])
+                    columns = [
+                        c
+                        for c in (rows[0].keys() if rows else [])
+                        if c not in ("Name", "_level")
+                    ]
+                    if boolean_only:
+                        columns = [c for c in columns if c in self._BOOLEAN_COLUMNS]
+                    if not columns:
+                        continue
+                    num_value_cols = len(columns)
 
-                self._add_cohort_header(sheet, cohort_name, current_col, num_value_cols)
-                pct_offset = self._write_column_labels(sheet, columns, current_col)
-                self._write_value_rows(
-                    sheet,
-                    rows,
-                    columns,
-                    expanded,
-                    current_col,
-                    pct_offset,
-                    name_to_level,
+                    display_name = group.display_name(cohort_dir)
+                    self._add_subcohort_header(
+                        sheet, display_name, current_col, num_value_cols
+                    )
+                    pct_offset = self._write_column_labels(
+                        sheet, columns, current_col
+                    )
+                    self._write_value_rows(
+                        sheet,
+                        rows,
+                        columns,
+                        expanded,
+                        current_col,
+                        pct_offset,
+                        name_to_level,
+                    )
+                    self._set_value_column_widths(sheet, rows, columns, current_col)
+
+                    if is_subcohort:
+                        self._apply_left_border_to_column(sheet, current_col)
+
+                    current_col += num_value_cols
+
+                except Exception as e:
+                    logger.warning(f"Failed to process {report_file}: {e}")
+
+            group_end_col = current_col - 1
+            if group_end_col >= group_start_col:
+                self._add_group_title(
+                    sheet, group.name, group_start_col, group_end_col
                 )
-                self._set_value_column_widths(sheet, rows, columns, current_col)
+                self._apply_group_border(sheet, group_start_col, group_end_col)
 
-                border_cols.append(current_col + num_value_cols - 1)
-                current_col += num_value_cols
-
-            except Exception as e:
-                logger.warning(f"Failed to process {report_file}: {e}")
-
-        # Apply section-header spans now that we know the full sheet width
-        self._apply_section_header_spans(sheet, expanded, sheet.max_column)
-
-        max_row = sheet.max_row
-        max_col = sheet.max_column
-        self._apply_right_border_to_column(sheet, 1, max_row)
-        for col in border_cols:
-            self._apply_right_border_to_column(sheet, col, max_row)
-        self._apply_bottom_border_to_row(sheet, max_row, max_col)
+        # Apply section-header spans, skipping spacer columns
+        self._apply_section_header_spans(sheet, expanded, sheet.max_column, spacing_cols)
 
     # ------------------------------------------------------------------
 
@@ -412,7 +524,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         name_to_level = name_to_level or {}
         self._write_cell(
             sheet,
-            2,
+            self._HEADER_ROW,
             1,
             "Name",
             bold=True,
@@ -421,7 +533,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             indent=4,
         )
         for i, (row_type, value) in enumerate(expanded):
-            out_row = 3 + i
+            out_row = self._DATA_START_ROW + i
             if row_type == "section":
                 self._write_cell(
                     sheet,
@@ -431,9 +543,11 @@ class Table1SheetWriter(_BaseSheetWriter):
                     bold=True,
                     size=14,
                     horizontal="left",
+                    vertical="bottom",
                     indent=2,
-                    fill_color="B8CCE4",
+                    fill_color=self._ROW_BACKGROUND_1,
                 )
+                sheet.row_dimensions[out_row].height = 36
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
@@ -453,25 +567,28 @@ class Table1SheetWriter(_BaseSheetWriter):
 
         max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
         sheet.column_dimensions["A"].width = max(max_name_len * 1.2, 14)
-        sheet.freeze_panes = sheet.cell(row=4, column=2)
+        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW + 1, column=2)
 
     def _write_column_labels(
         self, sheet, columns: List[str], start_col: int
     ) -> Optional[int]:
-        """Write row-2 column labels; return 0-based offset of the Pct column."""
+        """Write column labels in the header row; return 0-based offset of the Pct column."""
         pct_offset = None
         for offset, col_name in enumerate(columns):
             is_pct = col_name.strip().lower() == "pct"
+            is_n = col_name.strip().lower() == "n"
             if is_pct:
                 pct_offset = offset
+            display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
+            horizontal = "right" if is_n else ("left" if is_pct else "center")
             cell = self._write_cell(
                 sheet,
-                2,
+                self._HEADER_ROW,
                 start_col + offset,
-                col_name,
+                display_name,
                 bold=is_pct,
                 size=14,
-                horizontal="center",
+                horizontal=horizontal,
             )
             cell.border = Border()
         return pct_offset
@@ -489,7 +606,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         name_to_level = name_to_level or {}
         name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
         for i, (row_type, value) in enumerate(expanded):
-            out_row = 3 + i
+            out_row = self._DATA_START_ROW + i
             if row_type == "section":
                 for offset in range(len(columns)):
                     self._write_cell(
@@ -497,7 +614,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                         out_row,
                         start_col + offset,
                         None,
-                        fill_color="B8CCE4",
+                        fill_color=self._ROW_BACKGROUND_1,
                     )
                 continue
 
@@ -509,6 +626,8 @@ class Table1SheetWriter(_BaseSheetWriter):
             for offset, col_name in enumerate(columns):
                 raw_value = row_data.get(col_name) if row_data else None
                 is_pct_col = offset == pct_offset
+                is_n_col = col_name.strip().lower() == "n"
+                horizontal = "right" if is_n_col else ("left" if is_pct_col else "center")
                 fmt = self._number_format_for_value(raw_value)
                 self._write_cell(
                     sheet,
@@ -517,30 +636,44 @@ class Table1SheetWriter(_BaseSheetWriter):
                     raw_value,
                     bold=is_pct_col,
                     size=14,
-                    horizontal="center",
+                    horizontal=horizontal,
                     fill_color=row_fill,
                     number_format=fmt,
                 )
 
     def _apply_section_header_spans(
-        self, sheet, expanded: List[Tuple[str, str]], max_col: int
+        self,
+        sheet,
+        expanded: List[Tuple[str, str]],
+        max_col: int,
+        spacing_cols: List[int] = None,
     ):
-        """Merge section-header cells from col A to max_col."""
+        """Apply fill colour across the full row width for section headers."""
         if max_col < 2:
             return
+        skip = set(spacing_cols or [])
+        fill = PatternFill(
+            start_color=self._ROW_BACKGROUND_1,
+            end_color=self._ROW_BACKGROUND_1,
+            fill_type="solid",
+        )
         for i, (row_type, _) in enumerate(expanded):
             if row_type == "section":
-                out_row = 3 + i
-                sheet.merge_cells(
-                    start_row=out_row,
-                    start_column=1,
-                    end_row=out_row,
-                    end_column=max_col,
-                )
+                out_row = self._DATA_START_ROW + i
+                for col in range(1, max_col + 1):
+                    if col in skip:
+                        continue
+                    cell = sheet.cell(row=out_row, column=col)
+                    if not cell.fill or cell.fill.fgColor is None or cell.fill.fgColor.rgb == "00000000":
+                        cell.fill = fill
 
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
-        for offset in range(len(columns)):
-            sheet.column_dimensions[get_column_letter(start_col + offset)].width = 8
+        font_scale = 14 / 11  # scale relative to Excel default font size 11
+        for offset, col_name in enumerate(columns):
+            values = [str(r.get(col_name, "")) for r in rows] + [col_name]
+            max_len = max((len(v) for v in values if v), default=4)
+            width = max(max_len * font_scale + 2, 6)
+            sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
 # ---------------------------------------------------------------------------
@@ -703,6 +836,8 @@ class OutputConcatenator:
         "WaterfallDetailed",
         "Table1",
         "Table1Detailed",
+        "Table1Boolean",
+        "Table1BooleanDetailed",
         "Table1Outcomes",
         "Table1OutcomesDetailed",
     ]
@@ -744,6 +879,17 @@ class OutputConcatenator:
             logger.warning("No report files found in cohort directories")
             return
 
+        # Add boolean views of Table1 data (same source files, N+Pct only)
+        _BOOLEAN_SOURCES = {
+            "Table1Boolean": "Table1",
+            "Table1BooleanDetailed": "Table1Detailed",
+        }
+        for bool_type, source_type in _BOOLEAN_SOURCES.items():
+            if source_type in reports_by_type:
+                reports_by_type[bool_type] = reports_by_type[source_type]
+
+        cohort_groups = self._group_cohorts(cohort_dirs)
+
         output_wb = openpyxl.Workbook()
         output_wb.remove(output_wb.active)
 
@@ -759,7 +905,11 @@ class OutputConcatenator:
             sheet = output_wb.create_sheet(title=report_type)
             sheet.sheet_view.showGridLines = False
             self._write_sheet(
-                sheet, report_type, reports_by_type[report_type], cohort_dirs
+                sheet,
+                report_type,
+                reports_by_type[report_type],
+                cohort_dirs,
+                cohort_groups,
             )
 
         output_wb.save(self.output_file)
@@ -773,22 +923,39 @@ class OutputConcatenator:
         rest = sorted(k for k in reports_by_type if k not in self._SHEET_ORDER_PREFIX)
         return prefix + rest
 
+    _TABLE1_TYPES = {
+        "Table1",
+        "Table1Detailed",
+        "Table1Outcomes",
+        "Table1OutcomesDetailed",
+        "Table1Boolean",
+        "Table1BooleanDetailed",
+    }
+    _TABLE1_BOOLEAN_TYPES = {
+        "Table1Boolean",
+        "Table1BooleanDetailed",
+        "Table1Outcomes",
+        "Table1OutcomesDetailed",
+    }
+
     def _write_sheet(
         self,
         sheet,
         report_type: str,
         report_files: List[Optional[Path]],
         cohort_dirs: List[Path],
+        cohort_groups: List[CohortGroup],
     ) -> None:
-        if report_type in (
-            "Table1",
-            "Table1Detailed",
-            "Table1Outcomes",
-            "Table1OutcomesDetailed",
-        ):
-            self._table1_writer.write(sheet, report_files, cohort_dirs)
+        if report_type in self._TABLE1_TYPES:
+            boolean_only = report_type in self._TABLE1_BOOLEAN_TYPES
+            self._table1_writer.write(
+                sheet, report_files, cohort_dirs, cohort_groups,
+                boolean_only=boolean_only,
+            )
         else:
-            self._generic_writer.write(sheet, report_files, cohort_dirs)
+            self._generic_writer.write(
+                sheet, report_files, cohort_dirs, cohort_groups
+            )
 
     def _get_cohort_directories(self) -> List[Path]:
         dirs = {
@@ -799,6 +966,38 @@ class OutputConcatenator:
         if self.cohort_names:
             return [dirs[name] for name in self.cohort_names if name in dirs]
         return sorted(dirs.values(), key=lambda x: x.name)
+
+    def _group_cohorts(self, cohort_dirs: List[Path]) -> List[CohortGroup]:
+        """Group cohort directories into main cohorts with their subcohorts.
+
+        Main cohorts are those whose name does not start with
+        ``<other_name>__``.  Subcohorts are matched to their parent by
+        the ``parent__child`` naming convention.
+        """
+        names = [d.name for d in cohort_dirs]
+        dir_by_name = {d.name: d for d in cohort_dirs}
+
+        main_names = [
+            name
+            for name in names
+            if not any(
+                name.startswith(other + "__") for other in names if other != name
+            )
+        ]
+
+        groups: List[CohortGroup] = []
+        for main_name in main_names:
+            subcohort_dirs = [
+                dir_by_name[n] for n in names if n.startswith(main_name + "__")
+            ]
+            groups.append(
+                CohortGroup(
+                    name=main_name,
+                    main_dir=dir_by_name[main_name],
+                    subcohort_dirs=subcohort_dirs,
+                )
+            )
+        return groups
 
     def _group_reports_by_type(
         self, cohort_dirs: List[Path]
