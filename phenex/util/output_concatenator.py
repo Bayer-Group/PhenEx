@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import openpyxl
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
@@ -61,8 +63,22 @@ class _BaseSheetWriter:
 
     _SPACING_SIZE = 3
     _ROW_BACKGROUND_1 = "ededed"
+    _GRAY_TEXT = "808080"
     _BOOLEAN_COLUMNS = {"N", "Pct"}
     _COLUMN_DISPLAY_NAMES = {"Pct": "%"}
+
+    _COHORT_COLORS: List[str] = [
+        "D6E4F0",  # light blue
+        "D9EAD3",  # light green
+        "FDE5CC",  # light orange
+        "F4CCCC",  # light red
+        "D9D2E9",  # light purple
+        "D0E0E3",  # light teal
+        "FFF2CC",  # light yellow
+        "EAD1DC",  # light pink
+        "CFE2F3",  # light sky
+        "E6D8C3",  # light tan
+    ]
 
     # Row type -> background fill colour (ARGB hex, no leading #)
     _WATERFALL_COLORS: Dict[str, str] = {
@@ -87,9 +103,10 @@ class _BaseSheetWriter:
         indent: int = 0,
         fill_color: Optional[str] = None,
         number_format: Optional[str] = None,
+        font_color: Optional[str] = None,
     ):
         cell = sheet.cell(row=row, column=col, value=value)
-        cell.font = Font(bold=bold, italic=italic, size=size)
+        cell.font = Font(bold=bold, italic=italic, size=size, color=font_color)
         cell.alignment = Alignment(
             horizontal=horizontal, vertical=vertical, indent=indent
         )
@@ -101,7 +118,7 @@ class _BaseSheetWriter:
             cell.number_format = number_format
         return cell
 
-    def _add_group_title(self, sheet, title: str, start_col: int, end_col: int):
+    def _add_group_title(self, sheet, title: str, start_col: int, end_col: int, color: str = "D3D3D3"):
         """Write main cohort name in the title row, merged across group columns."""
         cell = self._write_cell(
             sheet,
@@ -112,7 +129,7 @@ class _BaseSheetWriter:
             size=18,
             horizontal="left",
             indent=2,
-            fill_color="D3D3D3",
+            fill_color=color,
         )
         cell.border = Border()
         if end_col > start_col:
@@ -124,7 +141,7 @@ class _BaseSheetWriter:
             )
 
     def _add_subcohort_header(
-        self, sheet, name: str, start_col: int, num_cols: int
+        self, sheet, name: str, start_col: int, num_cols: int, color: str = "E8E8E8"
     ):
         """Write individual cohort/subcohort name in the subtitle row."""
         self._write_cell(
@@ -136,7 +153,7 @@ class _BaseSheetWriter:
             size=14,
             horizontal="left",
             indent=2,
-            fill_color="E8E8E8",
+            fill_color=color,
         )
         if num_cols > 1:
             sheet.merge_cells(
@@ -146,20 +163,20 @@ class _BaseSheetWriter:
                 end_column=start_col + num_cols - 1,
             )
 
-    def _apply_group_border(self, sheet, start_col: int, end_col: int):
+    def _apply_group_border(self, sheet, start_col: int, end_col: int, color: str = "000000"):
         """Draw a thin border around the cohort group from title row to last data row."""
         max_row = sheet.max_row
         top_row = self._TITLE_ROW
-        thin = Side(style="thin")
+        side = Side(style="thin", color=color)
         for row in range(top_row, max_row + 1):
             for col in range(start_col, end_col + 1):
                 cell = sheet.cell(row=row, column=col)
                 existing = cell.border
                 cell.border = Border(
-                    left=thin if col == start_col else existing.left,
-                    right=thin if col == end_col else existing.right,
-                    top=thin if row == top_row else existing.top,
-                    bottom=thin if row == max_row else existing.bottom,
+                    left=side if col == start_col else existing.left,
+                    right=side if col == end_col else existing.right,
+                    top=side if row == top_row else existing.top,
+                    bottom=side if row == max_row else existing.bottom,
                 )
 
     def _apply_spacing(self, sheet, spacing_col: int):
@@ -169,14 +186,14 @@ class _BaseSheetWriter:
         )
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
 
-    def _apply_left_border_to_column(self, sheet, col: int):
+    def _apply_left_border_to_column(self, sheet, col: int, color: str = "000000"):
         """Draw a thin left border on every cell in a column."""
-        thin = Side(style="thin")
+        side = Side(style="thin", color=color)
         for row in range(self._TITLE_ROW, sheet.max_row + 1):
             cell = sheet.cell(row=row, column=col)
             existing = cell.border
             cell.border = Border(
-                left=thin,
+                left=side,
                 right=existing.right,
                 top=existing.top,
                 bottom=existing.bottom,
@@ -242,7 +259,8 @@ class GenericSheetWriter(_BaseSheetWriter):
         num_cols = len(columns)
         current_col = 1
 
-        for group in cohort_groups:
+        for gi, group in enumerate(cohort_groups):
+            group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
             self._apply_spacing(sheet, spacing_col=current_col)
             current_col += 1
             group_start_col = current_col
@@ -258,14 +276,14 @@ class GenericSheetWriter(_BaseSheetWriter):
 
                     display_name = group.display_name(cohort_dir)
                     self._add_subcohort_header(
-                        sheet, display_name, current_col, num_cols
+                        sheet, display_name, current_col, num_cols, color=group_color
                     )
                     self._write_column_headers(sheet, columns, current_col)
                     self._write_data_rows(sheet, rows, columns, current_col)
                     self._set_column_widths(sheet, rows, columns, current_col)
 
                     if is_subcohort:
-                        self._apply_left_border_to_column(sheet, current_col)
+                        self._apply_left_border_to_column(sheet, current_col, color=group_color)
 
                     current_col += num_cols
                 except Exception as e:
@@ -274,9 +292,9 @@ class GenericSheetWriter(_BaseSheetWriter):
             group_end_col = current_col - 1
             if group_end_col >= group_start_col:
                 self._add_group_title(
-                    sheet, group.name, group_start_col, group_end_col
+                    sheet, group.name, group_start_col, group_end_col, color=group_color
                 )
-                self._apply_group_border(sheet, group_start_col, group_end_col)
+                self._apply_group_border(sheet, group_start_col, group_end_col, color=group_color)
 
     def _get_column_order(self, report_files: List[Optional[Path]]) -> List[str]:
         for f in report_files:
@@ -362,8 +380,11 @@ class Table1SheetWriter(_BaseSheetWriter):
         Row 1  : spacing row
         Row 2  : main cohort name banner per group (merged)
         Row 3  : individual cohort/subcohort name per block
-        Row 4  : "Name" label in col A  +  column labels per cohort block
+        Row 4  : column labels per cohort block
         Row 5+ : characteristic rows; section-header rows interleaved
+
+    Column A is a narrow spacer that mirrors row colours.
+    Column B holds the characteristic names.
 
     Section headers appear as full-width blue-grey rows when the first cohort
     JSON contains a ``sections`` dict mapping section names to characteristic
@@ -390,10 +411,11 @@ class Table1SheetWriter(_BaseSheetWriter):
         self._write_name_column(sheet, expanded, name_to_level, alternate_fills)
 
         dir_to_report = dict(zip(cohort_dirs, report_files))
-        current_col = 2
+        current_col = 3
         spacing_cols: List[int] = []
 
-        for group in cohort_groups:
+        for gi, group in enumerate(cohort_groups):
+            group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
             spacing_cols.append(current_col)
             self._apply_spacing(sheet, spacing_col=current_col)
             current_col += 1
@@ -420,7 +442,7 @@ class Table1SheetWriter(_BaseSheetWriter):
 
                     display_name = group.display_name(cohort_dir)
                     self._add_subcohort_header(
-                        sheet, display_name, current_col, num_value_cols
+                        sheet, display_name, current_col, num_value_cols, color=group_color
                     )
                     pct_offset = self._write_column_labels(
                         sheet, columns, current_col
@@ -438,7 +460,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     self._set_value_column_widths(sheet, rows, columns, current_col)
 
                     if is_subcohort:
-                        self._apply_left_border_to_column(sheet, current_col)
+                        self._apply_left_border_to_column(sheet, current_col, color=group_color)
 
                     current_col += num_value_cols
 
@@ -448,9 +470,9 @@ class Table1SheetWriter(_BaseSheetWriter):
             group_end_col = current_col - 1
             if group_end_col >= group_start_col:
                 self._add_group_title(
-                    sheet, group.name, group_start_col, group_end_col
+                    sheet, group.name, group_start_col, group_end_col, color=group_color
                 )
-                self._apply_group_border(sheet, group_start_col, group_end_col)
+                self._apply_group_border(sheet, group_start_col, group_end_col, color=group_color)
 
         # Apply section-header spans, skipping spacer columns
         self._apply_section_header_spans(sheet, expanded, sheet.max_column, spacing_cols)
@@ -590,6 +612,9 @@ class Table1SheetWriter(_BaseSheetWriter):
                 return True
         return False
 
+    _NAME_SPACER_COL = 1
+    _NAME_COL = 2
+
     def _write_name_column(
         self,
         sheet,
@@ -597,57 +622,67 @@ class Table1SheetWriter(_BaseSheetWriter):
         name_to_level: Dict[str, int] = None,
         alternate_fills: List[Optional[str]] = None,
     ):
-        """Populate col A: row-2 label, then data and section rows."""
+        """Populate col B with characteristic names; col A is a narrow colour spacer."""
         name_to_level = name_to_level or {}
-        self._write_cell(
-            sheet,
-            self._HEADER_ROW,
-            1,
-            "Name",
-            bold=True,
-            size=14,
-            horizontal="right",
-            indent=4,
-        )
+        sheet.column_dimensions[get_column_letter(self._NAME_SPACER_COL)].width = self._SPACING_SIZE
+
         for i, (row_type, value) in enumerate(expanded):
             out_row = self._DATA_START_ROW + i
             if row_type == "section":
                 self._write_cell(
-                    sheet,
-                    out_row,
-                    1,
-                    value,
-                    bold=True,
-                    size=14,
-                    horizontal="left",
-                    indent=2,
+                    sheet, out_row, self._NAME_COL, value,
+                    bold=True, size=14, horizontal="left", indent=2,
+                    fill_color=self._ROW_BACKGROUND_1,
+                )
+                self._write_cell(
+                    sheet, out_row, self._NAME_SPACER_COL, None,
                     fill_color=self._ROW_BACKGROUND_1,
                 )
                 sheet.row_dimensions[out_row].height = 36
             elif row_type == "spacer":
-                # sheet.row_dimensions[out_row].height = 8
-                sheet.cell(row=out_row, column=1, value=None)
+                sheet.cell(row=out_row, column=self._NAME_COL, value=None)
+                sheet.cell(row=out_row, column=self._NAME_SPACER_COL, value=None)
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
                 gray = self._level_to_gray_hex(level)
                 alt = alternate_fills[i] if alternate_fills else None
-                fill = gray if gray else ("D3D3D3" if is_cohort else alt)
+                fill = gray if gray else alt
+                display = None if is_cohort else value
+                if display and "=" in display and name_to_level.get(value, 0) == 0:
+                    self._write_binned_name_cell(
+                        sheet, out_row, self._NAME_COL, display, fill_color=fill,
+                    )
+                else:
+                    self._write_cell(
+                        sheet, out_row, self._NAME_COL, display,
+                        bold=is_cohort, size=14, horizontal="right", indent=4,
+                        fill_color=fill,
+                    )
                 self._write_cell(
-                    sheet,
-                    out_row,
-                    1,
-                    value,
-                    bold=is_cohort,
-                    size=14,
-                    horizontal="right",
-                    indent=4,
+                    sheet, out_row, self._NAME_SPACER_COL, None,
                     fill_color=fill,
                 )
 
         max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
-        sheet.column_dimensions["A"].width = max(max_name_len * 1.2, 14)
-        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW + 1, column=2)
+        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = max(max_name_len * 1.2, 14)
+        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW + 1, column=self._NAME_COL + 1)
+
+    def _write_binned_name_cell(
+        self, sheet, row: int, col: int, value: str, fill_color: Optional[str] = None,
+    ):
+        """Write a binned phenotype name with the part after '=' in bold."""
+        prefix, suffix = value.split("=", 1)
+        rich = CellRichText(
+            TextBlock(InlineFont(sz=14), prefix + "="),
+            TextBlock(InlineFont(sz=14, b=True), suffix),
+        )
+        cell = sheet.cell(row=row, column=col, value=rich)
+        cell.alignment = Alignment(horizontal="right", indent=4)
+        if fill_color:
+            cell.fill = PatternFill(
+                start_color=fill_color, end_color=fill_color, fill_type="solid"
+            )
 
     def _write_column_labels(
         self, sheet, columns: List[str], start_col: int
@@ -669,6 +704,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 bold=is_pct,
                 size=14,
                 horizontal=horizontal,
+                font_color=self._GRAY_TEXT if is_n else None,
             )
             cell.border = Border()
         return pct_offset
@@ -706,7 +742,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             level = name_to_level.get(value, 0)
             gray = self._level_to_gray_hex(level)
             alt = alternate_fills[i] if alternate_fills else None
-            row_fill = gray if gray else ("D3D3D3" if is_cohort else alt)
+            row_fill = gray if gray else alt
             for offset, col_name in enumerate(columns):
                 raw_value = row_data.get(col_name) if row_data else None
                 is_pct_col = offset == pct_offset
@@ -723,6 +759,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     horizontal=horizontal,
                     fill_color=row_fill,
                     number_format=fmt,
+                    font_color=self._GRAY_TEXT if is_n_col else None,
                 )
 
     def _apply_section_header_spans(
