@@ -1,8 +1,14 @@
 from typing import List, Optional
 import os
+import pandas as pd
+import numpy as np
+import ibis
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.core.cohort import Cohort
-from phenex.reporting import Table1
+from phenex.reporting import Table1, Waterfall
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
 
 
 class _FilteredPhenotypeView:
@@ -68,6 +74,39 @@ class _SubcohortProxy:
         )
 
 
+class _PseudoReporterNode:
+    """Lightweight stand-in for a WaterfallNode / Table1Node so that
+    ``write_reports_to_excel`` / ``write_reports_to_json`` can call
+    ``node.to_excel()`` and ``node.to_json()`` uniformly."""
+
+    def __init__(self, name: str, reporter, table):
+        self.name = name
+        self.reporter = reporter
+        self.table = table
+
+    @property
+    def df_report(self):
+        if self.table is not None:
+            if hasattr(self.table, "execute"):
+                df = self.table.execute()
+            else:
+                df = self.table
+            self.reporter.df = df
+            result = self.reporter.get_pretty_display(color=False)
+            return result.drop(columns=["_color"], errors="ignore")
+        return None
+
+    def to_excel(self, path: str):
+        if self.table is not None:
+            _ = self.df_report
+            self.reporter.to_excel(path)
+
+    def to_json(self, path: str):
+        if self.table is not None:
+            _ = self.df_report
+            self.reporter.to_json(path)
+
+
 class Subcohort(Cohort):
     """
     A Subcohort derives from a parent cohort and applies additional inclusion /
@@ -102,16 +141,16 @@ class Subcohort(Cohort):
         outcomes: Optional[List[Phenotype]] = None,
         custom_reporters: Optional[List] = None,
     ):
-        additional_inclusions = inclusions or []
-        additional_exclusions = exclusions or []
-        additional_outcomes = outcomes or []
+        self.additional_inclusions = inclusions or []
+        self.additional_exclusions = exclusions or []
+        self.additional_outcomes = outcomes or []
 
         super(Subcohort, self).__init__(
             name=f"{cohort.name}__{name}",
             entry_criterion=cohort.entry_criterion,
-            inclusions=cohort.inclusions + additional_inclusions,
-            exclusions=cohort.exclusions + additional_exclusions,
-            outcomes=cohort.outcomes + additional_outcomes,
+            inclusions=cohort.inclusions + self.additional_inclusions,
+            exclusions=cohort.exclusions + self.additional_exclusions,
+            outcomes=cohort.outcomes + self.additional_outcomes,
             derived_tables=cohort.derived_tables,
             derived_tables_post_entry=cohort.derived_tables_post_entry,
             database=cohort.database,
@@ -128,18 +167,17 @@ class Subcohort(Cohort):
         lazy_execution=False,
     ):
         """
-        Execute the subcohort without rebuilding subset tables.
+        Execute the subcohort by applying additional criteria on top of the
+        parent cohort's final index table.
 
-        The parent cohort must be executed first. The entry stage (subset_tables_entry)
-        is reused from the parent directly. Index-stage nodes (inclusions, exclusions,
-        index table, waterfall) are executed by calling ``_execute()`` directly in
-        dependency order, bypassing the recursive Node execution machinery so that
-        already-computed shared phenotype nodes are never re-run.
+        The parent cohort must be executed first. No entry stage, subset tables,
+        or shared phenotype nodes are re-executed. Only additional
+        inclusions/exclusions/outcomes contributed by this subcohort are
+        executed against the parent's ``subset_tables_index``.
 
-        Subset index tables are never built or materialised for a subcohort. Reporting
-        (Table1, Table1Outcomes) is always generated lazily via the ``_make_*_reporter``
-        helpers which use :class:`_FilteredPhenotypeView` to scope counts to the
-        subcohort population.
+        The subcohort's index table is derived by filtering the parent's
+        ``index_table`` with the additional inclusion/exclusion criteria.
+        No subset tables are built or materialised for the subcohort.
         """
         if self.cohort.subset_tables_entry is None:
             raise RuntimeError(
@@ -149,29 +187,16 @@ class Subcohort(Cohort):
 
         con = self._prepare_database_connector_for_execution(con)
 
-        # Reuse parent's entry-level state directly — same entry criterion means
-        # the entry-subset tables are identical.
+        # Reuse parent state — same entry criterion, same entry-level filtering.
         self.n_persons_in_source_database = self.cohort.n_persons_in_source_database
         self.subset_tables_entry = self.cohort.subset_tables_entry
+        self.subset_tables_index = self.cohort.subset_tables_index
 
-        # Build node objects (we selectively execute only the ones we need).
-        self.build_stages(self.cohort.subset_tables_entry)
-
-        # Execute any phenotypes not yet run by the parent (i.e. additional
-        # inclusions/exclusions/outcomes contributed by this subcohort).
-        # Inclusions/exclusions execute against entry-subset domain tables;
-        # outcomes execute against the parent's index-subset domain tables.
-        for phenotype in self.inclusions + self.exclusions:
-            if phenotype.table is None:
-                phenotype.execute(
-                    tables=self.cohort.subset_tables_entry,
-                    con=con,
-                    overwrite=overwrite,
-                    n_threads=n_threads,
-                    lazy_execution=lazy_execution,
-                    table_name_prefix=self.name,
-                )
-        for phenotype in self.outcomes:
+        # ------------------------------------------------------------------
+        # Execute ONLY additional phenotypes against the parent's index-subset
+        # tables (post-inclusion/exclusion filtered domain data).
+        # ------------------------------------------------------------------
+        for phenotype in self.additional_inclusions + self.additional_exclusions + self.additional_outcomes:
             if phenotype.table is None:
                 phenotype.execute(
                     tables=self.cohort.subset_tables_index,
@@ -182,35 +207,184 @@ class Subcohort(Cohort):
                     table_name_prefix=self.name,
                 )
 
-        # Execute index-stage nodes in dependency order by calling _execute()
-        # directly.  All of these nodes read from phenotype.table attributes
-        # (already populated) rather than from the tables dict, so no domain
-        # table access occurs and no subset tables are built.
-        for node in [
-            self.inclusions_table_node,
-            self.exclusions_table_node,
-            self.index_table_node,
-            self.waterfall_node,
-            self.waterfall_detailed_node,
-        ]:
-            if node is None:
-                continue
-            node.table = node._execute(self.cohort.subset_tables_entry)
-            if con and node.table is not None:
-                con.create_table(node.table, node.name, overwrite=overwrite)
-                node.table = con.get_dest_table(node.name)
+        # ------------------------------------------------------------------
+        # Build subcohort index table: start from parent's index table and
+        # apply only the additional criteria.
+        # ------------------------------------------------------------------
+        index_table = self.cohort.index_table
 
-        self.table = self.index_table_node.table
+        for inclusion in self.additional_inclusions:
+            include_pids = (
+                inclusion.table
+                .filter(inclusion.table["BOOLEAN"] == True)
+                .select("PERSON_ID")
+            )
+            index_table = index_table.inner_join(include_pids, "PERSON_ID")
 
-        # Execute custom reporters (they receive the subcohort object and may
-        # access domain tables from the parent's index-subset tables).
-        for node in self.custom_reporter_nodes:
-            node.table = node._execute(self.cohort.subset_tables_index)
-            if con and node.table is not None:
-                con.create_table(node.table, node.name, overwrite=overwrite)
-                node.table = con.get_dest_table(node.name)
+        for exclusion in self.additional_exclusions:
+            exclude_pids = exclusion.table.select("PERSON_ID")
+            index_table = index_table.filter(
+                ~index_table["PERSON_ID"].isin(exclude_pids["PERSON_ID"])
+            )
+
+        self.table = index_table
+
+        # Materialise the index table if a connector is provided.
+        index_db_name = f"{self.name}__INDEX".upper()
+        if con and self.table is not None:
+            con.create_table(self.table, index_db_name, overwrite=overwrite)
+            self.table = con.get_dest_table(index_db_name)
+
+        # ------------------------------------------------------------------
+        # Build waterfall reports.  We construct the Waterfall manually so
+        # that parent criteria are read from the parent's already-computed
+        # waterfall data and only additional criteria are freshly appended.
+        # This avoids reading phenotype.table on parent phenotypes whose
+        # .table may have been overwritten by the parent's reporting stage.
+        # ------------------------------------------------------------------
+        self._build_waterfall(include_component_phenotypes_level=None)
+        self._build_waterfall(include_component_phenotypes_level=100)
+
+        # Execute custom reporters
+        for reporter in self.custom_reporters:
+            reporter.execute(self)
 
         return self.index_table
+
+    # ------------------------------------------------------------------
+    # Waterfall construction
+    # ------------------------------------------------------------------
+
+    def _build_waterfall(self, include_component_phenotypes_level=None):
+        """Build a waterfall by copying the parent's waterfall rows and
+        appending rows for the additional subcohort criteria."""
+        import numpy as np
+
+        is_detailed = include_component_phenotypes_level is not None
+
+        # Pick the right parent waterfall reporter
+        parent_reporter = (
+            self.cohort.waterfall_detailed_node if is_detailed
+            else self.cohort.waterfall_node
+        )
+        if parent_reporter is None or parent_reporter.table is None:
+            return
+
+        # Get the parent waterfall dataframe (the raw df, not pretty-printed)
+        parent_df = parent_reporter.table
+        if hasattr(parent_df, "execute"):
+            parent_df = parent_df.execute()
+
+        # The parent df has rows: [N persons in DB, entry, ...inclusions, ...exclusions, Final Cohort Size]
+        # Drop the "Final Cohort Size" row — we'll regenerate it.
+        parent_rows = parent_df[parent_df["Type"] != "info"].to_dict("records")
+
+        # Extract N_entry from the parent's waterfall entry row.
+        # We cannot use self.cohort.entry_criterion.table because the
+        # parent's reporting stage may have re-executed it (e.g. as a
+        # dependency of an outcome phenotype with a RelativeTimeRangeFilter),
+        # overwriting it with index-filtered data.
+        entry_rows = parent_df[parent_df["Type"] == "entry"]
+        N_entry = int(entry_rows["N"].iloc[0])
+
+        # Start the running table from the parent's index table (the
+        # patients that survived ALL parent inclusion/exclusion criteria).
+        # This avoids replaying parent criteria from a potentially
+        # corrupted entry_criterion.table.
+        running_table = self.cohort.index_table.select("PERSON_ID")
+
+        waterfall = Waterfall(
+            include_component_phenotypes_level=include_component_phenotypes_level
+        )
+        waterfall.cohort = self
+        waterfall.ds = list(parent_rows)
+
+        # Append additional criteria
+        index = len([r for r in parent_rows if r["Type"] != "component"])
+        for inclusion in self.additional_inclusions:
+            index += 1
+            running_table = waterfall.append_phenotype_to_waterfall(
+                running_table, inclusion, "inclusion", level=0, index=index,
+            )
+            if include_component_phenotypes_level is not None:
+                waterfall._append_components_recursively(
+                    inclusion, running_table, parent_index=str(index)
+                )
+
+        for exclusion in self.additional_exclusions:
+            index += 1
+            running_table = waterfall.append_phenotype_to_waterfall(
+                running_table, exclusion, "exclusion", level=0, index=index,
+            )
+            if include_component_phenotypes_level is not None:
+                waterfall._append_components_recursively(
+                    exclusion, running_table, parent_index=str(index)
+                )
+
+        # Now build the dataframe the same way Waterfall.execute does
+        waterfall.ds = waterfall.append_delta(waterfall.ds)
+        waterfall.df = pd.DataFrame(waterfall.ds)
+
+        N = (
+            self.index_table.filter(self.index_table.BOOLEAN == True)
+            .select("PERSON_ID").distinct().count().execute()
+        )
+
+        waterfall.df["Pct_Remaining"] = waterfall.df["Remaining"] / N_entry * 100
+        waterfall.df["Pct_N"] = waterfall.df["N"] / N_entry * 100
+
+        float_cols = waterfall.df.select_dtypes(include="float").columns
+        waterfall.df[float_cols] = waterfall.df[float_cols].round(waterfall.decimal_places)
+
+        first_row = pd.DataFrame([{
+            "Type": "info", "Name": "N persons in database",
+            "N": self.n_persons_in_source_database, "Level": 0, "Index": "",
+        }])
+        last_row = pd.DataFrame([{
+            "Type": "info", "Name": "Final Cohort Size",
+            "Remaining": N,
+            "Pct_Remaining": round(100 * N / N_entry, waterfall.decimal_places),
+            "Level": 0, "Index": "",
+        }])
+        waterfall.df = pd.concat([first_row, waterfall.df, last_row], ignore_index=True)
+
+        entry_pct = round(N_entry / self.n_persons_in_source_database * 100, waterfall.decimal_places)
+        final_pct = round(N / self.n_persons_in_source_database * 100, waterfall.decimal_places)
+        waterfall.df["Pct_Source_Database"] = (
+            [np.nan, entry_pct] + [np.nan] * (waterfall.df.shape[0] - 3) + [final_pct]
+        )
+
+        columns_to_select = [
+            "Type", "Index", "Name", "Level", "N", "Pct_N",
+            "Remaining", "Pct_Remaining", "Delta", "Pct_Source_Database",
+        ]
+        waterfall.df = waterfall.df[columns_to_select]
+
+        # Ensure Index column is uniformly typed (string) so ibis.memtable
+        # doesn't choke on mixed int / str values.
+        waterfall.df["Index"] = waterfall.df["Index"].astype(str)
+
+        # Wrap in a pseudo-node so write_reports_to_excel/json works
+        table = ibis.memtable(waterfall.df)
+        if is_detailed:
+            self.waterfall_detailed_node = _PseudoReporterNode(
+                name=f"{self.name}__waterfall_detailed".upper(),
+                reporter=waterfall, table=table,
+            )
+        else:
+            self.waterfall_node = _PseudoReporterNode(
+                name=f"{self.name}__waterfall".upper(),
+                reporter=waterfall, table=table,
+            )
+
+    # ------------------------------------------------------------------
+    # Property overrides
+    # ------------------------------------------------------------------
+
+    @property
+    def index_table(self):
+        """Return the subcohort's index table directly (no index_table_node)."""
+        return self.table
 
     # ------------------------------------------------------------------
     # Report helpers — build reporters lazily using _FilteredPhenotypeView
