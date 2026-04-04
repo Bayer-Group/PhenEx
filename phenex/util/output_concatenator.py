@@ -597,6 +597,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 sheet.row_dimensions[out_row].height = 36
             elif row_type == "spacer":
                 sheet.row_dimensions[out_row].height = 8
+                sheet.cell(row=out_row, column=1, value=None)
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
