@@ -60,7 +60,7 @@ class _BaseSheetWriter:
     _DATA_START_ROW = 5
 
     _SPACING_SIZE = 3
-    _ROW_BACKGROUND_1 = "D9D9D9"
+    _ROW_BACKGROUND_1 = "ededed"
     _BOOLEAN_COLUMNS = {"N", "Pct"}
     _COLUMN_DISPLAY_NAMES = {"Pct": "%"}
 
@@ -386,7 +386,8 @@ class Table1SheetWriter(_BaseSheetWriter):
             return
 
         expanded = self._build_expanded_rows(master_names, sections, name_to_level)
-        self._write_name_column(sheet, expanded, name_to_level)
+        alternate_fills = self._compute_alternate_fills(expanded, name_to_level)
+        self._write_name_column(sheet, expanded, name_to_level, alternate_fills)
 
         dir_to_report = dict(zip(cohort_dirs, report_files))
         current_col = 2
@@ -432,6 +433,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                         current_col,
                         pct_offset,
                         name_to_level,
+                        alternate_fills,
                     )
                     self._set_value_column_widths(sheet, rows, columns, current_col)
 
@@ -554,6 +556,33 @@ class Table1SheetWriter(_BaseSheetWriter):
             result.append((row_type, value))
         return result
 
+    def _compute_alternate_fills(
+        self,
+        expanded: List[Tuple[str, str]],
+        name_to_level: Dict[str, int],
+    ) -> List[Optional[str]]:
+        """Return per-row alternate background fill, or None.
+
+        Resets at each section.  The first eligible row after a section
+        header gets no fill; subsequent eligible rows alternate.
+        Component rows (level > 0) and spacer rows are always None.
+        """
+        fills: List[Optional[str]] = []
+        counter = 0
+        for row_type, value in expanded:
+            if row_type == "section":
+                counter = 0
+                fills.append(None)
+            elif row_type == "spacer":
+                fills.append(None)
+            else:
+                if name_to_level.get(value, 0) > 0:
+                    fills.append(None)
+                else:
+                    fills.append(self._ROW_BACKGROUND_1 if counter % 2 == 1 else None)
+                    counter += 1
+        return fills
+
     @staticmethod
     def _name_belongs_to_chars(name: str, char_names: List[str]) -> bool:
         for char in char_names:
@@ -566,6 +595,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         sheet,
         expanded: List[Tuple[str, str]],
         name_to_level: Dict[str, int] = None,
+        alternate_fills: List[Optional[str]] = None,
     ):
         """Populate col A: row-2 label, then data and section rows."""
         name_to_level = name_to_level or {}
@@ -590,19 +620,19 @@ class Table1SheetWriter(_BaseSheetWriter):
                     bold=True,
                     size=14,
                     horizontal="left",
-                    vertical="bottom",
                     indent=2,
                     fill_color=self._ROW_BACKGROUND_1,
                 )
                 sheet.row_dimensions[out_row].height = 36
             elif row_type == "spacer":
-                sheet.row_dimensions[out_row].height = 8
+                # sheet.row_dimensions[out_row].height = 8
                 sheet.cell(row=out_row, column=1, value=None)
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
                 gray = self._level_to_gray_hex(level)
-                fill = gray if gray else ("D3D3D3" if is_cohort else None)
+                alt = alternate_fills[i] if alternate_fills else None
+                fill = gray if gray else ("D3D3D3" if is_cohort else alt)
                 self._write_cell(
                     sheet,
                     out_row,
@@ -652,6 +682,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         start_col: int,
         pct_offset: Optional[int],
         name_to_level: Dict[str, int] = None,
+        alternate_fills: List[Optional[str]] = None,
     ):
         name_to_level = name_to_level or {}
         name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
@@ -674,7 +705,8 @@ class Table1SheetWriter(_BaseSheetWriter):
             is_cohort = value == "Cohort"
             level = name_to_level.get(value, 0)
             gray = self._level_to_gray_hex(level)
-            row_fill = gray if gray else ("D3D3D3" if is_cohort else None)
+            alt = alternate_fills[i] if alternate_fills else None
+            row_fill = gray if gray else ("D3D3D3" if is_cohort else alt)
             for offset, col_name in enumerate(columns):
                 raw_value = row_data.get(col_name) if row_data else None
                 is_pct_col = offset == pct_offset
