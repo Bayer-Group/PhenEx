@@ -410,7 +410,6 @@ class Table1SheetWriter(_BaseSheetWriter):
                     size=11,
                     horizontal="left",
                     indent=2,
-                    fill_color="B8CCE4",
                 )
             else:
                 is_cohort = value == "Cohort"
