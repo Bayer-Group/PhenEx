@@ -385,7 +385,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         if not master_names:
             return
 
-        expanded = self._build_expanded_rows(master_names, sections)
+        expanded = self._build_expanded_rows(master_names, sections, name_to_level)
         self._write_name_column(sheet, expanded, name_to_level)
 
         dir_to_report = dict(zip(cohort_dirs, report_files))
@@ -482,7 +482,8 @@ class Table1SheetWriter(_BaseSheetWriter):
         return list(seen.keys()), sections, name_to_level
 
     def _build_expanded_rows(
-        self, master_names: List[str], sections: Optional[Dict]
+        self, master_names: List[str], sections: Optional[Dict],
+        name_to_level: Dict[str, int] = None,
     ) -> List[Tuple[str, str]]:
         """Return list of (row_type, value) with section headers interleaved.
 
@@ -501,10 +502,56 @@ class Table1SheetWriter(_BaseSheetWriter):
                     break
 
         result: List[Tuple[str, str]] = []
+        section_start_indices = sorted(insert_at.keys())
+
+        # Build a mapping: master_names index -> which section it belongs to
+        current_section_idx = -1
+        owner: List[int] = []
+        for idx in range(len(master_names)):
+            if idx in insert_at:
+                current_section_idx = idx
+            owner.append(current_section_idx)
+
         for idx, name in enumerate(master_names):
             if idx in insert_at:
                 result.append(("section", insert_at[idx]))
             result.append(("row", name))
+            # Add spacer after the last row of this section
+            is_last = idx == len(master_names) - 1
+            next_in_different_section = (
+                not is_last and owner[idx + 1] != owner[idx]
+            )
+            if owner[idx] >= 0 and (is_last or next_in_different_section):
+                result.append(("spacer", ""))
+        return self._insert_binned_spacers(result, name_to_level or {})
+
+    @staticmethod
+    def _is_binned(name: str, name_to_level: Dict[str, int]) -> bool:
+        """A row is binned if it contains '=' and is not a component (level 0)."""
+        return "=" in name and name_to_level.get(name, 0) == 0
+
+    @staticmethod
+    def _insert_binned_spacers(
+        expanded: List[Tuple[str, str]],
+        name_to_level: Dict[str, int],
+    ) -> List[Tuple[str, str]]:
+        """Insert a spacer row before each group of binned rows.
+
+        A spacer is not inserted if the binned group is the first data row
+        or immediately follows a section header.
+        """
+        result: List[Tuple[str, str]] = []
+        for i, (row_type, value) in enumerate(expanded):
+            if row_type == "row" and "=" in value and name_to_level.get(value, 0) == 0:
+                prev_type = result[-1][0] if result else None
+                prev_is_binned = (
+                    prev_type == "row"
+                    and "=" in result[-1][1]
+                    and name_to_level.get(result[-1][1], 0) == 0
+                ) if result else False
+                if not prev_is_binned and prev_type not in (None, "section"):
+                    result.append(("spacer", ""))
+            result.append((row_type, value))
         return result
 
     @staticmethod
@@ -548,6 +595,8 @@ class Table1SheetWriter(_BaseSheetWriter):
                     fill_color=self._ROW_BACKGROUND_1,
                 )
                 sheet.row_dimensions[out_row].height = 36
+            elif row_type == "spacer":
+                sheet.row_dimensions[out_row].height = 8
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
@@ -616,6 +665,8 @@ class Table1SheetWriter(_BaseSheetWriter):
                         None,
                         fill_color=self._ROW_BACKGROUND_1,
                     )
+                continue
+            if row_type == "spacer":
                 continue
 
             row_data = name_to_row.get(value)
