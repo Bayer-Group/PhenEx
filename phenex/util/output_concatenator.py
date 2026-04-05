@@ -214,6 +214,13 @@ class _BaseSheetWriter:
         return None
 
     @staticmethod
+    def _clean_numeric(value):
+        """Convert whole-number floats to int (e.g. 98.0 -> 98)."""
+        if isinstance(value, float) and not math.isnan(value) and value == int(value):
+            return int(value)
+        return value
+
+    @staticmethod
     def _level_to_gray_hex(level) -> Optional[str]:
         """Return a 6-char ARGB hex fill colour for a component nesting level, or None."""
         try:
@@ -749,7 +756,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             alt = alternate_fills[i] if alternate_fills else None
             row_fill = gray if gray else alt
             for offset, col_name in enumerate(columns):
-                raw_value = row_data.get(col_name) if row_data else None
+                raw_value = self._clean_numeric(row_data.get(col_name)) if row_data else None
                 is_pct_col = offset == pct_offset
                 is_n_col = col_name.strip().lower() == "n"
                 horizontal = "right" if is_n_col else ("left" if is_pct_col else "center")
@@ -794,12 +801,10 @@ class Table1SheetWriter(_BaseSheetWriter):
                         cell.fill = fill
 
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
-        font_scale = 14 / 11  # scale relative to Excel default font size 11
+        font_scale = 14 / 11
         for offset, col_name in enumerate(columns):
-            is_n = col_name.strip().lower() == "n"
-            values = [str(r.get(col_name, "")) for r in rows] + [col_name]
-            max_len = max((len(v) for v in values if v), default=4)
-            width = max(max_len * font_scale + 2, 12 if is_n else 6)
+            display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
+            width = max(len(display_name) * font_scale + 2, 6)
             sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
@@ -847,8 +852,10 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
         # Column widths
         sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = self._SPACING_SIZE
         sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = 24
+        font_scale = 14 / 11
         for i, col_name in enumerate(stat_cols):
-            w = 7 if col_name in ("P10", "P25", "P75", "P90") else 9
+            display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
+            w = max(len(display_name) * font_scale + 2, 6)
             sheet.column_dimensions[get_column_letter(self._DATA_START_COL + i)].width = w
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
 
@@ -971,7 +978,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             fill_color=group_color,
         )
         for i, col_name in enumerate(stat_cols):
-            value = row_data.get(col_name) if row_data else None
+            value = self._clean_numeric(row_data.get(col_name)) if row_data else None
             is_pct = col_name == "Pct"
             is_n = col_name == "N"
             horizontal = "right" if is_n else ("left" if is_pct else "center")
@@ -1082,7 +1089,7 @@ class InfoSheetWriter(_BaseSheetWriter):
 
         # Info section
         self._write_cell(sheet, current_row, 2,
-                         "The following sheets allow comparison of all cohorts, subcohorts and stratificats within this study. "
+                         "The following sheets allow comparison of all cohorts, subcohorts and stratifications within this study. "
                          "Cohorts are arranged side by side for easy comparison.",
                          size=14)
         sheet.row_dimensions[current_row].height = 36
