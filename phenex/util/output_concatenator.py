@@ -803,8 +803,14 @@ class Table1SheetWriter(_BaseSheetWriter):
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
         font_scale = 14 / 11
         for offset, col_name in enumerate(columns):
-            display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
-            width = max(len(display_name) * font_scale + 2, 6)
+            if col_name.strip().lower() == "n":
+                width = 14  # fits "10,000,000"
+            else:
+                display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
+                values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
+                max_val_len = max((len(v) for v in values), default=0)
+                content_len = max(len(display_name), max_val_len)
+                width = min(max(content_len * font_scale + 1, 6), 18)
             sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
@@ -853,9 +859,13 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
         sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = self._SPACING_SIZE
         sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = 24
         font_scale = 14 / 11
+        col_max_lens = self._get_stat_col_max_lengths(report_files, stat_cols)
         for i, col_name in enumerate(stat_cols):
-            display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
-            w = max(len(display_name) * font_scale + 2, 6)
+            if col_name == "N":
+                w = 14  # fits "10,000,000"
+            else:
+                content_len = col_max_lens.get(col_name, len(col_name))
+                w = min(max(content_len * font_scale + 1, 6), 18)
             sheet.column_dimensions[get_column_letter(self._DATA_START_COL + i)].width = w
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
 
@@ -910,6 +920,26 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             except Exception:
                 pass
         return list(seen.keys())
+
+    def _get_stat_col_max_lengths(
+        self, report_files: List[Optional[Path]], stat_cols: List[str]
+    ) -> Dict[str, int]:
+        """Return max display-string length per stat column across all report files."""
+        max_lens = {c: len(self._COLUMN_DISPLAY_NAMES.get(c, c)) for c in stat_cols}
+        for f in report_files:
+            if f is None:
+                continue
+            try:
+                data = self._load_json(f)
+                for row in data.get("rows", []):
+                    if row.get("Mean") is not None:
+                        for col in stat_cols:
+                            val = row.get(col)
+                            if val is not None:
+                                max_lens[col] = max(max_lens[col], len(str(val)))
+            except Exception:
+                pass
+        return max_lens
 
     def _get_available_stat_cols(self, report_files: List[Optional[Path]]) -> List[str]:
         """Return stat columns that have at least one non-null value."""
