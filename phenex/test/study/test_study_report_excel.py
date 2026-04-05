@@ -179,9 +179,53 @@ def _table1_detailed(p: dict) -> dict:
     return {"reporter_type": "Table1", "rows": rows, "sections": base["sections"]}
 
 
-# ---------------------------------------------------------------------------
-# Write helpers
-# ---------------------------------------------------------------------------
+def _table1_outcomes(p: dict) -> dict:
+    n = p["n_final"]
+
+    def row(name, count, mean=None, std=None, median=None):
+        r = {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
+             "_level": 0, **_null_stats()}
+        if mean is not None:
+            r.update({"Mean": mean, "STD": std, "Median": median})
+        return r
+
+    rows = [
+        {"Name": "Cohort", "N": n, "Pct": 100.0, "_level": 0, **_null_stats()},
+        row("Time to first MI", n, mean=4.2, std=2.8, median=3.7),
+        row("Time to first stroke", n, mean=5.1, std=3.2, median=4.5),
+        row("All-cause mortality", round(n * 0.08)),
+        row("CV mortality", round(n * 0.04)),
+        row("MI", round(n * 0.12)),
+        row("Stroke", round(n * 0.07)),
+        row("Heart failure", round(n * 0.09)),
+        row("Hospitalisation", round(n * 0.22)),
+    ]
+    sections = {
+        "Time-to-event": ["Time to first MI", "Time to first stroke"],
+        "Events": ["All-cause mortality", "CV mortality", "MI", "Stroke",
+                   "Heart failure", "Hospitalisation"],
+    }
+    return {"reporter_type": "Table1", "rows": rows, "sections": sections}
+
+
+def _table1_outcomes_detailed(p: dict) -> dict:
+    base = _table1_outcomes(p)
+    n = p["n_final"]
+
+    def row(name, count, level=1):
+        return {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
+                "_level": level, **_null_stats()}
+
+    extras = [
+        row("MI=ICD code", round(n * 0.08), level=1),
+        row("MI=adjudicated", round(n * 0.06), level=1),
+    ]
+    rows = []
+    for r in base["rows"]:
+        rows.append(r)
+        if r["Name"] == "MI":
+            rows.extend(extras)
+    return {"reporter_type": "Table1", "rows": rows, "sections": base["sections"]}
 
 def _write_json(path: Path, data: dict) -> None:
     """Write dict to JSON, converting NaN to null."""
@@ -225,6 +269,8 @@ def build_dummy_study() -> Path:
         _write_json(cohort_dir / "waterfall_detailed.json", _waterfall_detailed(params))
         _write_json(cohort_dir / "table1.json", _table1(params))
         _write_json(cohort_dir / "table1_detailed.json", _table1_detailed(params))
+        _write_json(cohort_dir / "table1_outcomes.json", _table1_outcomes(params))
+        _write_json(cohort_dir / "table1_outcomes_detailed.json", _table1_outcomes_detailed(params))
 
     return study_dir
 

@@ -6,6 +6,7 @@ multi-sheet Excel file for cross-cohort comparison.
 """
 
 import json
+import math
 import re
 import zipfile
 from dataclasses import dataclass, field
@@ -227,6 +228,8 @@ class _BaseSheetWriter:
     def _set_default_row_height(self, sheet, height: float = 24.0) -> None:
         sheet.sheet_format.defaultRowHeight = height
         sheet.sheet_format.customHeight = True
+        sheet.row_dimensions[self._TITLE_ROW].height = 34
+        sheet.row_dimensions[self._SUBTITLE_ROW].height = 28
 
     @staticmethod
     def _load_json(path: Path) -> Dict:
@@ -658,7 +661,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 else:
                     self._write_cell(
                         sheet, out_row, self._NAME_COL, display,
-                        bold=is_cohort, size=14, horizontal="right", indent=4,
+                        bold=is_cohort, size=14, horizontal="right", indent=1,
                         fill_color=fill,
                     )
                 self._write_cell(
@@ -680,7 +683,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             TextBlock(InlineFont(rFont=self._FONT, sz=14, b=True), suffix),
         )
         cell = sheet.cell(row=row, column=col, value=rich)
-        cell.alignment = Alignment(horizontal="right", indent=4)
+        cell.alignment = Alignment(horizontal="right", indent=1)
         if fill_color:
             cell.fill = PatternFill(
                 start_color=fill_color, end_color=fill_color, fill_type="solid"
@@ -793,9 +796,10 @@ class Table1SheetWriter(_BaseSheetWriter):
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
         font_scale = 14 / 11  # scale relative to Excel default font size 11
         for offset, col_name in enumerate(columns):
+            is_n = col_name.strip().lower() == "n"
             values = [str(r.get(col_name, "")) for r in rows] + [col_name]
             max_len = max((len(v) for v in values if v), default=4)
-            width = max(max_len * font_scale + 2, 6)
+            width = max(max_len * font_scale + 2, 12 if is_n else 6)
             sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
@@ -1001,69 +1005,124 @@ class InfoSheetWriter(_BaseSheetWriter):
 
     _HEADER_SIZES: Dict[int, int] = {1: 20, 2: 16, 3: 14}
 
+    _SHEET_INFO_TABLE = [
+        ("Sheet", "Description"),
+        ("INCLUSION EXCLUSION",
+         "Shows how the study entry criterion, inclusion and exclusion criteria result in the final cohort sizes."),
+        ("CHARACTERISTICS",
+         "Characterizes populations at study entry date."),
+        ("OUTCOMES",
+         "Characterizes populations after study entry date."),
+        ("… all",
+         "Displays all boolean, numeric and categorical study elements within a single table."),
+        ("… boolean",
+         "Displays only boolean study elements — the number of patients that have or do not have a given element. "
+         "For numeric values, this identifies missingness."),
+        ("… numeric",
+         "Displays only numerically valued study elements with summary statistics such as mean, median, min and max."),
+        ("… (detailed)",
+         "Displays subcomponents of study elements (e.g. if Diabetes is composed of Type 1 and Type 2, counts for "
+         "each component are shown). Identical to the non-detailed version when no subcomponents are present."),
+    ]
+
     def write(
         self,
         sheet,
         cohort_dirs: List[Path],
         study_path: Path,
         description: Optional[str],
+        cohort_groups: Optional[List["CohortGroup"]] = None,
     ) -> None:
         self._set_default_row_height(sheet)
-        sheet.column_dimensions["A"].width = 30
-        sheet.column_dimensions["B"].width = 50
+        sheet.column_dimensions["A"].width = self._SPACING_SIZE
+        sheet.column_dimensions["B"].width = 34
+        sheet.column_dimensions["C"].width = 14
+        sheet.column_dimensions["D"].width = 80
 
         current_row = 1
 
-        # PhenEx version
-        phenex_version = self._read_phenex_version(study_path)
-        self._write_cell(
-            sheet,
-            current_row,
-            1,
-            f"Executed with PhenEx v{phenex_version}",
-            bold=True,
-            size=16,
-        )
-        current_row += 2  # blank row
-
-        # Cohort table headers
-        self._write_cell(sheet, current_row, 1, "Cohort", bold=True, size=14)
-        self._write_cell(
-            sheet, current_row, 2, "Final N", bold=True, size=14, horizontal="right"
-        )
-        current_row += 1
-
-        # One row per cohort
-        for cohort_dir in cohort_dirs:
-            final_n = self._read_final_n(cohort_dir)
-            self._write_cell(sheet, current_row, 1, cohort_dir.name, size=14)
-            self._write_cell(
-                sheet,
-                current_row,
-                2,
-                final_n,
-                size=14,
-                horizontal="right",
-                number_format="#,##0" if isinstance(final_n, int) else None,
-            )
-            current_row += 1
-
-        current_row += 1  # blank row before description
-
-        # Description
+        # Description at the top
         if description:
             for line in description.splitlines():
                 text, font_size, bold = self._parse_markdown_line(line)
                 if text is not None:
-                    self._write_cell(
-                        sheet,
-                        current_row,
-                        2,
-                        text,
-                        bold=bold,
-                        size=font_size,
-                    )
+                    self._write_cell(sheet, current_row, 2, text, bold=bold, size=font_size)
                 current_row += 1
+            current_row += 1  # blank row after description
+
+        # Cohort table header
+        self._write_cell(sheet, current_row, 2, "Cohort", bold=True, size=14)
+        self._write_cell(sheet, current_row, 3, "Final N", bold=True, size=14, horizontal="right")
+        current_row += 1
+
+        # Build lookup from dir -> (display_name, color, is_sub)
+        dir_to_display: Dict[Path, tuple] = {}
+        if cohort_groups:
+            for gi, group in enumerate(cohort_groups):
+                color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
+                for cohort_dir in group.all_dirs:
+                    display = group.display_name(cohort_dir)
+                    is_sub = cohort_dir != group.main_dir
+                    dir_to_display[cohort_dir] = (display, color, is_sub)
+
+        for cohort_dir in cohort_dirs:
+            final_n = self._read_final_n(cohort_dir)
+            display, color, is_sub = dir_to_display.get(
+                cohort_dir, (cohort_dir.name, None, False)
+            )
+            # Spacer col: no fill
+            self._write_cell(sheet, current_row, 2, display, size=14,
+                             indent=4 if is_sub else 2, fill_color=color)
+            self._write_cell(sheet, current_row, 3, final_n, size=14, horizontal="right",
+                             fill_color=color,
+                             number_format="#,##0" if isinstance(final_n, int) else None)
+            current_row += 1
+
+        current_row += 1  # blank row
+
+        # Info section
+        self._write_cell(sheet, current_row, 2,
+                         "The following sheets allow comparison of all cohorts, subcohorts and stratificats within this study. "
+                         "Cohorts are arranged side by side for easy comparison.",
+                         size=14)
+        sheet.row_dimensions[current_row].height = 36
+        current_row += 2  # blank row
+
+        # Sheet description table — header row
+        sheet_col, desc_col = 2, 4
+        thin = Side(style="thin")
+        header_bottom = Border(bottom=thin)
+        row_border = Border(bottom=Side(style="hair"))
+
+        self._write_cell(sheet, current_row, sheet_col, "Sheet name", bold=True, size=14)
+        self._write_cell(sheet, current_row, desc_col, "Description", bold=True, size=14)
+        for col in (sheet_col, sheet_col + 1, desc_col):
+            sheet.cell(row=current_row, column=col).border = header_bottom
+        current_row += 1
+
+        # col D width in chars ≈ 80 / 1.27 (ratio of 14pt to default 11pt)
+        chars_per_line = 63
+        line_height_pt = 20  # 14pt font line height
+
+        for sheet_name, sheet_desc in self._SHEET_INFO_TABLE[1:]:
+            name_cell = self._write_cell(sheet, current_row, sheet_col, sheet_name, size=14,
+                                         bold=(not sheet_name.startswith("…")))
+            desc_cell = self._write_cell(sheet, current_row, desc_col, sheet_desc, size=14)
+            desc_cell.alignment = Alignment(wrap_text=True, vertical="top")
+            name_cell.alignment = Alignment(vertical="top")
+            for col in (sheet_col, sheet_col + 1, desc_col):
+                sheet.cell(row=current_row, column=col).border = row_border
+            lines = max(1, math.ceil(len(sheet_desc) / chars_per_line))
+            sheet.row_dimensions[current_row].height = max(24, lines * line_height_pt)
+            current_row += 1
+
+        current_row += 1  # blank row
+
+        # PhenEx version at the bottom
+        phenex_version = self._read_phenex_version(study_path)
+        self._write_cell(sheet, current_row, 2,
+                         f"Executed with PhenEx v{phenex_version}",
+                         bold=False, size=11, font_color=self._GRAY_TEXT)
 
     # ------------------------------------------------------------------
 
@@ -1139,6 +1198,8 @@ class OutputConcatenator:
         "Table1BooleanDetailed",
         "Table1Numeric",
         "Table1NumericDetailed",
+        "Table1OutcomesAll",
+        "Table1OutcomesAllDetailed",
         "Table1Outcomes",
         "Table1OutcomesDetailed",
         "Table1OutcomesNumeric",
@@ -1161,6 +1222,8 @@ class OutputConcatenator:
         "Table1BooleanDetailed":      "CHARACTERISTICS bool (detailed)",
         "Table1Numeric":              "CHARACTERISTICS numeric",
         "Table1NumericDetailed":      "CHARACTERISTICS num (detailed)",
+        "Table1OutcomesAll":          "OUTCOMES all",
+        "Table1OutcomesAllDetailed":  "OUTCOMES all (detailed)",
         "Table1Outcomes":             "OUTCOMES boolean",
         "Table1OutcomesDetailed":     "OUTCOMES boolean (detailed)",
         "Table1OutcomesNumeric":      "OUTCOMES numeric",
@@ -1205,6 +1268,15 @@ class OutputConcatenator:
             if source_type in reports_by_type:
                 reports_by_type[bool_type] = reports_by_type[source_type]
 
+        # Add all-columns outcome views (same source files as boolean outcomes)
+        _ALL_SOURCES = {
+            "Table1OutcomesAll": "Table1Outcomes",
+            "Table1OutcomesAllDetailed": "Table1OutcomesDetailed",
+        }
+        for all_type, source_type in _ALL_SOURCES.items():
+            if source_type in reports_by_type:
+                reports_by_type[all_type] = reports_by_type[source_type]
+
         # Add numeric views of Table1 data (same source files, numeric rows only)
         _NUMERIC_SOURCES = {
             "Table1Numeric": "Table1",
@@ -1224,7 +1296,7 @@ class OutputConcatenator:
         info_sheet = output_wb.create_sheet(title=self._SHEET_DISPLAY_NAMES.get("Info", "Info"))
         info_sheet.sheet_view.showGridLines = False
         self._info_writer.write(
-            info_sheet, cohort_dirs, self.study_path, self.description
+            info_sheet, cohort_dirs, self.study_path, self.description, cohort_groups
         )
 
         for report_type in self._sheet_order(reports_by_type):
@@ -1254,6 +1326,8 @@ class OutputConcatenator:
     _TABLE1_TYPES = {
         "Table1",
         "Table1Detailed",
+        "Table1OutcomesAll",
+        "Table1OutcomesAllDetailed",
         "Table1Outcomes",
         "Table1OutcomesDetailed",
         "Table1Boolean",
@@ -1390,3 +1464,5 @@ class OutputConcatenator:
             f"</ignoredErrors>"
         )
         return text.replace("</worksheet>", snippet + "</worksheet>").encode("utf-8")
+
+
