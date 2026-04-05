@@ -906,7 +906,11 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
     # ------------------------------------------------------------------
 
     def _collect_numeric_names(self, report_files: List[Optional[Path]]) -> List[str]:
-        """Return ordered list of characteristic names whose Mean is non-null."""
+        """Return ordered list of truly numeric characteristic names.
+
+        A name is numeric if it has a non-null Mean and does not contain '='
+        (binned/categorical rows like ``race=asian`` are excluded).
+        """
         seen: Dict[str, None] = {}
         for f in report_files:
             if f is None:
@@ -915,7 +919,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 data = self._load_json(f)
                 for row in data.get("rows", []):
                     name = row.get("Name")
-                    if name and row.get("Mean") is not None and name not in seen:
+                    if name and "=" not in name and row.get("Mean") is not None and name not in seen:
                         seen[name] = None
             except Exception:
                 pass
@@ -1001,7 +1005,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
         stat_cols: List[str], group_color: str, alt_fill: Optional[str], is_subcohort: bool,
     ):
         """Write a single cohort data row for the current characteristic."""
-        self._write_cell(sheet, row, self._SPACER_COL, None, fill_color=group_color)
+        sheet.cell(row=row, column=self._SPACER_COL, value=None)
         self._write_cell(
             sheet, row, self._NAME_COL, display_name,
             size=14, horizontal="right", indent=6 if is_subcohort else 4,
@@ -1018,6 +1022,232 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 bold=is_pct, size=14, horizontal=horizontal,
                 fill_color=alt_fill, number_format=fmt,
                 font_color=self._GRAY_TEXT if is_n else None,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Table1 categorical vertical writer
+# ---------------------------------------------------------------------------
+
+
+class Table1CategoricalSheetWriter(_BaseSheetWriter):
+    """Writes categorical (binned) characteristics vertically: one block per phenotype.
+
+    Layout per block::
+
+        [full-width phenotype name row  – SECTION_HEADER_COLOR]
+        [category names merged over their N/% pair]
+        [column labels: blank | N % | N % | …]
+        [one row per cohort/subcohort]
+        [spacer row]
+
+    Column A : narrow spacer (no fill).
+    Column B : cohort display name (group colour).
+    Column C+: N/% pairs, one pair per category.
+    """
+
+    _SPACER_COL = 1
+    _NAME_COL = 2
+    _DATA_START_COL = 3
+
+    def write(
+        self,
+        sheet,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+        cohort_groups: List["CohortGroup"],
+    ):
+        self._set_default_row_height(sheet)
+        dir_to_report = dict(zip(cohort_dirs, report_files))
+
+        phenotype_categories = self._collect_categorical_phenotypes(report_files)
+        if not phenotype_categories:
+            return
+
+        # Column widths for fixed columns
+        sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = self._SPACING_SIZE
+        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = 24
+        sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
+
+        current_row = self._DATA_START_ROW
+        for phenotype_name, categories in phenotype_categories.items():
+            num_cats = len(categories)
+            total_data_cols = num_cats * 2  # N + % per category
+
+            # Set category column widths
+            for ci in range(total_data_cols):
+                col_letter = get_column_letter(self._DATA_START_COL + ci)
+                if ci % 2 == 0:  # N column
+                    sheet.column_dimensions[col_letter].width = 14
+                else:  # % column
+                    sheet.column_dimensions[col_letter].width = 6
+
+            # Phenotype name header row
+            self._write_phenotype_header(sheet, current_row, phenotype_name, total_data_cols)
+            current_row += 1
+
+            # Category name row (merged over N/% pairs)
+            self._write_category_names(sheet, current_row, categories)
+            # Compute row height from tallest category name
+            font_scale = 14 / 11
+            chars_per_col = int(14 / font_scale)  # width 14 ≈ 11 chars at 14pt
+            max_lines = 1
+            for cat in categories:
+                lines = max(1, math.ceil(len(cat) / max(chars_per_col, 1)))
+                max_lines = max(max_lines, lines)
+            sheet.row_dimensions[current_row].height = max(24, max_lines * 20)
+            current_row += 1
+
+            # N / % sub-header row
+            self._write_n_pct_labels(sheet, current_row, num_cats)
+            current_row += 1
+
+            # Cohort data rows
+            row_in_block = 0
+            for gi, group in enumerate(cohort_groups):
+                group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
+                for cohort_dir in group.all_dirs:
+                    report_file = dir_to_report.get(cohort_dir)
+                    if report_file is None:
+                        continue
+                    try:
+                        data = self._load_json(report_file)
+                        cat_data = self._get_category_data(data, phenotype_name, categories)
+                        display_name = group.display_name(cohort_dir)
+                        is_subcohort = cohort_dir != group.main_dir
+                        alt_fill = self._ROW_BACKGROUND_1 if row_in_block % 2 == 1 else None
+                        self._write_cohort_row(
+                            sheet, current_row, display_name, cat_data,
+                            categories, group_color, alt_fill, is_subcohort,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to process {report_file}: {e}")
+                    current_row += 1
+                    row_in_block += 1
+
+            # Spacer row after block
+            sheet.row_dimensions[current_row].height = 8
+            sheet.cell(row=current_row, column=self._SPACER_COL, value=None)
+            current_row += 1
+
+    # ------------------------------------------------------------------
+
+    def _collect_categorical_phenotypes(
+        self, report_files: List[Optional[Path]]
+    ) -> Dict[str, List[str]]:
+        """Return {phenotype_name: [category1, category2, ...]} for binned rows.
+
+        A row is categorical/binned if its Name contains '=' and its _level is 0.
+        Categories are ordered by first appearance.
+        """
+        phenotypes: Dict[str, Dict[str, None]] = {}  # name -> {cat: None}
+        for f in report_files:
+            if f is None:
+                continue
+            try:
+                data = self._load_json(f)
+                for row in data.get("rows", []):
+                    name = row.get("Name", "")
+                    level = row.get("_level", 0)
+                    if "=" in name and int(level) == 0:
+                        pheno, cat = name.split("=", 1)
+                        if pheno not in phenotypes:
+                            phenotypes[pheno] = {}
+                        if cat not in phenotypes[pheno]:
+                            phenotypes[pheno][cat] = None
+            except Exception:
+                pass
+        return {k: list(v.keys()) for k, v in phenotypes.items()}
+
+    def _write_phenotype_header(self, sheet, row: int, name: str, total_data_cols: int):
+        """Write phenotype name as a full-width section header."""
+        max_col = self._DATA_START_COL + total_data_cols - 1
+        fill = PatternFill(
+            start_color=self._SECTION_HEADER_COLOR,
+            end_color=self._SECTION_HEADER_COLOR,
+            fill_type="solid",
+        )
+        for col in range(self._SPACER_COL, max_col + 1):
+            sheet.cell(row=row, column=col).fill = fill
+        self._write_cell(
+            sheet, row, self._NAME_COL, name,
+            bold=True, size=14, horizontal="left", indent=2,
+            fill_color=self._SECTION_HEADER_COLOR,
+        )
+        sheet.row_dimensions[row].height = 36
+
+    def _write_category_names(self, sheet, row: int, categories: List[str]):
+        """Write category names merged over their N/% column pairs, with text wrapping."""
+        for ci, cat_name in enumerate(categories):
+            n_col = self._DATA_START_COL + ci * 2
+            pct_col = n_col + 1
+            cell = self._write_cell(
+                sheet, row, n_col, cat_name,
+                bold=True, size=14, horizontal="center",
+            )
+            cell.alignment = Alignment(horizontal="center", vertical="bottom", wrap_text=True)
+            sheet.merge_cells(
+                start_row=row, start_column=n_col,
+                end_row=row, end_column=pct_col,
+            )
+
+    def _write_n_pct_labels(self, sheet, row: int, num_cats: int):
+        """Write N / % column sub-headers for each category."""
+        for ci in range(num_cats):
+            n_col = self._DATA_START_COL + ci * 2
+            pct_col = n_col + 1
+            self._write_cell(
+                sheet, row, n_col, "N",
+                bold=False, size=14, horizontal="right",
+                font_color=self._GRAY_TEXT,
+            )
+            self._write_cell(
+                sheet, row, pct_col, "%",
+                bold=True, size=14, horizontal="left",
+            )
+
+    def _get_category_data(
+        self, data: Dict, phenotype_name: str, categories: List[str]
+    ) -> Dict[str, Dict[str, object]]:
+        """Return {category: {"N": ..., "Pct": ...}} for one phenotype from one cohort."""
+        result: Dict[str, Dict] = {}
+        for row in data.get("rows", []):
+            name = row.get("Name", "")
+            if "=" in name:
+                pheno, cat = name.split("=", 1)
+                if pheno == phenotype_name and cat in categories:
+                    result[cat] = {"N": row.get("N"), "Pct": row.get("Pct")}
+        return result
+
+    def _write_cohort_row(
+        self, sheet, row: int, display_name: str, cat_data: Dict[str, Dict],
+        categories: List[str], group_color: str, alt_fill: Optional[str], is_subcohort: bool,
+    ):
+        """Write a single cohort data row for the current phenotype."""
+        sheet.cell(row=row, column=self._SPACER_COL, value=None)
+        self._write_cell(
+            sheet, row, self._NAME_COL, display_name,
+            size=14, horizontal="right", indent=6 if is_subcohort else 4,
+            fill_color=group_color,
+        )
+        for ci, cat in enumerate(categories):
+            n_col = self._DATA_START_COL + ci * 2
+            pct_col = n_col + 1
+            vals = cat_data.get(cat, {})
+            n_val = self._clean_numeric(vals.get("N"))
+            pct_val = self._clean_numeric(vals.get("Pct"))
+            self._write_cell(
+                sheet, row, n_col, n_val,
+                size=14, horizontal="right",
+                fill_color=alt_fill,
+                number_format=self._number_format_for_value(n_val),
+                font_color=self._GRAY_TEXT,
+            )
+            self._write_cell(
+                sheet, row, pct_col, pct_val,
+                bold=True, size=14, horizontal="left",
+                fill_color=alt_fill,
+                number_format=self._number_format_for_value(pct_val),
             )
 
 
@@ -1057,6 +1287,8 @@ class InfoSheetWriter(_BaseSheetWriter):
          "For numeric values, this identifies missingness."),
         ("… numeric",
          "Displays only numerically valued study elements with summary statistics such as mean, median, min and max."),
+        ("… categorical",
+         "Displays categorical study elements with one table per phenotype, showing N and % for each category."),
         ("… (detailed)",
          "Displays subcomponents of study elements (e.g. if Diabetes is composed of Type 1 and Type 2, counts for "
          "each component are shown). Identical to the non-detailed version when no subcomponents are present."),
@@ -1235,11 +1467,13 @@ class OutputConcatenator:
         "Table1BooleanDetailed",
         "Table1Numeric",
         "Table1NumericDetailed",
+        "Table1Categorical",
         "Table1OutcomesAll",
         "Table1OutcomesAllDetailed",
         "Table1Outcomes",
         "Table1OutcomesDetailed",
         "Table1OutcomesNumeric",
+        "Table1OutcomesCategorical",
     ]
     _CANONICAL_NAMES = {
         "waterfall": "Waterfall",
@@ -1259,11 +1493,13 @@ class OutputConcatenator:
         "Table1BooleanDetailed":      "CHARACTERISTICS bool (detailed)",
         "Table1Numeric":              "CHARACTERISTICS numeric",
         "Table1NumericDetailed":      "CHARACTERISTICS num (detailed)",
+        "Table1Categorical":          "CHARACTERISTICS categorical",
         "Table1OutcomesAll":          "OUTCOMES all",
         "Table1OutcomesAllDetailed":  "OUTCOMES all (detailed)",
         "Table1Outcomes":             "OUTCOMES boolean",
         "Table1OutcomesDetailed":     "OUTCOMES boolean (detailed)",
         "Table1OutcomesNumeric":      "OUTCOMES numeric",
+        "Table1OutcomesCategorical":  "OUTCOMES categorical",
     }
 
     def __init__(
@@ -1282,6 +1518,7 @@ class OutputConcatenator:
         self._generic_writer = GenericSheetWriter()
         self._table1_writer = Table1SheetWriter()
         self._numeric_writer = Table1NumericSheetWriter()
+        self._categorical_writer = Table1CategoricalSheetWriter()
 
     # ------------------------------------------------------------------
 
@@ -1323,6 +1560,15 @@ class OutputConcatenator:
         for num_type, source_type in _NUMERIC_SOURCES.items():
             if source_type in reports_by_type:
                 reports_by_type[num_type] = reports_by_type[source_type]
+
+        # Add categorical views of Table1 data (same source files, binned rows only)
+        _CATEGORICAL_SOURCES = {
+            "Table1Categorical": "Table1",
+            "Table1OutcomesCategorical": "Table1Outcomes",
+        }
+        for cat_type, source_type in _CATEGORICAL_SOURCES.items():
+            if source_type in reports_by_type:
+                reports_by_type[cat_type] = reports_by_type[source_type]
 
         cohort_groups = self._group_cohorts(cohort_dirs)
 
@@ -1381,6 +1627,10 @@ class OutputConcatenator:
         "Table1NumericDetailed",
         "Table1OutcomesNumeric",
     }
+    _TABLE1_CATEGORICAL_TYPES = {
+        "Table1Categorical",
+        "Table1OutcomesCategorical",
+    }
 
     def _write_sheet(
         self,
@@ -1392,6 +1642,8 @@ class OutputConcatenator:
     ) -> None:
         if report_type in self._TABLE1_NUMERIC_TYPES:
             self._numeric_writer.write(sheet, report_files, cohort_dirs, cohort_groups)
+        elif report_type in self._TABLE1_CATEGORICAL_TYPES:
+            self._categorical_writer.write(sheet, report_files, cohort_dirs, cohort_groups)
         elif report_type in self._TABLE1_TYPES:
             boolean_only = report_type in self._TABLE1_BOOLEAN_TYPES
             self._table1_writer.write(

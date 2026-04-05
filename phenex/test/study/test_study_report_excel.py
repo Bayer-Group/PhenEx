@@ -137,6 +137,18 @@ def _table1(p: dict) -> dict:
         row("Binned age=[50-55)", round(n * 0.232)),
         row("Binned age=[55-60)", round(n * 0.218)),
         row("Binned age=[60-65)", round(n * 0.172)),
+        row("Age group=[18-30)", round(n * 0.08)),
+        row("Age group=[30-40)", round(n * 0.14)),
+        row("Age group=[40-50)", round(n * 0.26)),
+        row("Age group=[50-60)", round(n * 0.31)),
+        row("Age group=[60-70)", round(n * 0.15)),
+        row("Age group=[70-80)", round(n * 0.05)),
+        row("Age group=[80+)", round(n * 0.01)),
+        row("Race=White", round(n * 0.62)),
+        row("Race=Asian", round(n * 0.11)),
+        row("Race=Black or African American", round(n * 0.14)),
+        row("Race=Hispanic or Latino", round(n * 0.08)),
+        row("Race=Other", round(n * 0.05)),
         row("BMI", n, mean=28.4, std=5.9, median=27.5),
         row("Hypertension", round(n * 0.35)),
         row("Diabetes", round(n * 0.12)),
@@ -147,7 +159,7 @@ def _table1(p: dict) -> dict:
         row("Stroke", round(n * 0.014)),
     ]
     sections = {
-        "Demographics": ["Age", "Binned age"],
+        "Demographics": ["Age", "Binned age", "Age group", "Race"],
         "Observations": ["BMI"],
         "Comorbidities": [
             "Hypertension", "Diabetes", "Depression", "Anxiety",
