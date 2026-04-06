@@ -5,6 +5,7 @@ Reads per-cohort JSON reporter outputs and assembles them into a single
 multi-sheet Excel file for cross-cohort comparison.
 """
 
+import colorsys
 import json
 import math
 import re
@@ -144,7 +145,8 @@ class _BaseSheetWriter:
             )
 
     def _add_subcohort_header(
-        self, sheet, name: str, start_col: int, num_cols: int, color: str = "E8E8E8"
+        self, sheet, name: str, start_col: int, num_cols: int, color: str = "E8E8E8",
+        font_color: Optional[str] = None,
     ):
         """Write individual cohort/subcohort name in the subtitle row."""
         self._write_cell(
@@ -157,6 +159,7 @@ class _BaseSheetWriter:
             horizontal="left",
             indent=2,
             fill_color=color,
+            font_color=font_color,
         )
         if num_cols > 1:
             sheet.merge_cells(
@@ -231,6 +234,26 @@ class _BaseSheetWriter:
             return None
         value = max(235 - 20 * (lvl - 1), 100)
         return f"{value:02X}{value:02X}{value:02X}"
+
+    @staticmethod
+    def _cohort_text_colors(hex_color: str) -> Tuple[str, str]:
+        """Return (text_dark, text_light) derived from a cohort background hex colour.
+
+        Both share the same hue as *hex_color*.  ``text_dark`` is very dark
+        (for prominent text like %), ``text_light`` is medium-dark (for
+        secondary text like N).
+        """
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        # text_dark – deep, saturated
+        rd, gd, bd = colorsys.hls_to_rgb(h, 0.25, min(s * 1.5, 1.0))
+        dark = f"{int(rd * 255):02X}{int(gd * 255):02X}{int(bd * 255):02X}"
+        # text_light – medium
+        rl, gl, bl = colorsys.hls_to_rgb(h, 0.45, min(s * 1.3, 1.0))
+        light = f"{int(rl * 255):02X}{int(gl * 255):02X}{int(bl * 255):02X}"
+        return dark, light
 
     def _set_default_row_height(self, sheet, height: float = 24.0) -> None:
         sheet.sheet_format.defaultRowHeight = height
@@ -463,8 +486,8 @@ class Table1SheetWriter(_BaseSheetWriter):
             return
 
         expanded = self._build_expanded_rows(master_names, sections, name_to_level)
-        alternate_fills = self._compute_alternate_fills(expanded, name_to_level)
-        self._write_name_column(sheet, expanded, name_to_level, alternate_fills)
+        alt_mask = self._compute_alternate_fills(expanded, name_to_level)
+        self._write_name_column(sheet, expanded, name_to_level, alt_mask)
 
         dir_to_report = dict(zip(cohort_dirs, report_files))
         current_col = 3
@@ -472,6 +495,7 @@ class Table1SheetWriter(_BaseSheetWriter):
 
         for gi, group in enumerate(cohort_groups):
             group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
+            text_dark, text_light = self._cohort_text_colors(group_color)
             spacing_cols.append(current_col)
             self._apply_spacing(sheet, spacing_col=current_col)
             current_col += 1
@@ -498,10 +522,11 @@ class Table1SheetWriter(_BaseSheetWriter):
 
                     display_name = group.display_name(cohort_dir)
                     self._add_subcohort_header(
-                        sheet, display_name, current_col, num_value_cols, color=group_color
+                        sheet, display_name, current_col, num_value_cols,
+                        color=group_color, font_color=text_dark,
                     )
                     pct_offset = self._write_column_labels(
-                        sheet, columns, current_col
+                        sheet, columns, current_col, text_dark, text_light,
                     )
                     self._write_value_rows(
                         sheet,
@@ -511,7 +536,10 @@ class Table1SheetWriter(_BaseSheetWriter):
                         current_col,
                         pct_offset,
                         name_to_level,
-                        alternate_fills,
+                        alt_mask,
+                        group_color,
+                        text_dark,
+                        text_light,
                     )
                     self._set_value_column_widths(sheet, rows, columns, current_col)
 
@@ -638,28 +666,28 @@ class Table1SheetWriter(_BaseSheetWriter):
         self,
         expanded: List[Tuple[str, str]],
         name_to_level: Dict[str, int],
-    ) -> List[Optional[str]]:
-        """Return per-row alternate background fill, or None.
+    ) -> List[bool]:
+        """Return per-row boolean mask: True where an alternating fill applies.
 
         Resets at each section.  The first eligible row after a section
         header gets no fill; subsequent eligible rows alternate.
-        Component rows (level > 0) and spacer rows are always None.
+        Component rows (level > 0) and spacer rows are always False.
         """
-        fills: List[Optional[str]] = []
+        mask: List[bool] = []
         counter = 0
         for row_type, value in expanded:
             if row_type == "section":
                 counter = 0
-                fills.append(None)
+                mask.append(False)
             elif row_type == "spacer":
-                fills.append(None)
+                mask.append(False)
             else:
                 if name_to_level.get(value, 0) > 0:
-                    fills.append(None)
+                    mask.append(False)
                 else:
-                    fills.append(self._ROW_BACKGROUND_1 if counter % 2 == 1 else None)
+                    mask.append(counter % 2 == 1)
                     counter += 1
-        return fills
+        return mask
 
     @staticmethod
     def _name_belongs_to_chars(name: str, char_names: List[str]) -> bool:
@@ -676,7 +704,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         sheet,
         expanded: List[Tuple[str, str]],
         name_to_level: Dict[str, int] = None,
-        alternate_fills: List[Optional[str]] = None,
+        alt_mask: List[bool] = None,
     ):
         """Populate col B with characteristic names; col A is a narrow colour spacer."""
         name_to_level = name_to_level or {}
@@ -702,7 +730,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
                 gray = self._level_to_gray_hex(level)
-                alt = alternate_fills[i] if alternate_fills else None
+                alt = self._ROW_BACKGROUND_1 if (alt_mask and alt_mask[i]) else None
                 fill = gray if gray else alt
                 display = None if is_cohort else value
                 if display and "=" in display and name_to_level.get(value, 0) == 0:
@@ -741,7 +769,8 @@ class Table1SheetWriter(_BaseSheetWriter):
             )
 
     def _write_column_labels(
-        self, sheet, columns: List[str], start_col: int
+        self, sheet, columns: List[str], start_col: int,
+        text_dark: Optional[str] = None, text_light: Optional[str] = None,
     ) -> Optional[int]:
         """Write column labels in the header row; return 0-based offset of the Pct column."""
         pct_offset = None
@@ -752,6 +781,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 pct_offset = offset
             display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
             horizontal = "right" if is_n else ("left" if is_pct else "center")
+            fc = text_light if is_n and text_light else (text_dark if is_pct and text_dark else None)
             cell = self._write_cell(
                 sheet,
                 self._HEADER_ROW,
@@ -760,7 +790,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 bold=is_pct,
                 size=14,
                 horizontal=horizontal,
-                font_color=self._GRAY_TEXT if is_n else None,
+                font_color=fc,
             )
             cell.border = Border()
         return pct_offset
@@ -774,7 +804,10 @@ class Table1SheetWriter(_BaseSheetWriter):
         start_col: int,
         pct_offset: Optional[int],
         name_to_level: Dict[str, int] = None,
-        alternate_fills: List[Optional[str]] = None,
+        alt_mask: List[bool] = None,
+        group_color: Optional[str] = None,
+        text_dark: Optional[str] = None,
+        text_light: Optional[str] = None,
     ):
         name_to_level = name_to_level or {}
         name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
@@ -797,14 +830,15 @@ class Table1SheetWriter(_BaseSheetWriter):
             is_cohort = value == "Cohort"
             level = name_to_level.get(value, 0)
             gray = self._level_to_gray_hex(level)
-            alt = alternate_fills[i] if alternate_fills else None
-            row_fill = gray if gray else alt
+            should_alt = alt_mask[i] if alt_mask else False
+            row_fill = gray if gray else (group_color if should_alt else None)
             for offset, col_name in enumerate(columns):
                 raw_value = self._clean_numeric(row_data.get(col_name)) if row_data else None
                 is_pct_col = offset == pct_offset
                 is_n_col = col_name.strip().lower() == "n"
                 horizontal = "right" if is_n_col else ("left" if is_pct_col else "center")
                 fmt = self._number_format_for_value(raw_value)
+                fc = text_light if is_n_col else (text_dark if is_pct_col else None)
                 self._write_cell(
                     sheet,
                     out_row,
@@ -815,7 +849,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     horizontal=horizontal,
                     fill_color=row_fill,
                     number_format=fmt,
-                    font_color=self._GRAY_TEXT if is_n_col else None,
+                    font_color=fc,
                 )
 
     def _apply_section_header_spans(
@@ -933,10 +967,12 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                         row_data = self._find_char_row(data, char_name)
                         display_name = group.display_name(cohort_dir)
                         is_subcohort = cohort_dir != group.main_dir
-                        alt_fill = self._ROW_BACKGROUND_1 if row_in_block % 2 == 1 else None
+                        text_dark, text_light = self._cohort_text_colors(group_color)
+                        alt_fill = group_color if row_in_block % 2 == 1 else None
                         self._write_cohort_row(
                             sheet, current_row, display_name, row_data,
                             stat_cols, group_color, alt_fill, is_subcohort,
+                            text_dark, text_light,
                         )
                     except Exception as e:
                         logger.warning(f"Failed to process {report_file}: {e}")
@@ -1048,6 +1084,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
     def _write_cohort_row(
         self, sheet, row: int, display_name: str, row_data: Optional[Dict],
         stat_cols: List[str], group_color: str, alt_fill: Optional[str], is_subcohort: bool,
+        text_dark: Optional[str] = None, text_light: Optional[str] = None,
     ):
         """Write a single cohort data row for the current characteristic."""
         sheet.cell(row=row, column=self._SPACER_COL, value=None)
@@ -1062,11 +1099,12 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             is_n = col_name == "N"
             horizontal = "right" if is_n else ("left" if is_pct else "center")
             fmt = self._number_format_for_value(value)
+            fc = text_light if is_n else (text_dark if is_pct else None)
             self._write_cell(
                 sheet, row, self._DATA_START_COL + i, value,
                 bold=is_pct, size=14, horizontal=horizontal,
                 fill_color=alt_fill, number_format=fmt,
-                font_color=self._GRAY_TEXT if is_n else None,
+                font_color=fc,
             )
 
 
@@ -1161,10 +1199,12 @@ class Table1CategoricalSheetWriter(_BaseSheetWriter):
                         cat_data = self._get_category_data(data, phenotype_name, categories)
                         display_name = group.display_name(cohort_dir)
                         is_subcohort = cohort_dir != group.main_dir
-                        alt_fill = self._ROW_BACKGROUND_1 if row_in_block % 2 == 1 else None
+                        text_dark, text_light = self._cohort_text_colors(group_color)
+                        alt_fill = group_color if row_in_block % 2 == 1 else None
                         self._write_cohort_row(
                             sheet, current_row, display_name, cat_data,
                             categories, group_color, alt_fill, is_subcohort,
+                            text_dark, text_light,
                         )
                     except Exception as e:
                         logger.warning(f"Failed to process {report_file}: {e}")
@@ -1268,6 +1308,7 @@ class Table1CategoricalSheetWriter(_BaseSheetWriter):
     def _write_cohort_row(
         self, sheet, row: int, display_name: str, cat_data: Dict[str, Dict],
         categories: List[str], group_color: str, alt_fill: Optional[str], is_subcohort: bool,
+        text_dark: Optional[str] = None, text_light: Optional[str] = None,
     ):
         """Write a single cohort data row for the current phenotype."""
         sheet.cell(row=row, column=self._SPACER_COL, value=None)
@@ -1287,13 +1328,14 @@ class Table1CategoricalSheetWriter(_BaseSheetWriter):
                 size=14, horizontal="right",
                 fill_color=alt_fill,
                 number_format=self._number_format_for_value(n_val),
-                font_color=self._GRAY_TEXT,
+                font_color=text_light,
             )
             self._write_cell(
                 sheet, row, pct_col, pct_val,
                 bold=True, size=14, horizontal="left",
                 fill_color=alt_fill,
                 number_format=self._number_format_for_value(pct_val),
+                font_color=text_dark,
             )
 
 
