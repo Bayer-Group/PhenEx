@@ -897,6 +897,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 w = min(max(content_len * font_scale + 1, 6), 18)
             sheet.column_dimensions[get_column_letter(self._DATA_START_COL + i)].width = w
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
+        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW, column=self._NAME_COL + 1)
 
         current_row = self._DATA_START_ROW
         for bi, char_name in enumerate(numeric_names):
@@ -1097,6 +1098,7 @@ class Table1CategoricalSheetWriter(_BaseSheetWriter):
         sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = self._SPACING_SIZE
         sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = 24
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
+        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW, column=self._NAME_COL + 1)
 
         current_row = self._DATA_START_ROW
         for phenotype_name, categories in phenotype_categories.items():
@@ -1336,6 +1338,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                 sheet.row_dimensions[row].height = 28
 
         last_data_row = data_start + len(expanded) - 1
+        sheet.freeze_panes = sheet.cell(row=data_start, column=1)
 
         current_col = 1
         for gi, group in enumerate(cohort_groups):
