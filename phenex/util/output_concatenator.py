@@ -253,7 +253,28 @@ class GenericSheetWriter(_BaseSheetWriter):
     """Writes multiple JSON report files side-by-side into a single worksheet.
 
     For Waterfall reports the ``Type`` column drives row background colours.
+    Columns are reordered and renamed according to ``_COLUMN_ORDER`` and
+    ``_COLUMN_HEADERS``.  Columns not listed in the order list are appended
+    at the end in their original order.
     """
+
+    # Desired column order and display headers for Waterfall-type reports.
+    _COLUMN_ORDER = [
+        "Type", "Index", "Name",
+        "Pct_Source_Database", "Pct_Remaining", "Remaining",
+        "Delta", "Pct_N", "N",
+    ]
+    _COLUMN_HEADERS: Dict[str, str] = {
+        "Type": "",
+        "Index": "",
+        "Name": "",
+        "Pct_Source_Database": "% source",
+        "Pct_Remaining": "%",
+        "Remaining": "remaining",
+        "Delta": "\u0394",
+        "Pct_N": "%",
+        "N": "N",
+    }
 
     def write(
         self,
@@ -263,40 +284,43 @@ class GenericSheetWriter(_BaseSheetWriter):
         cohort_groups: List["CohortGroup"],
     ):
         self._set_default_row_height(sheet)
-        columns = self._get_column_order(report_files)
-        if not columns:
+        raw_columns = self._get_raw_column_order(report_files)
+        if not raw_columns:
             return
 
+        columns = self._reorder_columns(raw_columns)
         dir_to_report = dict(zip(cohort_dirs, report_files))
         num_cols = len(columns)
         current_col = 1
 
         for gi, group in enumerate(cohort_groups):
             group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
+            # Group-level spacer
             self._apply_spacing(sheet, spacing_col=current_col)
             current_col += 1
             group_start_col = current_col
 
-            for cohort_dir in group.all_dirs:
+            for ci, cohort_dir in enumerate(group.all_dirs):
                 report_file = dir_to_report.get(cohort_dir)
                 if report_file is None:
                     continue
                 is_subcohort = cohort_dir != group.main_dir
+
+                # Spacer before each subcohort
+                if is_subcohort:
+                    self._apply_spacing(sheet, spacing_col=current_col)
+                    current_col += 1
+
                 try:
                     data = self._load_json(report_file)
                     rows = data.get("rows", [])
-
                     display_name = group.display_name(cohort_dir)
                     self._add_subcohort_header(
-                        sheet, display_name, current_col, num_cols, color=group_color
+                        sheet, display_name, current_col, num_cols, color=group_color,
                     )
                     self._write_column_headers(sheet, columns, current_col)
                     self._write_data_rows(sheet, rows, columns, current_col)
                     self._set_column_widths(sheet, rows, columns, current_col)
-
-                    if is_subcohort:
-                        self._apply_left_border_to_column(sheet, current_col, color=group_color)
-
                     current_col += num_cols
                 except Exception as e:
                     logger.warning(f"Failed to process {report_file}: {e}")
@@ -304,16 +328,28 @@ class GenericSheetWriter(_BaseSheetWriter):
             group_end_col = current_col - 1
             if group_end_col >= group_start_col:
                 self._add_group_title(
-                    sheet, group.name, group_start_col, group_end_col, color=group_color
+                    sheet, group.name, group_start_col, group_end_col, color=group_color,
                 )
-                self._apply_group_border(sheet, group_start_col, group_end_col, color=group_color)
+                self._apply_group_border(
+                    sheet, group_start_col, group_end_col, color=group_color,
+                )
 
-    def _get_column_order(self, report_files: List[Optional[Path]]) -> List[str]:
+    # ------------------------------------------------------------------
+
+    def _reorder_columns(self, raw_columns: List[str]) -> List[str]:
+        """Return columns in the preferred order, appending any extras."""
+        ordered = [c for c in self._COLUMN_ORDER if c in raw_columns]
+        extras = [c for c in raw_columns if c not in self._COLUMN_ORDER]
+        return ordered + extras
+
+    @staticmethod
+    def _get_raw_column_order(report_files: List[Optional[Path]]) -> List[str]:
         for f in report_files:
             if f is None:
                 continue
             try:
-                data = self._load_json(f)
+                with f.open() as fh:
+                    data = json.load(fh)
                 rows = data.get("rows", [])
                 if rows:
                     return list(rows[0].keys())
@@ -323,36 +359,28 @@ class GenericSheetWriter(_BaseSheetWriter):
 
     def _write_column_headers(self, sheet, columns: List[str], start_col: int):
         for offset, col_name in enumerate(columns):
+            display = self._COLUMN_HEADERS.get(col_name, col_name)
             col = start_col + offset
             cell = self._write_cell(
-                sheet,
-                self._HEADER_ROW,
-                col,
-                col_name,
-                bold=True,
-                size=14,
-                horizontal="center",
-                fill_color="366092",
+                sheet, self._HEADER_ROW, col, display,
+                bold=True, size=14, horizontal="center", fill_color="366092",
             )
             cell.font = Font(name=self._FONT, bold=True, size=14, color="FFFFFF")
 
-    def _write_data_rows(self, sheet, rows, columns, start_col: int):
+    def _write_data_rows(self, sheet, rows: list, columns: List[str], start_col: int):
         display_rows = self._sparsify_type(rows) if "Type" in columns else rows
-        for row_idx, (orig_row, disp_row) in enumerate(zip(rows, display_rows), start=self._DATA_START_ROW):
+        for row_idx, (orig_row, disp_row) in enumerate(
+            zip(rows, display_rows), start=self._DATA_START_ROW,
+        ):
             row_type = str(orig_row.get("Type", "")).lower()
             fill_color = self._WATERFALL_COLORS.get(row_type)
             for offset, col_name in enumerate(columns):
-                value = disp_row.get(col_name)
+                value = self._clean_numeric(disp_row.get(col_name))
                 fmt = self._number_format_for_value(value)
                 self._write_cell(
-                    sheet,
-                    row_idx,
-                    start_col + offset,
-                    value,
-                    size=14,
-                    horizontal="center",
-                    fill_color=fill_color,
-                    number_format=fmt,
+                    sheet, row_idx, start_col + offset, value,
+                    size=14, horizontal="center",
+                    fill_color=fill_color, number_format=fmt,
                 )
 
     @staticmethod
@@ -370,13 +398,14 @@ class GenericSheetWriter(_BaseSheetWriter):
             result.append(row_copy)
         return result
 
-    def _set_column_widths(self, sheet, rows, columns, start_col: int):
+    def _set_column_widths(self, sheet, rows: list, columns: List[str], start_col: int):
         for offset, col_name in enumerate(columns):
-            values = [str(r.get(col_name, "")) for r in rows] + [col_name]
-            width = max((len(v) for v in values if v), default=8) + 2
-            sheet.column_dimensions[get_column_letter(start_col + offset)].width = min(
-                width, 40
-            )
+            display = self._COLUMN_HEADERS.get(col_name, col_name)
+            values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
+            max_val_len = max((len(v) for v in values), default=0)
+            content_len = max(len(display), max_val_len)
+            width = min(max(content_len + 2, 6), 40)
+            sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
 # ---------------------------------------------------------------------------
@@ -1461,19 +1490,19 @@ class OutputConcatenator:
         "Info",
         "Waterfall",
         "WaterfallDetailed",
-        "Table1",
-        "Table1Detailed",
         "Table1Boolean",
-        "Table1BooleanDetailed",
         "Table1Numeric",
-        "Table1NumericDetailed",
         "Table1Categorical",
-        "Table1OutcomesAll",
-        "Table1OutcomesAllDetailed",
-        "Table1Outcomes",
-        "Table1OutcomesDetailed",
+        "Table1",
         "Table1OutcomesNumeric",
         "Table1OutcomesCategorical",
+        "Table1Outcomes",
+        "Table1OutcomesAll",
+        "Table1BooleanDetailed",
+        "Table1NumericDetailed",
+        "Table1Detailed",
+        "Table1OutcomesDetailed",
+        "Table1OutcomesAllDetailed",
     ]
     _CANONICAL_NAMES = {
         "waterfall": "Waterfall",
