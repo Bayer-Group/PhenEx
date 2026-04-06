@@ -276,6 +276,9 @@ class GenericSheetWriter(_BaseSheetWriter):
         "N": "N",
     }
 
+    # Columns that should be sized for large numbers (2-digit millions).
+    _WIDE_COLUMNS = {"N", "Remaining"}
+
     def write(
         self,
         sheet,
@@ -292,47 +295,52 @@ class GenericSheetWriter(_BaseSheetWriter):
         dir_to_report = dict(zip(cohort_dirs, report_files))
         num_cols = len(columns)
         current_col = 1
+        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW, column=1)
 
         for gi, group in enumerate(cohort_groups):
             group_color = self._COHORT_COLORS[gi % len(self._COHORT_COLORS)]
-            # Group-level spacer
-            self._apply_spacing(sheet, spacing_col=current_col)
-            current_col += 1
-            group_start_col = current_col
 
-            for ci, cohort_dir in enumerate(group.all_dirs):
+            for cohort_dir in group.all_dirs:
                 report_file = dir_to_report.get(cohort_dir)
                 if report_file is None:
                     continue
                 is_subcohort = cohort_dir != group.main_dir
 
-                # Spacer before each subcohort
-                if is_subcohort:
-                    self._apply_spacing(sheet, spacing_col=current_col)
-                    current_col += 1
+                # Spacer before every cohort card
+                self._apply_spacing(sheet, spacing_col=current_col)
+                current_col += 1
 
                 try:
                     data = self._load_json(report_file)
                     rows = data.get("rows", [])
                     display_name = group.display_name(cohort_dir)
-                    self._add_subcohort_header(
-                        sheet, display_name, current_col, num_cols, color=group_color,
+                    title = f"{group.name} \u00b7 {display_name}" if is_subcohort else display_name
+
+                    card_start = current_col
+                    card_end = card_start + num_cols - 1
+
+                    # Title row (row 2) – cohort color, merged
+                    self._write_cell(
+                        sheet, self._TITLE_ROW, card_start, title,
+                        bold=True, italic=True, size=16, horizontal="left",
+                        indent=1, fill_color=group_color,
                     )
-                    self._write_column_headers(sheet, columns, current_col)
-                    self._write_data_rows(sheet, rows, columns, current_col)
-                    self._set_column_widths(sheet, rows, columns, current_col)
-                    current_col += num_cols
+                    for c in range(card_start + 1, card_end + 1):
+                        self._write_cell(sheet, self._TITLE_ROW, c, None, fill_color=group_color)
+                    if card_end > card_start:
+                        sheet.merge_cells(
+                            start_row=self._TITLE_ROW, start_column=card_start,
+                            end_row=self._TITLE_ROW, end_column=card_end,
+                        )
+
+                    self._write_column_headers(sheet, columns, card_start)
+                    self._write_data_rows(sheet, rows, columns, card_start)
+                    self._set_column_widths(sheet, rows, columns, card_start)
+                    self._apply_group_border(sheet, card_start, card_end, color=group_color)
+
+                    current_col = card_end + 1
                 except Exception as e:
                     logger.warning(f"Failed to process {report_file}: {e}")
-
-            group_end_col = current_col - 1
-            if group_end_col >= group_start_col:
-                self._add_group_title(
-                    sheet, group.name, group_start_col, group_end_col, color=group_color,
-                )
-                self._apply_group_border(
-                    sheet, group_start_col, group_end_col, color=group_color,
-                )
 
     # ------------------------------------------------------------------
 
@@ -361,11 +369,10 @@ class GenericSheetWriter(_BaseSheetWriter):
         for offset, col_name in enumerate(columns):
             display = self._COLUMN_HEADERS.get(col_name, col_name)
             col = start_col + offset
-            cell = self._write_cell(
+            self._write_cell(
                 sheet, self._HEADER_ROW, col, display,
-                bold=True, size=14, horizontal="center", fill_color="366092",
+                bold=True, size=14, horizontal="center",
             )
-            cell.font = Font(name=self._FONT, bold=True, size=14, color="FFFFFF")
 
     def _write_data_rows(self, sheet, rows: list, columns: List[str], start_col: int):
         display_rows = self._sparsify_type(rows) if "Type" in columns else rows
@@ -373,7 +380,7 @@ class GenericSheetWriter(_BaseSheetWriter):
             zip(rows, display_rows), start=self._DATA_START_ROW,
         ):
             row_type = str(orig_row.get("Type", "")).lower()
-            fill_color = self._WATERFALL_COLORS.get(row_type)
+            fill_color = None if row_type == "info" else self._WATERFALL_COLORS.get(row_type)
             for offset, col_name in enumerate(columns):
                 value = self._clean_numeric(disp_row.get(col_name))
                 fmt = self._number_format_for_value(value)
@@ -391,7 +398,11 @@ class GenericSheetWriter(_BaseSheetWriter):
         for row in rows:
             row_copy = dict(row)
             type_val = str(row_copy.get("Type", ""))
-            if type_val and type_val != previous_type and type_val.lower() != "component":
+            if (
+                type_val
+                and type_val != previous_type
+                and type_val.lower() not in ("component", "info")
+            ):
                 previous_type = type_val
             else:
                 row_copy["Type"] = ""
@@ -399,12 +410,16 @@ class GenericSheetWriter(_BaseSheetWriter):
         return result
 
     def _set_column_widths(self, sheet, rows: list, columns: List[str], start_col: int):
+        font_scale = 14 / 11
         for offset, col_name in enumerate(columns):
-            display = self._COLUMN_HEADERS.get(col_name, col_name)
-            values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
-            max_val_len = max((len(v) for v in values), default=0)
-            content_len = max(len(display), max_val_len)
-            width = min(max(content_len + 2, 6), 40)
+            if col_name in self._WIDE_COLUMNS:
+                width = 14  # fits "10,000,000"
+            else:
+                display = self._COLUMN_HEADERS.get(col_name, col_name)
+                values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
+                max_val_len = max((len(v) for v in values), default=0)
+                content_len = max(len(display), max_val_len)
+                width = min(max(content_len * font_scale + 2, 6), 40)
             sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
 
 
