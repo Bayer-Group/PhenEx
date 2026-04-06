@@ -1030,7 +1030,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                             seen.add(pheno)
                         if cat not in categorical_phenos[pheno]:
                             categorical_phenos[pheno][cat] = None
-                    elif name and "=" not in name and row.get("Mean") is not None:
+                    elif name and "=" not in name and self._has_numeric_mean(row):
                         if name not in seen:
                             order.append(("numeric", name))
                             seen.add(name)
@@ -1244,6 +1244,18 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                     top=side if row == top_row else existing.top,
                     bottom=side if row == bottom_row else existing.bottom,
                 )
+
+    @staticmethod
+    def _has_numeric_mean(row: Dict) -> bool:
+        """Return True if the row has a real (non-NaN) Mean value."""
+        val = row.get("Mean")
+        if val is None:
+            return False
+        if isinstance(val, float) and math.isnan(val):
+            return False
+        if isinstance(val, str) and val.lower() in ("nan", ""):
+            return False
+        return True
 
     @staticmethod
     def _find_char_row(data: Dict, char_name: str) -> Optional[Dict]:
