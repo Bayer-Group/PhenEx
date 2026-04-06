@@ -749,7 +749,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 )
 
         max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
-        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = max(max_name_len * 2.4, 28)
+        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = min(max(max_name_len * 2.4, 28), 60)
         sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW + 1, column=self._NAME_COL + 1)
 
     def _write_binned_name_cell(
@@ -1859,7 +1859,7 @@ class OutputConcatenator:
         self._generic_writer = GenericSheetWriter()
         self._table1_writer = Table1SheetWriter()
         self._numeric_writer = Table1NumericSheetWriter()
-        self._attrition_writer = SimplifiedAttritionTable()
+        self._attrition_writer = GenericSheetWriter()
 
     # ------------------------------------------------------------------
 
