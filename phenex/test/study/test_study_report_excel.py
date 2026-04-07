@@ -46,18 +46,18 @@ _N_DB = 6_200_000
 
 # Each cohort/subcohort gets a slightly different entry / final size
 _COHORT_PARAMS = {
-    "cohort_a":              dict(n_entry=2_300_000, n_final=840_000, entry_pct=37.1),
-    "cohort_a__female":      dict(n_entry=1_150_000, n_final=430_000, entry_pct=18.7),
-    "cohort_a__male":        dict(n_entry=1_150_000, n_final=410_000, entry_pct=18.4),
-    "cohort_b":              dict(n_entry=2_150_000, n_final=790_000, entry_pct=34.7),
-    "cohort_b__female":      dict(n_entry=1_080_000, n_final=400_000, entry_pct=17.4),
-    "cohort_b__male":        dict(n_entry=1_070_000, n_final=390_000, entry_pct=17.3),
-    "cohort_c":              dict(n_entry=2_420_000, n_final=910_000, entry_pct=39.0),
-    "cohort_d":              dict(n_entry=1_980_000, n_final=720_000, entry_pct=31.9),
-    "cohort_d__age_lt_50":   dict(n_entry=980_000,  n_final=350_000, entry_pct=15.8),
-    "cohort_d__age_gte_50":  dict(n_entry=1_000_000, n_final=370_000, entry_pct=16.1),
-    "cohort_d__diabetic":    dict(n_entry=240_000,  n_final=86_000,  entry_pct=3.8),
-    "cohort_e":              dict(n_entry=2_560_000, n_final=960_000, entry_pct=41.3),
+    "cohort_a": dict(n_entry=2_300_000, n_final=840_000, entry_pct=37.1),
+    "cohort_a__female": dict(n_entry=1_150_000, n_final=430_000, entry_pct=18.7),
+    "cohort_a__male": dict(n_entry=1_150_000, n_final=410_000, entry_pct=18.4),
+    "cohort_b": dict(n_entry=2_150_000, n_final=790_000, entry_pct=34.7),
+    "cohort_b__female": dict(n_entry=1_080_000, n_final=400_000, entry_pct=17.4),
+    "cohort_b__male": dict(n_entry=1_070_000, n_final=390_000, entry_pct=17.3),
+    "cohort_c": dict(n_entry=2_420_000, n_final=910_000, entry_pct=39.0),
+    "cohort_d": dict(n_entry=1_980_000, n_final=720_000, entry_pct=31.9),
+    "cohort_d__age_lt_50": dict(n_entry=980_000, n_final=350_000, entry_pct=15.8),
+    "cohort_d__age_gte_50": dict(n_entry=1_000_000, n_final=370_000, entry_pct=16.1),
+    "cohort_d__diabetic": dict(n_entry=240_000, n_final=86_000, entry_pct=3.8),
+    "cohort_e": dict(n_entry=2_560_000, n_final=960_000, entry_pct=41.3),
 }
 
 
@@ -71,30 +71,72 @@ def _waterfall(p: dict) -> dict:
     return {
         "reporter_type": "Waterfall",
         "rows": [
-            {"Type": "info", "Index": "", "Name": "N persons in database",
-             "N": _N_DB, "Pct_N": None, "Remaining": None,
-             "Pct_Remaining": None, "Delta": None, "Pct_Source_Database": None},
-            {"Type": "entry", "Index": "1", "Name": "Entry criterion",
-             "N": n1, "Pct_N": 100.0, "Remaining": n1,
-             "Pct_Remaining": 100.0, "Delta": None,
-             "Pct_Source_Database": round(n1 / _N_DB * 100, 1)},
-            {"Type": "inclusion", "Index": "2", "Name": "Inclusion A",
-             "N": n2, "Pct_N": round(n2 / n1 * 100, 1), "Remaining": n2,
-             "Pct_Remaining": round(n2 / n1 * 100, 1),
-             "Delta": n2 - n1, "Pct_Source_Database": None},
-            {"Type": "inclusion", "Index": "3", "Name": "Inclusion B",
-             "N": n3, "Pct_N": round(n3 / n1 * 100, 1), "Remaining": n3,
-             "Pct_Remaining": round(n3 / n1 * 100, 1),
-             "Delta": n3 - n2, "Pct_Source_Database": None},
-            {"Type": "exclusion", "Index": "4", "Name": "Exclusion A",
-             "N": n4, "Pct_N": round(n4 / n1 * 100, 1), "Remaining": n4,
-             "Pct_Remaining": round(n4 / n1 * 100, 1),
-             "Delta": None, "Pct_Source_Database": None},
-            {"Type": "info", "Index": "", "Name": "Final Cohort Size",
-             "N": None, "Pct_N": None, "Remaining": n_final,
-             "Pct_Remaining": round(n_final / n1 * 100, 1),
-             "Delta": None,
-             "Pct_Source_Database": round(n_final / _N_DB * 100, 1)},
+            {
+                "Type": "info",
+                "Index": "",
+                "Name": "N persons in database",
+                "N": _N_DB,
+                "Pct_N": None,
+                "Remaining": None,
+                "Pct_Remaining": None,
+                "Delta": None,
+                "Pct_Source_Database": None,
+            },
+            {
+                "Type": "entry",
+                "Index": "1",
+                "Name": "Entry criterion",
+                "N": n1,
+                "Pct_N": 100.0,
+                "Remaining": n1,
+                "Pct_Remaining": 100.0,
+                "Delta": None,
+                "Pct_Source_Database": round(n1 / _N_DB * 100, 1),
+            },
+            {
+                "Type": "inclusion",
+                "Index": "2",
+                "Name": "Inclusion A",
+                "N": n2,
+                "Pct_N": round(n2 / n1 * 100, 1),
+                "Remaining": n2,
+                "Pct_Remaining": round(n2 / n1 * 100, 1),
+                "Delta": n2 - n1,
+                "Pct_Source_Database": None,
+            },
+            {
+                "Type": "inclusion",
+                "Index": "3",
+                "Name": "Inclusion B",
+                "N": n3,
+                "Pct_N": round(n3 / n1 * 100, 1),
+                "Remaining": n3,
+                "Pct_Remaining": round(n3 / n1 * 100, 1),
+                "Delta": n3 - n2,
+                "Pct_Source_Database": None,
+            },
+            {
+                "Type": "exclusion",
+                "Index": "4",
+                "Name": "Exclusion A",
+                "N": n4,
+                "Pct_N": round(n4 / n1 * 100, 1),
+                "Remaining": n4,
+                "Pct_Remaining": round(n4 / n1 * 100, 1),
+                "Delta": None,
+                "Pct_Source_Database": None,
+            },
+            {
+                "Type": "info",
+                "Index": "",
+                "Name": "Final Cohort Size",
+                "N": None,
+                "Pct_N": None,
+                "Remaining": n_final,
+                "Pct_Remaining": round(n_final / n1 * 100, 1),
+                "Delta": None,
+                "Pct_Source_Database": round(n_final / _N_DB * 100, 1),
+            },
         ],
     }
 
@@ -105,26 +147,50 @@ def _waterfall_detailed(p: dict) -> dict:
     n_entry = p["n_entry"]
     # Insert component rows after the entry row
     entry_row = base["rows"][1]
-    comp1 = {"Type": "component", "Index": "1.1", "Name": "Component 1",
-              "N": round(n_entry * 0.95), "Pct_N": 95.0, "Remaining": None,
-              "Pct_Remaining": None, "Delta": None, "Pct_Source_Database": None}
-    comp2 = {"Type": "component", "Index": "1.2", "Name": "Component 2",
-              "N": round(n_entry * 0.60), "Pct_N": 60.0, "Remaining": None,
-              "Pct_Remaining": None, "Delta": None, "Pct_Source_Database": None}
+    comp1 = {
+        "Type": "component",
+        "Index": "1.1",
+        "Name": "Component 1",
+        "N": round(n_entry * 0.95),
+        "Pct_N": 95.0,
+        "Remaining": None,
+        "Pct_Remaining": None,
+        "Delta": None,
+        "Pct_Source_Database": None,
+    }
+    comp2 = {
+        "Type": "component",
+        "Index": "1.2",
+        "Name": "Component 2",
+        "N": round(n_entry * 0.60),
+        "Pct_N": 60.0,
+        "Remaining": None,
+        "Pct_Remaining": None,
+        "Delta": None,
+        "Pct_Source_Database": None,
+    }
     rows = [base["rows"][0], entry_row, comp1, comp2] + base["rows"][2:]
     return {"reporter_type": "Waterfall", "rows": rows}
 
 
 def _null_stats() -> dict:
-    return {k: None for k in ("Mean", "STD", "Min", "P10", "P25", "Median", "P75", "P90", "Max")}
+    return {
+        k: None
+        for k in ("Mean", "STD", "Min", "P10", "P25", "Median", "P75", "P90", "Max")
+    }
 
 
 def _table1(p: dict) -> dict:
     n = p["n_final"]
 
     def row(name, count, mean=None, std=None, median=None, level=0):
-        r = {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
-             "_level": level, **_null_stats()}
+        r = {
+            "Name": name,
+            "N": count,
+            "Pct": round(count / n * 100, 2),
+            "_level": level,
+            **_null_stats(),
+        }
         if mean is not None:
             r.update({"Mean": mean, "STD": std, "Median": median})
         return r
@@ -162,8 +228,13 @@ def _table1(p: dict) -> dict:
         "Demographics": ["Age", "Binned age", "Age group", "Race"],
         "Observations": ["BMI"],
         "Comorbidities": [
-            "Hypertension", "Diabetes", "Depression", "Anxiety",
-            "Osteoporosis", "Coronary heart disease", "Stroke",
+            "Hypertension",
+            "Diabetes",
+            "Depression",
+            "Anxiety",
+            "Osteoporosis",
+            "Coronary heart disease",
+            "Stroke",
         ],
     }
     return {"reporter_type": "Table1", "rows": rows, "sections": sections}
@@ -175,8 +246,13 @@ def _table1_detailed(p: dict) -> dict:
     n = p["n_final"]
 
     def row(name, count, level=1):
-        return {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
-                "_level": level, **_null_stats()}
+        return {
+            "Name": name,
+            "N": count,
+            "Pct": round(count / n * 100, 2),
+            "_level": level,
+            **_null_stats(),
+        }
 
     extras = [
         row("Hypertension=ICD code", round(n * 0.28), level=1),
@@ -195,8 +271,13 @@ def _table1_outcomes(p: dict) -> dict:
     n = p["n_final"]
 
     def row(name, count, mean=None, std=None, median=None):
-        r = {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
-             "_level": 0, **_null_stats()}
+        r = {
+            "Name": name,
+            "N": count,
+            "Pct": round(count / n * 100, 2),
+            "_level": 0,
+            **_null_stats(),
+        }
         if mean is not None:
             r.update({"Mean": mean, "STD": std, "Median": median})
         return r
@@ -214,8 +295,14 @@ def _table1_outcomes(p: dict) -> dict:
     ]
     sections = {
         "Time-to-event": ["Time to first MI", "Time to first stroke"],
-        "Events": ["All-cause mortality", "CV mortality", "MI", "Stroke",
-                   "Heart failure", "Hospitalisation"],
+        "Events": [
+            "All-cause mortality",
+            "CV mortality",
+            "MI",
+            "Stroke",
+            "Heart failure",
+            "Hospitalisation",
+        ],
     }
     return {"reporter_type": "Table1", "rows": rows, "sections": sections}
 
@@ -225,8 +312,13 @@ def _table1_outcomes_detailed(p: dict) -> dict:
     n = p["n_final"]
 
     def row(name, count, level=1):
-        return {"Name": name, "N": count, "Pct": round(count / n * 100, 2),
-                "_level": level, **_null_stats()}
+        return {
+            "Name": name,
+            "N": count,
+            "Pct": round(count / n * 100, 2),
+            "_level": level,
+            **_null_stats(),
+        }
 
     extras = [
         row("MI=ICD code", round(n * 0.08), level=1),
@@ -238,6 +330,7 @@ def _table1_outcomes_detailed(p: dict) -> dict:
         if r["Name"] == "MI":
             rows.extend(extras)
     return {"reporter_type": "Table1", "rows": rows, "sections": base["sections"]}
+
 
 def _write_json(path: Path, data: dict) -> None:
     """Write dict to JSON, converting NaN to null."""
@@ -267,6 +360,7 @@ def _write_info(study_dir: Path) -> None:
 # Main builder
 # ---------------------------------------------------------------------------
 
+
 def build_dummy_study() -> Path:
     """Create dummy study directory tree and return the study exec path."""
     study_dir = STUDY_EXEC_DIR
@@ -282,7 +376,10 @@ def build_dummy_study() -> Path:
         _write_json(cohort_dir / "table1.json", _table1(params))
         _write_json(cohort_dir / "table1_detailed.json", _table1_detailed(params))
         _write_json(cohort_dir / "table1_outcomes.json", _table1_outcomes(params))
-        _write_json(cohort_dir / "table1_outcomes_detailed.json", _table1_outcomes_detailed(params))
+        _write_json(
+            cohort_dir / "table1_outcomes_detailed.json",
+            _table1_outcomes_detailed(params),
+        )
 
     return study_dir
 

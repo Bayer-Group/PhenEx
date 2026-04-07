@@ -110,7 +110,9 @@ class _BaseSheetWriter:
         font_color: Optional[str] = None,
     ):
         cell = sheet.cell(row=row, column=col, value=value)
-        cell.font = Font(name=self._FONT, bold=bold, italic=italic, size=size, color=font_color)
+        cell.font = Font(
+            name=self._FONT, bold=bold, italic=italic, size=size, color=font_color
+        )
         cell.alignment = Alignment(
             horizontal=horizontal, vertical=vertical, indent=indent
         )
@@ -122,7 +124,9 @@ class _BaseSheetWriter:
             cell.number_format = number_format
         return cell
 
-    def _add_group_title(self, sheet, title: str, start_col: int, end_col: int, color: str = "D3D3D3"):
+    def _add_group_title(
+        self, sheet, title: str, start_col: int, end_col: int, color: str = "D3D3D3"
+    ):
         """Write main cohort name in the title row, merged across group columns."""
         cell = self._write_cell(
             sheet,
@@ -145,7 +149,12 @@ class _BaseSheetWriter:
             )
 
     def _add_subcohort_header(
-        self, sheet, name: str, start_col: int, num_cols: int, color: str = "E8E8E8",
+        self,
+        sheet,
+        name: str,
+        start_col: int,
+        num_cols: int,
+        color: str = "E8E8E8",
         font_color: Optional[str] = None,
     ):
         """Write individual cohort/subcohort name in the subtitle row."""
@@ -169,7 +178,9 @@ class _BaseSheetWriter:
                 end_column=start_col + num_cols - 1,
             )
 
-    def _apply_group_border(self, sheet, start_col: int, end_col: int, color: str = "000000"):
+    def _apply_group_border(
+        self, sheet, start_col: int, end_col: int, color: str = "000000"
+    ):
         """Draw a thin border around the cohort group from title row to last data row."""
         max_row = sheet.max_row
         top_row = self._TITLE_ROW
@@ -283,9 +294,15 @@ class GenericSheetWriter(_BaseSheetWriter):
 
     # Desired column order and display headers for Waterfall-type reports.
     _COLUMN_ORDER = [
-        "Type", "Index", "Name",
-        "Pct_Source_Database", "Pct_Remaining", "Remaining",
-        "Delta", "Pct_N", "N",
+        "Type",
+        "Index",
+        "Name",
+        "Pct_Source_Database",
+        "Pct_Remaining",
+        "Remaining",
+        "Delta",
+        "Pct_N",
+        "N",
     ]
     _COLUMN_HEADERS: Dict[str, str] = {
         "Type": "",
@@ -337,29 +354,46 @@ class GenericSheetWriter(_BaseSheetWriter):
                     data = self._load_json(report_file)
                     rows = data.get("rows", [])
                     display_name = group.display_name(cohort_dir)
-                    title = f"{group.name} \u00b7 {display_name}" if is_subcohort else display_name
+                    title = (
+                        f"{group.name} \u00b7 {display_name}"
+                        if is_subcohort
+                        else display_name
+                    )
 
                     card_start = current_col
                     card_end = card_start + num_cols - 1
 
                     # Title row (row 2) – cohort color, merged
                     self._write_cell(
-                        sheet, self._TITLE_ROW, card_start, title,
-                        bold=True, italic=True, size=16, horizontal="left",
-                        indent=1, fill_color=group_color,
+                        sheet,
+                        self._TITLE_ROW,
+                        card_start,
+                        title,
+                        bold=True,
+                        italic=True,
+                        size=16,
+                        horizontal="left",
+                        indent=1,
+                        fill_color=group_color,
                     )
                     for c in range(card_start + 1, card_end + 1):
-                        self._write_cell(sheet, self._TITLE_ROW, c, None, fill_color=group_color)
+                        self._write_cell(
+                            sheet, self._TITLE_ROW, c, None, fill_color=group_color
+                        )
                     if card_end > card_start:
                         sheet.merge_cells(
-                            start_row=self._TITLE_ROW, start_column=card_start,
-                            end_row=self._TITLE_ROW, end_column=card_end,
+                            start_row=self._TITLE_ROW,
+                            start_column=card_start,
+                            end_row=self._TITLE_ROW,
+                            end_column=card_end,
                         )
 
                     self._write_column_headers(sheet, columns, card_start)
                     self._write_data_rows(sheet, rows, columns, card_start)
                     self._set_column_widths(sheet, rows, columns, card_start)
-                    self._apply_group_border(sheet, card_start, card_end, color=group_color)
+                    self._apply_group_border(
+                        sheet, card_start, card_end, color=group_color
+                    )
 
                     current_col = card_end + 1
                 except Exception as e:
@@ -393,24 +427,37 @@ class GenericSheetWriter(_BaseSheetWriter):
             display = self._COLUMN_HEADERS.get(col_name, col_name)
             col = start_col + offset
             self._write_cell(
-                sheet, self._HEADER_ROW, col, display,
-                bold=True, size=14, horizontal="center",
+                sheet,
+                self._HEADER_ROW,
+                col,
+                display,
+                bold=True,
+                size=14,
+                horizontal="center",
             )
 
     def _write_data_rows(self, sheet, rows: list, columns: List[str], start_col: int):
         display_rows = self._sparsify_type(rows) if "Type" in columns else rows
         for row_idx, (orig_row, disp_row) in enumerate(
-            zip(rows, display_rows), start=self._DATA_START_ROW,
+            zip(rows, display_rows),
+            start=self._DATA_START_ROW,
         ):
             row_type = str(orig_row.get("Type", "")).lower()
-            fill_color = None if row_type == "info" else self._WATERFALL_COLORS.get(row_type)
+            fill_color = (
+                None if row_type == "info" else self._WATERFALL_COLORS.get(row_type)
+            )
             for offset, col_name in enumerate(columns):
                 value = self._clean_numeric(disp_row.get(col_name))
                 fmt = self._number_format_for_value(value)
                 self._write_cell(
-                    sheet, row_idx, start_col + offset, value,
-                    size=14, horizontal="center",
-                    fill_color=fill_color, number_format=fmt,
+                    sheet,
+                    row_idx,
+                    start_col + offset,
+                    value,
+                    size=14,
+                    horizontal="center",
+                    fill_color=fill_color,
+                    number_format=fmt,
                 )
 
     @staticmethod
@@ -439,7 +486,11 @@ class GenericSheetWriter(_BaseSheetWriter):
                 width = 14  # fits "10,000,000"
             else:
                 display = self._COLUMN_HEADERS.get(col_name, col_name)
-                values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
+                values = [
+                    str(r.get(col_name, ""))
+                    for r in rows
+                    if r.get(col_name) is not None
+                ]
                 max_val_len = max((len(v) for v in values), default=0)
                 content_len = max(len(display), max_val_len)
                 width = min(max(content_len * font_scale + 2, 6), 40)
@@ -522,11 +573,19 @@ class Table1SheetWriter(_BaseSheetWriter):
 
                     display_name = group.display_name(cohort_dir)
                     self._add_subcohort_header(
-                        sheet, display_name, current_col, num_value_cols,
-                        color=group_color, font_color=text_dark,
+                        sheet,
+                        display_name,
+                        current_col,
+                        num_value_cols,
+                        color=group_color,
+                        font_color=text_dark,
                     )
                     pct_offset = self._write_column_labels(
-                        sheet, columns, current_col, text_dark, text_light,
+                        sheet,
+                        columns,
+                        current_col,
+                        text_dark,
+                        text_light,
                     )
                     self._write_value_rows(
                         sheet,
@@ -544,7 +603,9 @@ class Table1SheetWriter(_BaseSheetWriter):
                     self._set_value_column_widths(sheet, rows, columns, current_col)
 
                     if is_subcohort:
-                        self._apply_left_border_to_column(sheet, current_col, color=group_color)
+                        self._apply_left_border_to_column(
+                            sheet, current_col, color=group_color
+                        )
 
                     current_col += num_value_cols
 
@@ -556,10 +617,14 @@ class Table1SheetWriter(_BaseSheetWriter):
                 self._add_group_title(
                     sheet, group.name, group_start_col, group_end_col, color=group_color
                 )
-                self._apply_group_border(sheet, group_start_col, group_end_col, color=group_color)
+                self._apply_group_border(
+                    sheet, group_start_col, group_end_col, color=group_color
+                )
 
         # Apply section-header spans, skipping spacer columns
-        self._apply_section_header_spans(sheet, expanded, sheet.max_column, spacing_cols)
+        self._apply_section_header_spans(
+            sheet, expanded, sheet.max_column, spacing_cols
+        )
 
     # ------------------------------------------------------------------
 
@@ -590,7 +655,9 @@ class Table1SheetWriter(_BaseSheetWriter):
         return list(seen.keys()), sections, name_to_level
 
     def _build_expanded_rows(
-        self, master_names: List[str], sections: Optional[Dict],
+        self,
+        master_names: List[str],
+        sections: Optional[Dict],
         name_to_level: Dict[str, int] = None,
     ) -> List[Tuple[str, str]]:
         """Return list of (row_type, value) with section headers interleaved.
@@ -626,9 +693,7 @@ class Table1SheetWriter(_BaseSheetWriter):
             result.append(("row", name))
             # Add spacer after the last row of this section
             is_last = idx == len(master_names) - 1
-            next_in_different_section = (
-                not is_last and owner[idx + 1] != owner[idx]
-            )
+            next_in_different_section = not is_last and owner[idx + 1] != owner[idx]
             if owner[idx] >= 0 and (is_last or next_in_different_section):
                 result.append(("spacer", ""))
         return self._insert_binned_spacers(result, name_to_level or {})
@@ -653,10 +718,14 @@ class Table1SheetWriter(_BaseSheetWriter):
             if row_type == "row" and "=" in value and name_to_level.get(value, 0) == 0:
                 prev_type = result[-1][0] if result else None
                 prev_is_binned = (
-                    prev_type == "row"
-                    and "=" in result[-1][1]
-                    and name_to_level.get(result[-1][1], 0) == 0
-                ) if result else False
+                    (
+                        prev_type == "row"
+                        and "=" in result[-1][1]
+                        and name_to_level.get(result[-1][1], 0) == 0
+                    )
+                    if result
+                    else False
+                )
                 if not prev_is_binned and prev_type not in (None, "section"):
                     result.append(("spacer", ""))
             result.append((row_type, value))
@@ -708,18 +777,29 @@ class Table1SheetWriter(_BaseSheetWriter):
     ):
         """Populate col B with characteristic names; col A is a narrow colour spacer."""
         name_to_level = name_to_level or {}
-        sheet.column_dimensions[get_column_letter(self._NAME_SPACER_COL)].width = self._SPACING_SIZE
+        sheet.column_dimensions[get_column_letter(self._NAME_SPACER_COL)].width = (
+            self._SPACING_SIZE
+        )
 
         for i, (row_type, value) in enumerate(expanded):
             out_row = self._DATA_START_ROW + i
             if row_type == "section":
                 self._write_cell(
-                    sheet, out_row, self._NAME_COL, value,
-                    bold=True, size=14, horizontal="left", indent=2,
+                    sheet,
+                    out_row,
+                    self._NAME_COL,
+                    value,
+                    bold=True,
+                    size=14,
+                    horizontal="left",
+                    indent=2,
                     fill_color=self._SECTION_HEADER_COLOR,
                 )
                 self._write_cell(
-                    sheet, out_row, self._NAME_SPACER_COL, None,
+                    sheet,
+                    out_row,
+                    self._NAME_SPACER_COL,
+                    None,
                     fill_color=self._SECTION_HEADER_COLOR,
                 )
                 sheet.row_dimensions[out_row].height = 36
@@ -735,25 +815,47 @@ class Table1SheetWriter(_BaseSheetWriter):
                 display = None if is_cohort else value
                 if display and "=" in display and name_to_level.get(value, 0) == 0:
                     self._write_binned_name_cell(
-                        sheet, out_row, self._NAME_COL, display, fill_color=fill,
+                        sheet,
+                        out_row,
+                        self._NAME_COL,
+                        display,
+                        fill_color=fill,
                     )
                 else:
                     self._write_cell(
-                        sheet, out_row, self._NAME_COL, display,
-                        bold=is_cohort, size=14, horizontal="right", indent=1,
+                        sheet,
+                        out_row,
+                        self._NAME_COL,
+                        display,
+                        bold=is_cohort,
+                        size=14,
+                        horizontal="right",
+                        indent=1,
                         fill_color=fill,
                     )
                 self._write_cell(
-                    sheet, out_row, self._NAME_SPACER_COL, None,
+                    sheet,
+                    out_row,
+                    self._NAME_SPACER_COL,
+                    None,
                     fill_color=fill,
                 )
 
         max_name_len = max((len(t[1]) for t in expanded if t[0] == "row"), default=10)
-        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = min(max(max_name_len * 2.4, 28), 60)
-        sheet.freeze_panes = sheet.cell(row=self._DATA_START_ROW + 1, column=self._NAME_COL + 1)
+        sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = min(
+            max(max_name_len * 2.4, 28), 60
+        )
+        sheet.freeze_panes = sheet.cell(
+            row=self._DATA_START_ROW + 1, column=self._NAME_COL + 1
+        )
 
     def _write_binned_name_cell(
-        self, sheet, row: int, col: int, value: str, fill_color: Optional[str] = None,
+        self,
+        sheet,
+        row: int,
+        col: int,
+        value: str,
+        fill_color: Optional[str] = None,
     ):
         """Write a binned phenotype name with the part after '=' in bold."""
         prefix, suffix = value.split("=", 1)
@@ -769,8 +871,12 @@ class Table1SheetWriter(_BaseSheetWriter):
             )
 
     def _write_column_labels(
-        self, sheet, columns: List[str], start_col: int,
-        text_dark: Optional[str] = None, text_light: Optional[str] = None,
+        self,
+        sheet,
+        columns: List[str],
+        start_col: int,
+        text_dark: Optional[str] = None,
+        text_light: Optional[str] = None,
     ) -> Optional[int]:
         """Write column labels in the header row; return 0-based offset of the Pct column."""
         pct_offset = None
@@ -781,7 +887,11 @@ class Table1SheetWriter(_BaseSheetWriter):
                 pct_offset = offset
             display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
             horizontal = "right" if is_n else ("left" if is_pct else "center")
-            fc = text_light if is_n and text_light else (text_dark if is_pct and text_dark else None)
+            fc = (
+                text_light
+                if is_n and text_light
+                else (text_dark if is_pct and text_dark else None)
+            )
             cell = self._write_cell(
                 sheet,
                 self._HEADER_ROW,
@@ -833,10 +943,14 @@ class Table1SheetWriter(_BaseSheetWriter):
             should_alt = alt_mask[i] if alt_mask else False
             row_fill = gray if gray else (group_color if should_alt else None)
             for offset, col_name in enumerate(columns):
-                raw_value = self._clean_numeric(row_data.get(col_name)) if row_data else None
+                raw_value = (
+                    self._clean_numeric(row_data.get(col_name)) if row_data else None
+                )
                 is_pct_col = offset == pct_offset
                 is_n_col = col_name.strip().lower() == "n"
-                horizontal = "right" if is_n_col else ("left" if is_pct_col else "center")
+                horizontal = (
+                    "right" if is_n_col else ("left" if is_pct_col else "center")
+                )
                 fmt = self._number_format_for_value(raw_value)
                 fc = text_light if is_n_col else (text_dark if is_pct_col else None)
                 self._write_cell(
@@ -875,7 +989,11 @@ class Table1SheetWriter(_BaseSheetWriter):
                     if col in skip:
                         continue
                     cell = sheet.cell(row=out_row, column=col)
-                    if not cell.fill or cell.fill.fgColor is None or cell.fill.fgColor.rgb == "00000000":
+                    if (
+                        not cell.fill
+                        or cell.fill.fgColor is None
+                        or cell.fill.fgColor.rgb == "00000000"
+                    ):
                         cell.fill = fill
 
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
@@ -885,7 +1003,11 @@ class Table1SheetWriter(_BaseSheetWriter):
                 width = 14  # fits "10,000,000"
             else:
                 display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
-                values = [str(r.get(col_name, "")) for r in rows if r.get(col_name) is not None]
+                values = [
+                    str(r.get(col_name, ""))
+                    for r in rows
+                    if r.get(col_name) is not None
+                ]
                 max_val_len = max((len(v) for v in values), default=0)
                 content_len = max(len(display_name), max_val_len)
                 width = min(max(content_len * font_scale + 1, 6), 18)
@@ -916,7 +1038,17 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
     """
 
     _NUMERIC_COL_ORDER = [
-        "Mean", "STD", "Min", "P10", "P25", "Median", "P75", "P90", "Max", "N", "Pct",
+        "Mean",
+        "STD",
+        "Min",
+        "P10",
+        "P25",
+        "Median",
+        "P75",
+        "P90",
+        "Max",
+        "N",
+        "Pct",
     ]
     _GRAYED_STATS = {"STD", "N", "Pct"}
 
@@ -951,20 +1083,24 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                     data = self._load_json(rf)
                 except Exception:
                     continue
-                cohort_entries.append({
-                    "display_name": group.display_name(cd),
-                    "group_color": gc,
-                    "text_dark": td,
-                    "text_light": tl,
-                    "is_subcohort": cd != group.main_dir,
-                    "data": data,
-                })
+                cohort_entries.append(
+                    {
+                        "display_name": group.display_name(cd),
+                        "group_color": gc,
+                        "text_dark": td,
+                        "text_light": tl,
+                        "is_subcohort": cd != group.main_dir,
+                        "data": data,
+                    }
+                )
 
         if not cohort_entries:
             return
 
         # Fixed columns
-        sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = self._SPACING_SIZE
+        sheet.column_dimensions[get_column_letter(self._SPACER_COL)].width = (
+            self._SPACING_SIZE
+        )
         sheet.column_dimensions[get_column_letter(self._NAME_COL)].width = 24
         sheet.row_dimensions[self._SPACING_ROW].height = self._SPACING_SIZE * 5
         sheet.row_dimensions[self._TITLE_ROW].height = 32
@@ -973,8 +1109,12 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
         for ri, entry in enumerate(cohort_entries):
             row = self._DATA_START_ROW + ri
             self._write_cell(
-                sheet, row, self._NAME_COL, entry["display_name"],
-                size=14, horizontal="right",
+                sheet,
+                row,
+                self._NAME_COL,
+                entry["display_name"],
+                size=14,
+                horizontal="right",
                 indent=6 if entry["is_subcohort"] else 4,
                 fill_color=entry["group_color"],
             )
@@ -988,20 +1128,30 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             block_start = current_col
             if block["kind"] == "numeric":
                 current_col = self._write_numeric_block(
-                    sheet, current_col, block, cohort_entries,
+                    sheet,
+                    current_col,
+                    block,
+                    cohort_entries,
                 )
             else:
                 current_col = self._write_categorical_block(
-                    sheet, current_col, block, cohort_entries,
+                    sheet,
+                    current_col,
+                    block,
+                    cohort_entries,
                 )
             self._apply_block_border(
-                sheet, self._TITLE_ROW, last_data_row,
-                block_start, current_col - 1,
+                sheet,
+                self._TITLE_ROW,
+                last_data_row,
+                block_start,
+                current_col - 1,
             )
 
         # Freeze header rows + cohort name columns
         sheet.freeze_panes = sheet.cell(
-            row=self._DATA_START_ROW, column=self._NAME_COL + 1,
+            row=self._DATA_START_ROW,
+            column=self._NAME_COL + 1,
         )
 
     # ------------------------------------------------------------------
@@ -1047,15 +1197,21 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             if kind == "numeric":
                 blocks.append({"kind": "numeric", "name": name, "stat_cols": available})
             else:
-                blocks.append({
-                    "kind": "categorical",
-                    "name": name,
-                    "categories": list(categorical_phenos[name].keys()),
-                })
+                blocks.append(
+                    {
+                        "kind": "categorical",
+                        "name": name,
+                        "categories": list(categorical_phenos[name].keys()),
+                    }
+                )
         return blocks
 
     def _write_numeric_block(
-        self, sheet, start_col: int, block: Dict, cohort_entries: List[Dict],
+        self,
+        sheet,
+        start_col: int,
+        block: Dict,
+        cohort_entries: List[Dict],
     ) -> int:
         """Write headers and data for one numeric phenotype. Returns next free column."""
         name = block["name"]
@@ -1065,15 +1221,22 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
 
         # Row 2: phenotype name (merged)
         self._write_cell(
-            sheet, self._TITLE_ROW, start_col, name,
-            bold=True, size=16, horizontal="center",
+            sheet,
+            self._TITLE_ROW,
+            start_col,
+            name,
+            bold=True,
+            size=16,
+            horizontal="center",
         )
         if num_cols > 1:
             for c in range(start_col + 1, end_col + 1):
                 sheet.cell(row=self._TITLE_ROW, column=c)
             sheet.merge_cells(
-                start_row=self._TITLE_ROW, start_column=start_col,
-                end_row=self._TITLE_ROW, end_column=end_col,
+                start_row=self._TITLE_ROW,
+                start_column=start_col,
+                end_row=self._TITLE_ROW,
+                end_column=end_col,
             )
 
         # Row 3: stat column labels
@@ -1081,8 +1244,13 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             display = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
             grayed = col_name in self._GRAYED_STATS
             self._write_cell(
-                sheet, self._SUBTITLE_ROW, start_col + i, display,
-                bold=not grayed, size=14, horizontal="center",
+                sheet,
+                self._SUBTITLE_ROW,
+                start_col + i,
+                display,
+                bold=not grayed,
+                size=14,
+                horizontal="center",
                 font_color=self._GRAY_TEXT if grayed else None,
             )
 
@@ -1096,7 +1264,9 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             alt_fill = entry["group_color"] if ri % 2 == 1 else None
             td, tl = entry["text_dark"], entry["text_light"]
             for i, col_name in enumerate(stat_cols):
-                value = self._clean_numeric(row_data.get(col_name)) if row_data else None
+                value = (
+                    self._clean_numeric(row_data.get(col_name)) if row_data else None
+                )
                 fmt = self._number_format_for_value(value)
                 if col_name == "STD":
                     fc = self._GRAY_TEXT
@@ -1107,14 +1277,20 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 else:
                     fc = td
                 self._write_cell(
-                    sheet, row, start_col + i, value,
-                    size=14, horizontal="center",
-                    fill_color=alt_fill, number_format=fmt,
+                    sheet,
+                    row,
+                    start_col + i,
+                    value,
+                    size=14,
+                    horizontal="center",
+                    fill_color=alt_fill,
+                    number_format=fmt,
                     font_color=fc,
                 )
                 if value is not None:
                     col_max_lens[col_name] = max(
-                        col_max_lens[col_name], len(str(value)),
+                        col_max_lens[col_name],
+                        len(str(value)),
                     )
 
         # Column widths
@@ -1129,7 +1305,11 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
         return end_col + 1
 
     def _write_categorical_block(
-        self, sheet, start_col: int, block: Dict, cohort_entries: List[Dict],
+        self,
+        sheet,
+        start_col: int,
+        block: Dict,
+        cohort_entries: List[Dict],
     ) -> int:
         """Write headers and data for one categorical phenotype. Returns next free column."""
         name = block["name"]
@@ -1139,15 +1319,22 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
 
         # Row 2: phenotype name (merged)
         self._write_cell(
-            sheet, self._TITLE_ROW, start_col, name,
-            bold=True, size=16, horizontal="center",
+            sheet,
+            self._TITLE_ROW,
+            start_col,
+            name,
+            bold=True,
+            size=16,
+            horizontal="center",
         )
         if num_cols > 1:
             for c in range(start_col + 1, end_col + 1):
                 sheet.cell(row=self._TITLE_ROW, column=c)
             sheet.merge_cells(
-                start_row=self._TITLE_ROW, start_column=start_col,
-                end_row=self._TITLE_ROW, end_column=end_col,
+                start_row=self._TITLE_ROW,
+                start_column=start_col,
+                end_row=self._TITLE_ROW,
+                end_column=end_col,
             )
 
         # Row 3: category names (merged over N/% pairs)
@@ -1155,15 +1342,24 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             n_col = start_col + ci * 2
             pct_col = n_col + 1
             cell = self._write_cell(
-                sheet, self._SUBTITLE_ROW, n_col, cat_name,
-                bold=True, size=14, horizontal="center",
+                sheet,
+                self._SUBTITLE_ROW,
+                n_col,
+                cat_name,
+                bold=True,
+                size=14,
+                horizontal="center",
             )
             cell.alignment = Alignment(
-                horizontal="center", vertical="bottom", wrap_text=True,
+                horizontal="center",
+                vertical="bottom",
+                wrap_text=True,
             )
             sheet.merge_cells(
-                start_row=self._SUBTITLE_ROW, start_column=n_col,
-                end_row=self._SUBTITLE_ROW, end_column=pct_col,
+                start_row=self._SUBTITLE_ROW,
+                start_column=n_col,
+                end_row=self._SUBTITLE_ROW,
+                end_column=pct_col,
             )
 
         # Adjust row 3 height for wrapped category names
@@ -1182,13 +1378,22 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             n_col = start_col + ci * 2
             pct_col = n_col + 1
             self._write_cell(
-                sheet, self._HEADER_ROW, n_col, "N",
-                size=14, horizontal="right",
+                sheet,
+                self._HEADER_ROW,
+                n_col,
+                "N",
+                size=14,
+                horizontal="right",
                 font_color=self._GRAY_TEXT,
             )
             self._write_cell(
-                sheet, self._HEADER_ROW, pct_col, "%",
-                bold=True, size=14, horizontal="left",
+                sheet,
+                self._HEADER_ROW,
+                pct_col,
+                "%",
+                bold=True,
+                size=14,
+                horizontal="left",
             )
 
         # Data rows
@@ -1204,15 +1409,24 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 n_val = self._clean_numeric(vals.get("N"))
                 pct_val = self._clean_numeric(vals.get("Pct"))
                 self._write_cell(
-                    sheet, row, n_col, n_val,
-                    size=14, horizontal="right",
+                    sheet,
+                    row,
+                    n_col,
+                    n_val,
+                    size=14,
+                    horizontal="right",
                     fill_color=alt_fill,
                     number_format=self._number_format_for_value(n_val),
                     font_color=tl,
                 )
                 self._write_cell(
-                    sheet, row, pct_col, pct_val,
-                    bold=True, size=14, horizontal="left",
+                    sheet,
+                    row,
+                    pct_col,
+                    pct_val,
+                    bold=True,
+                    size=14,
+                    horizontal="left",
                     fill_color=alt_fill,
                     number_format=self._number_format_for_value(pct_val),
                     font_color=td,
@@ -1230,7 +1444,12 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
     # ------------------------------------------------------------------
 
     def _apply_block_border(
-        self, sheet, top_row: int, bottom_row: int, start_col: int, end_col: int,
+        self,
+        sheet,
+        top_row: int,
+        bottom_row: int,
+        start_col: int,
+        end_col: int,
     ):
         """Draw a thin black border around a phenotype block."""
         side = Side(style="thin", color="000000")
@@ -1266,7 +1485,9 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
 
     @staticmethod
     def _get_category_data(
-        data: Dict, phenotype_name: str, categories: List[str],
+        data: Dict,
+        phenotype_name: str,
+        categories: List[str],
     ) -> Dict[str, Dict[str, object]]:
         result: Dict[str, Dict] = {}
         for row in data.get("rows", []):
@@ -1301,10 +1522,10 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     _OFF_TYPE = 0
     _OFF_INDEX = 1
     _OFF_NAME = 2
-    _OFF_PCT = 3   # Pct_Remaining
-    _OFF_N = 4     # Remaining
+    _OFF_PCT = 3  # Pct_Remaining
+    _OFF_N = 4  # Remaining
     _OFF_DELTA = 5
-    _OFF_SRC = 6   # Pct_Source_Database
+    _OFF_SRC = 6  # Pct_Source_Database
 
     _CARD_WIDTHS = [14, 4, 28, 10, 14, 14, 12]
 
@@ -1361,8 +1582,12 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                     self._write_headers(sheet, header_row, cs)
                     self._write_data(sheet, data_start, cs, rows, expanded, group_color)
                     self._set_widths(sheet, cs)
-                    self._apply_card_border(sheet, title_row, last_data_row, cs, ce, group_color)
-                    self._apply_section_dividers(sheet, data_start, cs, ce, expanded, group_color)
+                    self._apply_card_border(
+                        sheet, title_row, last_data_row, cs, ce, group_color
+                    )
+                    self._apply_section_dividers(
+                        sheet, data_start, cs, ce, expanded, group_color
+                    )
 
                     current_col = ce + 1
                 except Exception as e:
@@ -1417,11 +1642,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
 
             # Arrow row
             show_type = rtype != prev_type
-            expanded.append({
-                "kind": "arrow",
-                "type_label": rtype if show_type else None,
-                "idx": i,
-            })
+            expanded.append(
+                {
+                    "kind": "arrow",
+                    "type_label": rtype if show_type else None,
+                    "idx": i,
+                }
+            )
 
             # Data row
             expanded.append({"kind": "data", "idx": i})
@@ -1433,9 +1660,16 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
 
     def _write_title(self, sheet, row, cs, ce, title, color):
         self._write_cell(
-            sheet, row, cs, title,
-            bold=True, italic=True, size=16, horizontal="left",
-            indent=1, fill_color=color,
+            sheet,
+            row,
+            cs,
+            title,
+            bold=True,
+            italic=True,
+            size=16,
+            horizontal="left",
+            indent=1,
+            fill_color=color,
         )
         for c in range(cs + 1, ce + 1):
             self._write_cell(sheet, row, c, None, fill_color=color)
@@ -1450,8 +1684,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             (self._OFF_SRC, "% source", True),
         ):
             self._write_cell(
-                sheet, row, cs + offset, hdr,
-                bold=True, size=14, horizontal="center",
+                sheet,
+                row,
+                cs + offset,
+                hdr,
+                bold=True,
+                size=14,
+                horizontal="center",
                 font_color=self._GRAY_TEXT if gray else None,
             )
 
@@ -1479,7 +1718,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             elif kind == "arrow":
                 self._write_arrow_row(sheet, row, cs, rows, exp, prev_rem)
             elif kind == "final":
-                self._write_criterion_row(sheet, row, cs, rows[exp["idx"]], True, group_color)
+                self._write_criterion_row(
+                    sheet, row, cs, rows[exp["idx"]], True, group_color
+                )
             else:
                 self._write_criterion_row(sheet, row, cs, rows[exp["idx"]], False, None)
 
@@ -1487,25 +1728,43 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         db_n = dr.get("N")
         if db_n is not None:
             self._write_cell(
-                sheet, row, cs + self._OFF_N, self._clean_numeric(db_n),
-                size=14, horizontal="center",
+                sheet,
+                row,
+                cs + self._OFF_N,
+                self._clean_numeric(db_n),
+                size=14,
+                horizontal="center",
                 number_format=self._number_format_for_value(db_n),
             )
         self._write_cell(
-            sheet, row, cs + self._OFF_SRC, 100,
-            size=14, horizontal="center", font_color=self._GRAY_TEXT,
+            sheet,
+            row,
+            cs + self._OFF_SRC,
+            100,
+            size=14,
+            horizontal="center",
+            font_color=self._GRAY_TEXT,
         )
 
     def _write_arrow_row(self, sheet, row, cs, rows, exp, prev_rem):
         tl = exp.get("type_label")
         if tl:
             self._write_cell(
-                sheet, row, cs + self._OFF_TYPE, tl,
-                italic=True, size=14, horizontal="right",
+                sheet,
+                row,
+                cs + self._OFF_TYPE,
+                tl,
+                italic=True,
+                size=14,
+                horizontal="right",
             )
         self._write_cell(
-            sheet, row, cs + self._OFF_N, self._ARROW,
-            size=14, horizontal="center",
+            sheet,
+            row,
+            cs + self._OFF_N,
+            self._ARROW,
+            size=14,
+            horizontal="center",
         )
         di = exp["idx"]
         rem = rows[di].get("Remaining")
@@ -1513,8 +1772,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         if rem is not None and prev is not None:
             delta = rem - prev
             self._write_cell(
-                sheet, row, cs + self._OFF_DELTA, self._clean_numeric(delta),
-                size=14, horizontal="center", font_color=self._GRAY_TEXT,
+                sheet,
+                row,
+                cs + self._OFF_DELTA,
+                self._clean_numeric(delta),
+                size=14,
+                horizontal="center",
+                font_color=self._GRAY_TEXT,
                 number_format=self._number_format_for_value(delta),
             )
 
@@ -1523,34 +1787,60 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             idx_val = dr.get("Index")
             if idx_val:
                 self._write_cell(
-                    sheet, row, cs + self._OFF_INDEX, idx_val,
-                    size=14, horizontal="center", fill_color=fill_color,
+                    sheet,
+                    row,
+                    cs + self._OFF_INDEX,
+                    idx_val,
+                    size=14,
+                    horizontal="center",
+                    fill_color=fill_color,
                 )
         self._write_cell(
-            sheet, row, cs + self._OFF_NAME, dr.get("Name"),
-            bold=is_final, size=14, horizontal="left", fill_color=fill_color,
+            sheet,
+            row,
+            cs + self._OFF_NAME,
+            dr.get("Name"),
+            bold=is_final,
+            size=14,
+            horizontal="left",
+            fill_color=fill_color,
         )
         pct_rem = dr.get("Pct_Remaining")
         if pct_rem is not None:
             self._write_cell(
-                sheet, row, cs + self._OFF_PCT, self._clean_numeric(pct_rem),
-                bold=is_final, size=14, horizontal="center",
+                sheet,
+                row,
+                cs + self._OFF_PCT,
+                self._clean_numeric(pct_rem),
+                bold=is_final,
+                size=14,
+                horizontal="center",
                 number_format=self._number_format_for_value(pct_rem),
                 fill_color=fill_color,
             )
         remaining = dr.get("Remaining")
         if remaining is not None:
             self._write_cell(
-                sheet, row, cs + self._OFF_N, self._clean_numeric(remaining),
-                bold=is_final, size=14, horizontal="center",
+                sheet,
+                row,
+                cs + self._OFF_N,
+                self._clean_numeric(remaining),
+                bold=is_final,
+                size=14,
+                horizontal="center",
                 number_format=self._number_format_for_value(remaining),
                 fill_color=fill_color,
             )
         pct_src = dr.get("Pct_Source_Database")
         if pct_src is not None:
             self._write_cell(
-                sheet, row, cs + self._OFF_SRC, self._clean_numeric(pct_src),
-                size=14, horizontal="center", font_color=self._GRAY_TEXT,
+                sheet,
+                row,
+                cs + self._OFF_SRC,
+                self._clean_numeric(pct_src),
+                size=14,
+                horizontal="center",
+                font_color=self._GRAY_TEXT,
                 number_format=self._number_format_for_value(pct_src),
                 fill_color=fill_color,
             )
@@ -1560,7 +1850,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                 cell = sheet.cell(row=row, column=cs + off)
                 if cell.value is None:
                     cell.fill = PatternFill(
-                        start_color=fill_color, end_color=fill_color, fill_type="solid",
+                        start_color=fill_color,
+                        end_color=fill_color,
+                        fill_type="solid",
                     )
 
     def _set_widths(self, sheet, cs):
@@ -1621,22 +1913,30 @@ class InfoSheetWriter(_BaseSheetWriter):
 
     _SHEET_INFO_TABLE = [
         ("Sheet", "Description"),
-        ("INCLUSION EXCLUSION",
-         "Shows how the study entry criterion, inclusion and exclusion criteria result in the final cohort sizes."),
-        ("CHARACTERISTICS",
-         "Characterizes populations at study entry date."),
-        ("OUTCOMES",
-         "Characterizes populations after study entry date."),
-        ("… all",
-         "Displays all boolean, numeric and categorical study elements within a single table."),
-        ("… boolean",
-         "Displays only boolean study elements — the number of patients that have or do not have a given element. "
-         "For numeric values, this identifies missingness."),
-        ("… numeric",
-         "Displays numeric and categorical study elements horizontally — summary statistics for numeric values, N and % for each category."),
-        ("… (detailed)",
-         "Displays subcomponents of study elements (e.g. if Diabetes is composed of Type 1 and Type 2, counts for "
-         "each component are shown). Identical to the non-detailed version when no subcomponents are present."),
+        (
+            "INCLUSION EXCLUSION",
+            "Shows how the study entry criterion, inclusion and exclusion criteria result in the final cohort sizes.",
+        ),
+        ("CHARACTERISTICS", "Characterizes populations at study entry date."),
+        ("OUTCOMES", "Characterizes populations after study entry date."),
+        (
+            "… all",
+            "Displays all boolean, numeric and categorical study elements within a single table.",
+        ),
+        (
+            "… boolean",
+            "Displays only boolean study elements — the number of patients that have or do not have a given element. "
+            "For numeric values, this identifies missingness.",
+        ),
+        (
+            "… numeric",
+            "Displays numeric and categorical study elements horizontally — summary statistics for numeric values, N and % for each category.",
+        ),
+        (
+            "… (detailed)",
+            "Displays subcomponents of study elements (e.g. if Diabetes is composed of Type 1 and Type 2, counts for "
+            "each component are shown). Identical to the non-detailed version when no subcomponents are present.",
+        ),
     ]
 
     def write(
@@ -1660,13 +1960,17 @@ class InfoSheetWriter(_BaseSheetWriter):
             for line in description.splitlines():
                 text, font_size, bold = self._parse_markdown_line(line)
                 if text is not None:
-                    self._write_cell(sheet, current_row, 2, text, bold=bold, size=font_size)
+                    self._write_cell(
+                        sheet, current_row, 2, text, bold=bold, size=font_size
+                    )
                 current_row += 1
             current_row += 1  # blank row after description
 
         # Cohort table header
         self._write_cell(sheet, current_row, 2, "Cohort", bold=True, size=14)
-        self._write_cell(sheet, current_row, 3, "Final N", bold=True, size=14, horizontal="right")
+        self._write_cell(
+            sheet, current_row, 3, "Final N", bold=True, size=14, horizontal="right"
+        )
         current_row += 1
 
         # Build lookup from dir -> (display_name, color, is_sub)
@@ -1685,20 +1989,38 @@ class InfoSheetWriter(_BaseSheetWriter):
                 cohort_dir, (cohort_dir.name, None, False)
             )
             # Spacer col: no fill
-            self._write_cell(sheet, current_row, 2, display, size=14,
-                             indent=4 if is_sub else 2, fill_color=color)
-            self._write_cell(sheet, current_row, 3, final_n, size=14, horizontal="right",
-                             fill_color=color,
-                             number_format="#,##0" if isinstance(final_n, int) else None)
+            self._write_cell(
+                sheet,
+                current_row,
+                2,
+                display,
+                size=14,
+                indent=4 if is_sub else 2,
+                fill_color=color,
+            )
+            self._write_cell(
+                sheet,
+                current_row,
+                3,
+                final_n,
+                size=14,
+                horizontal="right",
+                fill_color=color,
+                number_format="#,##0" if isinstance(final_n, int) else None,
+            )
             current_row += 1
 
         current_row += 1  # blank row
 
         # Info section
-        self._write_cell(sheet, current_row, 2,
-                         "The following sheets allow comparison of all cohorts, subcohorts and stratifications within this study. "
-                         "Cohorts are arranged side by side for easy comparison.",
-                         size=14)
+        self._write_cell(
+            sheet,
+            current_row,
+            2,
+            "The following sheets allow comparison of all cohorts, subcohorts and stratifications within this study. "
+            "Cohorts are arranged side by side for easy comparison.",
+            size=14,
+        )
         sheet.row_dimensions[current_row].height = 36
         current_row += 2  # blank row
 
@@ -1708,8 +2030,12 @@ class InfoSheetWriter(_BaseSheetWriter):
         header_bottom = Border(bottom=thin)
         row_border = Border(bottom=Side(style="hair"))
 
-        self._write_cell(sheet, current_row, sheet_col, "Sheet name", bold=True, size=14)
-        self._write_cell(sheet, current_row, desc_col, "Description", bold=True, size=14)
+        self._write_cell(
+            sheet, current_row, sheet_col, "Sheet name", bold=True, size=14
+        )
+        self._write_cell(
+            sheet, current_row, desc_col, "Description", bold=True, size=14
+        )
         for col in (sheet_col, sheet_col + 1, desc_col):
             sheet.cell(row=current_row, column=col).border = header_bottom
         current_row += 1
@@ -1719,9 +2045,17 @@ class InfoSheetWriter(_BaseSheetWriter):
         line_height_pt = 20  # 14pt font line height
 
         for sheet_name, sheet_desc in self._SHEET_INFO_TABLE[1:]:
-            name_cell = self._write_cell(sheet, current_row, sheet_col, sheet_name, size=14,
-                                         bold=(not sheet_name.startswith("…")))
-            desc_cell = self._write_cell(sheet, current_row, desc_col, sheet_desc, size=14)
+            name_cell = self._write_cell(
+                sheet,
+                current_row,
+                sheet_col,
+                sheet_name,
+                size=14,
+                bold=(not sheet_name.startswith("…")),
+            )
+            desc_cell = self._write_cell(
+                sheet, current_row, desc_col, sheet_desc, size=14
+            )
             desc_cell.alignment = Alignment(wrap_text=True, vertical="top")
             name_cell.alignment = Alignment(vertical="top")
             for col in (sheet_col, sheet_col + 1, desc_col):
@@ -1734,9 +2068,15 @@ class InfoSheetWriter(_BaseSheetWriter):
 
         # PhenEx version at the bottom
         phenex_version = self._read_phenex_version(study_path)
-        self._write_cell(sheet, current_row, 2,
-                         f"Executed with PhenEx v{phenex_version}",
-                         bold=False, size=11, font_color=self._GRAY_TEXT)
+        self._write_cell(
+            sheet,
+            current_row,
+            2,
+            f"Executed with PhenEx v{phenex_version}",
+            bold=False,
+            size=11,
+            font_color=self._GRAY_TEXT,
+        )
 
     # ------------------------------------------------------------------
 
@@ -1827,20 +2167,20 @@ class OutputConcatenator:
         "table1_outcomes_detailed": "Table1OutcomesDetailed",
     }
     _SHEET_DISPLAY_NAMES = {
-        "Info":                       "OVERVIEW",
-        "Waterfall":                  "INCLUSION EXCLUSION",
-        "WaterfallDetailed":          "INCLUSION EXCLUSION (detailed)",
-        "Table1":                     "CHARACTERISTICS all",
-        "Table1Detailed":             "CHARACTERISTICS all (detailed)",
-        "Table1Boolean":              "CHARACTERISTICS boolean",
-        "Table1BooleanDetailed":      "CHARACTERISTICS bool (detailed)",
-        "Table1Numeric":              "CHARACTERISTICS numeric",
-        "Table1NumericDetailed":      "CHARACTERISTICS num (detailed)",
-        "Table1OutcomesAll":          "OUTCOMES all",
-        "Table1OutcomesAllDetailed":  "OUTCOMES all (detailed)",
-        "Table1Outcomes":             "OUTCOMES boolean",
-        "Table1OutcomesDetailed":     "OUTCOMES boolean (detailed)",
-        "Table1OutcomesNumeric":      "OUTCOMES numeric",
+        "Info": "OVERVIEW",
+        "Waterfall": "INCLUSION EXCLUSION",
+        "WaterfallDetailed": "INCLUSION EXCLUSION (detailed)",
+        "Table1": "CHARACTERISTICS all",
+        "Table1Detailed": "CHARACTERISTICS all (detailed)",
+        "Table1Boolean": "CHARACTERISTICS boolean",
+        "Table1BooleanDetailed": "CHARACTERISTICS bool (detailed)",
+        "Table1Numeric": "CHARACTERISTICS numeric",
+        "Table1NumericDetailed": "CHARACTERISTICS num (detailed)",
+        "Table1OutcomesAll": "OUTCOMES all",
+        "Table1OutcomesAllDetailed": "OUTCOMES all (detailed)",
+        "Table1Outcomes": "OUTCOMES boolean",
+        "Table1OutcomesDetailed": "OUTCOMES boolean (detailed)",
+        "Table1OutcomesNumeric": "OUTCOMES numeric",
     }
 
     def __init__(
@@ -1908,7 +2248,9 @@ class OutputConcatenator:
         output_wb.remove(output_wb.active)
 
         # Info sheet is always first
-        info_sheet = output_wb.create_sheet(title=self._SHEET_DISPLAY_NAMES.get("Info", "Info"))
+        info_sheet = output_wb.create_sheet(
+            title=self._SHEET_DISPLAY_NAMES.get("Info", "Info")
+        )
         info_sheet.sheet_view.showGridLines = False
         self._info_writer.write(
             info_sheet, cohort_dirs, self.study_path, self.description, cohort_groups
@@ -1959,6 +2301,7 @@ class OutputConcatenator:
         "Table1NumericDetailed",
         "Table1OutcomesNumeric",
     }
+
     def _write_sheet(
         self,
         sheet,
@@ -1968,19 +2311,22 @@ class OutputConcatenator:
         cohort_groups: List[CohortGroup],
     ) -> None:
         if report_type == "Waterfall":
-            self._attrition_writer.write(sheet, report_files, cohort_dirs, cohort_groups)
+            self._attrition_writer.write(
+                sheet, report_files, cohort_dirs, cohort_groups
+            )
         elif report_type in self._TABLE1_NUMERIC_TYPES:
             self._numeric_writer.write(sheet, report_files, cohort_dirs, cohort_groups)
         elif report_type in self._TABLE1_TYPES:
             boolean_only = report_type in self._TABLE1_BOOLEAN_TYPES
             self._table1_writer.write(
-                sheet, report_files, cohort_dirs, cohort_groups,
+                sheet,
+                report_files,
+                cohort_dirs,
+                cohort_groups,
                 boolean_only=boolean_only,
             )
         else:
-            self._generic_writer.write(
-                sheet, report_files, cohort_dirs, cohort_groups
-            )
+            self._generic_writer.write(sheet, report_files, cohort_dirs, cohort_groups)
 
     def _get_cohort_directories(self) -> List[Path]:
         dirs = {
@@ -2080,5 +2426,3 @@ class OutputConcatenator:
             f"</ignoredErrors>"
         )
         return text.replace("</worksheet>", snippet + "</worksheet>").encode("utf-8")
-
-
