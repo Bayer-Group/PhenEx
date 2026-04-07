@@ -107,6 +107,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "N persons in database",
             "N": cohort.n_persons_in_source_database,
+            "Remaining": cohort.n_persons_in_source_database,
             "Level": 0,
             "Index": "",
         }
