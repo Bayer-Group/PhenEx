@@ -300,7 +300,7 @@ class GenericSheetWriter(_BaseSheetWriter):
     }
 
     # Columns that should be sized for large numbers (2-digit millions).
-    _WIDE_COLUMNS = {"N", "Remaining"}
+    _WIDE_COLUMNS = {"N", "Remaining", "Delta"}
 
     def write(
         self,
