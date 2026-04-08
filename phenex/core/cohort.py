@@ -533,6 +533,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             # Update tables with filtered versions (only when the node actually modified the table;
             # nodes with no relevant date columns return None and the original table is kept)
@@ -551,6 +552,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables pre-entry stage."
@@ -566,6 +568,7 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
+            table_name_prefix=self.name,
         )
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
@@ -581,6 +584,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables post-entry stage."
@@ -602,6 +606,7 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
+            table_name_prefix=self.name,
         )
         self.table = self.index_table_node.table
 
@@ -630,6 +635,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
 
         return self.index_table
