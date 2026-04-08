@@ -84,6 +84,8 @@ class Waterfall(Reporter):
 
         # Calculate deltas before adding first/last rows
         self.ds = self.append_delta(self.ds)
+        # Entry row delta: remaining after entry vs N persons in database
+        self.ds[0]["Delta"] = N_entry - cohort.n_persons_in_source_database
 
         # create dataframe with phenotype counts (without first/last rows)
         self.df = pd.DataFrame(self.ds)
@@ -105,6 +107,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "N persons in database",
             "N": cohort.n_persons_in_source_database,
+            "Remaining": cohort.n_persons_in_source_database,
             "Level": 0,
             "Index": "",
         }
@@ -533,13 +536,11 @@ class Waterfall(Reporter):
     def append_delta(self, ds):
         ds[0]["Delta"] = np.nan
         previous_remaining = ds[0]["Remaining"]
-        for i in range(1, len(ds) - 1):
+        for i in range(1, len(ds)):
             d_current = ds[i]
-            d_previous = ds[i - 1]
             if pd.isna(d_current["Remaining"]):
                 d_current["Delta"] = np.nan
                 continue
-            print(f"Current: {d_current['Remaining']}, Previous: {previous_remaining}")
             d_current["Delta"] = d_current["Remaining"] - previous_remaining
             previous_remaining = d_current["Remaining"]
         return ds

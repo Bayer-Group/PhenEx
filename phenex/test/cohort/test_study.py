@@ -104,23 +104,43 @@ class TestStudyOutput(unittest.TestCase):
     # --- sheet structure ---
 
     def test_sheet_names_and_order(self):
-        self.assertEqual(
-            self.wb.sheetnames,
-            ["Info", "Waterfall", "WaterfallDetailed", "Table1", "Table1Detailed"],
-        )
+        expected = [
+            "OVERVIEW",
+            "INCLUSION EXCLUSION",
+            "INCLUSION EXCLUSION (detailed)",
+            "CHARACTERISTICS boolean",
+            "CHARACTERISTICS numeric",
+            "CHARACTERISTICS all",
+            "CHARACTERISTICS bool (detailed)",
+            "CHARACTERISTICS num (detailed)",
+            "CHARACTERISTICS all (detailed)",
+        ]
+        self.assertEqual(self.wb.sheetnames, expected)
 
-    def test_each_sheet_has_both_cohort_headers(self):
+    def test_each_sheet_has_cohort_headers(self):
+        """Every data sheet must mention each cohort name somewhere in the sheet."""
+        _NUMERIC_SHEETS = {"CHARACTERISTICS numeric", "CHARACTERISTICS num (detailed)"}
         for sheet_name in self.wb.sheetnames:
-            if sheet_name == "Info":
+            if sheet_name == "OVERVIEW":
                 continue
             sheet = self.wb[sheet_name]
-            row1 = {
-                sheet.cell(row=1, column=c).value
-                for c in range(1, sheet.max_column + 1)
-            }
+            all_values = set()
+            if sheet_name in _NUMERIC_SHEETS:
+                # Numeric sheets have cohort names in column B (data rows)
+                for r in range(1, sheet.max_row + 1):
+                    val = sheet.cell(row=r, column=2).value
+                    if val is not None:
+                        all_values.add(str(val))
+            else:
+                for row in range(1, 5):  # rows 1-4 are header rows
+                    for c in range(1, sheet.max_column + 1):
+                        val = sheet.cell(row=row, column=c).value
+                        if val is not None:
+                            all_values.add(str(val))
             for name in self.COHORT_NAMES:
-                self.assertIn(
-                    name, row1, f"Sheet '{sheet_name}': missing header '{name}'"
+                self.assertTrue(
+                    any(name in v for v in all_values),
+                    f"Sheet '{sheet_name}': missing cohort '{name}'",
                 )
 
     # --- per-cohort JSON files ---
@@ -158,7 +178,7 @@ class TestStudyOutput(unittest.TestCase):
     # --- WaterfallDetailed component phenotype rows ---
 
     def _waterfall_detailed_values_lower(self) -> set:
-        sheet = self.wb["WaterfallDetailed"]
+        sheet = self.wb["INCLUSION EXCLUSION (detailed)"]
         return {
             str(cell).lower()
             for row in sheet.iter_rows(values_only=True)
@@ -282,17 +302,17 @@ class TestWaterfallDetailedComponents(unittest.TestCase):
 
     def test_waterfall_detailed_sheet_present(self):
         self.assertIsNotNone(self.wb)
-        self.assertIn("WaterfallDetailed", self.wb.sheetnames)
+        self.assertIn("INCLUSION EXCLUSION (detailed)", self.wb.sheetnames)
 
     def test_logic_phenotype_name_present(self):
-        vals = self._all_cell_values_lower("WaterfallDetailed")
+        vals = self._all_cell_values_lower("INCLUSION EXCLUSION (detailed)")
         self.assertTrue(
             any("combined cc and prior drug" in v for v in vals),
             "WaterfallDetailed missing LogicPhenotype name",
         )
 
     def test_component_phenotype_names_present(self):
-        vals = self._all_cell_values_lower("WaterfallDetailed")
+        vals = self._all_cell_values_lower("INCLUSION EXCLUSION (detailed)")
         self.assertTrue(
             any("continuous coverage" in v for v in vals),
             "WaterfallDetailed missing component 'continuous_coverage'",
