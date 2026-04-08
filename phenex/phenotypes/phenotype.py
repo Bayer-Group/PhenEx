@@ -297,7 +297,7 @@ class ComputationGraph:
         elif self.operator == "*":
             return left * right
         elif self.operator == "/":
-            return left / right
+            return left / ibis.case().when(right == 0, ibis.null()).else_(right).end()
         elif self.operator == "**":
             return left**right
         else:

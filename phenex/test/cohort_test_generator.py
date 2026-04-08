@@ -118,8 +118,8 @@ class CohortTestGenerator:
             if not os.path.exists(_path):
                 os.makedirs(_path)
 
-    def _test_index_table(self, result, expected):
-        name = self.cohort.name + "_index"
+    def _test_index_table(self, result, expected, name=None):
+        name = name or (self.cohort.name + "_index")
         # Support both DuckDBConnector and direct ibis connection
         # DuckDBConnector.create_table(table, name_table, overwrite)
         # ibis.BaseBackend.create_table(name, obj, schema, ...)
@@ -137,7 +137,7 @@ class CohortTestGenerator:
         check_equality(
             result,
             expected_output_table,
-            test_name=self.cohort.name + "_index",
+            test_name=name,
             test_values=self.test_values,
             test_date=self.test_date,
             join_on=join_on,
