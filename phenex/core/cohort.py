@@ -92,7 +92,20 @@ class Cohort:
 
         self.derived_tables = derived_tables
         self.derived_tables_post_entry = derived_tables_post_entry
-        self.outcomes = self._flatten(outcomes)
+
+        # outcomes may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(outcomes, dict):
+            self.outcome_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in outcomes.items()
+            }
+            self.outcomes = [
+                p for phenos in outcomes.values() for p in phenos
+            ]
+        else:
+            self.outcome_sections = None
+            self.outcomes = self._flatten(outcomes)
+
         self.custom_reporters = custom_reporters or []
         self.n_persons_in_source_database = None
 
