@@ -297,7 +297,7 @@ class Node:
             ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
         if table_name_prefix:
-            table_name_prefix = re.sub(r'[^A-Za-z0-9_]', '_', table_name_prefix).upper()
+            table_name_prefix = re.sub(r"[^A-Za-z0-9_]", "_", table_name_prefix).upper()
         # Handle None tables
         if tables is None:
             tables = {}
