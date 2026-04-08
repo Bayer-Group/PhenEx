@@ -99,9 +99,7 @@ class Cohort:
                 section: [p.display_name for p in phenos]
                 for section, phenos in outcomes.items()
             }
-            self.outcomes = [
-                p for phenos in outcomes.values() for p in phenos
-            ]
+            self.outcomes = [p for phenos in outcomes.values() for p in phenos]
         else:
             self.outcome_sections = None
             self.outcomes = self._flatten(outcomes)
