@@ -469,9 +469,7 @@ class CohortExplorer(Reporter):
         try:
             from phenex.reporting.waterfall import Waterfall
 
-            waterfall_reporter = Waterfall(
-                decimal_places=self.decimal_places
-            )
+            waterfall_reporter = Waterfall(decimal_places=self.decimal_places)
             waterfall_data = waterfall_reporter.execute(self.cohort)
             logger.debug(f"Generated waterfall data with {len(waterfall_data)} steps")
             return waterfall_data

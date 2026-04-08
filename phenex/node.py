@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from typing import Dict, List, Set, Optional
 import pandas as pd
 import ibis
@@ -295,7 +296,8 @@ class Node:
         Raises:
             ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
-        table_name_prefix = table_name_prefix.upper() if table_name_prefix else None
+        if table_name_prefix:
+            table_name_prefix = re.sub(r'[^A-Za-z0-9_]', '_', table_name_prefix).upper()
         # Handle None tables
         if tables is None:
             tables = {}

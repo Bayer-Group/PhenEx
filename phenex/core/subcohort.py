@@ -196,7 +196,11 @@ class Subcohort(Cohort):
         # Execute ONLY additional phenotypes against the parent's index-subset
         # tables (post-inclusion/exclusion filtered domain data).
         # ------------------------------------------------------------------
-        for phenotype in self.additional_inclusions + self.additional_exclusions + self.additional_outcomes:
+        for phenotype in (
+            self.additional_inclusions
+            + self.additional_exclusions
+            + self.additional_outcomes
+        ):
             if phenotype.table is None:
                 phenotype.execute(
                     tables=self.cohort.subset_tables_index,
@@ -214,11 +218,9 @@ class Subcohort(Cohort):
         index_table = self.cohort.index_table
 
         for inclusion in self.additional_inclusions:
-            include_pids = (
-                inclusion.table
-                .filter(inclusion.table["BOOLEAN"] == True)
-                .select("PERSON_ID")
-            )
+            include_pids = inclusion.table.filter(
+                inclusion.table["BOOLEAN"] == True
+            ).select("PERSON_ID")
             index_table = index_table.inner_join(include_pids, "PERSON_ID")
 
         for exclusion in self.additional_exclusions:
@@ -264,7 +266,8 @@ class Subcohort(Cohort):
 
         # Pick the right parent waterfall reporter
         parent_reporter = (
-            self.cohort.waterfall_detailed_node if is_detailed
+            self.cohort.waterfall_detailed_node
+            if is_detailed
             else self.cohort.waterfall_node
         )
         if parent_reporter is None or parent_reporter.table is None:
@@ -304,7 +307,11 @@ class Subcohort(Cohort):
         for inclusion in self.additional_inclusions:
             index += 1
             running_table = waterfall.append_phenotype_to_waterfall(
-                running_table, inclusion, "inclusion", level=0, index=index,
+                running_table,
+                inclusion,
+                "inclusion",
+                level=0,
+                index=index,
             )
             if include_component_phenotypes_level is not None:
                 waterfall._append_components_recursively(
@@ -314,7 +321,11 @@ class Subcohort(Cohort):
         for exclusion in self.additional_exclusions:
             index += 1
             running_table = waterfall.append_phenotype_to_waterfall(
-                running_table, exclusion, "exclusion", level=0, index=index,
+                running_table,
+                exclusion,
+                "exclusion",
+                level=0,
+                index=index,
             )
             if include_component_phenotypes_level is not None:
                 waterfall._append_components_recursively(
@@ -327,36 +338,66 @@ class Subcohort(Cohort):
 
         N = (
             self.index_table.filter(self.index_table.BOOLEAN == True)
-            .select("PERSON_ID").distinct().count().execute()
+            .select("PERSON_ID")
+            .distinct()
+            .count()
+            .execute()
         )
 
         waterfall.df["Pct_Remaining"] = waterfall.df["Remaining"] / N_entry * 100
         waterfall.df["Pct_N"] = waterfall.df["N"] / N_entry * 100
 
         float_cols = waterfall.df.select_dtypes(include="float").columns
-        waterfall.df[float_cols] = waterfall.df[float_cols].round(waterfall.decimal_places)
+        waterfall.df[float_cols] = waterfall.df[float_cols].round(
+            waterfall.decimal_places
+        )
 
-        first_row = pd.DataFrame([{
-            "Type": "info", "Name": "N persons in database",
-            "N": self.n_persons_in_source_database, "Level": 0, "Index": "",
-        }])
-        last_row = pd.DataFrame([{
-            "Type": "info", "Name": "Final Cohort Size",
-            "Remaining": N,
-            "Pct_Remaining": round(100 * N / N_entry, waterfall.decimal_places),
-            "Level": 0, "Index": "",
-        }])
+        first_row = pd.DataFrame(
+            [
+                {
+                    "Type": "info",
+                    "Name": "N persons in database",
+                    "N": self.n_persons_in_source_database,
+                    "Level": 0,
+                    "Index": "",
+                }
+            ]
+        )
+        last_row = pd.DataFrame(
+            [
+                {
+                    "Type": "info",
+                    "Name": "Final Cohort Size",
+                    "Remaining": N,
+                    "Pct_Remaining": round(100 * N / N_entry, waterfall.decimal_places),
+                    "Level": 0,
+                    "Index": "",
+                }
+            ]
+        )
         waterfall.df = pd.concat([first_row, waterfall.df, last_row], ignore_index=True)
 
-        entry_pct = round(N_entry / self.n_persons_in_source_database * 100, waterfall.decimal_places)
-        final_pct = round(N / self.n_persons_in_source_database * 100, waterfall.decimal_places)
+        entry_pct = round(
+            N_entry / self.n_persons_in_source_database * 100, waterfall.decimal_places
+        )
+        final_pct = round(
+            N / self.n_persons_in_source_database * 100, waterfall.decimal_places
+        )
         waterfall.df["Pct_Source_Database"] = (
             [np.nan, entry_pct] + [np.nan] * (waterfall.df.shape[0] - 3) + [final_pct]
         )
 
         columns_to_select = [
-            "Type", "Index", "Name", "Level", "N", "Pct_N",
-            "Remaining", "Pct_Remaining", "Delta", "Pct_Source_Database",
+            "Type",
+            "Index",
+            "Name",
+            "Level",
+            "N",
+            "Pct_N",
+            "Remaining",
+            "Pct_Remaining",
+            "Delta",
+            "Pct_Source_Database",
         ]
         waterfall.df = waterfall.df[columns_to_select]
 
@@ -369,12 +410,14 @@ class Subcohort(Cohort):
         if is_detailed:
             self.waterfall_detailed_node = _PseudoReporterNode(
                 name=f"{self.name}__waterfall_detailed".upper(),
-                reporter=waterfall, table=table,
+                reporter=waterfall,
+                table=table,
             )
         else:
             self.waterfall_node = _PseudoReporterNode(
                 name=f"{self.name}__waterfall".upper(),
-                reporter=waterfall, table=table,
+                reporter=waterfall,
+                table=table,
             )
 
     # ------------------------------------------------------------------
