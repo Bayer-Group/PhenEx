@@ -25,6 +25,7 @@ from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
 from .factory import (
     ISTHMajorBleedPhenotype,
     StackableRegimen,
+    TreatmentPatternAnalysis,
     SmartCodelistPhenotype,
     CODETYPE_INFO,
 )

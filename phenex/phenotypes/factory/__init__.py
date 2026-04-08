@@ -1,3 +1,4 @@
 from .isth_major_bleed import ISTHMajorBleedPhenotype
 from .stackable_regimen import StackableRegimen
+from .treatment_pattern_analysis import TreatmentPatternAnalysis
 from .smart_codelist_phenotype import SmartCodelistPhenotype, CODETYPE_INFO
