@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from typing import Dict, List, Set, Optional
 import pandas as pd
 import ibis
@@ -256,6 +257,7 @@ class Node:
         overwrite: bool = False,
         lazy_execution: bool = False,
         n_threads: int = 1,
+        table_name_prefix: Optional[str] = None,
     ) -> Table:
         """
         Executes the Node computation for the current node and its dependencies.
@@ -294,6 +296,8 @@ class Node:
         Raises:
             ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
+        if table_name_prefix:
+            table_name_prefix = re.sub(r"[^A-Za-z0-9_]", "_", table_name_prefix).upper()
         # Handle None tables
         if tables is None:
             tables = {}
@@ -333,11 +337,16 @@ class Node:
 
         def _run_and_materialise(node, node_name):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
+            db_name = (
+                f"{table_name_prefix}__{node_name}"
+                if table_name_prefix and not node_name.startswith(table_name_prefix)
+                else node_name
+            )
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
             if table is not None:
-                con.create_table(table, node_name, overwrite=overwrite)
-                table = con.get_dest_table(node_name)
+                con.create_table(table, db_name, overwrite=overwrite)
+                table = con.get_dest_table(db_name)
             node.lastexecution_end_time = datetime.now()
             node.lastexecution_duration = (
                 node.lastexecution_end_time - node.lastexecution_start_time
@@ -376,12 +385,18 @@ class Node:
                         if Node._node_manager.should_rerun(node, con):
                             table = _run_and_materialise(node, node_name)
                         else:
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
+                                else node_name
+                            )
                             try:
-                                table = con.get_dest_table(node_name)
+                                table = con.get_dest_table(db_name)
                             except Exception:
                                 # Cached table was dropped or is inaccessible; recompute.
                                 logger.warning(
-                                    f"Cached table for '{node_name}' not found; recomputing."
+                                    f"Cached table for '{node_name}' not found at {db_name}; recomputing."
                                 )
                                 table = _run_and_materialise(node, node_name)
                     else:
@@ -392,16 +407,22 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
+                                else node_name
+                            )
                             logger.info(
                                 f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
                             )
                             _t_mat = datetime.now()
-                            con.create_table(table, node_name, overwrite=overwrite)
+                            con.create_table(table, db_name, overwrite=overwrite)
                             logger.info(
                                 f"Thread {threading.current_thread().name}: materialized '{node_name}' "
                                 f"in {(datetime.now() - _t_mat).total_seconds():.3f}s"
                             )
-                            table = con.get_dest_table(node_name)
+                            table = con.get_dest_table(db_name)
 
                         node.lastexecution_end_time = datetime.now()
                         node.lastexecution_duration = (
