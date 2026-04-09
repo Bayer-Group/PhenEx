@@ -109,7 +109,7 @@ class TreatmentPatternAnalysis:
             pts_in_period = []
             for phenotype in self.input_phenotypes:
                 pt = copy.deepcopy(phenotype)
-                pt.name = f"{phenotype.name}{idx_period + 1}"
+                pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
                 pt.table = None
                 pt.relative_time_range = [period_filter]
                 pts_in_period.append(pt)
