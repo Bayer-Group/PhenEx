@@ -469,6 +469,11 @@ allData.forEach(function(groupData) {
           '\\n' + lk.value + ' patients', pathEl);
   });
 
+  /* period-1 total — denominator for percentage labels */
+  var period1Total = nodes.reduce(function(s, n) {
+    return n.period === periods[0] ? s + n.value : s;
+  }, 0);
+
   /* dots — one circle per non-zero node, drawn on top of flows */
   nodes.forEach(function(n) {
     if (n.value === 0) return;
@@ -482,6 +487,18 @@ allData.forEach(function(groupData) {
     }, g);
     mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
           n.value + ' patients', c);
+    /* percentage label (top) */
+    var pct = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) + '%' : '';
+    mkTxt(pct, {
+      x: cx, y: cy - DOT_R - 14,
+      'text-anchor': 'middle', 'font-size': '9px',
+      'font-weight': 'bold', fill: '#444'
+    }, g);
+    /* count label (below %, just above dot) */
+    mkTxt('n\u202f=\u202f' + n.value, {
+      x: cx, y: cy - DOT_R - 3,
+      'text-anchor': 'middle', 'font-size': '8px', fill: '#777'
+    }, g);
   });
 
   /* invisible hover strips — one per active row, drawn last to receive events */
