@@ -121,8 +121,8 @@ class TreatmentPatternAnalysis:
             )
 
             period_key = (
-                f"treatment_patterns_D{idx_period * self.days_between_periods}"
-                f"_to_D{(idx_period + 1) * self.days_between_periods}"
+                f"distribution_of_patients_per_stacked_regimen_from_day_{idx_period * self.days_between_periods}"
+                f"_to_{(idx_period + 1) * self.days_between_periods}"
             )
             self._output_phenotypes_dict[period_key] = regimen.output_phenotypes
             self._output_phenotypes.extend(regimen.output_phenotypes)

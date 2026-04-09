@@ -164,7 +164,13 @@ class Phenotype(Node):
 
     @property
     def display_name(self):
+        if getattr(self, "_display_name", None) is not None:
+            return self._display_name
         return self.name.replace("_", " ").lower().capitalize()
+
+    @display_name.setter
+    def display_name(self, value):
+        self._display_name = value
 
 
 from typing import Dict, Union
