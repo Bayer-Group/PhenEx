@@ -462,7 +462,8 @@ allData.forEach(function(groupData) {
       stroke: colorMap[srcN.display_name] || '#888',
       'stroke-width': strokeW(lk.value),
       'stroke-opacity': 0.45,
-      'stroke-linecap': 'round'
+      'stroke-linecap': 'round',
+      'data-regimen': srcN.display_name
     }, g);
     mkTip(srcN.display_name + ' \u2192 ' + tgtN.display_name +
           '\\n' + lk.value + ' patients', pathEl);
@@ -481,6 +482,31 @@ allData.forEach(function(groupData) {
     }, g);
     mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
           n.value + ' patients', c);
+  });
+
+  /* invisible hover strips — one per active row, drawn last to receive events */
+  var allPaths = g.querySelectorAll('path[data-regimen]');
+  active.forEach(function(nm) {
+    if (rowY[nm] === undefined) return;
+    var strip = mkEl('rect', {
+      x: 0, y: rowY[nm] - ROW_H / 2,
+      width: svgW, height: ROW_H,
+      fill: 'transparent', cursor: 'default'
+    }, g);
+    strip.addEventListener('mouseover', function() {
+      allPaths.forEach(function(p) {
+        if (p.getAttribute('data-regimen') === nm) {
+          p.setAttribute('stroke-opacity', 0.80);
+        } else {
+          p.setAttribute('stroke-opacity', 0.06);
+        }
+      });
+    });
+    strip.addEventListener('mouseout', function() {
+      allPaths.forEach(function(p) {
+        p.setAttribute('stroke-opacity', 0.45);
+      });
+    });
   });
 });
 </script>
