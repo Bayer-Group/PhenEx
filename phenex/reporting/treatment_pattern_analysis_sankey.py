@@ -493,18 +493,21 @@ allData.forEach(function(groupData) {
     }, g);
     mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
           n.value + ' patients', c);
-    /* percentage label (top) */
-    var pct = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) + '%' : '';
-    mkTxt(pct, {
-      x: cx, y: cy - r - 14,
-      'text-anchor': 'middle', 'font-size': '9px',
-      'font-weight': 'bold', fill: '#444',
+    var col = colorMap[n.display_name] || '#888';
+    /* percentage label — bold, regimen colour */
+    var pctVal = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) : '';
+    mkTxt(pctVal, {
+      x: cx, y: cy - r - 13,
+      'text-anchor': 'middle', 'font-size': '9.5px',
+      'font-weight': 'bold', fill: col, 'fill-opacity': 0.9,
       'data-regimen': n.display_name
     }, g);
-    /* count label (below %, just above dot) */
-    mkTxt('n\u202f=\u202f' + n.value, {
-      x: cx, y: cy - r - 3,
-      'text-anchor': 'middle', 'font-size': '8px', fill: '#777',
+    /* count label — lighter alpha, comma-formatted */
+    var countStr = n.value.toLocaleString('en-US');
+    mkTxt(countStr, {
+      x: cx, y: cy - r - 2,
+      'text-anchor': 'middle', 'font-size': '8px',
+      fill: col, 'fill-opacity': 0.5,
       'data-regimen': n.display_name
     }, g);
   });
