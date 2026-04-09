@@ -302,7 +302,7 @@ const COLORS = """
 var MIN_THICK = 2, MAX_THICK = 18;
 var DOT_R     = MAX_THICK / 2;
 var ROW_H     = 50, SEC_HDR_H = 26, SEC_GAP = 14;
-var PERIOD_SPC = 170, LEFT = 220, TOP = 58, RIGHT = 50;
+var PERIOD_SPC = 170, LEFT = 360, TOP = 58, RIGHT = 50;
 var NS = 'http://www.w3.org/2000/svg';
 
 /* ── tiny SVG helpers ───────────────────────────────────────────────────── */
@@ -443,9 +443,10 @@ allData.forEach(function(groupData) {
   /* row labels */
   active.forEach(function(nm) {
     if (rowY[nm] === undefined) return;
-    mkTxt(nm, { x: LEFT - 10, y: rowY[nm] + 4, 'text-anchor': 'end',
-                'font-size': '10px', 'font-weight': 'bold',
-                fill: colorMap[nm] || '#333' }, g);
+    mkTxt(nm, { x: LEFT - 14, y: rowY[nm] + 4, 'text-anchor': 'end',
+                'font-size': '12px', 'font-weight': 'bold',
+                fill: colorMap[nm] || '#333',
+                'data-row-label': nm }, g);
   });
 
   /* flows (drawn before dots so dots sit on top) */
@@ -513,9 +514,10 @@ allData.forEach(function(groupData) {
   });
 
   /* invisible hover strips — one per active row, drawn last to receive events */
-  var allPaths   = g.querySelectorAll('path[data-regimen]');
-  var allCircles = g.querySelectorAll('circle[data-regimen]');
-  var allLabels  = g.querySelectorAll('text[data-regimen]');
+  var allPaths     = g.querySelectorAll('path[data-regimen]');
+  var allCircles   = g.querySelectorAll('circle[data-regimen]');
+  var allLabels    = g.querySelectorAll('text[data-regimen]');
+  var allRowLabels = g.querySelectorAll('text[data-row-label]');
   active.forEach(function(nm) {
     if (rowY[nm] === undefined) return;
     var strip = mkEl('rect', {
@@ -543,6 +545,10 @@ allData.forEach(function(groupData) {
         t.setAttribute('opacity',
           targets.has(t.getAttribute('data-regimen')) ? 1.0 : 0.15);
       });
+      allRowLabels.forEach(function(t) {
+        t.setAttribute('opacity',
+          targets.has(t.getAttribute('data-row-label')) ? 1.0 : 0.15);
+      });
     });
     strip.addEventListener('mouseout', function() {
       allPaths.forEach(function(p)   { p.setAttribute('stroke-opacity', 0.45); });
@@ -550,7 +556,8 @@ allData.forEach(function(groupData) {
         c.setAttribute('fill-opacity',   0.55);
         c.setAttribute('stroke-opacity', 1.0);
       });
-      allLabels.forEach(function(t)  { t.setAttribute('opacity', 1.0); });
+      allLabels.forEach(function(t)    { t.setAttribute('opacity', 1.0); });
+      allRowLabels.forEach(function(t) { t.setAttribute('opacity', 1.0); });
     });
   });
 });
