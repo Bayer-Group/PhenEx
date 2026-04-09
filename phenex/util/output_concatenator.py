@@ -2258,6 +2258,7 @@ class OutputConcatenator:
 
         for report_type in self._sheet_order(reports_by_type):
             display_name = self._SHEET_DISPLAY_NAMES.get(report_type, report_type)
+            display_name = display_name[:31]  # Excel sheet name limit
             logger.info(f"Concatenating {report_type} reports...")
             sheet = output_wb.create_sheet(title=display_name)
             sheet.sheet_view.showGridLines = False

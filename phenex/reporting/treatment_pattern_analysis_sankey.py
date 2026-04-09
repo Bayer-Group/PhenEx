@@ -167,6 +167,10 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         PNG screenshot of that HTML (requires ``playwright``).
     """
 
+    @property
+    def name(self):
+        return self._name or "TreatmentPatternSankey"
+
     def execute(self, cohort):
         self.cohort = cohort
 
