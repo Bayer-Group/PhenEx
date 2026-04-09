@@ -31,6 +31,13 @@ from .phenotypes import (
     ScorePhenotype,
     ArithmeticPhenotype,
     LogicPhenotype,
+    TreatmentPatternAnalysis,
+    CHADS2VASCPhenotype,
+    CHADSVASCComponents,
+    SmartCodelistPhenotype,
+    StackableRegimen,
+    ISTHMajorBleedPhenotype,
+    ISTHBleedComponents
 )
 
 # Filters
@@ -141,6 +148,13 @@ __all__ = [
     "ScorePhenotype",
     "ArithmeticPhenotype",
     "LogicPhenotype",
+    "TreatmentPatternAnalysis",
+    "CHADS2VASCPhenotype",
+    "CHADSVASCComponents",
+    "SmartCodelistPhenotype",
+    "StackableRegimen",
+    "ISTHMajorBleedPhenotype",
+    "ISTHBleedComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",
