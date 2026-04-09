@@ -28,7 +28,7 @@ from .factory import (
     StackableRegimen,
     TreatmentPatternAnalysis,
     SmartCodelistPhenotype,
-    CHADS2VASCPhenotype,
+    CHADSVASCPhenotype,
     CHADSVASCComponents,
     CODETYPE_INFO,
 )
