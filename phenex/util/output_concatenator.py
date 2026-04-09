@@ -50,11 +50,12 @@ class _BaseSheetWriter:
         indent: int = 0,
         fill_color: Optional[str] = None,
         number_format: Optional[str] = None,
+        wrap_text: bool = False,
     ):
         cell = sheet.cell(row=row, column=col, value=value)
         cell.font = Font(bold=bold, italic=italic, size=size)
         cell.alignment = Alignment(
-            horizontal=horizontal, vertical="center", indent=indent
+            horizontal=horizontal, vertical="center", indent=indent, wrap_text=wrap_text
         )
         if fill_color:
             cell.fill = PatternFill(
@@ -401,16 +402,20 @@ class Table1SheetWriter(_BaseSheetWriter):
         for i, (row_type, value) in enumerate(expanded):
             out_row = 3 + i
             if row_type == "section":
+                display_text = value.replace("_", "\n")
+                num_lines = display_text.count("\n") + 1
                 self._write_cell(
                     sheet,
                     out_row,
                     1,
-                    value,
+                    display_text,
                     bold=True,
                     size=11,
                     horizontal="left",
                     indent=2,
+                    wrap_text=True,
                 )
+                sheet.row_dimensions[out_row].height = 15 * num_lines
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
