@@ -402,20 +402,13 @@ class Table1SheetWriter(_BaseSheetWriter):
         for i, (row_type, value) in enumerate(expanded):
             out_row = 3 + i
             if row_type == "section":
-                display_text = value.replace("_", "\n")
-                num_lines = display_text.count("\n") + 1
                 self._write_cell(
                     sheet,
                     out_row,
                     1,
-                    display_text,
-                    bold=True,
-                    size=11,
-                    horizontal="left",
-                    indent=2,
-                    wrap_text=True,
+                    None,
+                    fill_color="B8CCE4",
                 )
-                sheet.row_dimensions[out_row].height = 15 * num_lines
             else:
                 is_cohort = value == "Cohort"
                 level = name_to_level.get(value, 0)
@@ -507,18 +500,34 @@ class Table1SheetWriter(_BaseSheetWriter):
     def _apply_section_header_spans(
         self, sheet, expanded: List[Tuple[str, str]], max_col: int
     ):
-        """Merge section-header cells from col A to max_col."""
+        """Write section-header text into col 2 and merge from col 2 to max_col."""
         if max_col < 2:
             return
-        for i, (row_type, _) in enumerate(expanded):
+        for i, (row_type, value) in enumerate(expanded):
             if row_type == "section":
                 out_row = 3 + i
-                sheet.merge_cells(
-                    start_row=out_row,
-                    start_column=1,
-                    end_row=out_row,
-                    end_column=max_col,
+                display_text = value.replace("_", "\n")
+                num_lines = display_text.count("\n") + 1
+                self._write_cell(
+                    sheet,
+                    out_row,
+                    2,
+                    display_text,
+                    bold=True,
+                    size=11,
+                    horizontal="left",
+                    indent=2,
+                    fill_color="B8CCE4",
+                    wrap_text=True,
                 )
+                sheet.row_dimensions[out_row].height = 15 * num_lines
+                if max_col >= 3:
+                    sheet.merge_cells(
+                        start_row=out_row,
+                        start_column=2,
+                        end_row=out_row,
+                        end_column=max_col,
+                    )
 
     def _set_value_column_widths(self, sheet, rows, columns: List[str], start_col: int):
         for offset in range(len(columns)):
