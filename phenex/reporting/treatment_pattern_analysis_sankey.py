@@ -466,7 +466,8 @@ allData.forEach(function(groupData) {
       'stroke-width': strokeW(lk.value),
       'stroke-opacity': 0.45,
       'stroke-linecap': 'round',
-      'data-regimen': srcN.display_name
+      'data-regimen': srcN.display_name,
+      'data-to': tgtN.display_name
     }, g);
     mkTip(srcN.display_name + ' \u2192 ' + tgtN.display_name +
           '\\n' + lk.value + ' patients', pathEl);
@@ -485,9 +486,8 @@ allData.forEach(function(groupData) {
     var r = dotR(n.value);
     var c = mkEl('circle', {
       cx: cx, cy: cy, r: r,
-      fill: colorMap[n.display_name] || '#888',
-      'fill-opacity': 0.9,
-      stroke: '#fff', 'stroke-width': 0.75,
+      fill: '#fff', 'fill-opacity': 0.55,
+      stroke: colorMap[n.display_name] || '#888', 'stroke-width': 2.5,
       'paint-order': 'stroke fill',
       'data-regimen': n.display_name
     }, g);
@@ -498,18 +498,21 @@ allData.forEach(function(groupData) {
     mkTxt(pct, {
       x: cx, y: cy - r - 14,
       'text-anchor': 'middle', 'font-size': '9px',
-      'font-weight': 'bold', fill: '#444'
+      'font-weight': 'bold', fill: '#444',
+      'data-regimen': n.display_name
     }, g);
     /* count label (below %, just above dot) */
     mkTxt('n\u202f=\u202f' + n.value, {
       x: cx, y: cy - r - 3,
-      'text-anchor': 'middle', 'font-size': '8px', fill: '#777'
+      'text-anchor': 'middle', 'font-size': '8px', fill: '#777',
+      'data-regimen': n.display_name
     }, g);
   });
 
   /* invisible hover strips — one per active row, drawn last to receive events */
   var allPaths   = g.querySelectorAll('path[data-regimen]');
   var allCircles = g.querySelectorAll('circle[data-regimen]');
+  var allLabels  = g.querySelectorAll('text[data-regimen]');
   active.forEach(function(nm) {
     if (rowY[nm] === undefined) return;
     var strip = mkEl('rect', {
@@ -518,18 +521,33 @@ allData.forEach(function(groupData) {
       fill: 'transparent', cursor: 'default'
     }, g);
     strip.addEventListener('mouseover', function() {
+      /* build set of target regimens that receive a flow from nm */
+      var targets = new Set([nm]);
+      allPaths.forEach(function(p) {
+        if (p.getAttribute('data-regimen') === nm) targets.add(p.getAttribute('data-to'));
+      });
       allPaths.forEach(function(p) {
         p.setAttribute('stroke-opacity',
           p.getAttribute('data-regimen') === nm ? 0.80 : 0.06);
       });
       allCircles.forEach(function(c) {
         c.setAttribute('fill-opacity',
-          c.getAttribute('data-regimen') === nm ? 0.95 : 0.15);
+          targets.has(c.getAttribute('data-regimen')) ? 0.75 : 0.10);
+        c.setAttribute('stroke-opacity',
+          targets.has(c.getAttribute('data-regimen')) ? 1.0  : 0.20);
+      });
+      allLabels.forEach(function(t) {
+        t.setAttribute('opacity',
+          targets.has(t.getAttribute('data-regimen')) ? 1.0 : 0.15);
       });
     });
     strip.addEventListener('mouseout', function() {
       allPaths.forEach(function(p)   { p.setAttribute('stroke-opacity', 0.45); });
-      allCircles.forEach(function(c) { c.setAttribute('fill-opacity',   0.9);  });
+      allCircles.forEach(function(c) {
+        c.setAttribute('fill-opacity',   0.55);
+        c.setAttribute('stroke-opacity', 1.0);
+      });
+      allLabels.forEach(function(t)  { t.setAttribute('opacity', 1.0); });
     });
   });
 });
