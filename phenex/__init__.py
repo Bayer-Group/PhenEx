@@ -37,7 +37,7 @@ from .phenotypes import (
     SmartCodelistPhenotype,
     StackableRegimen,
     ISTHMajorBleedPhenotype,
-    ISTHBleedComponents
+    ISTHBleedComponents,
 )
 
 # Filters
