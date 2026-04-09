@@ -113,6 +113,7 @@ class Study:
             )
 
             _cohort.write_reports_to_json(path_exec_dir_cohort)
+            _cohort.write_reports_to_html(path_exec_dir_cohort)
 
         self._concatenate_reports(path_exec_dir_study)
 

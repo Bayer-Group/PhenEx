@@ -249,3 +249,15 @@ class CustomReporterNode(Reporter):
         """Delegate to the wrapped reporter's to_json."""
         self._ensure_reporter_executed()
         self.reporter.to_json(path)
+
+    def to_html(self, path: str):
+        """Delegate to the wrapped reporter's to_html, if implemented."""
+        if hasattr(self.reporter, "to_html"):
+            self._ensure_reporter_executed()
+            self.reporter.to_html(path)
+
+    def to_png(self, path: str):
+        """Delegate to the wrapped reporter's to_png, if implemented."""
+        if hasattr(self.reporter, "to_png"):
+            self._ensure_reporter_executed()
+            self.reporter.to_png(path)

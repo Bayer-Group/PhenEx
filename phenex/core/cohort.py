@@ -759,6 +759,15 @@ class Cohort:
             report_filename = custom_reporter_node.reporter.name
             custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
 
+    def write_reports_to_html(self, path: str):
+        """Write HTML reports for custom reporters that implement to_html."""
+        for custom_reporter_node in self.custom_reporter_nodes:
+            if hasattr(custom_reporter_node.reporter, "to_html"):
+                report_filename = custom_reporter_node.reporter.name
+                custom_reporter_node.to_html(
+                    os.path.join(path, report_filename + ".html")
+                )
+
     def to_dict(self):
         """
         Return a dictionary representation of the Node. The dictionary must contain all dependencies of the Node such that if anything in self.to_dict() changes, the Node must be recomputed.
