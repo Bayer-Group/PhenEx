@@ -89,6 +89,8 @@ from .reporting import (
     TimeToEvent,
     CohortExplorer,
     ReportDrafter,
+    TreatmentPatternAnalysisSankeyReporter,
+    SankeyGenerator,
 )
 
 # Codelists
@@ -197,6 +199,8 @@ __all__ = [
     "TimeToEvent",
     "CohortExplorer",
     "ReportDrafter",
+    "TreatmentPatternAnalysisSankeyReporter",
+    "SankeyGenerator",
     # Codelists
     "Codelist",
     "LocalFileCodelistFactory",
