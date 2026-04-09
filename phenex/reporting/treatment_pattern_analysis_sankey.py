@@ -401,11 +401,14 @@ allData.forEach(function(groupData) {
   });
 
   /* ── stroke-width scale ─────────────────────────────────────────────────── */
-  var maxV = links.reduce(function(m, lk) { return Math.max(m, lk.value); }, 1);
-  function strokeW(v) { return MIN_THICK + (v / maxV) * (MAX_THICK - MIN_THICK); }
+  var maxV    = links.reduce(function(m, lk) { return Math.max(m, lk.value); }, 1);
+  var maxNodeV = nodes.reduce(function(m, n)  { return Math.max(m, n.value);  }, 1);
+  var DOT_MAX_R = (MAX_THICK + 5) / 2, DOT_MIN_R = MIN_THICK*2;
+  function strokeW(v) { return MIN_THICK + (v / maxV)      * (MAX_THICK - MIN_THICK); }
+  function dotR(v)    { return DOT_MIN_R  + (v / maxNodeV) * (DOT_MAX_R - DOT_MIN_R); }
 
   /* ── build SVG ──────────────────────────────────────────────────────────── */
-  var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + DOT_R + RIGHT;
+  var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + MAX_THICK / 2 + RIGHT;
   var svgH = TOP + totalH + 20;
   var svg  = mkEl('svg', { width: svgW, height: svgH });
   section.appendChild(svg);
@@ -479,24 +482,26 @@ allData.forEach(function(groupData) {
     if (n.value === 0) return;
     var cx = periodX[n.period], cy = rowY[n.display_name];
     if (cx === undefined || cy === undefined) return;
+    var r = dotR(n.value);
     var c = mkEl('circle', {
-      cx: cx, cy: cy, r: DOT_R,
+      cx: cx, cy: cy, r: r,
       fill: colorMap[n.display_name] || '#888',
       'fill-opacity': 0.9,
-      stroke: '#fff', 'stroke-width': 2
+      stroke: '#fff', 'stroke-width': 2,
+      'paint-order': 'stroke fill'
     }, g);
     mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
           n.value + ' patients', c);
     /* percentage label (top) */
     var pct = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) + '%' : '';
     mkTxt(pct, {
-      x: cx, y: cy - DOT_R - 14,
+      x: cx, y: cy - r - 14,
       'text-anchor': 'middle', 'font-size': '9px',
       'font-weight': 'bold', fill: '#444'
     }, g);
     /* count label (below %, just above dot) */
     mkTxt('n\u202f=\u202f' + n.value, {
-      x: cx, y: cy - DOT_R - 3,
+      x: cx, y: cy - r - 3,
       'text-anchor': 'middle', 'font-size': '8px', fill: '#777'
     }, g);
   });
