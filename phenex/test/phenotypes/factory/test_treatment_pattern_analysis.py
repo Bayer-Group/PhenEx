@@ -62,7 +62,7 @@ class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
         # Period 1: D0_to_D90
         # All events at day 0 are included (0 >= 0 and 0 < 90)
         # Results identical to StackableRegimen with 3 phenotypes
-        p1 = d["treatment_patterns_D0_to_D90"]
+        p1 = d["distribution_of_patients_per_stacked_regimen_from_day_0_to_90"]
 
         # stack1: single regimen
         test_infos.append({"name": "p1_s1", "persons": ["P4"], "phenotype": p1[0]})
@@ -79,7 +79,7 @@ class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
 
         # Period 2: D90_to_D180 (key name suggests 90-180, but filter is cumulative [0, 180))
         # Same results since all events are at day 0 and fall within [0, 180)
-        p2 = d["treatment_patterns_D90_to_D180"]
+        p2 = d["distribution_of_patients_per_stacked_regimen_from_day_90_to_180"]
 
         test_infos.append({"name": "p2_s1", "persons": ["P4"], "phenotype": p2[0]})
         test_infos.append({"name": "p2_s2", "persons": ["P6"], "phenotype": p2[1]})
@@ -205,7 +205,7 @@ class TreatmentPatternAnalysisTestGenerator_TimePeriods(PhenotypeTestGenerator):
         test_infos = []
 
         # Period 1: D0_to_D90 (events within [0, 90) days after INDEX_DATE)
-        p1 = d["treatment_patterns_D0_to_D90"]
+        p1 = d["distribution_of_patients_per_stacked_regimen_from_day_0_to_90"]
 
         test_infos.append(
             {"name": "p1_c1_only", "persons": ["P2", "P5"], "phenotype": p1[0]}
@@ -216,7 +216,7 @@ class TreatmentPatternAnalysisTestGenerator_TimePeriods(PhenotypeTestGenerator):
         # Period 2: D90_to_D180 (cumulative filter [0, 180) days after INDEX_DATE)
         # P4: c1 at day 100 AND c2 at day 100 -> both (now within window)
         # P5: c1 at day 5, c2 at day 100 -> both (now within window)
-        p2 = d["treatment_patterns_D90_to_D180"]
+        p2 = d["distribution_of_patients_per_stacked_regimen_from_day_90_to_180"]
 
         test_infos.append({"name": "p2_c1_only", "persons": ["P2"], "phenotype": p2[0]})
         test_infos.append({"name": "p2_c2_only", "persons": ["P3"], "phenotype": p2[1]})
