@@ -265,10 +265,232 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 
 
 # ---------------------------------------------------------------------------
-# HTML / d3-sankey template builder
+# HTML / d3-sankey template builders
 # ---------------------------------------------------------------------------
 
 def _build_sankey_html(sankey_data_list: list) -> str:
+    """Grid bump-chart: rows = regimen combos grouped by stack size (Single / Dual / Triple…),
+    columns = time periods.  A dot (diameter = MAX_THICK) marks every (regimen, period) cell
+    that has patients; cubic-bezier flows whose stroke-width scales with patient count connect
+    dots across consecutive time periods.  Rounded stroke-linecap gives the flows a pill shape.
+    """
+    data_json = json.dumps(sankey_data_list, default=str)
+    colors_json = json.dumps(_COLORS)
+
+    head = """\
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+<title>Treatment Pattern Flow</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 20px; }
+  .diagram-section { margin-bottom: 60px; }
+  .diagram-title { font-size: 15px; font-weight: bold; color: #333; margin: 0 0 8px 0; }
+</style>
+</head>
+<body>
+<div id="charts"></div>
+<script>
+const allData = """
+
+    middle = """;
+const COLORS = """
+
+    tail = """;
+
+/* ── layout constants ───────────────────────────────────────────────────── */
+var MIN_THICK = 2, MAX_THICK = 18;
+var DOT_R     = MAX_THICK / 2;
+var ROW_H     = 50, SEC_HDR_H = 26, SEC_GAP = 14;
+var PERIOD_SPC = 170, LEFT = 220, TOP = 58, RIGHT = 50;
+var NS = 'http://www.w3.org/2000/svg';
+
+/* ── tiny SVG helpers ───────────────────────────────────────────────────── */
+function mkEl(tag, attrs, parent) {
+  var e = document.createElementNS(NS, tag);
+  if (attrs) Object.keys(attrs).forEach(function(k) { e.setAttribute(k, attrs[k]); });
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function mkTip(text, parent) {
+  var t = document.createElementNS(NS, 'title');
+  t.textContent = text;
+  parent.appendChild(t);
+}
+function mkTxt(text, attrs, parent) {
+  var e = mkEl('text', attrs, parent);
+  e.textContent = text;
+  return e;
+}
+
+/* ── domain helpers ─────────────────────────────────────────────────────── */
+function stackSize(name) {
+  return (name.match(/\\+/g) || []).length + 1;
+}
+function shortPeriodLabel(label, num) {
+  var m = label.match(/from day (\\d+) to (\\d+)/i);
+  return m ? 'D' + m[1] + '\u2013' + m[2] : 'P' + num;
+}
+function sectionLabel(n) {
+  return (['', 'Single', 'Dual', 'Triple', 'Quadruple'])[n] || (n + '-Drug');
+}
+
+/* ── main render loop ───────────────────────────────────────────────────── */
+allData.forEach(function(groupData) {
+  var container = document.getElementById('charts');
+  var section   = document.createElement('div');
+  section.className = 'diagram-section';
+  container.appendChild(section);
+
+  var titleEl = document.createElement('p');
+  titleEl.className = 'diagram-title';
+  titleEl.textContent = 'Treatment Pattern Flow: ' + groupData.tpa_name;
+  section.appendChild(titleEl);
+
+  var nodes = groupData.nodes || [];
+  var links = groupData.links || [];
+  if (nodes.length === 0) return;
+
+  /* node lookup by original list index */
+  var nodeByIdx = nodes.slice();
+
+  /* active display names: non-zero value or referenced by a link */
+  var seen = {};
+  nodes.forEach(function(n) { if (n.value > 0) seen[n.display_name] = true; });
+  links.forEach(function(lk) {
+    var s = nodeByIdx[lk.source], t = nodeByIdx[lk.target];
+    if (s) seen[s.display_name] = true;
+    if (t) seen[t.display_name] = true;
+  });
+
+  /* stable colour assignment across ALL unique names (sorted alphabetically) */
+  var allUniq = Array.from(new Set(nodes.map(function(n) { return n.display_name; }))).sort();
+  var colorMap = {};
+  allUniq.forEach(function(nm, i) { colorMap[nm] = COLORS[i % COLORS.length]; });
+
+  /* group active names by stack-size, sort alphabetically within each group */
+  var active = Object.keys(seen).sort();
+  var groups = {};
+  active.forEach(function(nm) {
+    var s = stackSize(nm);
+    if (!groups[s]) groups[s] = [];
+    groups[s].push(nm);
+  });
+  var sizes = Object.keys(groups).map(Number).sort(function(a, b) { return a - b; });
+
+  /* ── Y layout ──────────────────────────────────────────────────────────── */
+  var rowY = {}, secInfo = [], curY = 0;
+  sizes.forEach(function(s) {
+    secInfo.push({ s: s, y: curY, names: groups[s] });
+    curY += SEC_HDR_H;
+    groups[s].forEach(function(nm) {
+      rowY[nm] = curY + ROW_H / 2;
+      curY += ROW_H;
+    });
+    curY += SEC_GAP;
+  });
+  var totalH = curY;
+
+  /* ── X layout (time periods) ───────────────────────────────────────────── */
+  var periods = Array.from(new Set(nodes.map(function(n) { return n.period; })));
+  periods.sort(function(a, b) { return a - b; });
+  var periodX = {}, periodLabel = {};
+  periods.forEach(function(p, i) { periodX[p] = LEFT + i * PERIOD_SPC; });
+  nodes.forEach(function(n) {
+    if (!periodLabel[n.period]) periodLabel[n.period] = shortPeriodLabel(n.period_label, n.period);
+  });
+
+  /* ── stroke-width scale ─────────────────────────────────────────────────── */
+  var maxV = links.reduce(function(m, lk) { return Math.max(m, lk.value); }, 1);
+  function strokeW(v) { return MIN_THICK + (v / maxV) * (MAX_THICK - MIN_THICK); }
+
+  /* ── build SVG ──────────────────────────────────────────────────────────── */
+  var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + DOT_R + RIGHT;
+  var svgH = TOP + totalH + 20;
+  var svg  = mkEl('svg', { width: svgW, height: svgH });
+  section.appendChild(svg);
+
+  /* content group shifted down by TOP */
+  var g = mkEl('g', { transform: 'translate(0,' + TOP + ')' }, svg);
+
+  /* section background bands */
+  secInfo.forEach(function(sec) {
+    var bandH = SEC_HDR_H + sec.names.length * ROW_H;
+    mkEl('rect', { x: 0, y: sec.y, width: svgW, height: bandH,
+                   fill: '#f5f5f5', opacity: 0.6 }, g);
+    mkTxt(sectionLabel(sec.s),
+          { x: 8, y: sec.y + SEC_HDR_H - 7, 'font-size': '11px',
+            'font-weight': 'bold', fill: '#777' }, g);
+  });
+
+  /* period grid lines */
+  periods.forEach(function(p) {
+    mkEl('line', { x1: periodX[p], y1: 0, x2: periodX[p], y2: totalH,
+                   stroke: '#e0e0e0', 'stroke-width': 1,
+                   'stroke-dasharray': '4,4' }, g);
+  });
+
+  /* period column labels (above translated g, placed directly in svg) */
+  periods.forEach(function(p) {
+    mkTxt(periodLabel[p],
+          { x: periodX[p], y: TOP - 10, 'text-anchor': 'middle',
+            'font-size': '11px', 'font-weight': 'bold', fill: '#444' }, svg);
+  });
+
+  /* row labels */
+  active.forEach(function(nm) {
+    if (rowY[nm] === undefined) return;
+    mkTxt(nm, { x: LEFT - 10, y: rowY[nm] + 4, 'text-anchor': 'end',
+                'font-size': '10px', 'font-weight': 'bold',
+                fill: colorMap[nm] || '#333' }, g);
+  });
+
+  /* flows (drawn before dots so dots sit on top) */
+  links.forEach(function(lk) {
+    var srcN = nodeByIdx[lk.source], tgtN = nodeByIdx[lk.target];
+    if (!srcN || !tgtN) return;
+    var x1 = periodX[srcN.period], y1 = rowY[srcN.display_name];
+    var x2 = periodX[tgtN.period], y2 = rowY[tgtN.display_name];
+    if (x1 === undefined || y1 === undefined ||
+        x2 === undefined || y2 === undefined) return;
+    var mx = (x1 + x2) / 2;
+    var pathEl = mkEl('path', {
+      d: 'M ' + x1 + ',' + y1 +
+         ' C ' + mx + ',' + y1 + ' ' + mx + ',' + y2 +
+         ' ' + x2 + ',' + y2,
+      fill: 'none',
+      stroke: colorMap[srcN.display_name] || '#888',
+      'stroke-width': strokeW(lk.value),
+      'stroke-opacity': 0.45,
+      'stroke-linecap': 'round'
+    }, g);
+    mkTip(srcN.display_name + ' \u2192 ' + tgtN.display_name +
+          '\\n' + lk.value + ' patients', pathEl);
+  });
+
+  /* dots — one circle per non-zero node, drawn on top of flows */
+  nodes.forEach(function(n) {
+    if (n.value === 0) return;
+    var cx = periodX[n.period], cy = rowY[n.display_name];
+    if (cx === undefined || cy === undefined) return;
+    var c = mkEl('circle', {
+      cx: cx, cy: cy, r: DOT_R,
+      fill: colorMap[n.display_name] || '#888',
+      'fill-opacity': 0.9,
+      stroke: '#fff', 'stroke-width': 2
+    }, g);
+    mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
+          n.value + ' patients', c);
+  });
+});
+</script>
+</body>
+</html>"""
+
+    return head + data_json + middle + colors_json + tail
+
+
+def _build_sankey_html_standard(sankey_data_list: list) -> str:
     """Return a self-contained HTML string rendering one sankey per TPA group."""
     data_json = json.dumps(sankey_data_list, default=str)
     colors_json = json.dumps(_COLORS)

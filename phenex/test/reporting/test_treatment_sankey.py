@@ -31,17 +31,28 @@ def test_sankey_html_from_fixture():
     html_path.write_text(html, encoding="utf-8")
 
     assert html_path.exists()
-    assert "d3-sankey" in html
 
-    # Verify all expected regimen labels appear in the output
-    expected_labels = [
-        "FZT only",
-        "HT + FZT",
-        "EZT + FZT",
-        "HT + EZT + FZT",
-    ]
-    for label in expected_labels:
-        assert label in html, f"Expected label '{label}' not found in HTML"
+    # SVG elements are built at runtime via JS — verify the template and embedded
+    # data are both present in the static file.
+    assert "mkEl" in html           # SVG helper function is defined
+    assert "stroke-linecap" in html  # flows use rounded-cap strokes
+    assert "DOT_R" in html           # dot-radius constant is defined
+
+    # Active regimen names must appear in the embedded JSON data
+    assert '"FZT only"' in html
+    assert '"HT + FZT"' in html
+    assert '"EZT + FZT"' in html
+    assert '"HT + EZT + FZT"' in html
+
+    # Section labels appear in the JS sectionLabel() function definition
+    assert "'Single'" in html
+    assert "'Dual'" in html
+    assert "'Triple'" in html
+
+    # Key patient counts from the fixture must be embedded in the JSON
+    assert "7688" in html   # FZT only, period 1 node value
+    assert "7248" in html   # FZT only → FZT only, period 1→2 link
+    assert "438" in html    # FZT only → HT+FZT link
 
     # Verify key patient counts from the fixture appear in the serialised data
     fixture_entry = sankey_data[0]
