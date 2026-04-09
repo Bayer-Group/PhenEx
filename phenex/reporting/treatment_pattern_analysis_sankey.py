@@ -338,11 +338,21 @@ allData.forEach(function(d) {
   var colorMap = {};
   uniqueNames.forEach(function(nm, i) { colorMap[nm] = COLORS[i % COLORS.length]; });
 
-  // Deep-copy nodes/links — d3-sankey mutates its input
-  var nodes = d.nodes.map(function(n, i) {
-    return Object.assign({}, n, {index: i});
+  // Deep-copy nodes/links — d3-sankey mutates its input.
+  // Drop nodes with value === 0 and any links that reference them.
+  var allNodes = d.nodes.map(function(n, i) {
+    return Object.assign({}, n, {origIndex: i});
   });
-  var links = d.links.map(function(l) { return Object.assign({}, l); });
+  var keepSet = new Set(allNodes.filter(function(n) { return n.value > 0; }).map(function(n) { return n.origIndex; }));
+  var nodes = allNodes.filter(function(n) { return keepSet.has(n.origIndex); });
+  // Build a remapping from original index → new index
+  var origToNew = {};
+  nodes.forEach(function(n, i) { origToNew[n.origIndex] = i; n.index = i; });
+  var links = d.links
+    .filter(function(l) { return keepSet.has(l.source) && keepSet.has(l.target); })
+    .map(function(l) {
+      return { source: origToNew[l.source], target: origToNew[l.target], value: l.value };
+    });
 
   var sankeyLayout = d3.sankey()
     .nodeId(function(n) { return n.index; })

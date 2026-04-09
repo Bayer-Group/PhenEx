@@ -1,6 +1,7 @@
 from typing import Any, Union, Dict
 import pandas as pd
 from pathlib import Path
+from phenex.util.serialization.to_dict import to_dict as _to_dict
 
 
 class Reporter:
@@ -39,6 +40,9 @@ class Reporter:
     def name(self):
         """Name of the reporter, used for identification and output file naming."""
         return self._name or self.__class__.__name__
+
+    def to_dict(self) -> dict:
+        return _to_dict(self)
 
     def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
         """
