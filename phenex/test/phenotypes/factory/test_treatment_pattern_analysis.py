@@ -501,7 +501,8 @@ def test_sankey_generation():
     assert os.path.exists(html_path)
     html = open(html_path, encoding="utf-8").read()
 
-    assert "d3-sankey" in html
+    assert "mkEl" in html  # SVG builder function present
+    assert "stroke-linecap" in html  # rounded flow caps
     assert "HT only" in html
     assert "EZT only" in html
     assert "FZT only" in html
