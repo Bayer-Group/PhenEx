@@ -107,6 +107,7 @@ class _BaseSheetWriter:
         indent: int = 0,
         fill_color: Optional[str] = None,
         number_format: Optional[str] = None,
+        wrap_text: bool = False,
         font_color: Optional[str] = None,
     ):
         cell = sheet.cell(row=row, column=col, value=value)
@@ -114,7 +115,7 @@ class _BaseSheetWriter:
             name=self._FONT, bold=bold, italic=italic, size=size, color=font_color
         )
         cell.alignment = Alignment(
-            horizontal=horizontal, vertical=vertical, indent=indent
+            horizontal=horizontal, vertical="center", indent=indent, wrap_text=wrap_text
         )
         if fill_color:
             cell.fill = PatternFill(

@@ -56,6 +56,7 @@ class _SubcohortProxy:
         parent_cohort: "Cohort",
         index_table,
         outcomes: list = None,
+        outcome_sections: dict = None,
     ):
         self.index_table = index_table
         index_patient_ids = index_table.filter(index_table.BOOLEAN == True).select(
@@ -68,6 +69,7 @@ class _SubcohortProxy:
         self.outcomes = [
             _FilteredPhenotypeView(p, index_patient_ids) for p in (outcomes or [])
         ]
+        self.outcome_sections = outcome_sections
         self.characteristics_table = None
         self.characteristic_sections = getattr(
             parent_cohort, "characteristic_sections", None
@@ -143,7 +145,19 @@ class Subcohort(Cohort):
     ):
         self.additional_inclusions = inclusions or []
         self.additional_exclusions = exclusions or []
-        self.additional_outcomes = outcomes or []
+
+        # outcomes may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(outcomes, dict):
+            self._additional_outcome_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in outcomes.items()
+            }
+            self.additional_outcomes = [
+                p for phenos in outcomes.values() for p in phenos
+            ]
+        else:
+            self._additional_outcome_sections = None
+            self.additional_outcomes = outcomes or []
 
         super(Subcohort, self).__init__(
             name=f"{cohort.name}__{name}",
@@ -157,6 +171,12 @@ class Subcohort(Cohort):
             custom_reporters=custom_reporters,
         )
         self.cohort = cohort
+
+        # Merge parent outcome_sections with additional outcome_sections
+        parent_sections = getattr(cohort, "outcome_sections", None) or {}
+        additional_sections = self._additional_outcome_sections or {}
+        merged = {**parent_sections, **additional_sections}
+        self.outcome_sections = merged if merged else None
 
     def execute(
         self,
@@ -460,8 +480,14 @@ class Subcohort(Cohort):
         reporter = Table1(
             include_component_phenotypes_level=include_component_phenotypes_level
         )
-        proxy = _SubcohortProxy(self.cohort, self.index_table, outcomes=self.outcomes)
+        proxy = _SubcohortProxy(
+            self.cohort,
+            self.index_table,
+            outcomes=self.outcomes,
+            outcome_sections=self.outcome_sections,
+        )
         reporter.execute(proxy, phenotypes=proxy.outcomes)
+        reporter.characteristic_sections = proxy.outcome_sections
         return reporter
 
     def _make_table1_outcomes_detailed_reporter(self) -> Optional["Table1"]:
