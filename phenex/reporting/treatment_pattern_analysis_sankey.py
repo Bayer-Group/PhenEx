@@ -497,9 +497,9 @@ allData.forEach(function(groupData) {
   secInfo.forEach(function(sec) {
     var bandH = SEC_HDR_H + sec.names.length * ROW_H;
     mkEl('rect', { x: 0, y: sec.y, width: svgW, height: bandH,
-                   fill: '#f5f5f5', opacity: 0.6 }, g);
+                   fill: '#f5f5f5', opacity: 0.6, rx: 20, ry: 20 }, g);
     mkTxt(sectionLabel(sec.s),
-          { x: 8, y: sec.y + SEC_HDR_H - 7, 'font-size': '11px',
+          { x: 20, y: sec.y + SEC_HDR_H, 'font-size': '12px',
             'font-weight': 'bold', fill: '#777' }, g);
   });
 
