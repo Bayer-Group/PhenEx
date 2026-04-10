@@ -48,6 +48,10 @@ def test_sankey_html_from_fixture():
     assert "'Single'" in html
     assert "'Dual'" in html
     assert "'Triple'" in html
+    assert "'Untreated'" in html   # None rows get their own Untreated section
+
+    # "None" display name must appear in the embedded fixture data
+    assert '"None"' in html
 
     # Key patient counts from the fixture must be embedded in the JSON
     assert "7688" in html   # FZT only, period 1 node value
