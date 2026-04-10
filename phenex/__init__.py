@@ -103,7 +103,7 @@ from .derived_tables import (
 # Serialization utilities
 from .util.serialization.json import dump, dumps, load, loads
 
-__version__ = "v0.8.0"
+__version__ = "v0.8.1"
 
 __all__ = [
     # Connectors
