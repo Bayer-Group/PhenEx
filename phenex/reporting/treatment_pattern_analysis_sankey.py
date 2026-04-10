@@ -299,7 +299,7 @@ const COLORS = """
     tail = """;
 
 /* ── layout constants ───────────────────────────────────────────────────── */
-var MIN_THICK = 2, MAX_THICK = 18;
+var MIN_THICK = .5, MAX_THICK = 25;
 var DOT_R     = MAX_THICK / 2;
 var ROW_H     = 50, SEC_HDR_H = 26, SEC_GAP = 14;
 var PERIOD_SPC = 170, LEFT = 360, TOP = 58, RIGHT = 50;
@@ -347,14 +347,23 @@ allData.forEach(function(groupData) {
   titleEl.textContent = 'Treatment Pattern Flow: ' + groupData.tpa_name;
   section.appendChild(titleEl);
 
+  /* toggle checkbox ─────────────────────────────────────────────────────── */
+  var cbWrap = document.createElement('label');
+  cbWrap.style.cssText = 'font-size:12px;color:#666;cursor:pointer;user-select:none;' +
+                         'display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;';
+  var cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cbWrap.appendChild(cb);
+  cbWrap.appendChild(document.createTextNode('Hide empty rows'));
+  section.appendChild(cbWrap);
+
   var nodes = groupData.nodes || [];
   var links = groupData.links || [];
   if (nodes.length === 0) return;
 
-  /* node lookup by original list index */
   var nodeByIdx = nodes.slice();
 
-  /* active display names: non-zero value or referenced by a link */
+  /* names with any patients or referenced by a link */
   var seen = {};
   nodes.forEach(function(n) { if (n.value > 0) seen[n.display_name] = true; });
   links.forEach(function(lk) {
@@ -363,22 +372,24 @@ allData.forEach(function(groupData) {
     if (t) seen[t.display_name] = true;
   });
 
-  /* stable colour assignment across ALL unique names (sorted alphabetically) */
+  /* all unique names (stable colour assignment) */
   var allUniq = Array.from(new Set(nodes.map(function(n) { return n.display_name; }))).sort();
   var colorMap = {};
   allUniq.forEach(function(nm, i) { colorMap[nm] = COLORS[i % COLORS.length]; });
 
-  /* group active names by stack-size, sort alphabetically within each group */
-  var active = Object.keys(seen).sort();
+  var active  = Object.keys(seen).sort();            /* has data */
+  var zeroSet = new Set(allUniq.filter(function(nm) { return !seen[nm]; }));
+
+  /* group ALL names by stack-size — zero rows included */
   var groups = {};
-  active.forEach(function(nm) {
+  allUniq.forEach(function(nm) {
     var s = stackSize(nm);
     if (!groups[s]) groups[s] = [];
     groups[s].push(nm);
   });
   var sizes = Object.keys(groups).map(Number).sort(function(a, b) { return a - b; });
 
-  /* ── Y layout ──────────────────────────────────────────────────────────── */
+  /* ── Y layout (all names) ─────────────────────────────────────────────── */
   var rowY = {}, secInfo = [], curY = 0;
   sizes.forEach(function(s) {
     secInfo.push({ s: s, y: curY, names: groups[s] });
@@ -391,7 +402,7 @@ allData.forEach(function(groupData) {
   });
   var totalH = curY;
 
-  /* ── X layout (time periods) ───────────────────────────────────────────── */
+  /* ── X layout ─────────────────────────────────────────────────────────── */
   var periods = Array.from(new Set(nodes.map(function(n) { return n.period; })));
   periods.sort(function(a, b) { return a - b; });
   var periodX = {}, periodLabel = {};
@@ -400,20 +411,19 @@ allData.forEach(function(groupData) {
     if (!periodLabel[n.period]) periodLabel[n.period] = shortPeriodLabel(n.period_label, n.period);
   });
 
-  /* ── stroke-width scale ─────────────────────────────────────────────────── */
-  var maxV    = links.reduce(function(m, lk) { return Math.max(m, lk.value); }, 1);
+  /* ── scale functions ──────────────────────────────────────────────────── */
+  var maxV     = links.reduce(function(m, lk) { return Math.max(m, lk.value); }, 1);
   var maxNodeV = nodes.reduce(function(m, n)  { return Math.max(m, n.value);  }, 1);
-  var DOT_MAX_R = (MAX_THICK + 5) / 2, DOT_MIN_R = MIN_THICK*2;
+  var DOT_MAX_R = (MAX_THICK - 8) / 2, DOT_MIN_R = (MIN_THICK + 4) / 2;
   function strokeW(v) { return MIN_THICK + (v / maxV)      * (MAX_THICK - MIN_THICK); }
   function dotR(v)    { return DOT_MIN_R  + (v / maxNodeV) * (DOT_MAX_R - DOT_MIN_R); }
 
-  /* ── build SVG ──────────────────────────────────────────────────────────── */
+  /* ── build SVG ────────────────────────────────────────────────────────── */
   var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + MAX_THICK / 2 + RIGHT;
   var svgH = TOP + totalH + 20;
   var svg  = mkEl('svg', { width: svgW, height: svgH });
   section.appendChild(svg);
 
-  /* content group shifted down by TOP */
   var g = mkEl('g', { transform: 'translate(0,' + TOP + ')' }, svg);
 
   /* section background bands */
@@ -433,23 +443,24 @@ allData.forEach(function(groupData) {
                    'stroke-dasharray': '4,4' }, g);
   });
 
-  /* period column labels (above translated g, placed directly in svg) */
+  /* period column labels */
   periods.forEach(function(p) {
     mkTxt(periodLabel[p],
           { x: periodX[p], y: TOP - 10, 'text-anchor': 'middle',
             'font-size': '11px', 'font-weight': 'bold', fill: '#444' }, svg);
   });
 
-  /* row labels */
-  active.forEach(function(nm) {
+  /* row labels — all names; zero rows styled lighter */
+  allUniq.forEach(function(nm) {
     if (rowY[nm] === undefined) return;
+    var isZero = zeroSet.has(nm);
     mkTxt(nm, { x: LEFT - 14, y: rowY[nm] + 4, 'text-anchor': 'end',
-                'font-size': '12px', 'font-weight': 'bold',
-                fill: colorMap[nm] || '#333',
+                'font-size': '12px', 'font-weight': isZero ? 'normal' : 'bold',
+                fill: isZero ? '#bbb' : (colorMap[nm] || '#333'),
                 'data-row-label': nm }, g);
   });
 
-  /* flows (drawn before dots so dots sit on top) */
+  /* flows */
   links.forEach(function(lk) {
     var srcN = nodeByIdx[lk.source], tgtN = nodeByIdx[lk.target];
     if (!srcN || !tgtN) return;
@@ -460,60 +471,72 @@ allData.forEach(function(groupData) {
     var mx = (x1 + x2) / 2;
     var pathEl = mkEl('path', {
       d: 'M ' + x1 + ',' + y1 +
-         ' C ' + mx + ',' + y1 + ' ' + mx + ',' + y2 +
-         ' ' + x2 + ',' + y2,
+         ' C ' + mx + ',' + y1 + ' ' + mx + ',' + y2 + ' ' + x2 + ',' + y2,
       fill: 'none',
       stroke: colorMap[srcN.display_name] || '#888',
       'stroke-width': strokeW(lk.value),
-      'stroke-opacity': 0.45,
-      'stroke-linecap': 'round',
-      'data-regimen': srcN.display_name,
-      'data-to': tgtN.display_name
+      'stroke-opacity': 0.45, 'stroke-linecap': 'round',
+      'data-regimen': srcN.display_name, 'data-to': tgtN.display_name
     }, g);
     mkTip(srcN.display_name + ' \u2192 ' + tgtN.display_name +
           '\\n' + lk.value + ' patients', pathEl);
   });
 
-  /* period-1 total — denominator for percentage labels */
+  /* period-1 total for % labels */
   var period1Total = nodes.reduce(function(s, n) {
     return n.period === periods[0] ? s + n.value : s;
   }, 0);
 
-  /* dots — one circle per non-zero node, drawn on top of flows */
+  /* dots + labels */
   nodes.forEach(function(n) {
     if (n.value === 0) return;
     var cx = periodX[n.period], cy = rowY[n.display_name];
     if (cx === undefined || cy === undefined) return;
-    var r = dotR(n.value);
+    var r   = dotR(n.value);
+    var col = colorMap[n.display_name] || '#888';
     var c = mkEl('circle', {
       cx: cx, cy: cy, r: r,
       fill: '#fff', 'fill-opacity': 0.55,
-      stroke: colorMap[n.display_name] || '#888', 'stroke-width': 2.5,
-      'paint-order': 'stroke fill',
-      'data-regimen': n.display_name
+      stroke: col, 'stroke-width': 2.5,
+      'paint-order': 'stroke fill', 'data-regimen': n.display_name
     }, g);
-    mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' +
-          n.value + ' patients', c);
-    var col = colorMap[n.display_name] || '#888';
-    /* percentage label — bold, regimen colour */
+    mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' + n.value + ' patients', c);
     var pctVal = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) : '';
     mkTxt(pctVal, {
-      x: cx, y: cy - r - 13,
-      'text-anchor': 'middle', 'font-size': '9.5px',
-      'font-weight': 'bold', fill: col, 'fill-opacity': 0.9,
+      x: cx, y: cy - r - 20, 'text-anchor': 'middle',
+      'font-size': '14px', 'font-weight': 'bold', fill: col, 'fill-opacity': 0.9,
       'data-regimen': n.display_name
     }, g);
-    /* count label — lighter alpha, comma-formatted */
-    var countStr = n.value.toLocaleString('en-US');
-    mkTxt(countStr, {
-      x: cx, y: cy - r - 2,
-      'text-anchor': 'middle', 'font-size': '8px',
-      fill: col, 'fill-opacity': 0.5,
+    mkTxt(n.value.toLocaleString('en-US'), {
+      x: cx, y: cy - r - 8, 'text-anchor': 'middle',
+      'font-size': '12px', fill: col, 'fill-opacity': 0.5,
       'data-regimen': n.display_name
     }, g);
   });
 
-  /* invisible hover strips — one per active row, drawn last to receive events */
+  /* ── checkbox filter ──────────────────────────────────────────────────── */
+  function applyFilter() {
+    var hide = cb.checked;
+    g.querySelectorAll('[data-row-label]').forEach(function(el) {
+      el.style.display = hide && zeroSet.has(el.getAttribute('data-row-label')) ? 'none' : '';
+    });
+    g.querySelectorAll('rect[data-row-strip]').forEach(function(el) {
+      el.style.display = hide && zeroSet.has(el.getAttribute('data-row-strip')) ? 'none' : '';
+    });
+    g.querySelectorAll('circle[data-regimen]').forEach(function(el) {
+      el.style.display = hide && zeroSet.has(el.getAttribute('data-regimen')) ? 'none' : '';
+    });
+    g.querySelectorAll('text[data-regimen]').forEach(function(el) {
+      el.style.display = hide && zeroSet.has(el.getAttribute('data-regimen')) ? 'none' : '';
+    });
+    g.querySelectorAll('path[data-regimen]').forEach(function(el) {
+      var from = el.getAttribute('data-regimen'), to = el.getAttribute('data-to');
+      el.style.display = hide && (zeroSet.has(from) || zeroSet.has(to)) ? 'none' : '';
+    });
+  }
+  cb.addEventListener('change', applyFilter);
+
+  /* ── hover strips (active rows only) ─────────────────────────────────── */
   var allPaths     = g.querySelectorAll('path[data-regimen]');
   var allCircles   = g.querySelectorAll('circle[data-regimen]');
   var allLabels    = g.querySelectorAll('text[data-regimen]');
@@ -523,10 +546,10 @@ allData.forEach(function(groupData) {
     var strip = mkEl('rect', {
       x: 0, y: rowY[nm] - ROW_H / 2,
       width: svgW, height: ROW_H,
-      fill: 'transparent', cursor: 'default'
+      fill: 'transparent', cursor: 'default',
+      'data-row-strip': nm
     }, g);
     strip.addEventListener('mouseover', function() {
-      /* build set of target regimens that receive a flow from nm */
       var targets = new Set([nm]);
       allPaths.forEach(function(p) {
         if (p.getAttribute('data-regimen') === nm) targets.add(p.getAttribute('data-to'));
