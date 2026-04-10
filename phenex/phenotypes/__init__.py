@@ -24,7 +24,11 @@ from .computation_graph_phenotypes import (
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
 from .factory import (
     ISTHMajorBleedPhenotype,
+    ISTHBleedComponents,
     StackableRegimen,
+    TreatmentPatternAnalysis,
     SmartCodelistPhenotype,
+    CHADSVASCPhenotype,
+    CHADSVASCComponents,
     CODETYPE_INFO,
 )

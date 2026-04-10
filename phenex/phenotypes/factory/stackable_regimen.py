@@ -193,6 +193,10 @@ class StackableRegimen:
 
                 # Create the phenotype and add to the list
                 phenotype = LogicPhenotype(name=name, expression=logic)
+                if size == 1:
+                    phenotype.display_name = f"{regimen_combo[0]} only"
+                else:
+                    phenotype.display_name = " + ".join(regimen_combo)
                 phenotype_list.append(phenotype)
 
             # Add the list to results dictionary
