@@ -277,6 +277,31 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         )
         return self.df
 
+    def to_json(self, filename: str) -> str:
+        """Export to JSON, including the full sankey graph (nodes + links) needed for HTML generation."""
+        if not hasattr(self, "sankey_generators"):
+            raise AttributeError("Call execute() first.")
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        sankey_data_list = [
+            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
+            for name, gen in self.sankey_generators.items()
+        ]
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "sankey_data": sankey_data_list,
+            "rows": self.df.to_dict(orient="records"),
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())
+
     def to_html(self, filename: str) -> str:
         """Export as a self-contained HTML page with d3-sankey diagram(s)."""
         if not hasattr(self, "sankey_generators"):

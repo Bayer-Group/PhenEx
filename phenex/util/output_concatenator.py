@@ -2257,6 +2257,8 @@ class OutputConcatenator:
         )
 
         for report_type in self._sheet_order(reports_by_type):
+            if report_type in self._SANKEY_TYPES:
+                continue  # handled separately as HTML
             display_name = self._SHEET_DISPLAY_NAMES.get(report_type, report_type)
             display_name = display_name[:31]  # Excel sheet name limit
             logger.info(f"Concatenating {report_type} reports...")
@@ -2274,12 +2276,54 @@ class OutputConcatenator:
         self._suppress_number_as_text_warnings(self.output_file)
         logger.info(f"Successfully created: {self.output_file}")
 
+        for report_type in self._SANKEY_TYPES:
+            if report_type in reports_by_type:
+                self._generate_sankey_html(
+                    report_type, reports_by_type[report_type], cohort_dirs
+                )
+
     # ------------------------------------------------------------------
 
     def _sheet_order(self, reports_by_type: Dict[str, List[Path]]) -> List[str]:
         prefix = [n for n in self._SHEET_ORDER_PREFIX if n in reports_by_type]
-        rest = sorted(k for k in reports_by_type if k not in self._SHEET_ORDER_PREFIX)
+        rest = sorted(
+            k for k in reports_by_type
+            if k not in self._SHEET_ORDER_PREFIX and k not in self._SANKEY_TYPES
+        )
         return prefix + rest
+
+    def _generate_sankey_html(
+        self,
+        report_type: str,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+    ) -> None:
+        """Generate a combined sankey HTML for all cohorts that have data."""
+        from phenex.reporting.treatment_pattern_analysis_sankey import _build_sankey_html
+
+        all_entries = []
+        for cohort_dir, json_file in zip(cohort_dirs, report_files):
+            if json_file is None:
+                continue
+            try:
+                with json_file.open() as f:
+                    data = json.load(f)
+                for entry in data.get("sankey_data", []):
+                    labeled = dict(entry)
+                    labeled["tpa_name"] = f"{cohort_dir.name} — {entry.get('tpa_name', '')}"
+                    all_entries.append(labeled)
+            except Exception as e:
+                logger.warning(f"Could not read sankey data from {json_file}: {e}")
+
+        if not all_entries:
+            logger.warning(f"No sankey data found for {report_type}; skipping HTML generation.")
+            return
+
+        html_path = self.output_file.with_name(
+            self.output_file.stem + f"_{report_type}.html"
+        )
+        html_path.write_text(_build_sankey_html(all_entries), encoding="utf-8")
+        logger.info(f"Generated sankey HTML: {html_path}")
 
     _TABLE1_TYPES = {
         "Table1",
@@ -2301,6 +2345,9 @@ class OutputConcatenator:
         "Table1Numeric",
         "Table1NumericDetailed",
         "Table1OutcomesNumeric",
+    }
+    _SANKEY_TYPES = {
+        "TreatmentPatternSankey",
     }
 
     def _write_sheet(
