@@ -10,6 +10,7 @@ import json
 import math
 import re
 import zipfile
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -633,7 +634,9 @@ class Table1SheetWriter(_BaseSheetWriter):
         self, report_files: List[Optional[Path]]
     ) -> Tuple[List[str], Optional[Dict], Dict[str, int]]:
         """Return (master_names, sections, name_to_level) aggregated across all JSON files."""
-        seen: Dict[str, None] = {}  # insertion-ordered set
+        master_names: List[str] = []
+        existing_names: set = set()
+        first_file_done = False
         sections = None
         name_to_level: Dict[str, int] = {}
         for report_file in report_files:
@@ -647,13 +650,21 @@ class Table1SheetWriter(_BaseSheetWriter):
                     name = row.get("Name")
                     if name is not None:
                         name_str = str(name)
-                        seen[name_str] = None
+                        if not first_file_done:
+                            # First file: preserve all names including duplicates
+                            master_names.append(name_str)
+                            existing_names.add(name_str)
+                        elif name_str not in existing_names:
+                            # Subsequent files: only add genuinely new names
+                            master_names.append(name_str)
+                            existing_names.add(name_str)
                         level = row.get("_level", 0)
                         if name_str not in name_to_level and level:
                             name_to_level[name_str] = int(level)
+                first_file_done = True
             except Exception as e:
                 logger.warning(f"Could not read {report_file}: {e}")
-        return list(seen.keys()), sections, name_to_level
+        return master_names, sections, name_to_level
 
     def _build_expanded_rows(
         self,
@@ -670,11 +681,20 @@ class Table1SheetWriter(_BaseSheetWriter):
             return [("row", n) for n in master_names]
 
         insert_at: Dict[int, str] = {}
+        search_start = 0
         for section_name, char_names in sections.items():
-            for idx, name in enumerate(master_names):
-                if self._name_belongs_to_chars(name, char_names):
-                    if idx not in insert_at:
-                        insert_at[idx] = section_name
+            for idx in range(search_start, len(master_names)):
+                if self._name_belongs_to_chars(master_names[idx], char_names):
+                    insert_at[idx] = section_name
+                    # Advance past all rows for this section by counting
+                    # base char_names matches (skips over binned variants)
+                    count = 0
+                    end = idx
+                    while end < len(master_names) and count < len(char_names):
+                        if master_names[end] in char_names:
+                            count += 1
+                        end += 1
+                    search_start = end
                     break
 
         result: List[Tuple[str, str]] = []
@@ -921,7 +941,12 @@ class Table1SheetWriter(_BaseSheetWriter):
         text_light: Optional[str] = None,
     ):
         name_to_level = name_to_level or {}
-        name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
+        # Build per-name list of rows to handle duplicate names (e.g. TPA periods)
+        _name_row_lists: Dict[str, List] = defaultdict(list)
+        for r in rows:
+            if "Name" in r:
+                _name_row_lists[str(r["Name"])].append(r)
+        _name_cursors: Dict[str, int] = defaultdict(int)
         for i, (row_type, value) in enumerate(expanded):
             out_row = self._DATA_START_ROW + i
             if row_type == "section":
@@ -937,7 +962,10 @@ class Table1SheetWriter(_BaseSheetWriter):
             if row_type == "spacer":
                 continue
 
-            row_data = name_to_row.get(value)
+            cursor = _name_cursors[value]
+            entries = _name_row_lists.get(value, [])
+            row_data = entries[cursor] if cursor < len(entries) else None
+            _name_cursors[value] = cursor + 1
             is_cohort = value == "Cohort"
             level = name_to_level.get(value, 0)
             gray = self._level_to_gray_hex(level)
