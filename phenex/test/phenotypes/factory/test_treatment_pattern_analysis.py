@@ -1,5 +1,7 @@
 import datetime
+import os
 import pandas as pd
+import ibis
 
 from phenex.phenotypes import CodelistPhenotype
 from phenex.phenotypes.factory import TreatmentPatternAnalysis
@@ -9,6 +11,8 @@ from phenex.test.util.dummy.generate_dummy_data import (
     sdf_and_tt_dummycodes_nvariables,
 )
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
+from phenex.tables import CodeTable, PhenexPersonTable
+from phenex.reporting import TreatmentPatternAnalysisSankeyReporter
 
 
 class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
@@ -237,6 +241,277 @@ def test_treatment_pattern_time_periods():
     g.run_tests()
 
 
+def test_sankey_generation():
+    """
+    Integration test for TreatmentPatternAnalysisSankeyReporter.
+
+    3 regimens (HT, EZT, FZT), 3 cumulative periods (0-90, 0-180, 0-270 days).
+    Patients change regimen between periods, producing real cross-period flows.
+
+    Patient  | day-0 drugs     | day-100 drugs | day-200 drugs
+    ---------|-----------------|---------------|---------------
+    P1       | HT              |               |
+    P2       | EZT             |               |
+    P3       | FZT             |               |
+    P4       | HT + EZT        |               |
+    P5       | HT              | + EZT         |              → switches from "HT only" to "HT + EZT"
+    P6       | EZT             | + FZT         |              → switches from "EZT only" to "EZT + FZT"
+    P7       |                 | HT            |              → enters period 2 as "HT only"
+    P8       |                 | FZT           | + HT         → enters period 2 as "FZT only", switches to "HT + FZT"
+    P9       | HT + EZT + FZT  |               |
+
+    Expected flows P1→P2 (period 1 regimen → period 2 regimen):
+      HT only   → HT only   : P1        (n=1)
+      HT only   → HT + EZT  : P5        (n=1)
+      EZT only  → EZT only  : P2        (n=1)
+      EZT only  → EZT + FZT : P6        (n=1)
+      FZT only  → FZT only  : P3        (n=1)
+      HT + EZT  → HT + EZT  : P4        (n=1)
+      ALL       → ALL        : P9        (n=1)
+
+    Expected flows P2→P3 (period 2 regimen → period 3 regimen):
+      HT only   → HT only   : P1, P7    (n=2)
+      EZT only  → EZT only  : P2        (n=1)
+      FZT only  → FZT only  : P3        (n=1)
+      FZT only  → HT + FZT  : P8        (n=1)
+      HT + EZT  → HT + EZT  : P4, P5   (n=2)
+      EZT + FZT → EZT + FZT : P6        (n=1)
+      ALL       → ALL        : P9        (n=1)
+    """
+    INDEX_DATE = datetime.date(2022, 1, 1)
+    DAY_100 = datetime.date(2022, 4, 11)  # 100 days after index
+    DAY_200 = datetime.date(2022, 7, 20)  # 200 days after index
+
+    records = [
+        # P1: HT at day 0
+        {
+            "PERSON_ID": "P1",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P2: EZT at day 0
+        {
+            "PERSON_ID": "P2",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P3: FZT at day 0
+        {
+            "PERSON_ID": "P3",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P4: HT + EZT at day 0
+        {
+            "PERSON_ID": "P4",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P4",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P5: HT at day 0, EZT at day 100  →  HT only → HT+EZT → HT+EZT
+        {
+            "PERSON_ID": "P5",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P5",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P6: EZT at day 0, FZT at day 100  →  EZT only → EZT+FZT → EZT+FZT
+        {
+            "PERSON_ID": "P6",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P6",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P7: HT at day 100  →  (none) → HT only → HT only
+        {
+            "PERSON_ID": "P7",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P8: FZT at day 100, HT at day 200  →  (none) → FZT only → HT+FZT
+        {
+            "PERSON_ID": "P8",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P8",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_200,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        # P9: HT + EZT + FZT at day 0  →  ALL → ALL → ALL
+        {
+            "PERSON_ID": "P9",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P9",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P9",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+    ]
+
+    df_co = pd.DataFrame(records)
+    df_person = pd.DataFrame({"PERSON_ID": [f"P{i}" for i in range(1, 10)]})
+
+    # Build DuckDB tables
+    con = ibis.duckdb.connect()
+    schema_co = {
+        "PERSON_ID": str,
+        "CODE": str,
+        "CODE_TYPE": str,
+        "EVENT_DATE": datetime.date,
+        "INDEX_DATE": datetime.date,
+    }
+    co_table = con.create_table("CONDITION_OCCURRENCE", df_co, schema=schema_co)
+    person_table = con.create_table("PERSON", df_person, schema={"PERSON_ID": str})
+
+    domains = {
+        "CONDITION_OCCURRENCE": CodeTable(co_table),
+        "PERSON": PhenexPersonTable(person_table),
+    }
+
+    # Build TPA: 3 regimens, 3 periods of 90 days each (cumulative)
+    cls = ["ht", "ezt", "fzt"]
+    pts = [
+        CodelistPhenotype(
+            name=cl, domain="CONDITION_OCCURRENCE", codelist=Codelist([cl])
+        )
+        for cl in cls
+    ]
+    tpa = TreatmentPatternAnalysis(
+        phenotypes=pts,
+        regimen_keys=["HT", "EZT", "FZT"],
+        name="TP",
+        days_between_periods=90,
+        n_periods=3,
+    )
+
+    # Execute every TPA output phenotype (resolves child CodelistPhenotypes automatically)
+    for pt in tpa.output_phenotypes:
+        pt.execute(domains)
+
+    # Mock cohort — only needs .characteristics and .outcomes
+    class _MockCohort:
+        characteristics = tpa.output_phenotypes
+        outcomes = []
+
+    reporter = TreatmentPatternAnalysisSankeyReporter()
+    df = reporter.execute(_MockCohort())
+
+    # ------------------------------------------------------------------
+    # Verify flows DataFrame structure
+    # ------------------------------------------------------------------
+    assert set(df.columns) >= {
+        "tpa_name",
+        "from_period",
+        "to_period",
+        "from_regimen",
+        "to_regimen",
+        "n_patients",
+    }
+    assert not df.empty, "Expected patient flows between periods"
+    assert df["n_patients"].sum() > 0
+
+    def flow(from_p, from_r, to_p, to_r):
+        row = df[
+            (df["from_period"] == from_p)
+            & (df["from_regimen"] == from_r)
+            & (df["to_period"] == to_p)
+            & (df["to_regimen"] == to_r)
+        ]
+        return int(row["n_patients"].iloc[0]) if not row.empty else 0
+
+    # Period 1 → Period 2
+    assert flow(1, "HT only", 2, "HT only") == 1  # P1
+    assert flow(1, "HT only", 2, "HT + EZT") == 1  # P5 added EZT
+    assert flow(1, "EZT only", 2, "EZT only") == 1  # P2
+    assert flow(1, "EZT only", 2, "EZT + FZT") == 1  # P6 added FZT
+    assert flow(1, "FZT only", 2, "FZT only") == 1  # P3
+    assert flow(1, "HT + EZT", 2, "HT + EZT") == 1  # P4 stays
+    assert flow(1, "HT + EZT + FZT", 2, "HT + EZT + FZT") == 1  # P9
+
+    # Period 2 → Period 3
+    assert flow(2, "HT only", 3, "HT only") == 2  # P1 + P7
+    assert flow(2, "EZT only", 3, "EZT only") == 1  # P2
+    assert flow(2, "FZT only", 3, "FZT only") == 1  # P3
+    assert flow(2, "FZT only", 3, "HT + FZT") == 1  # P8 added HT
+    assert flow(2, "HT + EZT", 3, "HT + EZT") == 2  # P4 + P5
+    assert flow(2, "EZT + FZT", 3, "EZT + FZT") == 1  # P6
+    assert flow(2, "HT + EZT + FZT", 3, "HT + EZT + FZT") == 1  # P9
+
+    # ------------------------------------------------------------------
+    # Write HTML to artifacts directory (like other tests) for inspection
+    # ------------------------------------------------------------------
+    artifacts_dir = os.path.join(
+        os.path.dirname(__file__), "..", "artifacts", "treatment_pattern_sankey"
+    )
+    os.makedirs(artifacts_dir, exist_ok=True)
+    html_path = os.path.join(artifacts_dir, "sankey.html")
+    reporter.to_html(html_path)
+
+    assert os.path.exists(html_path)
+    html = open(html_path, encoding="utf-8").read()
+
+    assert "mkEl" in html  # SVG builder function present
+    assert "stroke-linecap" in html  # rounded flow caps
+    assert "HT only" in html
+    assert "EZT only" in html
+    assert "FZT only" in html
+    assert "HT + EZT" in html
+    assert "EZT + FZT" in html
+    assert "HT + EZT + FZT" in html
+
+
 if __name__ == "__main__":
     test_treatment_pattern_basic()
     test_treatment_pattern_time_periods()
+    test_sankey_generation()

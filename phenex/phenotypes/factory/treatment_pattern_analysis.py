@@ -109,7 +109,7 @@ class TreatmentPatternAnalysis:
             pts_in_period = []
             for phenotype in self.input_phenotypes:
                 pt = copy.deepcopy(phenotype)
-                pt.name = f"{phenotype.name}{idx_period + 1}"
+                pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
                 pt.table = None
                 pt.relative_time_range = [period_filter]
                 pts_in_period.append(pt)
@@ -126,3 +126,10 @@ class TreatmentPatternAnalysis:
             )
             self._output_phenotypes_dict[period_key] = regimen.output_phenotypes
             self._output_phenotypes.extend(regimen.output_phenotypes)
+
+            # Annotate each output phenotype with TPA metadata for reporters
+            period_label = period_key.replace("_", " ")
+            for pt in regimen.output_phenotypes:
+                pt._tpa_name = self.name
+                pt._tpa_period_num = idx_period + 1
+                pt._tpa_period_label = period_label

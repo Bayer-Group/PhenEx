@@ -76,6 +76,30 @@ class _SubcohortProxy:
         )
 
 
+class _CustomReporterPseudoNode:
+    """Lightweight stand-in for a CustomReporterNode in a Subcohort.
+
+    Wraps an already-executed custom reporter so that the subcohort's
+    ``write_reports_to_json`` / ``write_reports_to_html`` /
+    ``write_reports_to_excel`` methods can delegate uniformly."""
+
+    def __init__(self, name: str, reporter):
+        self.name = name
+        self.reporter = reporter
+
+    def to_json(self, path: str):
+        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+            self.reporter.to_json(path)
+
+    def to_html(self, path: str):
+        if hasattr(self.reporter, "to_html"):
+            self.reporter.to_html(path)
+
+    def to_excel(self, path: str):
+        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+            self.reporter.to_excel(path)
+
+
 class _PseudoReporterNode:
     """Lightweight stand-in for a WaterfallNode / Table1Node so that
     ``write_reports_to_excel`` / ``write_reports_to_json`` can call
@@ -267,9 +291,19 @@ class Subcohort(Cohort):
         self._build_waterfall(include_component_phenotypes_level=None)
         self._build_waterfall(include_component_phenotypes_level=100)
 
-        # Execute custom reporters
+        # Execute custom reporters using a filtered proxy so phenotype tables
+        # are scoped to the subcohort's patient population, mirroring how
+        # Table1 and other built-in reporters are handled.
+        _proxy = _SubcohortProxy(self.cohort, self.index_table, outcomes=self.outcomes)
+        self.custom_reporter_nodes = []
         for reporter in self.custom_reporters:
-            reporter.execute(self)
+            reporter.execute(_proxy)
+            self.custom_reporter_nodes.append(
+                _CustomReporterPseudoNode(
+                    name=f"{self.name}__custom__{reporter.name}".upper(),
+                    reporter=reporter,
+                )
+            )
 
         return self.index_table
 
