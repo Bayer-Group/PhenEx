@@ -2287,7 +2287,8 @@ class OutputConcatenator:
     def _sheet_order(self, reports_by_type: Dict[str, List[Path]]) -> List[str]:
         prefix = [n for n in self._SHEET_ORDER_PREFIX if n in reports_by_type]
         rest = sorted(
-            k for k in reports_by_type
+            k
+            for k in reports_by_type
             if k not in self._SHEET_ORDER_PREFIX and k not in self._SANKEY_TYPES
         )
         return prefix + rest
@@ -2299,7 +2300,9 @@ class OutputConcatenator:
         cohort_dirs: List[Path],
     ) -> None:
         """Generate a combined sankey HTML for all cohorts that have data."""
-        from phenex.reporting.treatment_pattern_analysis_sankey import _build_sankey_html
+        from phenex.reporting.treatment_pattern_analysis_sankey import (
+            _build_sankey_html,
+        )
 
         all_entries = []
         for cohort_dir, json_file in zip(cohort_dirs, report_files):
@@ -2310,13 +2313,17 @@ class OutputConcatenator:
                     data = json.load(f)
                 for entry in data.get("sankey_data", []):
                     labeled = dict(entry)
-                    labeled["tpa_name"] = f"{cohort_dir.name} — {entry.get('tpa_name', '')}"
+                    labeled["tpa_name"] = (
+                        f"{cohort_dir.name} — {entry.get('tpa_name', '')}"
+                    )
                     all_entries.append(labeled)
             except Exception as e:
                 logger.warning(f"Could not read sankey data from {json_file}: {e}")
 
         if not all_entries:
-            logger.warning(f"No sankey data found for {report_type}; skipping HTML generation.")
+            logger.warning(
+                f"No sankey data found for {report_type}; skipping HTML generation."
+            )
             return
 
         html_path = self.output_file.with_name(

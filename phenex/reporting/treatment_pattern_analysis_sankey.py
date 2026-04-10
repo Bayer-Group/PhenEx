@@ -3,7 +3,9 @@ import pandas as pd
 from pathlib import Path
 
 from phenex.reporting.reporter import Reporter
-from phenex.reporting.treatment_pattern_analysis_mixin import _TreatmentPatternAnalysisMixin
+from phenex.reporting.treatment_pattern_analysis_mixin import (
+    _TreatmentPatternAnalysisMixin,
+)
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -13,8 +15,16 @@ logger = create_logger(__name__)
 # The same display_name gets the same colour across all periods.
 # ----------------------------------------------------------------------------
 _COLORS = [
-    "#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f",
-    "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac",
+    "#4e79a7",
+    "#f28e2b",
+    "#e15759",
+    "#76b7b2",
+    "#59a14f",
+    "#edc948",
+    "#b07aa1",
+    "#ff9da7",
+    "#9c755f",
+    "#bab0ac",
 ]
 
 
@@ -64,13 +74,15 @@ class SankeyGenerator:
             for pt in phenotypes:
                 idx = len(nodes)
                 node_index[(period_num, pt.name)] = idx
-                nodes.append({
-                    "name": f"{pt.display_name} ({period_label})",
-                    "display_name": pt.display_name,
-                    "period": period_num,
-                    "period_label": period_label,
-                    "value": 0,
-                })
+                nodes.append(
+                    {
+                        "name": f"{pt.display_name} ({period_label})",
+                        "display_name": pt.display_name,
+                        "period": period_num,
+                        "period_label": period_label,
+                        "value": 0,
+                    }
+                )
 
         # ------------------------------------------------------------------
         # Collect patient ID sets from executed phenotype tables
@@ -86,8 +98,7 @@ class SankeyGenerator:
                     patient_sets[(period_num, pt.name)] = set()
                     continue
                 ids = (
-                    pt.table
-                    .select("PERSON_ID")
+                    pt.table.select("PERSON_ID")
                     .distinct()
                     .execute()["PERSON_ID"]
                     .tolist()
@@ -112,19 +123,23 @@ class SankeyGenerator:
                     ids_to = patient_sets.get((p_to_num, pt_to.name), set())
                     flow = len(ids_from & ids_to)
                     if flow > 0:
-                        links.append({
-                            "source": node_index[(p_from_num, pt_from.name)],
-                            "target": node_index[(p_to_num, pt_to.name)],
-                            "value": flow,
-                        })
-                        link_rows.append({
-                            "tpa_name": self.tpa_name,
-                            "from_period": p_from_num,
-                            "to_period": p_to_num,
-                            "from_regimen": pt_from.display_name,
-                            "to_regimen": pt_to.display_name,
-                            "n_patients": flow,
-                        })
+                        links.append(
+                            {
+                                "source": node_index[(p_from_num, pt_from.name)],
+                                "target": node_index[(p_to_num, pt_to.name)],
+                                "value": flow,
+                            }
+                        )
+                        link_rows.append(
+                            {
+                                "tpa_name": self.tpa_name,
+                                "from_period": p_from_num,
+                                "to_period": p_to_num,
+                                "from_regimen": pt_from.display_name,
+                                "to_regimen": pt_to.display_name,
+                                "n_patients": flow,
+                            }
+                        )
 
         # ------------------------------------------------------------------
         # Post-hoc: derive "None" (untreated) nodes and flows.
@@ -147,13 +162,15 @@ class SankeyGenerator:
         for period_num, period_label, _ in self.periods:
             idx = len(nodes)
             none_node_index[period_num] = idx
-            nodes.append({
-                "name": f"None ({period_label})",
-                "display_name": "None",
-                "period": period_num,
-                "period_label": period_label,
-                "value": none_count[period_num],
-            })
+            nodes.append(
+                {
+                    "name": f"None ({period_label})",
+                    "display_name": "None",
+                    "period": period_num,
+                    "period_label": period_label,
+                    "value": none_count[period_num],
+                }
+            )
 
         for i in range(len(self.periods) - 1):
             p_from_num, _, _ = self.periods[i]
@@ -165,31 +182,45 @@ class SankeyGenerator:
 
             for pt_to in pts_to:
                 to_idx = node_index[(p_to_num, pt_to.name)]
-                inflow_from_regimens = sum(lk["value"] for lk in links if lk["target"] == to_idx)
+                inflow_from_regimens = sum(
+                    lk["value"] for lk in links if lk["target"] == to_idx
+                )
                 flow_val = nodes[to_idx]["value"] - inflow_from_regimens
                 if flow_val > 0:
-                    links.append({"source": none_from_idx, "target": to_idx, "value": flow_val})
-                    link_rows.append({
-                        "tpa_name": self.tpa_name,
-                        "from_period": p_from_num,
-                        "to_period": p_to_num,
-                        "from_regimen": "None",
-                        "to_regimen": pt_to.display_name,
-                        "n_patients": flow_val,
-                    })
+                    links.append(
+                        {"source": none_from_idx, "target": to_idx, "value": flow_val}
+                    )
+                    link_rows.append(
+                        {
+                            "tpa_name": self.tpa_name,
+                            "from_period": p_from_num,
+                            "to_period": p_to_num,
+                            "from_regimen": "None",
+                            "to_regimen": pt_to.display_name,
+                            "n_patients": flow_val,
+                        }
+                    )
                     none_to_regimen_total += flow_val
 
             none_to_none = none_count[p_from_num] - none_to_regimen_total
             if none_to_none > 0:
-                links.append({"source": none_from_idx, "target": none_to_idx, "value": none_to_none})
-                link_rows.append({
-                    "tpa_name": self.tpa_name,
-                    "from_period": p_from_num,
-                    "to_period": p_to_num,
-                    "from_regimen": "None",
-                    "to_regimen": "None",
-                    "n_patients": none_to_none,
-                })
+                links.append(
+                    {
+                        "source": none_from_idx,
+                        "target": none_to_idx,
+                        "value": none_to_none,
+                    }
+                )
+                link_rows.append(
+                    {
+                        "tpa_name": self.tpa_name,
+                        "from_period": p_from_num,
+                        "to_period": p_to_num,
+                        "from_regimen": "None",
+                        "to_regimen": "None",
+                        "n_patients": none_to_none,
+                    }
+                )
 
         self.nodes = nodes
         self.links = links
@@ -198,8 +229,12 @@ class SankeyGenerator:
             if link_rows
             else pd.DataFrame(
                 columns=[
-                    "tpa_name", "from_period", "to_period",
-                    "from_regimen", "to_regimen", "n_patients",
+                    "tpa_name",
+                    "from_period",
+                    "to_period",
+                    "from_regimen",
+                    "to_regimen",
+                    "n_patients",
                 ]
             )
         )
@@ -239,9 +274,8 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
     def execute(self, cohort):
         self.cohort = cohort
 
-        all_phenotypes = (
-            list(getattr(cohort, "characteristics", None) or [])
-            + list(getattr(cohort, "outcomes", None) or [])
+        all_phenotypes = list(getattr(cohort, "characteristics", None) or []) + list(
+            getattr(cohort, "outcomes", None) or []
         )
 
         tpa_groups = self._group_tpa_phenotypes(all_phenotypes)
@@ -251,8 +285,12 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             self.sankey_generators = {}
             self.df = pd.DataFrame(
                 columns=[
-                    "tpa_name", "from_period", "to_period",
-                    "from_regimen", "to_regimen", "n_patients",
+                    "tpa_name",
+                    "from_period",
+                    "to_period",
+                    "from_regimen",
+                    "to_regimen",
+                    "n_patients",
                 ]
             )
             return self.df
@@ -270,8 +308,12 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             if all_dfs
             else pd.DataFrame(
                 columns=[
-                    "tpa_name", "from_period", "to_period",
-                    "from_regimen", "to_regimen", "n_patients",
+                    "tpa_name",
+                    "from_period",
+                    "to_period",
+                    "from_regimen",
+                    "to_regimen",
+                    "n_patients",
                 ]
             )
         )
@@ -357,6 +399,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 # ---------------------------------------------------------------------------
 # HTML / d3-sankey template builders
 # ---------------------------------------------------------------------------
+
 
 def _build_sankey_html(sankey_data_list: list) -> str:
     """Grid bump-chart: rows = regimen combos grouped by stack size (Single / Dual / Triple…),

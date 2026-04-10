@@ -279,34 +279,124 @@ def test_sankey_generation():
       ALL       → ALL        : P9        (n=1)
     """
     INDEX_DATE = datetime.date(2022, 1, 1)
-    DAY_100 = datetime.date(2022, 4, 11)   # 100 days after index
-    DAY_200 = datetime.date(2022, 7, 20)   # 200 days after index
+    DAY_100 = datetime.date(2022, 4, 11)  # 100 days after index
+    DAY_200 = datetime.date(2022, 7, 20)  # 200 days after index
 
     records = [
         # P1: HT at day 0
-        {"PERSON_ID": "P1", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P1",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P2: EZT at day 0
-        {"PERSON_ID": "P2", "CODE": "ezt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P2",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P3: FZT at day 0
-        {"PERSON_ID": "P3", "CODE": "fzt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P3",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P4: HT + EZT at day 0
-        {"PERSON_ID": "P4", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P4", "CODE": "ezt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P4",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P4",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P5: HT at day 0, EZT at day 100  →  HT only → HT+EZT → HT+EZT
-        {"PERSON_ID": "P5", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P5", "CODE": "ezt", "CODE_TYPE": "ICD10", "EVENT_DATE": DAY_100,    "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P5",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P5",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P6: EZT at day 0, FZT at day 100  →  EZT only → EZT+FZT → EZT+FZT
-        {"PERSON_ID": "P6", "CODE": "ezt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P6", "CODE": "fzt", "CODE_TYPE": "ICD10", "EVENT_DATE": DAY_100,    "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P6",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P6",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P7: HT at day 100  →  (none) → HT only → HT only
-        {"PERSON_ID": "P7", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": DAY_100,    "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P7",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P8: FZT at day 100, HT at day 200  →  (none) → FZT only → HT+FZT
-        {"PERSON_ID": "P8", "CODE": "fzt", "CODE_TYPE": "ICD10", "EVENT_DATE": DAY_100,    "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P8", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": DAY_200,    "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P8",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_100,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P8",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": DAY_200,
+            "INDEX_DATE": INDEX_DATE,
+        },
         # P9: HT + EZT + FZT at day 0  →  ALL → ALL → ALL
-        {"PERSON_ID": "P9", "CODE": "ht",  "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P9", "CODE": "ezt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
-        {"PERSON_ID": "P9", "CODE": "fzt", "CODE_TYPE": "ICD10", "EVENT_DATE": INDEX_DATE, "INDEX_DATE": INDEX_DATE},
+        {
+            "PERSON_ID": "P9",
+            "CODE": "ht",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P9",
+            "CODE": "ezt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
+        {
+            "PERSON_ID": "P9",
+            "CODE": "fzt",
+            "CODE_TYPE": "ICD10",
+            "EVENT_DATE": INDEX_DATE,
+            "INDEX_DATE": INDEX_DATE,
+        },
     ]
 
     df_co = pd.DataFrame(records)
@@ -315,8 +405,11 @@ def test_sankey_generation():
     # Build DuckDB tables
     con = ibis.duckdb.connect()
     schema_co = {
-        "PERSON_ID": str, "CODE": str, "CODE_TYPE": str,
-        "EVENT_DATE": datetime.date, "INDEX_DATE": datetime.date,
+        "PERSON_ID": str,
+        "CODE": str,
+        "CODE_TYPE": str,
+        "EVENT_DATE": datetime.date,
+        "INDEX_DATE": datetime.date,
     }
     co_table = con.create_table("CONDITION_OCCURRENCE", df_co, schema=schema_co)
     person_table = con.create_table("PERSON", df_person, schema={"PERSON_ID": str})
@@ -329,7 +422,9 @@ def test_sankey_generation():
     # Build TPA: 3 regimens, 3 periods of 90 days each (cumulative)
     cls = ["ht", "ezt", "fzt"]
     pts = [
-        CodelistPhenotype(name=cl, domain="CONDITION_OCCURRENCE", codelist=Codelist([cl]))
+        CodelistPhenotype(
+            name=cl, domain="CONDITION_OCCURRENCE", codelist=Codelist([cl])
+        )
         for cl in cls
     ]
     tpa = TreatmentPatternAnalysis(
@@ -356,33 +451,40 @@ def test_sankey_generation():
     # Verify flows DataFrame structure
     # ------------------------------------------------------------------
     assert set(df.columns) >= {
-        "tpa_name", "from_period", "to_period", "from_regimen", "to_regimen", "n_patients"
+        "tpa_name",
+        "from_period",
+        "to_period",
+        "from_regimen",
+        "to_regimen",
+        "n_patients",
     }
     assert not df.empty, "Expected patient flows between periods"
     assert df["n_patients"].sum() > 0
 
     def flow(from_p, from_r, to_p, to_r):
         row = df[
-            (df["from_period"] == from_p) & (df["from_regimen"] == from_r) &
-            (df["to_period"]   == to_p)   & (df["to_regimen"]   == to_r)
+            (df["from_period"] == from_p)
+            & (df["from_regimen"] == from_r)
+            & (df["to_period"] == to_p)
+            & (df["to_regimen"] == to_r)
         ]
         return int(row["n_patients"].iloc[0]) if not row.empty else 0
 
     # Period 1 → Period 2
-    assert flow(1, "HT only",   2, "HT only")  == 1   # P1
-    assert flow(1, "HT only",   2, "HT + EZT") == 1   # P5 added EZT
-    assert flow(1, "EZT only",  2, "EZT only") == 1   # P2
-    assert flow(1, "EZT only",  2, "EZT + FZT") == 1  # P6 added FZT
-    assert flow(1, "FZT only",  2, "FZT only") == 1   # P3
-    assert flow(1, "HT + EZT",  2, "HT + EZT") == 1   # P4 stays
+    assert flow(1, "HT only", 2, "HT only") == 1  # P1
+    assert flow(1, "HT only", 2, "HT + EZT") == 1  # P5 added EZT
+    assert flow(1, "EZT only", 2, "EZT only") == 1  # P2
+    assert flow(1, "EZT only", 2, "EZT + FZT") == 1  # P6 added FZT
+    assert flow(1, "FZT only", 2, "FZT only") == 1  # P3
+    assert flow(1, "HT + EZT", 2, "HT + EZT") == 1  # P4 stays
     assert flow(1, "HT + EZT + FZT", 2, "HT + EZT + FZT") == 1  # P9
 
     # Period 2 → Period 3
-    assert flow(2, "HT only",   3, "HT only")  == 2   # P1 + P7
-    assert flow(2, "EZT only",  3, "EZT only") == 1   # P2
-    assert flow(2, "FZT only",  3, "FZT only") == 1   # P3
-    assert flow(2, "FZT only",  3, "HT + FZT") == 1   # P8 added HT
-    assert flow(2, "HT + EZT",  3, "HT + EZT") == 2   # P4 + P5
+    assert flow(2, "HT only", 3, "HT only") == 2  # P1 + P7
+    assert flow(2, "EZT only", 3, "EZT only") == 1  # P2
+    assert flow(2, "FZT only", 3, "FZT only") == 1  # P3
+    assert flow(2, "FZT only", 3, "HT + FZT") == 1  # P8 added HT
+    assert flow(2, "HT + EZT", 3, "HT + EZT") == 2  # P4 + P5
     assert flow(2, "EZT + FZT", 3, "EZT + FZT") == 1  # P6
     assert flow(2, "HT + EZT + FZT", 3, "HT + EZT + FZT") == 1  # P9
 
