@@ -31,7 +31,9 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
         }
 
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = df_condition_occurrence["PERSON_ID"].unique()
+        df_person["PERSON_ID"] = list(
+            df_condition_occurrence["PERSON_ID"].unique()
+        ) + ["P8"]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -85,6 +87,11 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
         test_infos.append(
             {"name": "s123", "persons": ["P1"], "phenotype": sr_dict["stack3"][0]}
         )
+
+        # none
+        test_infos.append(
+            {"name": "s_none", "persons": ["P8"], "phenotype": sr_dict["none"][0]}
+        )
         return test_infos
 
 
@@ -120,7 +127,9 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
             "df": df_condition_occurrence,
         }
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = df_condition_occurrence["PERSON_ID"].unique()
+        df_person["PERSON_ID"] = list(
+            df_condition_occurrence["PERSON_ID"].unique()
+        ) + ["P16"]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -205,6 +214,11 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
         # regime 4
         test_infos.append(
             {"name": "s_4_1234", "persons": ["P1"], "phenotype": sr_dict["stack4"][0]}
+        )
+
+        # none
+        test_infos.append(
+            {"name": "s_4_none", "persons": ["P16"], "phenotype": sr_dict["none"][0]}
         )
         self.test_infos = test_infos
 
