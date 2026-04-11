@@ -686,13 +686,32 @@ class Table1SheetWriter(_BaseSheetWriter):
             for idx in range(search_start, len(master_names)):
                 if self._name_belongs_to_chars(master_names[idx], char_names):
                     insert_at[idx] = section_name
-                    # Advance past all rows for this section by counting
-                    # base char_names matches (skips over binned variants)
-                    count = 0
+                    # Advance past all rows belonging to this section.
+                    # A row belongs if it exactly matches or is a binned
+                    # variant (startswith char+"=") of a char_name.
+                    # Stop when we hit a row that doesn't belong, OR
+                    # when we see an exact char_name duplicate (new TPA
+                    # period reusing the same names).
+                    seen_exact: set = set()
                     end = idx
-                    while end < len(master_names) and count < len(char_names):
-                        if master_names[end] in char_names:
-                            count += 1
+                    while end < len(master_names):
+                        rname = master_names[end]
+                        belongs = False
+                        is_exact = False
+                        for char in char_names:
+                            if rname == char:
+                                belongs = True
+                                is_exact = True
+                                break
+                            if rname.startswith(char + "="):
+                                belongs = True
+                                break
+                        if not belongs:
+                            break
+                        if is_exact and rname in seen_exact:
+                            break  # duplicate exact name → next TPA period
+                        if is_exact:
+                            seen_exact.add(rname)
                         end += 1
                     search_start = end
                     break
