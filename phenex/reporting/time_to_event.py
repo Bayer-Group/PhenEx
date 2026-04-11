@@ -47,10 +47,12 @@ class TimeToEvent(Reporter):
         right_censor_phenotypes: Optional[List["Phenotype"]] = None,
         end_of_study_period: Optional["datetime"] = None,
         decimal_places: int = 4,
+        phenotype_names: Optional[List[str]] = None,
     ):
         super().__init__(decimal_places=decimal_places)
         self.right_censor_phenotypes = right_censor_phenotypes
         self.end_of_study_period = end_of_study_period
+        self.phenotype_names = phenotype_names
         self._date_column_names = None
         self._tte_table = None  # Private: patient-level time-to-event data
 
@@ -78,11 +80,22 @@ class TimeToEvent(Reporter):
                 - Censored (int): Number of patients censored at this time point
         """
         self.cohort = cohort
+        if self.phenotype_names is not None:
+            self._outcomes = [
+                p for p in cohort.outcomes if p.name in self.phenotype_names
+            ]
+            missing = set(self.phenotype_names) - {p.name for p in self._outcomes}
+            if missing:
+                raise ValueError(
+                    f"No matching outcome phenotypes found for: {sorted(missing)}"
+                )
+        else:
+            self._outcomes = cohort.outcomes
         self._execute_right_censoring_phenotypes(self.cohort)
 
         # Build patient-level time-to-event table
         table = cohort.index_table.mutate(
-            INDEX_DATE=self.cohort.index_table.EVENT_DATE
+            INDEX_DATE=self.cohort.index_table.EVENT_DATE.cast("date")
         ).select(["PERSON_ID", "INDEX_DATE"])
         table = self._append_date_events(table)
         table = self._append_days_to_event(table)
@@ -98,7 +111,8 @@ class TimeToEvent(Reporter):
 
     def _execute_right_censoring_phenotypes(self, cohort):
         for phenotype in self.right_censor_phenotypes:
-            phenotype.execute(cohort.subset_tables_index)
+            if phenotype.table is None:
+                phenotype.execute(cohort.subset_tables_index)
 
     def _append_date_events(self, table):
         """
@@ -108,14 +122,14 @@ class TimeToEvent(Reporter):
         3. date of end of study period; column name is END_OF_STUDY_PERIOD
         Additionally, this method populates _date_column_names with the name of all date columns appended here.
         """
-        table = self._append_dates_for_phenotypes(table, self.cohort.outcomes)
+        table = self._append_dates_for_phenotypes(table, self._outcomes)
         table = self._append_dates_for_phenotypes(table, self.right_censor_phenotypes)
         self._date_column_names = [
-            x.name.upper() for x in self.cohort.outcomes + self.right_censor_phenotypes
+            x.name.upper() for x in self._outcomes + self.right_censor_phenotypes
         ]
         if self.end_of_study_period is not None:
             table = table.mutate(
-                END_OF_STUDY_PERIOD=ibis.literal(self.end_of_study_period)
+                END_OF_STUDY_PERIOD=ibis.literal(self.end_of_study_period).cast("date")
             )
             self._date_column_names.append("END_OF_STUDY_PERIOD")
         return table
@@ -129,9 +143,9 @@ class TimeToEvent(Reporter):
         for _phenotype in phenotypes:
             logger.info(f"appending dates for { _phenotype.name}")
             join_table = _phenotype.table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
-            # rename event_date to the right_censor_phenotype's name
+            # rename event_date to the right_censor_phenotype's name, cast to date
             join_table = join_table.mutate(
-                **{_phenotype.name.upper(): join_table.EVENT_DATE}
+                **{_phenotype.name.upper(): join_table.EVENT_DATE.cast("date")}
             )
             # select just person_id and event_date for current phenotype
             join_table = join_table.select(["PERSON_ID", _phenotype.name.upper()])
@@ -155,7 +169,7 @@ class TimeToEvent(Reporter):
         """
         For each outcome phenotype, determines which event occurred first, whether the outcome, a right censoring event, or the end of study period. Adds an indicator column whether the first event is the outcome.
         """
-        for phenotype in self.cohort.outcomes:
+        for phenotype in self._outcomes:
             # Subset the columns from which the minimum date should be determined; this is the outcome of interest, all right censoring events, and end of study period.
             cols = [phenotype.name.upper()] + [
                 x.name.upper() for x in self.right_censor_phenotypes
@@ -163,7 +177,7 @@ class TimeToEvent(Reporter):
 
             # Create a proper minimum date calculation that handles nulls correctly
             # Start with a very large date as the initial minimum
-            min_date_expr = ibis.literal(self.end_of_study_period)
+            min_date_expr = ibis.literal(self.end_of_study_period).cast("date")
 
             # For each column, update the minimum if the column has a valid (non-null) date that's smaller
             for col in cols:
@@ -215,10 +229,10 @@ class TimeToEvent(Reporter):
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
-        phenotypes = self.cohort.outcomes
+        phenotypes = self._outcomes
         if outcome_indices is not None:
             phenotypes = [
-                x for i, x in enumerate(self.cohort.outcomes) if i in outcome_indices
+                x for i, x in enumerate(self._outcomes) if i in outcome_indices
             ]
         n_rows = math.ceil(len(phenotypes) / n_cols)
         fig, axes = plt.subplots(n_rows, n_cols, sharey=True, sharex=True)
@@ -238,7 +252,8 @@ class TimeToEvent(Reporter):
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
         if path_dir is not None:
-            path = os.path.join(path_dir, f"KaplanMeierPanelFor_{self.cohort.name}.svg")
+            cohort_name = getattr(self.cohort, 'name', 'cohort')
+            path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
         plt.show()
 
@@ -253,7 +268,7 @@ class TimeToEvent(Reporter):
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
-        phenotype = self.cohort.outcomes[outcome_index]
+        phenotype = self._outcomes[outcome_index]
         fig, ax = plt.subplots(1, 1)
 
         kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
@@ -270,7 +285,7 @@ class TimeToEvent(Reporter):
 
         if path_dir is not None:
             path = os.path.join(
-                path_dir, f"KaplanMeier_{self.cohort.name}_{phenotype.name}.svg"
+                path_dir, f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg"
             )
             plt.savefig(path, dpi=150)
         plt.show()
@@ -305,7 +320,7 @@ class TimeToEvent(Reporter):
         """
         all_outcomes_data = []
 
-        for phenotype in self.cohort.outcomes:
+        for phenotype in self._outcomes:
             kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
 
             # Get survival function

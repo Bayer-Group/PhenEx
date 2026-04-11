@@ -74,6 +74,18 @@ class _SubcohortProxy:
         self.characteristic_sections = getattr(
             parent_cohort, "characteristic_sections", None
         )
+        parent_subset = getattr(parent_cohort, "subset_tables_index", None)
+        if parent_subset is not None:
+            self.subset_tables_index = {}
+            for domain, ptable in parent_subset.items():
+                if "PERSON_ID" in ptable._table.columns:
+                    self.subset_tables_index[domain] = type(ptable)(
+                        ptable._table.semi_join(index_patient_ids, "PERSON_ID")
+                    )
+                else:
+                    self.subset_tables_index[domain] = ptable
+        else:
+            self.subset_tables_index = None
 
 
 class _CustomReporterPseudoNode:
