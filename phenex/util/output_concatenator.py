@@ -10,6 +10,7 @@ import json
 import math
 import re
 import zipfile
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -633,7 +634,9 @@ class Table1SheetWriter(_BaseSheetWriter):
         self, report_files: List[Optional[Path]]
     ) -> Tuple[List[str], Optional[Dict], Dict[str, int]]:
         """Return (master_names, sections, name_to_level) aggregated across all JSON files."""
-        seen: Dict[str, None] = {}  # insertion-ordered set
+        master_names: List[str] = []
+        existing_names: set = set()
+        first_file_done = False
         sections = None
         name_to_level: Dict[str, int] = {}
         for report_file in report_files:
@@ -647,13 +650,21 @@ class Table1SheetWriter(_BaseSheetWriter):
                     name = row.get("Name")
                     if name is not None:
                         name_str = str(name)
-                        seen[name_str] = None
+                        if not first_file_done:
+                            # First file: preserve all names including duplicates
+                            master_names.append(name_str)
+                            existing_names.add(name_str)
+                        elif name_str not in existing_names:
+                            # Subsequent files: only add genuinely new names
+                            master_names.append(name_str)
+                            existing_names.add(name_str)
                         level = row.get("_level", 0)
                         if name_str not in name_to_level and level:
                             name_to_level[name_str] = int(level)
+                first_file_done = True
             except Exception as e:
                 logger.warning(f"Could not read {report_file}: {e}")
-        return list(seen.keys()), sections, name_to_level
+        return master_names, sections, name_to_level
 
     def _build_expanded_rows(
         self,
@@ -670,11 +681,39 @@ class Table1SheetWriter(_BaseSheetWriter):
             return [("row", n) for n in master_names]
 
         insert_at: Dict[int, str] = {}
+        search_start = 0
         for section_name, char_names in sections.items():
-            for idx, name in enumerate(master_names):
-                if self._name_belongs_to_chars(name, char_names):
-                    if idx not in insert_at:
-                        insert_at[idx] = section_name
+            for idx in range(search_start, len(master_names)):
+                if self._name_belongs_to_chars(master_names[idx], char_names):
+                    insert_at[idx] = section_name
+                    # Advance past all rows belonging to this section.
+                    # A row belongs if it exactly matches or is a binned
+                    # variant (startswith char+"=") of a char_name.
+                    # Stop when we hit a row that doesn't belong, OR
+                    # when we see an exact char_name duplicate (new TPA
+                    # period reusing the same names).
+                    seen_exact: set = set()
+                    end = idx
+                    while end < len(master_names):
+                        rname = master_names[end]
+                        belongs = False
+                        is_exact = False
+                        for char in char_names:
+                            if rname == char:
+                                belongs = True
+                                is_exact = True
+                                break
+                            if rname.startswith(char + "="):
+                                belongs = True
+                                break
+                        if not belongs:
+                            break
+                        if is_exact and rname in seen_exact:
+                            break  # duplicate exact name → next TPA period
+                        if is_exact:
+                            seen_exact.add(rname)
+                        end += 1
+                    search_start = end
                     break
 
         result: List[Tuple[str, str]] = []
@@ -921,7 +960,12 @@ class Table1SheetWriter(_BaseSheetWriter):
         text_light: Optional[str] = None,
     ):
         name_to_level = name_to_level or {}
-        name_to_row = {str(r["Name"]): r for r in rows if "Name" in r}
+        # Build per-name list of rows to handle duplicate names (e.g. TPA periods)
+        _name_row_lists: Dict[str, List] = defaultdict(list)
+        for r in rows:
+            if "Name" in r:
+                _name_row_lists[str(r["Name"])].append(r)
+        _name_cursors: Dict[str, int] = defaultdict(int)
         for i, (row_type, value) in enumerate(expanded):
             out_row = self._DATA_START_ROW + i
             if row_type == "section":
@@ -937,7 +981,10 @@ class Table1SheetWriter(_BaseSheetWriter):
             if row_type == "spacer":
                 continue
 
-            row_data = name_to_row.get(value)
+            cursor = _name_cursors[value]
+            entries = _name_row_lists.get(value, [])
+            row_data = entries[cursor] if cursor < len(entries) else None
+            _name_cursors[value] = cursor + 1
             is_cohort = value == "Cohort"
             level = name_to_level.get(value, 0)
             gray = self._level_to_gray_hex(level)
@@ -2258,7 +2305,7 @@ class OutputConcatenator:
         )
 
         for report_type in self._sheet_order(reports_by_type):
-            if report_type in self._SANKEY_TYPES:
+            if report_type in self._SANKEY_TYPES or report_type in self._TTE_TYPES:
                 continue  # handled separately as HTML
             display_name = self._SHEET_DISPLAY_NAMES.get(report_type, report_type)
             display_name = display_name[:31]  # Excel sheet name limit
@@ -2283,6 +2330,12 @@ class OutputConcatenator:
                     report_type, reports_by_type[report_type], cohort_dirs
                 )
 
+        for report_type in self._TTE_TYPES:
+            if report_type in reports_by_type:
+                self._generate_tte_html(
+                    report_type, reports_by_type[report_type], cohort_dirs
+                )
+
     # ------------------------------------------------------------------
 
     def _sheet_order(self, reports_by_type: Dict[str, List[Path]]) -> List[str]:
@@ -2290,7 +2343,9 @@ class OutputConcatenator:
         rest = sorted(
             k
             for k in reports_by_type
-            if k not in self._SHEET_ORDER_PREFIX and k not in self._SANKEY_TYPES
+            if k not in self._SHEET_ORDER_PREFIX
+            and k not in self._SANKEY_TYPES
+            and k not in self._TTE_TYPES
         )
         return prefix + rest
 
@@ -2327,11 +2382,266 @@ class OutputConcatenator:
             )
             return
 
+        version = self._info_writer._read_phenex_version(self.study_path)
+
         html_path = self.output_file.with_name(
             self.output_file.stem + f"_{report_type}.html"
         )
-        html_path.write_text(_build_sankey_html(all_entries), encoding="utf-8")
+        html_path.write_text(
+            _build_sankey_html(all_entries, version=version), encoding="utf-8"
+        )
         logger.info(f"Generated sankey HTML: {html_path}")
+
+    def _generate_tte_html(
+        self,
+        report_type: str,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+    ) -> None:
+        """Generate a combined time-to-event KM curves HTML for all cohorts."""
+        all_cohort_data = []
+        for cohort_dir, json_file in zip(cohort_dirs, report_files):
+            if json_file is None:
+                continue
+            try:
+                with json_file.open() as f:
+                    data = json.load(f)
+                rows = data.get("rows", [])
+                if rows:
+                    all_cohort_data.append(
+                        {"cohort_name": cohort_dir.name, "rows": rows}
+                    )
+            except Exception as e:
+                logger.warning(f"Could not read TTE data from {json_file}: {e}")
+
+        if not all_cohort_data:
+            logger.warning(
+                f"No time-to-event data found for {report_type}; skipping HTML generation."
+            )
+            return
+
+        version = self._info_writer._read_phenex_version(self.study_path)
+        html = self._build_tte_html(all_cohort_data, version=version)
+
+        html_path = self.output_file.with_name(
+            self.output_file.stem + f"_{report_type}.html"
+        )
+        html_path.write_text(html, encoding="utf-8")
+        logger.info(f"Generated time-to-event HTML: {html_path}")
+
+    @staticmethod
+    def _build_tte_html(all_cohort_data: List[dict], version: str = "unknown") -> str:
+        """Build a self-contained HTML with JS-rendered KM step-function curves."""
+        import base64
+        from html import escape
+
+        icon_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "docs"
+            / "assets"
+            / "bird_icon.png"
+        )
+        if icon_path.exists():
+            icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+            icon_data_uri = f"data:image/png;base64,{icon_b64}"
+        else:
+            icon_data_uri = ""
+
+        version_escaped = escape(version)
+
+        if icon_data_uri:
+            footer = (
+                f'<div class="phenex-footer">'
+                f'<img src="{icon_data_uri}" alt="PhenEx">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+        else:
+            footer = (
+                f'<div class="phenex-footer">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+
+        data_json = json.dumps(all_cohort_data, default=str)
+
+        return f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+<title>Time to Event — Kaplan-Meier Curves</title>
+<style>
+  body {{ font-family: Arial, sans-serif; background: #fff; margin: 0;
+         padding: 20px 20px 60px 20px; }}
+  .cohort-section {{ margin-bottom: 48px; }}
+  .cohort-title {{ font-size: 18px; font-weight: bold; color: #333;
+                   margin: 0 0 16px 0; }}
+  .outcome-chart {{ margin-bottom: 32px; }}
+  .outcome-title {{ font-size: 14px; font-weight: bold; color: #555;
+                    margin: 0 0 6px 0; }}
+  .phenex-footer {{ position: fixed; bottom: 0; left: 0; padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.9); z-index: 9999; }}
+  .phenex-footer img {{ height: 24px; width: auto; }}
+  .phenex-footer span {{ font-size: 11px; color: #999; }}
+</style>
+</head>
+<body>
+<h1 style="margin-bottom:24px;">Kaplan-Meier Survival Curves</h1>
+<div id="charts"></div>
+{footer}
+<script>
+var DATA = {data_json};
+var COLORS = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f",
+              "#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"];
+
+DATA.forEach(function(cohort) {{
+  var section = document.createElement('div');
+  section.className = 'cohort-section';
+  document.getElementById('charts').appendChild(section);
+
+  var title = document.createElement('p');
+  title.className = 'cohort-title';
+  title.textContent = cohort.cohort_name;
+  section.appendChild(title);
+
+  /* group rows by Outcome */
+  var outcomes = {{}};
+  var outcomeOrder = [];
+  cohort.rows.forEach(function(r) {{
+    if (!outcomes[r.Outcome]) {{
+      outcomes[r.Outcome] = [];
+      outcomeOrder.push(r.Outcome);
+    }}
+    outcomes[r.Outcome].push(r);
+  }});
+
+  outcomeOrder.forEach(function(outcomeName, oi) {{
+    var rows = outcomes[outcomeName];
+    rows.sort(function(a, b) {{ return a.Timeline - b.Timeline; }});
+
+    var W = 700, H = 300, PAD_L = 60, PAD_R = 20, PAD_T = 30, PAD_B = 50;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+
+    var maxT = rows[rows.length - 1].Timeline || 1;
+
+    var wrap = document.createElement('div');
+    wrap.className = 'outcome-chart';
+    section.appendChild(wrap);
+
+    var label = document.createElement('p');
+    label.className = 'outcome-title';
+    label.textContent = outcomeName;
+    wrap.appendChild(label);
+
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.style.display = 'block';
+    wrap.appendChild(svg);
+
+    function sx(t) {{ return PAD_L + (t / maxT) * plotW; }}
+    function sy(p) {{ return PAD_T + (1 - p) * plotH; }}
+
+    /* axes */
+    var axisColor = '#ccc';
+    var line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', PAD_L); line.setAttribute('y1', PAD_T);
+    line.setAttribute('x2', PAD_L); line.setAttribute('y2', PAD_T + plotH);
+    line.setAttribute('stroke', axisColor);
+    svg.appendChild(line);
+    var line2 = document.createElementNS(NS, 'line');
+    line2.setAttribute('x1', PAD_L); line2.setAttribute('y1', PAD_T + plotH);
+    line2.setAttribute('x2', PAD_L + plotW); line2.setAttribute('y2', PAD_T + plotH);
+    line2.setAttribute('stroke', axisColor);
+    svg.appendChild(line2);
+
+    /* Y ticks */
+    [0, 0.25, 0.5, 0.75, 1.0].forEach(function(v) {{
+      var y = sy(v);
+      var tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', PAD_L - 4); tick.setAttribute('y1', y);
+      tick.setAttribute('x2', PAD_L); tick.setAttribute('y2', y);
+      tick.setAttribute('stroke', '#999');
+      svg.appendChild(tick);
+      var grid = document.createElementNS(NS, 'line');
+      grid.setAttribute('x1', PAD_L); grid.setAttribute('y1', y);
+      grid.setAttribute('x2', PAD_L + plotW); grid.setAttribute('y2', y);
+      grid.setAttribute('stroke', '#eee');
+      svg.appendChild(grid);
+      var txt = document.createElementNS(NS, 'text');
+      txt.setAttribute('x', PAD_L - 8); txt.setAttribute('y', y + 4);
+      txt.setAttribute('text-anchor', 'end');
+      txt.setAttribute('font-size', '11');
+      txt.setAttribute('fill', '#666');
+      txt.textContent = v.toFixed(2);
+      svg.appendChild(txt);
+    }});
+
+    /* X ticks */
+    var nTicks = 5;
+    for (var ti = 0; ti <= nTicks; ti++) {{
+      var t = (maxT / nTicks) * ti;
+      var x = sx(t);
+      var tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', x); tick.setAttribute('y1', PAD_T + plotH);
+      tick.setAttribute('x2', x); tick.setAttribute('y2', PAD_T + plotH + 4);
+      tick.setAttribute('stroke', '#999');
+      svg.appendChild(tick);
+      var txt = document.createElementNS(NS, 'text');
+      txt.setAttribute('x', x); txt.setAttribute('y', PAD_T + plotH + 18);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('font-size', '11');
+      txt.setAttribute('fill', '#666');
+      txt.textContent = Math.round(t);
+      svg.appendChild(txt);
+    }}
+
+    /* X axis label */
+    var xlabel = document.createElementNS(NS, 'text');
+    xlabel.setAttribute('x', PAD_L + plotW / 2);
+    xlabel.setAttribute('y', H - 4);
+    xlabel.setAttribute('text-anchor', 'middle');
+    xlabel.setAttribute('font-size', '12');
+    xlabel.setAttribute('fill', '#666');
+    xlabel.textContent = 'Days';
+    svg.appendChild(xlabel);
+
+    /* Y axis label */
+    var ylabel = document.createElementNS(NS, 'text');
+    ylabel.setAttribute('x', 14);
+    ylabel.setAttribute('y', PAD_T + plotH / 2);
+    ylabel.setAttribute('text-anchor', 'middle');
+    ylabel.setAttribute('font-size', '12');
+    ylabel.setAttribute('fill', '#666');
+    ylabel.setAttribute('transform',
+      'rotate(-90,' + 14 + ',' + (PAD_T + plotH / 2) + ')');
+    ylabel.textContent = 'Survival Probability';
+    svg.appendChild(ylabel);
+
+    /* KM step-function */
+    var color = COLORS[oi % COLORS.length];
+    var d = '';
+    for (var i = 0; i < rows.length; i++) {{
+      var x = sx(rows[i].Timeline);
+      var y = sy(rows[i].Survival_Probability);
+      if (i === 0) {{
+        d += 'M' + sx(0) + ',' + sy(1) + ' L' + x + ',' + sy(1) + ' L' + x + ',' + y;
+      }} else {{
+        var prevY = sy(rows[i - 1].Survival_Probability);
+        d += ' L' + x + ',' + prevY + ' L' + x + ',' + y;
+      }}
+    }}
+    var path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+  }});
+}});
+</script>
+</body>
+</html>"""
 
     _TABLE1_TYPES = {
         "Table1",
@@ -2356,6 +2666,9 @@ class OutputConcatenator:
     }
     _SANKEY_TYPES = {
         "TreatmentPatternSankey",
+    }
+    _TTE_TYPES = {
+        "TimeToEvent",
     }
 
     def _write_sheet(

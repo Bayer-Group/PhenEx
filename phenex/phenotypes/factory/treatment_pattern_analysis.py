@@ -92,18 +92,16 @@ class TreatmentPatternAnalysis:
         return self._output_phenotypes_dict
 
     def _generate(self):
-        start_days = GreaterThanOrEqualTo(0)
 
         self._output_phenotypes_dict = {}
         self._output_phenotypes = []
 
         for idx_period in range(self.n_periods):
-            end_day = LessThan((idx_period + 1) * self.days_between_periods)
 
             period_filter = RelativeTimeRangeFilter(
                 when="after",
-                min_days=start_days,
-                max_days=end_day,
+                min_days=GreaterThanOrEqualTo((idx_period) * self.days_between_periods),
+                max_days=LessThan((idx_period + 1) * self.days_between_periods),
             )
 
             pts_in_period = []
