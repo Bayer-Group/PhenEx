@@ -761,9 +761,7 @@ class TestTimeToEventSubcohortProxy:
         proxy.subset_tables_index = None
 
         tte.cohort = proxy
-        tte._outcomes = [
-            p for p in proxy.outcomes if p.name in tte.phenotype_names
-        ]
+        tte._outcomes = [p for p in proxy.outcomes if p.name in tte.phenotype_names]
         tte._tte_table = pd.DataFrame(
             {
                 "INDICATOR_STROKE": [0, 1, 1, 0],
@@ -839,9 +837,7 @@ class TestTimeToEventEmptyData:
             right_censor_phenotypes=[],
             end_of_study_period=datetime(2024, 12, 31),
         )
-        tte._tte_table = pd.DataFrame(
-            columns=["INDICATOR_MI", "DAYS_FIRST_EVENT_MI"]
-        )
+        tte._tte_table = pd.DataFrame(columns=["INDICATOR_MI", "DAYS_FIRST_EVENT_MI"])
 
         mock_phenotype = Mock()
         mock_phenotype.name = "MI"

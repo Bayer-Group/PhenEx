@@ -266,7 +266,7 @@ class TimeToEvent(Reporter):
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
         if path_dir is not None:
-            cohort_name = getattr(self.cohort, 'name', 'cohort')
+            cohort_name = getattr(self.cohort, "name", "cohort")
             path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
         plt.show()
@@ -286,7 +286,7 @@ class TimeToEvent(Reporter):
         kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
         if kmf is None:
             return
-        fig, ax = plt.subplots(1, 1, figsize =(12, 4))
+        fig, ax = plt.subplots(1, 1, figsize=(12, 4))
 
         ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
         kmf.plot(ax=ax)
@@ -300,7 +300,8 @@ class TimeToEvent(Reporter):
 
         if path_dir is not None:
             path = os.path.join(
-                path_dir, f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg"
+                path_dir,
+                f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg",
             )
             plt.savefig(path, dpi=150)
         plt.show()
@@ -395,7 +396,9 @@ class TimeToEvent(Reporter):
         images_html = self._render_km_images_html()
 
         # Embed bird icon as base64 data URI
-        icon_path = Path(__file__).resolve().parent.parent / "docs" / "assets" / "bird_icon.png"
+        icon_path = (
+            Path(__file__).resolve().parent.parent / "docs" / "assets" / "bird_icon.png"
+        )
         if icon_path.exists():
             icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
             icon_data_uri = f"data:image/png;base64,{icon_b64}"
@@ -403,18 +406,19 @@ class TimeToEvent(Reporter):
             icon_data_uri = ""
 
         from html import escape
+
         version_escaped = escape(version)
 
         if icon_data_uri:
             footer = (
                 f'<div class="phenex-footer">'
                 f'<img src="{icon_data_uri}" alt="PhenEx">'
-                f'<span>Generated with PhenEx v{version_escaped}</span></div>'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
             )
         else:
             footer = (
                 f'<div class="phenex-footer">'
-                f'<span>Generated with PhenEx v{version_escaped}</span></div>'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
             )
 
         html = (

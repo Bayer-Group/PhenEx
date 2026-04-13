@@ -2387,7 +2387,9 @@ class OutputConcatenator:
         html_path = self.output_file.with_name(
             self.output_file.stem + f"_{report_type}.html"
         )
-        html_path.write_text(_build_sankey_html(all_entries, version=version), encoding="utf-8")
+        html_path.write_text(
+            _build_sankey_html(all_entries, version=version), encoding="utf-8"
+        )
         logger.info(f"Generated sankey HTML: {html_path}")
 
     def _generate_tte_html(
@@ -2410,9 +2412,7 @@ class OutputConcatenator:
                         {"cohort_name": cohort_dir.name, "rows": rows}
                     )
             except Exception as e:
-                logger.warning(
-                    f"Could not read TTE data from {json_file}: {e}"
-                )
+                logger.warning(f"Could not read TTE data from {json_file}: {e}")
 
         if not all_cohort_data:
             logger.warning(
@@ -2430,9 +2430,7 @@ class OutputConcatenator:
         logger.info(f"Generated time-to-event HTML: {html_path}")
 
     @staticmethod
-    def _build_tte_html(
-        all_cohort_data: List[dict], version: str = "unknown"
-    ) -> str:
+    def _build_tte_html(all_cohort_data: List[dict], version: str = "unknown") -> str:
         """Build a self-contained HTML with JS-rendered KM step-function curves."""
         import base64
         from html import escape
