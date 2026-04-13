@@ -1,3 +1,4 @@
+import base64
 import json
 import pandas as pd
 from pathlib import Path
@@ -320,7 +321,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 # ---------------------------------------------------------------------------
 
 
-def _build_sankey_html(sankey_data_list: list) -> str:
+def _build_sankey_html(sankey_data_list: list, version: str = "unknown") -> str:
     """Grid bump-chart: rows = regimen combos grouped by stack size (Single / Dual / Triple…),
     columns = time periods.  A dot (diameter = MAX_THICK) marks every (regimen, period) cell
     that has patients; cubic-bezier flows whose stroke-width scales with patient count connect
@@ -329,15 +330,37 @@ def _build_sankey_html(sankey_data_list: list) -> str:
     data_json = json.dumps(sankey_data_list, default=str)
     colors_json = json.dumps(_COLORS)
 
+    # Embed bird icon as base64 data URI
+    icon_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "docs"
+        / "assets"
+        / "bird_icon.png"
+    )
+    if icon_path.exists():
+        icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+        icon_data_uri = f"data:image/png;base64,{icon_b64}"
+    else:
+        icon_data_uri = ""
+
+    from html import escape
+
+    version_escaped = escape(version)
+
     head = """\
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8">
 <title>Treatment Pattern Flow</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 20px; }
+  body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 20px 20px 60px 20px; }
   .diagram-section { margin-bottom: 60px; }
   .diagram-title { font-size: 15px; font-weight: bold; color: #333; margin: 0 0 8px 0; }
+  .phenex-footer { position: fixed; bottom: 0; left: 0; padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.9);
+    z-index: 9999; }
+  .phenex-footer img { height: 24px; width: auto; }
+  .phenex-footer span { font-size: 11px; color: #999; }
 </style>
 </head>
 <body>
@@ -348,7 +371,8 @@ const allData = """
     middle = """;
 const COLORS = """
 
-    tail = """;
+    tail = (
+        """;
 
 /* ── layout constants ───────────────────────────────────────────────────── */
 var MIN_THICK = .5, MAX_THICK = 25;
@@ -639,8 +663,22 @@ allData.forEach(function(groupData) {
   });
 });
 </script>
+"""
+        + (
+            '<div class="phenex-footer"><img src="'
+            + icon_data_uri
+            + '" alt="PhenEx"><span>Generated with PhenEx v'
+            + version_escaped
+            + "</span></div>"
+            if icon_data_uri
+            else '<div class="phenex-footer"><span>Generated with PhenEx v'
+            + version_escaped
+            + "</span></div>"
+        )
+        + """
 </body>
 </html>"""
+    )
 
     return head + data_json + middle + colors_json + tail
 
