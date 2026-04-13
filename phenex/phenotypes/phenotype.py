@@ -30,8 +30,15 @@ class Phenotype(Node):
 
     output_display_type = "boolean"
 
-    def __init__(self, description: str = None, **kwargs):
+    def __init__(
+        self,
+        description: str = None,
+        output_display_type: Optional[str] = None,
+        **kwargs,
+    ):
         self.description = description
+        if output_display_type is not None:
+            self.output_display_type = output_display_type
         super(Phenotype, self).__init__(**kwargs)
 
     def _perform_final_processing(self, table: Table) -> Table:
@@ -157,7 +164,13 @@ class Phenotype(Node):
 
     @property
     def display_name(self):
+        if getattr(self, "_display_name", None) is not None:
+            return self._display_name
         return self.name.replace("_", " ").lower().capitalize()
+
+    @display_name.setter
+    def display_name(self, value):
+        self._display_name = value
 
 
 from typing import Dict, Union
@@ -290,7 +303,7 @@ class ComputationGraph:
         elif self.operator == "*":
             return left * right
         elif self.operator == "/":
-            return left / right
+            return left / ibis.case().when(right == 0, ibis.null()).else_(right).end()
         elif self.operator == "**":
             return left**right
         else:

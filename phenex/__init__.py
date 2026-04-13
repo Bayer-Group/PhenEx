@@ -9,6 +9,7 @@ from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 # Phenotype classes - the main public API
 from .phenotypes import (
     Phenotype,
+    EventPhenotype,
     CodelistPhenotype,
     SmartCodelistPhenotype,
     CODETYPE_INFO,
@@ -24,11 +25,19 @@ from .phenotypes import (
     TimeRangeCountPhenotype,
     TimeRangeDayCountPhenotype,
     TimeRangeDaysToNextRange,
+    TimeShiftPhenotype,
     WithinSameEncounterPhenotype,
     UserDefinedPhenotype,
     ScorePhenotype,
     ArithmeticPhenotype,
     LogicPhenotype,
+    TreatmentPatternAnalysis,
+    CHADSVASCPhenotype,
+    CHADSVASCComponents,
+    SmartCodelistPhenotype,
+    StackableRegimen,
+    ISTHMajorBleedPhenotype,
+    ISTHBleedComponents,
 )
 
 # Filters
@@ -80,11 +89,14 @@ from .reporting import (
     TimeToEvent,
     CohortExplorer,
     ReportDrafter,
+    TreatmentPatternAnalysisSankeyReporter,
+    SankeyGenerator,
 )
 
 # Codelists
 from .codelists import (
     Codelist,
+    LocalFileCodelistFactory,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
     MedConBCollection,
@@ -100,7 +112,7 @@ from .derived_tables import (
 # Serialization utilities
 from .util.serialization.json import dump, dumps, load, loads
 
-__version__ = "v0.8.0"
+__version__ = "v0.8.1"
 
 __all__ = [
     # Connectors
@@ -116,6 +128,7 @@ __all__ = [
     "Study",
     # Phenotypes
     "Phenotype",
+    "EventPhenotype",
     "CodelistPhenotype",
     "SmartCodelistPhenotype",
     "CODETYPE_INFO",
@@ -131,11 +144,19 @@ __all__ = [
     "TimeRangeCountPhenotype",
     "TimeRangeDayCountPhenotype",
     "TimeRangeDaysToNextRange",
+    "TimeShiftPhenotype",
     "WithinSameEncounterPhenotype",
     "UserDefinedPhenotype",
     "ScorePhenotype",
     "ArithmeticPhenotype",
     "LogicPhenotype",
+    "TreatmentPatternAnalysis",
+    "CHADSVASCPhenotype",
+    "CHADSVASCComponents",
+    "SmartCodelistPhenotype",
+    "StackableRegimen",
+    "ISTHMajorBleedPhenotype",
+    "ISTHBleedComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",
@@ -178,8 +199,11 @@ __all__ = [
     "TimeToEvent",
     "CohortExplorer",
     "ReportDrafter",
+    "TreatmentPatternAnalysisSankeyReporter",
+    "SankeyGenerator",
     # Codelists
     "Codelist",
+    "LocalFileCodelistFactory",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
     "MedConBCollection",

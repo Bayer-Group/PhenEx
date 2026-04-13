@@ -92,15 +92,60 @@ class SubcohortTestGenerator(CohortTestGenerator):
 
     def _run_tests(self):
         """Override to test both cohort and subcohort"""
-        # Run parent cohort tests (which will also execute subcohorts)
+        # Parent must be executed first; subcohort reuses its entry-stage results.
+        self.cohort.execute(self.mapped_tables)
         self.subcohort.execute(self.mapped_tables)
+
+        # Test parent cohort index if defined
+        if "index" in self.test_infos.keys():
+            self._test_index_table(
+                result=self.cohort.index_table,
+                expected=self.test_infos["index"],
+            )
 
         # Test subcohort results
         if "subcohort_index" in self.subcohort_test_infos.keys():
             self._test_index_table(
                 result=self.subcohort.index_table,
                 expected=self.subcohort_test_infos["subcohort_index"],
+                name=self.subcohort.name + "_index",
             )
+
+        # Test subcohort table1 counts if defined
+        if "subcohort_table1" in self.subcohort_test_infos.keys():
+            result_t1 = self.subcohort._make_table1_reporter()
+            assert result_t1 is not None, "Expected a table1 reporter but got None"
+            result_df = result_t1.get_pretty_display()
+            expected_df = self.subcohort_test_infos["subcohort_table1"]
+            for _, row in expected_df.iterrows():
+                name = row["Name"]
+                expected_n = str(row["N"])
+                actual_row = result_df[result_df["Name"] == name]
+                assert len(actual_row) == 1, f"Row '{name}' not found in table1"
+                actual_n = str(actual_row["N"].values[0])
+                assert (
+                    actual_n == expected_n
+                ), f"table1 count mismatch for '{name}': expected {expected_n}, got {actual_n}"
+
+        # Test subcohort table1_outcomes counts if defined
+        if "subcohort_table1_outcomes" in self.subcohort_test_infos.keys():
+            result_t1 = self.subcohort._make_table1_outcomes_reporter()
+            assert (
+                result_t1 is not None
+            ), "Expected a table1_outcomes reporter but got None"
+            result_df = result_t1.get_pretty_display()
+            expected_df = self.subcohort_test_infos["subcohort_table1_outcomes"]
+            for _, row in expected_df.iterrows():
+                name = row["Name"]
+                expected_n = str(row["N"])
+                actual_row = result_df[result_df["Name"] == name]
+                assert (
+                    len(actual_row) == 1
+                ), f"Row '{name}' not found in table1_outcomes"
+                actual_n = str(actual_row["N"].values[0])
+                assert (
+                    actual_n == expected_n
+                ), f"table1_outcomes count mismatch for '{name}': expected {expected_n}, got {actual_n}"
 
 
 class SimpleSubcohortWithExclusionTestGenerator(SubcohortTestGenerator):
@@ -322,19 +367,17 @@ class SimpleSubcohortWithExclusionAndStudyPeriodTestGenerator(
         return generate_dummy_cohort_data(values)
 
     def define_expected_output(self):
-        # Only patients with entry=d1, no e4 exclusion, AND entry date within study period (2015-2020)
+        # P0 and P8 have d1 within study period (2015-2020) and no e4 exclusion.
+        # P4/P12 have e4 → excluded. P2/P6/P10/P14 have entry date 2010 → outside study period.
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = [
-            "P0",
-            "P4",
-        ]  # P0 and P4 have 2020-01-01 entry dates within study period
+        df_expected_index["PERSON_ID"] = ["P0", "P8"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0 has entry within study period and recent observation (e1)
+        # P0 has d4 within 365 days before index; P8 has d5 only → excluded from subcohort.
         df_expected_index = pd.DataFrame()
         df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
@@ -432,7 +475,7 @@ class SimpleSubcohortWithExclusionPostIndexTestGenerator(
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # All patients from cohort should remain in subcohort since none have post-index d4
+        # No patients have post-index d4 → subcohort identical to cohort.
         df_expected_index = pd.DataFrame()
         df_expected_index["PERSON_ID"] = ["P0", "P8", "P12", "P16", "P24", "P28"]
         test_infos = {
@@ -482,8 +525,17 @@ class SimpleSubcohortWithInclusionTestGenerator(
             inclusions=[additional_inclusion],
         )
 
+    def define_expected_output(self):
+        # P0 has e1 (inclusion) and no e4 (exclusion); P4 has e4 → excluded.
+        df_expected_index = pd.DataFrame()
+        df_expected_index["PERSON_ID"] = ["P0", "P4"]
+        test_infos = {
+            "index": df_expected_index,
+        }
+        return test_infos
+
     def define_expected_subcohort_output(self):
-        # P0 has e1 and d4, so should be included in subcohort
+        # P0 has e1 and d4 → in subcohort; P4 has e4 → still excluded by parent exclusion.
         df_expected_index = pd.DataFrame()
         df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
@@ -584,15 +636,14 @@ class SimpleSubcohortWithInclusionAndExclusionTestGenerator(SubcohortTestGenerat
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0"]
+        df_expected_index["PERSON_ID"] = ["P0", "P16"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0 has entry=d1, i1 (cohort inclusion), i4 (subcohort inclusion), e1 (not e4)
-        # P0 qualifies for both cohort and subcohort
+        # P0 has i1+i4 and not e4; P16 lacks i4 → excluded from subcohort.
         df_expected_index = pd.DataFrame()
         df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
@@ -753,15 +804,14 @@ class SimpleSubcohortWithInclusionAndExclusionSeparateTablesTestGenerator(
 
     def define_expected_output(self):
         df_expected_index = pd.DataFrame()
-        df_expected_index["PERSON_ID"] = ["P0"]
+        df_expected_index["PERSON_ID"] = ["P0", "P16"]
         test_infos = {
             "index": df_expected_index,
         }
         return test_infos
 
     def define_expected_subcohort_output(self):
-        # P0 needs i4 from condition occurrence and must not have e1 from drug exposure
-        # Ensure P0 has both i1 and i4 from conditions and not excluded by e1
+        # P0 has i1+i4 (CONDITION_OCCURRENCE) and no e4 (DRUG_EXPOSURE); P16 lacks i4.
         df_expected_index = pd.DataFrame()
         df_expected_index["PERSON_ID"] = ["P0"]
         test_infos = {
@@ -866,6 +916,175 @@ def test_simple_subcohort_with_inclusions_and_exclusion_separate_table():
     g.run_tests()
 
 
+class SubcohortCharacteristicsAndOutcomesTestGenerator(SubcohortTestGenerator):
+    """
+    Parent cohort: 10 patients total, 8 pass entry+inclusion (d1 + prior i1).
+    Subcohort adds an additional inclusion (d4 prior to index) → 4 patients.
+
+    Characteristics (sex=male) and outcomes (condition c1 after index) are
+    defined on the parent cohort. Table1 and Table1Outcomes for the subcohort
+    must reflect only the 4 subcohort patients, NOT the 8 parent cohort patients.
+
+    Concretely:
+      - Parent cohort: 8 patients with i1, no e4.
+        * 6 of those 8 are male  → table1 "Sex=Male" N=6 for PARENT
+        * 5 of those 8 have c1   → table1_outcomes "c1" N=5 for PARENT
+      - Subcohort (also has d4): 4 patients.
+        * 3 of those 4 are male  → table1 "Sex=Male" N=3 for SUBCOHORT
+        * 2 of those 4 have c1   → table1_outcomes "c1" N=2 for SUBCOHORT
+    """
+
+    def define_cohort(self):
+        entry = CodelistPhenotype(
+            name="entry",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        i1 = CodelistPhenotype(
+            name="has_i1",
+            codelist=Codelist(["i1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
+        )
+        sex = SexPhenotype(name="sex")
+        c1 = CodelistPhenotype(
+            name="outcome_c1",
+            codelist=Codelist(["c1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+            relative_time_range=RelativeTimeRangeFilter(
+                anchor_phenotype=entry,
+                when="after",
+                min_days=GreaterThanOrEqualTo(1),
+            ),
+        )
+        return Cohort(
+            name="test_subcohort_characteristics_outcomes",
+            entry_criterion=entry,
+            inclusions=[i1],
+            characteristics=[sex],
+            outcomes=[c1],
+        )
+
+    def define_subcohort(self):
+        d4 = CodelistPhenotype(
+            name="has_d4",
+            codelist=Codelist(["d4"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+            relative_time_range=RelativeTimeRangeFilter(
+                when="before", min_days=GreaterThanOrEqualTo(0)
+            ),
+        )
+        return Subcohort(
+            name="test_subcohort_characteristics_outcomes_subcohort",
+            cohort=self.cohort,
+            inclusions=[d4],
+        )
+
+    def generate_dummy_input_data(self):
+        # We hand-craft the data instead of using the combinatorial generator
+        # so we have precise control over counts.
+        #
+        # Patients P0-P7: have d1 (entry) + i1 (cohort inclusion) → in parent cohort (8 pts)
+        #   P0-P3: also have d4               → in subcohort (4 pts)
+        #   P4-P7: no d4                      → in parent only
+        #
+        # Sex: P0,P1,P2, P4,P5,P6 → male (code 1); P3,P7 → female (code 2)
+        #   Parent:    male count = 6  (P0,P1,P2,P4,P5,P6)
+        #   Subcohort: male count = 3  (P0,P1,P2)
+        #
+        # Outcome c1 (after index 2020-01-02 onwards):
+        #   P0,P1, P4,P5,P6 → have c1
+        #   Parent:    c1 count = 5
+        #   Subcohort: c1 count = 2  (P0,P1)
+        #
+        # P8-P15: have d1 but NO i1 → excluded from parent cohort entirely
+        person_ids = [f"P{i}" for i in range(16)]
+        index_date = datetime.date(2020, 1, 1)
+        post_date = datetime.date(2020, 6, 1)
+        pre_date = datetime.date(2019, 6, 1)
+
+        drug_rows = []
+        person_rows = []
+        for pid in person_ids:
+            i = int(pid[1:])
+            # sex: P0-P2 and P4-P6 male; P3,P7 female; rest arbitrary (female)
+            if i in (0, 1, 2, 4, 5, 6):
+                gender = 1  # male
+            else:
+                gender = 2  # female
+            person_rows.append(
+                {"PATID": pid, "YOB": 1980, "GENDER": gender, "ACCEPTABLE": 1}
+            )
+
+            # entry drug d1 for all
+            drug_rows.append(
+                {"PATID": pid, "PRODCODEID": "d1", "ISSUEDATE": index_date}
+            )
+
+            # i1 only for P0-P7
+            if i < 8:
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "i1", "ISSUEDATE": pre_date}
+                )
+
+            # d4 only for P0-P3 (subcohort inclusion)
+            if i < 4:
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "d4", "ISSUEDATE": pre_date}
+                )
+
+            # outcome c1 for P0,P1,P4,P5,P6
+            if i in (0, 1, 4, 5, 6):
+                drug_rows.append(
+                    {"PATID": pid, "PRODCODEID": "c1", "ISSUEDATE": post_date}
+                )
+
+        return pd.DataFrame(person_rows), pd.DataFrame(drug_rows)
+
+    def define_mapped_tables(self):
+        self.con = ibis.duckdb.connect()
+        person_df, drug_df = self.generate_dummy_input_data()
+
+        person_table = PersonTableForTests(
+            self.con.create_table(
+                "PERSON",
+                person_df,
+                schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
+            )
+        )
+        drug_table = DrugExposureTableForTests(
+            self.con.create_table(
+                "DRUG_EXPOSURE",
+                drug_df,
+                schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
+            )
+        )
+        return {"PERSON": person_table, "DRUG_EXPOSURE": drug_table}
+
+    def define_expected_output(self):
+        df = pd.DataFrame({"PERSON_ID": [f"P{i}" for i in range(8)]})
+        return {"index": df}
+
+    def define_expected_subcohort_output(self):
+        return {
+            "subcohort_index": pd.DataFrame({"PERSON_ID": [f"P{i}" for i in range(4)]}),
+            # Table1: sex=Male N=3 for subcohort (P0,P1,P2)
+            "subcohort_table1": pd.DataFrame({"Name": ["Sex=1"], "N": ["3"]}),
+            # Table1Outcomes: c1 N=2 for subcohort (P0,P1)
+            "subcohort_table1_outcomes": pd.DataFrame(
+                {"Name": ["Outcome c1"], "N": ["2"]}
+            ),
+        }
+
+
+def test_subcohort_characteristics_and_outcomes_scoped_to_subcohort():
+    g = SubcohortCharacteristicsAndOutcomesTestGenerator()
+    g.run_tests()
+
+
 if __name__ == "__main__":
     test_simple_subcohort_with_exclusion()
     test_simple_subcohort_with_exclusion_and_study_period()
@@ -873,3 +1092,4 @@ if __name__ == "__main__":
     test_simple_subcohort_with_inclusions_postindex()
     test_simple_subcohort_with_inclusions_and_exclusions()
     test_simple_subcohort_with_inclusions_and_exclusion_separate_table()
+    test_subcohort_characteristics_and_outcomes_scoped_to_subcohort()

@@ -92,7 +92,18 @@ class Cohort:
 
         self.derived_tables = derived_tables
         self.derived_tables_post_entry = derived_tables_post_entry
-        self.outcomes = self._flatten(outcomes)
+
+        # outcomes may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(outcomes, dict):
+            self.outcome_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in outcomes.items()
+            }
+            self.outcomes = [p for phenos in outcomes.values() for p in phenos]
+        else:
+            self.outcome_sections = None
+            self.outcomes = self._flatten(outcomes)
+
         self.custom_reporters = custom_reporters or []
         self.n_persons_in_source_database = None
 
@@ -321,11 +332,14 @@ class Cohort:
             self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
                 phenotypes=self.characteristics,
+                join_table=self.index_table_node,
             )
             reporting_nodes.append(self.characteristics_table_node)
         if self.outcomes:
             self.outcomes_table_node = HStackNode(
-                name=f"{self.name}__outcomes".upper(), phenotypes=self.outcomes
+                name=f"{self.name}__outcomes".upper(),
+                phenotypes=self.outcomes,
+                join_table=self.index_table_node,
             )
             reporting_nodes.append(self.outcomes_table_node)
 
@@ -530,6 +544,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             # Update tables with filtered versions (only when the node actually modified the table;
             # nodes with no relevant date columns return None and the original table is kept)
@@ -548,6 +563,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables pre-entry stage."
@@ -563,6 +579,7 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
+            table_name_prefix=self.name,
         )
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
@@ -578,6 +595,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables post-entry stage."
@@ -599,6 +617,7 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
+            table_name_prefix=self.name,
         )
         self.table = self.index_table_node.table
 
@@ -620,13 +639,14 @@ class Cohort:
                     self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
 
         if self.reporting_stage:
-            logger.info("Cohort '{self.name}': executing reporting stage ...")
+            logger.info(f"Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
             )
 
         return self.index_table
@@ -749,6 +769,15 @@ class Cohort:
         for custom_reporter_node in self.custom_reporter_nodes:
             report_filename = custom_reporter_node.reporter.name
             custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
+
+    def write_reports_to_html(self, path: str):
+        """Write HTML reports for custom reporters that implement to_html."""
+        for custom_reporter_node in self.custom_reporter_nodes:
+            if hasattr(custom_reporter_node.reporter, "to_html"):
+                report_filename = custom_reporter_node.reporter.name
+                custom_reporter_node.to_html(
+                    os.path.join(path, report_filename + ".html")
+                )
 
     def to_dict(self):
         """

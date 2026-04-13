@@ -6,3 +6,7 @@ from .waterfall import Waterfall
 from .time_to_event import TimeToEvent
 from .cohort_explorer import CohortExplorer
 from .report_drafter import ReportDrafter
+from .treatment_pattern_analysis_sankey import (
+    TreatmentPatternAnalysisSankeyReporter,
+    SankeyGenerator,
+)

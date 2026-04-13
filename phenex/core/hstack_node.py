@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 from ibis.expr.types.relations import Table
 from phenex.node import Node
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.phenotypes.functions import hstack
+from phenex.phenotypes.functions import hstack_boolean, hstack_pivot
 
 
 class HStackNode(Node):
@@ -28,5 +28,7 @@ class HStackNode(Node):
         Returns:
             Table: Horizontally stacked table with all phenotype results
         """
-        # Stack the phenotype tables horizontally
-        return hstack(self.phenotypes, join_table=self.join_table)
+        # Stack phenotype tables using UNION ALL + GROUP BY pivot for all three columns
+        # (BOOLEAN, EVENT_DATE, VALUE). This is O(n) with a single aggregation pass,
+        # versus O(n*k) for k sequential JOINs.
+        return hstack_pivot(self.phenotypes, join_table=self.join_table.table)

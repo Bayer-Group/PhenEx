@@ -1,7 +1,10 @@
 from typing import Union, Optional, List
+import base64
+import io
 import math
 import os
 import pandas as pd
+from pathlib import Path
 from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 
@@ -47,10 +50,12 @@ class TimeToEvent(Reporter):
         right_censor_phenotypes: Optional[List["Phenotype"]] = None,
         end_of_study_period: Optional["datetime"] = None,
         decimal_places: int = 4,
+        phenotype_names: Optional[List[str]] = None,
     ):
         super().__init__(decimal_places=decimal_places)
         self.right_censor_phenotypes = right_censor_phenotypes
         self.end_of_study_period = end_of_study_period
+        self.phenotype_names = phenotype_names
         self._date_column_names = None
         self._tte_table = None  # Private: patient-level time-to-event data
 
@@ -78,16 +83,32 @@ class TimeToEvent(Reporter):
                 - Censored (int): Number of patients censored at this time point
         """
         self.cohort = cohort
+        if self.phenotype_names is not None:
+            self._outcomes = [
+                p for p in cohort.outcomes if p.name in self.phenotype_names
+            ]
+            missing = set(self.phenotype_names) - {p.name for p in self._outcomes}
+            if missing:
+                raise ValueError(
+                    f"No matching outcome phenotypes found for: {sorted(missing)}"
+                )
+        else:
+            self._outcomes = cohort.outcomes
         self._execute_right_censoring_phenotypes(self.cohort)
 
         # Build patient-level time-to-event table
         table = cohort.index_table.mutate(
-            INDEX_DATE=self.cohort.index_table.EVENT_DATE
+            INDEX_DATE=self.cohort.index_table.EVENT_DATE.cast("date")
         ).select(["PERSON_ID", "INDEX_DATE"])
         table = self._append_date_events(table)
         table = self._append_days_to_event(table)
         table = self._append_date_and_days_to_first_event(table)
         self._tte_table = table.execute()  # Convert to pandas DataFrame
+
+        if self._tte_table.empty:
+            logger.warning("No patients in cohort; skipping time-to-event analysis.")
+            self.df = pd.DataFrame()
+            return self.df
 
         # Build aggregated survival/risk data from KM fits
         self.df = self._build_aggregated_risk_table()
@@ -98,7 +119,8 @@ class TimeToEvent(Reporter):
 
     def _execute_right_censoring_phenotypes(self, cohort):
         for phenotype in self.right_censor_phenotypes:
-            phenotype.execute(cohort.subset_tables_index)
+            if phenotype.table is None:
+                phenotype.execute(cohort.subset_tables_index)
 
     def _append_date_events(self, table):
         """
@@ -108,14 +130,14 @@ class TimeToEvent(Reporter):
         3. date of end of study period; column name is END_OF_STUDY_PERIOD
         Additionally, this method populates _date_column_names with the name of all date columns appended here.
         """
-        table = self._append_dates_for_phenotypes(table, self.cohort.outcomes)
+        table = self._append_dates_for_phenotypes(table, self._outcomes)
         table = self._append_dates_for_phenotypes(table, self.right_censor_phenotypes)
         self._date_column_names = [
-            x.name.upper() for x in self.cohort.outcomes + self.right_censor_phenotypes
+            x.name.upper() for x in self._outcomes + self.right_censor_phenotypes
         ]
         if self.end_of_study_period is not None:
             table = table.mutate(
-                END_OF_STUDY_PERIOD=ibis.literal(self.end_of_study_period)
+                END_OF_STUDY_PERIOD=ibis.literal(self.end_of_study_period).cast("date")
             )
             self._date_column_names.append("END_OF_STUDY_PERIOD")
         return table
@@ -129,9 +151,9 @@ class TimeToEvent(Reporter):
         for _phenotype in phenotypes:
             logger.info(f"appending dates for { _phenotype.name}")
             join_table = _phenotype.table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
-            # rename event_date to the right_censor_phenotype's name
+            # rename event_date to the right_censor_phenotype's name, cast to date
             join_table = join_table.mutate(
-                **{_phenotype.name.upper(): join_table.EVENT_DATE}
+                **{_phenotype.name.upper(): join_table.EVENT_DATE.cast("date")}
             )
             # select just person_id and event_date for current phenotype
             join_table = join_table.select(["PERSON_ID", _phenotype.name.upper()])
@@ -155,7 +177,7 @@ class TimeToEvent(Reporter):
         """
         For each outcome phenotype, determines which event occurred first, whether the outcome, a right censoring event, or the end of study period. Adds an indicator column whether the first event is the outcome.
         """
-        for phenotype in self.cohort.outcomes:
+        for phenotype in self._outcomes:
             # Subset the columns from which the minimum date should be determined; this is the outcome of interest, all right censoring events, and end of study period.
             cols = [phenotype.name.upper()] + [
                 x.name.upper() for x in self.right_censor_phenotypes
@@ -163,7 +185,7 @@ class TimeToEvent(Reporter):
 
             # Create a proper minimum date calculation that handles nulls correctly
             # Start with a very large date as the initial minimum
-            min_date_expr = ibis.literal(self.end_of_study_period)
+            min_date_expr = ibis.literal(self.end_of_study_period).cast("date")
 
             # For each column, update the minimum if the column has a valid (non-null) date that's smaller
             for col in cols:
@@ -215,16 +237,22 @@ class TimeToEvent(Reporter):
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
-        phenotypes = self.cohort.outcomes
+        if self._tte_table is None or self._tte_table.empty:
+            return
+        phenotypes = self._outcomes
         if outcome_indices is not None:
             phenotypes = [
-                x for i, x in enumerate(self.cohort.outcomes) if i in outcome_indices
+                x for i, x in enumerate(self._outcomes) if i in outcome_indices
             ]
+        if not phenotypes:
+            return
         n_rows = math.ceil(len(phenotypes) / n_cols)
         fig, axes = plt.subplots(n_rows, n_cols, sharey=True, sharex=True)
 
         for i, phenotype in enumerate(phenotypes):
             kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
             if n_rows > 1 and n_cols > 1:
                 ax = axes[int(i / n_cols), i % n_cols]
             else:
@@ -238,7 +266,8 @@ class TimeToEvent(Reporter):
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
         if path_dir is not None:
-            path = os.path.join(path_dir, f"KaplanMeierPanelFor_{self.cohort.name}.svg")
+            cohort_name = getattr(self.cohort, "name", "cohort")
+            path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
         plt.show()
 
@@ -253,10 +282,11 @@ class TimeToEvent(Reporter):
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
-        phenotype = self.cohort.outcomes[outcome_index]
-        fig, ax = plt.subplots(1, 1)
-
+        phenotype = self._outcomes[outcome_index]
         kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+        if kmf is None:
+            return
+        fig, ax = plt.subplots(1, 1, figsize=(12, 4))
 
         ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
         kmf.plot(ax=ax)
@@ -270,7 +300,8 @@ class TimeToEvent(Reporter):
 
         if path_dir is not None:
             path = os.path.join(
-                path_dir, f"KaplanMeier_{self.cohort.name}_{phenotype.name}.svg"
+                path_dir,
+                f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg",
             )
             plt.savefig(path, dpi=150)
         plt.show()
@@ -283,12 +314,14 @@ class TimeToEvent(Reporter):
             phenotype: The outcome phenotype to analyze
 
         Returns:
-            KaplanMeierFitter: Fitted KM model
+            KaplanMeierFitter or None: Fitted KM model, or None if data is empty.
         """
         indicator = f"INDICATOR_{phenotype.name.upper()}"
         durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-        _sdf = self._tte_table[[indicator, durations]]
-        _df = _sdf
+        _df = self._tte_table[[indicator, durations]].dropna()
+        if _df.empty:
+            logger.warning(f"No data for outcome {phenotype.name}; skipping KM fit.")
+            return None
         kmf = KaplanMeierFitter(label=phenotype.name)
         kmf.fit(durations=_df[durations], event_observed=_df[indicator])
         return kmf
@@ -301,16 +334,24 @@ class TimeToEvent(Reporter):
         DataFrame suitable for reporting.
 
         Returns:
-            DataFrame with columns: Outcome, Timeline, Survival_Probability, At_Risk, Events, Censored
+            DataFrame with columns: Outcome, Timeline, Survival_Probability,
+            CI_Lower, CI_Upper, At_Risk, Events, Censored
         """
         all_outcomes_data = []
 
-        for phenotype in self.cohort.outcomes:
+        for phenotype in self._outcomes:
             kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
 
             # Get survival function
             survival_df = kmf.survival_function_.reset_index()
             survival_df.columns = ["Timeline", "Survival_Probability"]
+
+            # Get confidence intervals
+            ci_df = kmf.confidence_interval_.reset_index()
+            ci_df.columns = ["Timeline", "CI_Lower", "CI_Upper"]
+            survival_df = pd.merge(survival_df, ci_df, on="Timeline", how="left")
 
             # Get event table
             event_df = kmf.event_table.reset_index()
@@ -328,6 +369,8 @@ class TimeToEvent(Reporter):
                     "Outcome",
                     "Timeline",
                     "Survival_Probability",
+                    "CI_Lower",
+                    "CI_Upper",
                     "at_risk",
                     "observed",
                     "censored",
@@ -349,3 +392,86 @@ class TimeToEvent(Reporter):
             result = pd.DataFrame()
 
         return result
+
+    def to_html(self, filename: str, version: str = "unknown") -> str:
+        """Export KM curves for all outcomes as a self-contained HTML file with embedded PNGs."""
+        filepath = Path(filename)
+        if filepath.suffix != ".html":
+            filepath = filepath.with_suffix(".html")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        cohort_name = getattr(self.cohort, "name", "cohort")
+        images_html = self._render_km_images_html()
+
+        # Embed bird icon as base64 data URI
+        icon_path = (
+            Path(__file__).resolve().parent.parent / "docs" / "assets" / "bird_icon.png"
+        )
+        if icon_path.exists():
+            icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+            icon_data_uri = f"data:image/png;base64,{icon_b64}"
+        else:
+            icon_data_uri = ""
+
+        from html import escape
+
+        version_escaped = escape(version)
+
+        if icon_data_uri:
+            footer = (
+                f'<div class="phenex-footer">'
+                f'<img src="{icon_data_uri}" alt="PhenEx">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+        else:
+            footer = (
+                f'<div class="phenex-footer">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+
+        html = (
+            "<!DOCTYPE html><html><head>"
+            f"<title>Time to Event - {cohort_name}</title>"
+            "<style>"
+            "body{font-family:sans-serif;margin:20px;padding-bottom:50px;}"
+            ".phenex-footer{position:fixed;bottom:0;left:0;padding:10px 16px;"
+            "display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.9);z-index:9999;}"
+            ".phenex-footer img{height:24px;width:auto;}"
+            ".phenex-footer span{font-size:11px;color:#999;}"
+            "</style>"
+            "</head><body>"
+            f"<h1>Kaplan-Meier Curves &mdash; {cohort_name}</h1>"
+            + "\n".join(images_html)
+            + footer
+            + "</body></html>"
+        )
+        filepath.write_text(html, encoding="utf-8")
+        return str(filepath.absolute())
+
+    def _render_km_images_html(self) -> list:
+        """Render KM curves for all outcomes as base64-embedded HTML image divs."""
+        images_html = []
+        if self._tte_table is None or self._tte_table.empty:
+            return images_html
+        for i, phenotype in enumerate(self._outcomes):
+            kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
+            fig, ax = plt.subplots(1, 1, figsize=(12, 4))
+            ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
+            kmf.plot(ax=ax)
+            add_at_risk_counts(kmf, ax=ax)
+            plt.tight_layout()
+            ax.grid(color="gray", linestyle="-", linewidth=0.1)
+
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", dpi=150)
+            plt.close(fig)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode("utf-8")
+            images_html.append(
+                f'<div style="margin-bottom:20px;">'
+                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;"/>'
+                f"</div>"
+            )
+        return images_html
