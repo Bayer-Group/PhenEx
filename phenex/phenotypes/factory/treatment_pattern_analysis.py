@@ -101,7 +101,7 @@ class TreatmentPatternAnalysis:
             period_filter = RelativeTimeRangeFilter(
                 when="after",
                 min_days=GreaterThanOrEqualTo((idx_period) * self.days_between_periods),
-                max_days=LessThan((idx_period + 1) * self.days_between_periods)
+                max_days=LessThan((idx_period + 1) * self.days_between_periods),
             )
 
             pts_in_period = []

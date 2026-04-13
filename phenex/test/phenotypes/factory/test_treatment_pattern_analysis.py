@@ -35,9 +35,9 @@ class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
         }
 
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = list(
-            df_condition_occurrence["PERSON_ID"].unique()
-        ) + ["P8"]
+        df_person["PERSON_ID"] = list(df_condition_occurrence["PERSON_ID"].unique()) + [
+            "P8"
+        ]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -246,9 +246,7 @@ class TreatmentPatternAnalysisTestGenerator_TimePeriods(PhenotypeTestGenerator):
 
         test_infos.append({"name": "p2_c1_only", "persons": [], "phenotype": p2[0]})
         test_infos.append({"name": "p2_c2_only", "persons": ["P5"], "phenotype": p2[1]})
-        test_infos.append(
-            {"name": "p2_both", "persons": ["P4"], "phenotype": p2[2]}
-        )
+        test_infos.append({"name": "p2_both", "persons": ["P4"], "phenotype": p2[2]})
 
         # none (P1, P2, P3 have events only in [0, 90); P6 has no events at all)
         test_infos.append(
@@ -520,7 +518,9 @@ def test_sankey_generation():
     assert flow(2, "EZT only", 3, "None") == 1  # P5: EZT in P2 → nothing in P3
     assert flow(2, "FZT only", 3, "HT only") == 1  # P8: FZT in P2 → HT in P3
     assert flow(2, "FZT only", 3, "None") == 1  # P6: FZT in P2 → nothing in P3
-    assert flow(2, "None", 3, "None") == 5  # P1,P2,P3,P4,P9: nothing in P2 → nothing in P3
+    assert (
+        flow(2, "None", 3, "None") == 5
+    )  # P1,P2,P3,P4,P9: nothing in P2 → nothing in P3
 
     # ------------------------------------------------------------------
     # Write HTML to artifacts directory (like other tests) for inspection
