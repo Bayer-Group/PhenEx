@@ -35,7 +35,9 @@ class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
         }
 
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = df_condition_occurrence["PERSON_ID"].unique()
+        df_person["PERSON_ID"] = list(df_condition_occurrence["PERSON_ID"].unique()) + [
+            "P8"
+        ]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -81,17 +83,30 @@ class TreatmentPatternAnalysisTestGenerator_Basic(PhenotypeTestGenerator):
         # stack3: triple regimen
         test_infos.append({"name": "p1_s123", "persons": ["P1"], "phenotype": p1[6]})
 
-        # Period 2: D90_to_D180 (key name suggests 90-180, but filter is cumulative [0, 180))
-        # Same results since all events are at day 0 and fall within [0, 180)
+        # none
+        test_infos.append({"name": "p1_none", "persons": ["P8"], "phenotype": p1[7]})
+
+        # Period 2: D90_to_D180 — non-cumulative [90, 180)
+        # All events are at day 0 which is outside [90, 180), so every
+        # patient is "None" (no regimen matches) and all stacks are empty.
         p2 = d["distribution_of_patients_per_stacked_regimen_from_day_90_to_180"]
 
-        test_infos.append({"name": "p2_s1", "persons": ["P4"], "phenotype": p2[0]})
-        test_infos.append({"name": "p2_s2", "persons": ["P6"], "phenotype": p2[1]})
-        test_infos.append({"name": "p2_s3", "persons": ["P7"], "phenotype": p2[2]})
-        test_infos.append({"name": "p2_s12", "persons": ["P2"], "phenotype": p2[3]})
-        test_infos.append({"name": "p2_s13", "persons": ["P3"], "phenotype": p2[4]})
-        test_infos.append({"name": "p2_s23", "persons": ["P5"], "phenotype": p2[5]})
-        test_infos.append({"name": "p2_s123", "persons": ["P1"], "phenotype": p2[6]})
+        test_infos.append({"name": "p2_s1", "persons": [], "phenotype": p2[0]})
+        test_infos.append({"name": "p2_s2", "persons": [], "phenotype": p2[1]})
+        test_infos.append({"name": "p2_s3", "persons": [], "phenotype": p2[2]})
+        test_infos.append({"name": "p2_s12", "persons": [], "phenotype": p2[3]})
+        test_infos.append({"name": "p2_s13", "persons": [], "phenotype": p2[4]})
+        test_infos.append({"name": "p2_s23", "persons": [], "phenotype": p2[5]})
+        test_infos.append({"name": "p2_s123", "persons": [], "phenotype": p2[6]})
+
+        # none — all patients (P1-P7 in cohort + P8) have no events in [90,180)
+        test_infos.append(
+            {
+                "name": "p2_none",
+                "persons": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"],
+                "phenotype": p2[7],
+            }
+        )
 
         return test_infos
 
@@ -180,7 +195,7 @@ class TreatmentPatternAnalysisTestGenerator_TimePeriods(PhenotypeTestGenerator):
         }
 
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = ["P1", "P2", "P3", "P4", "P5"]
+        df_person["PERSON_ID"] = ["P1", "P2", "P3", "P4", "P5", "P6"]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -217,15 +232,29 @@ class TreatmentPatternAnalysisTestGenerator_TimePeriods(PhenotypeTestGenerator):
         test_infos.append({"name": "p1_c2_only", "persons": ["P3"], "phenotype": p1[1]})
         test_infos.append({"name": "p1_both", "persons": ["P1"], "phenotype": p1[2]})
 
-        # Period 2: D90_to_D180 (cumulative filter [0, 180) days after INDEX_DATE)
-        # P4: c1 at day 100 AND c2 at day 100 -> both (now within window)
-        # P5: c1 at day 5, c2 at day 100 -> both (now within window)
+        # none (P4 has no events in [0, 90); P6 has no events at all)
+        test_infos.append(
+            {"name": "p1_none", "persons": ["P4", "P6"], "phenotype": p1[3]}
+        )
+
+        # Period 2: D90_to_D180 — non-cumulative [90, 180)
+        # P4: c1 at day 100 AND c2 at day 100 -> both
+        # P5: c2 at day 100 -> c2 only (c1 at day 5 is outside [90, 180))
+        # P1, P2, P3: events at day 5 only -> None
+        # P6: no events -> None
         p2 = d["distribution_of_patients_per_stacked_regimen_from_day_90_to_180"]
 
-        test_infos.append({"name": "p2_c1_only", "persons": ["P2"], "phenotype": p2[0]})
-        test_infos.append({"name": "p2_c2_only", "persons": ["P3"], "phenotype": p2[1]})
+        test_infos.append({"name": "p2_c1_only", "persons": [], "phenotype": p2[0]})
+        test_infos.append({"name": "p2_c2_only", "persons": ["P5"], "phenotype": p2[1]})
+        test_infos.append({"name": "p2_both", "persons": ["P4"], "phenotype": p2[2]})
+
+        # none (P1, P2, P3 have events only in [0, 90); P6 has no events at all)
         test_infos.append(
-            {"name": "p2_both", "persons": ["P1", "P4", "P5"], "phenotype": p2[2]}
+            {
+                "name": "p2_none",
+                "persons": ["P1", "P2", "P3", "P6"],
+                "phenotype": p2[3],
+            }
         )
 
         return test_infos
@@ -245,38 +274,38 @@ def test_sankey_generation():
     """
     Integration test for TreatmentPatternAnalysisSankeyReporter.
 
-    3 regimens (HT, EZT, FZT), 3 cumulative periods (0-90, 0-180, 0-270 days).
+    3 regimens (HT, EZT, FZT), 3 non-overlapping periods ([0,90), [90,180), [180,270)).
     Patients change regimen between periods, producing real cross-period flows.
 
-    Patient  | day-0 drugs     | day-100 drugs | day-200 drugs
-    ---------|-----------------|---------------|---------------
-    P1       | HT              |               |
-    P2       | EZT             |               |
-    P3       | FZT             |               |
-    P4       | HT + EZT        |               |
-    P5       | HT              | + EZT         |              → switches from "HT only" to "HT + EZT"
-    P6       | EZT             | + FZT         |              → switches from "EZT only" to "EZT + FZT"
-    P7       |                 | HT            |              → enters period 2 as "HT only"
-    P8       |                 | FZT           | + HT         → enters period 2 as "FZT only", switches to "HT + FZT"
-    P9       | HT + EZT + FZT  |               |
+    Patient  | Period 1 [0,90) | Period 2 [90,180) | Period 3 [180,270)
+    ---------|-----------------|-------------------|--------------------
+    P1       | HT              | None              | None
+    P2       | EZT             | None              | None
+    P3       | FZT             | None              | None
+    P4       | HT + EZT        | None              | None
+    P5       | HT              | EZT               | None
+    P6       | EZT             | FZT               | None
+    P7       | None            | HT                | None
+    P8       | None            | FZT               | HT
+    P9       | HT + EZT + FZT  | None              | None
 
-    Expected flows P1→P2 (period 1 regimen → period 2 regimen):
-      HT only   → HT only   : P1        (n=1)
-      HT only   → HT + EZT  : P5        (n=1)
-      EZT only  → EZT only  : P2        (n=1)
-      EZT only  → EZT + FZT : P6        (n=1)
-      FZT only  → FZT only  : P3        (n=1)
-      HT + EZT  → HT + EZT  : P4        (n=1)
-      ALL       → ALL        : P9        (n=1)
+    Expected flows P1→P2:
+      HT only  → EZT only   : P5        (n=1)
+      HT only  → None       : P1        (n=1)
+      EZT only → FZT only   : P6        (n=1)
+      EZT only → None       : P2        (n=1)
+      FZT only → None       : P3        (n=1)
+      HT + EZT → None       : P4        (n=1)
+      ALL      → None       : P9        (n=1)
+      None     → HT only    : P7        (n=1)
+      None     → FZT only   : P8        (n=1)
 
-    Expected flows P2→P3 (period 2 regimen → period 3 regimen):
-      HT only   → HT only   : P1, P7    (n=2)
-      EZT only  → EZT only  : P2        (n=1)
-      FZT only  → FZT only  : P3        (n=1)
-      FZT only  → HT + FZT  : P8        (n=1)
-      HT + EZT  → HT + EZT  : P4, P5   (n=2)
-      EZT + FZT → EZT + FZT : P6        (n=1)
-      ALL       → ALL        : P9        (n=1)
+    Expected flows P2→P3:
+      HT only  → None       : P7        (n=1)
+      EZT only → None       : P5        (n=1)
+      FZT only → HT only    : P8        (n=1)
+      FZT only → None       : P6        (n=1)
+      None     → None       : P1,P2,P3,P4,P9 (n=5)
     """
     INDEX_DATE = datetime.date(2022, 1, 1)
     DAY_100 = datetime.date(2022, 4, 11)  # 100 days after index
@@ -471,22 +500,27 @@ def test_sankey_generation():
         return int(row["n_patients"].iloc[0]) if not row.empty else 0
 
     # Period 1 → Period 2
-    assert flow(1, "HT only", 2, "HT only") == 1  # P1
-    assert flow(1, "HT only", 2, "HT + EZT") == 1  # P5 added EZT
-    assert flow(1, "EZT only", 2, "EZT only") == 1  # P2
-    assert flow(1, "EZT only", 2, "EZT + FZT") == 1  # P6 added FZT
-    assert flow(1, "FZT only", 2, "FZT only") == 1  # P3
-    assert flow(1, "HT + EZT", 2, "HT + EZT") == 1  # P4 stays
-    assert flow(1, "HT + EZT + FZT", 2, "HT + EZT + FZT") == 1  # P9
+    # Period 1 [0,90): P1=HT, P2=EZT, P3=FZT, P4=HT+EZT, P5=HT, P6=EZT, P7=None, P8=None, P9=ALL
+    # Period 2 [90,180): P5=EZT, P6=FZT, P7=HT, P8=FZT, rest=None
+    assert flow(1, "HT only", 2, "EZT only") == 1  # P5: HT in P1 → EZT in P2
+    assert flow(1, "HT only", 2, "None") == 1  # P1: HT in P1 → nothing in P2
+    assert flow(1, "EZT only", 2, "FZT only") == 1  # P6: EZT in P1 → FZT in P2
+    assert flow(1, "EZT only", 2, "None") == 1  # P2: EZT in P1 → nothing in P2
+    assert flow(1, "FZT only", 2, "None") == 1  # P3: FZT in P1 → nothing in P2
+    assert flow(1, "HT + EZT", 2, "None") == 1  # P4: HT+EZT in P1 → nothing in P2
+    assert flow(1, "HT + EZT + FZT", 2, "None") == 1  # P9: ALL in P1 → nothing in P2
+    assert flow(1, "None", 2, "HT only") == 1  # P7: nothing in P1 → HT in P2
+    assert flow(1, "None", 2, "FZT only") == 1  # P8: nothing in P1 → FZT in P2
 
     # Period 2 → Period 3
-    assert flow(2, "HT only", 3, "HT only") == 2  # P1 + P7
-    assert flow(2, "EZT only", 3, "EZT only") == 1  # P2
-    assert flow(2, "FZT only", 3, "FZT only") == 1  # P3
-    assert flow(2, "FZT only", 3, "HT + FZT") == 1  # P8 added HT
-    assert flow(2, "HT + EZT", 3, "HT + EZT") == 2  # P4 + P5
-    assert flow(2, "EZT + FZT", 3, "EZT + FZT") == 1  # P6
-    assert flow(2, "HT + EZT + FZT", 3, "HT + EZT + FZT") == 1  # P9
+    # Period 3 [180,270): P8=HT, rest=None
+    assert flow(2, "HT only", 3, "None") == 1  # P7: HT in P2 → nothing in P3
+    assert flow(2, "EZT only", 3, "None") == 1  # P5: EZT in P2 → nothing in P3
+    assert flow(2, "FZT only", 3, "HT only") == 1  # P8: FZT in P2 → HT in P3
+    assert flow(2, "FZT only", 3, "None") == 1  # P6: FZT in P2 → nothing in P3
+    assert (
+        flow(2, "None", 3, "None") == 5
+    )  # P1,P2,P3,P4,P9: nothing in P2 → nothing in P3
 
     # ------------------------------------------------------------------
     # Write HTML to artifacts directory (like other tests) for inspection
@@ -509,6 +543,7 @@ def test_sankey_generation():
     assert "HT + EZT" in html
     assert "EZT + FZT" in html
     assert "HT + EZT + FZT" in html
+    assert "None" in html
 
 
 if __name__ == "__main__":
