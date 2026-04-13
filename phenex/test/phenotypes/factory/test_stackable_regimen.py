@@ -31,9 +31,9 @@ class StackableRegimenTestGenerator_3(PhenotypeTestGenerator):
         }
 
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = list(
-            df_condition_occurrence["PERSON_ID"].unique()
-        ) + ["P8"]
+        df_person["PERSON_ID"] = list(df_condition_occurrence["PERSON_ID"].unique()) + [
+            "P8"
+        ]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,
@@ -127,9 +127,9 @@ class StackableRegimenTestGenerator_4(PhenotypeTestGenerator):
             "df": df_condition_occurrence,
         }
         df_person = pd.DataFrame()
-        df_person["PERSON_ID"] = list(
-            df_condition_occurrence["PERSON_ID"].unique()
-        ) + ["P16"]
+        df_person["PERSON_ID"] = list(df_condition_occurrence["PERSON_ID"].unique()) + [
+            "P16"
+        ]
         input_info_person = {
             "name": "PERSON",
             "df": df_person,

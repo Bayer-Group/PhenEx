@@ -252,7 +252,7 @@ class TimeToEvent(Reporter):
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
         if path_dir is not None:
-            cohort_name = getattr(self.cohort, 'name', 'cohort')
+            cohort_name = getattr(self.cohort, "name", "cohort")
             path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
         plt.show()
@@ -285,7 +285,8 @@ class TimeToEvent(Reporter):
 
         if path_dir is not None:
             path = os.path.join(
-                path_dir, f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg"
+                path_dir,
+                f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg",
             )
             plt.savefig(path, dpi=150)
         plt.show()

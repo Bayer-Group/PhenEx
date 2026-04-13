@@ -761,9 +761,7 @@ class TestTimeToEventSubcohortProxy:
         proxy.subset_tables_index = None
 
         tte.cohort = proxy
-        tte._outcomes = [
-            p for p in proxy.outcomes if p.name in tte.phenotype_names
-        ]
+        tte._outcomes = [p for p in proxy.outcomes if p.name in tte.phenotype_names]
         tte._tte_table = pd.DataFrame(
             {
                 "INDICATOR_STROKE": [0, 1, 1, 0],

@@ -331,7 +331,12 @@ def _build_sankey_html(sankey_data_list: list, version: str = "unknown") -> str:
     colors_json = json.dumps(_COLORS)
 
     # Embed bird icon as base64 data URI
-    icon_path = Path(__file__).resolve().parent.parent.parent / "docs" / "assets" / "bird_icon.png"
+    icon_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "docs"
+        / "assets"
+        / "bird_icon.png"
+    )
     if icon_path.exists():
         icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
         icon_data_uri = f"data:image/png;base64,{icon_b64}"
@@ -339,6 +344,7 @@ def _build_sankey_html(sankey_data_list: list, version: str = "unknown") -> str:
         icon_data_uri = ""
 
     from html import escape
+
     version_escaped = escape(version)
 
     head = """\
@@ -365,7 +371,8 @@ const allData = """
     middle = """;
 const COLORS = """
 
-    tail = """;
+    tail = (
+        """;
 
 /* ── layout constants ───────────────────────────────────────────────────── */
 var MIN_THICK = .5, MAX_THICK = 25;
@@ -656,9 +663,22 @@ allData.forEach(function(groupData) {
   });
 });
 </script>
-""" + ('<div class="phenex-footer"><img src="' + icon_data_uri + '" alt="PhenEx"><span>Generated with PhenEx v' + version_escaped + '</span></div>' if icon_data_uri else '<div class="phenex-footer"><span>Generated with PhenEx v' + version_escaped + '</span></div>') + """
+"""
+        + (
+            '<div class="phenex-footer"><img src="'
+            + icon_data_uri
+            + '" alt="PhenEx"><span>Generated with PhenEx v'
+            + version_escaped
+            + "</span></div>"
+            if icon_data_uri
+            else '<div class="phenex-footer"><span>Generated with PhenEx v'
+            + version_escaped
+            + "</span></div>"
+        )
+        + """
 </body>
 </html>"""
+    )
 
     return head + data_json + middle + colors_json + tail
 
