@@ -2731,11 +2731,11 @@ class OutputConcatenator:
             "</head>\n<body>\n"
             '<h1 style="margin-bottom:8px">Kaplan-Meier Survival Curves</h1>\n'
             '<div class="controls" id="controls">'
-            '<label>Cohorts:</label></div>\n'
-            '<div id="charts"></div>\n'
-            + footer_html
-            + "\n<script>\n"
-            "var DATA = " + data_json + ";\n"
+            "<label>Cohorts:</label></div>\n"
+            '<div id="charts"></div>\n' + footer_html + "\n<script>\n"
+            "var DATA = "
+            + data_json
+            + ";\n"
             + _TTE_JS
             + "\n</script>\n</body>\n</html>"
         )
