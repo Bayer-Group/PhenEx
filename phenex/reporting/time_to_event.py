@@ -334,7 +334,8 @@ class TimeToEvent(Reporter):
         DataFrame suitable for reporting.
 
         Returns:
-            DataFrame with columns: Outcome, Timeline, Survival_Probability, At_Risk, Events, Censored
+            DataFrame with columns: Outcome, Timeline, Survival_Probability,
+            CI_Lower, CI_Upper, At_Risk, Events, Censored
         """
         all_outcomes_data = []
 
@@ -346,6 +347,11 @@ class TimeToEvent(Reporter):
             # Get survival function
             survival_df = kmf.survival_function_.reset_index()
             survival_df.columns = ["Timeline", "Survival_Probability"]
+
+            # Get confidence intervals
+            ci_df = kmf.confidence_interval_.reset_index()
+            ci_df.columns = ["Timeline", "CI_Lower", "CI_Upper"]
+            survival_df = pd.merge(survival_df, ci_df, on="Timeline", how="left")
 
             # Get event table
             event_df = kmf.event_table.reset_index()
@@ -363,6 +369,8 @@ class TimeToEvent(Reporter):
                     "Outcome",
                     "Timeline",
                     "Survival_Probability",
+                    "CI_Lower",
+                    "CI_Upper",
                     "at_risk",
                     "observed",
                     "censored",

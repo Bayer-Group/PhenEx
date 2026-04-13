@@ -116,6 +116,8 @@ class TestTimeToEvent:
             "Outcome",
             "Timeline",
             "Survival_Probability",
+            "CI_Lower",
+            "CI_Upper",
             "At_Risk",
             "Events",
             "Censored",

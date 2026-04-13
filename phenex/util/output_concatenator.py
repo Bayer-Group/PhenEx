@@ -2181,6 +2181,244 @@ class InfoSheetWriter(_BaseSheetWriter):
 # Top-level orchestrator
 # ---------------------------------------------------------------------------
 
+# JavaScript for the interactive KM survival curves HTML.  Kept as a plain
+# string constant so the Python f-string in _build_tte_html only handles
+# the data injection; all JS braces are literal.
+_TTE_JS = """\
+var COLORS = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f',
+              '#edc949','#af7aa1','#ff9da7','#9c755f','#bab0ab'];
+var NS = 'http://www.w3.org/2000/svg';
+
+/* ── index cohort data by outcome ────────────────────────────────────── */
+var cohortNames = DATA.map(function(c){ return c.cohort_name; });
+var selected = new Set(cohortNames.length ? [cohortNames[0]] : []);
+
+/* per-cohort, per-outcome sorted row arrays */
+var cohortOutcomes = {};   // cohortName -> { outcomeName -> [rows] }
+var allOutcomes = [];      // ordered unique outcome names
+var outcomeSet = {};
+DATA.forEach(function(c){
+  var byOc = {};
+  c.rows.forEach(function(r){
+    if(!byOc[r.Outcome]){ byOc[r.Outcome] = []; }
+    byOc[r.Outcome].push(r);
+    if(!outcomeSet[r.Outcome]){ outcomeSet[r.Outcome]=1; allOutcomes.push(r.Outcome); }
+  });
+  Object.keys(byOc).forEach(function(k){ byOc[k].sort(function(a,b){return a.Timeline-b.Timeline;}); });
+  cohortOutcomes[c.cohort_name] = byOc;
+});
+
+/* ── cohort toggle buttons ───────────────────────────────────────────── */
+var controls = document.getElementById('controls');
+cohortNames.forEach(function(name, ci){
+  var btn = document.createElement('button');
+  btn.className = 'cohort-btn';
+  btn.textContent = name;
+  btn.dataset.cohort = name;
+  btn.dataset.ci = ci;
+  btn.addEventListener('click', function(){
+    if(selected.has(name)) selected.delete(name); else selected.add(name);
+    updateButtons(); render();
+  });
+  controls.appendChild(btn);
+});
+function updateButtons(){
+  var btns = controls.querySelectorAll('.cohort-btn');
+  btns.forEach(function(b){
+    var ci = +b.dataset.ci;
+    var col = COLORS[ci % COLORS.length];
+    if(selected.has(b.dataset.cohort)){
+      b.classList.add('active');
+      b.style.borderColor = col; b.style.background = col; b.style.color='#fff';
+    } else {
+      b.classList.remove('active');
+      b.style.borderColor = '#ccc'; b.style.background='#fff'; b.style.color='#333';
+    }
+  });
+}
+updateButtons();
+
+/* ── SVG helpers ─────────────────────────────────────────────────────── */
+function el(tag,attrs,parent){
+  var e=document.createElementNS(NS,tag);
+  if(attrs) Object.keys(attrs).forEach(function(k){e.setAttribute(k,attrs[k]);});
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(text,attrs,parent){var e=el('text',attrs,parent);e.textContent=text;return e;}
+
+/* ── step-function path builder ──────────────────────────────────────── */
+function stepPath(rows, sx, sy, field){
+  var d='';
+  for(var i=0;i<rows.length;i++){
+    var x=sx(rows[i].Timeline), y=sy(rows[i][field]);
+    if(i===0){ d+='M'+sx(0)+','+sy(1)+' L'+x+','+sy(1)+' L'+x+','+y; }
+    else { d+=' L'+x+','+sy(rows[i-1][field])+' L'+x+','+y; }
+  }
+  return d;
+}
+
+/* CI band: closed polygon upper-forward then lower-backward */
+function ciBand(rows, sx, sy){
+  if(!rows.length || rows[0].CI_Lower==null) return '';
+  var upper='', lower='';
+  for(var i=0;i<rows.length;i++){
+    var x=sx(rows[i].Timeline);
+    var yu=sy(rows[i].CI_Upper), yl=sy(rows[i].CI_Lower);
+    if(i===0){
+      upper+='M'+sx(0)+','+sy(1);
+      lower='L'+sx(0)+','+sy(1);
+      upper+=' L'+x+','+sy(1)+' L'+x+','+yu;
+      lower=' L'+x+','+sy(1)+' L'+x+','+yl+lower;
+    } else {
+      upper+=' L'+x+','+sy(rows[i-1].CI_Upper)+' L'+x+','+yu;
+      lower=' L'+x+','+sy(rows[i-1].CI_Lower)+' L'+x+','+yl+lower;
+    }
+  }
+  return upper+lower+'Z';
+}
+
+/* ── risk-table tick positions ───────────────────────────────────────── */
+function riskTicks(maxT, n){ var a=[]; for(var i=0;i<=n;i++) a.push(Math.round(maxT/n*i)); return a; }
+function lookupAtTick(rows, t, field){
+  var v=null;
+  for(var i=0;i<rows.length;i++){
+    if(rows[i].Timeline<=t) v=rows[i][field]; else break;
+  }
+  return v;
+}
+
+/* cumulative events / censored up to tick */
+function cumField(rows, t, field){
+  var s=0;
+  for(var i=0;i<rows.length;i++){
+    if(rows[i].Timeline>t) break;
+    s+=(rows[i][field]||0);
+  }
+  return s;
+}
+
+/* ── main render ─────────────────────────────────────────────────────── */
+var chartsDiv = document.getElementById('charts');
+function render(){
+  chartsDiv.innerHTML='';
+  var sel = Array.from(selected);
+  if(!sel.length) return;
+
+  allOutcomes.forEach(function(outcomeName){
+    /* collect data series for selected cohorts that have this outcome */
+    var series=[];
+    sel.forEach(function(cn){
+      var oc = cohortOutcomes[cn];
+      if(oc && oc[outcomeName] && oc[outcomeName].length){
+        series.push({name:cn, rows:oc[outcomeName], ci:cohortNames.indexOf(cn)});
+      }
+    });
+    if(!series.length) return;
+
+    var section = document.createElement('div');
+    section.className='outcome-section';
+    chartsDiv.appendChild(section);
+
+    var title = document.createElement('p');
+    title.className='outcome-title';
+    title.textContent = outcomeName;
+    section.appendChild(title);
+
+    /* compute shared x-axis max */
+    var maxT=1;
+    series.forEach(function(s){
+      var last=s.rows[s.rows.length-1].Timeline;
+      if(last>maxT) maxT=last;
+    });
+
+    var N_TICKS=6;
+    var ticks = riskTicks(maxT, N_TICKS);
+
+    var W=780, PAD_L=250, PAD_R=20, PAD_T=20, PAD_B=30;
+    var RISK_ROW_H=16, RISK_ROWS=3; /* at_risk, events, censored */
+    var RISK_H = series.length * RISK_ROWS * RISK_ROW_H + 20;
+    var plotH=250;
+    var H = PAD_T + plotH + PAD_B + RISK_H;
+    var plotW = W - PAD_L - PAD_R;
+
+    function sx(t){ return PAD_L + (t/maxT)*plotW; }
+    function sy(p){ return PAD_T + (1-p)*plotH; }
+
+    var svg = el('svg',{width:W, height:H});
+    svg.style.display='block';
+    section.appendChild(svg);
+
+    /* grid + axes */
+    el('line',{x1:PAD_L,y1:PAD_T,x2:PAD_L,y2:PAD_T+plotH,stroke:'#ccc'},svg);
+    el('line',{x1:PAD_L,y1:PAD_T+plotH,x2:PAD_L+plotW,y2:PAD_T+plotH,stroke:'#ccc'},svg);
+    [0,0.25,0.5,0.75,1.0].forEach(function(v){
+      var y=sy(v);
+      el('line',{x1:PAD_L-4,y1:y,x2:PAD_L,y2:y,stroke:'#999'},svg);
+      el('line',{x1:PAD_L,y1:y,x2:PAD_L+plotW,y2:y,stroke:'#f0f0f0'},svg);
+      txt(v.toFixed(2),{x:PAD_L-8,y:y+4,'text-anchor':'end','font-size':11,fill:'#666'},svg);
+    });
+    ticks.forEach(function(t){
+      var x=sx(t);
+      el('line',{x1:x,y1:PAD_T+plotH,x2:x,y2:PAD_T+plotH+4,stroke:'#999'},svg);
+      txt(t,{x:x,y:PAD_T+plotH+16,'text-anchor':'middle','font-size':11,fill:'#666'},svg);
+    });
+    txt('Days',{x:PAD_L+plotW/2,y:PAD_T+plotH+PAD_B-2,'text-anchor':'middle','font-size':12,fill:'#666'},svg);
+    var yl=txt('Survival Probability',{x:14,y:PAD_T+plotH/2,'text-anchor':'middle','font-size':12,fill:'#666'},svg);
+    yl.setAttribute('transform','rotate(-90,14,'+(PAD_T+plotH/2)+')');
+
+    /* draw each cohort series */
+    series.forEach(function(s){
+      var color = COLORS[s.ci % COLORS.length];
+      /* CI band */
+      var ciD = ciBand(s.rows, sx, sy);
+      if(ciD) el('path',{d:ciD,fill:color,'fill-opacity':0.12,stroke:'none'},svg);
+      /* KM step line */
+      el('path',{d:stepPath(s.rows,sx,sy,'Survival_Probability'),fill:'none',stroke:color,'stroke-width':2},svg);
+    });
+
+    /* ── risk table below plot ───────────────────────────────────────── */
+    var riskTop = PAD_T + plotH + PAD_B + 4;
+    /* separator line */
+
+    var labels = ['At risk','Events','Censored'];
+    var fields = ['At_Risk','Events','Censored'];
+    series.forEach(function(s, si){
+      var color = COLORS[s.ci % COLORS.length];
+      var baseY = riskTop + si * RISK_ROWS * RISK_ROW_H;
+
+      labels.forEach(function(lbl, li){
+        var rowY = baseY + li * RISK_ROW_H + RISK_ROW_H - 2;
+        /* label */
+        if(si===0){
+          /* only the first cohort prints the row labels to avoid overlap;
+             when multiple cohorts are shown the cohort name is the label */
+        }
+        var labelText = (series.length>1 && li===0) ? s.name : (si===0 ? lbl : '');
+        if(li===0 && series.length>1){
+          txt(s.name,{x:PAD_L-150,y:rowY,'text-anchor':'end','font-size':10,fill:color,'font-weight':'bold'},svg);
+        } else if(series.length===1){
+          txt(lbl,{x:PAD_L-150,y:rowY,'text-anchor':'end','font-size':10,fill:'#666'},svg);
+        }
+
+        /* values at each tick */
+        ticks.forEach(function(t){
+          var val;
+          if(fields[li]==='At_Risk'){
+            val = lookupAtTick(s.rows, t, 'At_Risk');
+          } else {
+            val = cumField(s.rows, t, fields[li]);
+          }
+          if(val==null) val='';
+          txt(val,{x:sx(t),y:rowY,'text-anchor':'middle','font-size':10,fill:li===0?color:'#999'},svg);
+        });
+      });
+    });
+  });
+}
+render();
+"""
+
 
 class OutputConcatenator:
     """Concatenates per-cohort JSON reports into a single multi-sheet study file.
@@ -2431,7 +2669,7 @@ class OutputConcatenator:
 
     @staticmethod
     def _build_tte_html(all_cohort_data: List[dict], version: str = "unknown") -> str:
-        """Build a self-contained HTML with JS-rendered KM step-function curves."""
+        """Build interactive HTML with multi-select cohort dropdown and KM curves."""
         import base64
         from html import escape
 
@@ -2450,198 +2688,57 @@ class OutputConcatenator:
         version_escaped = escape(version)
 
         if icon_data_uri:
-            footer = (
+            footer_html = (
                 f'<div class="phenex-footer">'
                 f'<img src="{icon_data_uri}" alt="PhenEx">'
                 f"<span>Generated with PhenEx v{version_escaped}</span></div>"
             )
         else:
-            footer = (
+            footer_html = (
                 f'<div class="phenex-footer">'
                 f"<span>Generated with PhenEx v{version_escaped}</span></div>"
             )
 
         data_json = json.dumps(all_cohort_data, default=str)
 
-        return f"""\
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8">
-<title>Time to Event — Kaplan-Meier Curves</title>
-<style>
-  body {{ font-family: Arial, sans-serif; background: #fff; margin: 0;
-         padding: 20px 20px 60px 20px; }}
-  .cohort-section {{ margin-bottom: 48px; }}
-  .cohort-title {{ font-size: 18px; font-weight: bold; color: #333;
-                   margin: 0 0 16px 0; }}
-  .outcome-chart {{ margin-bottom: 32px; }}
-  .outcome-title {{ font-size: 14px; font-weight: bold; color: #555;
-                    margin: 0 0 6px 0; }}
-  .phenex-footer {{ position: fixed; bottom: 0; left: 0; padding: 10px 16px;
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.9); z-index: 9999; }}
-  .phenex-footer img {{ height: 24px; width: auto; }}
-  .phenex-footer span {{ font-size: 11px; color: #999; }}
-</style>
-</head>
-<body>
-<h1 style="margin-bottom:24px;">Kaplan-Meier Survival Curves</h1>
-<div id="charts"></div>
-{footer}
-<script>
-var DATA = {data_json};
-var COLORS = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f",
-              "#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"];
-
-DATA.forEach(function(cohort) {{
-  var section = document.createElement('div');
-  section.className = 'cohort-section';
-  document.getElementById('charts').appendChild(section);
-
-  var title = document.createElement('p');
-  title.className = 'cohort-title';
-  title.textContent = cohort.cohort_name;
-  section.appendChild(title);
-
-  /* group rows by Outcome */
-  var outcomes = {{}};
-  var outcomeOrder = [];
-  cohort.rows.forEach(function(r) {{
-    if (!outcomes[r.Outcome]) {{
-      outcomes[r.Outcome] = [];
-      outcomeOrder.push(r.Outcome);
-    }}
-    outcomes[r.Outcome].push(r);
-  }});
-
-  outcomeOrder.forEach(function(outcomeName, oi) {{
-    var rows = outcomes[outcomeName];
-    rows.sort(function(a, b) {{ return a.Timeline - b.Timeline; }});
-
-    var W = 700, H = 300, PAD_L = 60, PAD_R = 20, PAD_T = 30, PAD_B = 50;
-    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
-
-    var maxT = rows[rows.length - 1].Timeline || 1;
-
-    var wrap = document.createElement('div');
-    wrap.className = 'outcome-chart';
-    section.appendChild(wrap);
-
-    var label = document.createElement('p');
-    label.className = 'outcome-title';
-    label.textContent = outcomeName;
-    wrap.appendChild(label);
-
-    var NS = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('width', W);
-    svg.setAttribute('height', H);
-    svg.style.display = 'block';
-    wrap.appendChild(svg);
-
-    function sx(t) {{ return PAD_L + (t / maxT) * plotW; }}
-    function sy(p) {{ return PAD_T + (1 - p) * plotH; }}
-
-    /* axes */
-    var axisColor = '#ccc';
-    var line = document.createElementNS(NS, 'line');
-    line.setAttribute('x1', PAD_L); line.setAttribute('y1', PAD_T);
-    line.setAttribute('x2', PAD_L); line.setAttribute('y2', PAD_T + plotH);
-    line.setAttribute('stroke', axisColor);
-    svg.appendChild(line);
-    var line2 = document.createElementNS(NS, 'line');
-    line2.setAttribute('x1', PAD_L); line2.setAttribute('y1', PAD_T + plotH);
-    line2.setAttribute('x2', PAD_L + plotW); line2.setAttribute('y2', PAD_T + plotH);
-    line2.setAttribute('stroke', axisColor);
-    svg.appendChild(line2);
-
-    /* Y ticks */
-    [0, 0.25, 0.5, 0.75, 1.0].forEach(function(v) {{
-      var y = sy(v);
-      var tick = document.createElementNS(NS, 'line');
-      tick.setAttribute('x1', PAD_L - 4); tick.setAttribute('y1', y);
-      tick.setAttribute('x2', PAD_L); tick.setAttribute('y2', y);
-      tick.setAttribute('stroke', '#999');
-      svg.appendChild(tick);
-      var grid = document.createElementNS(NS, 'line');
-      grid.setAttribute('x1', PAD_L); grid.setAttribute('y1', y);
-      grid.setAttribute('x2', PAD_L + plotW); grid.setAttribute('y2', y);
-      grid.setAttribute('stroke', '#eee');
-      svg.appendChild(grid);
-      var txt = document.createElementNS(NS, 'text');
-      txt.setAttribute('x', PAD_L - 8); txt.setAttribute('y', y + 4);
-      txt.setAttribute('text-anchor', 'end');
-      txt.setAttribute('font-size', '11');
-      txt.setAttribute('fill', '#666');
-      txt.textContent = v.toFixed(2);
-      svg.appendChild(txt);
-    }});
-
-    /* X ticks */
-    var nTicks = 5;
-    for (var ti = 0; ti <= nTicks; ti++) {{
-      var t = (maxT / nTicks) * ti;
-      var x = sx(t);
-      var tick = document.createElementNS(NS, 'line');
-      tick.setAttribute('x1', x); tick.setAttribute('y1', PAD_T + plotH);
-      tick.setAttribute('x2', x); tick.setAttribute('y2', PAD_T + plotH + 4);
-      tick.setAttribute('stroke', '#999');
-      svg.appendChild(tick);
-      var txt = document.createElementNS(NS, 'text');
-      txt.setAttribute('x', x); txt.setAttribute('y', PAD_T + plotH + 18);
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('font-size', '11');
-      txt.setAttribute('fill', '#666');
-      txt.textContent = Math.round(t);
-      svg.appendChild(txt);
-    }}
-
-    /* X axis label */
-    var xlabel = document.createElementNS(NS, 'text');
-    xlabel.setAttribute('x', PAD_L + plotW / 2);
-    xlabel.setAttribute('y', H - 4);
-    xlabel.setAttribute('text-anchor', 'middle');
-    xlabel.setAttribute('font-size', '12');
-    xlabel.setAttribute('fill', '#666');
-    xlabel.textContent = 'Days';
-    svg.appendChild(xlabel);
-
-    /* Y axis label */
-    var ylabel = document.createElementNS(NS, 'text');
-    ylabel.setAttribute('x', 14);
-    ylabel.setAttribute('y', PAD_T + plotH / 2);
-    ylabel.setAttribute('text-anchor', 'middle');
-    ylabel.setAttribute('font-size', '12');
-    ylabel.setAttribute('fill', '#666');
-    ylabel.setAttribute('transform',
-      'rotate(-90,' + 14 + ',' + (PAD_T + plotH / 2) + ')');
-    ylabel.textContent = 'Survival Probability';
-    svg.appendChild(ylabel);
-
-    /* KM step-function */
-    var color = COLORS[oi % COLORS.length];
-    var d = '';
-    for (var i = 0; i < rows.length; i++) {{
-      var x = sx(rows[i].Timeline);
-      var y = sy(rows[i].Survival_Probability);
-      if (i === 0) {{
-        d += 'M' + sx(0) + ',' + sy(1) + ' L' + x + ',' + sy(1) + ' L' + x + ',' + y;
-      }} else {{
-        var prevY = sy(rows[i - 1].Survival_Probability);
-        d += ' L' + x + ',' + prevY + ' L' + x + ',' + y;
-      }}
-    }}
-    var path = document.createElementNS(NS, 'path');
-    path.setAttribute('d', d);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', color);
-    path.setAttribute('stroke-width', '2');
-    svg.appendChild(path);
-  }});
-}});
-</script>
-</body>
-</html>"""
+        # The JS is kept as a plain string to avoid f-string brace conflicts
+        return (
+            '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
+            "<title>Time to Event \u2014 Kaplan-Meier Curves</title>\n"
+            "<style>\n"
+            "body{font-family:Arial,sans-serif;background:#fff;margin:0;"
+            "padding:20px 20px 60px 20px}\n"
+            ".controls{margin-bottom:24px;display:flex;flex-wrap:wrap;gap:8px;"
+            "align-items:center}\n"
+            ".controls label{font-size:13px;font-weight:bold;color:#555;"
+            "margin-right:4px}\n"
+            ".cohort-btn{padding:5px 14px;border-radius:16px;border:2px solid #ccc;"
+            "background:#fff;font-size:12px;cursor:pointer;transition:all .15s}\n"
+            ".cohort-btn.active{color:#fff}\n"
+            ".outcome-section{margin-bottom:40px}\n"
+            ".outcome-title{font-size:16px;font-weight:bold;color:#333;"
+            "margin:0 0 8px 0}\n"
+            ".risk-table{border-collapse:collapse;font-size:11px;margin-top:2px}\n"
+            ".risk-table td{padding:1px 0;text-align:center;min-width:50px}\n"
+            ".risk-table .label-cell{text-align:right;padding-right:8px;"
+            "font-weight:bold;white-space:nowrap}\n"
+            ".phenex-footer{position:fixed;bottom:0;left:0;padding:10px 16px;"
+            "display:flex;align-items:center;gap:8px;"
+            "background:rgba(255,255,255,0.9);z-index:9999}\n"
+            ".phenex-footer img{height:24px;width:auto}\n"
+            ".phenex-footer span{font-size:11px;color:#999}\n"
+            "</style>\n"
+            "</head>\n<body>\n"
+            '<h1 style="margin-bottom:8px">Kaplan-Meier Survival Curves</h1>\n'
+            '<div class="controls" id="controls">'
+            '<label>Cohorts:</label></div>\n'
+            '<div id="charts"></div>\n'
+            + footer_html
+            + "\n<script>\n"
+            "var DATA = " + data_json + ";\n"
+            + _TTE_JS
+            + "\n</script>\n</body>\n</html>"
+        )
 
     _TABLE1_TYPES = {
         "Table1",
