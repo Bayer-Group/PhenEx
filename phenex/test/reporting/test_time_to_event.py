@@ -761,9 +761,7 @@ class TestTimeToEventSubcohortProxy:
         proxy.subset_tables_index = None
 
         tte.cohort = proxy
-        tte._outcomes = [
-            p for p in proxy.outcomes if p.name in tte.phenotype_names
-        ]
+        tte._outcomes = [p for p in proxy.outcomes if p.name in tte.phenotype_names]
         tte._tte_table = pd.DataFrame(
             {
                 "INDICATOR_STROKE": [0, 1, 1, 0],
@@ -828,3 +826,90 @@ class TestTimeToEventSubcohortProxy:
         # getattr fallback should return 'cohort'
         cohort_name = getattr(tte.cohort, "name", "cohort")
         assert cohort_name == "cohort"
+
+
+class TestTimeToEventEmptyData:
+    """Test graceful handling when cohort has no patients or outcomes have no data."""
+
+    def test_empty_tte_table_returns_empty_df(self):
+        """fit/build/plot should not raise when _tte_table is empty."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(columns=["INDICATOR_MI", "DAYS_FIRST_EVENT_MI"])
+
+        mock_phenotype = Mock()
+        mock_phenotype.name = "MI"
+        tte._outcomes = [mock_phenotype]
+        tte.cohort = Mock()
+        tte.cohort.name = "empty_cohort"
+
+        # fit should return None
+        kmf = tte.fit_kaplan_meier_for_phenotype(mock_phenotype)
+        assert kmf is None
+
+        # aggregated table should be empty
+        result = tte._build_aggregated_risk_table()
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+        # plotting should not raise
+        tte.plot_multiple_kaplan_meier()
+
+    def test_empty_tte_table_render_km_images_returns_empty(self):
+        """_render_km_images_html returns empty list when no data."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame()
+        tte._outcomes = []
+        tte.cohort = Mock()
+        tte.cohort.name = "empty_cohort"
+
+        assert tte._render_km_images_html() == []
+
+    def test_fit_returns_none_for_all_nan_durations(self):
+        """fit should return None when duration column is all NaN."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [float("nan"), float("nan")],
+                "DAYS_FIRST_EVENT_MI": [float("nan"), float("nan")],
+            }
+        )
+        mock_phenotype = Mock()
+        mock_phenotype.name = "MI"
+
+        kmf = tte.fit_kaplan_meier_for_phenotype(mock_phenotype)
+        assert kmf is None
+
+    def test_build_aggregated_table_skips_empty_outcomes(self):
+        """Outcomes with no data are skipped; valid ones still produce rows."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [float("nan"), float("nan")],
+                "DAYS_FIRST_EVENT_MI": [float("nan"), float("nan")],
+                "INDICATOR_STROKE": [1, 0],
+                "DAYS_FIRST_EVENT_STROKE": [30.0, 60.0],
+            }
+        )
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+        mock_stroke = Mock()
+        mock_stroke.name = "Stroke"
+        tte._outcomes = [mock_mi, mock_stroke]
+        tte.cohort = Mock()
+
+        result = tte._build_aggregated_risk_table()
+        assert not result.empty
+        assert "MI" not in result["Outcome"].values
+        assert "Stroke" in result["Outcome"].values

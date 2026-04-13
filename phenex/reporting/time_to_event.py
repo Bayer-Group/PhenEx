@@ -1,7 +1,10 @@
 from typing import Union, Optional, List
+import base64
+import io
 import math
 import os
 import pandas as pd
+from pathlib import Path
 from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 
@@ -101,6 +104,11 @@ class TimeToEvent(Reporter):
         table = self._append_days_to_event(table)
         table = self._append_date_and_days_to_first_event(table)
         self._tte_table = table.execute()  # Convert to pandas DataFrame
+
+        if self._tte_table.empty:
+            logger.warning("No patients in cohort; skipping time-to-event analysis.")
+            self.df = pd.DataFrame()
+            return self.df
 
         # Build aggregated survival/risk data from KM fits
         self.df = self._build_aggregated_risk_table()
@@ -229,16 +237,22 @@ class TimeToEvent(Reporter):
         For each outcome, plot a kaplan meier curve.
         """
         # subset for current codelist
+        if self._tte_table is None or self._tte_table.empty:
+            return
         phenotypes = self._outcomes
         if outcome_indices is not None:
             phenotypes = [
                 x for i, x in enumerate(self._outcomes) if i in outcome_indices
             ]
+        if not phenotypes:
+            return
         n_rows = math.ceil(len(phenotypes) / n_cols)
         fig, axes = plt.subplots(n_rows, n_cols, sharey=True, sharex=True)
 
         for i, phenotype in enumerate(phenotypes):
             kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
             if n_rows > 1 and n_cols > 1:
                 ax = axes[int(i / n_cols), i % n_cols]
             else:
@@ -252,7 +266,7 @@ class TimeToEvent(Reporter):
             ax.grid(color="gray", linestyle="-", linewidth=0.1)
 
         if path_dir is not None:
-            cohort_name = getattr(self.cohort, 'name', 'cohort')
+            cohort_name = getattr(self.cohort, "name", "cohort")
             path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
         plt.show()
@@ -269,9 +283,10 @@ class TimeToEvent(Reporter):
         """
         # subset for current codelist
         phenotype = self._outcomes[outcome_index]
-        fig, ax = plt.subplots(1, 1)
-
         kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+        if kmf is None:
+            return
+        fig, ax = plt.subplots(1, 1, figsize=(12, 4))
 
         ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
         kmf.plot(ax=ax)
@@ -285,7 +300,8 @@ class TimeToEvent(Reporter):
 
         if path_dir is not None:
             path = os.path.join(
-                path_dir, f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg"
+                path_dir,
+                f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg",
             )
             plt.savefig(path, dpi=150)
         plt.show()
@@ -298,12 +314,14 @@ class TimeToEvent(Reporter):
             phenotype: The outcome phenotype to analyze
 
         Returns:
-            KaplanMeierFitter: Fitted KM model
+            KaplanMeierFitter or None: Fitted KM model, or None if data is empty.
         """
         indicator = f"INDICATOR_{phenotype.name.upper()}"
         durations = f"DAYS_FIRST_EVENT_{phenotype.name.upper()}"
-        _sdf = self._tte_table[[indicator, durations]]
-        _df = _sdf
+        _df = self._tte_table[[indicator, durations]].dropna()
+        if _df.empty:
+            logger.warning(f"No data for outcome {phenotype.name}; skipping KM fit.")
+            return None
         kmf = KaplanMeierFitter(label=phenotype.name)
         kmf.fit(durations=_df[durations], event_observed=_df[indicator])
         return kmf
@@ -322,6 +340,8 @@ class TimeToEvent(Reporter):
 
         for phenotype in self._outcomes:
             kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
 
             # Get survival function
             survival_df = kmf.survival_function_.reset_index()
@@ -364,3 +384,86 @@ class TimeToEvent(Reporter):
             result = pd.DataFrame()
 
         return result
+
+    def to_html(self, filename: str, version: str = "unknown") -> str:
+        """Export KM curves for all outcomes as a self-contained HTML file with embedded PNGs."""
+        filepath = Path(filename)
+        if filepath.suffix != ".html":
+            filepath = filepath.with_suffix(".html")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        cohort_name = getattr(self.cohort, "name", "cohort")
+        images_html = self._render_km_images_html()
+
+        # Embed bird icon as base64 data URI
+        icon_path = (
+            Path(__file__).resolve().parent.parent / "docs" / "assets" / "bird_icon.png"
+        )
+        if icon_path.exists():
+            icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+            icon_data_uri = f"data:image/png;base64,{icon_b64}"
+        else:
+            icon_data_uri = ""
+
+        from html import escape
+
+        version_escaped = escape(version)
+
+        if icon_data_uri:
+            footer = (
+                f'<div class="phenex-footer">'
+                f'<img src="{icon_data_uri}" alt="PhenEx">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+        else:
+            footer = (
+                f'<div class="phenex-footer">'
+                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            )
+
+        html = (
+            "<!DOCTYPE html><html><head>"
+            f"<title>Time to Event - {cohort_name}</title>"
+            "<style>"
+            "body{font-family:sans-serif;margin:20px;padding-bottom:50px;}"
+            ".phenex-footer{position:fixed;bottom:0;left:0;padding:10px 16px;"
+            "display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.9);z-index:9999;}"
+            ".phenex-footer img{height:24px;width:auto;}"
+            ".phenex-footer span{font-size:11px;color:#999;}"
+            "</style>"
+            "</head><body>"
+            f"<h1>Kaplan-Meier Curves &mdash; {cohort_name}</h1>"
+            + "\n".join(images_html)
+            + footer
+            + "</body></html>"
+        )
+        filepath.write_text(html, encoding="utf-8")
+        return str(filepath.absolute())
+
+    def _render_km_images_html(self) -> list:
+        """Render KM curves for all outcomes as base64-embedded HTML image divs."""
+        images_html = []
+        if self._tte_table is None or self._tte_table.empty:
+            return images_html
+        for i, phenotype in enumerate(self._outcomes):
+            kmf = self.fit_kaplan_meier_for_phenotype(phenotype)
+            if kmf is None:
+                continue
+            fig, ax = plt.subplots(1, 1, figsize=(12, 4))
+            ax.set_title(f"Kaplan Meier for outcome : {phenotype.name}")
+            kmf.plot(ax=ax)
+            add_at_risk_counts(kmf, ax=ax)
+            plt.tight_layout()
+            ax.grid(color="gray", linestyle="-", linewidth=0.1)
+
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", dpi=150)
+            plt.close(fig)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode("utf-8")
+            images_html.append(
+                f'<div style="margin-bottom:20px;">'
+                f'<img src="data:image/png;base64,{b64}" style="max-width:100%;"/>'
+                f"</div>"
+            )
+        return images_html
