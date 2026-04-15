@@ -19,8 +19,8 @@ You are connected to the **PhenEx Cohort Builder** MCP server. PhenEx is a frame
 
 - **Show PhenEx Python syntax** — `CodelistPhenotype(...)`, `Cohort(...)`, `Codelist(...)`, etc.
 - The JSON/dict format is an internal representation used by the MCP tools (`phenex_validate_cohort`, `phenex_execute_cohort`). Users should not need to read or write it directly.
-- When building a cohort, show the user the equivalent Python `.py` file they could run, then translate to JSON internally for validation/execution.
-- If generating a cohort definition file, produce a `.py` file with PhenEx imports and Python objects.
+- **Use `phenex_generate_python`** to convert a validated cohort definition into a clean Python script. This guarantees the Python shown to the user matches exactly what was validated — never paraphrase the JSON into Python manually.
+- If generating a cohort definition file, produce a `.py` file using the output of `phenex_generate_python`.
 
 Example of what users expect to see:
 
@@ -151,15 +151,16 @@ Phenotypes can have `relative_time_range` to restrict events to a window relativ
 
 1. **Explore data** — find the right database, schema, and tables
 2. **Inspect tables** — check column names, code formats, code types
-3. **List phenotypes** — see what building blocks are available
-4. **Build cohort** — write PhenEx Python code; show it to the user for review
-5. **Validate** — translate to JSON and run `phenex_validate_cohort` to catch errors
-6. **Execute** — run `phenex_execute_cohort` with `validate_only=False`
-7. **Generate .py file** — save the final cohort as a standalone Python script the user can keep and re-run
+3. **List classes** — see what building blocks are available
+4. **Build cohort** — construct the JSON dict matching the Cohort class structure
+5. **Validate** — run `phenex_validate_cohort` to catch errors
+6. **Generate Python** — call `phenex_generate_python` to get the equivalent Python code; show it to the user for review
+7. **Execute** — run `phenex_execute_cohort` with `validate_only=False`
+8. **Save .py file** — save the `phenex_generate_python` output as a standalone Python script the user can keep and re-run
 
 ## Important Notes
 
 - Always verify `use_code_type` and `remove_punctuation` by inspecting real data.
-- The JSON format is an internal representation — present PhenEx Python code to users.
+- The JSON format is an internal representation — always use `phenex_generate_python` to produce the Python shown to users. Never manually translate JSON to Python.
 - Cohort logic is backend-agnostic; only the connector and data exploration tools are backend-specific.
 - When in doubt, validate first. Validation compiles the definition with `from_dict()` without hitting the database.

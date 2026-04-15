@@ -37,6 +37,7 @@ from phenotype_registry import (
 )
 import snowflake_explorer as sf_explorer
 from cohort_tools import validate_phenotype, validate_cohort, execute_cohort
+from code_generator import generate_python
 import codelist_store
 
 # Load environment variables from .env file in this directory
@@ -189,6 +190,103 @@ def phenex_get_codelist(name: str) -> Dict[str, Any]:
         return {"success": True, **result}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# ============================================================
+# PHENEX CODE GENERATION TOOLS
+# ============================================================
+
+
+@mcp.tool()
+def phenex_generate_python(
+    definition: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Generate a runnable Python script from any PhenEx definition dict.
+
+    Accepts any PhenEx expression — a Cohort, a single phenotype, a filter,
+    a Codelist, etc. Compiles the dict with from_dict() to verify correctness,
+    then emits clean, idiomatic Python code that constructs the same object.
+
+    Use this tool:
+    - After building and validating a definition to show the user the
+      equivalent Python code for review
+    - To produce a .py artifact the user can save and re-run independently
+    - To guarantee that the Python shown matches exactly what was validated
+
+    Args:
+        definition: Any PhenEx definition dict with a 'class_name' (or 'type')
+                    field. Examples:
+                    - A full Cohort dict with entry_criterion, inclusions, etc.
+                    - A single phenotype: {"type": "CodelistPhenotype", ...}
+                    - A filter: {"type": "RelativeTimeRangeFilter", ...}
+                    - A codelist: {"class_name": "Codelist", ...}
+
+    Returns:
+        Dictionary containing:
+        - success (bool): Whether code generation succeeded
+        - code (str): The generated Python script with imports and
+                      constructor calls. Ready to save as a .py file.
+        - error (str): Error message if generation failed. Fix errors with
+                      phenex_validate_phenotype / phenex_validate_cohort
+                      first, then retry.
+
+    Example — single phenotype:
+
+        Input:
+            {"type": "CodelistPhenotype", "name": "diabetes",
+             "domain": "CONDITION_OCCURRENCE_SOURCE",
+             "codelist": {"ICD10CM": ["E11.0", "E11.9"]},
+             "return_date": "first"}
+
+        Output code:
+            from phenex.codelists import Codelist
+            from phenex.phenotypes import CodelistPhenotype
+
+            diabetes = CodelistPhenotype(
+                name='DIABETES',
+                domain='CONDITION_OCCURRENCE_SOURCE',
+                return_date='first',
+                codelist=Codelist(
+                    codelist={'ICD10CM': ['E11.0', 'E11.9']},
+                    name='diabetes_codes',
+                ),
+            )
+
+    Example — full cohort:
+
+        Input:
+            {"class_name": "Cohort", "name": "afib_cohort",
+             "entry_criterion": {"type": "CodelistPhenotype", "name": "af",
+                "domain": "CONDITION_OCCURRENCE_SOURCE",
+                "codelist": {"ICD10CM": ["I48.0", "I48.1"]},
+                "return_date": "first"},
+             "characteristics": [
+                {"type": "AgePhenotype", "name": "age"},
+                {"type": "SexPhenotype", "name": "sex"}]}
+
+        Output code:
+            from phenex.codelists import Codelist
+            from phenex.core import Cohort
+            from phenex.phenotypes import AgePhenotype, CodelistPhenotype, SexPhenotype
+
+            af = CodelistPhenotype(
+                name='AF',
+                domain='CONDITION_OCCURRENCE_SOURCE',
+                return_date='first',
+                codelist=Codelist(codelist={'ICD10CM': ['I48.0', 'I48.1']}, ...),
+            )
+
+            age = AgePhenotype(name='AGE')
+            sex = SexPhenotype(name='SEX')
+
+            afib_cohort = Cohort(
+                name='afib_cohort',
+                entry_criterion=af,
+                characteristics=[age, sex],
+            )
+    """
+    return generate_python(definition)
 
 
 # ============================================================
