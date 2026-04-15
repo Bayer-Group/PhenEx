@@ -10,8 +10,11 @@ from phenex.tables import is_phenex_code_table, PhenotypeTable
 
 class CodelistPhenotype(EventPhenotype):
     """
-    CodelistPhenotype extracts patients from a CodeTable based on a specified codelist and
-    other optional filters such as date range, relative time range and categorical filters.
+    Use CodelistPhenotype to identify patients who have a specific diagnosis, procedure, or drug exposure based on medical codes (e.g. ICD-10, CPT, RxNorm). This is the most commonly used phenotype — use it whenever the clinical concept you need can be defined by a set of codes in a codelist. Supports filtering by date range, relative time range, and categorical filters (e.g. inpatient / outpatient).
+
+    For patients passing all filters, this phenotype returns:
+        DATE: The date of the matching event (first, last, nearest, or all depending on return_date).
+        VALUE: The matched medical code if return_value='all'; otherwise not populated.
 
     Parameters:
         domain: The domain of the phenotype.

@@ -18,16 +18,11 @@ import ibis
 
 class TimeRangeCountPhenotype(Phenotype):
     """
-    TimeRangeCountPhenotype works with time range tables i.e. the input table must have a START_DATE and END_DATE column (in addition to PERSON_ID). It counts the number of distinct time ranges for each person, either total or within a specified date range (relative or absolute). If no relative_time_range defined, it returns the number of time periods per person. If relative_time_range is defined, it counts the number of time periods before or after (depending on when keyword argument of relative_time_range), NOT including the time period defined by the relative_time_range anchor.
+    Use TimeRangeCountPhenotype to count the number of distinct episodes or periods for each patient from a table with START_DATE and END_DATE columns. Common use cases: count hospitalizations in the post-index period, count drug exposure episodes, or require a minimum number of coverage periods. Use value_filter to set thresholds (e.g. "≥2 hospitalizations").
 
-    If min_days or max_days of the relative_time_range are defined, the entire time period must be included in the relative time range i.e. if before, the start date of all time periods must be contained within the time range.
-
-    This can be used :
-    - given an admission discharge table, to count the number of hospitalizations that occurred e.g. in the post index period
-    - given a drug exposure table, to count the number of times a person has taken a medication
-
-    DATE: Date is always null
-    VALUE: Number of distinct time periods in the specified time range.
+    This phenotype returns:
+        DATE: Not populated (null).
+        VALUE: Number of distinct time periods in the specified time range.
 
     Parameters:
         domain: The domain of the phenotype.

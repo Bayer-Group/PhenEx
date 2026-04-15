@@ -79,7 +79,27 @@ PHENOTYPE_CLASSES: List = (
         ArithmeticPhenotype,
         LogicPhenotype,
         WithinSameEncounterPhenotype,
-        UserDefinedPhenotype,
+    ]
+    if PHENEX_AVAILABLE
+    else []
+)
+
+# Filter classes to expose via phenex_list_available_filters
+FILTER_CLASSES: List = (
+    [
+        RelativeTimeRangeFilter,
+        ValueFilter,
+        CategoricalFilter,
+        DateFilter,
+        GreaterThan,
+        GreaterThanOrEqualTo,
+        LessThan,
+        LessThanOrEqualTo,
+        EqualTo,
+        After,
+        AfterOrOn,
+        Before,
+        BeforeOrOn,
     ]
     if PHENEX_AVAILABLE
     else []
@@ -298,22 +318,42 @@ def get_available_phenotypes() -> List[Dict[str, Any]]:
     phenotypes = []
     for cls in PHENOTYPE_CLASSES:
         sections = _extract_docstring_sections(cls)
-        params = _extract_parameters(cls)
 
         phenotypes.append(
             {
                 "name": cls.__name__,
                 "description": sections["description"],
-                "parameters": params,
-                "example": sections.get("example", ""),
             }
         )
     return phenotypes
 
 
-def get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
+def get_available_filters() -> List[Dict[str, Any]]:
+    """Get list of all available PhenEx filter types, derived from actual class docs."""
+    if not PHENEX_AVAILABLE:
+        return [
+            {
+                "error": "PhenEx library not available. Install with: pip install phenex",
+                "filters": [],
+            }
+        ]
+
+    filters = []
+    for cls in FILTER_CLASSES:
+        sections = _extract_docstring_sections(cls)
+
+        filters.append(
+            {
+                "name": cls.__name__,
+                "description": sections["description"],
+            }
+        )
+    return filters
+
+
+def get_spec(class_name: str) -> Dict[str, Any]:
     """
-    Get detailed specification for a specific phenotype class.
+    Get detailed specification for a phenotype class, filter class, or the Codelist class.
 
     Returns the full docstring, all constructor parameters, and examples —
     all derived from the actual class, nothing hardcoded.
@@ -323,14 +363,17 @@ def get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
             "error": "PhenEx library not available. Install with: pip install phenex"
         }
 
+    # Build a combined map of phenotypes + filters
     cls_map = {cls.__name__: cls for cls in PHENOTYPE_CLASSES}
-    if phenotype_class not in cls_map:
+    cls_map.update({cls.__name__: cls for cls in FILTER_CLASSES})
+
+    if class_name not in cls_map:
         return {
-            "error": f"Unknown phenotype class: {phenotype_class}",
-            "available_classes": list(cls_map.keys()),
+            "error": f"Unknown class: {class_name}",
+            "available_classes": sorted(cls_map.keys()),
         }
 
-    cls = cls_map[phenotype_class]
+    cls = cls_map[class_name]
     sections = _extract_docstring_sections(cls)
     params = _extract_parameters(cls)
 
@@ -339,21 +382,20 @@ def get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
     for param_info in params.values():
         type_str = param_info.get("type", "")
         param_nested = {}
-        for class_name, supporting_cls in SUPPORTING_CLASSES.items():
-            if class_name in type_str and class_name not in seen:
-                seen.add(class_name)
-                param_nested[class_name] = _get_supporting_class_spec(
+        for sc_name, supporting_cls in SUPPORTING_CLASSES.items():
+            if sc_name in type_str and sc_name not in seen:
+                seen.add(sc_name)
+                param_nested[sc_name] = _get_supporting_class_spec(
                     supporting_cls, seen
                 )
         if param_nested:
             param_info["nested_specs"] = param_nested
 
     return {
-        "name": phenotype_class,
+        "name": class_name,
         "description": sections["description"],
         "parameters": params,
-        "docstring": sections["full"],
-        "example": sections.get("example", "See docstring for examples"),
+        "example": sections.get("example", "No examples found."),
     }
 
 

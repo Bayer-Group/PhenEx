@@ -14,9 +14,11 @@ logger = create_logger(__name__)
 
 class AgePhenotype(Phenotype):
     """
-    AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals
-    based on their date of birth and an optional anchor phenotype. The age is computed in years and can
-    be filtered within a specified range.
+    Use AgePhenotype to compute patient age (in years) at a given reference date or to include/exclude patients based on age criteria (e.g. "patients aged 18-65 at index date"). Age is calculated from date of birth to the index date (or a custom anchor phenotype if supplied).
+
+    For patients passing all filters, this phenotype returns:
+        DATE: The patient's date of birth.
+        VALUE: Age in years at the anchor date (index date if not anchor not explicitly supplied).
 
     Parameters:
         name: Name of the phenotype, default is 'age'.

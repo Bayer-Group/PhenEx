@@ -53,7 +53,7 @@ cohort = Cohort(
 ### 1. Explore Phenotype Types
 
 Use `phenex_list_available_phenotypes` to see all available phenotype classes.
-Use `phenex_get_phenotype_spec` to get detailed constructor parameters and examples for a specific class.
+Use `phenex_get_spec` to get detailed constructor parameters and examples for a specific class.
 Pass `"Codelist"` to get full documentation on the Codelist class (the fundamental building block for code-based phenotypes).
 
 ### 2. Explore Data (Snowflake)

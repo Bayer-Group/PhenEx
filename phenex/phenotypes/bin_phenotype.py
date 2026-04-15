@@ -16,14 +16,11 @@ logger = create_logger(__name__)
 
 class BinPhenotype(Phenotype):
     """
-    BinPhenotype converts values into categorical bin labels. Supports both continuous numeric binning and discrete value mapping.
+    Use BinPhenotype to convert numeric or discrete values into categorical groups for reporting (e.g. age groups "18-30", "31-45", "46-65" or BMI categories "normal", "overweight", "obese"). Takes another phenotype as input and maps its VALUE column into named bins. Use bins for numeric ranges or value_mapping for discrete-to-category mapping.
 
-    For continuous values: Takes a phenotype that returns numeric values (like age, measurements, etc.) and converts the VALUE column into bin labels like "[10-20)", "[20-30)", etc.
-
-    For discrete values: Takes a phenotype that returns discrete values (like codes from CodelistPhenotype) and maps them to categorical labels using a bin mapping dictionary.
-
-    DATE: The event date selected from the input phenotype
-    VALUE: A categorical variable representing the bin label
+    This phenotype returns:
+        DATE: The event date from the input phenotype.
+        VALUE: A label representing the bin.
 
     Parameters:
         name: The name of the phenotype.

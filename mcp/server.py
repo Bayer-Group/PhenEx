@@ -33,7 +33,8 @@ logger.setLevel(getattr(logging, log_level, logging.INFO))
 
 from phenotype_registry import (
     get_available_phenotypes,
-    get_phenotype_spec,
+    get_available_filters,
+    get_spec,
     get_codelist_spec,
 )
 import snowflake_explorer as sf_explorer
@@ -66,10 +67,9 @@ def phenex_list_available_phenotypes() -> Dict[str, Any]:
         - phenotypes (list): Array of available phenotype types, each with:
             * name (str): Phenotype class name (e.g., "CodelistPhenotype")
             * description (str): What the phenotype does
-            * use_cases (list): Example clinical use cases
         - count (int): Total number of available phenotypes
 
-    After reviewing available phenotypes, use phenex_get_phenotype_spec() to get detailed
+    After reviewing available phenotypes, use phenex_get_spec() to get detailed
     parameters and usage examples for a specific phenotype class.
     """
     try:
@@ -90,34 +90,67 @@ def phenex_list_available_phenotypes() -> Dict[str, Any]:
 
 
 @mcp.tool()
-def phenex_get_phenotype_spec(phenotype_class: str) -> Dict[str, Any]:
+def phenex_list_available_filters() -> Dict[str, Any]:
     """
-    Get detailed specification and usage examples for a specific PhenEx phenotype class.
+    List all available PhenEx filter types with descriptions.
 
-    Also supports "Codelist" to get full documentation on the Codelist class, which is
-    the fundamental building block for code-based phenotypes.
+    Filters are used within phenotype definitions to restrict which events or
+    patients are included. Use this tool to discover what types of filters you
+    can apply when building phenotypes.
+
+    Returns:
+        Dictionary containing:
+        - filters (list): Array of available filter types, each with:
+            * name (str): Filter class name (e.g., "RelativeTimeRangeFilter")
+            * description (str): When to use this filter
+        - count (int): Total number of available filters
+
+    After reviewing available filters, use phenex_get_spec() to get detailed
+    parameters and usage examples for a specific filter class.
+    """
+    try:
+        filters = get_available_filters()
+
+        if isinstance(filters, list) and len(filters) > 0:
+            if "error" in filters[0]:
+                return {
+                    "success": False,
+                    "error": filters[0]["error"],
+                    "filters": [],
+                    "count": 0,
+                }
+
+        return {"success": True, "filters": filters, "count": len(filters)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "filters": [], "count": 0}
+
+
+@mcp.tool()
+def phenex_get_spec(class_name: str) -> Dict[str, Any]:
+    """
+    Get detailed specification and usage examples for a PhenEx phenotype class,
+    filter class, or the Codelist class.
 
     Args:
-        phenotype_class: Name of the phenotype class to get specs for.
-                        Must exactly match a name from phenex_list_available_phenotypes(),
-                        or "Codelist" for codelist documentation.
-                        Examples: "CodelistPhenotype", "Codelist", "AgePhenotype", "MeasurementPhenotype"
+        class_name: Name of the class to get specs for.
+                    Must exactly match a name from phenex_list_available_phenotypes()
+                    or phenex_list_available_filters(), or "Codelist" for codelist documentation.
+                    Examples: "CodelistPhenotype", "RelativeTimeRangeFilter",
+                              "ValueFilter", "Codelist", "AgePhenotype"
 
     Returns:
         Dictionary containing:
         - success (bool): Whether the spec was retrieved successfully
-        - name (str): Phenotype class name
+        - name (str): Class name
         - description (str): Brief description
-        - use_cases (list): Example clinical use cases
         - parameters (dict): All constructor parameters with types, required flags, defaults
-        - docstring (str): Complete class documentation
         - example (str): Example usage code
     """
-    if phenotype_class == "Codelist":
+    if class_name == "Codelist":
         return get_codelist_spec()
 
     try:
-        spec = get_phenotype_spec(phenotype_class)
+        spec = get_spec(class_name)
         if "error" in spec:
             return {"success": False, **spec}
         return {"success": True, **spec}

@@ -10,14 +10,11 @@ import ibis
 
 class TimeRangePhenotype(Phenotype):
     """
-    As the name implies, TimeRangePhenotype is designed for working with time ranges. If the input data has a start and an end date, use TimeRangePhenotype to identify other events (or patients) that occur within this time range. The most common use case of this is working with 'health insurance coverage' data i.e. on 'OBSERVATION_PERIOD' table. These tables have one or many rows per patient with the start of coverage and end of coverage i.e. domains compatible with TimeRangePhenotype require a START_DATE and an END_DATE column. At it's simplest, TimeRangePhenotype identifies patients who have their INDEX_DATE (or other anchor date of interest) within this time range. Additionally, a minimum or maximum number of days from the anchor date to the beginning/end of the time range can be defined. The returned Phenotype has the following interpretation:
+    Use TimeRangePhenotype to work with data that has start and end dates — most commonly health insurance coverage (OBSERVATION_PERIOD). The two primary use cases are: (1) require minimum continuous enrollment/coverage before or after index date (e.g. "1 year of continuous coverage prior to index"), and (2) determine the date of loss to follow-up (right censoring). The input domain must have START_DATE and END_DATE columns.
 
-    DATE: If relative_time_range.when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If relative_time_range.when='after', then DATE is the end of the coverage period containing the anchor date.
-    VALUE: Coverage (in days) relative to the anchor date. By convention, always non-negative.
-
-    There are two primary use cases for TimeRangePhenotype:
-        1. Identify patients with some minimum duration of coverage prior to anchor_phenotype date e.g. "identify patients with 1 year of continuous coverage prior to index date"
-        2. Determine the date of loss to followup (right censoring) i.e. the duration of coverage after the anchor_phenotype event
+    This phenotype returns:
+        DATE: If when='before', the start of the coverage period containing the anchor. If 'after', the end of that period.
+        VALUE: Coverage in days relative to the anchor date (always non-negative).
 
     ## Data for TimeRangePhenotype
     This phenotype requires a table with PersonID and a coverage start date and end date. Depending on the datasource used, this information is a separate ObservationPeriod table or found in the PersonTable. Use an PhenexObservationPeriodTable to map required coverage start and end date columns. For tables with overlapping time ranges, use the CombineOverlappingPeriods derived table to combine time ranges into a single time range.
