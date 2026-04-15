@@ -48,8 +48,128 @@ mcp = FastMCP("PhenEx Cohort Builder")
 
 
 # ============================================================
+# CONFIGURATION
+# ============================================================
+
+# Environment variables to expose in get_config, grouped by purpose.
+# Values marked as secret are masked in the output.
+_CONFIG_KEYS = [
+    # (env_var, display_name, secret)
+    ("SNOWFLAKE_USER", "Snowflake user", False),
+    ("SNOWFLAKE_ACCOUNT", "Snowflake account", False),
+    ("SNOWFLAKE_WAREHOUSE", "Snowflake warehouse", False),
+    ("SNOWFLAKE_ROLE", "Snowflake role", False),
+    ("SNOWFLAKE_PASSWORD", "Snowflake password", True),
+    ("SNOWFLAKE_SOURCE_DATABASE", "Source database", False),
+    ("SNOWFLAKE_SOURCE_SCHEMA", "Source schema", False),
+    ("SNOWFLAKE_DEST_DATABASE", "Destination database", False),
+    ("PHENEX_CODELIST_DIR", "Codelist directory", False),
+    ("PHENEX_CODELIST_CODE_COLUMN", "Codelist code column", False),
+    ("PHENEX_CODELIST_NAME_COLUMN", "Codelist name column", False),
+    ("PHENEX_CODELIST_CODE_TYPE_COLUMN", "Codelist code type column", False),
+    ("MCP_TRANSPORT", "MCP transport", False),
+    ("MCP_HOST", "MCP host", False),
+    ("MCP_PORT", "MCP port", False),
+    ("LOG_LEVEL", "Log level", False),
+]
+
+
+@mcp.tool()
+def phenex_get_config() -> Dict[str, Any]:
+    """
+    Return the current server configuration (environment variables).
+
+    Sensitive values (passwords, tokens) are masked. Use this to verify
+    which Snowflake account, database, schema, and codelist directory are
+    configured before running queries or executing cohorts.
+
+    Returns:
+        Dictionary with:
+        - config (dict): Key-value pairs of all configured settings
+        - missing (list): Environment variables that are not set
+    """
+    config = {}
+    missing = []
+    for env_var, display_name, secret in _CONFIG_KEYS:
+        value = os.getenv(env_var)
+        if value is None:
+            missing.append(env_var)
+        elif secret:
+            config[env_var] = "****"
+        else:
+            config[env_var] = value
+    return {"config": config, "missing": missing}
+
+
+# ============================================================
 # PHENEX CLASS DISCOVERY TOOLS
 # ============================================================
+
+
+@mcp.tool()
+def phenex_get_mappers() -> Dict[str, Any]:
+    """
+    Discover all available data-source mappers and their domain configurations.
+
+    Mappers convert from a source data format (e.g. OMOP CDM) to PhenEx's
+    internal column model.  The AI workflow is:
+
+    1. Call this tool to see which mapper families are available.
+    2. Pick the mapper that matches the target database's format.
+    3. For each phenotype, pick the right **domain** within that mapper
+       (e.g. CONDITION_OCCURRENCE_SOURCE for ICD source codes).
+    4. Check has_code_type — if False, set use_code_type=False on the codelist.
+
+    Returns:
+        Dictionary with:
+        - mappers (dict): Each key is a mapper family name, value has:
+            * domains (dict): domain_name → {source_table, column_mapping,
+              table_type, has_code_type, note?}
+    """
+    try:
+        import inspect
+        import phenex.mappers as mappers_module
+        from phenex.mappers import DomainsDictionary
+
+        # Discover all module-level DomainsDictionary instances
+        result = {}
+        for attr_name in dir(mappers_module):
+            obj = getattr(mappers_module, attr_name)
+            if not isinstance(obj, DomainsDictionary):
+                continue
+
+            # Derive a friendly mapper family name from the variable name
+            # e.g. "OMOPDomains" → "OMOP"
+            family = attr_name.replace("Domains", "").replace("domains", "")
+            if not family:
+                family = attr_name
+
+            domains = {}
+            for domain_name, mapper_cls in obj.domains_dict.items():
+                info = {
+                    "source_table": mapper_cls.NAME_TABLE,
+                    "column_mapping": dict(mapper_cls.DEFAULT_MAPPING),
+                    "table_type": (
+                        mapper_cls.__bases__[0].__name__
+                        if mapper_cls.__bases__
+                        else mapper_cls.__name__
+                    ),
+                }
+                if "CODE" in mapper_cls.DEFAULT_MAPPING and "CODE_TYPE" not in mapper_cls.DEFAULT_MAPPING:
+                    info["has_code_type"] = False
+                    info["note"] = "No CODE_TYPE column — use use_code_type=False in your codelist"
+                elif "CODE_TYPE" in mapper_cls.DEFAULT_MAPPING:
+                    info["has_code_type"] = True
+                domains[domain_name] = info
+
+            result[family] = {"variable": attr_name, "domains": domains}
+
+        if not result:
+            return {"success": False, "error": "No DomainsDictionary instances found in phenex.mappers"}
+
+        return {"success": True, "mappers": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
