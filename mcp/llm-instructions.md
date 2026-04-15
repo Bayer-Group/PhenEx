@@ -72,41 +72,42 @@ The `snowflake_*` tools let you browse a Snowflake warehouse. These are Snowflak
 
 ### 3. Define & Validate Cohorts
 
-Internally, cohorts are passed to the MCP tools as JSON dictionaries. The simplified format:
+Internally, cohorts are passed to the MCP tools as JSON dictionaries matching the `Cohort` class constructor:
 
 ```json
 {
   "name": "my_cohort",
-  "phenotypes": [
+  "entry_criterion": {
+    "type": "CodelistPhenotype",
+    "name": "index_event",
+    "domain": "CONDITION_OCCURRENCE_SOURCE",
+    "codelist": { "ICD10CM": ["I48.0", "I48.1"] },
+    "return_date": "first"
+  },
+  "inclusions": [
     {
-      "type": "CodelistPhenotype",
-      "name": "index_event",
-      "domain": "CONDITION_OCCURRENCE_SOURCE",
-      "codelist": { "ICD10CM": ["I48.0", "I48.1"] },
-      "use_code_type": false,
-      "remove_punctuation": true,
-      "return_date": "first"
+      "type": "AgePhenotype",
+      "name": "age_18_plus",
+      "min_age": { "type": "GreaterThanOrEqualTo", "value": 18 }
     }
-  ]
+  ],
+  "exclusions": [],
+  "characteristics": [
+    { "type": "AgePhenotype", "name": "age" },
+    { "type": "SexPhenotype", "name": "sex" }
+  ],
+  "outcomes": []
 }
 ```
 
-Codelists can also be passed **by reference** using the name from the codelist store
+Codelists can be **inline dicts** or passed **by reference** as a string name from the codelist store
 (use `phenex_find_codelists` to discover available names):
 
 ```json
-{
-  "type": "CodelistPhenotype",
-  "name": "index_event",
-  "domain": "CONDITION_OCCURRENCE_SOURCE",
-  "codelist": "atrial_fibrillation",
-  "return_date": "first"
-}
+"codelist": "atrial_fibrillation"
 ```
 
 When `"codelist"` is a string, it is resolved from the codelist store at validation/execution time.
-
-The first phenotype is always the **entry criterion** (index date). Additional phenotypes can have a `"role"` field: `"inclusion"`, `"exclusion"`, `"characteristic"`, or `"outcome"`.
 
 **But present this to the user as Python code** (see User Preferences above). Only use JSON when calling the MCP tools.
 

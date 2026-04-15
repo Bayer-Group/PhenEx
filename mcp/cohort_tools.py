@@ -203,69 +203,33 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
     return native
 
 
-def translate_to_phenex_native(
-    cohort_definition: Dict[str, Any], cohort_name: str
-) -> Dict[str, Any]:
+def _prepare_phenotype_for_compilation(pheno: Any) -> Any:
+    """Apply translate_phenotype_to_native to a phenotype dict (or each item in a list)."""
+    if isinstance(pheno, list):
+        return [_prepare_phenotype_for_compilation(p) for p in pheno]
+    if isinstance(pheno, dict):
+        return translate_phenotype_to_native(pheno)
+    return pheno
+
+
+def _prepare_cohort_for_compilation(cohort_definition: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Translate the simplified cohort format (shown in tool docs) to PhenEx's native
-    from_dict() Cohort format.
-
-    Simplified format:
-        {"name": "my_cohort", "phenotypes": [
-            {"type": "CodelistPhenotype", "name": "af", "domain": "...", "codelist": {...}}
-        ]}
-
-    PhenEx native format:
-        {"class_name": "Cohort", "name": "my_cohort",
-         "entry_criterion": {"class_name": "CodelistPhenotype", ...}}
+    Walk a native-format cohort dict and apply phenotype translation
+    (type->class_name, codelist resolution, filter wrapping) to every
+    phenotype slot.  Returns a copy ready for from_dict().
     """
-    # If already in native format, return as-is
-    if cohort_definition.get("class_name") == "Cohort":
-        return cohort_definition
+    native = cohort_definition.copy()
 
-    phenotypes = cohort_definition.get("phenotypes", [])
-    if not phenotypes:
-        return cohort_definition  # Let from_dict() raise a clear error
+    if "class_name" not in native:
+        native["class_name"] = "Cohort"
 
-    # Translate each phenotype
-    translated = [translate_phenotype_to_native(p) for p in phenotypes]
+    # Translate each phenotype slot
+    if "entry_criterion" in native:
+        native["entry_criterion"] = _prepare_phenotype_for_compilation(native["entry_criterion"])
 
-    # First phenotype is the entry criterion
-    entry = translated[0]
-
-    native = {
-        "class_name": "Cohort",
-        "name": cohort_definition.get("name", cohort_name),
-        "entry_criterion": entry,
-    }
-
-    # Assign remaining phenotypes based on role hints
-    if len(translated) > 1:
-        inclusions = []
-        exclusions = []
-        characteristics = []
-        outcomes = []
-        for p in translated[1:]:
-            role = p.pop("role", "inclusion")
-            if role == "exclusion":
-                exclusions.append(p)
-            elif role == "characteristic":
-                characteristics.append(p)
-            elif role == "outcome":
-                outcomes.append(p)
-            else:
-                inclusions.append(p)
-        if inclusions:
-            native["inclusions"] = inclusions
-        if exclusions:
-            native["exclusions"] = exclusions
-        if characteristics:
-            native["characteristics"] = characteristics
-        if outcomes:
-            native["outcomes"] = outcomes
-
-    if "description" in cohort_definition:
-        native["description"] = cohort_definition["description"]
+    for key in ("inclusions", "exclusions", "characteristics", "outcomes"):
+        if key in native and native[key]:
+            native[key] = _prepare_phenotype_for_compilation(native[key])
 
     return native
 
@@ -362,6 +326,7 @@ def validate_cohort(
     """
     Validate a cohort definition without executing it.
 
+    Expects the native Cohort format with entry_criterion, inclusions, etc.
     Returns a dict with 'valid', 'errors', 'warnings', and metadata.
     """
     errors = []
@@ -390,109 +355,106 @@ def validate_cohort(
                 "target_schema": target_schema,
             }
 
-        # 3. Check for Cohort class_name (PhenEx format)
-        if cohort_definition.get("class_name") == "Cohort":
-            if "name" not in cohort_definition:
-                errors.append("Cohort definition missing required field: 'name'")
-            if "entry_criterion" not in cohort_definition:
-                errors.append(
-                    "Cohort definition missing required field: 'entry_criterion'"
-                )
-            else:
-                entry = cohort_definition["entry_criterion"]
-                if isinstance(entry, dict) and "class_name" in entry:
-                    phenotypes_used.append(entry.get("class_name"))
+        # 3. Validate required fields
+        if "name" not in cohort_definition:
+            errors.append(
+                "Cohort definition missing required field: 'name'. "
+                "Call phenex_inspect_class('Cohort') to see the full specification."
+            )
 
-            for field in ["inclusions", "exclusions", "characteristics", "outcomes"]:
-                if field in cohort_definition and cohort_definition[field]:
-                    for pheno in cohort_definition[field]:
-                        if isinstance(pheno, dict) and "class_name" in pheno:
-                            phenotypes_used.append(pheno.get("class_name"))
-
-            phenotype_count = 1
-            phenotype_count += len(cohort_definition.get("inclusions", []))
-            phenotype_count += len(cohort_definition.get("exclusions", []))
-            phenotype_count += len(cohort_definition.get("characteristics", []))
-            phenotype_count += len(cohort_definition.get("outcomes", []))
+        if "entry_criterion" not in cohort_definition:
+            errors.append(
+                "Cohort definition missing required field: 'entry_criterion'. "
+                "This must be a phenotype dict that defines the index date. "
+                "Call phenex_inspect_class('Cohort') to see the full specification."
+            )
+        elif not isinstance(cohort_definition["entry_criterion"], dict):
+            errors.append(
+                f"'entry_criterion' must be a phenotype dictionary, "
+                f"not {type(cohort_definition['entry_criterion']).__name__}."
+            )
         else:
-            # Simplified format validation
-            if "name" not in cohort_definition:
+            entry = cohort_definition["entry_criterion"]
+            entry_type = entry.get("type") or entry.get("class_name")
+            if entry_type:
+                phenotypes_used.append(entry_type)
+            else:
                 errors.append(
-                    "cohort_definition missing required field: 'name'. "
-                    "Add a 'name' key with a descriptive string, e.g. {'name': 'my_cohort', 'phenotypes': [...]}"
+                    "'entry_criterion' phenotype must have a 'type' (or 'class_name') field. "
+                    "Call phenex_list_classes() to see valid type names."
                 )
 
-            if "phenotypes" not in cohort_definition:
-                errors.append(
-                    "cohort_definition missing required field: 'phenotypes'. "
-                    "Add a 'phenotypes' list containing at least one phenotype dict. "
-                    "Example: {'name': 'my_cohort', 'phenotypes': [{'type': 'CodelistPhenotype', 'name': 'dx', 'domain': '...', 'codelist': {...}}]}"
-                )
-            elif not isinstance(cohort_definition["phenotypes"], list):
-                errors.append(
-                    "'phenotypes' must be a list of phenotype dictionaries, not a "
-                    f"{type(cohort_definition['phenotypes']).__name__}."
-                )
-            elif len(cohort_definition["phenotypes"]) == 0:
-                errors.append(
-                    "'phenotypes' list is empty — must have at least one phenotype. "
-                    "The first phenotype becomes the entry criterion (defines the index date)."
-                )
-            else:
-                for i, pheno in enumerate(cohort_definition["phenotypes"]):
+        # Warn about legacy flat-list format
+        if "phenotypes" in cohort_definition:
+            errors.append(
+                "Found 'phenotypes' key — this flat-list format is no longer supported. "
+                "Use the native Cohort structure with 'entry_criterion', 'inclusions', "
+                "'exclusions', 'characteristics', and 'outcomes' as separate keys. "
+                "Call phenex_inspect_class('Cohort') to see the expected structure."
+            )
+
+        # 4. Validate optional list fields
+        for field in ("inclusions", "exclusions", "characteristics", "outcomes"):
+            if field in cohort_definition and cohort_definition[field] is not None:
+                val = cohort_definition[field]
+                if not isinstance(val, list):
+                    errors.append(
+                        f"'{field}' must be a list of phenotype dictionaries, "
+                        f"not {type(val).__name__}."
+                    )
+                    continue
+                for i, pheno in enumerate(val):
                     if not isinstance(pheno, dict):
                         errors.append(
-                            f"Phenotype at index {i} is a {type(pheno).__name__}, not a dictionary. "
-                            f"Each phenotype must be a dict with at least 'type' and 'name'."
+                            f"'{field}[{i}]' is a {type(pheno).__name__}, not a dictionary."
                         )
                         continue
-                    if "type" not in pheno and "class_name" not in pheno:
-                        errors.append(
-                            f"Phenotype at index {i} (name='{pheno.get('name', 'unknown')}') is missing a 'type' field. "
-                            f"Set 'type' to a phenotype class name like 'CodelistPhenotype'. "
-                            f"Call phenex_list_classes() to see all valid type names."
-                        )
-                    else:
-                        pheno_type = pheno.get("type") or pheno.get("class_name")
+                    pheno_type = pheno.get("type") or pheno.get("class_name")
+                    if pheno_type:
                         phenotypes_used.append(pheno_type)
                         if pheno_type not in KNOWN_PHENOTYPE_TYPES:
                             close = _get_close_matches(pheno_type, KNOWN_PHENOTYPE_TYPES)
                             hint = f" Did you mean: {', '.join(close)}?" if close else ""
                             warnings.append(
-                                f"Phenotype at index {i}: unrecognized type '{pheno_type}'.{hint} "
+                                f"'{field}[{i}]': unrecognized type '{pheno_type}'.{hint} "
                                 f"Call phenex_list_classes() for valid types."
                             )
 
-            phenotype_count = len(cohort_definition.get("phenotypes", []))
+        # Count phenotypes
+        phenotype_count = 1 if "entry_criterion" in cohort_definition else 0
+        for field in ("inclusions", "exclusions", "characteristics", "outcomes"):
+            items = cohort_definition.get(field)
+            if isinstance(items, list):
+                phenotype_count += len(items)
 
         # Additional validation
-        if cohort_definition.get("name") != cohort_name:
+        if cohort_definition.get("name") and cohort_definition["name"] != cohort_name:
             warnings.append(
-                f"cohort_definition.name ('{cohort_definition.get('name')}') doesn't match cohort_name parameter ('{cohort_name}')"
+                f"cohort_definition.name ('{cohort_definition['name']}') doesn't match "
+                f"cohort_name parameter ('{cohort_name}')"
             )
 
-        # Deep validation: attempt actual from_dict() compilation to catch structural errors
+        # Deep validation: attempt actual from_dict() compilation
         if len(errors) == 0:
             try:
                 from phenex.util.serialization.from_dict import from_dict
 
-                native_def = translate_to_phenex_native(
-                    cohort_definition.copy(), cohort_name
+                native_def = _prepare_cohort_for_compilation(
+                    cohort_definition.copy()
                 )
                 _compiled = from_dict(native_def)
             except KeyError as key_err:
                 errors.append(
                     f"Unknown class name '{key_err}' encountered during compilation. "
-                    f"Check that all 'type' values in your phenotype definitions are valid PhenEx class names. "
+                    f"Check that all 'type' values are valid PhenEx class names. "
                     f"Call phenex_list_classes() for valid names."
                 )
             except Exception as compile_err:
-                # Try to identify which phenotype caused the error
                 err_msg = str(compile_err)
                 errors.append(
                     f"Compilation failed: {type(compile_err).__name__}: {err_msg}. "
                     f"Try validating each phenotype individually with phenex_validate_phenotype() "
-                    f"to isolate the problem phenotype, then call phenex_inspect_class() for that type."
+                    f"to isolate the problem, then call phenex_inspect_class() for that type."
                 )
 
         is_valid = len(errors) == 0
@@ -625,9 +587,9 @@ def execute_cohort(
 
         logger_info = []
 
-        # 3a: Translate simplified format to PhenEx native format
-        cohort_definition = translate_to_phenex_native(cohort_definition, cohort_name)
-        logger_info.append("Translated cohort definition to PhenEx native format")
+        # 3a: Prepare cohort for compilation (type->class_name, codelist resolution)
+        cohort_definition = _prepare_cohort_for_compilation(cohort_definition)
+        logger_info.append("Prepared cohort definition for compilation")
 
         # 3b: Create SnowflakeConnector
         logger_info.append("Creating Snowflake connector...")

@@ -251,15 +251,21 @@ def phenex_validate_cohort(
     """
     Validate a PhenEx cohort definition (as JSON/dict) without executing it.
 
-    Cohorts are defined as structured JSON objects, not Python code strings.
-    This tool validates the structure and attempts to compile with from_dict().
+    Cohorts are defined as structured JSON objects matching the Cohort class
+    constructor. This tool validates the structure and attempts to compile
+    with from_dict().
 
     Args:
         cohort_definition: Dictionary defining the cohort structure with:
             - name (str): Cohort name
-            - phenotypes (list): List of phenotype definitions, each with:
-                * type (str): Phenotype class name (e.g., "CodelistPhenotype")
-                * Additional fields specific to the phenotype type
+            - entry_criterion (dict): Phenotype that defines the index date (required)
+            - inclusions (list[dict]): Phenotypes that must be True for inclusion
+            - exclusions (list[dict]): Phenotypes that must be False (excluded)
+            - characteristics (list[dict]): Baseline characteristic phenotypes
+            - outcomes (list[dict]): Outcome phenotypes
+            - description (str): Optional cohort description
+            Each phenotype dict needs at least 'type' and 'name'.
+            Codelists can be inline dicts or by-reference strings.
         cohort_name: Name for the cohort (used for schema naming).
                     Must be alphanumeric + underscores, starting with letter.
                     Results will be written to: PHENEX_AI__{cohort_name.upper()}
@@ -274,33 +280,24 @@ def phenex_validate_cohort(
         - phenotypes_used (list): List of phenotype types in definition
         - phenotype_count (int): Number of phenotypes defined
 
-    Example cohort definition (inline codelist):
+    Example cohort definition:
         {
             "name": "afib_optum",
-            "phenotypes": [
-                {
-                    "type": "CodelistPhenotype",
-                    "domain": "CONDITION_OCCURRENCE_SOURCE",
-                    "codelist": {
-                        "ICD10CM": ["I48", "I48.0", "I48.1", "I48.2", "I48.91"]
-                    },
-                    "name": "atrial_fibrillation",
-                    "use_code_type": false,
-                    "remove_punctuation": true
-                }
-            ]
-        }
-
-    Example with codelist by reference (from codelist store):
-        {
-            "name": "afib_optum",
-            "phenotypes": [
-                {
-                    "type": "CodelistPhenotype",
-                    "domain": "CONDITION_OCCURRENCE_SOURCE",
-                    "codelist": "atrial_fibrillation",
-                    "name": "atrial_fibrillation"
-                }
+            "entry_criterion": {
+                "type": "CodelistPhenotype",
+                "name": "atrial_fibrillation",
+                "domain": "CONDITION_OCCURRENCE_SOURCE",
+                "codelist": {"ICD10CM": ["I48.0", "I48.1", "I48.2", "I48.91"]},
+                "return_date": "first"
+            },
+            "inclusions": [
+                {"type": "AgePhenotype", "name": "age_18_plus",
+                 "min_age": {"type": "GreaterThanOrEqualTo", "value": 18}}
+            ],
+            "exclusions": [
+                {"type": "CodelistPhenotype", "name": "pregnancy",
+                 "domain": "CONDITION_OCCURRENCE_SOURCE",
+                 "codelist": "pregnancy_codes"}
             ]
         }
     """
@@ -324,10 +321,14 @@ def phenex_execute_cohort(
     for safety: PHENEX_AI__{COHORT_NAME}.
 
     Args:
-        cohort_definition: Dict with cohort specification including:
-            - name: Cohort name
-            - phenotypes: List of phenotype definitions (dicts)
-            - description: Optional cohort description
+        cohort_definition: Dict with cohort specification matching the Cohort class:
+            - name (str): Cohort name
+            - entry_criterion (dict): Phenotype defining the index date
+            - inclusions (list[dict]): Inclusion phenotypes
+            - exclusions (list[dict]): Exclusion phenotypes
+            - characteristics (list[dict]): Baseline characteristics
+            - outcomes (list[dict]): Outcome phenotypes
+            - description (str): Optional description
 
         cohort_name: Optional name override. If not provided, will use cohort_definition["name"]
 
