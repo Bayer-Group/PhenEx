@@ -5,7 +5,94 @@ Cohort validation, translation, and execution helpers for PhenEx.
 import re
 import os
 import traceback
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
+
+# Known phenotype class names for error guidance
+KNOWN_PHENOTYPE_TYPES = [
+    "CodelistPhenotype", "AgePhenotype", "SexPhenotype", "MeasurementPhenotype",
+    "MeasurementChangePhenotype", "EventCountPhenotype", "TimeRangePhenotype",
+    "TimeRangeCountPhenotype", "TimeRangeDayCountPhenotype", "TimeRangeDaysToNextRange",
+    "DeathPhenotype", "CategoricalPhenotype", "BinPhenotype", "ScorePhenotype",
+    "ArithmeticPhenotype", "LogicPhenotype", "WithinSameEncounterPhenotype",
+]
+
+# Common required fields per phenotype type
+REQUIRED_FIELDS_BY_TYPE = {
+    "CodelistPhenotype": ["domain", "codelist"],
+    "MeasurementPhenotype": ["domain", "codelist"],
+    "AgePhenotype": ["name"],
+    "SexPhenotype": ["name"],
+    "DeathPhenotype": ["name"],
+    "EventCountPhenotype": ["name", "input_phenotype"],
+    "ScorePhenotype": ["name", "expression"],
+    "ArithmeticPhenotype": ["name", "expression"],
+    "LogicPhenotype": ["name", "expression"],
+    "BinPhenotype": ["name", "input_phenotype"],
+}
+
+
+def _get_close_matches(name: str, candidates: List[str], n: int = 3) -> List[str]:
+    """Return candidate strings that are close matches to name (case-insensitive)."""
+    import difflib
+    # Try case-insensitive matching
+    lower_map = {c.lower(): c for c in candidates}
+    matches = difflib.get_close_matches(name.lower(), lower_map.keys(), n=n, cutoff=0.5)
+    return [lower_map[m] for m in matches]
+
+
+def _diagnose_compilation_error(error: Exception, pheno_type: str, definition: Dict[str, Any]) -> str:
+    """Produce an actionable remediation hint from a compilation exception."""
+    err_str = str(error)
+    err_type = type(error).__name__
+
+    # Unknown class_name in from_dict
+    if err_type == "KeyError" and "class_name" not in definition:
+        return (
+            f"The class '{err_str}' is not recognized by PhenEx. "
+            f"Call phenex_list_classes() to see valid class names."
+        )
+
+    # Missing required parameter
+    if "required" in err_str.lower() or "missing" in err_str.lower():
+        required = REQUIRED_FIELDS_BY_TYPE.get(pheno_type, [])
+        missing = [f for f in required if f not in definition]
+        if missing:
+            return (
+                f"Missing required field(s): {missing}. "
+                f"Call phenex_inspect_class('{pheno_type}') to see all required parameters."
+            )
+        return (
+            f"{err_type}: {err_str}. "
+            f"Call phenex_inspect_class('{pheno_type}') to see all required parameters and their types."
+        )
+
+    # Type errors (e.g. passing string where int expected)
+    if err_type == "TypeError":
+        return (
+            f"Type mismatch: {err_str}. "
+            f"Call phenex_inspect_class('{pheno_type}') to check the expected types for each parameter."
+        )
+
+    # Assertion errors (e.g. invalid domain, bad operator)
+    if err_type == "AssertionError":
+        return (
+            f"Validation failed: {err_str}. "
+            f"Check that domain, operator, and enum-like fields use exact expected values. "
+            f"Call phenex_inspect_class('{pheno_type}') for valid options."
+        )
+
+    # Value errors
+    if err_type == "ValueError":
+        return (
+            f"Invalid value: {err_str}. "
+            f"Call phenex_inspect_class('{pheno_type}') to review accepted values for each parameter."
+        )
+
+    # Generic fallback — still actionable
+    return (
+        f"{err_type}: {err_str}. "
+        f"Call phenex_inspect_class('{pheno_type}') to review the full specification and examples."
+    )
 
 
 def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
@@ -169,8 +256,38 @@ def validate_phenotype(phenotype_definition: Dict[str, Any]) -> Dict[str, Any]:
     if not pheno_type:
         return {
             "valid": False,
-            "errors": ["phenotype_definition must have a 'type' or 'class_name' field"],
+            "errors": [
+                "phenotype_definition must have a 'type' field. "
+                "Set 'type' to a phenotype class name such as 'CodelistPhenotype'. "
+                "Call phenex_list_classes() to see all valid type names."
+            ],
             "warnings": [],
+        }
+
+    # Check for unknown phenotype type early
+    if pheno_type not in KNOWN_PHENOTYPE_TYPES:
+        close = _get_close_matches(pheno_type, KNOWN_PHENOTYPE_TYPES)
+        hint = f" Did you mean: {', '.join(close)}?" if close else ""
+        warnings.append(
+            f"Unrecognized phenotype type '{pheno_type}'.{hint} "
+            f"Call phenex_list_classes() to see all valid type names."
+        )
+
+    # Check for commonly missing required fields before compilation
+    required = REQUIRED_FIELDS_BY_TYPE.get(pheno_type, [])
+    missing = [f for f in required if f not in phenotype_definition]
+    if missing:
+        errors.append(
+            f"Missing required field(s) for {pheno_type}: {missing}. "
+            f"Call phenex_inspect_class('{pheno_type}') to see all required parameters."
+        )
+        return {
+            "valid": False,
+            "errors": errors,
+            "warnings": warnings,
+            "phenotype_name": name,
+            "phenotype_type": pheno_type,
+            "message": f"Phenotype '{name}' ({pheno_type}) is missing required fields: {missing}",
         }
 
     name = phenotype_definition.get("name", "unnamed")
@@ -191,9 +308,10 @@ def validate_phenotype(phenotype_definition: Dict[str, Any]) -> Dict[str, Any]:
             "message": f"Phenotype '{name}' ({pheno_type}) compiles successfully",
         }
     except Exception as e:
+        remediation = _diagnose_compilation_error(e, pheno_type, phenotype_definition)
         return {
             "valid": False,
-            "errors": [f"Compilation error: {type(e).__name__}: {str(e)}"],
+            "errors": [remediation],
             "warnings": warnings,
             "phenotype_name": name,
             "phenotype_type": pheno_type,
@@ -217,7 +335,9 @@ def validate_cohort(
         # 1. Validate cohort_name format
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", cohort_name):
             errors.append(
-                f"Invalid cohort_name '{cohort_name}'. Must start with letter and contain only alphanumeric and underscore"
+                f"Invalid cohort_name '{cohort_name}'. "
+                f"Must start with a letter and contain only alphanumeric characters and underscores. "
+                f"Example: 'af_cohort_v1'. This name is used to create the output schema PHENEX_AI__{cohort_name.upper()}."
             )
 
         target_schema = f"PHENEX_AI__{cohort_name.upper()}"
@@ -260,28 +380,51 @@ def validate_cohort(
         else:
             # Simplified format validation
             if "name" not in cohort_definition:
-                errors.append("cohort_definition missing required field: 'name'")
+                errors.append(
+                    "cohort_definition missing required field: 'name'. "
+                    "Add a 'name' key with a descriptive string, e.g. {'name': 'my_cohort', 'phenotypes': [...]}"
+                )
 
             if "phenotypes" not in cohort_definition:
-                errors.append("cohort_definition missing required field: 'phenotypes'")
+                errors.append(
+                    "cohort_definition missing required field: 'phenotypes'. "
+                    "Add a 'phenotypes' list containing at least one phenotype dict. "
+                    "Example: {'name': 'my_cohort', 'phenotypes': [{'type': 'CodelistPhenotype', 'name': 'dx', 'domain': '...', 'codelist': {...}}]}"
+                )
             elif not isinstance(cohort_definition["phenotypes"], list):
-                errors.append("'phenotypes' must be a list")
+                errors.append(
+                    "'phenotypes' must be a list of phenotype dictionaries, not a "
+                    f"{type(cohort_definition['phenotypes']).__name__}."
+                )
             elif len(cohort_definition["phenotypes"]) == 0:
                 errors.append(
-                    "'phenotypes' list is empty - must have at least one phenotype"
+                    "'phenotypes' list is empty — must have at least one phenotype. "
+                    "The first phenotype becomes the entry criterion (defines the index date)."
                 )
             else:
                 for i, pheno in enumerate(cohort_definition["phenotypes"]):
                     if not isinstance(pheno, dict):
-                        errors.append(f"Phenotype {i} is not a dictionary")
+                        errors.append(
+                            f"Phenotype at index {i} is a {type(pheno).__name__}, not a dictionary. "
+                            f"Each phenotype must be a dict with at least 'type' and 'name'."
+                        )
                         continue
                     if "type" not in pheno and "class_name" not in pheno:
                         errors.append(
-                            f"Phenotype {i} missing required field 'type' or 'class_name'"
+                            f"Phenotype at index {i} (name='{pheno.get('name', 'unknown')}') is missing a 'type' field. "
+                            f"Set 'type' to a phenotype class name like 'CodelistPhenotype'. "
+                            f"Call phenex_list_classes() to see all valid type names."
                         )
                     else:
                         pheno_type = pheno.get("type") or pheno.get("class_name")
                         phenotypes_used.append(pheno_type)
+                        if pheno_type not in KNOWN_PHENOTYPE_TYPES:
+                            close = _get_close_matches(pheno_type, KNOWN_PHENOTYPE_TYPES)
+                            hint = f" Did you mean: {', '.join(close)}?" if close else ""
+                            warnings.append(
+                                f"Phenotype at index {i}: unrecognized type '{pheno_type}'.{hint} "
+                                f"Call phenex_list_classes() for valid types."
+                            )
 
             phenotype_count = len(cohort_definition.get("phenotypes", []))
 
@@ -300,9 +443,19 @@ def validate_cohort(
                     cohort_definition.copy(), cohort_name
                 )
                 _compiled = from_dict(native_def)
-            except Exception as compile_err:
+            except KeyError as key_err:
                 errors.append(
-                    f"Compilation error (from_dict): {type(compile_err).__name__}: {str(compile_err)}"
+                    f"Unknown class name '{key_err}' encountered during compilation. "
+                    f"Check that all 'type' values in your phenotype definitions are valid PhenEx class names. "
+                    f"Call phenex_list_classes() for valid names."
+                )
+            except Exception as compile_err:
+                # Try to identify which phenotype caused the error
+                err_msg = str(compile_err)
+                errors.append(
+                    f"Compilation failed: {type(compile_err).__name__}: {err_msg}. "
+                    f"Try validating each phenotype individually with phenex_validate_phenotype() "
+                    f"to isolate the problem phenotype, then call phenex_inspect_class() for that type."
                 )
 
         is_valid = len(errors) == 0
@@ -325,7 +478,11 @@ def validate_cohort(
     except Exception as e:
         return {
             "valid": False,
-            "errors": [f"Validation error: {str(e)}"],
+            "errors": [
+                f"Unexpected validation error: {type(e).__name__}: {str(e)}. "
+                f"Try validating each phenotype individually with phenex_validate_phenotype() "
+                f"to narrow down the issue."
+            ],
             "warnings": warnings,
             "cohort_name": cohort_name,
             "target_schema": f"PHENEX_AI__{cohort_name.upper()}",
@@ -373,15 +530,20 @@ def execute_cohort(
     config_errors = []
     if not source_database:
         config_errors.append(
-            "SNOWFLAKE_SOURCE_DATABASE not provided as parameter or env var"
+            "SNOWFLAKE_SOURCE_DATABASE not set. Pass it as a parameter or set the "
+            "SNOWFLAKE_SOURCE_DATABASE environment variable (e.g. 'MY_DATABASE')."
         )
     if not source_schema:
         config_errors.append(
-            "SNOWFLAKE_SOURCE_SCHEMA not provided as parameter or env var"
+            "SNOWFLAKE_SOURCE_SCHEMA not set. Pass it as a parameter or set the "
+            "SNOWFLAKE_SOURCE_SCHEMA environment variable (e.g. 'OMOP_CDM'). "
+            "Use snowflake_list_schemas() to browse available schemas."
         )
     if not dest_database:
         config_errors.append(
-            "SNOWFLAKE_DEST_DATABASE not provided as parameter or env var"
+            "SNOWFLAKE_DEST_DATABASE not set. Pass it as a parameter or set the "
+            "SNOWFLAKE_DEST_DATABASE environment variable. Results will be written to "
+            f"{dest_schema} schema in this database."
         )
 
     if config_errors:

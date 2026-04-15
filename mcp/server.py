@@ -32,10 +32,8 @@ logger = logging.getLogger("phenex-mcp")
 logger.setLevel(getattr(logging, log_level, logging.INFO))
 
 from phenotype_registry import (
-    get_available_phenotypes,
-    get_available_filters,
+    get_available_classes,
     get_spec,
-    get_codelist_spec,
 )
 import snowflake_explorer as sf_explorer
 from cohort_tools import validate_phenotype, validate_cohort, execute_cohort
@@ -49,94 +47,53 @@ mcp = FastMCP("PhenEx Cohort Builder")
 
 
 # ============================================================
-# PHENEX PHENOTYPE TOOLS
+# PHENEX CLASS DISCOVERY TOOLS
 # ============================================================
 
 
 @mcp.tool()
-def phenex_list_available_phenotypes() -> Dict[str, Any]:
+def phenex_list_classes() -> Dict[str, Any]:
     """
-    List all available PhenEx phenotype types with descriptions and use cases.
+    List all available PhenEx classes grouped by category: phenotypes, filters, and codelists.
 
-    PhenEx (Phenotype Extractor) provides pre-built phenotype classes for common clinical
-    data extraction patterns. Use this tool to discover what types of phenotypes you can
-    define for cohort building.
+    PhenEx (Phenotype Extractor) provides pre-built classes for clinical data extraction.
+    Use this tool first to discover what building blocks are available for cohort building.
 
     Returns:
         Dictionary containing:
-        - phenotypes (list): Array of available phenotype types, each with:
-            * name (str): Phenotype class name (e.g., "CodelistPhenotype")
-            * description (str): What the phenotype does
-        - count (int): Total number of available phenotypes
+        - phenotypes (list): Phenotype classes for identifying patient characteristics and events
+        - filters (list): Filter and value classes for restricting events within phenotypes
+        - codelists (list): Codelist classes for defining sets of medical codes
+        Each entry has:
+            * name (str): Class name (e.g., "CodelistPhenotype", "RelativeTimeRangeFilter")
+            * description (str): What the class does and when to use it
 
-    After reviewing available phenotypes, use phenex_get_spec() to get detailed
-    parameters and usage examples for a specific phenotype class.
+    After reviewing available classes, use phenex_inspect_class() to get detailed
+    parameters and usage examples for a specific class.
     """
     try:
-        phenotypes = get_available_phenotypes()
-
-        if isinstance(phenotypes, list) and len(phenotypes) > 0:
-            if "error" in phenotypes[0]:
-                return {
-                    "success": False,
-                    "error": phenotypes[0]["error"],
-                    "phenotypes": [],
-                    "count": 0,
-                }
-
-        return {"success": True, "phenotypes": phenotypes, "count": len(phenotypes)}
+        result = get_available_classes()
+        if "error" in result:
+            return {"success": False, **result}
+        return {"success": True, **result}
     except Exception as e:
-        return {"success": False, "error": str(e), "phenotypes": [], "count": 0}
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
-def phenex_list_available_filters() -> Dict[str, Any]:
+def phenex_inspect_class(class_name: str) -> Dict[str, Any]:
     """
-    List all available PhenEx filter types with descriptions.
+    Get detailed specification and usage examples for a PhenEx class.
 
-    Filters are used within phenotype definitions to restrict which events or
-    patients are included. Use this tool to discover what types of filters you
-    can apply when building phenotypes.
-
-    Returns:
-        Dictionary containing:
-        - filters (list): Array of available filter types, each with:
-            * name (str): Filter class name (e.g., "RelativeTimeRangeFilter")
-            * description (str): When to use this filter
-        - count (int): Total number of available filters
-
-    After reviewing available filters, use phenex_get_spec() to get detailed
-    parameters and usage examples for a specific filter class.
-    """
-    try:
-        filters = get_available_filters()
-
-        if isinstance(filters, list) and len(filters) > 0:
-            if "error" in filters[0]:
-                return {
-                    "success": False,
-                    "error": filters[0]["error"],
-                    "filters": [],
-                    "count": 0,
-                }
-
-        return {"success": True, "filters": filters, "count": len(filters)}
-    except Exception as e:
-        return {"success": False, "error": str(e), "filters": [], "count": 0}
-
-
-@mcp.tool()
-def phenex_get_spec(class_name: str) -> Dict[str, Any]:
-    """
-    Get detailed specification and usage examples for a PhenEx phenotype class,
-    filter class, or the Codelist class.
+    Use this after phenex_list_classes() to drill into a specific class and see
+    its constructor parameters, types, defaults, and code examples.
 
     Args:
-        class_name: Name of the class to get specs for.
-                    Must exactly match a name from phenex_list_available_phenotypes()
-                    or phenex_list_available_filters(), or "Codelist" for codelist documentation.
+        class_name: Name of the class to inspect.
+                    Must exactly match a name from phenex_list_classes().
                     Examples: "CodelistPhenotype", "RelativeTimeRangeFilter",
-                              "ValueFilter", "Codelist", "AgePhenotype"
+                              "ValueFilter", "Codelist", "AgePhenotype",
+                              "GreaterThan", "After"
 
     Returns:
         Dictionary containing:
@@ -146,9 +103,6 @@ def phenex_get_spec(class_name: str) -> Dict[str, Any]:
         - parameters (dict): All constructor parameters with types, required flags, defaults
         - example (str): Example usage code
     """
-    if class_name == "Codelist":
-        return get_codelist_spec()
-
     try:
         spec = get_spec(class_name)
         if "error" in spec:

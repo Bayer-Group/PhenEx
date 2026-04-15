@@ -147,8 +147,14 @@ def get_codelist(name: str) -> Dict[str, Any]:
 
     if name not in index:
         available = sorted(index.keys())
+        import difflib
+        close = difflib.get_close_matches(name, available, n=3, cutoff=0.4)
+        hint = f" Did you mean: {', '.join(close)}?" if close else ""
         return {
-            "error": f"Codelist '{name}' not found.",
+            "error": (
+                f"Codelist '{name}' not found.{hint} "
+                f"Call phenex_list_available_codelists() to see all available codelist names."
+            ),
             "available_codelists": available,
         }
 

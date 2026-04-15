@@ -84,7 +84,7 @@ PHENOTYPE_CLASSES: List = (
     else []
 )
 
-# Filter classes to expose via phenex_list_available_filters
+# Filter classes to expose via phenex_list_classes
 FILTER_CLASSES: List = (
     [
         RelativeTimeRangeFilter,
@@ -305,50 +305,28 @@ def _extract_docstring_sections(cls) -> Dict[str, str]:
     }
 
 
-def get_available_phenotypes() -> List[Dict[str, Any]]:
-    """Get list of all available PhenEx phenotype types, derived from actual class docs."""
+def get_available_classes() -> Dict[str, List[Dict[str, Any]]]:
+    """Get all available PhenEx classes grouped by category."""
     if not PHENEX_AVAILABLE:
-        return [
-            {
-                "error": "PhenEx library not available. Install with: pip install phenex",
-                "phenotypes": [],
-            }
-        ]
+        return {
+            "error": "PhenEx library not available. Install with: pip install phenex",
+        }
 
-    phenotypes = []
-    for cls in PHENOTYPE_CLASSES:
-        sections = _extract_docstring_sections(cls)
-
-        phenotypes.append(
-            {
+    def _summarize(classes):
+        result = []
+        for cls in classes:
+            sections = _extract_docstring_sections(cls)
+            result.append({
                 "name": cls.__name__,
                 "description": sections["description"],
-            }
-        )
-    return phenotypes
+            })
+        return result
 
-
-def get_available_filters() -> List[Dict[str, Any]]:
-    """Get list of all available PhenEx filter types, derived from actual class docs."""
-    if not PHENEX_AVAILABLE:
-        return [
-            {
-                "error": "PhenEx library not available. Install with: pip install phenex",
-                "filters": [],
-            }
-        ]
-
-    filters = []
-    for cls in FILTER_CLASSES:
-        sections = _extract_docstring_sections(cls)
-
-        filters.append(
-            {
-                "name": cls.__name__,
-                "description": sections["description"],
-            }
-        )
-    return filters
+    return {
+        "phenotypes": _summarize(PHENOTYPE_CLASSES),
+        "filters": _summarize(FILTER_CLASSES),
+        "codelists": _summarize([Codelist]),
+    }
 
 
 def get_spec(class_name: str) -> Dict[str, Any]:
@@ -363,14 +341,22 @@ def get_spec(class_name: str) -> Dict[str, Any]:
             "error": "PhenEx library not available. Install with: pip install phenex"
         }
 
-    # Build a combined map of phenotypes + filters
+    # Build a combined map of phenotypes + filters + Codelist
     cls_map = {cls.__name__: cls for cls in PHENOTYPE_CLASSES}
     cls_map.update({cls.__name__: cls for cls in FILTER_CLASSES})
+    cls_map["Codelist"] = Codelist
 
     if class_name not in cls_map:
+        import difflib
+        available = sorted(cls_map.keys())
+        close = difflib.get_close_matches(class_name, available, n=3, cutoff=0.4)
+        hint = f" Did you mean: {', '.join(close)}?" if close else ""
         return {
-            "error": f"Unknown class: {class_name}",
-            "available_classes": sorted(cls_map.keys()),
+            "error": (
+                f"Unknown class: '{class_name}'.{hint} "
+                f"Call phenex_list_classes() to see all valid class names."
+            ),
+            "available_classes": available,
         }
 
     cls = cls_map[class_name]
@@ -396,26 +382,4 @@ def get_spec(class_name: str) -> Dict[str, Any]:
         "description": sections["description"],
         "parameters": params,
         "example": sections.get("example", "No examples found."),
-    }
-
-
-def get_codelist_spec() -> Dict[str, Any]:
-    """Return Codelist documentation derived from the actual Codelist class."""
-    try:
-        from phenex.codelists import Codelist
-    except ImportError:
-        return {
-            "error": "PhenEx library not available. Install with: pip install phenex"
-        }
-
-    sections = _extract_docstring_sections(Codelist)
-    params = _extract_parameters(Codelist)
-
-    return {
-        "success": True,
-        "name": "Codelist",
-        "description": sections["description"],
-        "parameters": params,
-        "docstring": sections["full"],
-        "example": sections.get("example", "See docstring for examples"),
     }
