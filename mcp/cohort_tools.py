@@ -95,6 +95,28 @@ def _diagnose_compilation_error(error: Exception, pheno_type: str, definition: D
     )
 
 
+def _resolve_codelist_reference(name: str) -> Dict[str, Any]:
+    """
+    Look up a codelist by name from the codelist store and return it as a
+    native from_dict()-compatible Codelist dict.
+
+    Raises ValueError if the codelist is not found.
+    """
+    import codelist_store
+
+    result = codelist_store.get_codelist(name)
+    if "error" in result:
+        raise ValueError(result["error"])
+
+    return {
+        "class_name": "Codelist",
+        "name": name,
+        "codelist": result["codelist"],
+        "use_code_type": True,
+        "remove_punctuation": False,
+    }
+
+
 def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
     """
     Translate a single phenotype from simplified tool format to PhenEx native from_dict() format.
@@ -102,6 +124,10 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
     Simplified format (what the tool docs show):
         {"type": "CodelistPhenotype", "name": "af", "domain": "CONDITION_OCCURRENCE_SOURCE",
          "codelist": {"ICD10CM": ["I48.0", "I48.1"]}, "remove_punctuation": true, "return_date": "first"}
+
+    Codelist by reference (name from codelist store):
+        {"type": "CodelistPhenotype", "name": "af", "domain": "CONDITION_OCCURRENCE_SOURCE",
+         "codelist": "atrial_fibrillation", "return_date": "first"}
 
     PhenEx native format (what from_dict() expects):
         {"class_name": "CodelistPhenotype", "name": "af", "domain": "CONDITION_OCCURRENCE_SOURCE",
@@ -115,8 +141,19 @@ def translate_phenotype_to_native(pheno: Dict[str, Any]) -> Dict[str, Any]:
     if "type" in native and "class_name" not in native:
         native["class_name"] = native.pop("type")
 
+    # Resolve codelist by reference (string = name in codelist store)
+    if "codelist" in native and isinstance(native["codelist"], str):
+        codelist_name = native["codelist"]
+        resolved = _resolve_codelist_reference(codelist_name)
+        # Allow phenotype-level overrides for remove_punctuation / use_code_type
+        if "remove_punctuation" in native:
+            resolved["remove_punctuation"] = native.pop("remove_punctuation")
+        if "use_code_type" in native:
+            resolved["use_code_type"] = native.pop("use_code_type")
+        native["codelist"] = resolved
+
     # Convert flat codelist dict to wrapped Codelist object
-    if (
+    elif (
         "codelist" in native
         and isinstance(native["codelist"], dict)
         and "class_name" not in native["codelist"]

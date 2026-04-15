@@ -209,6 +209,8 @@ def phenex_validate_phenotype(
 
     Args:
         phenotype_definition: Dictionary defining a single phenotype, e.g.:
+
+            Inline codelist:
             {
                 "type": "CodelistPhenotype",
                 "name": "atrial_fibrillation",
@@ -216,6 +218,15 @@ def phenex_validate_phenotype(
                 "codelist": {"ICD10CM": ["I48.0", "I48.1", "I48.2", "I48.91"]},
                 "use_code_type": false,
                 "remove_punctuation": true,
+                "return_date": "first"
+            }
+
+            Codelist by reference (name from codelist store):
+            {
+                "type": "CodelistPhenotype",
+                "name": "atrial_fibrillation",
+                "domain": "CONDITION_OCCURRENCE_SOURCE",
+                "codelist": "atrial_fibrillation",
                 "return_date": "first"
             }
 
@@ -263,7 +274,7 @@ def phenex_validate_cohort(
         - phenotypes_used (list): List of phenotype types in definition
         - phenotype_count (int): Number of phenotypes defined
 
-    Example cohort definition:
+    Example cohort definition (inline codelist):
         {
             "name": "afib_optum",
             "phenotypes": [
@@ -276,6 +287,19 @@ def phenex_validate_cohort(
                     "name": "atrial_fibrillation",
                     "use_code_type": false,
                     "remove_punctuation": true
+                }
+            ]
+        }
+
+    Example with codelist by reference (from codelist store):
+        {
+            "name": "afib_optum",
+            "phenotypes": [
+                {
+                    "type": "CodelistPhenotype",
+                    "domain": "CONDITION_OCCURRENCE_SOURCE",
+                    "codelist": "atrial_fibrillation",
+                    "name": "atrial_fibrillation"
                 }
             ]
         }

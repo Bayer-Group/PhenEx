@@ -91,6 +91,21 @@ Internally, cohorts are passed to the MCP tools as JSON dictionaries. The simpli
 }
 ```
 
+Codelists can also be passed **by reference** using the name from the codelist store
+(use `phenex_find_codelists` to discover available names):
+
+```json
+{
+  "type": "CodelistPhenotype",
+  "name": "index_event",
+  "domain": "CONDITION_OCCURRENCE_SOURCE",
+  "codelist": "atrial_fibrillation",
+  "return_date": "first"
+}
+```
+
+When `"codelist"` is a string, it is resolved from the codelist store at validation/execution time.
+
 The first phenotype is always the **entry criterion** (index date). Additional phenotypes can have a `"role"` field: `"inclusion"`, `"exclusion"`, `"characteristic"`, or `"outcome"`.
 
 **But present this to the user as Python code** (see User Preferences above). Only use JSON when calling the MCP tools.
@@ -111,6 +126,7 @@ Note: The PheNEx library also supports DuckDB and PostgreSQL backends, but those
 ### Codelist & code_type
 
 - A **Codelist** maps code types (vocabularies like ICD10CM, CPT4, RxNorm) to lists of codes.
+- Codelists can be provided **inline** as a dict (`"codelist": {"ICD10CM": [...]}`) or **by reference** as a string (`"codelist": "my_codelist_name"`). By-reference codelists are resolved from the codelist store at validation/execution time — use `phenex_find_codelists` to discover available names.
 - `use_code_type`: set `True` when the domain table has a CODE_TYPE column; `False` when it doesn't (common with `_SOURCE` domains).
 - `remove_punctuation`: set `True` when codelist codes contain dots (e.g., `I48.0`) but the database stores them without (`I480`).
 - **Always inspect the target table** with `snowflake_get_table_columns` and `snowflake_get_distinct_values` before choosing these settings.
