@@ -5,8 +5,17 @@ from .reporter import Reporter
 
 class InExCounts(Reporter):
     """
-    Get counts of inclusion and exclusion criteria
+    Use InExCounts to get raw counts for each inclusion and exclusion criterion in a cohort. It produces a simple table with the number of patients satisfying each criterion independently.
 
+    Examples:
+
+    Example: Get inclusion/exclusion counts
+        ```python
+        from phenex.reporting import InExCounts
+
+        counts = InExCounts()
+        df = counts.execute(cohort)
+        ```
     """
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:

@@ -28,7 +28,7 @@ logger = create_logger(__name__)
 
 class Cohort:
     """
-    The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
+    Use Cohort to define and execute a patient cohort with entry criteria, inclusion/exclusion rules, baseline characteristics, and outcomes. It takes an entry criterion phenotype (which defines the index date), applies inclusion and exclusion phenotypes, then computes characteristics and outcome phenotypes for the patients passing the inclusion/exclusion rules.
 
     Parameters:
         name: A descriptive name for the cohort.

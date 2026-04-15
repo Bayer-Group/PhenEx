@@ -52,18 +52,23 @@ mcp = FastMCP("PhenEx Cohort Builder")
 
 
 @mcp.tool()
-def phenex_list_classes() -> Dict[str, Any]:
+def phenex_list_classes(category: str = "") -> Dict[str, Any]:
     """
-    List all available PhenEx classes grouped by category: phenotypes, filters, and codelists.
+    List all available PhenEx classes grouped by category: phenotypes, filters, reporters, and other.
 
     PhenEx (Phenotype Extractor) provides pre-built classes for clinical data extraction.
     Use this tool first to discover what building blocks are available for cohort building.
+
+    Args:
+        category: Optional category to filter by. One of: "phenotypes", "filters",
+                  "reporters", "other". If empty, returns all categories.
 
     Returns:
         Dictionary containing:
         - phenotypes (list): Phenotype classes for identifying patient characteristics and events
         - filters (list): Filter and value classes for restricting events within phenotypes
-        - codelists (list): Codelist classes for defining sets of medical codes
+        - reporters (list): Reporter classes for generating analysis outputs (Table1, Waterfall, etc.)
+        - other (list): Other useful classes (Cohort, Subcohort, Study)
         Each entry has:
             * name (str): Class name (e.g., "CodelistPhenotype", "RelativeTimeRangeFilter")
             * description (str): What the class does and when to use it
@@ -72,7 +77,7 @@ def phenex_list_classes() -> Dict[str, Any]:
     parameters and usage examples for a specific class.
     """
     try:
-        result = get_available_classes()
+        result = get_available_classes(category=category)
         if "error" in result:
             return {"success": False, **result}
         return {"success": True, **result}
@@ -118,14 +123,23 @@ def phenex_inspect_class(class_name: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-def phenex_list_available_codelists() -> Dict[str, Any]:
+def phenex_find_codelists(
+    name_pattern: Optional[str] = None,
+    code_type_pattern: Optional[str] = None,
+) -> Dict[str, Any]:
     """
-    List all codelists available in the configured codelist directory.
+    Search for codelists available in the configured codelist directory.
+
+    Without any filters, returns the first 25 codelists. Use regex patterns
+    to narrow results by codelist name and/or code vocabulary type.
 
     Scans CSV/Excel files in the directory specified by PHENEX_CODELIST_DIR.
-    Each file should contain columns for code, codelist name, and code type
-    (configurable via PHENEX_CODELIST_CODE_COLUMN, PHENEX_CODELIST_NAME_COLUMN,
-    PHENEX_CODELIST_CODE_TYPE_COLUMN; defaults: 'code', 'codelist', 'code_type').
+
+    Args:
+        name_pattern: Optional regex pattern to filter codelist names
+                     (case-insensitive). Examples: "diabetes", "^af_", "hba1c|glucose"
+        code_type_pattern: Optional regex pattern to filter by code vocabulary type
+                          (case-insensitive). Examples: "ICD10", "CPT|HCPCS", "RxNorm"
 
     Returns:
         Dictionary containing:
@@ -135,11 +149,16 @@ def phenex_list_available_codelists() -> Dict[str, Any]:
             * code_types (list): Vocabularies present (e.g. ["ICD10CM", "ICD9CM"])
             * total_codes (int): Total number of codes
             * sample_codes (list): Up to 10 sample codes with code_type
-        - count (int): Number of codelists found
+        - count (int): Total number of matching codelists
+        - returned (int): Number of codelists returned (may be less than count)
+        - truncated (bool): Whether results were truncated (max 25)
         - error (str): Error message if operation failed
     """
     try:
-        result = codelist_store.list_available_codelists()
+        result = codelist_store.find_codelists(
+            name_pattern=name_pattern,
+            code_type_pattern=code_type_pattern,
+        )
         return {"success": True, **result}
     except Exception as e:
         return {"success": False, "error": str(e), "codelists": [], "count": 0}
@@ -151,7 +170,7 @@ def phenex_get_codelist(name: str) -> Dict[str, Any]:
     Get the full contents of a specific codelist by name.
 
     Args:
-        name: Exact codelist name as shown by phenex_list_available_codelists().
+        name: Exact codelist name as shown by phenex_find_codelists().
 
     Returns:
         Dictionary containing:

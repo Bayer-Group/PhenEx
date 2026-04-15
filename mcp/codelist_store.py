@@ -96,6 +96,79 @@ def _build_index() -> Dict[str, LocalFileCodelistFactory]:
 # ---------------------------------------------------------------------------
 
 MAX_SAMPLE_CODES = 10
+MAX_RESULTS = 25
+
+
+def _summarize_codelist(name: str, factory: LocalFileCodelistFactory) -> Dict[str, Any]:
+    """Build a summary dict for a single codelist."""
+    codelist: Codelist = factory.get_codelist(name)
+    cl_dict = codelist.codelist
+
+    code_types = [ct for ct in cl_dict.keys() if ct is not None] or [None]
+    total_codes = sum(len(codes) for codes in cl_dict.values())
+
+    sample = []
+    for ct, codes in cl_dict.items():
+        for code in codes:
+            if len(sample) >= MAX_SAMPLE_CODES:
+                break
+            sample.append({"code": str(code), "code_type": ct})
+        if len(sample) >= MAX_SAMPLE_CODES:
+            break
+
+    return {
+        "name": name,
+        "code_types": code_types,
+        "total_codes": total_codes,
+        "sample_codes": sample,
+    }
+
+
+def find_codelists(
+    name_pattern: Optional[str] = None,
+    code_type_pattern: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Search codelists by name and/or code type using regex patterns.
+
+    Returns dict with 'codelists' (list of summaries), 'count', and 'truncated'.
+    """
+    import re
+
+    index = _build_index()
+
+    # Compile patterns (case-insensitive)
+    name_re = re.compile(name_pattern, re.IGNORECASE) if name_pattern else None
+    code_type_re = re.compile(code_type_pattern, re.IGNORECASE) if code_type_pattern else None
+
+    matched = []
+    for name in sorted(index.keys()):
+        # Filter by name
+        if name_re and not name_re.search(name):
+            continue
+
+        # Filter by code type (need to load the codelist to check)
+        if code_type_re:
+            factory = index[name]
+            codelist: Codelist = factory.get_codelist(name)
+            code_types = [ct for ct in codelist.codelist.keys() if ct is not None]
+            if not any(code_type_re.search(ct) for ct in code_types):
+                continue
+
+        matched.append(name)
+
+    total_matched = len(matched)
+    truncated = total_matched > MAX_RESULTS
+    matched = matched[:MAX_RESULTS]
+
+    summaries = [_summarize_codelist(n, index[n]) for n in matched]
+
+    return {
+        "codelists": summaries,
+        "count": total_matched,
+        "returned": len(summaries),
+        "truncated": truncated,
+    }
 
 
 def list_available_codelists() -> Dict[str, Any]:
@@ -106,34 +179,7 @@ def list_available_codelists() -> Dict[str, Any]:
     Each summary includes name, code_types, total_codes, and a sample of codes.
     """
     index = _build_index()
-    summaries = []
-
-    for name, factory in sorted(index.items()):
-        codelist: Codelist = factory.get_codelist(name)
-        cl_dict = codelist.codelist  # Dict[Optional[str], List[str]]
-
-        code_types = [ct for ct in cl_dict.keys() if ct is not None] or [None]
-        total_codes = sum(len(codes) for codes in cl_dict.values())
-
-        # Build a sample: take up to MAX_SAMPLE_CODES across all code types
-        sample = []
-        for ct, codes in cl_dict.items():
-            for code in codes:
-                if len(sample) >= MAX_SAMPLE_CODES:
-                    break
-                sample.append({"code": str(code), "code_type": ct})
-            if len(sample) >= MAX_SAMPLE_CODES:
-                break
-
-        summaries.append(
-            {
-                "name": name,
-                "code_types": code_types,
-                "total_codes": total_codes,
-                "sample_codes": sample,
-            }
-        )
-
+    summaries = [_summarize_codelist(name, factory) for name, factory in sorted(index.items())]
     return {"codelists": summaries, "count": len(summaries)}
 
 
@@ -153,7 +199,7 @@ def get_codelist(name: str) -> Dict[str, Any]:
         return {
             "error": (
                 f"Codelist '{name}' not found.{hint} "
-                f"Call phenex_list_available_codelists() to see all available codelist names."
+                f"Call phenex_find_codelists() to search available codelist names."
             ),
             "available_codelists": available,
         }

@@ -53,6 +53,20 @@ try:
         EqualTo,
     )
     from phenex.codelists import Codelist
+    from phenex.core.cohort import Cohort
+    from phenex.core.subcohort import Subcohort
+    from phenex.core.study import Study
+    from phenex.reporting import (
+        Table1,
+        Table2,
+        Waterfall,
+        InExCounts,
+        TimeToEvent,
+        CohortExplorer,
+        ReportDrafter,
+        TreatmentPatternAnalysisSankeyReporter,
+    )
+    from phenex.reporting.protocol_drafter import ProtocolDrafter
 
     PHENEX_AVAILABLE = True
 except ImportError:
@@ -84,13 +98,14 @@ PHENOTYPE_CLASSES: List = (
     else []
 )
 
-# Filter classes to expose via phenex_list_classes
+# Filter and value classes to expose via phenex_list_classes
 FILTER_CLASSES: List = (
     [
         RelativeTimeRangeFilter,
         ValueFilter,
         CategoricalFilter,
         DateFilter,
+        Codelist,
         GreaterThan,
         GreaterThanOrEqualTo,
         LessThan,
@@ -100,6 +115,34 @@ FILTER_CLASSES: List = (
         AfterOrOn,
         Before,
         BeforeOrOn,
+    ]
+    if PHENEX_AVAILABLE
+    else []
+)
+
+# Top-level orchestration classes
+OTHER_CLASSES: List = (
+    [
+        Cohort,
+        Subcohort,
+        Study,
+    ]
+    if PHENEX_AVAILABLE
+    else []
+)
+
+# Reporter classes for cohort analysis and visualization
+REPORTER_CLASSES: List = (
+    [
+        Table1,
+        Table2,
+        Waterfall,
+        InExCounts,
+        TimeToEvent,
+        CohortExplorer,
+        ReportDrafter,
+        ProtocolDrafter,
+        TreatmentPatternAnalysisSankeyReporter,
     ]
     if PHENEX_AVAILABLE
     else []
@@ -234,7 +277,7 @@ def _clean_type_str(annotation) -> str:
 
 
 def _extract_parameters(cls) -> Dict[str, Dict[str, Any]]:
-    """Extract constructor parameters with types and defaults from a class or function."""
+    """Extract constructor parameters with types, defaults, and descriptions from a class or function."""
     try:
         if inspect.isfunction(cls):
             sig = inspect.signature(cls)
@@ -246,16 +289,94 @@ def _extract_parameters(cls) -> Dict[str, Dict[str, Any]]:
         except (ValueError, TypeError):
             return {}
 
+    # Parse parameter descriptions from the docstring
+    param_descriptions = _parse_param_descriptions(cls)
+
     params = {}
     for name, p in sig.parameters.items():
         if name in ("self", "kwargs", "args"):
             continue
-        params[name] = {
+        info = {
             "type": _clean_type_str(p.annotation),
             "required": p.default == inspect.Parameter.empty,
             "default": None if p.default == inspect.Parameter.empty else str(p.default),
         }
+        if name in param_descriptions:
+            info["description"] = param_descriptions[name]
+        params[name] = info
     return params
+
+
+def _parse_param_descriptions(cls) -> Dict[str, str]:
+    """Parse the 'Parameters:' section of a docstring into {param_name: description}."""
+    raw = inspect.getdoc(cls) or ""
+    if not raw:
+        return {}
+
+    lines = raw.split("\n")
+
+    # Find the Parameters: section
+    param_start = None
+    for i, line in enumerate(lines):
+        if line.strip() == "Parameters:":
+            param_start = i + 1
+            break
+
+    if param_start is None:
+        return {}
+
+    descriptions = {}
+    current_param = None
+    current_desc_lines = []
+
+    for line in lines[param_start:]:
+        stripped = line.strip()
+
+        # Stop at the next section header (e.g. Attributes:, Methods:, Examples:, Example)
+        if stripped and not stripped.startswith(" ") and stripped.endswith(":") and stripped != "Parameters:":
+            break
+        if stripped.startswith("Example"):
+            break
+
+        # Check if this is a new parameter line: "param_name: description"
+        # or "param_name (type): description"
+        if ":" in stripped and not stripped.startswith(" "):
+            # Could be a continuation line if deeply indented, but at the
+            # Parameters level it should be a param definition
+            pass
+
+        # Detect param lines: they are indented at the first level under Parameters:
+        # and have the form "name: description" or "name (type): description"
+        if line and not line.startswith("        ") and ":" in stripped:
+            # Save previous param
+            if current_param is not None:
+                descriptions[current_param] = " ".join(current_desc_lines).strip()
+
+            # Parse "param_name: description" or "param_name (type): description"
+            colon_idx = stripped.index(":")
+            param_part = stripped[:colon_idx].strip()
+            desc_part = stripped[colon_idx + 1:].strip()
+
+            # Strip type annotation if present: "param_name (type)" -> "param_name"
+            if "(" in param_part:
+                param_part = param_part[:param_part.index("(")].strip()
+
+            current_param = param_part
+            current_desc_lines = [desc_part] if desc_part else []
+        elif current_param is not None and stripped:
+            # Continuation line for the current parameter
+            current_desc_lines.append(stripped)
+        elif current_param is not None and not stripped:
+            # Blank line — end of this param's description if next line is a new section
+            # But could also be a paragraph break within a param description.
+            # We'll let the section-header check above handle termination.
+            pass
+
+    # Save the last param
+    if current_param is not None:
+        descriptions[current_param] = " ".join(current_desc_lines).strip()
+
+    return descriptions
 
 
 def _extract_docstring_sections(cls) -> Dict[str, str]:
@@ -305,11 +426,23 @@ def _extract_docstring_sections(cls) -> Dict[str, str]:
     }
 
 
-def get_available_classes() -> Dict[str, List[Dict[str, Any]]]:
-    """Get all available PhenEx classes grouped by category."""
+def get_available_classes(category: str = "") -> Dict[str, List[Dict[str, Any]]]:
+    """Get all available PhenEx classes grouped by category.
+
+    Args:
+        category: Optional category key to filter by ("phenotypes", "filters",
+                  "reporters", "other"). If empty, returns all categories.
+    """
     if not PHENEX_AVAILABLE:
         return {
             "error": "PhenEx library not available. Install with: pip install phenex",
+        }
+
+    VALID_CATEGORIES = ["phenotypes", "filters", "reporters", "other"]
+
+    if category and category not in VALID_CATEGORIES:
+        return {
+            "error": f"Unknown category '{category}'. Valid categories: {', '.join(VALID_CATEGORIES)}",
         }
 
     def _summarize(classes):
@@ -322,11 +455,17 @@ def get_available_classes() -> Dict[str, List[Dict[str, Any]]]:
             })
         return result
 
-    return {
-        "phenotypes": _summarize(PHENOTYPE_CLASSES),
-        "filters": _summarize(FILTER_CLASSES),
-        "codelists": _summarize([Codelist]),
+    all_categories = {
+        "phenotypes": PHENOTYPE_CLASSES,
+        "filters": FILTER_CLASSES,
+        "reporters": REPORTER_CLASSES,
+        "other": OTHER_CLASSES,
     }
+
+    if category:
+        return {category: _summarize(all_categories[category])}
+
+    return {k: _summarize(v) for k, v in all_categories.items()}
 
 
 def get_spec(class_name: str) -> Dict[str, Any]:
@@ -341,10 +480,11 @@ def get_spec(class_name: str) -> Dict[str, Any]:
             "error": "PhenEx library not available. Install with: pip install phenex"
         }
 
-    # Build a combined map of phenotypes + filters + Codelist
+    # Build a combined map of all exposed classes
     cls_map = {cls.__name__: cls for cls in PHENOTYPE_CLASSES}
     cls_map.update({cls.__name__: cls for cls in FILTER_CLASSES})
-    cls_map["Codelist"] = Codelist
+    cls_map.update({cls.__name__: cls for cls in OTHER_CLASSES})
+    cls_map.update({cls.__name__: cls for cls in REPORTER_CLASSES})
 
     if class_name not in cls_map:
         import difflib
