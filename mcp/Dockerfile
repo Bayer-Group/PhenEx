@@ -8,20 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     apt-get install -y --no-install-recommends nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy and install PhenEx library
-COPY pyproject.toml setup.py /app/
-COPY phenex /app/phenex
-RUN pip install --no-cache-dir /app
-
-# Install MCP server dependencies
-COPY mcp/requirements.txt /app/mcp/requirements.txt
-RUN pip install --no-cache-dir -r /app/mcp/requirements.txt
+# Install Python dependencies (includes phenex from PyPI)
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Pre-install MCP Inspector
 RUN npm install -g @modelcontextprotocol/inspector
 
 # Copy MCP server code
-COPY ./ /app/mcp/
+COPY . /app/mcp/
 
 ENV MCP_TRANSPORT=streamable-http
 ENV MCP_HOST=0.0.0.0
