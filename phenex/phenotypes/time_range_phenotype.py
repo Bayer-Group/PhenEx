@@ -72,7 +72,7 @@ class TimeRangePhenotype(Phenotype):
         date_range: Optional[DateFilter] = None,
         relative_time_range: Optional["RelativeTimeRangeFilter"] = None,
         allow_null_end_date: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super(TimeRangePhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain

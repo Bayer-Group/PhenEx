@@ -18,6 +18,8 @@ RUN npm install -g @modelcontextprotocol/inspector
 # Copy MCP server code
 COPY . /app/mcp/
 
+ENV MCP_TRANSPORT=stdio
+
 EXPOSE 6277 6274
 
 CMD ["npx", "@modelcontextprotocol/inspector", "python", "/app/mcp/server.py"]

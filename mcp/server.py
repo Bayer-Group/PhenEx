@@ -155,9 +155,14 @@ def phenex_get_mappers() -> Dict[str, Any]:
                         else mapper_cls.__name__
                     ),
                 }
-                if "CODE" in mapper_cls.DEFAULT_MAPPING and "CODE_TYPE" not in mapper_cls.DEFAULT_MAPPING:
+                if (
+                    "CODE" in mapper_cls.DEFAULT_MAPPING
+                    and "CODE_TYPE" not in mapper_cls.DEFAULT_MAPPING
+                ):
                     info["has_code_type"] = False
-                    info["note"] = "No CODE_TYPE column — use use_code_type=False in your codelist"
+                    info["note"] = (
+                        "No CODE_TYPE column — use use_code_type=False in your codelist"
+                    )
                 elif "CODE_TYPE" in mapper_cls.DEFAULT_MAPPING:
                     info["has_code_type"] = True
                 domains[domain_name] = info
@@ -165,7 +170,10 @@ def phenex_get_mappers() -> Dict[str, Any]:
             result[family] = {"variable": attr_name, "domains": domains}
 
         if not result:
-            return {"success": False, "error": "No DomainsDictionary instances found in phenex.mappers"}
+            return {
+                "success": False,
+                "error": "No DomainsDictionary instances found in phenex.mappers",
+            }
 
         return {"success": True, "mappers": result}
     except Exception as e:

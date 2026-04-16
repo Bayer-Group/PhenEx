@@ -9,11 +9,23 @@ from typing import Dict, Any, List, Optional
 
 # Known phenotype class names for error guidance
 KNOWN_PHENOTYPE_TYPES = [
-    "CodelistPhenotype", "AgePhenotype", "SexPhenotype", "MeasurementPhenotype",
-    "MeasurementChangePhenotype", "EventCountPhenotype", "TimeRangePhenotype",
-    "TimeRangeCountPhenotype", "TimeRangeDayCountPhenotype", "TimeRangeDaysToNextRange",
-    "DeathPhenotype", "CategoricalPhenotype", "BinPhenotype", "ScorePhenotype",
-    "ArithmeticPhenotype", "LogicPhenotype", "WithinSameEncounterPhenotype",
+    "CodelistPhenotype",
+    "AgePhenotype",
+    "SexPhenotype",
+    "MeasurementPhenotype",
+    "MeasurementChangePhenotype",
+    "EventCountPhenotype",
+    "TimeRangePhenotype",
+    "TimeRangeCountPhenotype",
+    "TimeRangeDayCountPhenotype",
+    "TimeRangeDaysToNextRange",
+    "DeathPhenotype",
+    "CategoricalPhenotype",
+    "BinPhenotype",
+    "ScorePhenotype",
+    "ArithmeticPhenotype",
+    "LogicPhenotype",
+    "WithinSameEncounterPhenotype",
 ]
 
 # Common required fields per phenotype type
@@ -34,13 +46,16 @@ REQUIRED_FIELDS_BY_TYPE = {
 def _get_close_matches(name: str, candidates: List[str], n: int = 3) -> List[str]:
     """Return candidate strings that are close matches to name (case-insensitive)."""
     import difflib
+
     # Try case-insensitive matching
     lower_map = {c.lower(): c for c in candidates}
     matches = difflib.get_close_matches(name.lower(), lower_map.keys(), n=n, cutoff=0.5)
     return [lower_map[m] for m in matches]
 
 
-def _diagnose_compilation_error(error: Exception, pheno_type: str, definition: Dict[str, Any]) -> str:
+def _diagnose_compilation_error(
+    error: Exception, pheno_type: str, definition: Dict[str, Any]
+) -> str:
     """Produce an actionable remediation hint from a compilation exception."""
     err_str = str(error)
     err_type = type(error).__name__
@@ -212,7 +227,9 @@ def _prepare_phenotype_for_compilation(pheno: Any) -> Any:
     return pheno
 
 
-def _prepare_cohort_for_compilation(cohort_definition: Dict[str, Any]) -> Dict[str, Any]:
+def _prepare_cohort_for_compilation(
+    cohort_definition: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Walk a native-format cohort dict and apply phenotype translation
     (type->class_name, codelist resolution, filter wrapping) to every
@@ -225,7 +242,9 @@ def _prepare_cohort_for_compilation(cohort_definition: Dict[str, Any]) -> Dict[s
 
     # Translate each phenotype slot
     if "entry_criterion" in native:
-        native["entry_criterion"] = _prepare_phenotype_for_compilation(native["entry_criterion"])
+        native["entry_criterion"] = _prepare_phenotype_for_compilation(
+            native["entry_criterion"]
+        )
 
     for key in ("inclusions", "exclusions", "characteristics", "outcomes"):
         if key in native and native[key]:
@@ -413,8 +432,12 @@ def validate_cohort(
                     if pheno_type:
                         phenotypes_used.append(pheno_type)
                         if pheno_type not in KNOWN_PHENOTYPE_TYPES:
-                            close = _get_close_matches(pheno_type, KNOWN_PHENOTYPE_TYPES)
-                            hint = f" Did you mean: {', '.join(close)}?" if close else ""
+                            close = _get_close_matches(
+                                pheno_type, KNOWN_PHENOTYPE_TYPES
+                            )
+                            hint = (
+                                f" Did you mean: {', '.join(close)}?" if close else ""
+                            )
                             warnings.append(
                                 f"'{field}[{i}]': unrecognized type '{pheno_type}'.{hint} "
                                 f"Call phenex_list_classes() for valid types."
@@ -439,9 +462,7 @@ def validate_cohort(
             try:
                 from phenex.util.serialization.from_dict import from_dict
 
-                native_def = _prepare_cohort_for_compilation(
-                    cohort_definition.copy()
-                )
+                native_def = _prepare_cohort_for_compilation(cohort_definition.copy())
                 _compiled = from_dict(native_def)
             except KeyError as key_err:
                 errors.append(

@@ -333,7 +333,12 @@ def _parse_param_descriptions(cls) -> Dict[str, str]:
         stripped = line.strip()
 
         # Stop at the next section header (e.g. Attributes:, Methods:, Examples:, Example)
-        if stripped and not stripped.startswith(" ") and stripped.endswith(":") and stripped != "Parameters:":
+        if (
+            stripped
+            and not stripped.startswith(" ")
+            and stripped.endswith(":")
+            and stripped != "Parameters:"
+        ):
             break
         if stripped.startswith("Example"):
             break
@@ -355,11 +360,11 @@ def _parse_param_descriptions(cls) -> Dict[str, str]:
             # Parse "param_name: description" or "param_name (type): description"
             colon_idx = stripped.index(":")
             param_part = stripped[:colon_idx].strip()
-            desc_part = stripped[colon_idx + 1:].strip()
+            desc_part = stripped[colon_idx + 1 :].strip()
 
             # Strip type annotation if present: "param_name (type)" -> "param_name"
             if "(" in param_part:
-                param_part = param_part[:param_part.index("(")].strip()
+                param_part = param_part[: param_part.index("(")].strip()
 
             current_param = param_part
             current_desc_lines = [desc_part] if desc_part else []
@@ -449,10 +454,12 @@ def get_available_classes(category: str = "") -> Dict[str, List[Dict[str, Any]]]
         result = []
         for cls in classes:
             sections = _extract_docstring_sections(cls)
-            result.append({
-                "name": cls.__name__,
-                "description": sections["description"],
-            })
+            result.append(
+                {
+                    "name": cls.__name__,
+                    "description": sections["description"],
+                }
+            )
         return result
 
     all_categories = {
@@ -488,6 +495,7 @@ def get_spec(class_name: str) -> Dict[str, Any]:
 
     if class_name not in cls_map:
         import difflib
+
         available = sorted(cls_map.keys())
         close = difflib.get_close_matches(class_name, available, n=3, cutoff=0.4)
         hint = f" Did you mean: {', '.join(close)}?" if close else ""
@@ -511,9 +519,7 @@ def get_spec(class_name: str) -> Dict[str, Any]:
         for sc_name, supporting_cls in SUPPORTING_CLASSES.items():
             if sc_name in type_str and sc_name not in seen:
                 seen.add(sc_name)
-                param_nested[sc_name] = _get_supporting_class_spec(
-                    supporting_cls, seen
-                )
+                param_nested[sc_name] = _get_supporting_class_spec(supporting_cls, seen)
         if param_nested:
             param_info["nested_specs"] = param_nested
 

@@ -139,7 +139,9 @@ def find_codelists(
 
     # Compile patterns (case-insensitive)
     name_re = re.compile(name_pattern, re.IGNORECASE) if name_pattern else None
-    code_type_re = re.compile(code_type_pattern, re.IGNORECASE) if code_type_pattern else None
+    code_type_re = (
+        re.compile(code_type_pattern, re.IGNORECASE) if code_type_pattern else None
+    )
 
     matched = []
     for name in sorted(index.keys()):
@@ -179,7 +181,9 @@ def list_available_codelists() -> Dict[str, Any]:
     Each summary includes name, code_types, total_codes, and a sample of codes.
     """
     index = _build_index()
-    summaries = [_summarize_codelist(name, factory) for name, factory in sorted(index.items())]
+    summaries = [
+        _summarize_codelist(name, factory) for name, factory in sorted(index.items())
+    ]
     return {"codelists": summaries, "count": len(summaries)}
 
 
@@ -194,6 +198,7 @@ def get_codelist(name: str) -> Dict[str, Any]:
     if name not in index:
         available = sorted(index.keys())
         import difflib
+
         close = difflib.get_close_matches(name, available, n=3, cutoff=0.4)
         hint = f" Did you mean: {', '.join(close)}?" if close else ""
         return {

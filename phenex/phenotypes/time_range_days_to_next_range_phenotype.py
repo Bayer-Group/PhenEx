@@ -38,7 +38,7 @@ class TimeRangeDaysToNextRange(Phenotype):
         name: Optional[str] = None,
         relative_time_range: Optional[RelativeTimeRangeFilter] = None,
         value_filter: Optional[ValueFilter] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(name=name, **kwargs)
         self.domain = domain

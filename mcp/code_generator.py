@@ -62,12 +62,19 @@ _IMPORT_MAP = {
 _COHORT_LIKE = {"Cohort", "Subcohort", "Study"}
 
 # Slots on Cohort/Subcohort that hold phenotype objects or lists of them.
-_PHENOTYPE_SLOTS = ("entry_criterion", "inclusions", "exclusions", "characteristics", "outcomes")
+_PHENOTYPE_SLOTS = (
+    "entry_criterion",
+    "inclusions",
+    "exclusions",
+    "characteristics",
+    "outcomes",
+)
 
 
 # ---------------------------------------------------------------------------
 # Low-level emitters
 # ---------------------------------------------------------------------------
+
 
 def _is_phenex_object(value: Any) -> bool:
     """True if value is a dict with a class_name key (i.e. a serialized PhenEx object)."""
@@ -164,6 +171,7 @@ def _build_variable_name(obj_dict: Dict[str, Any]) -> str:
 # High-level generators
 # ---------------------------------------------------------------------------
 
+
 def _generate_cohort_python(canonical: Dict[str, Any]) -> str:
     """
     Generate Python for a Cohort-like object, extracting child phenotypes as
@@ -257,6 +265,7 @@ def _generate_simple_python(canonical: Dict[str, Any]) -> str:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def generate_python(definition: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate idiomatic Python from any PhenEx definition dict.
@@ -303,7 +312,10 @@ def generate_python(definition: Dict[str, Any]) -> Dict[str, Any]:
             "error": "PhenEx library not available. Install with: pip install phenex",
         }
 
-    from cohort_tools import _prepare_cohort_for_compilation, translate_phenotype_to_native
+    from cohort_tools import (
+        _prepare_cohort_for_compilation,
+        translate_phenotype_to_native,
+    )
 
     # --- Prepare (type->class_name, codelist resolution, filter wrapping) ---
     try:
