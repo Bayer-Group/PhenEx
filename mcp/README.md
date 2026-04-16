@@ -79,6 +79,39 @@ bash start_http.sh
 MCP_PORT=8080 bash start_http.sh
 ```
 
+### Docker
+
+Build and run the MCP server as a Docker container. The build context is the **repo root**.
+
+```bash
+# Build (from the repo root)
+docker build -t phenex-mcp -f mcp/Dockerfile .
+
+# Run (MCP server on 9000, Inspector on 6868)
+docker run --rm -p 9000:9000 -p 6868:6868 \
+  --env-file mcp/.env \
+  phenex-mcp
+```
+
+To mount a local codelists directory into the container:
+
+```bash
+docker run --rm -p 9000:9000 \
+  --env-file mcp/.env \
+  -v /path/to/codelists:/codelists \
+  -e PHENEX_CODELIST_DIR=/codelists \
+  phenex-mcp
+```
+
+Override the port or transport via environment variables:
+
+```bash
+docker run --rm -p 8080:8080 \
+  --env-file mcp/.env \
+  -e MCP_PORT=8080 \
+  phenex-mcp
+```
+
 ## Client Configuration
 
 ### LLM Instructions
