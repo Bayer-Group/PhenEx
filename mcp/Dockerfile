@@ -18,11 +18,6 @@ RUN npm install -g @modelcontextprotocol/inspector
 # Copy MCP server code
 COPY . /app/mcp/
 
-ENV MCP_TRANSPORT=streamable-http
-ENV MCP_HOST=0.0.0.0
-ENV MCP_PORT=9000
-ENV INSPECTOR_PORT=6868
+EXPOSE 9000 6274
 
-EXPOSE 9000 6868
-
-CMD ["sh", "-c", "python /app/mcp/server.py & env -i PATH=\"$PATH\" HOME=\"$HOME\" npx @modelcontextprotocol/inspector --port ${INSPECTOR_PORT} http://localhost:${MCP_PORT}/mcp/ & wait"]
+CMD ["npx", "@modelcontextprotocol/inspector", "python", "/app/mcp/server.py"]

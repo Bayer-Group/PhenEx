@@ -89,7 +89,7 @@ cd mcp
 docker build -t phenex-mcp .
 
 # Run (MCP server on 9000, Inspector on 6868)
-docker run --rm -p 9000:9000 -p 6868:6868 \
+docker run --rm -p 9000:9000 -p 6868:6274 \
   --env-file .env \
   phenex-mcp
 ```
@@ -97,7 +97,7 @@ docker run --rm -p 9000:9000 -p 6868:6868 \
 To mount a local codelists directory into the container:
 
 ```bash
-docker run --rm -p 9000:9000 -p 6868:6868 \
+docker run --rm -p 9000:9000 -p 6868:6274 \
   --env-file .env \
   -v /path/to/codelists:/codelists \
   -e PHENEX_CODELIST_DIR=/codelists \
