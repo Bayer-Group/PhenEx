@@ -85,7 +85,8 @@ Build and run the MCP server as a Docker container. The build context is the **r
 
 ```bash
 # Build (from the repo root)
-docker build -t phenex-mcp -f mcp/Dockerfile .
+cd mcp
+docker build -t phenex-mcp -f Dockerfile .
 
 # Run (MCP server on 9000, Inspector on 6868)
 docker run --rm -p 9000:9000 -p 6868:6868 \

@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r /app/mcp/requirements.txt
 RUN npm install -g @modelcontextprotocol/inspector
 
 # Copy MCP server code
-COPY mcp/ /app/mcp/
+COPY ./ /app/mcp/
 
 ENV MCP_TRANSPORT=streamable-http
 ENV MCP_HOST=0.0.0.0
