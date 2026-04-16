@@ -18,6 +18,6 @@ RUN npm install -g @modelcontextprotocol/inspector
 # Copy MCP server code
 COPY . /app/mcp/
 
-EXPOSE 9000 6274
+EXPOSE 6277 6274
 
 CMD ["npx", "@modelcontextprotocol/inspector", "python", "/app/mcp/server.py"]

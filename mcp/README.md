@@ -88,8 +88,8 @@ Build and run the MCP server as a Docker container. The build context is the **m
 cd mcp
 docker build -t phenex-mcp .
 
-# Run (MCP server on 9000, Inspector on 6868)
-docker run --rm -p 9000:9000 -p 6868:6274 \
+# Run — Inspector UI on http://localhost:6274
+docker run --rm -p 6274:6274 -p 6277:6277 \
   --env-file .env \
   phenex-mcp
 ```
@@ -97,19 +97,10 @@ docker run --rm -p 9000:9000 -p 6868:6274 \
 To mount a local codelists directory into the container:
 
 ```bash
-docker run --rm -p 9000:9000 -p 6868:6274 \
+docker run --rm -p 6274:6274 -p 6277:6277 \
   --env-file .env \
   -v /path/to/codelists:/codelists \
   -e PHENEX_CODELIST_DIR=/codelists \
-  phenex-mcp
-```
-
-Override the port or transport via environment variables:
-
-```bash
-docker run --rm -p 8080:8080 \
-  --env-file .env \
-  -e MCP_PORT=8080 \
   phenex-mcp
 ```
 
@@ -207,5 +198,5 @@ mcp/
 | `PHENEX_CODELIST_CODE_TYPE_COLUMN` | No                 | Code type column (default `code_type`)          |
 | `MCP_TRANSPORT`                    | No                 | `stdio` (default), `streamable-http`, or `sse`  |
 | `MCP_HOST`                         | No                 | HTTP host (default `0.0.0.0`)                   |
-| `MCP_PORT`                         | No                 | HTTP port (default `9000`)                      |
+| `MCP_PORT`                         | No                 | HTTP port (default `6277`)                      |
 | `LOG_LEVEL`                        | No                 | Logging level (default `INFO`)                  |
