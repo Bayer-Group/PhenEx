@@ -25,4 +25,4 @@ ENV INSPECTOR_PORT=6868
 
 EXPOSE 9000 6868
 
-CMD ["sh", "-c", "python /app/mcp/server.py & npx @modelcontextprotocol/inspector --port ${INSPECTOR_PORT} http://localhost:${MCP_PORT}/mcp/ & wait"]
+CMD ["sh", "-c", "python /app/mcp/server.py & env -i PATH=\"$PATH\" HOME=\"$HOME\" npx @modelcontextprotocol/inspector --port ${INSPECTOR_PORT} http://localhost:${MCP_PORT}/mcp/ & wait"]
