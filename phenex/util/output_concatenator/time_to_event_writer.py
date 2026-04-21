@@ -45,9 +45,7 @@ class TimeToEventWriter:
 
         html = self._build_html(all_cohort_data, version=version)
 
-        html_path = output_file.with_name(
-            output_file.stem + f"_{report_type}.html"
-        )
+        html_path = output_file.with_name(output_file.stem + f"_{report_type}.html")
         html_path.write_text(html, encoding="utf-8")
         logger.info(f"Generated time-to-event HTML: {html_path}")
 

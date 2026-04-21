@@ -185,7 +185,6 @@ class OutputConcatenator:
         )
         return prefix + rest
 
-
     _TABLE1_TYPES = {
         "Table1",
         "Table1Detailed",
