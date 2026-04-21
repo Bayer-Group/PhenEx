@@ -2,13 +2,11 @@
 # string constant so the Python f-string in _build_tte_html only handles
 # the data injection; all JS braces are literal.
 _TTE_JS = """\
-var COLORS = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f',
-              '#edc949','#af7aa1','#ff9da7','#9c755f','#bab0ab'];
 var NS = 'http://www.w3.org/2000/svg';
 
 /* ── index cohort data by outcome ────────────────────────────────────── */
 var cohortNames = DATA.map(function(c){ return c.cohort_name; });
-var selected = new Set(cohortNames.length ? [cohortNames[0]] : []);
+var selected = initCohortSelector(cohortNames, 'controls', render);
 
 /* per-cohort, per-outcome sorted row arrays */
 var cohortOutcomes = {};   // cohortName -> { outcomeName -> [rows] }
@@ -24,36 +22,6 @@ DATA.forEach(function(c){
   Object.keys(byOc).forEach(function(k){ byOc[k].sort(function(a,b){return a.Timeline-b.Timeline;}); });
   cohortOutcomes[c.cohort_name] = byOc;
 });
-
-/* ── cohort toggle buttons ───────────────────────────────────────────── */
-var controls = document.getElementById('controls');
-cohortNames.forEach(function(name, ci){
-  var btn = document.createElement('button');
-  btn.className = 'cohort-btn';
-  btn.textContent = name;
-  btn.dataset.cohort = name;
-  btn.dataset.ci = ci;
-  btn.addEventListener('click', function(){
-    if(selected.has(name)) selected.delete(name); else selected.add(name);
-    updateButtons(); render();
-  });
-  controls.appendChild(btn);
-});
-function updateButtons(){
-  var btns = controls.querySelectorAll('.cohort-btn');
-  btns.forEach(function(b){
-    var ci = +b.dataset.ci;
-    var col = COLORS[ci % COLORS.length];
-    if(selected.has(b.dataset.cohort)){
-      b.classList.add('active');
-      b.style.borderColor = col; b.style.background = col; b.style.color='#fff';
-    } else {
-      b.classList.remove('active');
-      b.style.borderColor = '#ccc'; b.style.background='#fff'; b.style.color='#333';
-    }
-  });
-}
-updateButtons();
 
 /* ── SVG helpers ─────────────────────────────────────────────────────── */
 function el(tag,attrs,parent){

@@ -124,6 +124,8 @@ class Table1(Reporter):
         self.df_booleans = self._report_boolean_columns()
         logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
+        logger.debug("Collecting value distributions for histogram visualization")
+        self._value_distributions = self._collect_value_distributions()
 
         # add the full cohort size as the first row
         df_n = pd.DataFrame(
@@ -277,6 +279,26 @@ class Table1(Reporter):
         df.index = names
         return df
 
+    def _collect_value_distributions(self):
+        """Collect raw patient-level values for numeric phenotypes (for histogram visualization)."""
+        value_phenotypes = self._get_value_characteristics()
+        distributions = {}
+        for phenotype in value_phenotypes:
+            try:
+                values = (
+                    phenotype.table.select(["PERSON_ID", "VALUE"])
+                    .distinct()["VALUE"]
+                    .execute()
+                    .dropna()
+                    .tolist()
+                )
+                distributions[phenotype.display_name] = [
+                    float(v) for v in values
+                ]
+            except Exception:
+                pass
+        return distributions
+
     def get_pretty_display(self) -> pd.DataFrame:
         """
         Return a formatted version of the Table1 results for display.
@@ -336,6 +358,8 @@ class Table1(Reporter):
         }
         if self.characteristic_sections:
             payload["sections"] = self.characteristic_sections
+        if hasattr(self, "_value_distributions") and self._value_distributions:
+            payload["value_distributions"] = self._value_distributions
 
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)

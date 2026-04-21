@@ -5,13 +5,23 @@ from typing import List, Optional
 from phenex.util import create_logger
 from .base_html_writer import _BaseHtmlWriter
 from ._cohort_selector_js import _COHORT_SELECTOR_JS
-from ._tte_js import _TTE_JS
+from ._table1_visualization_js import _TABLE1_VIZ_JS
 
 logger = create_logger(__name__)
 
 
-class TimeToEventWriter(_BaseHtmlWriter):
-    """Generates interactive KM survival curve HTML from per-cohort TTE JSON files."""
+class Table1HtmlWriter(_BaseHtmlWriter):
+    """Generates interactive Table1 characteristic visualizations as HTML."""
+
+    _EXTRA_CSS = (
+        ".chart-section{margin-bottom:32px}\n"
+        ".chart-section h2{font-size:15px;font-weight:bold;color:#333;"
+        "margin:0 0 8px 0;border-bottom:1px solid #eee;padding-bottom:4px}\n"
+        ".summary-table{border-collapse:collapse;font-size:12px;margin-top:4px}\n"
+        ".summary-table th,.summary-table td{padding:3px 10px;text-align:right;"
+        "border-bottom:1px solid #eee}\n"
+        ".summary-table th{color:#999;font-weight:normal}\n"
+    )
 
     def write(
         self,
@@ -21,7 +31,6 @@ class TimeToEventWriter(_BaseHtmlWriter):
         output_file: Path,
         version: str = "unknown",
     ) -> None:
-        """Generate a combined time-to-event KM curves HTML for all cohorts."""
         all_cohort_data = []
         for cohort_dir, json_file in zip(cohort_dirs, report_files):
             if json_file is None:
@@ -31,49 +40,44 @@ class TimeToEventWriter(_BaseHtmlWriter):
                     data = json.load(f)
                 rows = data.get("rows", [])
                 if rows:
-                    all_cohort_data.append(
-                        {"cohort_name": cohort_dir.name, "rows": rows}
-                    )
+                    entry = {"cohort_name": cohort_dir.name, "rows": rows}
+                    if "value_distributions" in data:
+                        entry["value_distributions"] = data["value_distributions"]
+                    if "sections" in data:
+                        entry["sections"] = data["sections"]
+                    all_cohort_data.append(entry)
             except Exception as e:
-                logger.warning(f"Could not read TTE data from {json_file}: {e}")
+                logger.warning(f"Could not read Table1 data from {json_file}: {e}")
 
         if not all_cohort_data:
             logger.warning(
-                f"No time-to-event data found for {report_type}; skipping HTML generation."
+                f"No Table1 data found for {report_type}; skipping HTML generation."
             )
             return
 
         html = self._build_html(all_cohort_data, version=version)
-
-        html_path = output_file.with_name(output_file.stem + f"_{report_type}.html")
+        html_path = output_file.with_name(
+            output_file.stem + f"_{report_type}_visualization.html"
+        )
         html_path.write_text(html, encoding="utf-8")
-        logger.info(f"Generated time-to-event HTML: {html_path}")
+        logger.info(f"Generated Table1 visualization HTML: {html_path}")
 
-    _EXTRA_CSS = (
-        ".outcome-section{margin-bottom:40px}\n"
-        ".outcome-title{font-size:16px;font-weight:bold;color:#333;"
-        "margin:0 0 8px 0}\n"
-        ".risk-table{border-collapse:collapse;font-size:11px;margin-top:2px}\n"
-        ".risk-table td{padding:1px 0;text-align:center;min-width:50px}\n"
-        ".risk-table .label-cell{text-align:right;padding-right:8px;"
-        "font-weight:bold;white-space:nowrap}\n"
-    )
-
-    def _build_html(self, all_cohort_data: List[dict], version: str = "unknown") -> str:
-        """Build interactive HTML with multi-select cohort dropdown and KM curves."""
+    def _build_html(
+        self, all_cohort_data: List[dict], version: str = "unknown"
+    ) -> str:
         icon_data_uri = self._get_icon_data_uri()
         footer_html = self._build_footer_html(version, icon_data_uri)
         data_json = json.dumps(all_cohort_data, default=str)
 
         return (
             '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
-            "<title>Time to Event \u2014 Kaplan-Meier Curves</title>\n"
+            "<title>Baseline Characteristics</title>\n"
             "<style>\n"
             + self._SHARED_CSS
             + self._EXTRA_CSS
             + "</style>\n"
             "</head>\n<body>\n"
-            '<h1 style="margin-bottom:8px">Kaplan-Meier Survival Curves</h1>\n'
+            '<h1 style="margin-bottom:8px">Baseline Characteristics</h1>\n'
             '<div class="controls" id="controls">'
             "<label>Cohorts:</label></div>\n"
             '<div id="charts"></div>\n'
@@ -83,6 +87,6 @@ class TimeToEventWriter(_BaseHtmlWriter):
             + ";\n"
             + _COHORT_SELECTOR_JS
             + "\n"
-            + _TTE_JS
+            + _TABLE1_VIZ_JS
             + "\n</script>\n</body>\n</html>"
         )

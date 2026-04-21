@@ -7,7 +7,7 @@ import openpyxl
 
 from phenex.util import create_logger
 from .cohort_group import CohortGroup
-from .html_writers import SankeyWriter, TimeToEventWriter
+from .html_writers import SankeyWriter, Table1HtmlWriter, TimeToEventWriter
 from .sheet_writers import (
     GenericSheetWriter,
     InfoSheetWriter,
@@ -86,6 +86,7 @@ class OutputConcatenator:
         self._attrition_writer = GenericSheetWriter()
         self._tte_writer = TimeToEventWriter()
         self._sankey_writer = SankeyWriter()
+        self._table1_html_writer = Table1HtmlWriter()
 
     # ------------------------------------------------------------------
 
@@ -174,6 +175,12 @@ class OutputConcatenator:
                     report_type, reports_by_type[report_type], cohort_dirs
                 )
 
+        for report_type in self._TABLE1_VIZ_TYPES:
+            if report_type in reports_by_type:
+                self._generate_table1_html(
+                    report_type, reports_by_type[report_type], cohort_dirs
+                )
+
     # ------------------------------------------------------------------
 
     def _sheet_order(self, reports_by_type: Dict[str, List[Path]]) -> List[str]:
@@ -213,6 +220,10 @@ class OutputConcatenator:
     }
     _TTE_TYPES = {
         "TimeToEvent",
+    }
+    _TABLE1_VIZ_TYPES = {
+        "Table1",
+        "Table1Outcomes",
     }
 
     def _write_sheet(
@@ -361,5 +372,17 @@ class OutputConcatenator:
         """Generate a combined time-to-event KM curves HTML for all cohorts."""
         version = self._tte_writer._read_phenex_version(self.study_path)
         self._tte_writer.write(
+            report_type, report_files, cohort_dirs, self.output_file, version
+        )
+
+    def _generate_table1_html(
+        self,
+        report_type: str,
+        report_files: List[Optional[Path]],
+        cohort_dirs: List[Path],
+    ) -> None:
+        """Generate Table1 characteristic visualization HTML."""
+        version = self._table1_html_writer._read_phenex_version(self.study_path)
+        self._table1_html_writer.write(
             report_type, report_files, cohort_dirs, self.output_file, version
         )
