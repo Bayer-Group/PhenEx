@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from openpyxl.styles import Alignment, Border, Side
 
 from .base_sheet_writer import _BaseSheetWriter
-from .cohort_group import CohortGroup
+from ..cohort_group import CohortGroup
 
 
 class InfoSheetWriter(_BaseSheetWriter):

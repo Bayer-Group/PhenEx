@@ -6,7 +6,7 @@ from openpyxl.styles import Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from .base_sheet_writer import _BaseSheetWriter
-from .cohort_group import CohortGroup
+from ..cohort_group import CohortGroup
 
 
 class Table1NumericSheetWriter(_BaseSheetWriter):

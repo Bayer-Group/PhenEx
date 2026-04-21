@@ -1,16 +1,15 @@
-import base64
 import json
-from html import escape
 from pathlib import Path
 from typing import List, Optional
 
 from phenex.util import create_logger
+from .base_html_writer import _BaseHtmlWriter
 from ._tte_js import _TTE_JS
 
 logger = create_logger(__name__)
 
 
-class TimeToEventWriter:
+class TimeToEventWriter(_BaseHtmlWriter):
     """Generates interactive KM survival curve HTML from per-cohort TTE JSON files."""
 
     def write(
@@ -49,38 +48,12 @@ class TimeToEventWriter:
         html_path.write_text(html, encoding="utf-8")
         logger.info(f"Generated time-to-event HTML: {html_path}")
 
-    @staticmethod
-    def _build_html(all_cohort_data: List[dict], version: str = "unknown") -> str:
+    def _build_html(self, all_cohort_data: List[dict], version: str = "unknown") -> str:
         """Build interactive HTML with multi-select cohort dropdown and KM curves."""
-        icon_path = (
-            Path(__file__).resolve().parent.parent.parent
-            / "docs"
-            / "assets"
-            / "bird_icon.png"
-        )
-        if icon_path.exists():
-            icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
-            icon_data_uri = f"data:image/png;base64,{icon_b64}"
-        else:
-            icon_data_uri = ""
-
-        version_escaped = escape(version)
-
-        if icon_data_uri:
-            footer_html = (
-                f'<div class="phenex-footer">'
-                f'<img src="{icon_data_uri}" alt="PhenEx">'
-                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
-            )
-        else:
-            footer_html = (
-                f'<div class="phenex-footer">'
-                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
-            )
-
+        icon_data_uri = self._get_icon_data_uri()
+        footer_html = self._build_footer_html(version, icon_data_uri)
         data_json = json.dumps(all_cohort_data, default=str)
 
-        # The JS is kept as a plain string to avoid f-string brace conflicts
         return (
             '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
             "<title>Time to Event \u2014 Kaplan-Meier Curves</title>\n"

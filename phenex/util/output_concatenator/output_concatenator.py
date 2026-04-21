@@ -1,4 +1,3 @@
-import json
 import re
 import zipfile
 from pathlib import Path
@@ -8,11 +7,13 @@ import openpyxl
 
 from phenex.util import create_logger
 from .cohort_group import CohortGroup
-from .generic_sheet_writer import GenericSheetWriter
-from .info_sheet_writer import InfoSheetWriter
-from .table1_numeric_sheet_writer import Table1NumericSheetWriter
-from .table1_sheet_writer import Table1SheetWriter
-from .time_to_event_writer import TimeToEventWriter
+from .html_writers import SankeyWriter, TimeToEventWriter
+from .sheet_writers import (
+    GenericSheetWriter,
+    InfoSheetWriter,
+    Table1NumericSheetWriter,
+    Table1SheetWriter,
+)
 
 logger = create_logger(__name__)
 
@@ -84,6 +85,7 @@ class OutputConcatenator:
         self._numeric_writer = Table1NumericSheetWriter()
         self._attrition_writer = GenericSheetWriter()
         self._tte_writer = TimeToEventWriter()
+        self._sankey_writer = SankeyWriter()
 
     # ------------------------------------------------------------------
 
@@ -345,41 +347,10 @@ class OutputConcatenator:
         cohort_dirs: List[Path],
     ) -> None:
         """Generate a combined sankey HTML for all cohorts that have data."""
-        from phenex.reporting.treatment_pattern_analysis_sankey import (
-            _build_sankey_html,
+        version = self._sankey_writer._read_phenex_version(self.study_path)
+        self._sankey_writer.write(
+            report_type, report_files, cohort_dirs, self.output_file, version
         )
-
-        all_entries = []
-        for cohort_dir, json_file in zip(cohort_dirs, report_files):
-            if json_file is None:
-                continue
-            try:
-                with json_file.open() as f:
-                    data = json.load(f)
-                for entry in data.get("sankey_data", []):
-                    labeled = dict(entry)
-                    labeled["tpa_name"] = (
-                        f"{cohort_dir.name} — {entry.get('tpa_name', '')}"
-                    )
-                    all_entries.append(labeled)
-            except Exception as e:
-                logger.warning(f"Could not read sankey data from {json_file}: {e}")
-
-        if not all_entries:
-            logger.warning(
-                f"No sankey data found for {report_type}; skipping HTML generation."
-            )
-            return
-
-        version = self._info_writer._read_phenex_version(self.study_path)
-
-        html_path = self.output_file.with_name(
-            self.output_file.stem + f"_{report_type}.html"
-        )
-        html_path.write_text(
-            _build_sankey_html(all_entries, version=version), encoding="utf-8"
-        )
-        logger.info(f"Generated sankey HTML: {html_path}")
 
     def _generate_tte_html(
         self,
@@ -388,7 +359,7 @@ class OutputConcatenator:
         cohort_dirs: List[Path],
     ) -> None:
         """Generate a combined time-to-event KM curves HTML for all cohorts."""
-        version = self._info_writer._read_phenex_version(self.study_path)
+        version = self._tte_writer._read_phenex_version(self.study_path)
         self._tte_writer.write(
             report_type, report_files, cohort_dirs, self.output_file, version
         )

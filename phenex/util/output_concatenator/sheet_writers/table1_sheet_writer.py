@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 
 from phenex.util import create_logger
 from .base_sheet_writer import _BaseSheetWriter
-from .cohort_group import CohortGroup
+from ..cohort_group import CohortGroup
 
 logger = create_logger(__name__)
 
