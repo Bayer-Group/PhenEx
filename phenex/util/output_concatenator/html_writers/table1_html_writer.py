@@ -14,6 +14,10 @@ class Table1HtmlWriter(_BaseHtmlWriter):
     """Generates interactive Table1 characteristic visualizations as HTML."""
 
     _EXTRA_CSS = (
+        "html,body{height:100%;overflow:hidden}\n"
+        ".header{position:sticky;top:0;background:#fff;z-index:10;"
+        "padding:20px 20px 0 20px;flex-shrink:0}\n"
+        ".content{flex:1;overflow-y:auto;padding:16px 20px 60px 20px}\n"
         ".chart-section{margin-bottom:32px}\n"
         ".chart-section h2{font-size:15px;font-weight:bold;color:#333;"
         "margin:0 0 8px 0;border-bottom:1px solid #eee;padding-bottom:4px}\n"
@@ -21,6 +25,14 @@ class Table1HtmlWriter(_BaseHtmlWriter):
         ".summary-table th,.summary-table td{padding:3px 10px;text-align:right;"
         "border-bottom:1px solid #eee}\n"
         ".summary-table th{color:#999;font-weight:normal}\n"
+        ".tab-bar{display:flex;gap:0;margin:8px 0 0 0;border-bottom:2px solid #ddd}\n"
+        ".tab-btn{padding:8px 24px;font-size:13px;font-weight:bold;cursor:pointer;"
+        "border:none;background:none;color:#999;border-bottom:2px solid transparent;"
+        "margin-bottom:-2px;transition:color .15s,border-color .15s}\n"
+        ".tab-btn.active{color:#333;border-bottom-color:#4e79a7}\n"
+        ".tab-btn.disabled{color:#ccc;cursor:default}\n"
+        ".tab-panel{display:none}\n"
+        ".tab-panel.active{display:block}\n"
     )
 
     def write(
@@ -76,11 +88,22 @@ class Table1HtmlWriter(_BaseHtmlWriter):
             + self._SHARED_CSS
             + self._EXTRA_CSS
             + "</style>\n"
-            "</head>\n<body>\n"
-            '<h1 style="margin-bottom:8px">Baseline Characteristics</h1>\n'
+            '</head>\n<body style="display:flex;flex-direction:column;'
+            'padding:0;margin:0">\n'
+            '<div class="header">\n'
+            '<h1 style="margin:0 0 8px 0">Baseline Characteristics</h1>\n'
             '<div class="controls" id="controls">'
             "<label>Cohorts:</label></div>\n"
-            '<div id="charts"></div>\n'
+            '<div class="tab-bar" id="tab-bar">'
+            '<button class="tab-btn active" data-tab="boolean">Boolean</button>'
+            '<button class="tab-btn" data-tab="categorical">Categorical</button>'
+            '<button class="tab-btn" data-tab="numeric">Numeric</button>'
+            "</div>\n</div>\n"
+            '<div class="content">\n'
+            '<div class="tab-panel active" id="panel-boolean"></div>\n'
+            '<div class="tab-panel" id="panel-categorical"></div>\n'
+            '<div class="tab-panel" id="panel-numeric"></div>\n'
+            "</div>\n"
             + footer_html
             + "\n<script>\nvar DATA = "
             + data_json

@@ -5,7 +5,27 @@ _TABLE1_VIZ_JS = """\
 var NS = 'http://www.w3.org/2000/svg';
 var cohortNames = DATA.map(function(c) { return c.cohort_name; });
 var selected = initCohortSelector(cohortNames, 'controls', render);
-var chartsDiv = document.getElementById('charts');
+
+var panels = {
+  boolean: document.getElementById('panel-boolean'),
+  categorical: document.getElementById('panel-categorical'),
+  numeric: document.getElementById('panel-numeric')
+};
+var tabBtns = document.querySelectorAll('.tab-btn');
+var activeTab = 'boolean';
+
+/* ── Tab switching ───────────────────────────────────────────────────── */
+tabBtns.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    if (btn.classList.contains('disabled')) return;
+    activeTab = btn.dataset.tab;
+    tabBtns.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    Object.keys(panels).forEach(function(k) {
+      panels[k].classList.toggle('active', k === activeTab);
+    });
+  });
+});
 
 /* ── SVG helpers ─────────────────────────────────────────────────────── */
 function el(tag, attrs, parent) {
@@ -42,21 +62,14 @@ function classifyRows(rows) {
 }
 
 /* ── Boolean horizontal bar chart ────────────────────────────────────── */
-function renderBooleanChart(cohortData) {
+function renderBooleanChart(container, cohortData) {
   var allNames = [], nameSet = {};
   cohortData.forEach(function(cd) {
     cd.classified.booleans.forEach(function(row) {
       if (!nameSet[row.Name]) { nameSet[row.Name] = true; allNames.push(row.Name); }
     });
   });
-  if (!allNames.length) return;
-
-  var section = document.createElement('div');
-  section.className = 'chart-section';
-  chartsDiv.appendChild(section);
-  var h = document.createElement('h2');
-  h.textContent = 'Boolean Characteristics';
-  section.appendChild(h);
+  if (!allNames.length) return false;
 
   var nc = cohortData.length;
   var barH = 16, barGap = 2, phenoGap = 14;
@@ -69,9 +82,8 @@ function renderBooleanChart(cohortData) {
   var svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('width', W); svg.setAttribute('height', H);
   svg.style.display = 'block';
-  section.appendChild(svg);
+  container.appendChild(svg);
 
-  /* grid */
   [0, 25, 50, 75, 100].forEach(function(p) {
     var x = padL + (p / 100) * barW;
     el('line', { x1: x, y1: padT - 4, x2: x, y2: H - padB, stroke: '#eee' }, svg);
@@ -95,10 +107,11 @@ function renderBooleanChart(cohortData) {
       txt(Math.round(pct * 10) / 10 + '% (N=' + n + ')', { x: labelX, y: barY + barH / 2 + 4, 'font-size': 10, fill: '#666' }, svg);
     });
   });
+  return true;
 }
 
 /* ── Categorical grouped bar charts ──────────────────────────────────── */
-function renderCategoricalCharts(cohortData) {
+function renderCategoricalCharts(container, cohortData) {
   var allPhenos = [], phenoSet = {}, allCats = {};
   cohortData.forEach(function(cd) {
     cd.classified.catOrder.forEach(function(ph) {
@@ -110,18 +123,20 @@ function renderCategoricalCharts(cohortData) {
       });
     });
   });
+  if (!allPhenos.length) return false;
 
   allPhenos.forEach(function(phenoName) {
     var categories = allCats[phenoName] || [];
     if (!categories.length) return;
-    renderCategoricalChart(phenoName, categories, cohortData);
+    renderCategoricalChart(container, phenoName, categories, cohortData);
   });
+  return true;
 }
 
-function renderCategoricalChart(phenoName, categories, cohortData) {
+function renderCategoricalChart(container, phenoName, categories, cohortData) {
   var section = document.createElement('div');
   section.className = 'chart-section';
-  chartsDiv.appendChild(section);
+  container.appendChild(section);
   var h = document.createElement('h2');
   h.textContent = phenoName;
   section.appendChild(h);
@@ -139,7 +154,6 @@ function renderCategoricalChart(phenoName, categories, cohortData) {
   svg.style.display = 'block';
   section.appendChild(svg);
 
-  /* y-axis */
   var maxPct = 0;
   cohortData.forEach(function(cd) {
     var cats = cd.classified.categoricals[phenoName] || [];
@@ -150,7 +164,6 @@ function renderCategoricalChart(phenoName, categories, cohortData) {
   if (yMax < maxPct) yMax = maxPct + 5;
   function sy(v) { return padT + plotH - (v / yMax) * plotH; }
 
-  /* grid lines */
   var nTicks = 4;
   for (var ti = 0; ti <= nTicks; ti++) {
     var v = (yMax / nTicks) * ti;
@@ -171,7 +184,6 @@ function renderCategoricalChart(phenoName, categories, cohortData) {
       var bh = Math.max(0, (pct / yMax) * plotH);
       el('rect', { x: bx, y: padT + plotH - bh, width: bw, height: bh, fill: color, rx: 1 }, svg);
     });
-    /* category label */
     var labelX = gx + groupW / 2;
     var lbl = txt(cat, { x: labelX, y: padT + plotH + 14, 'text-anchor': 'middle', 'font-size': 10, fill: '#333' }, svg);
     if (cat.length > 12) {
@@ -182,38 +194,22 @@ function renderCategoricalChart(phenoName, categories, cohortData) {
 }
 
 /* ── Numeric histograms ──────────────────────────────────────────────── */
-function renderNumericHistograms(cohortData) {
+function renderNumericHistograms(container, cohortData) {
   var allNames = [], nameSet = {};
   cohortData.forEach(function(cd) {
     cd.classified.numerics.forEach(function(row) {
       if (!nameSet[row.Name]) { nameSet[row.Name] = true; allNames.push(row.Name); }
     });
   });
+  if (!allNames.length) return false;
 
   allNames.forEach(function(name) {
-    renderHistogram(name, cohortData);
+    renderHistogram(container, name, cohortData);
   });
+  return true;
 }
 
-function computeBins(values, numBins) {
-  if (!values || !values.length) return [];
-  var mn = Infinity, mx = -Infinity;
-  values.forEach(function(v) { if (v < mn) mn = v; if (v > mx) mx = v; });
-  if (mn === mx) { mn -= 0.5; mx += 0.5; }
-  var bw = (mx - mn) / numBins;
-  var bins = [];
-  for (var i = 0; i < numBins; i++) bins.push({ x0: mn + i * bw, x1: mn + (i + 1) * bw, count: 0 });
-  var total = values.length;
-  values.forEach(function(v) {
-    var idx = Math.min(Math.floor((v - mn) / bw), numBins - 1);
-    bins[idx].count++;
-  });
-  bins.forEach(function(b) { b.pct = total > 0 ? (b.count / total) * 100 : 0; });
-  return bins;
-}
-
-function renderHistogram(phenoName, cohortData) {
-  /* collect value arrays */
+function renderHistogram(container, phenoName, cohortData) {
   var series = [];
   cohortData.forEach(function(cd) {
     var vals = (cd.data.value_distributions || {})[phenoName];
@@ -221,20 +217,18 @@ function renderHistogram(phenoName, cohortData) {
   });
 
   if (!series.length) {
-    /* no patient-level data; show summary stats instead */
-    renderSummaryStats(phenoName, cohortData);
+    renderSummaryStats(container, phenoName, cohortData);
     return;
   }
 
   var section = document.createElement('div');
   section.className = 'chart-section';
-  chartsDiv.appendChild(section);
+  container.appendChild(section);
   var h = document.createElement('h2');
   h.textContent = phenoName + ' (distribution)';
   section.appendChild(h);
 
   var numBins = 20;
-  /* compute shared x range */
   var gMin = Infinity, gMax = -Infinity;
   series.forEach(function(s) {
     s.values.forEach(function(v) { if (v < gMin) gMin = v; if (v > gMax) gMax = v; });
@@ -242,7 +236,6 @@ function renderHistogram(phenoName, cohortData) {
   if (gMin === gMax) { gMin -= 0.5; gMax += 0.5; }
   var bw = (gMax - gMin) / numBins;
 
-  /* bin each series with shared range */
   var allBinned = [];
   var maxPct = 0;
   series.forEach(function(s) {
@@ -272,14 +265,12 @@ function renderHistogram(phenoName, cohortData) {
   function sx(v) { return padL + ((v - gMin) / (gMax - gMin)) * plotW; }
   function sy(v) { return padT + plotH - (v / yMax) * plotH; }
 
-  /* y gridlines */
   for (var ti = 0; ti <= 4; ti++) {
     var v = (yMax / 4) * ti;
     el('line', { x1: padL, y1: sy(v), x2: padL + plotW, y2: sy(v), stroke: '#eee' }, svg);
     txt(Math.round(v) + '%', { x: padL - 6, y: sy(v) + 4, 'text-anchor': 'end', 'font-size': 10, fill: '#999' }, svg);
   }
 
-  /* bars – overlaid with transparency */
   var barW = plotW / numBins;
   allBinned.forEach(function(s) {
     var color = COLORS[s.ci % COLORS.length];
@@ -293,7 +284,6 @@ function renderHistogram(phenoName, cohortData) {
     });
   });
 
-  /* x-axis labels */
   var nLabels = 5;
   for (var i = 0; i <= nLabels; i++) {
     var v = gMin + (gMax - gMin) / nLabels * i;
@@ -302,8 +292,8 @@ function renderHistogram(phenoName, cohortData) {
   }
 }
 
-/* ── Summary stats fallback (when no patient-level data) ─────────────── */
-function renderSummaryStats(phenoName, cohortData) {
+/* ── Summary stats fallback ──────────────────────────────────────────── */
+function renderSummaryStats(container, phenoName, cohortData) {
   var rows = [];
   cohortData.forEach(function(cd) {
     cd.classified.numerics.forEach(function(r) {
@@ -314,7 +304,7 @@ function renderSummaryStats(phenoName, cohortData) {
 
   var section = document.createElement('div');
   section.className = 'chart-section';
-  chartsDiv.appendChild(section);
+  container.appendChild(section);
   var h = document.createElement('h2');
   h.textContent = phenoName + ' (summary)';
   section.appendChild(h);
@@ -324,7 +314,6 @@ function renderSummaryStats(phenoName, cohortData) {
   tbl.className = 'summary-table';
   section.appendChild(tbl);
 
-  /* header */
   var thead = document.createElement('tr');
   tbl.appendChild(thead);
   var th0 = document.createElement('th'); th0.textContent = ''; thead.appendChild(th0);
@@ -349,9 +338,15 @@ function renderSummaryStats(phenoName, cohortData) {
 
 /* ── Main render ─────────────────────────────────────────────────────── */
 function render() {
-  chartsDiv.innerHTML = '';
+  panels.boolean.innerHTML = '';
+  panels.categorical.innerHTML = '';
+  panels.numeric.innerHTML = '';
+
   var sel = Array.from(selected);
-  if (!sel.length) return;
+  if (!sel.length) {
+    updateTabStates(false, false, false);
+    return;
+  }
 
   var cohortData = [];
   sel.forEach(function(name) {
@@ -367,9 +362,43 @@ function render() {
     });
   });
 
-  renderBooleanChart(cohortData);
-  renderCategoricalCharts(cohortData);
-  renderNumericHistograms(cohortData);
+  var hasBoolean = renderBooleanChart(panels.boolean, cohortData);
+  var hasCategorical = renderCategoricalCharts(panels.categorical, cohortData);
+  var hasNumeric = renderNumericHistograms(panels.numeric, cohortData);
+  updateTabStates(hasBoolean, hasCategorical, hasNumeric);
 }
+
+function updateTabStates(hasBoolean, hasCategorical, hasNumeric) {
+  var avail = { boolean: hasBoolean, categorical: hasCategorical, numeric: hasNumeric };
+  tabBtns.forEach(function(btn) {
+    var key = btn.dataset.tab;
+    if (avail[key]) {
+      btn.classList.remove('disabled');
+    } else {
+      btn.classList.add('disabled');
+      if (btn.classList.contains('active')) {
+        btn.classList.remove('active');
+        panels[key].classList.remove('active');
+      }
+    }
+  });
+  /* ensure at least one available tab is active */
+  var anyActive = false;
+  tabBtns.forEach(function(b) { if (b.classList.contains('active')) anyActive = true; });
+  if (!anyActive) {
+    var order = ['boolean', 'categorical', 'numeric'];
+    for (var i = 0; i < order.length; i++) {
+      if (avail[order[i]]) {
+        tabBtns.forEach(function(b) {
+          if (b.dataset.tab === order[i]) { b.classList.add('active'); }
+        });
+        panels[order[i]].classList.add('active');
+        activeTab = order[i];
+        break;
+      }
+    }
+  }
+}
+
 render();
 """
