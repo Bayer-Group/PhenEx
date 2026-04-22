@@ -69,9 +69,9 @@ class _BaseHtmlWriter(ABC):
             return (
                 f'<div class="phenex-footer">'
                 f'<img src="{icon_data_uri}" alt="PhenEx">'
-                f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+                f"<span>Generated with PhenEx {version_escaped}</span></div>"
             )
         return (
             f'<div class="phenex-footer">'
-            f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+            f"<span>Generated with PhenEx {version_escaped}</span></div>"
         )

@@ -33,6 +33,10 @@ class Table1HtmlWriter(_BaseHtmlWriter):
         ".tab-btn.disabled{color:#ccc;cursor:default}\n"
         ".tab-panel{display:none}\n"
         ".tab-panel.active{display:block}\n"
+        ".section-header{font-size:14px;font-weight:bold;color:#4e79a7;"
+        "margin:24px 0 12px 0;padding:6px 12px;background:#f0f4f8;"
+        "border-left:3px solid #4e79a7;border-radius:0 4px 4px 0}\n"
+        ".section-header:first-child{margin-top:0}\n"
     )
 
     def write(

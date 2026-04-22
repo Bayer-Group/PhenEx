@@ -40,6 +40,46 @@ function txt(text, attrs, parent) {
   return e;
 }
 
+/* ── Section grouping ────────────────────────────────────────────────── */
+function getSections() {
+  for (var i = 0; i < DATA.length; i++) {
+    if (DATA[i].sections) return DATA[i].sections;
+  }
+  return null;
+}
+
+function groupBySection(names, sections) {
+  if (!sections) return [{ section: null, items: names }];
+  var groups = [];
+  var used = {};
+  var sectionKeys = Object.keys(sections);
+  sectionKeys.forEach(function(sec) {
+    var chars = sections[sec];
+    var items = [];
+    names.forEach(function(name) {
+      for (var i = 0; i < chars.length; i++) {
+        if (name === chars[i] || name.indexOf(chars[i] + '=') === 0) {
+          items.push(name);
+          used[name] = true;
+          break;
+        }
+      }
+    });
+    if (items.length) groups.push({ section: sec, items: items });
+  });
+  var ungrouped = names.filter(function(n) { return !used[n]; });
+  if (ungrouped.length) groups.push({ section: null, items: ungrouped });
+  return groups;
+}
+
+function renderSectionHeader(container, sectionName) {
+  if (!sectionName) return;
+  var h = document.createElement('h3');
+  h.className = 'section-header';
+  h.textContent = sectionName;
+  container.appendChild(h);
+}
+
 /* ── Row classification ──────────────────────────────────────────────── */
 function classifyRows(rows) {
   var booleans = [], categoricals = {}, catOrder = [], numerics = [];
@@ -71,6 +111,16 @@ function renderBooleanChart(container, cohortData) {
   });
   if (!allNames.length) return false;
 
+  var sections = getSections();
+  var groups = groupBySection(allNames, sections);
+  groups.forEach(function(g) {
+    renderSectionHeader(container, g.section);
+    renderBooleanBars(container, g.items, cohortData);
+  });
+  return true;
+}
+
+function renderBooleanBars(container, allNames, cohortData) {
   var nc = cohortData.length;
   var barH = 16, barGap = 2, phenoGap = 14;
   var phenoH = nc * barH + (nc - 1) * barGap;
@@ -107,7 +157,6 @@ function renderBooleanChart(container, cohortData) {
       txt(Math.round(pct * 10) / 10 + '% (N=' + n + ')', { x: labelX, y: barY + barH / 2 + 4, 'font-size': 10, fill: '#666' }, svg);
     });
   });
-  return true;
 }
 
 /* ── Categorical grouped bar charts ──────────────────────────────────── */
@@ -125,10 +174,15 @@ function renderCategoricalCharts(container, cohortData) {
   });
   if (!allPhenos.length) return false;
 
-  allPhenos.forEach(function(phenoName) {
-    var categories = allCats[phenoName] || [];
-    if (!categories.length) return;
-    renderCategoricalChart(container, phenoName, categories, cohortData);
+  var sections = getSections();
+  var groups = groupBySection(allPhenos, sections);
+  groups.forEach(function(g) {
+    renderSectionHeader(container, g.section);
+    g.items.forEach(function(phenoName) {
+      var categories = allCats[phenoName] || [];
+      if (!categories.length) return;
+      renderCategoricalChart(container, phenoName, categories, cohortData);
+    });
   });
   return true;
 }
@@ -203,8 +257,13 @@ function renderNumericHistograms(container, cohortData) {
   });
   if (!allNames.length) return false;
 
-  allNames.forEach(function(name) {
-    renderHistogram(container, name, cohortData);
+  var sections = getSections();
+  var groups = groupBySection(allNames, sections);
+  groups.forEach(function(g) {
+    renderSectionHeader(container, g.section);
+    g.items.forEach(function(name) {
+      renderHistogram(container, name, cohortData);
+    });
   });
   return true;
 }
