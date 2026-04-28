@@ -68,10 +68,7 @@ class TimeToEventWriter(_BaseHtmlWriter):
         return (
             '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
             "<title>Time to Event \u2014 Kaplan-Meier Curves</title>\n"
-            "<style>\n"
-            + self._SHARED_CSS
-            + self._EXTRA_CSS
-            + "</style>\n"
+            "<style>\n" + self._SHARED_CSS + self._EXTRA_CSS + "</style>\n"
             "</head>\n<body>\n"
             '<h1 style="margin-bottom:8px">Kaplan-Meier Survival Curves</h1>\n'
             '<div class="controls" id="controls">'

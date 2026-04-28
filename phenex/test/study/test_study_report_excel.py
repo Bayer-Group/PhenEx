@@ -321,8 +321,12 @@ def _table1_outcomes(p: dict) -> dict:
         ],
     }
     value_distributions = {
-        "Time to first MI": _dummy_values(4.2, 2.8, seed=hash(p["n_final"]) % 2**31 + 2),
-        "Time to first stroke": _dummy_values(5.1, 3.2, seed=hash(p["n_final"]) % 2**31 + 3),
+        "Time to first MI": _dummy_values(
+            4.2, 2.8, seed=hash(p["n_final"]) % 2**31 + 2
+        ),
+        "Time to first stroke": _dummy_values(
+            5.1, 3.2, seed=hash(p["n_final"]) % 2**31 + 3
+        ),
     }
     return {
         "reporter_type": "Table1",

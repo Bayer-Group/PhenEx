@@ -78,9 +78,7 @@ class Table1HtmlWriter(_BaseHtmlWriter):
         html_path.write_text(html, encoding="utf-8")
         logger.info(f"Generated Table1 visualization HTML: {html_path}")
 
-    def _build_html(
-        self, all_cohort_data: List[dict], version: str = "unknown"
-    ) -> str:
+    def _build_html(self, all_cohort_data: List[dict], version: str = "unknown") -> str:
         icon_data_uri = self._get_icon_data_uri()
         footer_html = self._build_footer_html(version, icon_data_uri)
         data_json = json.dumps(all_cohort_data, default=str)
@@ -88,10 +86,7 @@ class Table1HtmlWriter(_BaseHtmlWriter):
         return (
             '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
             "<title>Baseline Characteristics</title>\n"
-            "<style>\n"
-            + self._SHARED_CSS
-            + self._EXTRA_CSS
-            + "</style>\n"
+            "<style>\n" + self._SHARED_CSS + self._EXTRA_CSS + "</style>\n"
             '</head>\n<body style="display:flex;flex-direction:column;'
             'padding:0;margin:0">\n'
             '<div class="header">\n'

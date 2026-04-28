@@ -292,9 +292,7 @@ class Table1(Reporter):
                     .dropna()
                     .tolist()
                 )
-                distributions[phenotype.display_name] = [
-                    float(v) for v in values
-                ]
+                distributions[phenotype.display_name] = [float(v) for v in values]
             except Exception:
                 pass
         return distributions
