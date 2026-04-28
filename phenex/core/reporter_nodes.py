@@ -21,11 +21,11 @@ class Reporter(Node):
         super(Reporter, self).__init__(name=name)
         self.cohort = cohort
 
-    def to_dict(self):
-        """Exclude cohort from serialization to avoid hashing the entire Cohort object."""
-        d = super().to_dict()
-        d.pop("cohort", None)
-        return d
+    # def to_dict(self):
+    #     """Exclude cohort from serialization to avoid hashing the entire Cohort object."""
+    #     d = super().to_dict()
+    #     # d.pop("cohort", None)
+    #     return d
 
     def _execute(self, tables: Dict[str, Table]):
         """
