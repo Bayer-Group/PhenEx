@@ -1,6 +1,5 @@
 import os, datetime, json, sys
 from typing import List, Dict, Optional
-from importlib.metadata import version, PackageNotFoundError
 
 from phenex.node import Node, NodeGroup
 import ibis
@@ -140,11 +139,8 @@ class Study:
         # Get Python version
         python_version = sys.version
 
-        # Get PhenEx version
-        try:
-            phenex_version = version("phenex")
-        except PackageNotFoundError:
-            phenex_version = "unknown (package not installed)"
+        # Get PhenEx version from live source code
+        from phenex import __version__ as phenex_version
 
         # Write to file
         with open(info_path, "w") as f:

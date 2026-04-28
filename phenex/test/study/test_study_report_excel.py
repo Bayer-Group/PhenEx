@@ -11,6 +11,7 @@ OutputConcatenator to produce:
 import json
 import math
 import os
+import random
 from pathlib import Path
 
 from phenex.util.output_concatenator import OutputConcatenator
@@ -180,6 +181,12 @@ def _null_stats() -> dict:
     }
 
 
+def _dummy_values(mean: float, std: float, n: int = 500, seed: int = 42) -> list:
+    """Generate *n* normally-distributed dummy values for histogram visualization."""
+    rng = random.Random(seed)
+    return [round(rng.gauss(mean, std), 2) for _ in range(n)]
+
+
 def _table1(p: dict) -> dict:
     n = p["n_final"]
 
@@ -237,7 +244,16 @@ def _table1(p: dict) -> dict:
             "Stroke",
         ],
     }
-    return {"reporter_type": "Table1", "rows": rows, "sections": sections}
+    value_distributions = {
+        "Age": _dummy_values(52.3, 7.1, seed=hash(p["n_final"]) % 2**31),
+        "BMI": _dummy_values(28.4, 5.9, seed=hash(p["n_final"]) % 2**31 + 1),
+    }
+    return {
+        "reporter_type": "Table1",
+        "rows": rows,
+        "sections": sections,
+        "value_distributions": value_distributions,
+    }
 
 
 def _table1_detailed(p: dict) -> dict:
@@ -304,7 +320,20 @@ def _table1_outcomes(p: dict) -> dict:
             "Hospitalisation",
         ],
     }
-    return {"reporter_type": "Table1", "rows": rows, "sections": sections}
+    value_distributions = {
+        "Time to first MI": _dummy_values(
+            4.2, 2.8, seed=hash(p["n_final"]) % 2**31 + 2
+        ),
+        "Time to first stroke": _dummy_values(
+            5.1, 3.2, seed=hash(p["n_final"]) % 2**31 + 3
+        ),
+    }
+    return {
+        "reporter_type": "Table1",
+        "rows": rows,
+        "sections": sections,
+        "value_distributions": value_distributions,
+    }
 
 
 def _table1_outcomes_detailed(p: dict) -> dict:
