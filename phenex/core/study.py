@@ -14,9 +14,7 @@ logger = create_logger(__name__)
 
 class Study:
     """
-    Orchestrates the execution of multiple cohorts and aggregates their reports.
-
-    A Study manages the execution of one or more cohorts, automatically generating standardized reports (Waterfall, Table1) for each cohort and concatenating them into a single multi-sheet Excel file for easy comparison. Each execution creates a timestamped directory containing individual cohort outputs and a combined study results file.
+    Use Study to execute multiple cohorts together and produce a combined report. It runs each cohort, generates standardized reports (Waterfall, Table1), and concatenates them into a single multi-sheet Excel file in a timestamped output directory.
 
     Parameters:
         path: Base directory where study outputs will be saved. A subdirectory with the study name will be created if it doesn't exist.

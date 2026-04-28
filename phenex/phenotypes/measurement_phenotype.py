@@ -11,14 +11,16 @@ from ibis import _
 
 class MeasurementPhenotype(CodelistPhenotype):
     """
-    # What is MeasurementPhenotype for?
-    The MeasurementPhenotype is for manipulating numerical data found in RWD data sources e.g. laboratory or observation results. These tables often contain numerical values (height, weight, blood pressure, lab results). As an event-based table, each row records a single measurement value for a single patient with a date. All numerical values are in a 'value' column. A medical code indicates the type of numerical measurement and the units of measurement are in an additional column.
+    Use MeasurementPhenotype when you need to work with numeric lab values, vitals, or observation results (e.g. HbA1c > 7%, systolic blood pressure, BMI, eGFR). It identifies measurements by medical code (like CodelistPhenotype) and additionally lets you filter by value range (value_filter) and return the numeric value — either a single value (first, last, nearest) or an aggregation (mean, median, max, min). Use this whenever the clinical concept involves a numeric threshold or you need the measurement value itself.
 
-    MeasurementPhenotype is a subclass of CodelistPhenotype, inheriting all of its functionality to identify patients by single or sets of medical codes (e.g. 'test type') within a specified time period. It can also :
+    MeasurementPhenotype is a subclass of CodelistPhenotype, inheriting all of its code-matching and time-filtering functionality. It additionally supports:
 
-    - identify patients with a measurement value within a value range and
-    - return a measurement value, either all measurements values within filter
-      criteria or perform simple aggregations (mean, median, max, min).
+    - filtering patients by measurement value within a range (value_filter)
+    - returning measurement values with optional aggregation (mean, median, max, min)
+
+    This phenotype returns:
+        DATE: The date of the matching measurement event.
+        VALUE: The numeric measurement value (optionally aggregated via mean, median, max, min).
 
     # Example data:
 

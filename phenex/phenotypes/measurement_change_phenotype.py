@@ -10,7 +10,11 @@ from ibis import _
 
 class MeasurementChangePhenotype(Phenotype):
     """
-    MeasurementChangePhenotype looks for changes in the value of a MeasurementPhenotype within a certain time period. Returns EVENT_DATE as either the date of the first or second MeasurementPhenotype event and VALUE as the observed change in the underlying MeasurementPhenotype's VALUE.
+    Use MeasurementChangePhenotype when you need to detect a change in a lab value or vital sign over time (e.g. "HbA1c decrease of ≥1% within 6 months", "weight gain of >5kg"). Takes a MeasurementPhenotype as input and compares pairs of measurements, returning the magnitude of change. Use direction to specify increase or decrease, and min_change/max_change to set thresholds.
+
+    This phenotype returns:
+        DATE: The date of the first or second measurement event (based on component_date_select).
+        VALUE: The magnitude of change in the measurement value between the two events.
 
     Parameters:
         name: The name of the phenotype.

@@ -10,18 +10,11 @@ from ibis.expr.types.relations import Table
 
 class TimeRangeDaysToNextRange(Phenotype):
     """
-    TimeRangeDaysToNextRange identifies the time range that contains the anchor phenotype,
-    then finds the adjacent time range (next or previous) and counts the days difference between them.
+    Use TimeRangeDaysToNextRange to measure the gap (in days) between consecutive time range episodes (e.g. "days from hospital discharge to next readmission", "gap between coverage periods"). Finds the time range containing the anchor date, then measures the gap to the next (or previous) adjacent time range.
 
-    If relative_time_range.when is 'after' (default):
-        Finds the next consecutive time range.
-        VALUE: Days difference between the end of anchored time range and start of next time range.
-        EVENT_DATE: The start date of the next consecutive time range.
-
-    If relative_time_range.when is 'before':
-        Finds the previous consecutive time range.
-        VALUE: Days difference between the start of the anchored time range and the end of the previous time range.
-        EVENT_DATE: The end date of the previous consecutive time range.
+    This phenotype returns:
+        DATE: If when='after', start date of the next period. If when='before', end date of the previous period.
+        VALUE: Days between the current period and the adjacent period.
 
 
     Example: Count number days to next hospitalization after index date hospitalization
@@ -45,7 +38,7 @@ class TimeRangeDaysToNextRange(Phenotype):
         name: Optional[str] = None,
         relative_time_range: Optional[RelativeTimeRangeFilter] = None,
         value_filter: Optional[ValueFilter] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(name=name, **kwargs)
         self.domain = domain

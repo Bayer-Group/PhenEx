@@ -18,14 +18,11 @@ import ibis
 
 class TimeRangeDayCountPhenotype(Phenotype):
     """
-    TimeRangeDayCountPhenotype works with time range tables i.e. the input table must have a START_DATE and END_DATE column (in addition to PERSON_ID). It counts the **total number of days** within time ranges for each person, either total or within a specified date range (relative or absolute (TODO)). If no relative_time_range is defined, it returns the total number of days across all time periods per person. If relative_time_range is defined, it counts the number of days before or after (depending on when keyword argument of relative_time_range), INCLUDING the time period that contains the anchor date.
+    Use TimeRangeDayCountPhenotype to count the total number of days across time range episodes for each patient (e.g. "total days hospitalized in the year after index", "total days of drug exposure"). Works with tables that have START_DATE and END_DATE columns. Unlike TimeRangeCountPhenotype which counts episodes, this counts the sum of days across all episodes.
 
-    This can be used :
-    - given an admission discharge table, to count the total number of days hospitalized e.g. in the post index period
-    - given a drug exposure table, to count the total number of days of drug exposure
-
-    DATE: Date is always null
-    VALUE: Total number of days across all time periods in the specified time range.
+    This phenotype returns:
+        DATE: Not populated (null).
+        VALUE: Total number of days across all time periods in the specified time range.
 
     Parameters:
         domain: The domain of the phenotype.

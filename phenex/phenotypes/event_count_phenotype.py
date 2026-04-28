@@ -13,15 +13,11 @@ logger = create_logger(__name__)
 
 class EventCountPhenotype(Phenotype):
     """
-    EventCountPhenotype counts the number of events that occur on distinct days. It is additionally able to filter patients based on:
-    1. the number of distinct days an event occurred, by setting value_filter
-    2. the number of days between pairs of events
+    Use EventCountPhenotype when you need to count how many times an event occurred (e.g. "≥2 diagnoses on distinct days", "≥3 prescriptions within 90 days") or to require a minimum number of events for inclusion. Takes another phenotype as input (which must have return_date='all') and counts events on distinct days. Use value_filter to set minimum/maximum event count thresholds. Use relative_time_range to require minimum days between event pairs.
 
-    EventCountPhenotype is a composite phenotype, meaning that it does not directly operate on source data and takes a phenotype as an argument. The phenotype passed to EventCountPhenotype must have return_date set to 'all' (if return_date on the provided phenotype is set to `first` or `last`, there will only be one event per patient...)
-
-
-    DATE: The event date selected based on `component_date_select` and `return_date` parameters. `return_date` returns multiple rows per patient for all events that fulfill criteria. `return_date` first is the first fulfilling event date, last the last. If component_date_select = 'first' the returned date is a pair of events, if component_date_select = 'second' we return the second of a pair of events.
-    VALUE: The number of days that the phenotype of interest has occurred i.e. if 4, that means the phenotype has occurred on 4 distinct days.
+    This phenotype returns:
+        DATE: The event date selected based on component_date_select and return_date parameters.
+        VALUE: The number of distinct days on which the event occurred.
 
     Parameters:
         name: The name of the phenotype.

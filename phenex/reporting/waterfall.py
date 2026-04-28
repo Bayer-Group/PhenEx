@@ -9,17 +9,44 @@ logger = create_logger(__name__)
 
 class Waterfall(Reporter):
     """
-    A waterfall diagram, also known as an attrition table, shows how inclusion/exclusion criteria contribute to a final population size. Each inclusion/exclusion criteria is a row in the table, and the number of patients remaining after applying that criteria are shown on that row.
+    Use Waterfall to generate an attrition table showing how each inclusion/exclusion criterion contributes to the final cohort size. Each row shows a criterion with the absolute count fulfilling it, the cumulative remaining count, the percentage retained, and the delta from the previous step.
 
     | Column name | Description |
     | --- | --- |
-    | Type | The type of the phenotype, either entry, inclusion or exclusion |
-    | Name | The name of entry, inclusion or exclusion criteria |
-    | N | The absolute number of patients that fulfill that phenotype. For the entry criterium this is the absolute number in the dataset. For inclusion/exclusion criteria this is the number of patients that fulfill the entry criterium AND the phenotype and that row. |
-    | Remaining | The number of patients remaining in the cohort after sequentially applying the inclusion/exclusion criteria in the order that they are listed in this table. |
-    | % | The percentage of patients who fulfill the entry criterion who are remaining in the cohort after application of the phenotype on that row |
-    | Delta | The change in number of patients that occurs by applying the phenotype on that row. |
+    | Type | The type of the phenotype: entry, inclusion, or exclusion |
+    | Name | The name of the entry, inclusion, or exclusion criterion |
+    | N | The absolute number of patients that fulfill that phenotype |
+    | Remaining | The number of patients remaining after sequentially applying criteria |
+    | % | The percentage of entry patients remaining after applying this criterion |
+    | Delta | The change in number of patients caused by applying this criterion |
 
+    Parameters:
+        decimal_places: Number of decimal places to round to. Default: 1
+        include_component_phenotypes_level: When set to an integer, component
+            (child) phenotypes are expanded inline beneath each parent. None
+            (default) disables expansion.
+
+    Examples:
+
+    Example: Generate waterfall for a cohort
+        ```python
+        from phenex.reporting import Waterfall
+
+        waterfall = Waterfall()
+        # Waterfall is generated automatically during cohort.execute()
+        # Access via:
+        df = cohort.waterfall  # DataFrame with attrition data
+        cohort.write_reports_to_excel("./output")  # writes waterfall.xlsx
+        ```
+
+    Example: Use as a custom reporter with component phenotype expansion
+        ```python
+        waterfall = Waterfall(include_component_phenotypes_level=100)
+        cohort = Cohort(
+            ...,
+            custom_reporters=[waterfall]
+        )
+        ```
     """
 
     def __init__(

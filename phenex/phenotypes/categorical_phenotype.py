@@ -35,14 +35,11 @@ def check_categorical_filters_share_same_domain(filter, domain):
 
 class CategoricalPhenotype(Phenotype):
     """
-    CategoricalPhenotype is used for discrete entities such for sex, race, or ethnicity, diagnosis position, or encounter type. CategoricalPhenotypes are especially helpful as a baseline characteristic from PERSON like tables to identify demographic information.
+    Use CategoricalPhenotype to extract or filter by discrete categorical values such as race, ethnicity, encounter type, or diagnosis position. Most commonly used as a baseline characteristic to capture demographic information from PERSON-like tables, or to filter events by category (e.g. "inpatient encounters only"). For sex specifically, use SexPhenotype instead (a convenience subclass).
 
-    CategoricalPhenotype can be used to filter patients by a category, or to pull relevant categorical information.
-
-
-    DATE: Often null; only populated if the categorical value is associated with a date e.g.a categorical phenotype identifying all inpatient encounters in an event table
-    VALUE: The identified category from the source column.
-
+    This phenotype returns:
+        DATE: Often null; only populated if the categorical value is associated with a date (e.g. inpatient encounters).
+        VALUE: The identified category from the source column.
 
     Parameters:
         name: Name of the phenotype.

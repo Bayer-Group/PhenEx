@@ -13,15 +13,7 @@ logger = create_logger(__name__)
 
 class Table2(Reporter):
     """
-    Table2 generates outcome incidence rates and event counts for a cohort at specified time points.
-
-    For each outcome, reports:
-    - N events in the cohort
-    - N censored patients (patients whose follow-up was cut short)
-    - Time under risk in patient-years (accounting for censoring)
-    - Incidence rate per 100 patient-years
-
-    Time under risk accounts for censoring from competing events (e.g., death) and administrative censoring at end of study period.
+    Use Table2 to generate outcome incidence rates and event counts for a cohort at specified time points. It reports N events, N censored patients, time under risk in patient-years, and incidence rate per 100 patient-years, accounting for competing-event and administrative censoring.
 
     Parameters:
         time_points: List of days from index to evaluate outcomes (e.g., [90, 365])
