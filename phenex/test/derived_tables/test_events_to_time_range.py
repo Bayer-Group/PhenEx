@@ -343,9 +343,81 @@ def test_events_to_time_range_days_columnname_null_fallback():
     test_generator.run_tests(verbose=True)
 
 
+class EventsToTimeRangeGapPeriodTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange correctly applies gap_period to extend each period.
+
+    With max_days=30 and gap_period=5 the effective day count is 35.
+
+    P1: two events (2022-01-01 and 2022-02-05) that are exactly adjacent once the gap
+        is applied (Jan 1 + 35 = Feb 5; next start Feb 5 ≤ Feb 6 = end+1), so they
+        must be merged into a single period.
+    P2: two events (2022-01-01 and 2022-02-07) where even with the gap the second start
+        (Feb 7) is still beyond end+1 (Feb 6), so they must remain separate.
+    """
+
+    name_space = "ettr_gap_period"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: gap causes the two periods to touch and merge
+                ("P1", "c1", "2022-01-01"),
+                ("P1", "c1", "2022-02-05"),
+                # P2: gap does not close the gap between the two periods
+                ("P2", "c1", "2022-01-01"),
+                ("P2", "c1", "2022-02-07"),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # P1: Jan 1 + 35 = Feb 5; Feb 5 + 35 = Mar 12
+        #     Feb 5 ≤ Feb 6 → merged → Jan 1–Mar 12
+        # P2: Jan 1 + 35 = Feb 5; Feb 7 > Feb 6 → separate
+        #     period 1: Jan 1–Feb 5
+        #     period 2: Feb 7 + 35 = Mar 14  → Feb 7–Mar 14
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-03-12"),
+                ("P2", "2022-01-01", "2022-02-05"),
+                ("P2", "2022-02-07", "2022-03-14"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            max_days=30,
+            gap_period=5,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_gap_period_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_gap_period():
+    test_generator = EventsToTimeRangeGapPeriodTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
     test_events_to_time_range_duplicate_events()
     test_events_to_time_range_days_columnname()
     test_events_to_time_range_days_columnname_null_fallback()
+    test_events_to_time_range_gap_period()

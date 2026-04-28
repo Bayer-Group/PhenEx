@@ -37,6 +37,10 @@ class EventsToTimeRange(Node):
         operator: Comparison operator applied to the day count. Use ``'<='`` (default) to add
                   the day value directly, or ``'<'`` to subtract one day first (exclusive upper
                   bound). Applies to both ``max_days`` and ``days_columnname``.
+        gap_period: Additional days appended to the computed day count before deriving the end
+                    date. For example, with ``max_days=30`` and ``gap_period=5`` the end date is
+                    calculated as if ``max_days=35``. The ``operator`` offset is applied to the
+                    combined total. Defaults to ``0`` (no gap).
         name: Optional name for the derived table.
 
     Attributes:
@@ -45,6 +49,7 @@ class EventsToTimeRange(Node):
         max_days: Fixed day count fallback.
         days_columnname: Column name providing per-row day counts (when used).
         operator: The comparison operator (``'<='`` or ``'<'``).
+        gap_period: Additional days added to each day count before computing the end date.
 
     Examples:
 
@@ -87,6 +92,7 @@ class EventsToTimeRange(Node):
         codelist: Optional["Codelist"] = None,
         days_columnname: Optional[str] = None,
         operator: str = "<=",
+        gap_period: int = 0,
         **kwargs,
     ):
         self.domain = domain
@@ -104,6 +110,7 @@ class EventsToTimeRange(Node):
         self.max_days = max_days
         self.days_columnname = days_columnname
         self.operator = operator
+        self.gap_period = gap_period
         super(EventsToTimeRange, self).__init__(**kwargs)
 
     def _execute(
@@ -149,6 +156,7 @@ class EventsToTimeRange(Node):
         table = table.distinct()
         table = table.mutate(START_DATE=table.EVENT_DATE)
         offset = -1 if self.operator == "<" else 0
+        gap = self.gap_period
         if self.days_columnname is not None:
             days_col = table[self.days_columnname].cast("int32")
             if self.max_days is not None:
@@ -158,13 +166,14 @@ class EventsToTimeRange(Node):
                     .else_(days_col)
                     .end()
                 )
-            days_col = days_col + offset
+            days_col = days_col + gap + offset
             table = table.mutate(
                 END_DATE=table.START_DATE + days_col.as_interval(unit="D")
             )
         else:
             table = table.mutate(
-                END_DATE=table.START_DATE + ibis.interval(days=self.max_days + offset)
+                END_DATE=table.START_DATE
+                + ibis.interval(days=self.max_days + gap + offset)
             )
         return table.select("PERSON_ID", "START_DATE", "END_DATE")
 
