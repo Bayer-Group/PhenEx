@@ -6,6 +6,7 @@ Verifies that when lazy_execution=True and nothing has changed, reporters
 """
 
 import matplotlib
+
 matplotlib.use("Agg")
 
 import datetime
@@ -44,6 +45,7 @@ from phenex.test.cohort.test_mappings import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _build_test_tables(con):
     """Create minimal but realistic test tables in the DuckDB connector."""
     n_patients = 10
@@ -68,21 +70,35 @@ def _build_test_tables(con):
     # DRUG_EXPOSURE (entry: d1 for all patients, outcome: d_outcome for some)
     rows = []
     for i, pid in enumerate(patids):
-        rows.append({"PATID": pid, "PRODCODEID": "d1", "ISSUEDATE": datetime.date(2020, 1, 1)})
+        rows.append(
+            {"PATID": pid, "PRODCODEID": "d1", "ISSUEDATE": datetime.date(2020, 1, 1)}
+        )
         # Patients P0-P4 also have an outcome drug event 90 days later
         if i < 5:
             rows.append(
-                {"PATID": pid, "PRODCODEID": "d_outcome", "ISSUEDATE": datetime.date(2020, 4, 1)}
+                {
+                    "PATID": pid,
+                    "PRODCODEID": "d_outcome",
+                    "ISSUEDATE": datetime.date(2020, 4, 1),
+                }
             )
         # Patients P0, P1 have an exclusion drug
         if i < 2:
             rows.append(
-                {"PATID": pid, "PRODCODEID": "e_excl", "ISSUEDATE": datetime.date(2019, 6, 1)}
+                {
+                    "PATID": pid,
+                    "PRODCODEID": "e_excl",
+                    "ISSUEDATE": datetime.date(2019, 6, 1),
+                }
             )
         # Right-censor event for P5-P9
         if i >= 5:
             rows.append(
-                {"PATID": pid, "PRODCODEID": "d_censor", "ISSUEDATE": datetime.date(2020, 7, 1)}
+                {
+                    "PATID": pid,
+                    "PRODCODEID": "d_censor",
+                    "ISSUEDATE": datetime.date(2020, 7, 1),
+                }
             )
     df_drug = pd.DataFrame(rows)
     drug_table = DrugExposureTableForTests(
@@ -98,7 +114,11 @@ def _build_test_tables(con):
     for i, pid in enumerate(patids):
         if i < 7:
             rows_cond.append(
-                {"PATID": pid, "MEDCODEID": "cond1", "OBSDATE": datetime.date(2019, 6, 1)}
+                {
+                    "PATID": pid,
+                    "MEDCODEID": "cond1",
+                    "OBSDATE": datetime.date(2019, 6, 1),
+                }
             )
     df_cond = pd.DataFrame(rows_cond)
     cond_table = ConditionOccurenceTableForTests(
@@ -121,7 +141,11 @@ def _build_test_tables(con):
         con.dest_connection.create_table(
             "OBSERVATION_PERIOD",
             df_obs,
-            schema={"PATID": str, "REGSTARTDATE": datetime.date, "REGENDDATE": datetime.date},
+            schema={
+                "PATID": str,
+                "REGSTARTDATE": datetime.date,
+                "REGENDDATE": datetime.date,
+            },
         )
     )
 
@@ -262,7 +286,9 @@ class _ExecutionTracker:
     def count_node_cache_hits(self) -> int:
         """Count how many nodes used cached results."""
         return sum(
-            1 for msg in self._messages() if "unchanged, using cached result" in msg.lower()
+            1
+            for msg in self._messages()
+            if "unchanged, using cached result" in msg.lower()
         )
 
     def has_table1_execution(self) -> bool:
@@ -275,7 +301,8 @@ class _ExecutionTracker:
     def has_tte_execution(self) -> bool:
         """Check if TimeToEvent reporter was executed."""
         return any(
-            "time to event finished execution" in msg.lower() for msg in self._messages()
+            "time to event finished execution" in msg.lower()
+            for msg in self._messages()
         )
 
     def has_waterfall_execution(self) -> bool:
@@ -432,7 +459,9 @@ class TestCohortLazyExecution(unittest.TestCase):
 
         # Waterfall should be accessible
         wf = self.cohort.waterfall
-        self.assertIsNotNone(wf, "Waterfall should be accessible after cached execution.")
+        self.assertIsNotNone(
+            wf, "Waterfall should be accessible after cached execution."
+        )
         self.assertGreater(len(wf), 0, "Waterfall should have rows.")
 
     def test_05_write_reports_after_cached_execution(self):
@@ -447,7 +476,11 @@ class TestCohortLazyExecution(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             self.cohort.write_reports_to_json(tmpdir)
             # Check that expected files were created
-            expected_files = ["table1.json", "waterfall.json", "waterfall_detailed.json"]
+            expected_files = [
+                "table1.json",
+                "waterfall.json",
+                "waterfall_detailed.json",
+            ]
             for fname in expected_files:
                 fpath = os.path.join(tmpdir, fname)
                 self.assertTrue(
@@ -483,7 +516,9 @@ class TestSubcohortLazyExecution(unittest.TestCase):
             tracker.print_summary("Parent cohort - first run")
 
         parent_computed = tracker.count_node_computations()
-        self.assertGreater(parent_computed, 0, "Parent cohort should compute nodes on first run.")
+        self.assertGreater(
+            parent_computed, 0, "Parent cohort should compute nodes on first run."
+        )
 
         # Execute subcohort
         with _ExecutionTracker() as tracker:
