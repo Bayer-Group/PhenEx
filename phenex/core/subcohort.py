@@ -195,6 +195,8 @@ class Subcohort(Cohort):
             self._additional_outcome_sections = None
             self.additional_outcomes = outcomes or []
 
+        parent_sections = getattr(cohort, "outcome_sections", None) or {}
+
         super(Subcohort, self).__init__(
             name=f"{cohort.name}__{name}",
             entry_criterion=cohort.entry_criterion,
@@ -208,8 +210,6 @@ class Subcohort(Cohort):
         )
         self.cohort = cohort
 
-        # Merge parent outcome_sections with additional outcome_sections
-        parent_sections = getattr(cohort, "outcome_sections", None) or {}
         additional_sections = self._additional_outcome_sections or {}
         merged = {**parent_sections, **additional_sections}
         self.outcome_sections = merged if merged else None

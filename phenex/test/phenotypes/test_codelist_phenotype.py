@@ -1056,6 +1056,122 @@ class CodelistPhenotypeCategoricalFilterLogicalCombinationsAutojoinTestGenerator
         return test_infos
 
 
+class CodelistPhenotypeMultipleRelativeTimeRangeFilterTestGenerator(
+    PhenotypeTestGenerator
+):
+    """
+    Test that a list of three RelativeTimeRangeFilters with two different
+    anchor_phenotypes is applied as a conjunction (AND).
+
+    anchor_A (c1) = 2022-01-01 for all persons.
+    anchor_B (c2) varies per person.
+
+    Three filters on the main phenotype (c3):
+      1. when='after',  anchor_phenotype=anchor_A           → event must be after A
+      2. when='after',  max_days<=180, anchor_phenotype=anchor_A → within 180 days of A
+      3. when='before', anchor_phenotype=anchor_B           → event must be before B
+
+    Effective window: (A, min(A+180d, B))
+
+    Person layout
+    ─────────────────────────────────────────────────────────────────
+    P1  anchor_B = A+150d  c3 events: A+59d (PASS), A+181d (FAIL >180d, also after B)
+    P2  anchor_B = A+243d  c3 events: A+90d (PASS), A+212d (FAIL >180d)
+    P3  anchor_B = A+59d   c3 events: A+31d (PASS), A+90d  (FAIL after B)
+    P4  anchor_B = A+150d  c3 events: A+31d (PASS), A+181d (FAIL)
+    P5  anchor_B = A+31d   c3 events: A+59d (FAIL after B), A+181d (FAIL)
+    ─────────────────────────────────────────────────────────────────
+    Expected persons: P1, P2, P3, P4
+    """
+
+    name_space = "clpt_multi_rtrf"
+
+    def define_input_tables(self):
+        A = datetime.date(2022, 1, 1)
+
+        rows = [
+            # anchor_A (c1)
+            ("P1", "c1", A),
+            ("P2", "c1", A),
+            ("P3", "c1", A),
+            ("P4", "c1", A),
+            ("P5", "c1", A),
+            # anchor_B (c2)
+            ("P1", "c2", A + datetime.timedelta(days=150)),
+            ("P2", "c2", A + datetime.timedelta(days=243)),
+            ("P3", "c2", A + datetime.timedelta(days=59)),
+            ("P4", "c2", A + datetime.timedelta(days=150)),
+            ("P5", "c2", A + datetime.timedelta(days=31)),
+            # main events (c3)
+            ("P1", "c3", A + datetime.timedelta(days=59)),  # PASS
+            ("P1", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
+            ("P2", "c3", A + datetime.timedelta(days=90)),  # PASS
+            ("P2", "c3", A + datetime.timedelta(days=212)),  # FAIL: >180d
+            ("P3", "c3", A + datetime.timedelta(days=31)),  # PASS
+            ("P3", "c3", A + datetime.timedelta(days=90)),  # FAIL: after B@59d
+            ("P4", "c3", A + datetime.timedelta(days=31)),  # PASS
+            ("P4", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
+            ("P5", "c3", A + datetime.timedelta(days=59)),  # FAIL: after B@31d
+            ("P5", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
+        ]
+
+        df = pd.DataFrame(rows, columns=["PERSON_ID", "CODE", "EVENT_DATE"])
+        df["CODE_TYPE"] = "ICD10CM"
+        df["EVENT_DATE"] = pd.to_datetime(df["EVENT_DATE"])
+
+        return [{"name": "CONDITION_OCCURRENCE", "df": df}]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        anchor_A = CodelistPhenotype(
+            name="anchor_a",
+            codelist=codelist_factory.get_codelist("c1"),
+            domain="CONDITION_OCCURRENCE",
+            return_date="first",
+        )
+        anchor_B = CodelistPhenotype(
+            name="anchor_b",
+            codelist=codelist_factory.get_codelist("c2"),
+            domain="CONDITION_OCCURRENCE",
+            return_date="first",
+        )
+
+        t1 = {
+            "name": "three_filters_two_anchors",
+            "persons": ["P1", "P2", "P3", "P4"],
+            "phenotype": CodelistPhenotype(
+                name="three_filters_two_anchors",
+                codelist=codelist_factory.get_codelist("c3"),
+                domain="CONDITION_OCCURRENCE",
+                relative_time_range=[
+                    RelativeTimeRangeFilter(
+                        when="after",
+                        anchor_phenotype=anchor_A,
+                    ),
+                    RelativeTimeRangeFilter(
+                        when="after",
+                        max_days=LessThanOrEqualTo(180),
+                        anchor_phenotype=anchor_A,
+                    ),
+                    RelativeTimeRangeFilter(
+                        when="before",
+                        anchor_phenotype=anchor_B,
+                    ),
+                ],
+            ),
+        }
+
+        return [t1]
+
+
+def test_multiple_relative_time_range_filters():
+    tg = CodelistPhenotypeMultipleRelativeTimeRangeFilterTestGenerator()
+    tg.run_tests()
+
+
 def test_categorical_filter_logic():
     tg = CodelistPhenotypeCategoricalFilterLogicalCombinationsTestGenerator()
     tg.run_tests()
@@ -1325,6 +1441,7 @@ if __name__ == "__main__":
     test_categorical_filter_logic_autojoin()
     test_categorical_filter_phenotype()
     test_relative_time_range_filter()
+    test_multiple_relative_time_range_filters()
     test_anchor_phenotype()
     test_return_date()
     test_fuzzy_match()
