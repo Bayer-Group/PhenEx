@@ -175,6 +175,9 @@ class EventsToTimeRange(Node):
                 END_DATE=table.START_DATE
                 + ibis.interval(days=self.max_days + gap + offset)
             )
+        table = table.group_by(["PERSON_ID", "START_DATE"]).agg(
+            END_DATE=table.END_DATE.max()
+        )
         return table.select("PERSON_ID", "START_DATE", "END_DATE")
 
     def _combine_overlapping_periods(self, table):

@@ -414,6 +414,73 @@ def test_events_to_time_range_gap_period():
     test_generator.run_tests(verbose=True)
 
 
+class EventsToTimeRangeDuplicateDaysColumnMixedNullTestGenerator(
+    DerivedTablesTestGenerator
+):
+    """
+    Test that duplicate events with mixed NULL / non-NULL days_columnname values
+    on the same date produce a single output row.
+
+    Input has four rows for P1 on 2024-09-16: two with DAYSSUPPLY=30, two with
+    DAYSSUPPLY=NULL. With max_days=30 and gap_period=30 the NULL rows fall back
+    to max_days=30. All rows therefore map to the same START_DATE and the same
+    effective day count (30+30=60), so only one period should be produced.
+    """
+
+    name_space = "ettr_duplicate_days_column_mixed_null"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                ("P1", "c1", "2024-09-16", 30),
+                ("P1", "c1", "2024-09-16", None),
+                ("P1", "c1", "2024-09-16", 30),
+                ("P1", "c1", "2024-09-16", None),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYSSUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        df_input["DAYSSUPPLY"] = df_input["DAYSSUPPLY"].astype("Int64")
+
+        return [{"name": "MEDICATIONDISPENSE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # All rows → START_DATE 2024-09-16, END_DATE = 2024-09-16 + 60 = 2024-11-15
+        # Should produce exactly one row.
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2024-09-16", "2024-11-15"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="ON_TREATMENT_DAYS_SUPPLY",
+            domain="MEDICATIONDISPENSE",
+            codelist=cl,
+            days_columnname="DAYSSUPPLY",
+            max_days=30,
+            gap_period=30,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_duplicate_days_column_mixed_null_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_duplicate_days_column_mixed_null():
+    test_generator = EventsToTimeRangeDuplicateDaysColumnMixedNullTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
