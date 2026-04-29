@@ -13,6 +13,9 @@ logger = create_logger(__name__)
 class TimeToEventWriter(_BaseHtmlWriter):
     """Generates interactive KM survival curve HTML from per-cohort TTE JSON files."""
 
+    def __init__(self, risk_table_times: Optional[List[int]] = None):
+        self.risk_table_times = risk_table_times
+
     def write(
         self,
         report_type: str,
@@ -43,7 +46,7 @@ class TimeToEventWriter(_BaseHtmlWriter):
             )
             return
 
-        html = self._build_html(all_cohort_data, version=version)
+        html = self._build_html(all_cohort_data, version=version, risk_table_times=self.risk_table_times)
 
         html_path = output_file.with_name(output_file.stem + f"_{report_type}.html")
         html_path.write_text(html, encoding="utf-8")
@@ -59,11 +62,17 @@ class TimeToEventWriter(_BaseHtmlWriter):
         "font-weight:bold;white-space:nowrap}\n"
     )
 
-    def _build_html(self, all_cohort_data: List[dict], version: str = "unknown") -> str:
+    def _build_html(
+        self,
+        all_cohort_data: List[dict],
+        version: str = "unknown",
+        risk_table_times: Optional[List[int]] = None,
+    ) -> str:
         """Build interactive HTML with multi-select cohort dropdown and KM curves."""
         icon_data_uri = self._get_icon_data_uri()
         footer_html = self._build_footer_html(version, icon_data_uri)
         data_json = json.dumps(all_cohort_data, default=str)
+        risk_times_json = json.dumps(risk_table_times) if risk_table_times else "null"
 
         return (
             '<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8">\n'
@@ -73,10 +82,18 @@ class TimeToEventWriter(_BaseHtmlWriter):
             '<h1 style="margin-bottom:8px">Kaplan-Meier Survival Curves</h1>\n'
             '<div class="controls" id="controls">'
             "<label>Cohorts:</label></div>\n"
+            '<div class="controls" id="risk-times-control">'
+            '<label>Risk times (days):</label>'
+            '<input id="risk-times-input" type="text"'
+            ' style="width:240px;margin-left:8px;font-size:12px"'
+            ' placeholder="auto (6 evenly-spaced)">'
+            '</div>\n'
             '<div id="charts"></div>\n'
             + footer_html
             + "\n<script>\nvar DATA = "
             + data_json
+            + ";\nvar RISK_TIMES = "
+            + risk_times_json
             + ";\n"
             + _COHORT_SELECTOR_JS
             + "\n"

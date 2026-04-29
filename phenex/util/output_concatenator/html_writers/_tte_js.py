@@ -8,6 +8,20 @@ var NS = 'http://www.w3.org/2000/svg';
 var cohortNames = DATA.map(function(c){ return c.cohort_name; });
 var selected = initCohortSelector(cohortNames, 'controls', render);
 
+/* ── risk-times input ─────────────────────────────────────────────────── */
+var riskTimesInput = document.getElementById('risk-times-input');
+if(RISK_TIMES && RISK_TIMES.length){ riskTimesInput.value = RISK_TIMES.join(', '); }
+riskTimesInput.addEventListener('change', function(){ render(); });
+
+function getActiveTicks(maxT){
+  var raw = riskTimesInput.value.trim();
+  if(raw){
+    var parsed = raw.split(/[\s,]+/).map(Number).filter(function(n){ return isFinite(n) && n>=0; });
+    if(parsed.length) return parsed.filter(function(t){ return t<=maxT; });
+  }
+  return riskTicks(maxT, 6);
+}
+
 /* per-cohort, per-outcome sorted row arrays */
 var cohortOutcomes = {};   // cohortName -> { outcomeName -> [rows] }
 var allOutcomes = [];      // ordered unique outcome names
@@ -117,8 +131,7 @@ function render(){
       if(last>maxT) maxT=last;
     });
 
-    var N_TICKS=6;
-    var ticks = riskTicks(maxT, N_TICKS);
+    var ticks = getActiveTicks(maxT);
 
     var W=780, PAD_L=250, PAD_R=20, PAD_T=20, PAD_B=30;
     var RISK_ROW_H=16, RISK_ROWS=3; /* at_risk, events, censored */

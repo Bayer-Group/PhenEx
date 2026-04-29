@@ -65,7 +65,8 @@ class EventPhenotype(Phenotype):
         if self.relative_time_range is not None:
             for rtr in self.relative_time_range:
                 if rtr.anchor_phenotype is not None:
-                    self.add_children(rtr.anchor_phenotype)
+                    if not any(c is rtr.anchor_phenotype for c in self.children):
+                        self.add_children(rtr.anchor_phenotype)
 
     def _execute(self, tables) -> PhenotypeTable:
         code_table = tables[self.domain]
