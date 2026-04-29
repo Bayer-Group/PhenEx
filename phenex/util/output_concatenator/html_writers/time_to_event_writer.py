@@ -46,7 +46,9 @@ class TimeToEventWriter(_BaseHtmlWriter):
             )
             return
 
-        html = self._build_html(all_cohort_data, version=version, risk_table_times=self.risk_table_times)
+        html = self._build_html(
+            all_cohort_data, version=version, risk_table_times=self.risk_table_times
+        )
 
         html_path = output_file.with_name(output_file.stem + f"_{report_type}.html")
         html_path.write_text(html, encoding="utf-8")
@@ -83,11 +85,11 @@ class TimeToEventWriter(_BaseHtmlWriter):
             '<div class="controls" id="controls">'
             "<label>Cohorts:</label></div>\n"
             '<div class="controls" id="risk-times-control">'
-            '<label>Risk times (days):</label>'
+            "<label>Risk times (days):</label>"
             '<input id="risk-times-input" type="text"'
             ' style="width:240px;margin-left:8px;font-size:12px"'
             ' placeholder="auto (6 evenly-spaced)">'
-            '</div>\n'
+            "</div>\n"
             '<div id="charts"></div>\n'
             + footer_html
             + "\n<script>\nvar DATA = "

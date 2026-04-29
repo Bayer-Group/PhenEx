@@ -1103,15 +1103,15 @@ class CodelistPhenotypeMultipleRelativeTimeRangeFilterTestGenerator(
             ("P4", "c2", A + datetime.timedelta(days=150)),
             ("P5", "c2", A + datetime.timedelta(days=31)),
             # main events (c3)
-            ("P1", "c3", A + datetime.timedelta(days=59)),   # PASS
+            ("P1", "c3", A + datetime.timedelta(days=59)),  # PASS
             ("P1", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
-            ("P2", "c3", A + datetime.timedelta(days=90)),   # PASS
+            ("P2", "c3", A + datetime.timedelta(days=90)),  # PASS
             ("P2", "c3", A + datetime.timedelta(days=212)),  # FAIL: >180d
-            ("P3", "c3", A + datetime.timedelta(days=31)),   # PASS
-            ("P3", "c3", A + datetime.timedelta(days=90)),   # FAIL: after B@59d
-            ("P4", "c3", A + datetime.timedelta(days=31)),   # PASS
+            ("P3", "c3", A + datetime.timedelta(days=31)),  # PASS
+            ("P3", "c3", A + datetime.timedelta(days=90)),  # FAIL: after B@59d
+            ("P4", "c3", A + datetime.timedelta(days=31)),  # PASS
             ("P4", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
-            ("P5", "c3", A + datetime.timedelta(days=59)),   # FAIL: after B@31d
+            ("P5", "c3", A + datetime.timedelta(days=59)),  # FAIL: after B@31d
             ("P5", "c3", A + datetime.timedelta(days=181)),  # FAIL: >180d, after B
         ]
 
