@@ -1,22 +1,6 @@
-from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.phenotypes.event_count_phenotype import (
-    EventCountPhenotype,
-)
-from phenex.phenotypes.cohort import Cohort
-from phenex.codelists.codelists import Codelist
-from phenex.filters.value_filter import ValueFilter
-from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.value_filter import ValueFilter
-from phenex.util.serialization.to_dict import to_dict
-from phenex.filters.value import LessThanOrEqualTo, GreaterThanOrEqualTo
-from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
-from phenex.codelists.codelists import Codelist
-from phenex.phenotypes.cohort import Cohort
-from phenex.phenotypes.age_phenotype import AgePhenotype
-from phenex.phenotypes.measurement_phenotype import MeasurementPhenotype
-from phenex.util.serialization.to_dict import to_dict
-from phenex.filters.value import Value
 
+from phenex import *
+from phenex.util.serialization.to_dict import to_dict
 
 def diabetes_cohort():
     """

@@ -210,6 +210,11 @@ from .routes.codelist import (
 app.include_router(codelist_list_router)  # /codelists endpoint (no prefix)
 app.include_router(codelist_router, prefix="/codelist")  # /codelist operations
 
+# Include the report router
+from .routes.report import router as report_router
+
+app.include_router(report_router)
+
 # Include the auth router
 from .routes.auth import router as auth_router
 
