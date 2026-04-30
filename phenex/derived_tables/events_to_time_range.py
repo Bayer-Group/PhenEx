@@ -6,7 +6,6 @@ from phenex.filters.codelist_filter import CodelistFilter
 from phenex.node import Node
 from phenex.util import create_logger
 from phenex.codelists import Codelist
-from phenex.filters.value import Value
 
 from .combine_overlapping_periods import CombineOverlappingPeriods
 
@@ -29,14 +28,28 @@ class EventsToTimeRange(Node):
     Parameters:
         domain: The source domain containing event data.
         codelist: The codelist used to filter events.
-        max_days: A Value filter (like LessThan or LessThanOrEqualTo) specifying the number of days
-                  to add to each event date to create the end date.
+        max_days: Fixed integer number of days used to compute the end date. Used for every row
+                  when ``days_columnname`` is not provided, or as a fallback when the
+                  ``days_columnname`` value is null for a given row.
+        days_columnname: Name of a column in the source table whose integer value is used to
+                         compute the end date for that row, allowing a different duration per row.
+                         When the column value is null, ``max_days`` is used instead.
+        operator: Comparison operator applied to the day count. Use ``'<='`` (default) to add
+                  the day value directly, or ``'<'`` to subtract one day first (exclusive upper
+                  bound). Applies to both ``max_days`` and ``days_columnname``.
+        gap_period: Additional days appended to the computed day count before deriving the end
+                    date. For example, with ``max_days=30`` and ``gap_period=5`` the end date is
+                    calculated as if ``max_days=35``. The ``operator`` offset is applied to the
+                    combined total. Defaults to ``0`` (no gap).
         name: Optional name for the derived table.
 
     Attributes:
         domain: The domain of events to process.
         codelist: The codelist used for filtering events.
-        max_days: The number of days to add to each event date.
+        max_days: Fixed day count fallback.
+        days_columnname: Column name providing per-row day counts (when used).
+        operator: The comparison operator (``'<='`` or ``'<'``).
+        gap_period: Additional days added to each day count before computing the end date.
 
     Examples:
 
@@ -54,7 +67,7 @@ class EventsToTimeRange(Node):
             name = 'ET_USAGE',
             domain = 'DRUG_EXPOSURE',
             codelist = et_codelist,
-            max_days = LessThanOrEqualTo(180)
+            max_days = 180,
         )
 
         # Return the persons that discontinue post index
@@ -72,16 +85,32 @@ class EventsToTimeRange(Node):
         ```
     """
 
-    def __init__(self, domain: str, codelist: "Codelist", max_days: "Value", **kwargs):
+    def __init__(
+        self,
+        domain: str,
+        max_days: Optional[int] = None,
+        codelist: Optional["Codelist"] = None,
+        days_columnname: Optional[str] = None,
+        operator: str = "<=",
+        gap_period: int = 0,
+        **kwargs,
+    ):
         self.domain = domain
-        self.codelist_filter = CodelistFilter(codelist)
+        if codelist is not None:
+            if not isinstance(codelist, Codelist):
+                raise ValueError("codelist must be an instance of Codelist or None")
+            self.codelist_filter = CodelistFilter(codelist)
         self.codelist = codelist
 
-        assert max_days.operator in [
-            "<",
-            "<=",
-        ], f"max_days operator must be < or <=, not {max_days.operator}"
+        if max_days is None and days_columnname is None:
+            raise ValueError("Either max_days or days_columnname must be provided")
+        if operator not in ("<", "<="):
+            raise ValueError(f"operator must be '<' or '<=', not {operator!r}")
+
         self.max_days = max_days
+        self.days_columnname = days_columnname
+        self.operator = operator
+        self.gap_period = gap_period
         super(EventsToTimeRange, self).__init__(**kwargs)
 
     def _execute(
@@ -89,45 +118,67 @@ class EventsToTimeRange(Node):
         tables: Dict[str, Table],
     ) -> "Table":
         table = tables[self.domain]
-        table = self._perform_codelist_filtering(table)
+        table = self._perform_codelist_filtering(table, tables)
         table = self._create_start_end_date_table(table)
         table = self._combine_overlapping_periods(table)
         return table
 
-    def _perform_codelist_filtering(self, table):
+    def _perform_codelist_filtering(self, table, tables):
         """
         Filter source table to codelist events of interest i.e. drug x events only
 
         Returns:
             Source DataFrame with all original columns:
         """
+        if self.codelist is None:
+            return table
         assert is_phenex_code_table(table)
-        table = self.codelist_filter.filter(table)
+        table = self.codelist_filter.autojoin_filter(table, tables)
         return table
 
     def _create_start_end_date_table(self, table):
         """
-        Create start and end date columns for the events. Start date is the codelist event, end date is the start date plus max_days.
+        Create start and end date columns for the events. Start date is the event
+        date; end date is computed from the per-row ``days_columnname`` value when
+        non-null, falling back to the fixed ``max_days`` value otherwise.
 
         Returns:
-            Table with three columns
+            Table with three columns:
             PERSON_ID
             START_DATE : the codelist EVENT_DATE
-            END_DATE : START_DATE + max_days
+            END_DATE   : START_DATE + days (per-row or fixed)
         """
-        table = table.select("PERSON_ID", "EVENT_DATE")
+        if self.days_columnname is not None:
+            table = table.select("PERSON_ID", "EVENT_DATE", self.days_columnname)
+        else:
+            table = table.select("PERSON_ID", "EVENT_DATE")
+        table = table.mutate(EVENT_DATE=table.EVENT_DATE.cast("date"))
+        table = table.distinct()
         table = table.mutate(START_DATE=table.EVENT_DATE)
-        if self.max_days.operator == "<":
-            days_to_add = self.max_days.value - 1
+        offset = -1 if self.operator == "<" else 0
+        gap = self.gap_period
+        if self.days_columnname is not None:
+            days_col = table[self.days_columnname].cast("int32")
+            if self.max_days is not None:
+                days_col = (
+                    ibis.case()
+                    .when(days_col.isnull(), self.max_days)
+                    .else_(days_col)
+                    .end()
+                )
+            days_col = days_col + gap + offset
             table = table.mutate(
-                END_DATE=table.START_DATE + ibis.interval(days=days_to_add)
+                END_DATE=table.START_DATE + days_col.as_interval(unit="D")
             )
         else:
-            days_to_add = self.max_days.value
             table = table.mutate(
-                END_DATE=table.START_DATE + ibis.interval(days=days_to_add)
+                END_DATE=table.START_DATE
+                + ibis.interval(days=self.max_days + gap + offset)
             )
-        return table
+        table = table.group_by(["PERSON_ID", "START_DATE"]).agg(
+            END_DATE=table.END_DATE.max()
+        )
+        return table.select("PERSON_ID", "START_DATE", "END_DATE")
 
     def _combine_overlapping_periods(self, table):
         """

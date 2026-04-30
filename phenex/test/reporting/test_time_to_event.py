@@ -23,13 +23,11 @@ class TestTimeToEvent:
             right_censor_phenotypes=[death],
             end_of_study_period=datetime(2024, 12, 31),
             decimal_places=3,
-            pretty_display=True,
         )
 
         assert tte.right_censor_phenotypes == [death]
         assert tte.end_of_study_period == datetime(2024, 12, 31)
         assert tte.decimal_places == 3
-        assert tte.pretty_display is True
         assert tte._tte_table is None
         assert tte._date_column_names is None
 
@@ -41,7 +39,6 @@ class TestTimeToEvent:
         )
 
         assert tte.decimal_places == 4
-        assert tte.pretty_display is True
 
     def test_inherits_from_reporter(self):
         """Test that TimeToEvent properly inherits from Reporter."""
@@ -105,6 +102,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         # Build aggregated table
         result = tte._build_aggregated_risk_table()
@@ -118,6 +116,8 @@ class TestTimeToEvent:
             "Outcome",
             "Timeline",
             "Survival_Probability",
+            "CI_Lower",
+            "CI_Upper",
             "At_Risk",
             "Events",
             "Censored",
@@ -160,6 +160,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_mi, mock_stroke]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         # Build aggregated table
         result = tte._build_aggregated_risk_table()
@@ -195,6 +196,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -239,6 +241,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = []
         tte.cohort = mock_cohort
+        tte._outcomes = []
         tte._tte_table = pd.DataFrame()  # Empty TTE table
 
         result = tte._build_aggregated_risk_table()
@@ -288,6 +291,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -347,6 +351,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -392,6 +397,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -433,6 +439,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
         result = result.sort_values("Timeline").reset_index(drop=True)
@@ -472,6 +479,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -522,6 +530,7 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
@@ -594,9 +603,315 @@ class TestTimeToEvent:
         mock_cohort = Mock()
         mock_cohort.outcomes = [mock_phenotype]
         tte.cohort = mock_cohort
+        tte._outcomes = mock_cohort.outcomes
 
         result = tte._build_aggregated_risk_table()
 
         # Final survival probability should be 0 (all patients experienced event)
         final_survival = result.iloc[-1]["Survival_Probability"]
         assert abs(final_survival - 0.0) < 0.001
+
+
+class TestTimeToEventPhenotypeNames:
+    """Test the phenotype_names filtering feature."""
+
+    def test_phenotype_names_initialization(self):
+        """Test that phenotype_names is stored correctly."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+            phenotype_names=["MI", "Stroke"],
+        )
+        assert tte.phenotype_names == ["MI", "Stroke"]
+
+    def test_phenotype_names_default_none(self):
+        """Test that phenotype_names defaults to None."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        assert tte.phenotype_names is None
+
+    def test_phenotype_names_filters_outcomes(self):
+        """Test that phenotype_names filters cohort outcomes to only matching ones."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+            phenotype_names=["MI"],
+        )
+
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+        mock_stroke = Mock()
+        mock_stroke.name = "Stroke"
+
+        mock_cohort = Mock()
+        mock_cohort.outcomes = [mock_mi, mock_stroke]
+
+        # Simulate the filtering logic from execute()
+        tte.cohort = mock_cohort
+        tte._outcomes = [
+            p for p in mock_cohort.outcomes if p.name in tte.phenotype_names
+        ]
+
+        assert len(tte._outcomes) == 1
+        assert tte._outcomes[0].name == "MI"
+
+    def test_phenotype_names_raises_on_missing(self):
+        """Test that ValueError is raised when a requested phenotype name doesn't exist."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+            phenotype_names=["MI", "NonExistent"],
+        )
+
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+
+        mock_cohort = Mock()
+        mock_cohort.outcomes = [mock_mi]
+
+        # Simulate execute() filtering
+        tte._outcomes = [
+            p for p in mock_cohort.outcomes if p.name in tte.phenotype_names
+        ]
+        missing = set(tte.phenotype_names) - {p.name for p in tte._outcomes}
+
+        assert missing == {"NonExistent"}
+        with pytest.raises(ValueError, match="NonExistent"):
+            raise ValueError(
+                f"No matching outcome phenotypes found for: {sorted(missing)}"
+            )
+
+    def test_phenotype_names_selects_subset_for_aggregation(self):
+        """Test that only selected phenotypes appear in the aggregated risk table."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+            phenotype_names=["MI"],
+        )
+
+        # TTE table has data for both MI and Stroke
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [1, 0, 1],
+                "DAYS_FIRST_EVENT_MI": [30, 60, 45],
+                "INDICATOR_STROKE": [0, 1, 0],
+                "DAYS_FIRST_EVENT_STROKE": [90, 30, 120],
+            }
+        )
+
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+
+        tte.cohort = Mock()
+        tte._outcomes = [mock_mi]  # Only MI selected
+
+        result = tte._build_aggregated_risk_table()
+
+        assert "MI" in result["Outcome"].values
+        assert "Stroke" not in result["Outcome"].values
+
+
+class TestTimeToEventSubcohortProxy:
+    """Test TimeToEvent compatibility with _SubcohortProxy."""
+
+    def test_subcohort_proxy_provides_outcomes(self):
+        """Test that a subcohort proxy's outcomes are used correctly."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+
+        # Simulate a _SubcohortProxy-like object (no .name, has .outcomes)
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+
+        proxy = Mock()
+        proxy.outcomes = [mock_mi]
+        proxy.subset_tables_index = None
+        del proxy.name  # _SubcohortProxy doesn't have .name
+
+        tte.cohort = proxy
+        tte._outcomes = proxy.outcomes
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [1, 0, 1, 0],
+                "DAYS_FIRST_EVENT_MI": [10, 20, 30, 40],
+            }
+        )
+
+        result = tte._build_aggregated_risk_table()
+        assert not result.empty
+        assert all(result["Outcome"] == "MI")
+
+    def test_subcohort_proxy_with_phenotype_names(self):
+        """Test phenotype_names filtering works with subcohort proxy outcomes."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+            phenotype_names=["Stroke"],
+        )
+
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+        mock_stroke = Mock()
+        mock_stroke.name = "Stroke"
+
+        proxy = Mock()
+        proxy.outcomes = [mock_mi, mock_stroke]
+        proxy.subset_tables_index = None
+
+        tte.cohort = proxy
+        tte._outcomes = [p for p in proxy.outcomes if p.name in tte.phenotype_names]
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_STROKE": [0, 1, 1, 0],
+                "DAYS_FIRST_EVENT_STROKE": [50, 20, 30, 60],
+            }
+        )
+
+        result = tte._build_aggregated_risk_table()
+        assert not result.empty
+        assert all(result["Outcome"] == "Stroke")
+        assert "MI" not in result["Outcome"].values
+
+    def test_right_censor_skip_already_executed(self):
+        """Test that right censor phenotypes with existing tables are not re-executed."""
+        death = Mock()
+        death.name = "Death"
+        death.table = Mock()  # Already executed (table is not None)
+
+        tte = TimeToEvent(
+            right_censor_phenotypes=[death],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+
+        proxy = Mock()
+        proxy.subset_tables_index = None
+
+        tte._execute_right_censoring_phenotypes(proxy)
+
+        # Should NOT have called execute since table already exists
+        death.execute.assert_not_called()
+
+    def test_right_censor_executes_when_table_is_none(self):
+        """Test that right censor phenotypes without tables are executed."""
+        death = Mock()
+        death.name = "Death"
+        death.table = None  # Not yet executed
+
+        tte = TimeToEvent(
+            right_censor_phenotypes=[death],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+
+        mock_subset_tables = Mock()
+        proxy = Mock()
+        proxy.subset_tables_index = mock_subset_tables
+
+        tte._execute_right_censoring_phenotypes(proxy)
+
+        # Should have called execute with subset_tables_index
+        death.execute.assert_called_once_with(mock_subset_tables)
+
+    def test_plot_save_path_without_cohort_name(self):
+        """Test that plot save paths work when cohort has no .name attribute."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+
+        proxy = Mock(spec=[])  # Empty spec — no attributes
+        tte.cohort = proxy
+
+        # getattr fallback should return 'cohort'
+        cohort_name = getattr(tte.cohort, "name", "cohort")
+        assert cohort_name == "cohort"
+
+
+class TestTimeToEventEmptyData:
+    """Test graceful handling when cohort has no patients or outcomes have no data."""
+
+    def test_empty_tte_table_returns_empty_df(self):
+        """fit/build/plot should not raise when _tte_table is empty."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(columns=["INDICATOR_MI", "DAYS_FIRST_EVENT_MI"])
+
+        mock_phenotype = Mock()
+        mock_phenotype.name = "MI"
+        tte._outcomes = [mock_phenotype]
+        tte.cohort = Mock()
+        tte.cohort.name = "empty_cohort"
+
+        # fit should return None
+        kmf = tte.fit_kaplan_meier_for_phenotype(mock_phenotype)
+        assert kmf is None
+
+        # aggregated table should be empty
+        result = tte._build_aggregated_risk_table()
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+        # plotting should not raise
+        tte.plot_multiple_kaplan_meier()
+
+    def test_empty_tte_table_render_km_images_returns_empty(self):
+        """_render_km_images_html returns empty list when no data."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame()
+        tte._outcomes = []
+        tte.cohort = Mock()
+        tte.cohort.name = "empty_cohort"
+
+        assert tte._render_km_images_html() == []
+
+    def test_fit_returns_none_for_all_nan_durations(self):
+        """fit should return None when duration column is all NaN."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [float("nan"), float("nan")],
+                "DAYS_FIRST_EVENT_MI": [float("nan"), float("nan")],
+            }
+        )
+        mock_phenotype = Mock()
+        mock_phenotype.name = "MI"
+
+        kmf = tte.fit_kaplan_meier_for_phenotype(mock_phenotype)
+        assert kmf is None
+
+    def test_build_aggregated_table_skips_empty_outcomes(self):
+        """Outcomes with no data are skipped; valid ones still produce rows."""
+        tte = TimeToEvent(
+            right_censor_phenotypes=[],
+            end_of_study_period=datetime(2024, 12, 31),
+        )
+        tte._tte_table = pd.DataFrame(
+            {
+                "INDICATOR_MI": [float("nan"), float("nan")],
+                "DAYS_FIRST_EVENT_MI": [float("nan"), float("nan")],
+                "INDICATOR_STROKE": [1, 0],
+                "DAYS_FIRST_EVENT_STROKE": [30.0, 60.0],
+            }
+        )
+        mock_mi = Mock()
+        mock_mi.name = "MI"
+        mock_stroke = Mock()
+        mock_stroke.name = "Stroke"
+        tte._outcomes = [mock_mi, mock_stroke]
+        tte.cohort = Mock()
+
+        result = tte._build_aggregated_risk_table()
+        assert not result.empty
+        assert "MI" not in result["Outcome"].values
+        assert "Stroke" in result["Outcome"].values

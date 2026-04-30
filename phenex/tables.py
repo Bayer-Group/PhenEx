@@ -22,6 +22,13 @@ class PhenexTable:
 
     Note that for each table type, there are REQUIRED_FIELDS, i.e., fields that MUST be defined for Phenex to work with such a table and KNOWN_FIELDS, i.e., fields that Phenex internally understands what to do with (there is a Phenotype that knows how to work with that field). For instance, in a PhenexPersonTable, one MUST define PERSON_ID, but DATE_OF_BIRTH is an optional field that PhenEx can process if given and transform into AGE. These are fixed for each table type and should not be overridden.
 
+    DEFAULT_MAPPING can map to either a single column (string) or multiple columns (list):
+    - String value: Creates a column as a direct copy/rename
+      Example: {"PERSON_ID": "PERSON_ID"} copies PERSON_ID column
+    - List value: Creates a column as a coalesce of multiple columns (first non-null value)
+      Example: {"EVENT_DATE": ["STARTDATETIME", "RECORDEDDATETIME"]} creates EVENT_DATE using
+      STARTDATETIME if available, falling back to RECORDEDDATETIME if STARTDATETIME is null
+
     JOIN_KEYS and PATHS Documentation:
 
     JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
@@ -140,7 +147,9 @@ class PhenexTable:
         self.NAME_TABLE = name or self.NAME_TABLE
 
         self.column_mapping = self._get_column_mapping(column_mapping)
-        self._table = table.mutate(**self.column_mapping)
+        self._table = table.mutate(
+            **self._resolve_column_mapping(table, self.column_mapping)
+        )
 
         for key in self.REQUIRED_FIELDS:
             try:
@@ -167,6 +176,34 @@ class PhenexTable:
         default_mapping = copy.deepcopy(self.DEFAULT_MAPPING)
         default_mapping.update(column_mapping)
         return default_mapping
+
+    def _resolve_column_mapping(self, table, column_mapping):
+        """
+        Convert raw column mapping (strings/lists) to ibis expressions for use in mutate().
+
+        String values become direct column references: table[col].
+        List values become coalesce expressions over the listed columns.
+        Date columns in a coalesce list are cast to timestamp for consistent typing.
+        """
+        processed_mapping = {}
+        for key, value in column_mapping.items():
+            if isinstance(value, list):
+                # Coalesce multiple columns - first non-null value wins
+                # Cast date columns to timestamp for consistent typing
+                cols = []
+                for col in value:
+                    col_ref = table[col]
+                    col_type = str(col_ref.type())
+                    if col_type.startswith("date") and not col_type.startswith(
+                        "timestamp"
+                    ):
+                        col_ref = col_ref.cast("timestamp")
+                    cols.append(col_ref)
+                processed_mapping[key] = ibis.coalesce(*cols)
+            else:
+                # Single column mapping - create column reference
+                processed_mapping[key] = table[value]
+        return processed_mapping
 
     def __getattr__(self, name):
         # pass all attributes on to underlying table

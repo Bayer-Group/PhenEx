@@ -193,9 +193,19 @@ class StackableRegimen:
 
                 # Create the phenotype and add to the list
                 phenotype = LogicPhenotype(name=name, expression=logic)
+                if size == 1:
+                    phenotype.display_name = f"{regimen_combo[0]} only"
+                else:
+                    phenotype.display_name = " + ".join(regimen_combo)
                 phenotype_list.append(phenotype)
 
             # Add the list to results dictionary
             results[stack_key] = phenotype_list
+
+        # Add "none" category: patients with none of the regimens active
+        all_combined = reduce(operator.or_, [phenotypes_dict[r] for r in regimen_keys])
+        none_phenotype = LogicPhenotype(name=f"{prefix}_NONE", expression=~all_combined)
+        none_phenotype.display_name = "None"
+        results["none"] = [none_phenotype]
 
         return results

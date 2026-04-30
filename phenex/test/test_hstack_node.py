@@ -77,7 +77,12 @@ class HStackNodeTestGenerator(PhenotypeTestGenerator):
                 ],
             }
         )
-        join_table = ibis.memtable(join_table_data)
+
+        class MockNode:
+            def __init__(self, table):
+                self.table = table
+
+        join_table = MockNode(ibis.memtable(join_table_data))
 
         # Create HStackNode
         hstack_node = HStackNode(

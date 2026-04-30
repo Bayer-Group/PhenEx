@@ -2,7 +2,6 @@ import pandas as pd
 import ibis
 from phenex.derived_tables import EventsToTimeRange
 from phenex.codelists import Codelist
-from phenex.filters.value import LessThan, LessThanOrEqualTo
 
 from phenex.test.derived_tables.derived_tables_test_generator import (
     DerivedTablesTestGenerator,
@@ -66,7 +65,8 @@ class EventsToTimeRangeLessThanTestGenerator(DerivedTablesTestGenerator):
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThan(5),
+            max_days=5,
+            operator="<",
         )
 
         # Return test information
@@ -109,13 +109,86 @@ class EventsToTimeRangeLessThanOrEqualToTestGenerator(
             name="COMBINED_EVENTS",
             domain="DRUG_EXPOSURE",
             codelist=cl,
-            max_days=LessThanOrEqualTo(5),
+            max_days=5,
         )
 
         # Return test information
         return [
             {
                 "name": "events_to_time_range_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+class EventsToTimeRangeDuplicateEventsTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange correctly handles duplicate event dates.
+
+    When the same event date appears multiple times in the source table (e.g. due to
+    duplicate rows in the raw data), CombineOverlappingPeriods must still produce
+    non-overlapping periods. This reproduces a bug where identical periods were not
+    deduplicated, causing spurious overlapping output rows.
+    """
+
+    name_space = "ettr_duplicate_events"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: 2022-07-27 appears three times and 2022-08-23 twice —
+                # all five rows must collapse into one period: 2022-07-27 → 2022-09-22
+                ("P1", "c1", "2022-07-27"),
+                ("P1", "c1", "2022-07-27"),
+                ("P1", "c1", "2022-07-27"),
+                ("P1", "c1", "2022-08-23"),
+                ("P1", "c1", "2022-08-23"),
+                # 2022-09-28 is more than 30 days after 2022-09-22, so it forms a
+                # separate period: 2022-09-28 → 2022-10-28
+                ("P1", "c1", "2022-09-28"),
+                # P2: no duplicates — control case
+                ("P2", "c1", "2022-01-01"),
+                ("P2", "c1", "2022-02-15"),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # P1 expected:
+        #   2022-07-27 +30 = 2022-08-26; 2022-08-23 ≤ 2022-08-27 → consecutive
+        #   → merged start 2022-07-27, end max(2022-08-26, 2022-09-22) = 2022-09-22
+        #   2022-09-28 > 2022-09-23 → new period  2022-09-28 +30 = 2022-10-28
+        # P2 expected:
+        #   2022-01-01 +30 = 2022-01-31
+        #   2022-02-15 > 2022-02-01 → new period  2022-02-15 +30 = 2022-03-17
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-07-27", "2022-09-22"),
+                ("P1", "2022-09-28", "2022-10-28"),
+                ("P2", "2022-01-01", "2022-01-31"),
+                ("P2", "2022-02-15", "2022-03-17"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            max_days=30,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_duplicate_events_test",
                 "derived_table": ettr,
                 "expected_df": df_expected,
                 "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
@@ -133,6 +206,285 @@ def test_events_to_time_range_less_than_or_equal_to():
     test_generator.run_tests(verbose=True)
 
 
+def test_events_to_time_range_duplicate_events():
+    test_generator = EventsToTimeRangeDuplicateEventsTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
+class EventsToTimeRangeDaysColumnnameTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange correctly computes per-row end dates when
+    days_columnname is used instead of a fixed max_days value.
+
+    P1: two overlapping periods (different days_supply) that must be merged.
+    P2: two non-overlapping periods that must remain separate.
+    """
+
+    name_space = "ettr_days_columnname"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: Jan 1 + 5 days  → Jan 1–Jan 6
+                #     Jan 4 + 10 days → Jan 4–Jan 14
+                #     Jan 4 ≤ Jan 6+1, so both merge → Jan 1–Jan 14
+                ("P1", "c1", "2022-01-01", 5),
+                ("P1", "c1", "2022-01-04", 10),
+                # P2: Jan 1 + 3 days → Jan 1–Jan 4
+                #     Jan 10 + 3 days → Jan 10–Jan 13
+                #     Jan 10 > Jan 4+1, so they stay separate
+                ("P2", "c1", "2022-01-01", 3),
+                ("P2", "c1", "2022-01-10", 3),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYS_SUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-01-14"),
+                ("P2", "2022-01-01", "2022-01-04"),
+                ("P2", "2022-01-10", "2022-01-13"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            days_columnname="DAYS_SUPPLY",
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_days_columnname_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_days_columnname():
+    test_generator = EventsToTimeRangeDaysColumnnameTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
+class EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator(
+    DerivedTablesTestGenerator
+):
+    """
+    Test that EventsToTimeRange falls back to max_days when days_columnname is null
+    for a given row, while using the column value when it is not null.
+    """
+
+    name_space = "ettr_days_columnname_null_fallback"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: DAYS_SUPPLY present → use column value (7 days)
+                ("P1", "c1", "2022-01-01", 7),
+                # P1: DAYS_SUPPLY null → fall back to max_days (3 days)
+                ("P1", "c1", "2022-01-15", None),
+                # P2: all null → always falls back to max_days (3 days)
+                ("P2", "c1", "2022-01-01", None),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYS_SUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        df_input["DAYS_SUPPLY"] = df_input["DAYS_SUPPLY"].astype("Int64")
+
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # P1 row 1: Jan 1 + 7 = Jan 8   → Jan 1–Jan 8
+        # P1 row 2: Jan 15 + 3 = Jan 18  → Jan 15–Jan 18 (no overlap with Jan 1–Jan 8)
+        # P2 row 1: Jan 1 + 3 = Jan 4    → Jan 1–Jan 4
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-01-08"),
+                ("P1", "2022-01-15", "2022-01-18"),
+                ("P2", "2022-01-01", "2022-01-04"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            days_columnname="DAYS_SUPPLY",
+            max_days=3,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_days_columnname_null_fallback_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_days_columnname_null_fallback():
+    test_generator = EventsToTimeRangeDaysColumnnameNullFallbackTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
+class EventsToTimeRangeGapPeriodTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange correctly applies gap_period to extend each period.
+
+    With max_days=30 and gap_period=5 the effective day count is 35.
+
+    P1: two events (2022-01-01 and 2022-02-05) that are exactly adjacent once the gap
+        is applied (Jan 1 + 35 = Feb 5; next start Feb 5 ≤ Feb 6 = end+1), so they
+        must be merged into a single period.
+    P2: two events (2022-01-01 and 2022-02-07) where even with the gap the second start
+        (Feb 7) is still beyond end+1 (Feb 6), so they must remain separate.
+    """
+
+    name_space = "ettr_gap_period"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                # P1: gap causes the two periods to touch and merge
+                ("P1", "c1", "2022-01-01"),
+                ("P1", "c1", "2022-02-05"),
+                # P2: gap does not close the gap between the two periods
+                ("P2", "c1", "2022-01-01"),
+                ("P2", "c1", "2022-02-07"),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        return [{"name": "DRUG_EXPOSURE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # P1: Jan 1 + 35 = Feb 5; Feb 5 + 35 = Mar 12
+        #     Feb 5 ≤ Feb 6 → merged → Jan 1–Mar 12
+        # P2: Jan 1 + 35 = Feb 5; Feb 7 > Feb 6 → separate
+        #     period 1: Jan 1–Feb 5
+        #     period 2: Feb 7 + 35 = Mar 14  → Feb 7–Mar 14
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-03-12"),
+                ("P2", "2022-01-01", "2022-02-05"),
+                ("P2", "2022-02-07", "2022-03-14"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            max_days=30,
+            gap_period=5,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_gap_period_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_gap_period():
+    test_generator = EventsToTimeRangeGapPeriodTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
+class EventsToTimeRangeDuplicateDaysColumnMixedNullTestGenerator(
+    DerivedTablesTestGenerator
+):
+    """
+    Test that duplicate events with mixed NULL / non-NULL days_columnname values
+    on the same date produce a single output row.
+
+    Input has four rows for P1 on 2024-09-16: two with DAYSSUPPLY=30, two with
+    DAYSSUPPLY=NULL. With max_days=30 and gap_period=30 the NULL rows fall back
+    to max_days=30. All rows therefore map to the same START_DATE and the same
+    effective day count (30+30=60), so only one period should be produced.
+    """
+
+    name_space = "ettr_duplicate_days_column_mixed_null"
+
+    def define_input_tables(self):
+        df_input = pd.DataFrame.from_records(
+            [
+                ("P1", "c1", "2024-09-16", 30),
+                ("P1", "c1", "2024-09-16", None),
+                ("P1", "c1", "2024-09-16", 30),
+                ("P1", "c1", "2024-09-16", None),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE", "DAYSSUPPLY"],
+        )
+        df_input["EVENT_DATE"] = pd.to_datetime(df_input["EVENT_DATE"])
+        df_input["DAYSSUPPLY"] = df_input["DAYSSUPPLY"].astype("Int64")
+
+        return [{"name": "MEDICATIONDISPENSE", "df": df_input}]
+
+    def define_derived_table_tests(self):
+        # All rows → START_DATE 2024-09-16, END_DATE = 2024-09-16 + 60 = 2024-11-15
+        # Should produce exactly one row.
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2024-09-16", "2024-11-15"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="ON_TREATMENT_DAYS_SUPPLY",
+            domain="MEDICATIONDISPENSE",
+            codelist=cl,
+            days_columnname="DAYSSUPPLY",
+            max_days=30,
+            gap_period=30,
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_duplicate_days_column_mixed_null_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_duplicate_days_column_mixed_null():
+    test_generator = EventsToTimeRangeDuplicateDaysColumnMixedNullTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
+    test_events_to_time_range_duplicate_events()
+    test_events_to_time_range_days_columnname()
+    test_events_to_time_range_days_columnname_null_fallback()
+    test_events_to_time_range_gap_period()

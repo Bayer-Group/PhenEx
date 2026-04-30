@@ -25,10 +25,9 @@ class Waterfall(Reporter):
     def __init__(
         self,
         decimal_places: int = 1,
-        pretty_display: bool = True,
         include_component_phenotypes_level=None,
     ):
-        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        super().__init__(decimal_places=decimal_places)
         self.include_component_phenotypes_level = include_component_phenotypes_level
 
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
@@ -45,20 +44,16 @@ class Waterfall(Reporter):
         # create info dictionaries for each phenotype containing counts
         self.ds = []
         table = cohort.entry_criterion.table
-        N_entry = table.count().execute()
+        N_entry = table.select("PERSON_ID").distinct().count().execute()
         index = 1
         self.ds.append(
             {
                 "Type": "entry",
                 "Level": 0,
                 "Index": str(index),
-                "Name": (
-                    cohort.entry_criterion.display_name
-                    if self.pretty_display
-                    else cohort.entry_criterion.name
-                ),
+                "Name": (cohort.entry_criterion.display_name),
                 "N": N_entry,
-                "Remaining": table.count().execute(),
+                "Remaining": N_entry,
             }
         )
 
@@ -89,26 +84,30 @@ class Waterfall(Reporter):
 
         # Calculate deltas before adding first/last rows
         self.ds = self.append_delta(self.ds)
+        # Entry row delta: remaining after entry vs N persons in database
+        self.ds[0]["Delta"] = N_entry - cohort.n_persons_in_source_database
 
         # create dataframe with phenotype counts (without first/last rows)
         self.df = pd.DataFrame(self.ds)
 
         # calculate percentage of entry criterion
-        self.df["% Remaining"] = self.df["Remaining"] / N_entry * 100
-        self.df["% N"] = self.df["N"] / N_entry * 100
+        self.df["Pct_Remaining"] = self.df["Remaining"] / N_entry * 100
+        self.df["Pct_N"] = self.df["N"] / N_entry * 100
 
-        # Calculate % Source Database column before rounding
+        # Calculate Pct Source Database column before rounding
         # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
         entry_pct = N_entry / cohort.n_persons_in_source_database * 100
 
-        # Round all numeric columns including % Source Database
-        self.df = self.df.round(self.decimal_places)
+        # Round numeric (float) columns; preserve integer columns like Level
+        float_cols = self.df.select_dtypes(include="float").columns
+        self.df[float_cols] = self.df[float_cols].round(self.decimal_places)
 
         # first row data
         first_row_data = {
             "Type": "info",
             "Name": "N persons in database",
             "N": cohort.n_persons_in_source_database,
+            "Remaining": cohort.n_persons_in_source_database,
             "Level": 0,
             "Index": "",
         }
@@ -118,7 +117,7 @@ class Waterfall(Reporter):
             "Type": "info",
             "Name": "Final Cohort Size",
             "Remaining": N,
-            "% Remaining": round(100 * N / N_entry, self.decimal_places),
+            "Pct_Remaining": round(100 * N / N_entry, self.decimal_places),
             "Level": 0,
             "Index": "",
         }
@@ -135,34 +134,70 @@ class Waterfall(Reporter):
             N / cohort.n_persons_in_source_database * 100, self.decimal_places
         )
 
-        self.df["% Source Database"] = (
+        self.df["Pct_Source_Database"] = (
             [np.nan, entry_pct] + [np.nan] * (self.df.shape[0] - 3) + [final_pct]
         )
 
-        # Do final column selection (keep _color if it exists for styling)
+        # Do final column selection (never include _color in raw df)
         columns_to_select = [
             "Type",
             "Index",
             "Name",
+            "Level",
             "N",
-            "% N",
+            "Pct_N",
             "Remaining",
-            "% Remaining",
+            "Pct_Remaining",
             "Delta",
-            "% Source Database",
+            "Pct_Source_Database",
         ]
-
-        # Add _color column if it exists
-        if "_color" in self.df.columns:
-            columns_to_select.append("_color")
 
         self.df = self.df[columns_to_select]
 
-        # Return styled dataframe if pretty display is enabled
-        if self.pretty_display and "_color" in self.df.columns:
-            return self._apply_styling()
-
         return self.df
+
+    def to_json(self, filename: str) -> str:
+        """Serialise waterfall results to JSON.
+
+        Compared to the base implementation:
+        - Drops the internal ``Level`` column (used only for visual indentation)
+        - Stores N / Remaining / Delta as integers (not floats)
+        - Serialises NaN cells as JSON ``null``
+        """
+        import json
+        import math
+        from pathlib import Path
+
+        df = self.df.drop(columns=["Level"], errors="ignore").copy()
+
+        COUNT_COLS = {"N", "Remaining", "Delta"}
+
+        records = []
+        for row in df.to_dict(orient="records"):
+            clean = {}
+            for k, v in row.items():
+                if isinstance(v, float) and math.isnan(v):
+                    clean[k] = None
+                elif k in COUNT_COLS and isinstance(v, float):
+                    clean[k] = int(v)
+                else:
+                    clean[k] = v
+            records.append(clean)
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": records,
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
+
+        return str(filepath.absolute())
 
     def _append_components_recursively(
         self, current_phenotype, table, level=1, parent_index=""
@@ -170,7 +205,7 @@ class Waterfall(Reporter):
         if level <= self.include_component_phenotypes_level:
             for i, child in enumerate(current_phenotype.children):
                 current_index = f"{parent_index}.{i+1}"
-                current_name = child.display_name if self.pretty_display else child.name
+                current_name = child.display_name
                 self.append_phenotype_to_waterfall(
                     table,
                     child,
@@ -199,9 +234,7 @@ class Waterfall(Reporter):
         logger.debug(f"Starting {type} criteria {phenotype.name}")
 
         if full_name is None:
-            full_name = (
-                phenotype.display_name if self.pretty_display else phenotype.name
-            )
+            full_name = phenotype.display_name
 
         self.ds.append(
             {
@@ -227,10 +260,27 @@ class Waterfall(Reporter):
         Return a formatted version of the waterfall results for display.
 
         Formatting includes:
-        - Adding row colors based on type and level
         - Formatting numeric columns as strings with thousand separators
         - Replacing NAs with empty strings
         - Creating sparse type column
+
+        Returns:
+            pd.DataFrame: Formatted copy of the results without color styling
+        """
+        return self.get_pretty_display(color=False)
+
+    def get_pretty_display(self, color: bool = True) -> pd.DataFrame:
+        """
+        Return a formatted version of the waterfall results for display.
+
+        Formatting includes:
+        - Formatting numeric columns as strings with thousand separators
+        - Replacing NAs with empty strings
+        - Creating sparse type column
+        - Optionally adding row colors based on type and level
+
+        Args:
+            color: If True, add color styling to rows. Default: True
 
         Returns:
             pd.DataFrame: Formatted copy of the results
@@ -243,8 +293,12 @@ class Waterfall(Reporter):
         self.df = pretty_df
 
         try:
-            # Add colors before any transformations
-            self._add_row_colors()
+            # Add colors before any transformations (if requested)
+            if color:
+                self._add_row_colors()
+
+            # Drop Level column now that coloring is done
+            self.df = self.df.drop(columns=["Level"], errors="ignore")
 
             # Format numeric columns as strings
             self._format_numeric_columns()
@@ -270,18 +324,26 @@ class Waterfall(Reporter):
         last_parent_color = None
 
         for idx, row in self.df.iterrows():
-            row_type = self._get_effective_type(row)
-            level = row.get("Level", 0)
+            row_type = str(row["Type"]) if row["Type"] != "" else "component"
+            # Derive level from the Index column (always present): the number of
+            # dots encodes nesting depth, e.g. "2" → 0, "2.1" → 1, "2.1.3" → 2.
+            # This avoids relying on the Level column which is not saved to Excel.
+            index_val = (
+                str(row.get("Index", "")) if pd.notna(row.get("Index", None)) else ""
+            )
+            level = index_val.count(".")
 
-            # Determine base color
+            # Determine base color and apply lightness for component depth
             if row_type == "component":
+                # Inherit parent color and lighten based on nesting level
                 base_color = last_parent_color
+                adjusted_color = self._adjust_brightness(base_color, level)
             else:
+                # Non-component rows: use base color (level is always 0 here)
                 base_color = color_map.get(row_type, (0, 0, 100))
                 last_parent_color = base_color
+                adjusted_color = base_color
 
-            # Apply brightness adjustment and convert to CSS string
-            adjusted_color = self._adjust_brightness(base_color, level)
             self.df.at[idx, "_color"] = self._hsl_to_string(adjusted_color)
 
     def _format_numeric_columns(self):
@@ -298,10 +360,12 @@ class Waterfall(Reporter):
         )
 
         # Format percentage columns without commas (they won't need them)
-        self.df["% Remaining"] = self.df["% Remaining"].astype("Float64").astype(str)
-        self.df["% N"] = self.df["% N"].astype("Float64").astype(str)
-        self.df["% Source Database"] = (
-            self.df["% Source Database"].astype("Float64").astype(str)
+        self.df["Pct_Remaining"] = (
+            self.df["Pct_Remaining"].astype("Float64").astype(str)
+        )
+        self.df["Pct_N"] = self.df["Pct_N"].astype("Float64").astype(str)
+        self.df["Pct_Source_Database"] = (
+            self.df["Pct_Source_Database"].astype("Float64").astype(str)
         )
 
     def _apply_styling(self):
@@ -352,13 +416,16 @@ class Waterfall(Reporter):
         # Create parent directories if needed
         filename.parent.mkdir(parents=True, exist_ok=True)
 
-        # Get dataframe without _color column for export
-        if "_color" in self.df.columns:
-            export_df = self.df.drop(columns=["_color"])
-            colors = self.df["_color"].tolist()
+        # Get formatted dataframe with colors
+        colored_df = self.get_pretty_display(color=True)
+
+        # Extract colors if they exist
+        if "_color" in colored_df.columns:
+            export_df = colored_df.drop(columns=["_color"])
+            colors = colored_df["_color"].tolist()
         else:
-            export_df = self.df
-            colors = [None] * len(self.df)
+            export_df = colored_df
+            colors = [None] * len(colored_df)
 
         # Create workbook and worksheet
         wb = Workbook()
@@ -469,13 +536,11 @@ class Waterfall(Reporter):
     def append_delta(self, ds):
         ds[0]["Delta"] = np.nan
         previous_remaining = ds[0]["Remaining"]
-        for i in range(1, len(ds) - 1):
+        for i in range(1, len(ds)):
             d_current = ds[i]
-            d_previous = ds[i - 1]
             if pd.isna(d_current["Remaining"]):
                 d_current["Delta"] = np.nan
                 continue
-            print(f"Current: {d_current['Remaining']}, Previous: {previous_remaining}")
             d_current["Delta"] = d_current["Remaining"] - previous_remaining
             previous_remaining = d_current["Remaining"]
         return ds
@@ -508,7 +573,7 @@ class Waterfall(Reporter):
         if hsl_tuple is None:
             return None
         h, s, l = hsl_tuple
-        return f"hsl({h}, {s}%, {l}%)"
+        return f"hsl({int(round(h))}, {int(round(s))}%, {int(round(l))}%)"
 
     def _create_sparse_type_column(self):
         """Show type label only once per section (not repeated on each row)"""

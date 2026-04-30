@@ -1,5 +1,6 @@
 from .phenotype import Phenotype
 
+from .event_phenotype import EventPhenotype
 from .codelist_phenotype import CodelistPhenotype
 from .age_phenotype import AgePhenotype
 from .bin_phenotype import BinPhenotype
@@ -13,6 +14,7 @@ from .time_range_count_phenotype import TimeRangeCountPhenotype
 from .time_range_day_count_phenotype import TimeRangeDayCountPhenotype
 from .time_range_days_to_next_range_phenotype import TimeRangeDaysToNextRange
 from .time_range_phenotype import TimeRangePhenotype
+from .time_shift_phenotype import TimeShiftPhenotype
 from .user_defined_phenotype import UserDefinedPhenotype
 from .computation_graph_phenotypes import (
     ScorePhenotype,
@@ -20,5 +22,13 @@ from .computation_graph_phenotypes import (
     LogicPhenotype,
 )
 from .within_same_encounter_phenotype import WithinSameEncounterPhenotype
-
-# from ..core.cohort import Cohort, Subcohort
+from .factory import (
+    ISTHMajorBleedPhenotype,
+    ISTHBleedComponents,
+    StackableRegimen,
+    TreatmentPatternAnalysis,
+    SmartCodelistPhenotype,
+    CHADSVASCPhenotype,
+    CHADSVASCComponents,
+    CODETYPE_INFO,
+)

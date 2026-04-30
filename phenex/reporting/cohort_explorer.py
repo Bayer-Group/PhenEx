@@ -58,7 +58,6 @@ class CohortExplorer(Reporter):
         width: Dashboard width in pixels
         height: Plot height in pixels
         decimal_places: Number of decimal places for display (inherited)
-        pretty_display: Use pretty formatting (inherited)
     """
 
     def __init__(
@@ -67,7 +66,6 @@ class CohortExplorer(Reporter):
         width: int = 900,
         height: int = 500,
         decimal_places: int = 2,
-        pretty_display: bool = True,
         show_waterfall: bool = True,
         show_table1: bool = True,
         show_correlation: bool = True,
@@ -82,14 +80,13 @@ class CohortExplorer(Reporter):
             width: Dashboard width in pixels
             height: Plot height in pixels
             decimal_places: Number of decimal places for display
-            pretty_display: Use pretty formatting
             show_waterfall: Include waterfall/attrition plot (default: True)
             show_table1: Include baseline characteristics table (default: True)
             show_correlation: Include correlation heatmap (default: True)
             show_phenotype_explorer: Include interactive phenotype explorer (default: True)
             show_counts: Include counts table for inclusion/exclusion criteria (default: True)
         """
-        super().__init__(decimal_places=decimal_places, pretty_display=pretty_display)
+        super().__init__(decimal_places=decimal_places)
         self.title = title
         self.width = width
         self.height = height
@@ -472,9 +469,7 @@ class CohortExplorer(Reporter):
         try:
             from phenex.reporting.waterfall import Waterfall
 
-            waterfall_reporter = Waterfall(
-                decimal_places=self.decimal_places, pretty_display=self.pretty_display
-            )
+            waterfall_reporter = Waterfall(decimal_places=self.decimal_places)
             waterfall_data = waterfall_reporter.execute(self.cohort)
             logger.debug(f"Generated waterfall data with {len(waterfall_data)} steps")
             return waterfall_data
@@ -498,7 +493,6 @@ class CohortExplorer(Reporter):
 
                 counts_reporter = InExCounts(
                     decimal_places=self.decimal_places,
-                    pretty_display=self.pretty_display,
                 )
                 counts_data = counts_reporter.execute(self.cohort)
                 logger.debug(f"Generated Counts data with {len(counts_data)} criteria")
@@ -518,7 +512,6 @@ class CohortExplorer(Reporter):
 
                 table1_reporter = Table1(
                     decimal_places=self.decimal_places,
-                    pretty_display=self.pretty_display,
                 )
                 table1_data = table1_reporter.execute(self.cohort)
                 logger.debug(

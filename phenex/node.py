@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from typing import Dict, List, Set, Optional
 import pandas as pd
 import ibis
@@ -260,6 +261,7 @@ class Node:
         overwrite: bool = False,
         lazy_execution: bool = False,
         n_threads: int = 1,
+        table_name_prefix: Optional[str] = None,
     ) -> Table:
         """
         Executes the Node computation for the current node and its dependencies.
@@ -298,6 +300,8 @@ class Node:
         Raises:
             ValueError: If lazy_execution=True but overwrite=False or con=None.
         """
+        if table_name_prefix:
+            table_name_prefix = re.sub(r"[^A-Za-z0-9_]", "_", table_name_prefix).upper()
         # Handle None tables
         if tables is None:
             tables = {}
@@ -335,6 +339,25 @@ class Node:
             if degree == 0:
                 ready_queue.put(node_name)
 
+        def _run_and_materialise(node, node_name):
+            """Execute *node*, materialise the result, record timing, and update the run hash."""
+            db_name = (
+                f"{table_name_prefix}__{node_name}"
+                if table_name_prefix and not node_name.startswith(table_name_prefix)
+                else node_name
+            )
+            node.lastexecution_start_time = datetime.now()
+            table = node._execute(tables)
+            if table is not None:
+                con.create_table(table, db_name, overwrite=overwrite)
+                table = con.get_dest_table(db_name)
+            node.lastexecution_end_time = datetime.now()
+            node.lastexecution_duration = (
+                node.lastexecution_end_time - node.lastexecution_start_time
+            ).total_seconds()
+            Node._node_manager.update_run_params(node, con)
+            return table
+
         def worker():
             """Worker function for thread pool"""
             while not stop_all_workers.is_set():
@@ -364,25 +387,22 @@ class Node:
                             )
 
                         if Node._node_manager.should_rerun(node, con):
-                            # Time the execution
-                            node.lastexecution_start_time = datetime.now()
-                            table = node._execute(tables)
-
-                            if (
-                                table is not None
-                            ):  # Only create table if _execute returns something
-                                con.create_table(table, node_name, overwrite=overwrite)
-                                table = con.get_dest_table(node_name)
-
-                            node.lastexecution_end_time = datetime.now()
-                            node.lastexecution_duration = (
-                                node.lastexecution_end_time
-                                - node.lastexecution_start_time
-                            ).total_seconds()
-
-                            Node._node_manager.update_run_params(node, con)
+                            table = _run_and_materialise(node, node_name)
                         else:
-                            table = con.get_dest_table(node_name)
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
+                                else node_name
+                            )
+                            try:
+                                table = con.get_dest_table(db_name)
+                            except Exception:
+                                # Cached table was dropped or is inaccessible; recompute.
+                                logger.warning(
+                                    f"Cached table for '{node_name}' not found at {db_name}; recomputing."
+                                )
+                                table = _run_and_materialise(node, node_name)
                     else:
                         # Time the execution
                         node.lastexecution_start_time = datetime.now()
@@ -391,8 +411,22 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
-                            con.create_table(table, node_name, overwrite=overwrite)
-                            table = con.get_dest_table(node_name)
+                            db_name = (
+                                f"{table_name_prefix}__{node_name}"
+                                if table_name_prefix
+                                and not node_name.startswith(table_name_prefix)
+                                else node_name
+                            )
+                            logger.info(
+                                f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
+                            )
+                            _t_mat = datetime.now()
+                            con.create_table(table, db_name, overwrite=overwrite)
+                            logger.info(
+                                f"Thread {threading.current_thread().name}: materialized '{node_name}' "
+                                f"in {(datetime.now() - _t_mat).total_seconds():.3f}s"
+                            )
+                            table = con.get_dest_table(db_name)
 
                         node.lastexecution_end_time = datetime.now()
                         node.lastexecution_duration = (
@@ -447,12 +481,20 @@ class Node:
             threads.append(thread)
 
         # Wait for all nodes to complete or for an error to occur
+        _last_heartbeat = datetime.now()
         while (
             len(completed) < len(nodes)
             and not worker_exceptions
             and not stop_all_workers.is_set()
         ):
             threading.Event().wait(0.1)  # Small delay to prevent busy waiting
+            _now = datetime.now()
+            if (_now - _last_heartbeat).total_seconds() >= 30:
+                _pending = sorted(set(nodes.keys()) - completed)
+                logger.info(
+                    f"Node '{self.name}': still waiting for {len(_pending)} nodes: {_pending}"
+                )
+                _last_heartbeat = _now
 
         if not stop_all_workers.is_set():
             # Time to stop workers and cleanup
@@ -580,16 +622,17 @@ class NodeGroup(Node):
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
-        Execute all children nodes and return a table with information about dependencies.
-        The execution logic is handled by the parent Node class.
+        NodeGroup is a coordinator node only. Children are executed by the parent Node
+        execution engine; there is no table to produce here.
         """
-        # Create a table with NODE_NAME and NODE_PARAMS for each dependency
-        data = []
-        for node in self.dependencies:
-            data.append(
-                {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
-            )
+        return None
+        # # Create a table with NODE_NAME and NODE_PARAMS for each dependency
+        # data = []
+        # for node in self.dependencies:
+        #     data.append(
+        #         {"NODE_NAME": node.name, "NODE_PARAMS": json.dumps(node.to_dict())}
+        #     )
 
-        # Create a pandas DataFrame and convert to ibis memtable
-        df = pd.DataFrame(data)
-        return ibis.memtable(df)
+        # # Create a pandas DataFrame and convert to ibis memtable
+        # df = pd.DataFrame(data)
+        # return ibis.memtable(df)

@@ -2,12 +2,17 @@
 from .node import Node, NodeGroup
 
 # Cohort and core classes
-from .core import Cohort, Subcohort, Database
+from .core import Cohort, Subcohort, Database, Study
+
+from .ibis_connect import SnowflakeConnector, DuckDBConnector, PostgresConnector
 
 # Phenotype classes - the main public API
 from .phenotypes import (
     Phenotype,
+    EventPhenotype,
     CodelistPhenotype,
+    SmartCodelistPhenotype,
+    CODETYPE_INFO,
     MeasurementPhenotype,
     MeasurementChangePhenotype,
     AgePhenotype,
@@ -20,11 +25,19 @@ from .phenotypes import (
     TimeRangeCountPhenotype,
     TimeRangeDayCountPhenotype,
     TimeRangeDaysToNextRange,
+    TimeShiftPhenotype,
     WithinSameEncounterPhenotype,
     UserDefinedPhenotype,
     ScorePhenotype,
     ArithmeticPhenotype,
     LogicPhenotype,
+    TreatmentPatternAnalysis,
+    CHADSVASCPhenotype,
+    CHADSVASCComponents,
+    SmartCodelistPhenotype,
+    StackableRegimen,
+    ISTHMajorBleedPhenotype,
+    ISTHBleedComponents,
 )
 
 # Filters
@@ -76,36 +89,49 @@ from .reporting import (
     TimeToEvent,
     CohortExplorer,
     ReportDrafter,
+    TreatmentPatternAnalysisSankeyReporter,
+    SankeyGenerator,
 )
 
 # Codelists
 from .codelists import (
     Codelist,
+    LocalFileCodelistFactory,
     LocalCSVCodelistFactory,
     MedConBCodelistFactory,
+    MedConBCollection,
 )
 
 # Derived Tables
 from .derived_tables import (
     CombineOverlappingPeriods,
     EventsToTimeRange,
+    MinMaxDatesToTimeRange,
 )
 
 # Serialization utilities
 from .util.serialization.json import dump, dumps, load, loads
 
-__version__ = "v0.8.0"
+__version__ = "v0.8.1"
 
 __all__ = [
+    # Connectors
+    "SnowflakeConnector",
+    "DuckDBConnector",
+    "PostgresConnector",
     # Core
     "Node",
     "NodeGroup",
     "Cohort",
     "Subcohort",
     "Database",
+    "Study",
     # Phenotypes
     "Phenotype",
+    "EventPhenotype",
     "CodelistPhenotype",
+    "SmartCodelistPhenotype",
+    "CODETYPE_INFO",
     "MeasurementPhenotype",
     "MeasurementChangePhenotype",
     "AgePhenotype",
@@ -118,11 +144,19 @@ __all__ = [
     "TimeRangeCountPhenotype",
     "TimeRangeDayCountPhenotype",
     "TimeRangeDaysToNextRange",
+    "TimeShiftPhenotype",
     "WithinSameEncounterPhenotype",
     "UserDefinedPhenotype",
     "ScorePhenotype",
     "ArithmeticPhenotype",
     "LogicPhenotype",
+    "TreatmentPatternAnalysis",
+    "CHADSVASCPhenotype",
+    "CHADSVASCComponents",
+    "SmartCodelistPhenotype",
+    "StackableRegimen",
+    "ISTHMajorBleedPhenotype",
+    "ISTHBleedComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",
@@ -165,13 +199,18 @@ __all__ = [
     "TimeToEvent",
     "CohortExplorer",
     "ReportDrafter",
+    "TreatmentPatternAnalysisSankeyReporter",
+    "SankeyGenerator",
     # Codelists
     "Codelist",
+    "LocalFileCodelistFactory",
     "LocalCSVCodelistFactory",
     "MedConBCodelistFactory",
+    "MedConBCollection",
     # Derived Tables
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
+    "MinMaxDatesToTimeRange",
     # Serialization
     "dump",
     "dumps",

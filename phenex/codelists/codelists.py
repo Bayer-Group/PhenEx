@@ -20,6 +20,9 @@ class Codelist:
         codelist: User can enter codelists as either a string, a list of strings or a dictionary keyed by code type. In first two cases, the class will convert the input to a dictionary with a single key None. All consumers of the Codelist instance can then assume the codelist in that format.
         use_code_type: User can define whether code type should be used or not.
         remove_punctuation: User can define whether punctuation should be removed from codes or not.
+        rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
+        code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
+
 
     Methods:
         from_yaml: Load a codelist from a YAML file.
@@ -140,37 +143,69 @@ class Codelist:
         use_code_type: Optional[bool] = True,
         remove_punctuation: Optional[bool] = False,
         fuzzy_match: Optional[bool] = False,
+        rename_code_type: Optional[Dict[str, str]] = None,
+        code_type_info: Optional[Dict[str, Dict]] = None,
     ) -> None:
         self.name = name
 
         if isinstance(codelist, dict):
-            self.codelist = codelist
+            pass
         elif isinstance(codelist, list):
-            self.codelist = {None: codelist}
+            codelist = {None: codelist}
         elif isinstance(codelist, str):
             if name is None:
                 self.name = codelist
-            self.codelist = {None: [codelist]}
+            codelist = {None: [codelist]}
         else:
             raise TypeError("Input codelist must be a dictionary, list, or string.")
 
-        if list(self.codelist.keys()) == [None]:
+        if list(codelist.keys()) == [None]:
             self.use_code_type = False
         else:
             self.use_code_type = use_code_type
 
         self.remove_punctuation = remove_punctuation
 
+        self.codelist = self._rename_code_types(
+            codelist=codelist,
+            rename_code_type=rename_code_type,
+            code_type_info=code_type_info,
+        )
+
         self.fuzzy_match = fuzzy_match
-        for code_type, codelist in self.codelist.items():
-            if any(["%" in str(code) for code in codelist]):
+        for code_type, _codelist in self.codelist.items():
+            if any(["%" in str(code) for code in _codelist]):
                 self.fuzzy_match = True
-                if len(codelist) > 100:
+                if len(_codelist) > 100:
                     warnings.warn(
                         f"Detected fuzzy codelist match with > 100 regex's for code type {code_type}. Performance may suffer significantly."
                     )
 
         self._resolved_codelist = None
+
+    def _rename_code_types(self, codelist, rename_code_type=None, code_type_info=None):
+        def rename_codelist_with_mapping(_codelist, rename_code_type):
+            for current, renamed in rename_code_type.items():
+                if current == renamed:
+                    continue
+                if _codelist.get(current) is not None:
+                    _codelist[renamed] = _codelist[current]
+                    del _codelist[current]
+            return _codelist
+
+        def create_mapping_from_mapping_info(codetype_info):
+            return {k: v["source"] for k, v in codetype_info.items()}
+
+        _codelist = codelist.copy()
+        # manual mapping of code types takes precedence over mapping based on code_type_info
+        if rename_code_type is not None and isinstance(rename_code_type, dict):
+            _codelist = rename_codelist_with_mapping(_codelist, rename_code_type)
+        # if rename_code_type is not provided but code_type_info is provided, we create the mapping based on the code_type_info
+        elif code_type_info is not None:
+            mapping = create_mapping_from_mapping_info(code_type_info)
+            _codelist = rename_codelist_with_mapping(_codelist, mapping)
+
+        return _codelist
 
     def copy(
         self,
@@ -179,6 +214,7 @@ class Codelist:
         remove_punctuation: bool = None,
         rename_code_type: dict = None,
         fuzzy_match: Optional[bool] = None,
+        code_type_info: Optional[Dict[str, Dict]] = None,
     ) -> "Codelist":
         """
         Codelist's are immutable. If you want to update how codelists are resolved, make a copy of the given codelist changing the resolution parameters.
@@ -188,19 +224,13 @@ class Codelist:
             use_code_type: If False, merge all the code lists into one with None as the key.
             remove_punctuation: If True, remove '.' from all codes.
             rename_code_type: Dictionary defining code types that should be renamed. For example, if the original code type is 'ICD-10-CM', but it is 'ICD10' in the database, we must rename the code type. This keyword argument is a dictionary with keys being the current code type and the value being the desired code type. Code types not included in the mapping are left unchanged.
+            code_type_info: A dictionary containing information about code types. If rename_code_type is not provided, but code_type_info is provided, the mapping for renaming code types will be created based on the 'source' field in the code_type_info. For example, if code_type_info contains an entry for 'ICD-10-CM' with 'source' field equal to 'ICD10', then the code type 'ICD-10-CM' will be renamed to 'ICD10'. This is a convenient way to rename code types without having to manually create a mapping dictionary. The code_type_info should be in the following format:
 
         Returns:
             Codelist instance with the updated resolution options.
         """
-        _codelist = self.codelist.copy()
-        if rename_code_type is not None and isinstance(rename_code_type, dict):
-            for current, renamed in rename_code_type.items():
-                if _codelist.get(current) is not None:
-                    _codelist[renamed] = _codelist[current]
-                    del _codelist[current]
-
         return Codelist(
-            _codelist,
+            codelist=self.codelist,
             name=name or self.name,
             use_code_type=(
                 use_code_type if use_code_type is not None else self.use_code_type
@@ -211,7 +241,25 @@ class Codelist:
                 else self.remove_punctuation
             ),
             fuzzy_match=fuzzy_match if fuzzy_match is not None else self.fuzzy_match,
+            rename_code_type=rename_code_type,
+            code_type_info=code_type_info,
         )
+
+    @property
+    def df(self) -> pd.DataFrame:
+        """
+        Convert the codelist dictionary to a pandas DataFrame.
+
+        Returns:
+            DataFrame with columns 'code', 'code_type', and 'codelist'.
+        """
+        rows = []
+        for code_type, codes in self.codelist.items():
+            for code in codes:
+                rows.append(
+                    {"code": code, "code_type": code_type, "codelist": self.name}
+                )
+        return pd.DataFrame(rows, columns=["code", "code_type", "codelist"])
 
     @property
     def resolved_codelist(self):
@@ -488,110 +536,8 @@ class Codelist:
         )
 
 
-class LocalCSVCodelistFactory:
-    """
-    LocalCSVCodelistFactory allows for the creation of multiple codelists from a single CSV file. Use this class when you have a single CSV file that contains multiple codelists.
-
-    To use, create an instance of the class and then call the `get_codelist` method with the name of the codelist you want to retrieve; this codelist name must be an entry in the name_codelist_column.
-    """
-
-    def __init__(
-        self,
-        path: str,
-        name_code_column: str = "code",
-        name_codelist_column: str = "codelist",
-        name_code_type_column: str = "code_type",
-    ) -> None:
-        """
-        Parameters:
-            path: Path to the CSV file.
-            name_code_column: The name of the column containing the codes.
-            name_codelist_column: The name of the column containing the codelist names.
-            name_code_type_column: The name of the column containing the code types.
-        """
-        self.path = path
-        self.name_code_column = name_code_column
-        self.name_codelist_column = name_codelist_column
-        self.name_code_type_column = name_code_type_column
-        try:
-            self.df = pd.read_csv(path)
-        except:
-            raise ValueError("Could not read the file at the given path.")
-
-        # Check if the required columns exist in the DataFrame
-        required_columns = [
-            name_code_column,
-            name_codelist_column,
-            name_code_type_column,
-        ]
-        missing_columns = [
-            col for col in required_columns if col not in self.df.columns
-        ]
-        if missing_columns:
-            raise ValueError(
-                f"The following required columns are missing in the CSV: {', '.join(missing_columns)}"
-            )
-
-    def get_codelists(self) -> List[str]:
-        """
-        Get a list of all codelists in the supplied CSV.
-        """
-        return self.df[self.name_codelist_column].unique().tolist()
-
-    def get_codelist(self, name: str) -> Codelist:
-        """
-        Retrieve a single codelist by name.
-        """
-        try:
-            df_codelist = self.df[self.df[self.name_codelist_column] == name]
-            code_dict = (
-                df_codelist.groupby(self.name_code_type_column)[self.name_code_column]
-                .apply(list)
-                .to_dict()
-            )
-            return Codelist(name=name, codelist=code_dict)
-        except:
-            raise ValueError("Could not find the codelist with the given name.")
-
-
-class MedConBCodelistFactory:
-    """
-    Retrieve Codelists for use in Phenex from MedConB.
-
-    Example:
-    ```python
-    from medconb_client import Client
-    endpoint = "https://api.medconb.example.com/graphql/"
-    token = get_token()
-    client = Client(endpoint, token)
-    medconb_factory = MedConBCodelistFactory(client)
-
-    phenex_codelist = medconb_factory.get_codelist(
-        id="9c4ad312-3008-4d95-9b16-6f9b21ec1ad9"
-    )
-    ```
-    """
-
-    def __init__(
-        self,
-        medconb_client,
-    ):
-        self.medconb_client = medconb_client
-
-    def get_codelist(self, id: str):
-        """
-        Resolve the codelist by querying the MedConB client.
-        """
-        medconb_codelist = self.medconb_client.get_codelist(codelist_id=id)
-        return Codelist.from_medconb(medconb_codelist)
-
-    def get_codelists(self):
-        """
-        Returns a list of all available codelist IDs.
-        """
-        return sum(
-            [c.items for c in self.medconb_client.get_workspace().collections], []
-        )
+def create_mapping_from_mapping_info(codetype_info):
+    return {k: v["source"] for k, v in codetype_info.items()}
 
 
 class CompositeCodelist(Codelist):

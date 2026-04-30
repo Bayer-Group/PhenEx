@@ -25,7 +25,6 @@ class MockNode(Node):
 
 
 class TestNodeManager(unittest.TestCase):
-
     def setUp(self):
         # Create a temporary database for each test
         self.temp_db = tempfile.mktemp(suffix=".db")

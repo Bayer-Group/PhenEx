@@ -1,245 +1,325 @@
 """
-Test Study class execution and report concatenation.
+Tests for Study execution and OutputConcatenator output.
 
-Tests that Study correctly executes multiple cohorts and concatenates
-their reports into a single multi-sheet Excel file.
+Verifies that Study writes the correct files to the correct locations and
+that OutputConcatenator produces a correctly structured Excel file.
 """
 
-import os
+import json
 import unittest
 from pathlib import Path
+
 import openpyxl
-import pandas as pd
-from phenex.core.study import Study
-from phenex.core.cohort import Cohort
+
 from phenex import Database
-from phenex.reporting import Reporter
+from phenex.core.study import Study
 from phenex.test.cohort.test_cohort_various_phenotypes_as_inex import (
     CohortWithContinuousCoverageAndExclusionTestGenerator,
     CohortWithContinuousCoverageTestGenerator,
+    CohortWithLogicPhenotypeAsInclusionTestGenerator,
 )
 from phenex.test.cohort.test_mappings import TestDomains
 
 
-class TestStudyExecution(unittest.TestCase):
-    """Test Study execution and output concatenation."""
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_cohort(gen_cls, name):
+    gen = gen_cls()
+    gen.define_mapped_tables()
+    cohort = gen.define_cohort()
+    cohort.name = name
+    cohort.database = Database(connector=gen.con, mapper=TestDomains)
+    return cohort
+
+
+def _latest_exec_dir(study_dir: Path) -> Path:
+    dirs = sorted(
+        [d for d in study_dir.iterdir() if d.is_dir() and d.name.startswith("D20")],
+        key=lambda d: d.stat().st_mtime,
+    )
+    return dirs[-1]
+
+
+# ---------------------------------------------------------------------------
+# Study output location and structure
+# ---------------------------------------------------------------------------
+
+
+class TestStudyOutput(unittest.TestCase):
+    """Verify files written to the correct locations with correct names."""
+
+    COHORT_NAMES = (
+        "CohortWithExclusion",
+        "CohortWithoutExclusion",
+        "CohortWithComponents",
+    )
+    STUDY_NAME = "output_test"
 
     @classmethod
     def setUpClass(cls):
-        """Set up test artifacts directory."""
-        cls.artifacts_dir = Path(__file__).parent / "artifacts" / "study_test"
-        cls.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        artifacts = Path(__file__).parent / "artifacts"
+        artifacts.mkdir(parents=True, exist_ok=True)
 
-    def test_study_execution_with_multiple_cohorts(self):
-        """Test that Study executes multiple cohorts and concatenates reports."""
-        # Create cohort generators
-        c1gen = CohortWithContinuousCoverageAndExclusionTestGenerator()
-        c2gen = CohortWithContinuousCoverageTestGenerator()
-
-        # Define mapped tables
-        c1gen.define_mapped_tables()
-        c2gen.define_mapped_tables()
-
-        # Define cohorts
-        c1 = c1gen.define_cohort()
-        c2 = c2gen.define_cohort()
-
-        # Assign names
-        c1.name = "CohortWithExclusion"
-        c2.name = "CohortWithoutExclusion"
-
-        # Assign databases
-        c1.database = Database(connector=c1gen.con, mapper=TestDomains)
-        c2.database = Database(connector=c2gen.con, mapper=TestDomains)
-
-        # Create study with default reporters only (Waterfall and Table1)
-        study = Study(name="test_study", path=str(self.artifacts_dir), cohorts=[c1, c2])
-
-        # Execute study
+        cohorts = [
+            _make_cohort(
+                CohortWithContinuousCoverageAndExclusionTestGenerator,
+                "CohortWithExclusion",
+            ),
+            _make_cohort(
+                CohortWithContinuousCoverageTestGenerator,
+                "CohortWithoutExclusion",
+            ),
+            _make_cohort(
+                CohortWithLogicPhenotypeAsInclusionTestGenerator,
+                "CohortWithComponents",
+            ),
+        ]
+        study = Study(name=cls.STUDY_NAME, path=str(artifacts), cohorts=cohorts)
         study.execute(overwrite=True)
 
-        # Verify study execution directory was created
-        test_study_dir = self.artifacts_dir / "test_study"
-        self.assertTrue(test_study_dir.exists(), "test_study directory should exist")
+        cls.exec_dir = _latest_exec_dir(artifacts / cls.STUDY_NAME)
 
-        study_dirs = [
-            d
-            for d in test_study_dir.iterdir()
-            if d.is_dir() and d.name.startswith("D20")
+        xlsx_files = list(cls.exec_dir.glob("results_*.xlsx"))
+        cls.results_file = xlsx_files[0] if xlsx_files else None
+        cls.wb = openpyxl.load_workbook(cls.results_file) if cls.results_file else None
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.wb:
+            cls.wb.close()
+
+    # --- results file ---
+
+    def test_results_file_exists(self):
+        self.assertIsNotNone(self.results_file, "No results_*.xlsx found in exec dir")
+
+    def test_results_file_name(self):
+        """Filename must be results_{study_name}_{exec_dirname}.xlsx."""
+        expected = f"results_{self.STUDY_NAME}_{self.exec_dir.name}.xlsx"
+        self.assertEqual(self.results_file.name, expected)
+
+    # --- sheet structure ---
+
+    def test_sheet_names_and_order(self):
+        expected = [
+            "OVERVIEW",
+            "INCLUSION EXCLUSION",
+            "INCLUSION EXCLUSION (detailed)",
+            "CHARACTERISTICS boolean",
+            "CHARACTERISTICS numeric",
+            "CHARACTERISTICS all",
+            "CHARACTERISTICS bool (detailed)",
+            "CHARACTERISTICS num (detailed)",
+            "CHARACTERISTICS all (detailed)",
         ]
-        self.assertGreater(
-            len(study_dirs), 0, "Should create at least one study execution directory"
-        )
+        self.assertEqual(self.wb.sheetnames, expected)
 
-        # Get the most recent study execution directory
-        study_exec_dir = max(study_dirs, key=lambda x: x.stat().st_mtime)
+    def test_each_sheet_has_cohort_headers(self):
+        """Every data sheet must mention each cohort name somewhere in the sheet."""
+        _NUMERIC_SHEETS = {"CHARACTERISTICS numeric", "CHARACTERISTICS num (detailed)"}
+        for sheet_name in self.wb.sheetnames:
+            if sheet_name == "OVERVIEW":
+                continue
+            sheet = self.wb[sheet_name]
+            all_values = set()
+            if sheet_name in _NUMERIC_SHEETS:
+                # Numeric sheets have cohort names in column B (data rows)
+                for r in range(1, sheet.max_row + 1):
+                    val = sheet.cell(row=r, column=2).value
+                    if val is not None:
+                        all_values.add(str(val))
+            else:
+                for row in range(1, 5):  # rows 1-4 are header rows
+                    for c in range(1, sheet.max_column + 1):
+                        val = sheet.cell(row=row, column=c).value
+                        if val is not None:
+                            all_values.add(str(val))
+            for name in self.COHORT_NAMES:
+                self.assertTrue(
+                    any(name in v for v in all_values),
+                    f"Sheet '{sheet_name}': missing cohort '{name}'",
+                )
 
-        # Verify cohort directories exist
-        cohort_dirs = [d for d in study_exec_dir.iterdir() if d.is_dir()]
-        self.assertEqual(len(cohort_dirs), 2, "Should have 2 cohort directories")
+    # --- per-cohort JSON files ---
 
-        cohort_names = sorted([d.name for d in cohort_dirs])
-        self.assertEqual(
-            cohort_names, ["CohortWithExclusion", "CohortWithoutExclusion"]
-        )
+    def test_cohort_directories_created(self):
+        dirs = {d.name for d in self.exec_dir.iterdir() if d.is_dir()}
+        for name in self.COHORT_NAMES:
+            self.assertIn(name, dirs)
 
-        # Verify individual cohort outputs
-        for cohort_dir in cohort_dirs:
-            # Check that basic reports exist
-            self.assertTrue(
-                (cohort_dir / "table1.xlsx").exists(),
-                f"table1.xlsx should exist in {cohort_dir.name}",
-            )
-            self.assertTrue(
-                (cohort_dir / "Waterfall.xlsx").exists(),
-                f"Waterfall.xlsx should exist in {cohort_dir.name}",
-            )
-            self.assertTrue(
-                (cohort_dir / f"{cohort_dir.name}.json").exists(),
-                f"Cohort JSON should exist in {cohort_dir.name}",
-            )
+    def test_json_reports_written_per_cohort(self):
+        for name in self.COHORT_NAMES:
+            for fname in (
+                "table1.json",
+                "table1_detailed.json",
+                "waterfall.json",
+                "waterfall_detailed.json",
+            ):
+                self.assertTrue(
+                    (self.exec_dir / name / fname).exists(),
+                    f"{name}/{fname} missing",
+                )
 
-        # Verify concatenated study results file
-        study_results_file = study_exec_dir / "study_results.xlsx"
+    def test_frozen_cohort_json_written(self):
+        for name in self.COHORT_NAMES:
+            frozen = self.exec_dir / name / f"frozen_{name}.json"
+            self.assertTrue(frozen.exists(), f"Frozen cohort JSON missing: {frozen}")
+
+    # --- info file ---
+
+    def test_info_file_contains_version_info(self):
+        info = (self.exec_dir / "info.txt").read_text()
+        self.assertIn("Python Version", info)
+        self.assertIn("PhenEx Version", info)
+
+    # --- WaterfallDetailed component phenotype rows ---
+
+    def _waterfall_detailed_values_lower(self) -> set:
+        sheet = self.wb["INCLUSION EXCLUSION (detailed)"]
+        return {
+            str(cell).lower()
+            for row in sheet.iter_rows(values_only=True)
+            for cell in row
+            if cell is not None
+        }
+
+    def test_waterfall_detailed_contains_logic_phenotype(self):
+        vals = self._waterfall_detailed_values_lower()
         self.assertTrue(
-            study_results_file.exists(), "study_results.xlsx should be created"
+            any("combined cc and prior drug" in v for v in vals),
+            "WaterfallDetailed missing LogicPhenotype inclusion name",
         )
 
-        # Verify contents of study_results.xlsx
-        self._verify_study_results_file(study_results_file)
-
-        # Verify software version info file
-        info_file = study_exec_dir / "info.txt"
-        self.assertTrue(info_file.exists(), "info.txt should be created")
-        with open(info_file, "r") as f:
-            content = f.read()
-            self.assertIn("Python Version", content)
-            self.assertIn("PhenEx Version", content)
-
-    def _verify_study_results_file(self, filepath: Path):
-        """Verify the structure and content of study_results.xlsx."""
-        wb = openpyxl.load_workbook(filepath)
-
-        # Verify expected sheets exist
-        expected_sheets = ["Waterfall", "Table1"]
-        actual_sheets = wb.sheetnames
-        self.assertEqual(
-            actual_sheets,
-            expected_sheets,
-            "Should have sheets in correct order: Waterfall, Table1",
+    def test_waterfall_detailed_contains_component_phenotypes(self):
+        vals = self._waterfall_detailed_values_lower()
+        self.assertTrue(
+            any("continuous coverage" in v for v in vals),
+            "WaterfallDetailed missing component 'continuous_coverage'",
+        )
+        self.assertTrue(
+            any("prior drug d1" in v for v in vals),
+            "WaterfallDetailed missing component 'prior_drug_d1'",
         )
 
-        # Verify Waterfall sheet
-        waterfall_sheet = wb["Waterfall"]
-        self._verify_concatenated_sheet(
-            waterfall_sheet,
-            expected_cohorts=["CohortWithExclusion", "CohortWithoutExclusion"],
-            sheet_name="Waterfall",
-        )
 
-        # Verify Table1 sheet
-        table1_sheet = wb["Table1"]
-        self._verify_concatenated_sheet(
-            table1_sheet,
-            expected_cohorts=["CohortWithExclusion", "CohortWithoutExclusion"],
-            sheet_name="Table1",
-        )
+# ---------------------------------------------------------------------------
+# Waterfall JSON content
+# ---------------------------------------------------------------------------
 
-        wb.close()
 
-    def _verify_concatenated_sheet(
-        self, sheet, expected_cohorts: list, sheet_name: str
-    ):
-        """Verify that a sheet has cohort headers and data concatenated horizontally."""
-        # First row should have cohort names as headers
-        first_row_values = []
-        for col in range(1, sheet.max_column + 1):
-            cell_value = sheet.cell(row=1, column=col).value
-            if cell_value:
-                first_row_values.append(cell_value)
+class TestWaterfallJsonContent(unittest.TestCase):
+    """Verify correctness of the serialised waterfall JSON."""
 
-        # Should find both cohort names in the headers
-        for cohort_name in expected_cohorts:
-            self.assertIn(
-                cohort_name,
-                first_row_values,
-                f"{sheet_name} sheet should have header for {cohort_name}",
-            )
+    COHORT_NAMES = ("CohortWithExclusion", "CohortWithoutExclusion")
+    STUDY_NAME = "waterfall_json_test"
 
-        # Verify there is at least the header row (data rows optional for empty reports like Table1)
-        self.assertGreaterEqual(
-            sheet.max_row, 1, f"{sheet_name} sheet should have at least header row"
-        )
+    @classmethod
+    def setUpClass(cls):
+        artifacts = Path(__file__).parent / "artifacts"
+        artifacts.mkdir(parents=True, exist_ok=True)
 
-    def test_study_with_empty_custom_reporters(self):
-        """Test that Study works with no custom reporters (only default Waterfall)."""
-        # Create minimal cohorts
-        c1gen = CohortWithContinuousCoverageTestGenerator()
-        c1gen.define_mapped_tables()
-        c1 = c1gen.define_cohort()
-        c1.name = "MinimalCohort"
-        c1.database = Database(connector=c1gen.con, mapper=TestDomains)
-
-        # Create study with no custom reporters
-        study = Study(
-            name="minimal_study",
-            path=str(self.artifacts_dir),
-            cohorts=[c1],
-            custom_reporters=None,
-        )
-
+        cohorts = [
+            _make_cohort(
+                CohortWithContinuousCoverageAndExclusionTestGenerator,
+                "CohortWithExclusion",
+            ),
+            _make_cohort(
+                CohortWithContinuousCoverageTestGenerator,
+                "CohortWithoutExclusion",
+            ),
+        ]
+        study = Study(name=cls.STUDY_NAME, path=str(artifacts), cohorts=cohorts)
         study.execute(overwrite=True)
 
-        # Verify study execution directory in the minimal_study subfolder
-        minimal_study_dir = self.artifacts_dir / "minimal_study"
+        cls.exec_dir = _latest_exec_dir(artifacts / cls.STUDY_NAME)
+
+    def _load_waterfall(self, cohort_name: str) -> list:
+        path = self.exec_dir / cohort_name / "waterfall.json"
+        return json.loads(path.read_text())["rows"]
+
+    def test_count_columns_are_integers(self):
+        """N, Remaining and Delta must serialise as JSON integers (no .0)."""
+        for name in self.COHORT_NAMES:
+            for row in self._load_waterfall(name):
+                for col in ("N", "Remaining", "Delta"):
+                    val = row.get(col)
+                    if val is not None:
+                        self.assertIsInstance(
+                            val,
+                            int,
+                            f"{name} waterfall '{col}' = {val!r} should be int",
+                        )
+
+    def test_level_column_absent(self):
+        """Level is internal and must not appear in JSON output."""
+        for name in self.COHORT_NAMES:
+            for row in self._load_waterfall(name):
+                self.assertNotIn(
+                    "Level", row, f"{name}: 'Level' must not be serialised"
+                )
+
+
+# ---------------------------------------------------------------------------
+# WaterfallDetailed component phenotypes
+# ---------------------------------------------------------------------------
+
+
+class TestWaterfallDetailedComponents(unittest.TestCase):
+    """Verify WaterfallDetailed contains rows for component phenotypes."""
+
+    @classmethod
+    def setUpClass(cls):
+        artifacts = Path(__file__).parent / "artifacts"
+        artifacts.mkdir(parents=True, exist_ok=True)
+
+        cohort = _make_cohort(
+            CohortWithLogicPhenotypeAsInclusionTestGenerator,
+            "CohortWithComponents",
+        )
+        study = Study(name="components_test", path=str(artifacts), cohorts=[cohort])
+        study.execute(overwrite=True)
+
+        cls.exec_dir = _latest_exec_dir(artifacts / "components_test")
+        xlsx_files = list(cls.exec_dir.glob("results_*.xlsx"))
+        cls.wb = openpyxl.load_workbook(xlsx_files[0]) if xlsx_files else None
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.wb:
+            cls.wb.close()
+
+    def _all_cell_values_lower(self, sheet_name: str) -> set:
+        sheet = self.wb[sheet_name]
+        return {
+            str(cell).lower()
+            for row in sheet.iter_rows(values_only=True)
+            for cell in row
+            if cell is not None
+        }
+
+    def test_waterfall_detailed_sheet_present(self):
+        self.assertIsNotNone(self.wb)
+        self.assertIn("INCLUSION EXCLUSION (detailed)", self.wb.sheetnames)
+
+    def test_logic_phenotype_name_present(self):
+        vals = self._all_cell_values_lower("INCLUSION EXCLUSION (detailed)")
         self.assertTrue(
-            minimal_study_dir.exists(), "minimal_study directory should exist"
+            any("combined cc and prior drug" in v for v in vals),
+            "WaterfallDetailed missing LogicPhenotype name",
         )
 
-        study_dirs = [
-            d
-            for d in minimal_study_dir.iterdir()
-            if d.is_dir() and d.name.startswith("D20")
-        ]
-        self.assertGreater(
-            len(study_dirs), 0, "Should create study execution directory"
+    def test_component_phenotype_names_present(self):
+        vals = self._all_cell_values_lower("INCLUSION EXCLUSION (detailed)")
+        self.assertTrue(
+            any("continuous coverage" in v for v in vals),
+            "WaterfallDetailed missing component 'continuous_coverage'",
         )
-
-        # Verify default Waterfall reporter was added
-        study_exec_dir = max(
-            study_dirs, key=lambda x: x.stat().st_mtime
-        )  # Get most recent
-        study_results_file = study_exec_dir / "study_results.xlsx"
-
-        if study_results_file.exists():
-            wb = openpyxl.load_workbook(study_results_file)
-            self.assertIn(
-                "Waterfall",
-                wb.sheetnames,
-                "Should have Waterfall sheet even with no custom reporters",
-            )
-            self.assertIn("Table1", wb.sheetnames, "Should have Table1 sheet")
-            wb.close()
-
-    def test_cohort_waterfall_values(self):
-        """Test that waterfall values are correct for known cohorts."""
-        # Create cohorts with known expected values
-        c1gen = CohortWithContinuousCoverageAndExclusionTestGenerator()
-        c1gen.define_mapped_tables()
-        c1 = c1gen.define_cohort()
-        c1.name = "TestCohort"
-        c1.database = Database(connector=c1gen.con, mapper=TestDomains)
-
-        # Execute just the cohort to get expected waterfall
-        c1.execute(overwrite=True)
-
-        # Access the final index table result (cohort.table is set after execution)
-        index_df = c1.table.to_pandas()
-        n_final = len(index_df)
-
-        self.assertGreater(n_final, 0, "Should have final cohort")
-        self.assertEqual(
-            n_final, 1, "Expected 1 person in final cohort based on test data"
+        self.assertTrue(
+            any("prior drug d1" in v for v in vals),
+            "WaterfallDetailed missing component 'prior_drug_d1'",
         )
 
 

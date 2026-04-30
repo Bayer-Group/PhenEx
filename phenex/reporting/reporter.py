@@ -1,6 +1,7 @@
 from typing import Any, Union, Dict
 import pandas as pd
 from pathlib import Path
+from phenex.util.serialization.to_dict import to_dict as _to_dict
 
 
 class Reporter:
@@ -25,16 +26,23 @@ class Reporter:
 
     Parameters:
         decimal_places: Number of decimal places to round to. Default: 1
-        pretty_display: If True, format output for display (rounded decimals, display names, empty strings instead of NaNs). Default: True
     """
 
     def __init__(
         self,
         decimal_places: int = 1,
-        pretty_display: bool = True,
+        name: str = None,
     ):
         self.decimal_places = decimal_places
-        self.pretty_display = pretty_display
+        self._name = name
+
+    @property
+    def name(self):
+        """Name of the reporter, used for identification and output file naming."""
+        return self._name or self.__class__.__name__
+
+    def to_dict(self) -> dict:
+        return _to_dict(self)
 
     def execute(self, cohort) -> Union[pd.DataFrame, Dict[str, Any]]:
         """
@@ -126,11 +134,48 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to Excel
         df_to_export.to_excel(filepath, index=False)
+
+        return str(filepath.absolute())
+
+    def to_json(self, filename: str) -> str:
+        """
+        Export reporter results to JSON (machine-readable intermediate format).
+
+        Stores raw (unformatted) data so downstream tools can apply their own
+        formatting.  Subclasses may override to include additional metadata
+        (e.g. Table1 adds section information).
+
+        Args:
+            filename: Path to the output file (with or without .json extension)
+
+        Returns:
+            str: Full path to the created file
+        """
+        import json
+
+        if not hasattr(self, "df"):
+            raise AttributeError(
+                f"{self.__class__.__name__} does not have a 'df' attribute. "
+                "Call execute() first or implement a custom to_json() method."
+            )
+
+        filepath = Path(filename)
+        if filepath.suffix != ".json":
+            filepath = filepath.with_suffix(".json")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "reporter_type": self.__class__.__name__,
+            "rows": self.df.to_dict(orient="records"),
+        }
+
+        with filepath.open("w") as f:
+            json.dump(payload, f, indent=2, default=str)
 
         return str(filepath.absolute())
 
@@ -163,8 +208,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to CSV
         df_to_export.to_csv(filepath, index=False)
@@ -200,8 +245,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to HTML
         df_to_export.to_html(filepath, index=False)
@@ -238,8 +283,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Export to Markdown (requires tabulate package)
         try:
@@ -291,8 +336,8 @@ class Reporter:
         # Create parent directories if needed
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        # Apply pretty display if requested
-        df_to_export = self.get_pretty_display() if self.pretty_display else self.df
+        # Apply pretty display formatting
+        df_to_export = self.get_pretty_display()
 
         # Create Word document with table
         doc = Document()
