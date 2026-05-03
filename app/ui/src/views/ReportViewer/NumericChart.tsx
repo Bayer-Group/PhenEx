@@ -1,5 +1,5 @@
 import { FC, useRef, useEffect, useState, useCallback } from 'react';
-import { COLORS, type CohortClassified, type Table1Row } from './types';
+import { type CohortClassified, type Table1Row } from './types';
 import { groupBySection } from './types';
 import { fetchDistributions } from './ReportViewerDataService';
 import styles from './ReportViewer.module.css';
@@ -169,7 +169,7 @@ const HistogramChart: FC<HistogramChartProps> = ({
 
     // Bin all series
     let maxPct = 0;
-    const allBinned: { ci: number; bins: { pct: number }[] }[] = [];
+    const allBinned: { color: string; bins: { pct: number }[] }[] = [];
 
     for (const cd of cohortData) {
       const vals = distributions[cd.name];
@@ -189,7 +189,7 @@ const HistogramChart: FC<HistogramChartProps> = ({
         b.pct = total > 0 ? (b.count / total) * 100 : 0;
         if (b.pct > maxPct) maxPct = b.pct;
       }
-      allBinned.push({ ci: cd.ci, bins });
+      allBinned.push({ color: cd.color, bins });
     }
 
     let yMax = Math.ceil(maxPct / 5) * 5;
@@ -209,7 +209,7 @@ const HistogramChart: FC<HistogramChartProps> = ({
     // Bars
     const barW = plotW / NUM_BINS;
     for (const s of allBinned) {
-      const color = COLORS[s.ci % COLORS.length];
+      const color = s.color;
       for (let bi = 0; bi < s.bins.length; bi++) {
         const bh = Math.max(0, (s.bins[bi].pct / yMax) * plotH);
         mkEl('rect', {
@@ -260,11 +260,11 @@ const SummaryStatsTable: FC<SummaryStatsTableProps> = ({
   cohortData,
   onLoadDistributions,
 }) => {
-  const rows: { name: string; ci: number; row: Table1Row }[] = [];
+  const rows: { name: string; color: string; row: Table1Row }[] = [];
   for (const cd of cohortData) {
     for (const r of cd.classified.numerics) {
       if (r.Name === phenoName) {
-        rows.push({ name: cd.name, ci: cd.ci, row: r });
+        rows.push({ name: cd.name, color: cd.color, row: r });
       }
     }
   }
@@ -295,7 +295,7 @@ const SummaryStatsTable: FC<SummaryStatsTableProps> = ({
         <tbody>
           {rows.map((r) => (
             <tr key={r.name}>
-              <td style={{ color: COLORS[r.ci % COLORS.length], fontWeight: 'bold' }}>
+              <td style={{ color: r.color, fontWeight: 'bold' }}>
                 {r.name}
               </td>
               {STATS.map((s) => (

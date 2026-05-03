@@ -1,7 +1,40 @@
-export const COLORS = [
-  '#2E5A88', '#B8533E', '#3A7D6E', '#7B5EA7', '#C4853A',
-  '#5B8C3E', '#A04668', '#3E7FA8', '#8C6D3F', '#6B4C7A',
+/** Base cohort colors — one per cohort group. */
+export const COHORT_BASE_COLORS = [
+  '#1A4225',
+  '#27607C',
+  '#C22D4E',
+  '#7B5EA7',
+  '#C4853A',
+  '#3A7D6E',
+  '#5B8C3E',
+  '#A04668',
 ];
+
+/**
+ * Get the color for a selection, based on its cohort group index and
+ * subcohort position within that group. Subcohorts fade in alpha.
+ */
+export function getCohortColor(
+  groupIndex: number,
+  subIndex: number,
+  totalSubs: number,
+): string {
+  const base = COHORT_BASE_COLORS[groupIndex % COHORT_BASE_COLORS.length];
+  if (totalSubs <= 1) return base;
+  // Alpha from 1.0 (first sub) fading down, minimum 0.35
+  const alpha = 1.0 - (subIndex / totalSubs) * 0.65;
+  return hexToRgba(base, alpha);
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Keep COLORS for backward compat (BooleanChart bar fills still use it)
+export const COLORS = COHORT_BASE_COLORS;
 
 /** An active legend item: a selected cohort at a specific display index/color. */
 export interface LegendSelection {
@@ -9,6 +42,12 @@ export interface LegendSelection {
   cohortName: string;
   /** Index into COLORS */
   colorIndex: number;
+  /** Index of the parent cohort group (for grouped coloring) */
+  groupIndex: number;
+  /** Index of subcohort within its group */
+  subIndex: number;
+  /** Total number of subcohorts in the group */
+  totalSubs: number;
 }
 
 /** Parsed cohort group: a parent cohort with its subcohorts. */
@@ -86,8 +125,10 @@ export interface ClassifiedRows {
 
 export interface CohortClassified {
   name: string;
-  /** Index into COLORS */
+  /** Index into COLORS (legacy) */
   ci: number;
+  /** Resolved color string for this cohort */
+  color: string;
   classified: ClassifiedRows;
   data: Table1Data;
 }

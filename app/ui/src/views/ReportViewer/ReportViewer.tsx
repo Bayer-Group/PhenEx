@@ -17,6 +17,7 @@ import {
 import {
   classifyRows,
   parseCohortGroups,
+  getCohortColor,
   type CohortEntry,
   type CohortClassified,
   type CohortGroup,
@@ -55,7 +56,13 @@ export const ReportViewer: FC = () => {
       setGroups(parsed);
       // Default: select first parent cohort's "main"
       if (parsed.length && parsed[0].subcohorts.length) {
-        setSelections([{ cohortName: parsed[0].subcohorts[0].fullName, colorIndex: 0 }]);
+        setSelections([{
+          cohortName: parsed[0].subcohorts[0].fullName,
+          colorIndex: 0,
+          groupIndex: 0,
+          subIndex: 0,
+          totalSubs: parsed[0].subcohorts.length,
+        }]);
       } else {
         setSelections([]);
       }
@@ -93,14 +100,28 @@ export const ReportViewer: FC = () => {
     });
   }, [selectedRun, cohortEntries]);
 
+  // ── Helper: find group/sub indices for a cohort name ────────────────
+  const findGroupInfo = useCallback((fullName: string) => {
+    for (let gi = 0; gi < groups.length; gi++) {
+      const group = groups[gi];
+      for (let si = 0; si < group.subcohorts.length; si++) {
+        if (group.subcohorts[si].fullName === fullName) {
+          return { groupIndex: gi, subIndex: si, totalSubs: group.subcohorts.length };
+        }
+      }
+    }
+    return { groupIndex: 0, subIndex: 0, totalSubs: 1 };
+  }, [groups]);
+
   // ── Replace a legend item ─────────────────────────────────────────────
   const handleReplace = useCallback((index: number, fullName: string) => {
+    const info = findGroupInfo(fullName);
     setSelections((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], cohortName: fullName };
+      next[index] = { ...next[index], cohortName: fullName, ...info };
       return next;
     });
-  }, []);
+  }, [findGroupInfo]);
 
   // ── Add a new legend item ─────────────────────────────────────────────
   const nextColorIndex = useCallback(() => {
@@ -113,12 +134,13 @@ export const ReportViewer: FC = () => {
 
   const handleAdd = useCallback(
     (fullName: string) => {
+      const info = findGroupInfo(fullName);
       setSelections((prev) => [
         ...prev,
-        { cohortName: fullName, colorIndex: nextColorIndex() },
+        { cohortName: fullName, colorIndex: nextColorIndex(), ...info },
       ]);
     },
-    [nextColorIndex],
+    [nextColorIndex, findGroupInfo],
   );
 
   // ── Classify rows for selected cohorts ────────────────────────────────
@@ -131,6 +153,7 @@ export const ReportViewer: FC = () => {
           return {
             name: entry.cohortName,
             ci: sel.colorIndex,
+            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
             classified: classifyRows(entry.data.rows),
             data: entry.data,
           };

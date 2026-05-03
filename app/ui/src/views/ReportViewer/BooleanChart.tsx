@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react';
 import { AgGridReact } from '@ag-grid-community/react';
 import { themeQuartz } from 'ag-grid-community';
-import { COLORS, type CohortClassified } from './types';
+import { type CohortClassified } from './types';
 import { groupBySection } from './types';
 import styles from './BooleanChart.module.css';
 import sectionStyles from './ReportViewer.module.css';
@@ -39,7 +39,7 @@ const BarChartCellRenderer: FC<any> = (params) => {
         const row = cd.classified.booleans.find((r) => r.Name === name);
         const pct = row?.Pct ?? 0;
         const n = row?.N ?? 0;
-        const color = COLORS[cd.ci % COLORS.length];
+        const color = cd.color;
         return (
           <div key={ci} className={styles.barRow}>
             <div

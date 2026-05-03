@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useCallback } from 'react';
-import { COLORS, type CohortGroup, type LegendSelection } from './types';
+import { getCohortColor, type CohortGroup, type LegendSelection } from './types';
 import { CohortMenu } from './CohortMenu';
 import styles from './CohortSelector.module.css';
 
@@ -81,7 +81,7 @@ interface LegendItemProps {
 
 const LegendItem: FC<LegendItemProps> = ({ selection, onClick }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const color = COLORS[selection.colorIndex % COLORS.length];
+  const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
 
   // Parse labels
   const idx = selection.cohortName.indexOf('__');
@@ -92,9 +92,9 @@ const LegendItem: FC<LegendItemProps> = ({ selection, onClick }) => {
     <div
       ref={ref}
       className={styles.legendItem}
-      style={{ background: color }}
       onClick={() => ref.current && onClick(ref.current)}
     >
+      <div className={styles.legendDot} style={{ background: color }} />
       <span className={styles.legendItemTop}>{topLabel}</span>
       <span className={styles.legendItemDot}>·</span>
       <span className={styles.legendItemBottom}>{bottomLabel}</span>

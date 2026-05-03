@@ -2,44 +2,52 @@
 .legendBar {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 4px;
+  max-width: 340px;
 }
 
-/* ── LegendItem (pill) ───────────────────────────────────────────────── */
+/* ── LegendItem (dot + labels) ───────────────────────────────────────── */
 .legendItem {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0;
-  padding: 4px 14px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 6px;
   cursor: pointer;
   user-select: none;
-  transition: filter 0.15s;
+  transition: background 0.15s;
   white-space: nowrap;
 }
 
 .legendItem:hover {
-  filter: brightness(1.15);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.legendDot {
+  width: 10px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .legendItemTop {
   font-size: var(--font_size_infotext, 14px);
-  color: #fff;
+  color: #333;
   line-height: 1.3;
 }
 
 .legendItemDot {
-  margin: 0 6px;
-  color: rgba(255, 255, 255, 0.6);
+  margin: 0 2px;
+  color: #999;
   font-size: 10px;
 }
 
 .legendItemBottom {
   font-size: var(--font_size_items, 12px);
   font-weight: bold;
-  color: #fff;
+  color: #555;
   line-height: 1.3;
 }
 

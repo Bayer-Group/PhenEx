@@ -1,5 +1,5 @@
 import { FC, useRef, useEffect } from 'react';
-import { COLORS, type CohortClassified } from './types';
+import { type CohortClassified } from './types';
 import { groupBySection } from './types';
 import styles from './ReportViewer.module.css';
 
@@ -126,7 +126,7 @@ const CategoricalSingle: FC<CategoricalSingleProps> = ({ phenoName, categories, 
         const cats = cd.classified.categoricals[phenoName] || [];
         const item = cats.find((c) => c.category === cat);
         const pct = item?.Pct ?? 0;
-        const color = COLORS[cd.ci % COLORS.length];
+        const color = cd.color;
         const bw = 18;
         const bx = gx + ci * (bw + 2);
         const bh = Math.max(0, (pct / yMax) * plotH);

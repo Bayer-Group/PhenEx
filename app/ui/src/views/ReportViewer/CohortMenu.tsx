@@ -1,6 +1,6 @@
 import { FC, useEffect, useRef, useCallback } from 'react';
 import { Portal } from '@/components/Portal/Portal';
-import { COLORS, type CohortGroup, type LegendSelection } from './types';
+import { getCohortColor, type CohortGroup, type LegendSelection } from './types';
 import styles from './CohortSelector.module.css';
 
 interface CohortMenuProps {
@@ -48,7 +48,10 @@ export const CohortMenu: FC<CohortMenuProps> = ({
 
   const activeSet = new Set(activeSelections.map((s) => s.cohortName));
   const activeColorMap = new Map(
-    activeSelections.map((s) => [s.cohortName, COLORS[s.colorIndex % COLORS.length]]),
+    activeSelections.map((s) => [
+      s.cohortName,
+      getCohortColor(s.groupIndex, s.subIndex, s.totalSubs),
+    ]),
   );
 
   const handleClick = (fullName: string) => {
