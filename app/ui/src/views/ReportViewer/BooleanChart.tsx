@@ -1,24 +1,126 @@
-import { FC, useRef, useEffect } from 'react';
+import { FC, useMemo } from 'react';
+import { AgGridReact } from '@ag-grid-community/react';
+import { themeQuartz } from 'ag-grid-community';
 import { COLORS, type CohortClassified } from './types';
 import { groupBySection } from './types';
-import styles from './ReportViewer.module.css';
+import styles from './BooleanChart.module.css';
+import sectionStyles from './ReportViewer.module.css';
+
+/* ── Fake AI analysis data ───────────────────────────────────────────── */
+const FAKE_ANALYSES: Record<string, string> = {};
+const DEFAULT_ANALYSES = [
+  'This is to be expected because prior diagnosis of menopause was part of the cohort definition. An outlier is the age cohort 60-65.',
+  'Prevalence is consistent across subcohorts, suggesting this characteristic is independent of the stratification variable.',
+  'Higher than expected rate in the baseline cohort — may reflect referral bias in the source population.',
+  'The difference between cohorts is not clinically meaningful despite statistical significance (p<0.05).',
+  'Consider that this phenotype overlaps with the exclusion criteria, which may explain the low prevalence.',
+  'Distribution matches published literature for this population. No further investigation needed.',
+  'Notably absent in the youngest age stratum. This warrants manual chart review to rule out coding artifacts.',
+  'The 12% gap between cohort1 and cohort2 likely reflects differences in follow-up duration rather than true prevalence.',
+];
+
+function getAnalysis(name: string, index: number): string {
+  return FAKE_ANALYSES[name] || DEFAULT_ANALYSES[index % DEFAULT_ANALYSES.length];
+}
+
+/* ── Cell renderers ──────────────────────────────────────────────────── */
+
+const NameCellRenderer: FC<any> = (params) => {
+  return <div className={styles.nameCell}>{params.value}</div>;
+};
+
+const BarChartCellRenderer: FC<any> = (params) => {
+  const { cohortData } = params.data._meta;
+  const name = params.data.name;
+
+  return (
+    <div className={styles.barCell}>
+      {cohortData.map((cd: CohortClassified, ci: number) => {
+        const row = cd.classified.booleans.find((r) => r.Name === name);
+        const pct = row?.Pct ?? 0;
+        const n = row?.N ?? 0;
+        const color = COLORS[cd.ci % COLORS.length];
+        return (
+          <div key={ci} className={styles.barRow}>
+            <div
+              className={styles.barFill}
+              style={{ width: `${Math.max(0, pct)}%`, backgroundColor: color }}
+            />
+            <span className={styles.barValue}>
+              {Math.round(pct * 10) / 10}% (N={n})
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const AnalysisCellRenderer: FC<any> = (params) => {
+  return (
+    <div className={styles.analysisCell}>
+      <p className={styles.analysisText}>{params.value}</p>
+    </div>
+  );
+};
+
+/* ── AG Grid theme ───────────────────────────────────────────────────── */
+const gridTheme = themeQuartz.withParams({
+  accentColor: 'transparent',
+  borderColor: 'var(--line-color, #e0e0e0)',
+  browserColorScheme: 'light',
+  columnBorder: false,
+  headerFontSize: 10,
+  headerRowBorder: false,
+  cellHorizontalPadding: 0,
+  headerBackgroundColor: 'transparent',
+  rowBorder: true,
+  spacing: 0,
+  wrapperBorder: false,
+  backgroundColor: 'transparent',
+  wrapperBorderRadius: 0,
+  rowHoverColor: 'rgba(78, 121, 167, 0.04)',
+});
+
+/* ── Column definitions ──────────────────────────────────────────────── */
+const columnDefs: any[] = [
+  {
+    field: 'name',
+    headerName: '',
+    width: 300,
+    resizable: false,
+    sortable: false,
+    cellRenderer: NameCellRenderer,
+    suppressHeaderMenuButton: true,
+  },
+  {
+    field: 'chart',
+    headerName: '',
+    width: 300,
+    resizable: false,
+    sortable: false,
+    cellRenderer: BarChartCellRenderer,
+    suppressHeaderMenuButton: true,
+  },
+  {
+    field: 'analysis',
+    headerName: '',
+    flex: 1,
+    resizable: false,
+    sortable: false,
+    cellRenderer: AnalysisCellRenderer,
+    suppressHeaderMenuButton: true,
+  },
+];
+
+/* ── Components ──────────────────────────────────────────────────────── */
 
 interface BooleanChartProps {
   cohortData: CohortClassified[];
   sections: Record<string, string[]> | null;
 }
 
-const BAR_H = 16;
-const BAR_GAP = 2;
-const PHENO_GAP = 14;
-const PAD_L = 220;
-const PAD_R = 160;
-const PAD_T = 24;
-const PAD_B = 20;
-const BAR_W = 400;
-
 export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) => {
-  // Collect all boolean names across selected cohorts
   const allNames: string[] = [];
   const nameSet = new Set<string>();
   for (const cd of cohortData) {
@@ -38,7 +140,7 @@ export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) =>
     <div>
       {groups.map((g, gi) => (
         <div key={gi}>
-          {g.section && <h3 className={styles.sectionHeader}>{g.section}</h3>}
+          {g.section && <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>}
           <BooleanBarGroup names={g.items} cohortData={cohortData} />
         </div>
       ))}
@@ -52,96 +154,39 @@ interface BooleanBarGroupProps {
 }
 
 const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
   const nc = cohortData.length;
-  const phenoH = nc * BAR_H + (nc - 1) * BAR_GAP;
-  const W = PAD_L + BAR_W + PAD_R;
-  const H = PAD_T + names.length * (phenoH + PHENO_GAP) - PHENO_GAP + PAD_B;
+  const barRowH = 16 + 2; // BAR_H + BAR_GAP
+  const rowPadding = 12;
 
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    // Clear previous content
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const rowData = useMemo(
+    () =>
+      names.map((name, i) => ({
+        name,
+        chart: name,
+        analysis: getAnalysis(name, i),
+        _meta: { cohortData },
+      })),
+    [names, cohortData],
+  );
 
-    const NS = 'http://www.w3.org/2000/svg';
-    const mkEl = (tag: string, attrs: Record<string, string | number>) => {
-      const e = document.createElementNS(NS, tag);
-      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-      svg.appendChild(e);
-      return e;
-    };
-    const mkText = (text: string, attrs: Record<string, string | number>) => {
-      const e = mkEl('text', attrs);
-      e.textContent = text;
-      return e;
-    };
+  const getRowHeight = () => nc * barRowH + rowPadding;
+  const gridH = names.length * getRowHeight() + 4; // +4 for border
 
-    const lineColor = getComputedStyle(svg).getPropertyValue('--line-color').trim() || '#e0e0e0';
-    const phenoFontSize = getComputedStyle(svg).getPropertyValue('--font_size_phenotypename').trim() || '18px';
-
-    // Grid lines
-    for (const p of [0, 25, 50, 75, 100]) {
-      const x = PAD_L + (p / 100) * BAR_W;
-      mkEl('line', { x1: x, y1: PAD_T - 4, x2: x, y2: H - PAD_B, stroke: '#eee' });
-      mkText(`${p}%`, { x, y: PAD_T - 8, 'text-anchor': 'middle', 'font-size': 10, fill: '#aaa' });
-    }
-
-    names.forEach((name, ni) => {
-      const y0 = PAD_T + ni * (phenoH + PHENO_GAP);
-
-      // Separator line between rows
-      if (ni > 0) {
-        const sepY = y0 - PHENO_GAP / 2;
-        mkEl('line', {
-          x1: 0, y1: sepY, x2: W, y2: sepY,
-          stroke: lineColor, 'stroke-width': 1,
-        });
-      }
-
-      // Label with text wrap, top-right aligned, never clipped
-      const labelW = PAD_L - 16;
-      const fo = document.createElementNS(NS, 'foreignObject');
-      fo.setAttribute('x', '4');
-      fo.setAttribute('y', String(y0));
-      fo.setAttribute('width', String(labelW));
-      fo.setAttribute('height', String(phenoH + PHENO_GAP));
-      fo.setAttribute('overflow', 'visible');
-      const div = document.createElement('div');
-      div.textContent = name;
-      Object.assign(div.style, {
-        fontSize: phenoFontSize,
-        fontFamily: 'IBMPlexSans-regular',
-        color: '#333',
-        textAlign: 'right',
-        lineHeight: '1.2',
-        wordBreak: 'break-word',
-        paddingTop: '2px',
-        paddingRight: '4px',
-      });
-      fo.appendChild(div);
-      svg.appendChild(fo);
-
-      cohortData.forEach((cd, ci) => {
-        const row = cd.classified.booleans.find((r) => r.Name === name);
-        const pct = row?.Pct ?? 0;
-        const n = row?.N ?? 0;
-        const barY = y0 + ci * (BAR_H + BAR_GAP);
-        const color = COLORS[cd.ci % COLORS.length];
-
-        mkEl('rect', {
-          x: PAD_L, y: barY,
-          width: Math.max(0, (pct / 100) * BAR_W), height: BAR_H,
-          fill: color, rx: 2,
-        });
-        mkText(`${Math.round(pct * 10) / 10}% (N=${n})`, {
-          x: PAD_L + Math.max((pct / 100) * BAR_W, 0) + 6,
-          y: barY + BAR_H / 2 + 4,
-          'font-size': 10, fill: '#666',
-        });
-      });
-    });
-  }, [names, cohortData, nc, phenoH, H]);
-
-  return <svg ref={svgRef} width={W} height={H} style={{ display: 'block' }} />;
+  return (
+    <div className={styles.gridContainer} style={{ height: gridH }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={columnDefs}
+        theme={gridTheme}
+        headerHeight={0}
+        domLayout="normal"
+        suppressRowHoverHighlight={false}
+        getRowHeight={getRowHeight}
+        defaultColDef={{
+          filter: false,
+          suppressHeaderMenuButton: true,
+        }}
+      />
+    </div>
+  );
 };

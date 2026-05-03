@@ -1,9 +1,13 @@
-import { FC, useState, useEffect, useCallback, useMemo } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styles from './ReportViewer.module.css';
+import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
 import { NumericChart } from './NumericChart';
+import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
+import { PhenExNavBarMenu } from '../../components/PhenExNavBar/PhenExNavBarMenu';
+import { SwitchButton } from '../../components/ButtonsAndTabs/SwitchButton/SwitchButton';
 import {
   fetchRuns,
   fetchCohorts,
@@ -164,16 +168,20 @@ export const ReportViewer: FC = () => {
   }, [cohortEntries]);
 
   // ── Render ────────────────────────────────────────────────────────────
-  const tabBtnClass = (tab: TabKey) => {
-    const classes = [styles.tabBtn];
-    if (tab === activeTab) classes.push(styles.tabBtnActive);
-    if (!tabAvail[tab]) classes.push(styles.tabBtnDisabled);
-    return classes.join(' ');
+  const TAB_KEYS: TabKey[] = ['boolean', 'categorical', 'numeric'];
+  const TAB_LABELS = ['Boolean', 'Categorical', 'Numeric'];
+
+  const handleTabChange = (index: number) => {
+    const key = TAB_KEYS[index];
+    if (tabAvail[key]) setActiveTab(key);
   };
 
-  const handleTabClick = (tab: TabKey) => {
-    if (tabAvail[tab]) setActiveTab(tab);
-  };
+  // ── Visibility menu state ─────────────────────────────────────────────
+  const [showAnalysis, setShowAnalysis] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [isVisMenuOpen, setIsVisMenuOpen] = useState(false);
+  const eyeBtnRef = useRef<HTMLButtonElement>(null);
+  const visMenuRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   return (
     <div className={styles.page}>
@@ -200,25 +208,62 @@ export const ReportViewer: FC = () => {
         />
       </div>
 
-      <div className={styles.tabBar}>
-        <button
-          className={tabBtnClass('boolean')}
-          onClick={() => handleTabClick('boolean')}
+      <div className={styles.navBarContainer}>
+        <div className={navBarStyles.navBar} style={{ height: 44 }}>
+          <div className={navBarStyles.viewNavContent}>
+            <Tabs
+              tabs={TAB_LABELS}
+              active_tab_index={TAB_KEYS.indexOf(activeTab)}
+              onTabChange={handleTabChange}
+              classNameTabs={navBarStyles.classNameSectionTabs}
+              classNameTabsContainer={navBarStyles.classNameTabsContainer}
+              classNameActiveTab={navBarStyles.classNameActiveTab}
+              classNameHoverTab={navBarStyles.classNameHoverTab}
+            />
+            <button
+              ref={eyeBtnRef}
+              className={navBarStyles.eyeButton}
+              onMouseEnter={() => setIsVisMenuOpen(true)}
+              onMouseLeave={() => {
+                setTimeout(() => {
+                  if (!visMenuRef.current?.matches(':hover')) {
+                    setIsVisMenuOpen(false);
+                  }
+                }, 100);
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <PhenExNavBarMenu
+          isOpen={isVisMenuOpen}
+          onClose={() => setIsVisMenuOpen(false)}
+          anchorElement={eyeBtnRef.current}
+          menuRef={visMenuRef}
+          onMouseEnter={() => setIsVisMenuOpen(true)}
+          onMouseLeave={() => setIsVisMenuOpen(false)}
+          verticalPosition="above"
+          horizontalAlignment="center"
         >
-          Boolean
-        </button>
-        <button
-          className={tabBtnClass('categorical')}
-          onClick={() => handleTabClick('categorical')}
-        >
-          Categorical
-        </button>
-        <button
-          className={tabBtnClass('numeric')}
-          onClick={() => handleTabClick('numeric')}
-        >
-          Numeric
-        </button>
+          <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>Visibility Options</div>
+            <SwitchButton
+              label="Show Analysis"
+              value={showAnalysis}
+              onValueChange={setShowAnalysis}
+            />
+            <SwitchButton
+              label="Show Labels"
+              value={showLabels}
+              onValueChange={setShowLabels}
+            />
+          </div>
+        </PhenExNavBarMenu>
       </div>
 
       <div className={styles.content}>
