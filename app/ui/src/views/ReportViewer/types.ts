@@ -1,7 +1,55 @@
 export const COLORS = [
-  '#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f',
-  '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab',
+  '#2E5A88', '#B8533E', '#3A7D6E', '#7B5EA7', '#C4853A',
+  '#5B8C3E', '#A04668', '#3E7FA8', '#8C6D3F', '#6B4C7A',
 ];
+
+/** An active legend item: a selected cohort at a specific display index/color. */
+export interface LegendSelection {
+  /** Full cohort directory name (e.g. "cohort1_baseline__age_40_45") */
+  cohortName: string;
+  /** Index into COLORS */
+  colorIndex: number;
+}
+
+/** Parsed cohort group: a parent cohort with its subcohorts. */
+export interface CohortGroup {
+  /** Parent cohort name (no __) */
+  parent: string;
+  /** Subcohort entries: label + full directory name */
+  subcohorts: { label: string; fullName: string }[];
+}
+
+/** Parse a flat list of cohort directory names into grouped structure. */
+export function parseCohortGroups(names: string[]): CohortGroup[] {
+  const groupMap = new Map<string, { label: string; fullName: string }[]>();
+  const order: string[] = [];
+
+  for (const name of names) {
+    const idx = name.indexOf('__');
+    if (idx === -1) {
+      // Parent cohort
+      if (!groupMap.has(name)) {
+        groupMap.set(name, []);
+        order.push(name);
+      }
+      // Auto-add "main" as the first subcohort
+      groupMap.get(name)!.unshift({ label: 'main', fullName: name });
+    } else {
+      const parent = name.substring(0, idx);
+      const sub = name.substring(idx + 2);
+      if (!groupMap.has(parent)) {
+        groupMap.set(parent, [{ label: 'main', fullName: parent }]);
+        order.push(parent);
+      }
+      groupMap.get(parent)!.push({ label: sub, fullName: name });
+    }
+  }
+
+  return order.map((parent) => ({
+    parent,
+    subcohorts: groupMap.get(parent)!,
+  }));
+}
 
 export interface Table1Row {
   Name: string;

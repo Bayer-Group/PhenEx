@@ -8,11 +8,15 @@ import {
   fetchRuns,
   fetchCohorts,
   fetchAllCohortTable1,
+  fetchReportAnalysis,
 } from './ReportViewerDataService';
 import {
   classifyRows,
+  parseCohortGroups,
   type CohortEntry,
   type CohortClassified,
+  type CohortGroup,
+  type LegendSelection,
 } from './types';
 
 type TabKey = 'boolean' | 'categorical' | 'numeric';
@@ -21,8 +25,8 @@ export const ReportViewer: FC = () => {
   // ── Run & cohort selection state ──────────────────────────────────────
   const [runs, setRuns] = useState<string[]>([]);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
-  const [cohortNames, setCohortNames] = useState<string[]>([]);
-  const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(new Set());
+  const [groups, setGroups] = useState<CohortGroup[]>([]);
+  const [selections, setSelections] = useState<LegendSelection[]>([]);
 
   // ── Data state ────────────────────────────────────────────────────────
   const [cohortEntries, setCohortEntries] = useState<CohortEntry[]>([]);
@@ -35,7 +39,7 @@ export const ReportViewer: FC = () => {
   useEffect(() => {
     fetchRuns().then((r) => {
       setRuns(r);
-      if (r.length) setSelectedRun(r[r.length - 1]); // default to latest
+      if (r.length) setSelectedRun(r[r.length - 1]);
     });
   }, []);
 
@@ -43,44 +47,92 @@ export const ReportViewer: FC = () => {
   useEffect(() => {
     if (!selectedRun) return;
     fetchCohorts(selectedRun).then((names) => {
-      setCohortNames(names);
-      setSelectedCohorts(new Set(names.length ? [names[0]] : []));
+      const parsed = parseCohortGroups(names);
+      setGroups(parsed);
+      // Default: select first parent cohort's "main"
+      if (parsed.length && parsed[0].subcohorts.length) {
+        setSelections([{ cohortName: parsed[0].subcohorts[0].fullName, colorIndex: 0 }]);
+      } else {
+        setSelections([]);
+      }
     });
   }, [selectedRun]);
 
   // ── Load table1 data when selection changes ───────────────────────────
+  const selectedCohortNames = useMemo(
+    () => new Set(selections.map((s) => s.cohortName)),
+    [selections],
+  );
+
   useEffect(() => {
-    if (!selectedRun || !selectedCohorts.size) {
+    if (!selectedRun || !selections.length) {
       setCohortEntries([]);
       return;
     }
     setLoading(true);
-    fetchAllCohortTable1(selectedRun, Array.from(selectedCohorts)).then((entries) => {
-      setCohortEntries(entries);
-      setLoading(false);
-    });
-  }, [selectedRun, selectedCohorts]);
+    fetchAllCohortTable1(selectedRun, selections.map((s) => s.cohortName)).then(
+      (entries) => {
+        setCohortEntries(entries);
+        setLoading(false);
+      },
+    );
+  }, [selectedRun, selections]);
 
-  // ── Toggle cohort selection ───────────────────────────────────────────
-  const toggleCohort = useCallback((name: string) => {
-    setSelectedCohorts((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+  // ── AI analysis on data load ──────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedRun || !cohortEntries.length) return;
+    const names = cohortEntries.map((e) => e.cohortName);
+    fetchReportAnalysis(selectedRun, names).then((result) => {
+      console.log('AI Report Analysis:', result);
+    }).catch((err) => {
+      console.warn('AI analysis failed:', err);
+    });
+  }, [selectedRun, cohortEntries]);
+
+  // ── Replace a legend item ─────────────────────────────────────────────
+  const handleReplace = useCallback((index: number, fullName: string) => {
+    setSelections((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], cohortName: fullName };
       return next;
     });
   }, []);
 
+  // ── Add a new legend item ─────────────────────────────────────────────
+  const nextColorIndex = useCallback(() => {
+    const used = new Set(selections.map((s) => s.colorIndex));
+    for (let i = 0; i < 10; i++) {
+      if (!used.has(i)) return i;
+    }
+    return selections.length;
+  }, [selections]);
+
+  const handleAdd = useCallback(
+    (fullName: string) => {
+      setSelections((prev) => [
+        ...prev,
+        { cohortName: fullName, colorIndex: nextColorIndex() },
+      ]);
+    },
+    [nextColorIndex],
+  );
+
   // ── Classify rows for selected cohorts ────────────────────────────────
   const cohortData: CohortClassified[] = useMemo(
     () =>
-      cohortEntries.map((entry) => ({
-        name: entry.cohortName,
-        ci: cohortNames.indexOf(entry.cohortName),
-        classified: classifyRows(entry.data.rows),
-        data: entry.data,
-      })),
-    [cohortEntries, cohortNames],
+      selections
+        .map((sel) => {
+          const entry = cohortEntries.find((e) => e.cohortName === sel.cohortName);
+          if (!entry) return null;
+          return {
+            name: entry.cohortName,
+            ci: sel.colorIndex,
+            classified: classifyRows(entry.data.rows),
+            data: entry.data,
+          };
+        })
+        .filter((c): c is CohortClassified => c !== null),
+    [cohortEntries, selections],
   );
 
   // ── Determine which tabs have data ────────────────────────────────────
@@ -94,7 +146,6 @@ export const ReportViewer: FC = () => {
     return has;
   }, [cohortData]);
 
-  // Ensure active tab is valid
   useEffect(() => {
     if (!tabAvail[activeTab]) {
       const order: TabKey[] = ['boolean', 'categorical', 'numeric'];
@@ -126,9 +177,8 @@ export const ReportViewer: FC = () => {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
+      <div className={styles.legendContainer}>
         <h1 className={styles.title}>Baseline Characteristics</h1>
-
         <div className={styles.runSelector}>
           <label>Run:</label>
           <select
@@ -142,36 +192,39 @@ export const ReportViewer: FC = () => {
             ))}
           </select>
         </div>
-
         <CohortSelector
-          cohortNames={cohortNames}
-          selected={selectedCohorts}
-          onToggle={toggleCohort}
+          groups={groups}
+          selections={selections}
+          onReplace={handleReplace}
+          onAdd={handleAdd}
         />
+      </div>
 
-        <div className={styles.tabBar}>
-          <button
-            className={tabBtnClass('boolean')}
-            onClick={() => handleTabClick('boolean')}
-          >
-            Boolean
-          </button>
-          <button
-            className={tabBtnClass('categorical')}
-            onClick={() => handleTabClick('categorical')}
-          >
-            Categorical
-          </button>
-          <button
-            className={tabBtnClass('numeric')}
-            onClick={() => handleTabClick('numeric')}
-          >
-            Numeric
-          </button>
-        </div>
+      <div className={styles.tabBar}>
+        <button
+          className={tabBtnClass('boolean')}
+          onClick={() => handleTabClick('boolean')}
+        >
+          Boolean
+        </button>
+        <button
+          className={tabBtnClass('categorical')}
+          onClick={() => handleTabClick('categorical')}
+        >
+          Categorical
+        </button>
+        <button
+          className={tabBtnClass('numeric')}
+          onClick={() => handleTabClick('numeric')}
+        >
+          Numeric
+        </button>
       </div>
 
       <div className={styles.content}>
+              <div className={styles.bottomGradient} />
+              <div className={styles.topGradient} />
+
         {loading && <div className={styles.loading}>Loading…</div>}
 
         {!loading && !cohortData.length && (
@@ -191,7 +244,7 @@ export const ReportViewer: FC = () => {
                 cohortData={cohortData}
                 sections={sections}
                 runId={selectedRun}
-                selectedCohorts={selectedCohorts}
+                selectedCohorts={selectedCohortNames}
               />
             )}
           </>

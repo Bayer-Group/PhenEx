@@ -215,6 +215,11 @@ from .routes.report import router as report_router
 
 app.include_router(report_router)
 
+# Include the report analysis AI router
+from .routes.ai.report_analysis import router as report_analysis_router
+
+app.include_router(report_analysis_router)
+
 # Include the auth router
 from .routes.auth import router as auth_router
 

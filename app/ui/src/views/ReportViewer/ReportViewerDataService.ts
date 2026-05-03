@@ -68,3 +68,15 @@ export async function fetchAllCohortTable1(
   );
   return results.filter((r): r is CohortEntry => r !== null);
 }
+
+/** Request AI analysis comparing selected cohorts. */
+export async function fetchReportAnalysis(
+  runId: string,
+  cohortNames: string[],
+): Promise<{ analysis: Record<string, string>; cohorts_analyzed: string[] }> {
+  const { data } = await api.post<{
+    analysis: Record<string, string>;
+    cohorts_analyzed: string[];
+  }>(`${BASE}/analyze`, { run_id: runId, cohort_names: cohortNames });
+  return data;
+}
