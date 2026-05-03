@@ -93,14 +93,14 @@
 
 /* ── Chart sections ──────────────────────────────────────────────────── */
 .sectionHeader {
-  font-size: 14px;
+  font-size: var(--font_size_breadcrumb, 14px);
   font-weight: bold;
-  color: #4e79a7;
+  color: #333;
   margin: 24px 0 12px 0;
-  padding: 6px 12px;
-  background: #f0f4f8;
-  border-left: 3px solid #4e79a7;
-  border-radius: 0 4px 4px 0;
+  padding: 0;
+  background: none;
+  border-left: none;
+  border-radius: 0;
 }
 
 .sectionHeader:first-child {
@@ -186,7 +186,7 @@
   pointer-events: none;
 } */
 
-.topGradient {
+/* .topGradient {
   position: absolute;
   top: 0;
   left: 0;
@@ -194,4 +194,4 @@
   height: 100px;
   background: linear-gradient(to top, #ffffff00, var(--background-color));
   pointer-events: none;
-}
+} */

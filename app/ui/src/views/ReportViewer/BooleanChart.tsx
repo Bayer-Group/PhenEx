@@ -77,6 +77,9 @@ const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
       return e;
     };
 
+    const lineColor = getComputedStyle(svg).getPropertyValue('--line-color').trim() || '#e0e0e0';
+    const phenoFontSize = getComputedStyle(svg).getPropertyValue('--font_size_phenotypename').trim() || '18px';
+
     // Grid lines
     for (const p of [0, 25, 50, 75, 100]) {
       const x = PAD_L + (p / 100) * BAR_W;
@@ -86,10 +89,38 @@ const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
 
     names.forEach((name, ni) => {
       const y0 = PAD_T + ni * (phenoH + PHENO_GAP);
-      mkText(name, {
-        x: PAD_L - 8, y: y0 + phenoH / 2 + 4,
-        'text-anchor': 'end', 'font-size': 12, fill: '#333',
+
+      // Separator line between rows
+      if (ni > 0) {
+        const sepY = y0 - PHENO_GAP / 2;
+        mkEl('line', {
+          x1: 0, y1: sepY, x2: W, y2: sepY,
+          stroke: lineColor, 'stroke-width': 1,
+        });
+      }
+
+      // Label with text wrap, top-right aligned, never clipped
+      const labelW = PAD_L - 16;
+      const fo = document.createElementNS(NS, 'foreignObject');
+      fo.setAttribute('x', '4');
+      fo.setAttribute('y', String(y0));
+      fo.setAttribute('width', String(labelW));
+      fo.setAttribute('height', String(phenoH + PHENO_GAP));
+      fo.setAttribute('overflow', 'visible');
+      const div = document.createElement('div');
+      div.textContent = name;
+      Object.assign(div.style, {
+        fontSize: phenoFontSize,
+        fontFamily: 'IBMPlexSans-regular',
+        color: '#333',
+        textAlign: 'right',
+        lineHeight: '1.2',
+        wordBreak: 'break-word',
+        paddingTop: '2px',
+        paddingRight: '4px',
       });
+      fo.appendChild(div);
+      svg.appendChild(fo);
 
       cohortData.forEach((cd, ci) => {
         const row = cd.classified.booleans.find((r) => r.Name === name);
