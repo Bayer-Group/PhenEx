@@ -70,8 +70,8 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
 
     # Main cohort column widths: spacer, Type, Index, Name, src%, rem%, remN, Δ, entry%, entryN
     _MAIN_WIDTHS = [3, 14, 4, 28, 10, 10, 14, 14, 10, 14]
-    # Sub-cohort column widths: spacer, Index, src%, rem%, remN, Δ, entry%, entryN
-    _SUB_WIDTHS = [3, 4, 10, 10, 14, 14, 10, 14]
+    # Sub-cohort column widths: spacer, Index, Name, src%, rem%, remN, Δ, entry%, entryN
+    _SUB_WIDTHS = [3, 4, 28, 10, 10, 14, 14, 10, 14]
 
     _SEPARATOR_HEIGHT = 15
     _TITLE_ROW_HEIGHT = 28
@@ -126,7 +126,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                 sheet.column_dimensions[
                     get_column_letter(next_sub_col + i)
                 ].width = w
-            data_start_col = next_sub_col + 2
+            data_start_col = next_sub_col + 3  # skip spacer, index, name
             self._write_header_block(sheet, data_start_col)
             next_sub_col += len(self._SUB_WIDTHS)
 
@@ -381,9 +381,10 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         self._write_data_cells(sheet, row, data_col, dr, is_final, None, fc)
 
     def _write_sub_data_row(self, sheet, row, dr, is_final, col_start):
-        """Write one waterfall row for a sub-cohort (Index + data cols)."""
+        """Write one waterfall row for a sub-cohort (Index + Name + data cols)."""
         idx_col = col_start + 1
-        data_col = col_start + 2
+        name_col = col_start + 2
+        data_col = col_start + 3
         rtype = str(dr.get("Type", "")).lower()
         fc = self._TYPE_COLORS.get(rtype)
 
@@ -395,6 +396,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                 horizontal="center",
                 font_color=fc,
             )
+        self._write_cell(
+            sheet, row, name_col, dr.get("Name"),
+            bold=is_final,
+            size=self._FONT_SIZE_CONTENT,
+            horizontal="right",
+            font_color=fc,
+        )
         self._write_data_cells(sheet, row, data_col, dr, is_final, None, fc)
 
     def _write_data_cells(self, sheet, row, data_col, dr, is_final, fill_color, font_color=None):
