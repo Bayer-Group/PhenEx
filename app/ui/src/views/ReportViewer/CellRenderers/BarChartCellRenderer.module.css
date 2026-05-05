@@ -59,13 +59,14 @@
   height: 100%;
 }
 
-/* ── Pct column (right-aligned) ───────────────────────────────────────── */
+/* ── Pct column (left, right-aligned) ─────────────────────────────────── */
 .pctColumn {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: flex-start;
-  flex: 1;
+  width: 15%;
+  flex-shrink: 0;
   padding: 0 6px;
   padding-top: var(--HEIGHT_TABLE1_ROW_BOOLEAN_TOP);
 }

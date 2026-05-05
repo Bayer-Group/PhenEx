@@ -24,6 +24,20 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
 
   return (
     <div className={styles.container}>
+      <div className={styles.pctColumn}>
+        {cohortData.map((cd, i) => {
+          const row = cd.classified.booleans.find((r) => r.Name === name);
+          const pct = row?.Pct ?? 0;
+          const dimmed = hoveredIndex !== null && hoveredIndex !== i;
+          return (
+            <div key={i} className={styles.pctRow} style={{ opacity: dimmed ? 0.25 : 1 }}>
+              <strong>{Math.round(pct * 10) / 10}</strong>
+              {/* <span className={styles.barPercent}>%</span> */}
+            </div>
+          );
+        })}
+      </div>
+
       <div className={styles.barArea}>
         <div className={styles.gridLines}>
           {allTicks.map((t) => (
@@ -48,20 +62,6 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
                 className={styles.barFill}
                 style={{ width: `${Math.max(0, pct)}%`, backgroundColor: cd.color }}
               />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className={styles.pctColumn}>
-        {cohortData.map((cd, i) => {
-          const row = cd.classified.booleans.find((r) => r.Name === name);
-          const pct = row?.Pct ?? 0;
-          const dimmed = hoveredIndex !== null && hoveredIndex !== i;
-          return (
-            <div key={i} className={styles.pctRow} style={{ opacity: dimmed ? 0.25 : 1 }}>
-              <strong>{Math.round(pct * 10) / 10}</strong>
-              <span className={styles.barPercent}>%</span>
             </div>
           );
         })}
