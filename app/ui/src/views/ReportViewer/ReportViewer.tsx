@@ -35,7 +35,8 @@ export const ReportViewer: FC = () => {
 
   // ── Data state ────────────────────────────────────────────────────────
   const [cohortEntries, setCohortEntries] = useState<CohortEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingCohorts, setLoadingCohorts] = useState<Set<string>>(new Set());
+  const loading = loadingCohorts.size > 0;
 
   // ── Tab state ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabKey>('boolean');
@@ -80,13 +81,39 @@ export const ReportViewer: FC = () => {
       setCohortEntries([]);
       return;
     }
-    setLoading(true);
-    fetchAllCohortTable1(selectedRun, selections.map((s) => s.cohortName)).then(
-      (entries) => {
-        setCohortEntries(entries);
-        setLoading(false);
-      },
-    );
+
+    const wanted = new Set(selections.map((s) => s.cohortName));
+    // Remove entries that are no longer selected
+    setCohortEntries((prev) => prev.filter((e) => wanted.has(e.cohortName)));
+
+    // Determine which cohorts still need fetching
+    const alreadyLoaded = new Set(cohortEntries.map((e) => e.cohortName));
+    const toFetch = selections
+      .map((s) => s.cohortName)
+      .filter((name) => !alreadyLoaded.has(name));
+
+    if (!toFetch.length) return;
+
+    setLoadingCohorts((prev) => new Set([...prev, ...toFetch]));
+
+    fetchAllCohortTable1(selectedRun, toFetch).then((newEntries) => {
+      setCohortEntries((prev) => {
+        const existing = new Map(prev.map((e) => [e.cohortName, e]));
+        for (const entry of newEntries) {
+          existing.set(entry.cohortName, entry);
+        }
+        // Preserve selection order
+        return selections
+          .map((s) => existing.get(s.cohortName))
+          .filter((e): e is CohortEntry => e != null);
+      });
+      setLoadingCohorts((prev) => {
+        const next = new Set(prev);
+        for (const name of toFetch) next.delete(name);
+        return next;
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRun, selections]);
 
   // ── AI analysis on data load ──────────────────────────────────────────
@@ -228,6 +255,7 @@ export const ReportViewer: FC = () => {
           selections={selections}
           onReplace={handleReplace}
           onAdd={handleAdd}
+          loadingCohorts={loadingCohorts}
         />
       </div>
 
@@ -293,13 +321,11 @@ export const ReportViewer: FC = () => {
               <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
 
-        {loading && <div className={styles.loading}>Loading…</div>}
-
-        {!loading && !cohortData.length && (
+        {!cohortData.length && !loading && (
           <div className={styles.empty}>Select one or more cohorts to view data.</div>
         )}
 
-        {!loading && cohortData.length > 0 && (
+        {cohortData.length > 0 && (
           <>
             {activeTab === 'boolean' && (
               <BooleanChart cohortData={cohortData} sections={sections} />

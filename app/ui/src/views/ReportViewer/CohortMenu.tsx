@@ -12,6 +12,10 @@ interface CohortMenuProps {
   /** Called when user picks a cohort */
   onSelect: (fullName: string) => void;
   onClose: () => void;
+  /** If false the menu stays open after a selection (used for multi-add). */
+  closeOnSelect?: boolean;
+  /** Cohort names currently being fetched */
+  loadingCohorts?: Set<string>;
 }
 
 export const CohortMenu: FC<CohortMenuProps> = ({
@@ -20,6 +24,8 @@ export const CohortMenu: FC<CohortMenuProps> = ({
   activeSelections,
   onSelect,
   onClose,
+  closeOnSelect = true,
+  loadingCohorts = new Set(),
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -34,16 +40,16 @@ export const CohortMenu: FC<CohortMenuProps> = ({
     return () => document.removeEventListener('mousedown', handle);
   }, [onClose]);
 
-  // Compute position: below anchor, prevent right-edge overflow
+  // Compute position: above anchor, anchored to bottom-right of viewport
   const computeStyle = useCallback((): React.CSSProperties => {
-    let left = anchorRect.left;
-    const top = anchorRect.bottom + 4;
-    const menuWidth = menuRef.current?.offsetWidth ?? 400;
-    if (left + menuWidth > window.innerWidth - 8) {
-      left = window.innerWidth - menuWidth - 8;
-    }
-    if (left < 8) left = 8;
-    return { position: 'fixed', top, left };
+    const bottom = window.innerHeight - anchorRect.top + 4;
+    const right = window.innerWidth - anchorRect.right;
+    return {
+      position: 'fixed',
+      bottom: Math.max(bottom, 8),
+      right: Math.max(right, 8),
+      maxHeight: window.innerHeight - 16,
+    };
   }, [anchorRect]);
 
   const activeSet = new Set(activeSelections.map((s) => s.cohortName));
@@ -57,6 +63,7 @@ export const CohortMenu: FC<CohortMenuProps> = ({
   const handleClick = (fullName: string) => {
     if (activeSet.has(fullName)) return;
     onSelect(fullName);
+    if (closeOnSelect) onClose();
   };
 
   return (
@@ -72,6 +79,7 @@ export const CohortMenu: FC<CohortMenuProps> = ({
               <div className={styles.menuGroupTitle}>{group.parent}</div>
               {group.subcohorts.map((sub) => {
                 const isActive = activeSet.has(sub.fullName);
+                const isLoading = loadingCohorts.has(sub.fullName);
                 const dotColor = activeColorMap.get(sub.fullName);
                 return (
                   <div
@@ -79,12 +87,14 @@ export const CohortMenu: FC<CohortMenuProps> = ({
                     className={`${styles.menuItem} ${isActive ? styles.menuItemDisabled : ''}`}
                     onClick={() => handleClick(sub.fullName)}
                   >
-                    {isActive && dotColor && (
+                    {isLoading ? (
+                      <span className={styles.menuItemSpinner} />
+                    ) : isActive && dotColor ? (
                       <span
                         className={styles.menuItemDot}
                         style={{ background: dotColor }}
                       />
-                    )}
+                    ) : null}
                     <span className={styles.menuItemLabel}>{sub.label}</span>
                   </div>
                 );

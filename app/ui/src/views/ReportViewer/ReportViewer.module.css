@@ -6,11 +6,11 @@
   background: #fff;
 }
 
-/* ── Header card (top-right) ──────────────────────────────────────────── */
+/* ── Header card (bottom-right) ───────────────────────────────────────── */
 .legendContainer {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  bottom: 80px;
+  right: 100px;
   z-index: 10;
   max-width: 380px;
   padding: 16px 20px;

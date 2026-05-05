@@ -73,7 +73,7 @@
 /* ── Dropdown menu (portal) ──────────────────────────────────────────── */
 .menu {
   min-width: 280px;
-  max-width: 600px;
+  max-width: 70vw;
   padding: 10px;
   background: #fff;
   border: 1px solid var(--line-color, #ddd);
@@ -140,6 +140,21 @@
   border-radius: 50%;
   flex-shrink: 0;
   margin-left: -16px;
+}
+
+.menuItemSpinner {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid #ccc;
+  border-top-color: #555;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: -16px;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .menuItemLabel {
