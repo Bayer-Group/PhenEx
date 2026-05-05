@@ -340,7 +340,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     self._NAME_COL,
                     value,
                     bold=True,
-                    size=14,
+                    size=10,
                     horizontal="left",
                     indent=2,
                     fill_color=self._SECTION_HEADER_COLOR,
@@ -378,7 +378,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                         self._NAME_COL,
                         display,
                         bold=is_cohort,
-                        size=14,
+                        size=10,
                         horizontal="right",
                         indent=1,
                         fill_color=fill,
@@ -410,8 +410,8 @@ class Table1SheetWriter(_BaseSheetWriter):
         """Write a binned phenotype name with the part after '=' in bold."""
         prefix, suffix = value.split("=", 1)
         rich = CellRichText(
-            TextBlock(InlineFont(rFont=self._FONT, sz=14), prefix + "="),
-            TextBlock(InlineFont(rFont=self._FONT, sz=14, b=True), suffix),
+            TextBlock(InlineFont(rFont=self._FONT, sz=10), prefix + "="),
+            TextBlock(InlineFont(rFont=self._FONT, sz=10, b=True), suffix),
         )
         cell = sheet.cell(row=row, column=col, value=rich)
         cell.alignment = Alignment(horizontal="right", indent=1)
@@ -448,7 +448,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                 start_col + offset,
                 display_name,
                 bold=is_pct,
-                size=14,
+                size=10,
                 horizontal=horizontal,
                 font_color=fc,
             )
@@ -517,7 +517,7 @@ class Table1SheetWriter(_BaseSheetWriter):
                     start_col + offset,
                     raw_value,
                     bold=is_pct_col,
-                    size=14,
+                    size=10,
                     horizontal=horizontal,
                     fill_color=row_fill,
                     number_format=fmt,
