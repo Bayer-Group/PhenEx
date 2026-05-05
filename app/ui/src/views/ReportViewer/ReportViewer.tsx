@@ -1,4 +1,5 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
 import { CohortSelector } from './CohortSelector';
@@ -14,6 +15,7 @@ import {
   fetchCombinedTable1,
   fetchReportAnalysis,
 } from './ReportViewerDataService';
+import { getCached, setCache, clearCache } from './reportCache';
 import {
   classifyRows,
   parseCohortGroups,
@@ -27,8 +29,9 @@ import {
 type TabKey = 'boolean' | 'categorical' | 'numeric';
 
 export const ReportViewer: FC = () => {
+  const { timestamp } = useParams<{ studyName?: string; timestamp?: string }>();
+
   // ── Run & cohort selection state ──────────────────────────────────────
-  const [runs, setRuns] = useState<string[]>([]);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
   const [groups, setGroups] = useState<CohortGroup[]>([]);
   const [selections, setSelections] = useState<LegendSelection[]>([]);
@@ -40,28 +43,36 @@ export const ReportViewer: FC = () => {
   // ── Tab state ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabKey>('boolean');
 
-  // ── Load runs on mount ────────────────────────────────────────────────
+  // ── Resolve run from URL param or fall back to latest ─────────────────
   useEffect(() => {
-    fetchRuns().then((r) => {
-      setRuns(r);
-      if (r.length) setSelectedRun(r[r.length - 1]);
-    });
-  }, []);
+    if (timestamp) {
+      setSelectedRun(timestamp);
+    } else {
+      fetchRuns().then((r) => {
+        if (r.length) setSelectedRun(r[r.length - 1]);
+      });
+    }
+  }, [timestamp]);
 
   // ── Load cohorts + combined data when run changes ──────────────────────
-  useEffect(() => {
-    if (!selectedRun) return;
+  const loadRun = useCallback((runId: string, bypassCache = false) => {
     setLoadingRun(true);
 
-    Promise.all([
-      fetchCohorts(selectedRun),
-      fetchCombinedTable1(selectedRun),
-    ]).then(([names, entries]) => {
+    const cached = bypassCache ? null : getCached(runId);
+    console.debug(`[ReportViewer] loadRun ${runId} — cache ${cached ? 'HIT' : 'MISS'}`);
+
+    const entriesPromise = cached
+      ? Promise.resolve(cached)
+      : fetchCombinedTable1(runId).then((entries) => {
+          setCache(runId, entries);
+          return entries;
+        });
+
+    Promise.all([fetchCohorts(runId), entriesPromise]).then(([names, entries]) => {
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
       setAllCohortEntries(entries);
 
-      // Default: select first parent cohort's "main"
       if (parsed.length && parsed[0].subcohorts.length) {
         setSelections([{
           cohortName: parsed[0].subcohorts[0].fullName,
@@ -75,6 +86,22 @@ export const ReportViewer: FC = () => {
       }
       setLoadingRun(false);
     });
+  }, []);
+
+  useEffect(() => {
+    if (selectedRun) loadRun(selectedRun);
+  }, [selectedRun, loadRun]);
+
+  /** Re-fetch from the server, ignoring the cache. */
+  const refreshData = useCallback(() => {
+    if (!selectedRun) return;
+    clearCache(selectedRun);
+    loadRun(selectedRun, true);
+  }, [selectedRun, loadRun]);
+
+  /** Delete cached data for the current run. */
+  const deleteCache = useCallback(() => {
+    if (selectedRun) clearCache(selectedRun);
   }, [selectedRun]);
 
   // ── Derive visible cohort entries from selections (instant, no fetch) ─
@@ -209,19 +236,6 @@ export const ReportViewer: FC = () => {
     <div className={styles.page}>
       <div className={styles.legendContainer}>
         <h1 className={styles.title}>Baseline Characteristics</h1>
-        <div className={styles.runSelector}>
-          <label>Run:</label>
-          <select
-            value={selectedRun ?? ''}
-            onChange={(e) => setSelectedRun(e.target.value)}
-          >
-            {runs.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
         <CohortSelector
           groups={groups}
           selections={selections}

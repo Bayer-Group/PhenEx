@@ -10,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainView />} />
         <Route path="/report" element={<ReportViewer />} />
+        <Route path="/report/:studyName/:timestamp" element={<ReportViewer />} />
         <Route path="/studies" element={<MainView />} />
         <Route path="/studies/:studyId" element={<MainView />} />
         <Route path="/studies/:studyId/cohorts/:cohortId" element={<MainView />} />

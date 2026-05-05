@@ -78,7 +78,7 @@
 
 /* ── Chart sections ──────────────────────────────────────────────────── */
 .sectionHeader {
-  font-size: var(--font_size_pagetitle, 14px);
+  font-size: var(--font_size_breadcrumb, 14px);
   font-weight: bold;
   color: #333;
   margin: 24px 0 12px 0;
