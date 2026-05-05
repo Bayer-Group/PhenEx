@@ -3,6 +3,9 @@ import { AgGridReact } from '@ag-grid-community/react';
 import { themeQuartz } from 'ag-grid-community';
 import { type CohortClassified } from './types';
 import { groupBySection } from './types';
+import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
+import { NameCellRenderer } from './CellRenderers/NameCellRenderer';
+import { AnalysisCellRenderer } from './CellRenderers/AnalysisCellRenderer';
 import styles from './BooleanChart.module.css';
 import sectionStyles from './ReportViewer.module.css';
 
@@ -24,45 +27,6 @@ function getAnalysis(name: string, index: number): string {
 }
 
 /* ── Cell renderers ──────────────────────────────────────────────────── */
-
-const NameCellRenderer: FC<any> = (params) => {
-  return <div className={styles.nameCell}>{params.value}</div>;
-};
-
-const BarChartCellRenderer: FC<any> = (params) => {
-  const { cohortData } = params.data._meta;
-  const name = params.data.name;
-
-  return (
-    <div className={styles.barCell}>
-      {cohortData.map((cd: CohortClassified, ci: number) => {
-        const row = cd.classified.booleans.find((r) => r.Name === name);
-        const pct = row?.Pct ?? 0;
-        const n = row?.N ?? 0;
-        const color = cd.color;
-        return (
-          <div key={ci} className={styles.barRow}>
-            <div
-              className={styles.barFill}
-              style={{ width: `${Math.max(0, pct)}%`, backgroundColor: color }}
-            />
-            <span className={styles.barValue}>
-              {Math.round(pct * 10) / 10}% (N={n})
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const AnalysisCellRenderer: FC<any> = (params) => {
-  return (
-    <div className={styles.analysisCell}>
-      <p className={styles.analysisText}>{params.value}</p>
-    </div>
-  );
-};
 
 /* ── AG Grid theme ───────────────────────────────────────────────────── */
 const gridTheme = themeQuartz.withParams({
@@ -155,7 +119,7 @@ interface BooleanBarGroupProps {
 
 const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
   const nc = cohortData.length;
-  const barRowH = 16 + 2; // BAR_H + BAR_GAP
+  const barRowH = 16 + 2 + 5; // BAR_H + determines  ##HEIGHT_TABLE1_ROW_BOOLEAN_TOTAL
   const rowPadding = 12;
 
   const rowData = useMemo(

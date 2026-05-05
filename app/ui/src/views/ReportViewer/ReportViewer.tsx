@@ -396,7 +396,10 @@ export const ReportViewer: FC = () => {
                 selectedCohorts={selectedCohortNames}
               />
             )}
+
+            <div className={styles.bottomSpacer} />
           </>
+
         )}
       </div>
     </div>
