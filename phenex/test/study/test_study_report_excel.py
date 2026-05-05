@@ -45,21 +45,36 @@ COHORT_NAMES = [
 
 _N_DB = 6_200_000
 
-# Each cohort/subcohort gets a slightly different entry / final size
+# Parent cohort parameters (entry/final for waterfall + table1)
 _COHORT_PARAMS = {
     "cohort_a": dict(n_entry=2_300_000, n_final=840_000, entry_pct=37.1),
-    "cohort_a__female": dict(n_entry=1_150_000, n_final=430_000, entry_pct=18.7),
-    "cohort_a__male": dict(n_entry=1_150_000, n_final=410_000, entry_pct=18.4),
     "cohort_b": dict(n_entry=2_150_000, n_final=790_000, entry_pct=34.7),
-    "cohort_b__female": dict(n_entry=1_080_000, n_final=400_000, entry_pct=17.4),
-    "cohort_b__male": dict(n_entry=1_070_000, n_final=390_000, entry_pct=17.3),
     "cohort_c": dict(n_entry=2_420_000, n_final=910_000, entry_pct=39.0),
     "cohort_d": dict(n_entry=1_980_000, n_final=720_000, entry_pct=31.9),
-    "cohort_d__age_lt_50": dict(n_entry=980_000, n_final=350_000, entry_pct=15.8),
-    "cohort_d__age_gte_50": dict(n_entry=1_000_000, n_final=370_000, entry_pct=16.1),
-    "cohort_d__diabetic": dict(n_entry=240_000, n_final=86_000, entry_pct=3.8),
     "cohort_e": dict(n_entry=2_560_000, n_final=960_000, entry_pct=41.3),
 }
+
+# Subcohort definitions: each copies the parent waterfall and adds one filter row.
+# n_final is used for the subcohort's own final count (and table1 generation).
+_SUBCOHORT_DEFS = {
+    "cohort_a__female": dict(parent="cohort_a", filter_name="Female only", n_final=430_000),
+    "cohort_a__male": dict(parent="cohort_a", filter_name="Male only", n_final=410_000),
+    "cohort_b__female": dict(parent="cohort_b", filter_name="Female only", n_final=400_000),
+    "cohort_b__male": dict(parent="cohort_b", filter_name="Male only", n_final=390_000),
+    "cohort_d__age_lt_50": dict(parent="cohort_d", filter_name="Age < 50", n_final=350_000),
+    "cohort_d__age_gte_50": dict(parent="cohort_d", filter_name="Age >= 50", n_final=370_000),
+    "cohort_d__diabetic": dict(parent="cohort_d", filter_name="Diabetic", n_final=86_000),
+}
+
+# Merged params for table1 generation (subcohorts need n_entry + n_final)
+_ALL_PARAMS = {**_COHORT_PARAMS}
+for _name, _sdef in _SUBCOHORT_DEFS.items():
+    _parent_p = _COHORT_PARAMS[_sdef["parent"]]
+    _ALL_PARAMS[_name] = dict(
+        n_entry=_parent_p["n_entry"],
+        n_final=_sdef["n_final"],
+        entry_pct=round(_sdef["n_final"] / _N_DB * 100, 1),
+    )
 
 
 def _waterfall(p: dict) -> dict:
@@ -140,6 +155,64 @@ def _waterfall(p: dict) -> dict:
             },
         ],
     }
+
+
+def _subcohort_waterfall(parent_wf: dict, sub_def: dict) -> dict:
+    """Create a subcohort waterfall by copying parent rows and adding one filter criterion.
+
+    The subcohort shares all parent entry/inclusion/exclusion rows identically,
+    then appends its own inclusion row (the subcohort filter) with a smaller remaining
+    count, followed by the final info row.
+    """
+    parent_rows = parent_wf["rows"]
+    # Copy all rows except the final info row
+    rows = [dict(r) for r in parent_rows[:-1]]
+
+    # Determine n_entry from the entry row
+    n_entry = next(r["Remaining"] for r in rows if r.get("Type") == "entry")
+
+    # Last body row gives N before the subcohort filter
+    n_before = rows[-1]["Remaining"]
+    n_final = sub_def["n_final"]
+
+    # Next integer index (skip component sub-indices like "1.1")
+    max_idx = 0
+    for r in rows:
+        idx_str = str(r.get("Index", ""))
+        if idx_str and "." not in idx_str:
+            try:
+                max_idx = max(max_idx, int(idx_str))
+            except ValueError:
+                pass
+    next_idx = str(max_idx + 1)
+
+    # Subcohort filter inclusion row
+    rows.append({
+        "Type": "inclusion",
+        "Index": next_idx,
+        "Name": sub_def["filter_name"],
+        "N": n_final,
+        "Pct_N": round(n_final / n_entry * 100, 1),
+        "Remaining": n_final,
+        "Pct_Remaining": round(n_final / n_entry * 100, 1),
+        "Delta": n_final - n_before,
+        "Pct_Source_Database": None,
+    })
+
+    # Final info row
+    rows.append({
+        "Type": "info",
+        "Index": "",
+        "Name": "Final Cohort Size",
+        "N": None,
+        "Pct_N": None,
+        "Remaining": n_final,
+        "Pct_Remaining": round(n_final / n_entry * 100, 1),
+        "Delta": None,
+        "Pct_Source_Database": round(n_final / _N_DB * 100, 1),
+    })
+
+    return {"reporter_type": "Waterfall", "rows": rows}
 
 
 def _waterfall_detailed(p: dict) -> dict:
@@ -377,6 +450,7 @@ def _write_json(path: Path, data: dict) -> None:
 def _write_info(study_dir: Path) -> None:
     info = study_dir / "info.txt"
     info.write_text(
+        "Study Name: test_study\n"
         "Software Environment Information\n"
         "==================================================\n\n"
         "Study Execution Date: 2026-04-01 12:00:00\n\n"
@@ -396,18 +470,40 @@ def build_dummy_study() -> Path:
     study_dir.mkdir(parents=True, exist_ok=True)
     _write_info(study_dir)
 
+    # Cache parent waterfalls so subcohorts can copy them
+    parent_waterfalls: dict = {}
+    parent_waterfalls_detailed: dict = {}
+
     for name in COHORT_NAMES:
-        params = _COHORT_PARAMS[name]
         cohort_dir = study_dir / name
         cohort_dir.mkdir(exist_ok=True)
-        _write_json(cohort_dir / "waterfall.json", _waterfall(params))
-        _write_json(cohort_dir / "waterfall_detailed.json", _waterfall_detailed(params))
-        _write_json(cohort_dir / "table1.json", _table1(params))
-        _write_json(cohort_dir / "table1_detailed.json", _table1_detailed(params))
-        _write_json(cohort_dir / "table1_outcomes.json", _table1_outcomes(params))
+
+        sub_def = _SUBCOHORT_DEFS.get(name)
+        if sub_def is not None:
+            # Subcohort: copy parent waterfall and add filter row
+            parent_wf = parent_waterfalls[sub_def["parent"]]
+            wf = _subcohort_waterfall(parent_wf, sub_def)
+            parent_wf_det = parent_waterfalls_detailed[sub_def["parent"]]
+            wf_det = _subcohort_waterfall(parent_wf_det, sub_def)
+        else:
+            # Parent cohort: generate fresh waterfall
+            params = _COHORT_PARAMS[name]
+            wf = _waterfall(params)
+            wf_det = _waterfall_detailed(params)
+            parent_waterfalls[name] = wf
+            parent_waterfalls_detailed[name] = wf_det
+
+        _write_json(cohort_dir / "waterfall.json", wf)
+        _write_json(cohort_dir / "waterfall_detailed.json", wf_det)
+
+        # Table1 reports use the merged params
+        t1_params = _ALL_PARAMS[name]
+        _write_json(cohort_dir / "table1.json", _table1(t1_params))
+        _write_json(cohort_dir / "table1_detailed.json", _table1_detailed(t1_params))
+        _write_json(cohort_dir / "table1_outcomes.json", _table1_outcomes(t1_params))
         _write_json(
             cohort_dir / "table1_outcomes_detailed.json",
-            _table1_outcomes_detailed(params),
+            _table1_outcomes_detailed(t1_params),
         )
 
     return study_dir

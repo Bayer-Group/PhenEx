@@ -21,7 +21,7 @@ class _BaseSheetWriter:
     _SPACING_SIZE = 3
     _ROW_BACKGROUND_1 = "ededed"
     _SECTION_HEADER_COLOR = "FFFFFF"
-    _GRAY_TEXT = "808080"
+    _GRAY_TEXT = "D9D9D9"
     _FONT = "Arial"
     _BOOLEAN_COLUMNS = {"N", "Pct"}
     _COLUMN_DISPLAY_NAMES = {"Pct": "%"}
@@ -56,7 +56,7 @@ class _BaseSheetWriter:
         value,
         bold: bool = False,
         italic: bool = False,
-        size: int = 14,
+        size: int = 10,
         horizontal: str = "left",
         vertical: str = "center",
         indent: int = 0,

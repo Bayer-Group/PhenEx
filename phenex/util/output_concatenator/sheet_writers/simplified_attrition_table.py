@@ -82,6 +82,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         "inclusion": "1A4225",
         "exclusion": "C22D4E",
     }
+    _TEXT_COLOR_SUBCOHORT = "B0B0B0"
 
     # Header definitions: (label_row1, merge_count, sub_labels)
     # sub_labels: (text, horizontal_alignment)
@@ -241,10 +242,14 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             )
 
             # Write sub-cohort rows (final row pinned to bottom)
+            # Rows at positions 0..main_body_count-1 are shared with the parent
+            # and should be rendered in light gray.
+            main_body_count = len(main_rows) - 1  # exclude final info row
             for sub in sub_entries:
                 self._write_cohort_in_box(
                     sheet, data_start_row, last_data_row,
                     sub["rows"], group_color, is_main=False, col_start=sub["col_start"],
+                    shared_row_count=main_body_count,
                 )
 
             # --- Borders around each card ---
@@ -267,6 +272,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     def _write_cohort_in_box(
         self, sheet, data_start_row, last_data_row,
         rows, group_color, is_main, col_start,
+        shared_row_count=0,
     ):
         """Write cohort rows with final row pinned to bottom of the box."""
         num_rows = len(rows)
@@ -287,7 +293,8 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             if is_main:
                 self._write_main_data_row(sheet, row, dr, type_label, False, group_color)
             else:
-                self._write_sub_data_row(sheet, row, dr, False, col_start)
+                is_shared = ri < shared_row_count
+                self._write_sub_data_row(sheet, row, dr, False, col_start, is_shared=is_shared)
 
         # Write final row at the bottom of the box
         if final_row_data is not None:
@@ -380,13 +387,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         # Data columns
         self._write_data_cells(sheet, row, data_col, dr, is_final, None, fc)
 
-    def _write_sub_data_row(self, sheet, row, dr, is_final, col_start):
+    def _write_sub_data_row(self, sheet, row, dr, is_final, col_start, is_shared=False):
         """Write one waterfall row for a sub-cohort (Index + Name + data cols)."""
         idx_col = col_start + 1
         name_col = col_start + 2
         data_col = col_start + 3
         rtype = str(dr.get("Type", "")).lower()
-        fc = self._TYPE_COLORS.get(rtype)
+        fc = self._TEXT_COLOR_SUBCOHORT if is_shared else self._TYPE_COLORS.get(rtype)
 
         idx_val = dr.get("Index")
         if idx_val and not is_final:
