@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
 import { CohortSelector } from './CohortSelector';
@@ -15,7 +15,7 @@ import {
   fetchCombinedTable1,
   fetchReportAnalysis,
 } from './ReportViewerDataService';
-import { getCached, setCache, clearCache } from './reportCache';
+import { getCached, setCache, clearCache, saveSelections, loadSelections } from './reportCache';
 import {
   classifyRows,
   parseCohortGroups,
@@ -30,6 +30,13 @@ type TabKey = 'boolean' | 'categorical' | 'numeric';
 
 export const ReportViewer: FC = () => {
   const { timestamp } = useParams<{ studyName?: string; timestamp?: string }>();
+  const [searchParams] = useSearchParams();
+  const urlCohorts = useMemo(
+    () => searchParams.get('cohorts')?.split(',').filter(Boolean) ?? [],
+    [searchParams],
+  );
+  const urlCohortsRef = useRef(urlCohorts);
+  urlCohortsRef.current = urlCohorts;
 
   // ── Run & cohort selection state ──────────────────────────────────────
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
@@ -54,6 +61,31 @@ export const ReportViewer: FC = () => {
     }
   }, [timestamp]);
 
+  // ── Build selections from cohort names using group info ────────────────
+  const buildSelections = useCallback(
+    (names: string[], parsed: CohortGroup[]): LegendSelection[] => {
+      const findInfo = (fullName: string) => {
+        for (let gi = 0; gi < parsed.length; gi++) {
+          const group = parsed[gi];
+          for (let si = 0; si < group.subcohorts.length; si++) {
+            if (group.subcohorts[si].fullName === fullName) {
+              return { groupIndex: gi, subIndex: si, totalSubs: group.subcohorts.length };
+            }
+          }
+        }
+        return { groupIndex: 0, subIndex: 0, totalSubs: 1 };
+      };
+      const used = new Set<number>();
+      return names.map((name) => {
+        let ci = 0;
+        while (used.has(ci)) ci++;
+        used.add(ci);
+        return { cohortName: name, colorIndex: ci, ...findInfo(name) };
+      });
+    },
+    [],
+  );
+
   // ── Load cohorts + combined data when run changes ──────────────────────
   const loadRun = useCallback((runId: string, bypassCache = false) => {
     setLoadingRun(true);
@@ -61,32 +93,61 @@ export const ReportViewer: FC = () => {
     const cached = bypassCache ? null : getCached(runId);
     console.debug(`[ReportViewer] loadRun ${runId} — cache ${cached ? 'HIT' : 'MISS'}`);
 
-    const entriesPromise = cached
-      ? Promise.resolve(cached)
-      : fetchCombinedTable1(runId).then((entries) => {
-          setCache(runId, entries);
-          return entries;
-        });
+    if (cached) {
+      // Fully offline path — derive cohort names from cached entries
+      const names = cached.map((e) => e.cohortName);
+      applyLoadedData(runId, names, cached);
+      return;
+    }
 
-    Promise.all([fetchCohorts(runId), entriesPromise]).then(([names, entries]) => {
+    Promise.all([fetchCohorts(runId), fetchCombinedTable1(runId)]).then(
+      ([names, entries]) => {
+        setCache(runId, entries);
+        applyLoadedData(runId, names, entries);
+      },
+    );
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Shared logic: set groups, entries, and resolve initial selections. */
+  const applyLoadedData = useCallback(
+    (runId: string, names: string[], entries: CohortEntry[]) => {
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
       setAllCohortEntries(entries);
 
+      // Priority: URL params > saved state > default first cohort
+      const cohortParams = urlCohortsRef.current;
+
+      if (cohortParams.length) {
+        const available = new Set(names);
+        const valid = cohortParams.filter((n) => available.has(n));
+        if (valid.length) {
+          setSelections(buildSelections(valid, parsed));
+          setLoadingRun(false);
+          return;
+        }
+      }
+
+      const saved = loadSelections(runId);
+      if (saved?.length) {
+        const available = new Set(names);
+        const valid = saved.filter((s) => available.has(s.cohortName));
+        if (valid.length) {
+          setSelections(valid);
+          setLoadingRun(false);
+          return;
+        }
+      }
+
       if (parsed.length && parsed[0].subcohorts.length) {
-        setSelections([{
-          cohortName: parsed[0].subcohorts[0].fullName,
-          colorIndex: 0,
-          groupIndex: 0,
-          subIndex: 0,
-          totalSubs: parsed[0].subcohorts.length,
-        }]);
+        setSelections(buildSelections([parsed[0].subcohorts[0].fullName], parsed));
       } else {
         setSelections([]);
       }
       setLoadingRun(false);
-    });
-  }, []);
+    },
+    [buildSelections],
+  );
 
   useEffect(() => {
     if (selectedRun) loadRun(selectedRun);
@@ -103,6 +164,13 @@ export const ReportViewer: FC = () => {
   const deleteCache = useCallback(() => {
     if (selectedRun) clearCache(selectedRun);
   }, [selectedRun]);
+
+  // ── Persist selections to localStorage on change ──────────────────────
+  useEffect(() => {
+    if (selectedRun && selections.length) {
+      saveSelections(selectedRun, selections);
+    }
+  }, [selectedRun, selections]);
 
   // ── Derive visible cohort entries from selections (instant, no fetch) ─
   const selectedCohortNames = useMemo(

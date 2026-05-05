@@ -5,9 +5,10 @@
  * so subsequent visits skip the network fetch entirely.
  */
 
-import type { CohortEntry } from './types';
+import type { CohortEntry, LegendSelection } from './types';
 
 const PREFIX = 'phenex:report:';
+const SEL_PREFIX = 'phenex:report:sel:';
 
 /** Build the storage key for a run + report combination. */
 function cacheKey(runId: string, report: string = 'table1'): string {
@@ -63,4 +64,29 @@ export function listCachedRuns(): string[] {
     }
   }
   return runs.sort();
+}
+
+// ── Selection persistence ───────────────────────────────────────────────
+
+/** Save the current cohort selections for a run. */
+export function saveSelections(runId: string, selections: LegendSelection[]): void {
+  try {
+    localStorage.setItem(`${SEL_PREFIX}${runId}`, JSON.stringify(selections));
+  } catch { /* ignore */ }
+}
+
+/** Restore saved cohort selections for a run. */
+export function loadSelections(runId: string): LegendSelection[] | null {
+  try {
+    const raw = localStorage.getItem(`${SEL_PREFIX}${runId}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as LegendSelection[];
+  } catch {
+    return null;
+  }
+}
+
+/** Clear saved selections for a run. */
+export function clearSelections(runId: string): void {
+  localStorage.removeItem(`${SEL_PREFIX}${runId}`);
 }
