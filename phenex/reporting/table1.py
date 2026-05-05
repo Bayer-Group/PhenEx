@@ -356,11 +356,14 @@ class Table1(Reporter):
         }
         if self.characteristic_sections:
             payload["sections"] = self.characteristic_sections
-        if hasattr(self, "_value_distributions") and self._value_distributions:
-            payload["value_distributions"] = self._value_distributions
 
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)
+
+        if hasattr(self, "_value_distributions") and self._value_distributions:
+            dist_path = filepath.with_stem(f"{filepath.stem}_value_distributions")
+            with dist_path.open("w") as f:
+                json.dump(self._value_distributions, f, indent=2, default=str)
 
         return str(filepath.absolute())
 

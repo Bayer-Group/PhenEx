@@ -90,16 +90,30 @@ class Study:
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
         lazy_execution: Optional[bool] = False,
+        previous_executions: Optional[Dict[str, str]] = None,
     ):
         path_exec_dir_study = self._prepare_study_execution_directory()
         self._freeze_software_versions(path_exec_dir_study)
 
         self.custom_reporters = self.custom_reporters or []
+        previous_executions = previous_executions or {}
+        parents_requiring_execution = self._get_parents_requiring_execution(
+            previous_executions
+        )
 
         for _cohort in self.cohorts:
             path_exec_dir_cohort = self._prepare_cohort_execution_directory(
                 _cohort, path_exec_dir_study
             )
+
+            if self._should_use_previous_execution(
+                _cohort, previous_executions, parents_requiring_execution
+            ):
+                if self._copy_previous_execution(
+                    _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
+                ):
+                    continue
+
             self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
             # Merge study-level custom reporters into the cohort before execution.
@@ -119,6 +133,68 @@ class Study:
             _cohort.write_reports_to_html(path_exec_dir_cohort)
 
         self._concatenate_reports(path_exec_dir_study)
+
+    def _should_use_previous_execution(
+        self, cohort, previous_executions, parents_requiring_execution
+    ):
+        """Check if a cohort should reuse results from a previous execution."""
+        return (
+            cohort.name in previous_executions
+            and cohort.name not in parents_requiring_execution
+        )
+
+    def _get_parents_requiring_execution(self, previous_executions):
+        """Identify parent cohorts that must be re-executed because a new subcohort needs them.
+
+        If a Subcohort is not in ``previous_executions`` (i.e. it will be
+        executed), its parent cohort must also be executed so that
+        ``subset_tables_entry`` and ``index_table`` are available in memory.
+        """
+        from phenex.core.subcohort import Subcohort
+
+        parents = set()
+        for _cohort in self.cohorts:
+            if (
+                isinstance(_cohort, Subcohort)
+                and _cohort.name not in previous_executions
+            ):
+                parent_name = _cohort.cohort.name
+                if parent_name in previous_executions:
+                    parents.add(parent_name)
+        return parents
+
+    def _copy_previous_execution(self, cohort, timestamp, path_exec_dir_cohort):
+        """Copy all output files from a previous execution directory.
+
+        Searches ``self.path / <timestamp> / <cohort.name>`` for the previous
+        results.  Returns ``True`` if the copy succeeded.  If the directory is
+        not found, emits a warning and returns ``False`` so the caller can
+        fall back to re-execution.
+        """
+        import shutil
+
+        previous_cohort_dir = os.path.join(self.path, timestamp, cohort.name)
+
+        if not os.path.exists(previous_cohort_dir):
+            logger.warning(
+                f"Previous execution directory not found for cohort '{cohort.name}' "
+                f"at '{previous_cohort_dir}'. Re-executing cohort."
+            )
+            return False
+
+        for item in os.listdir(previous_cohort_dir):
+            src = os.path.join(previous_cohort_dir, item)
+            dst = os.path.join(path_exec_dir_cohort, item)
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+            elif os.path.isdir(src):
+                shutil.copytree(src, dst)
+
+        logger.info(
+            f"Copied previous execution results for cohort '{cohort.name}' "
+            f"from '{previous_cohort_dir}'"
+        )
+        return True
 
     def _prepare_study_execution_directory(self):
         now = datetime.datetime.today()
