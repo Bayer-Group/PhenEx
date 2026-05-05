@@ -1,5 +1,6 @@
 import { FC, useState, useRef, useCallback } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection } from './types';
+import { useBarHoverStore } from './CellRenderers/useBarHoverStore';
 import { CohortMenu } from './CohortMenu';
 import styles from './CohortSelector.module.css';
 
@@ -16,6 +17,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onReplace,
   onAdd,
 }) => {
+  const { hoveredIndex } = useBarHoverStore();
   const [menuState, setMenuState] = useState<{
     type: 'replace' | 'add';
     index: number;
@@ -53,6 +55,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         <LegendItem
           key={`${sel.cohortName}-${sel.colorIndex}`}
           selection={sel}
+          dimmed={hoveredIndex !== null && hoveredIndex !== i}
           onClick={(el) => handleItemClick(i, el)}
         />
       ))}
@@ -76,10 +79,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
 interface LegendItemProps {
   selection: LegendSelection;
+  dimmed: boolean;
   onClick: (el: HTMLElement) => void;
 }
 
-const LegendItem: FC<LegendItemProps> = ({ selection, onClick }) => {
+const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick }) => {
   const ref = useRef<HTMLDivElement>(null);
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
 
@@ -92,6 +96,7 @@ const LegendItem: FC<LegendItemProps> = ({ selection, onClick }) => {
     <div
       ref={ref}
       className={styles.legendItem}
+      style={{ opacity: dimmed ? 0.25 : 1, transition: 'opacity 0.15s ease' }}
       onClick={() => ref.current && onClick(ref.current)}
     >
       <div className={styles.legendDot} style={{ background: color }} />

@@ -1,5 +1,6 @@
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { type CohortClassified } from '../types';
+import { useBarHoverStore } from './useBarHoverStore';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -17,7 +18,7 @@ interface BarChartCellRendererProps {
 export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) => {
   const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
   const { name } = data;
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const { hoveredIndex, onEnter, onLeave } = useBarHoverStore();
 
   // Always include the 100 line
   const allTicks = ticks.includes(100) ? ticks : [...ticks, 100];
@@ -55,8 +56,8 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
               key={i}
               className={styles.bar}
               style={{ opacity: dimmed ? 0.25 : 1 }}
-              onMouseEnter={() => setHoveredIndex(i)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              onMouseEnter={() => onEnter(i)}
+              onMouseLeave={onLeave}
             >
               <div
                 className={styles.barFill}
