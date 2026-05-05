@@ -73,9 +73,7 @@ class InfoSheetWriter(_BaseSheetWriter):
         # Study name at the top
         study_name = self._read_study_name(study_path)
         if study_name:
-            self._write_cell(
-                sheet, current_row, 2, study_name, bold=True, size=20
-            )
+            self._write_cell(sheet, current_row, 2, study_name, bold=True, size=20)
             current_row += 1
             current_row += 1  # blank row after study name
 

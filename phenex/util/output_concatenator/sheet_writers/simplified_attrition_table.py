@@ -124,9 +124,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         for slot in range(max_subs):
             sub_slot_starts.append(next_sub_col)
             for i, w in enumerate(self._SUB_WIDTHS):
-                sheet.column_dimensions[
-                    get_column_letter(next_sub_col + i)
-                ].width = w
+                sheet.column_dimensions[get_column_letter(next_sub_col + i)].width = w
             data_start_col = next_sub_col + 3  # skip spacer, index, name
             self._write_header_block(sheet, data_start_col)
             next_sub_col += len(self._SUB_WIDTHS)
@@ -237,8 +235,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
 
             # Write main cohort rows (final row pinned to bottom)
             self._write_cohort_in_box(
-                sheet, data_start_row, last_data_row,
-                main_rows, group_color, is_main=True, col_start=None,
+                sheet,
+                data_start_row,
+                last_data_row,
+                main_rows,
+                group_color,
+                is_main=True,
+                col_start=None,
             )
 
             # Write sub-cohort rows (final row pinned to bottom)
@@ -247,22 +250,35 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             main_body_count = len(main_rows) - 1  # exclude final info row
             for sub in sub_entries:
                 self._write_cohort_in_box(
-                    sheet, data_start_row, last_data_row,
-                    sub["rows"], group_color, is_main=False, col_start=sub["col_start"],
+                    sheet,
+                    data_start_row,
+                    last_data_row,
+                    sub["rows"],
+                    group_color,
+                    is_main=False,
+                    col_start=sub["col_start"],
                     shared_row_count=main_body_count,
                 )
 
             # --- Borders around each card ---
             self._apply_card_border(
-                sheet, data_start_row, last_data_row,
-                main_card_start, main_card_end, group_color,
+                sheet,
+                data_start_row,
+                last_data_row,
+                main_card_start,
+                main_card_end,
+                group_color,
             )
             for sub in sub_entries:
                 sub_card_start = sub["col_start"] + 1
                 sub_card_end = sub["col_start"] + len(self._SUB_WIDTHS) - 1
                 self._apply_card_border(
-                    sheet, data_start_row, last_data_row,
-                    sub_card_start, sub_card_end, group_color,
+                    sheet,
+                    data_start_row,
+                    last_data_row,
+                    sub_card_start,
+                    sub_card_end,
+                    group_color,
                 )
 
             current_row = last_data_row + 1
@@ -270,8 +286,14 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     # ------------------------------------------------------------------
 
     def _write_cohort_in_box(
-        self, sheet, data_start_row, last_data_row,
-        rows, group_color, is_main, col_start,
+        self,
+        sheet,
+        data_start_row,
+        last_data_row,
+        rows,
+        group_color,
+        is_main,
+        col_start,
         shared_row_count=0,
     ):
         """Write cohort rows with final row pinned to bottom of the box."""
@@ -291,10 +313,14 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
             if rtype not in ("info", "component"):
                 prev_type = rtype
             if is_main:
-                self._write_main_data_row(sheet, row, dr, type_label, False, group_color)
+                self._write_main_data_row(
+                    sheet, row, dr, type_label, False, group_color
+                )
             else:
                 is_shared = ri < shared_row_count
-                self._write_sub_data_row(sheet, row, dr, False, col_start, is_shared=is_shared)
+                self._write_sub_data_row(
+                    sheet, row, dr, False, col_start, is_shared=is_shared
+                )
 
         # Write final row at the bottom of the box
         if final_row_data is not None:
@@ -361,7 +387,10 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         # Type label (sparsified)
         if type_label:
             self._write_cell(
-                sheet, row, self._COL_TYPE, type_label,
+                sheet,
+                row,
+                self._COL_TYPE,
+                type_label,
                 italic=True,
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="right",
@@ -371,14 +400,20 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         idx_val = dr.get("Index")
         if idx_val:
             self._write_cell(
-                sheet, row, self._COL_INDEX, idx_val,
+                sheet,
+                row,
+                self._COL_INDEX,
+                idx_val,
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="center",
                 font_color=fc,
             )
         # Name
         self._write_cell(
-            sheet, row, self._COL_NAME, dr.get("Name"),
+            sheet,
+            row,
+            self._COL_NAME,
+            dr.get("Name"),
             bold=is_final,
             size=self._FONT_SIZE_CONTENT,
             horizontal="right",
@@ -398,13 +433,19 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         idx_val = dr.get("Index")
         if idx_val and not is_final:
             self._write_cell(
-                sheet, row, idx_col, idx_val,
+                sheet,
+                row,
+                idx_col,
+                idx_val,
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="center",
                 font_color=fc,
             )
         self._write_cell(
-            sheet, row, name_col, dr.get("Name"),
+            sheet,
+            row,
+            name_col,
+            dr.get("Name"),
             bold=is_final,
             size=self._FONT_SIZE_CONTENT,
             horizontal="right",
@@ -412,12 +453,16 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         )
         self._write_data_cells(sheet, row, data_col, dr, is_final, None, fc)
 
-    def _write_data_cells(self, sheet, row, data_col, dr, is_final, fill_color, font_color=None):
+    def _write_data_cells(
+        self, sheet, row, data_col, dr, is_final, fill_color, font_color=None
+    ):
         """Write the 6 data columns for a waterfall row."""
         pct_src = dr.get("Pct_Source_Database")
         if pct_src is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_SRC_PCT,
+                sheet,
+                row,
+                data_col + self._DATA_SRC_PCT,
                 self._clean_numeric(pct_src),
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="right",
@@ -428,7 +473,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         pct_rem = dr.get("Pct_Remaining")
         if pct_rem is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_REM_PCT,
+                sheet,
+                row,
+                data_col + self._DATA_REM_PCT,
                 self._clean_numeric(pct_rem),
                 bold=is_final,
                 size=self._FONT_SIZE_CONTENT,
@@ -440,7 +487,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         remaining = dr.get("Remaining")
         if remaining is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_REM_N,
+                sheet,
+                row,
+                data_col + self._DATA_REM_N,
                 self._clean_numeric(remaining),
                 bold=is_final,
                 size=self._FONT_SIZE_CONTENT,
@@ -452,7 +501,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         delta = dr.get("Delta")
         if delta is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_DELTA,
+                sheet,
+                row,
+                data_col + self._DATA_DELTA,
                 self._clean_numeric(delta),
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="right",
@@ -463,7 +514,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         pct_n = dr.get("Pct_N")
         if pct_n is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_ENTRY_PCT,
+                sheet,
+                row,
+                data_col + self._DATA_ENTRY_PCT,
                 self._clean_numeric(pct_n),
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="right",
@@ -474,7 +527,9 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         n_val = dr.get("N")
         if n_val is not None:
             self._write_cell(
-                sheet, row, data_col + self._DATA_ENTRY_N,
+                sheet,
+                row,
+                data_col + self._DATA_ENTRY_N,
                 self._clean_numeric(n_val),
                 size=self._FONT_SIZE_CONTENT,
                 horizontal="left",

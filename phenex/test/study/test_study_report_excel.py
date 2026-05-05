@@ -57,13 +57,23 @@ _COHORT_PARAMS = {
 # Subcohort definitions: each copies the parent waterfall and adds one filter row.
 # n_final is used for the subcohort's own final count (and table1 generation).
 _SUBCOHORT_DEFS = {
-    "cohort_a__female": dict(parent="cohort_a", filter_name="Female only", n_final=430_000),
+    "cohort_a__female": dict(
+        parent="cohort_a", filter_name="Female only", n_final=430_000
+    ),
     "cohort_a__male": dict(parent="cohort_a", filter_name="Male only", n_final=410_000),
-    "cohort_b__female": dict(parent="cohort_b", filter_name="Female only", n_final=400_000),
+    "cohort_b__female": dict(
+        parent="cohort_b", filter_name="Female only", n_final=400_000
+    ),
     "cohort_b__male": dict(parent="cohort_b", filter_name="Male only", n_final=390_000),
-    "cohort_d__age_lt_50": dict(parent="cohort_d", filter_name="Age < 50", n_final=350_000),
-    "cohort_d__age_gte_50": dict(parent="cohort_d", filter_name="Age >= 50", n_final=370_000),
-    "cohort_d__diabetic": dict(parent="cohort_d", filter_name="Diabetic", n_final=86_000),
+    "cohort_d__age_lt_50": dict(
+        parent="cohort_d", filter_name="Age < 50", n_final=350_000
+    ),
+    "cohort_d__age_gte_50": dict(
+        parent="cohort_d", filter_name="Age >= 50", n_final=370_000
+    ),
+    "cohort_d__diabetic": dict(
+        parent="cohort_d", filter_name="Diabetic", n_final=86_000
+    ),
 }
 
 # Merged params for table1 generation (subcohorts need n_entry + n_final)
@@ -187,30 +197,34 @@ def _subcohort_waterfall(parent_wf: dict, sub_def: dict) -> dict:
     next_idx = str(max_idx + 1)
 
     # Subcohort filter inclusion row
-    rows.append({
-        "Type": "inclusion",
-        "Index": next_idx,
-        "Name": sub_def["filter_name"],
-        "N": n_final,
-        "Pct_N": round(n_final / n_entry * 100, 1),
-        "Remaining": n_final,
-        "Pct_Remaining": round(n_final / n_entry * 100, 1),
-        "Delta": n_final - n_before,
-        "Pct_Source_Database": None,
-    })
+    rows.append(
+        {
+            "Type": "inclusion",
+            "Index": next_idx,
+            "Name": sub_def["filter_name"],
+            "N": n_final,
+            "Pct_N": round(n_final / n_entry * 100, 1),
+            "Remaining": n_final,
+            "Pct_Remaining": round(n_final / n_entry * 100, 1),
+            "Delta": n_final - n_before,
+            "Pct_Source_Database": None,
+        }
+    )
 
     # Final info row
-    rows.append({
-        "Type": "info",
-        "Index": "",
-        "Name": "Final Cohort Size",
-        "N": None,
-        "Pct_N": None,
-        "Remaining": n_final,
-        "Pct_Remaining": round(n_final / n_entry * 100, 1),
-        "Delta": None,
-        "Pct_Source_Database": round(n_final / _N_DB * 100, 1),
-    })
+    rows.append(
+        {
+            "Type": "info",
+            "Index": "",
+            "Name": "Final Cohort Size",
+            "N": None,
+            "Pct_N": None,
+            "Remaining": n_final,
+            "Pct_Remaining": round(n_final / n_entry * 100, 1),
+            "Delta": None,
+            "Pct_Source_Database": round(n_final / _N_DB * 100, 1),
+        }
+    )
 
     return {"reporter_type": "Waterfall", "rows": rows}
 
