@@ -86,8 +86,15 @@ async def get_distributions(
     If ``variable`` is given, only that variable's distribution is returned.
     Otherwise returns a dict mapping variable name → list of values.
     """
-    data = storage.read_json(run_id, cohort_name, f"{report}.json")
-    distributions = data.get("value_distributions", {})
+    # Prefer the dedicated distributions file; fall back to the legacy
+    # embedded key for older runs that haven't been re-exported yet.
+    try:
+        distributions = storage.read_json(
+            run_id, cohort_name, f"{report}_value_distributions.json"
+        )
+    except HTTPException:
+        data = storage.read_json(run_id, cohort_name, f"{report}.json")
+        distributions = data.get("value_distributions", {})
 
     if variable is not None:
         if variable not in distributions:
