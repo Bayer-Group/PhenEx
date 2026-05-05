@@ -3,6 +3,7 @@ fastapi[standard]
 gunicorn
 uvicorn
 openai
+boto3
 httpx
 typing-extensions>=4.11.0,<5.0.0
 pydantic-ai[openai]
