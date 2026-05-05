@@ -89,11 +89,13 @@
   font-size: var(--font_size_breadcrumb, 14px);
   font-weight: bold;
   color: #333;
-  margin: 24px 0 12px 0;
+  margin: 0px 0 0px 0;
   padding: 20px 0px 30px 20px;
   background: none;
   border-left: none;
   border-radius: 0;
+  border-bottom: var(--line-color, #e0e0e0) 1px solid;
+
 }
 
 .sectionHeader:first-child {

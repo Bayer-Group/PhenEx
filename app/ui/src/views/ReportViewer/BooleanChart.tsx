@@ -134,7 +134,7 @@ const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
   );
 
   const getRowHeight = () => nc * barRowH + rowPadding;
-  const gridH = names.length * getRowHeight() + 4; // +4 for border
+  const gridH = names.length * getRowHeight() + 2; // +4 for border
 
   return (
     <div className={styles.gridContainer} style={{ height: gridH }}>
