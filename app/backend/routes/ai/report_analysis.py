@@ -14,11 +14,11 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from .. import report_storage as storage
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
 # ── Load environment ─────────────────────────────────────────────────────
 try:
@@ -46,40 +46,24 @@ def _strip_codelists(obj: Any) -> Any:
     return obj
 
 
-def _load_frozen_cohort(run_dir: Path, cohort_name: str) -> Dict[str, Any] | None:
+def _load_frozen_cohort(run_id: str, cohort_name: str) -> Dict[str, Any] | None:
     """Load and strip a frozen cohort JSON, returning None on failure."""
-    cohort_dir = run_dir / Path(cohort_name).name
-    if not cohort_dir.is_dir():
+    data = storage.find_frozen_cohort(run_id, cohort_name)
+    if data is None:
         return None
-    # Find the frozen file (frozen_<cohort_name>.json)
-    candidates = list(cohort_dir.glob("frozen_*.json"))
-    if not candidates:
-        return None
-    try:
-        with candidates[0].open() as f:
-            data = json.load(f)
-        return _strip_codelists(data)
-    except Exception as e:
-        logger.warning("Failed to read frozen cohort %s: %s", cohort_name, e)
-        return None
+    return _strip_codelists(data)
 
 
-def _load_table1_summary(run_dir: Path, cohort_name: str) -> Dict[str, Any] | None:
+def _load_table1_summary(run_id: str, cohort_name: str) -> Dict[str, Any] | None:
     """Load table1 rows + sections (no distributions)."""
-    cohort_dir = run_dir / Path(cohort_name).name
-    table1_file = cohort_dir / "table1.json"
-    if not table1_file.is_file():
-        return None
     try:
-        with table1_file.open() as f:
-            data = json.load(f)
-        return {
-            "rows": data.get("rows", []),
-            "sections": data.get("sections", {}),
-        }
-    except Exception as e:
-        logger.warning("Failed to read table1 for %s: %s", cohort_name, e)
+        data = storage.read_json(run_id, cohort_name, "table1.json")
+    except HTTPException:
         return None
+    return {
+        "rows": data.get("rows", []),
+        "sections": data.get("sections", {}),
+    }
 
 
 def _get_openai_client():
@@ -141,16 +125,15 @@ async def analyze_report(request: AnalyzeRequest):
     summary to Azure OpenAI, and returns per-phenotype analysis text.
     """
     safe_run = Path(request.run_id).name
-    run_dir = DATA_DIR / safe_run
-    if not run_dir.is_dir():
-        raise HTTPException(status_code=404, detail=f"Run '{safe_run}' not found")
+    # Validate that the run exists (raises 404 via storage)
+    storage.list_cohorts(safe_run)
 
     # Gather data for each cohort
     cohort_summaries = {}
     for name in request.cohort_names:
         safe_name = Path(name).name
-        frozen = _load_frozen_cohort(run_dir, safe_name)
-        table1 = _load_table1_summary(run_dir, safe_name)
+        frozen = _load_frozen_cohort(safe_run, safe_name)
+        table1 = _load_table1_summary(safe_run, safe_name)
         if table1:
             cohort_summaries[safe_name] = {
                 "definition": frozen,
