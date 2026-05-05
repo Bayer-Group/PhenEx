@@ -9,8 +9,8 @@
 /* ── Header card (bottom-right) ───────────────────────────────────────── */
 .legendContainer {
   position: absolute;
-  bottom: 80px;
-  right: 100px;
+  bottom: 30px;
+  right: 30px;
   z-index: 10;
   max-width: 380px;
   padding: 16px 20px;

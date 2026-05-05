@@ -215,6 +215,25 @@ def _assert_prefix_exists(run_id: str) -> None:
 
 # ── Local helpers ────────────────────────────────────────────────────────
 
+def read_run_file(run_id: str, filename: str) -> Optional[Dict[str, Any]]:
+    """Read a JSON file directly from the run directory (not a cohort subdir).
+
+    Returns None if the file doesn't exist.
+    """
+    safe_run = _sanitise(run_id)
+    if _get_s3_bucket():
+        text = _s3_read_text(safe_run, filename)
+        if text is None:
+            return None
+        return json.loads(text)
+
+    json_file = _resolve_local_run(safe_run) / filename
+    if not json_file.is_file():
+        return None
+    with json_file.open() as f:
+        return json.load(f)
+
+
 def _resolve_local_run(safe_run_id: str) -> Path:
     """Return a validated local run directory path."""
     run_dir = LOCAL_DATA_DIR / safe_run_id

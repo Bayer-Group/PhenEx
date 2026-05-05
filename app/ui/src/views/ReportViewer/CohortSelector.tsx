@@ -8,7 +8,6 @@ interface CohortSelectorProps {
   selections: LegendSelection[];
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
-  loadingCohorts: Set<string>;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
@@ -16,7 +15,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   selections,
   onReplace,
   onAdd,
-  loadingCohorts,
 }) => {
   const [menuState, setMenuState] = useState<{
     type: 'replace' | 'add';
@@ -68,7 +66,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           onSelect={handleMenuSelect}
           onClose={handleClose}
           closeOnSelect={menuState.type === 'replace'}
-          loadingCohorts={loadingCohorts}
         />
       )}
     </div>

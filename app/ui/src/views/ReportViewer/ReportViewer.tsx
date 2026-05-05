@@ -11,7 +11,7 @@ import { SwitchButton } from '../../components/ButtonsAndTabs/SwitchButton/Switc
 import {
   fetchRuns,
   fetchCohorts,
-  fetchAllCohortTable1,
+  fetchCombinedTable1,
   fetchReportAnalysis,
 } from './ReportViewerDataService';
 import {
@@ -34,9 +34,8 @@ export const ReportViewer: FC = () => {
   const [selections, setSelections] = useState<LegendSelection[]>([]);
 
   // ── Data state ────────────────────────────────────────────────────────
-  const [cohortEntries, setCohortEntries] = useState<CohortEntry[]>([]);
-  const [loadingCohorts, setLoadingCohorts] = useState<Set<string>>(new Set());
-  const loading = loadingCohorts.size > 0;
+  const [allCohortEntries, setAllCohortEntries] = useState<CohortEntry[]>([]);
+  const [loadingRun, setLoadingRun] = useState(false);
 
   // ── Tab state ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabKey>('boolean');
@@ -49,12 +48,19 @@ export const ReportViewer: FC = () => {
     });
   }, []);
 
-  // ── Load cohorts when run changes ─────────────────────────────────────
+  // ── Load cohorts + combined data when run changes ──────────────────────
   useEffect(() => {
     if (!selectedRun) return;
-    fetchCohorts(selectedRun).then((names) => {
+    setLoadingRun(true);
+
+    Promise.all([
+      fetchCohorts(selectedRun),
+      fetchCombinedTable1(selectedRun),
+    ]).then(([names, entries]) => {
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
+      setAllCohortEntries(entries);
+
       // Default: select first parent cohort's "main"
       if (parsed.length && parsed[0].subcohorts.length) {
         setSelections([{
@@ -67,54 +73,20 @@ export const ReportViewer: FC = () => {
       } else {
         setSelections([]);
       }
+      setLoadingRun(false);
     });
   }, [selectedRun]);
 
-  // ── Load table1 data when selection changes ───────────────────────────
+  // ── Derive visible cohort entries from selections (instant, no fetch) ─
   const selectedCohortNames = useMemo(
     () => new Set(selections.map((s) => s.cohortName)),
     [selections],
   );
 
-  useEffect(() => {
-    if (!selectedRun || !selections.length) {
-      setCohortEntries([]);
-      return;
-    }
-
-    const wanted = new Set(selections.map((s) => s.cohortName));
-    // Remove entries that are no longer selected
-    setCohortEntries((prev) => prev.filter((e) => wanted.has(e.cohortName)));
-
-    // Determine which cohorts still need fetching
-    const alreadyLoaded = new Set(cohortEntries.map((e) => e.cohortName));
-    const toFetch = selections
-      .map((s) => s.cohortName)
-      .filter((name) => !alreadyLoaded.has(name));
-
-    if (!toFetch.length) return;
-
-    setLoadingCohorts((prev) => new Set([...prev, ...toFetch]));
-
-    fetchAllCohortTable1(selectedRun, toFetch).then((newEntries) => {
-      setCohortEntries((prev) => {
-        const existing = new Map(prev.map((e) => [e.cohortName, e]));
-        for (const entry of newEntries) {
-          existing.set(entry.cohortName, entry);
-        }
-        // Preserve selection order
-        return selections
-          .map((s) => existing.get(s.cohortName))
-          .filter((e): e is CohortEntry => e != null);
-      });
-      setLoadingCohorts((prev) => {
-        const next = new Set(prev);
-        for (const name of toFetch) next.delete(name);
-        return next;
-      });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRun, selections]);
+  const cohortEntries = useMemo(
+    () => allCohortEntries.filter((e) => selectedCohortNames.has(e.cohortName)),
+    [allCohortEntries, selectedCohortNames],
+  );
 
   // ── AI analysis on data load ──────────────────────────────────────────
   useEffect(() => {
@@ -255,7 +227,6 @@ export const ReportViewer: FC = () => {
           selections={selections}
           onReplace={handleReplace}
           onAdd={handleAdd}
-          loadingCohorts={loadingCohorts}
         />
       </div>
 
@@ -321,7 +292,9 @@ export const ReportViewer: FC = () => {
               <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
 
-        {!cohortData.length && !loading && (
+        {loadingRun && <div className={styles.loading}>Loading…</div>}
+
+        {!loadingRun && !cohortData.length && (
           <div className={styles.empty}>Select one or more cohorts to view data.</div>
         )}
 

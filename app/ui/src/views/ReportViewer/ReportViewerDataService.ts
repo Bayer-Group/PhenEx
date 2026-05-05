@@ -69,6 +69,21 @@ export async function fetchAllCohortTable1(
   return results.filter((r): r is CohortEntry => r !== null);
 }
 
+/** Fetch combined table1 data for all cohorts in a single request. */
+export async function fetchCombinedTable1(
+  runId: string,
+  report: 'table1' | 'table1_outcomes' = 'table1',
+): Promise<CohortEntry[]> {
+  const { data } = await api.get<Record<string, Table1Data>>(
+    `${BASE}/runs/${encodeURIComponent(runId)}/table1_combined`,
+    { params: { report } },
+  );
+  return Object.entries(data).map(([cohortName, table1]) => ({
+    cohortName,
+    data: table1,
+  }));
+}
+
 /** Request AI analysis comparing selected cohorts. */
 export async function fetchReportAnalysis(
   runId: string,

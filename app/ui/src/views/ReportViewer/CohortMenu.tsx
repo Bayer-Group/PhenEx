@@ -14,8 +14,6 @@ interface CohortMenuProps {
   onClose: () => void;
   /** If false the menu stays open after a selection (used for multi-add). */
   closeOnSelect?: boolean;
-  /** Cohort names currently being fetched */
-  loadingCohorts?: Set<string>;
 }
 
 export const CohortMenu: FC<CohortMenuProps> = ({
@@ -25,7 +23,6 @@ export const CohortMenu: FC<CohortMenuProps> = ({
   onSelect,
   onClose,
   closeOnSelect = true,
-  loadingCohorts = new Set(),
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +76,6 @@ export const CohortMenu: FC<CohortMenuProps> = ({
               <div className={styles.menuGroupTitle}>{group.parent}</div>
               {group.subcohorts.map((sub) => {
                 const isActive = activeSet.has(sub.fullName);
-                const isLoading = loadingCohorts.has(sub.fullName);
                 const dotColor = activeColorMap.get(sub.fullName);
                 return (
                   <div
@@ -87,14 +83,12 @@ export const CohortMenu: FC<CohortMenuProps> = ({
                     className={`${styles.menuItem} ${isActive ? styles.menuItemDisabled : ''}`}
                     onClick={() => handleClick(sub.fullName)}
                   >
-                    {isLoading ? (
-                      <span className={styles.menuItemSpinner} />
-                    ) : isActive && dotColor ? (
+                    {isActive && dotColor && (
                       <span
                         className={styles.menuItemDot}
                         style={{ background: dotColor }}
                       />
-                    ) : null}
+                    )}
                     <span className={styles.menuItemLabel}>{sub.label}</span>
                   </div>
                 );

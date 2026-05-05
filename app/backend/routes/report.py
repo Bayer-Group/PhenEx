@@ -102,3 +102,35 @@ async def get_distributions(
         return _nan_to_none({variable: distributions[variable]})
 
     return _nan_to_none(distributions)
+
+
+# ── Combined table1 (all cohorts in one file) ────────────────────────────
+
+@router.get("/report/runs/{run_id}/table1_combined")
+async def get_table1_combined(
+    run_id: str,
+    report: str = Query("table1", regex=r"^table1(_outcomes)?$"),
+) -> Dict[str, Any]:
+    """Return combined table1 data for all cohorts in a single response.
+
+    Looks for ``combined_<report>.json`` in the run directory.  Falls back
+    to loading each cohort's file individually if the combined file is
+    missing.
+    """
+    combined = storage.read_run_file(run_id, f"combined_{report}.json")
+    if combined is not None:
+        return _nan_to_none(combined)
+
+    # Fallback: build on the fly from individual cohort files
+    cohort_names = storage.list_cohorts(run_id)
+    result: Dict[str, Any] = {}
+    for name in cohort_names:
+        try:
+            data = storage.read_json(run_id, name, f"{report}.json")
+            result[name] = {
+                "rows": data.get("rows", []),
+                "sections": data.get("sections", {}),
+            }
+        except Exception:
+            pass
+    return _nan_to_none(result)
