@@ -1,7 +1,8 @@
 /* ── BooleanChart layout ─────────────────────────────────────────────── */
 
 .mainContent {
-  padding-top: 100px;
+  padding-top: 0px;
+  user-select: none;
 }
 
 .table {

@@ -89,11 +89,18 @@
 }
 
 .contentInner {
-  max-width: 900px;
-  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 300px;
   margin-left: min(8vw, 120px);
   padding-top: 0px;
   transform-origin: top left;
+}
+
+.chartPanel {
+  width: 900px;
+  flex-shrink: 0;
 }
 
 .bottomSpacer{

@@ -31,6 +31,10 @@ import {
 
 type TabKey = 'boolean' | 'categorical' | 'numeric';
 
+const TAB_ORDER: TabKey[] = ['boolean', 'categorical', 'numeric'];
+const PANEL_WIDTH = 900;
+const PANEL_GAP = 300;
+
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const ordinal = (d: number) => d + (['th', 'st', 'nd', 'rd'][(d % 100 > 10 && d % 100 < 14) ? 0 : d % 10] ?? 'th');
 
@@ -303,12 +307,18 @@ export const ReportViewer: FC = () => {
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage } = useViewZoom({
+  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
     minScale: 0.5,
     maxScale: 2.0,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
   });
+
+  // ── Pan to active tab's panel on change ───────────────────────────────
+  useEffect(() => {
+    const i = TAB_ORDER.indexOf(activeTab);
+    panToX(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={styles.page}>
@@ -365,24 +375,26 @@ export const ReportViewer: FC = () => {
 
         {cohortData.length > 0 && (
           <>
-            {activeTab === 'boolean' && (
+            <div className={styles.chartPanel}>
               <BooleanChart cohortData={cohortData} sections={sections} />
-            )}
-            {activeTab === 'categorical' && (
+              <div className={styles.bottomSpacer} />
+            </div>
+            <div className={styles.chartPanel}>
               <CategoricalChart cohortData={cohortData} sections={sections} />
-            )}
-            {activeTab === 'numeric' && selectedRun && (
-              <NumericChart
-                cohortData={cohortData}
-                sections={sections}
-                runId={selectedRun}
-                selectedCohorts={selectedCohortNames}
-              />
-            )}
-
-            <div className={styles.bottomSpacer} />
+              <div className={styles.bottomSpacer} />
+            </div>
+            <div className={styles.chartPanel}>
+              {selectedRun && (
+                <NumericChart
+                  cohortData={cohortData}
+                  sections={sections}
+                  runId={selectedRun}
+                  selectedCohorts={selectedCohortNames}
+                />
+              )}
+              <div className={styles.bottomSpacer} />
+            </div>
           </>
-
         )}
         </div>
       </div>
