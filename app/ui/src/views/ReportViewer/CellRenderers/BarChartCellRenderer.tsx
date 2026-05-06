@@ -28,59 +28,41 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
 
   return (
     <div className={styles.container}>
-      <div className={styles.pctColumn}>
-        {cohortData.map((cd, i) => {
-          const row = cd.classified.booleans.find((r) => r.Name === name);
-          const pct = row?.Pct ?? 0;
-          const dimmed = hoveredIndex !== null && hoveredIndex !== i;
-          return (
-            <div key={i} className={styles.pctRow} style={{ opacity: dimmed ? 0.25 : 1 }}>
-              <strong>{Math.round(pct * 10) / 10}</strong>
-              {/* <span className={styles.barPercent}>%</span> */}
-            </div>
-          );
-        })}
+      {/* Grid lines positioned over the bar column */}
+      <div className={styles.gridOverlay} style={{ left: '15%', width: '60%' }}>
+        {allTicks.map((t) => (
+          <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
+        ))}
       </div>
 
-      <div className={styles.barArea}>
-        <div className={styles.gridLines}>
-          {allTicks.map((t) => (
-            <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
-          ))}
-        </div>
-
+      <div className={styles.rows}>
         {cohortData.map((cd, i) => {
           const row = cd.classified.booleans.find((r) => r.Name === name);
           const pct = row?.Pct ?? 0;
+          const n = row?.N ?? 0;
           const dimmed = hoveredIndex !== null && hoveredIndex !== i;
 
           return (
             <div
               key={i}
               ref={(el) => { if (el) barRefs.current[i] = el; }}
-              className={styles.bar}
-              style={{ opacity: dimmed ? 0.25 : 1 }}
+              className={styles.cohortRow}
               onMouseEnter={(e) => { isLocalHover.current = true; onEnter(i, e); }}
               onMouseMove={onMove}
               onMouseLeave={() => { isLocalHover.current = false; onLeave(); }}
             >
-              <div
-                className={styles.barFill}
-                style={{ width: `${Math.max(0, pct)}%`, backgroundColor: cd.color }}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className={styles.nColumn}>
-        {cohortData.map((cd, i) => {
-          const row = cd.classified.booleans.find((r) => r.Name === name);
-          const n = row?.N ?? 0;
-          const dimmed = hoveredIndex !== null && hoveredIndex !== i;
-          return (
-            <div key={i} className={styles.nRow} style={{ opacity: dimmed ? 0.25 : 1 }}>
-              {n}
+              <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
+                <strong>{Math.round(pct * 10) / 10}</strong>
+              </div>
+              <div className={styles.barCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
+                <div
+                  className={styles.barFill}
+                  style={{ width: `${Math.max(0, pct)}%`, backgroundColor: cd.color }}
+                />
+              </div>
+              <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: hoveredIndex === i ? '#000' : undefined }}>
+                {n.toLocaleString()}
+              </div>
             </div>
           );
         })}

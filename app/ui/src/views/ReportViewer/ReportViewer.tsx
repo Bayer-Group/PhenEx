@@ -309,6 +309,7 @@ export const ReportViewer: FC = () => {
           selections={selections}
           onReplace={handleReplace}
           onAdd={handleAdd}
+          onRemove={(index) => setSelections((prev) => prev.filter((_, i) => i !== index))}
         />
       </div>
 

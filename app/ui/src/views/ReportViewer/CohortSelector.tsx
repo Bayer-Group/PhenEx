@@ -9,6 +9,7 @@ interface CohortSelectorProps {
   selections: LegendSelection[];
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
+  onRemove: (index: number) => void;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
@@ -16,6 +17,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   selections,
   onReplace,
   onAdd,
+  onRemove,
 }) => {
   const { hoveredIndex } = useBarHoverStore();
   const [menuState, setMenuState] = useState<{
@@ -57,6 +59,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           selection={sel}
           dimmed={hoveredIndex !== null && hoveredIndex !== i}
           onClick={(el) => handleItemClick(i, el)}
+          onRemove={() => onRemove(i)}
         />
       ))}
       <PlusButton onClick={handlePlusClick} />
@@ -81,9 +84,10 @@ interface LegendItemProps {
   selection: LegendSelection;
   dimmed: boolean;
   onClick: (el: HTMLElement) => void;
+  onRemove: () => void;
 }
 
-const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick }) => {
+const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
   const ref = useRef<HTMLDivElement>(null);
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
 
@@ -103,6 +107,13 @@ const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick }) => {
       <span className={styles.legendItemTop}>{topLabel}</span>
       <span className={styles.legendItemDot}>·</span>
       <span className={styles.legendItemBottom}>{bottomLabel}</span>
+      <button
+        className={styles.removeBtn}
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        aria-label="Remove cohort"
+      >
+        ×
+      </button>
     </div>
   );
 };

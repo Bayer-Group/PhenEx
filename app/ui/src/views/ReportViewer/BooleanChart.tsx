@@ -43,7 +43,7 @@ const gridTheme = themeQuartz.withParams({
   wrapperBorder: false,
   backgroundColor: 'transparent',
   wrapperBorderRadius: 0,
-  rowHoverColor: 'rgba(78, 121, 167, 0.04)',
+  rowHoverColor: 'rgba(211, 213, 215, 0.04)',
 });
 
 /* ── Column definitions ──────────────────────────────────────────────── */
@@ -119,8 +119,9 @@ interface BooleanBarGroupProps {
 
 const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
   const nc = cohortData.length;
-  const barRowH = 16 + 2 + 5; // BAR_H + determines  ##HEIGHT_TABLE1_ROW_BOOLEAN_TOTAL
-  const rowPadding = 12;
+  const barRowH = 16; // BAR_H + determines  ##HEIGHT_TABLE1_ROW_BOOLEAN_TOTAL
+  const rowPaddingTop = 20;
+  const rowPaddingBottom = 20;
 
   const rowData = useMemo(
     () =>
@@ -133,7 +134,7 @@ const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
     [names, cohortData],
   );
 
-  const getRowHeight = () => nc * barRowH + rowPadding;
+  const getRowHeight = () => nc * barRowH + rowPaddingTop + rowPaddingBottom;
   const gridH = names.length * getRowHeight() + 2; // +4 for border
 
   return (
