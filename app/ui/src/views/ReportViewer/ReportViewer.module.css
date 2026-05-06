@@ -101,15 +101,9 @@
 .chartPanel {
   width: 900px;
   flex-shrink: 0;
-  --panel-active: 1;
-  transition: opacity 0.4s ease, filter 0.4s ease;
-}
-
-.chartPanelInactive {
-  --panel-active: 0;
-  opacity: 0.25;
-  filter: grayscale(40%);
-  pointer-events: none;
+  --panel-visibility: 1;
+  opacity: var(--panel-visibility);
+  transition: opacity 0.15s ease;
 }
 
 .bottomSpacer{

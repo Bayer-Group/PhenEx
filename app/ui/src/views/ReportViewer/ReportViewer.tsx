@@ -306,6 +306,7 @@ export const ReportViewer: FC = () => {
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
   const panToXRef = useRef<((contentX: number, viewFraction?: number) => void) | null>(null);
 
   const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
@@ -315,15 +316,14 @@ export const ReportViewer: FC = () => {
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
     onTransformChange: (x, _y, scale) => {
       const viewW = contentRef.current?.clientWidth ?? window.innerWidth;
-      const activeContentX = (0.3 * viewW - x) / scale;
-      let closestTab = TAB_ORDER[0];
-      let closestDist = Infinity;
-      TAB_ORDER.forEach((tab, i) => {
-        const panelCenter = i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2;
-        const dist = Math.abs(panelCenter - activeContentX);
-        if (dist < closestDist) { closestDist = dist; closestTab = tab; }
+      TAB_ORDER.forEach((_, i) => {
+        const panelLeft = i * (PANEL_WIDTH + PANEL_GAP);
+        const screenLeft = panelLeft * scale + x;
+        const screenRight = (panelLeft + PANEL_WIDTH) * scale + x;
+        const visiblePx = Math.max(0, Math.min(screenRight, viewW) - Math.max(screenLeft, 0));
+        const visibility = Math.max(0.15, visiblePx / (PANEL_WIDTH * scale));
+        panelRefs.current[i]?.style.setProperty('--panel-visibility', String(visibility));
       });
-      setActiveTab(closestTab);
     },
   });
   panToXRef.current = panToX;
@@ -388,15 +388,15 @@ export const ReportViewer: FC = () => {
 
         {cohortData.length > 0 && (
           <>
-            <div className={`${styles.chartPanel} ${activeTab !== 'boolean' ? styles.chartPanelInactive : ''}`}>
+            <div className={styles.chartPanel} ref={el => { panelRefs.current[0] = el; }}>
               <BooleanChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={`${styles.chartPanel} ${activeTab !== 'categorical' ? styles.chartPanelInactive : ''}`}>
+            <div className={styles.chartPanel} ref={el => { panelRefs.current[1] = el; }}>
               <CategoricalChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={`${styles.chartPanel} ${activeTab !== 'numeric' ? styles.chartPanelInactive : ''}`}>
+            <div className={styles.chartPanel} ref={el => { panelRefs.current[2] = el; }}>
               {selectedRun && (
                 <NumericChart
                   cohortData={cohortData}
