@@ -45,11 +45,11 @@ function formatRunTimestamp(raw: string): string {
 }
 
 const ZoomScrubber: React.FC<{ percentage: number; onChange: (p: number) => void }> = ({ percentage, onChange }) => {
-  const barRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const updateFromEvent = (e: MouseEvent | React.MouseEvent) => {
-    if (!barRef.current) return;
-    const rect = barRef.current.getBoundingClientRect();
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
     onChange(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
   };
 
@@ -63,10 +63,12 @@ const ZoomScrubber: React.FC<{ percentage: number; onChange: (p: number) => void
   };
 
   return (
-    <div className={navBarStyles.horizontalScrollContainer}>
-      <div ref={barRef} className={navBarStyles.horizontalScrollbar} onMouseDown={handleMouseDown} style={{ width: 120 }}>
-        <div className={navBarStyles.scrollbarThumb} style={{ left: `${percentage}%` }} />
-      </div>
+    <div
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      style={{ position: 'relative', height: 8, borderRadius: 10, background: 'var(--line-color)', cursor: 'pointer', width: '100%' }}
+    >
+      <div className={navBarStyles.scrollbarThumb} style={{ left: `${percentage}%` }} />
     </div>
   );
 };
@@ -336,8 +338,8 @@ export const ReportViewer: FC = () => {
   const panToXRef = useRef<((contentX: number, viewFraction?: number) => void) | null>(null);
 
   const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
-    minScale: 0.5,
-    maxScale: 2.0,
+    minScale: 0.15,
+    maxScale: 1.3,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
     onTransformChange: (x, _y, scale) => {
