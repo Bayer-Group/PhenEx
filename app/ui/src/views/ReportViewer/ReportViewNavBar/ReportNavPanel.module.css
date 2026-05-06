@@ -1,0 +1,36 @@
+.panel {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  bottom: 20px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+
+}
+
+.panel > * {
+  pointer-events: auto;
+}
+
+.top {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.center {
+  flex: 1 1 0;
+  width: 100%;
+  overflow-y: auto;
+  min-height: 0;
+  background: transparent;
+}
+
+.bottom {
+  flex: 0 0 auto;
+  width: 100%;
+}

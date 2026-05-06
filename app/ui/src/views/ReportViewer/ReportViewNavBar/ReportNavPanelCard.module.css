@@ -1,0 +1,20 @@
+.card {
+  background: rgba(237, 236, 236, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  border: var(--line-color) 1px solid;
+}
+
+.title {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+}
