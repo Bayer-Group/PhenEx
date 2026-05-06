@@ -306,19 +306,32 @@ export const ReportViewer: FC = () => {
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const panToXRef = useRef<((contentX: number, viewFraction?: number) => void) | null>(null);
 
   const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
     minScale: 0.5,
     maxScale: 2.0,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
+    onTransformChange: (x, _y, scale) => {
+      const viewW = contentRef.current?.clientWidth ?? window.innerWidth;
+      const activeContentX = (0.3 * viewW - x) / scale;
+      let closestTab = TAB_ORDER[0];
+      let closestDist = Infinity;
+      TAB_ORDER.forEach((tab, i) => {
+        const panelCenter = i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2;
+        const dist = Math.abs(panelCenter - activeContentX);
+        if (dist < closestDist) { closestDist = dist; closestTab = tab; }
+      });
+      setActiveTab(closestTab);
+    },
   });
+  panToXRef.current = panToX;
 
-  // ── Pan to active tab's panel on change ───────────────────────────────
-  useEffect(() => {
-    const i = TAB_ORDER.indexOf(activeTab);
-    panToX(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleTabChange = useCallback((tab: TabKey) => {
+    const i = TAB_ORDER.indexOf(tab);
+    panToXRef.current?.(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -338,7 +351,7 @@ export const ReportViewer: FC = () => {
               <ReportDataTypeSelector
                 activeTab={activeTab}
                 tabAvail={tabAvail}
-                onTabChange={setActiveTab}
+                onTabChange={handleTabChange}
                 showAnalysis={showAnalysis}
                 onShowAnalysisChange={setShowAnalysis}
                 showLabels={showLabels}
@@ -375,15 +388,15 @@ export const ReportViewer: FC = () => {
 
         {cohortData.length > 0 && (
           <>
-            <div className={styles.chartPanel}>
+            <div className={`${styles.chartPanel} ${activeTab !== 'boolean' ? styles.chartPanelInactive : ''}`}>
               <BooleanChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={styles.chartPanel}>
+            <div className={`${styles.chartPanel} ${activeTab !== 'categorical' ? styles.chartPanelInactive : ''}`}>
               <CategoricalChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={styles.chartPanel}>
+            <div className={`${styles.chartPanel} ${activeTab !== 'numeric' ? styles.chartPanelInactive : ''}`}>
               {selectedRun && (
                 <NumericChart
                   cohortData={cohortData}
