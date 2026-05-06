@@ -2,6 +2,9 @@ import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
+import { useViewZoom } from '../../hooks/useViewZoom';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
@@ -300,6 +303,13 @@ export const ReportViewer: FC = () => {
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage } = useViewZoom({
+    minScale: 0.5,
+    maxScale: 2.0,
+    initialTransform: { x: 0, y: 0, scale: 1 },
+    storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
+  });
+
   return (
     <div className={styles.page}>
       <div className={styles.titleContainer}>
@@ -338,11 +348,14 @@ export const ReportViewer: FC = () => {
         }
       />
 
-      <div className={styles.content} ref={contentRef}>
+      <div className={styles.content} ref={(el) => {
+        (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+        (viewportRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+      }}>
               <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
 
-        <div className={styles.contentInner}>
+        <div className={styles.contentInner} ref={transformRef}>
 
         {loadingRun && <div className={styles.loading}>Loading…</div>}
 
@@ -374,6 +387,16 @@ export const ReportViewer: FC = () => {
         </div>
       </div>
       <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30}/>
+      <div className={navBarStyles.topRight}>
+        <ViewNavBar
+          height={44}
+          scrollPercentage={zoomPercentage}
+          canScrollLeft={false}
+          canScrollRight={false}
+          onViewNavigationScroll={setZoomPercentage}
+          scrollbarTooltipLabel="Zoom"
+        />
+      </div>
     </div>
   );
 };

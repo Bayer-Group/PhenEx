@@ -1,13 +1,57 @@
-/* ── AG Grid overrides for BooleanChart ──────────────────────────────── */
-.gridContainer {
+/* ── BooleanChart layout ─────────────────────────────────────────────── */
+
+.mainContent {
+  padding-top: 100px;
+}
+
+.table {
   width: 100%;
 }
 
-.sectionContainer{
-  width: 100%;
-  height: 100%;
+.row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line-color, #e0e0e0);
 }
 
-.mainContent{
-  padding-top:100px;
+.row:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.nameCell {
+  width: 350px;
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: clamp(18px, calc(14px / var(--zoom-scale, 1)), 24px);
+  color: #333;
+  line-height: 1.25;
+  word-break: break-word;
+  white-space: normal;
+  padding: 5px 10px 30px 20px;
+  text-align: right;
+  box-sizing: border-box;
+  /* display: flex;
+  align-items: center; */
+}
+
+.chartCell {
+  width: 300px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.analysisCell {
+  flex: 1;
+  padding: 20px 12px 15px 30px;
+  box-sizing: border-box;
+}
+
+.analysisText {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: var(--font_size_infotext, 16px);
+  color: #999;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+  margin: 0;
 }

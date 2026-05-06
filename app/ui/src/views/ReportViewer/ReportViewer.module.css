@@ -81,6 +81,7 @@
   height: 100%;
   width: 100%;
   scrollbar-width: none;
+  overflow: hidden;
 }
 
 .content::-webkit-scrollbar {
@@ -92,6 +93,7 @@
   width: 100%;
   margin-left: min(8vw, 120px);
   padding-top: 0px;
+  transform-origin: top left;
 }
 
 .bottomSpacer{

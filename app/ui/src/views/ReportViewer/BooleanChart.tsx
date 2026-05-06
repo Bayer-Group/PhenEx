@@ -1,11 +1,7 @@
-import { FC, useMemo } from 'react';
-import { AgGridReact } from '@ag-grid-community/react';
-import { themeQuartz } from 'ag-grid-community';
+import { FC } from 'react';
 import { type CohortClassified } from './types';
 import { groupBySection } from './types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
-import { NameCellRenderer } from './CellRenderers/NameCellRenderer';
-import { AnalysisCellRenderer } from './CellRenderers/AnalysisCellRenderer';
 import styles from './BooleanChart.module.css';
 import sectionStyles from './ReportViewer.module.css';
 
@@ -25,57 +21,6 @@ const DEFAULT_ANALYSES = [
 function getAnalysis(name: string, index: number): string {
   return FAKE_ANALYSES[name] || DEFAULT_ANALYSES[index % DEFAULT_ANALYSES.length];
 }
-
-/* ── Cell renderers ──────────────────────────────────────────────────── */
-
-/* ── AG Grid theme ───────────────────────────────────────────────────── */
-const gridTheme = themeQuartz.withParams({
-  accentColor: 'transparent',
-  borderColor: 'var(--line-color, #e0e0e0)',
-  browserColorScheme: 'light',
-  columnBorder: false,
-  headerFontSize: 10,
-  headerRowBorder: false,
-  cellHorizontalPadding: 0,
-  headerBackgroundColor: 'transparent',
-  rowBorder: true,
-  spacing: 0,
-  wrapperBorder: false,
-  backgroundColor: 'transparent',
-  wrapperBorderRadius: 0,
-  rowHoverColor: 'rgba(211, 213, 215, 0.04)',
-});
-
-/* ── Column definitions ──────────────────────────────────────────────── */
-const columnDefs: any[] = [
-  {
-    field: 'name',
-    headerName: '',
-    width: 300,
-    resizable: false,
-    sortable: false,
-    cellRenderer: NameCellRenderer,
-    suppressHeaderMenuButton: true,
-  },
-  {
-    field: 'chart',
-    headerName: '',
-    width: 300,
-    resizable: false,
-    sortable: false,
-    cellRenderer: BarChartCellRenderer,
-    suppressHeaderMenuButton: true,
-  },
-  {
-    field: 'analysis',
-    headerName: '',
-    flex: 1,
-    resizable: false,
-    sortable: false,
-    cellRenderer: AnalysisCellRenderer,
-    suppressHeaderMenuButton: true,
-  },
-];
 
 /* ── Components ──────────────────────────────────────────────────────── */
 
@@ -105,7 +50,7 @@ export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) =>
       {groups.map((g, gi) => (
         <div key={gi}>
           {g.section && <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>}
-          <BooleanBarGroup names={g.items} cohortData={cohortData} />
+          <BooleanBarGroup names={g.items} cohortData={cohortData} startIndex={gi * 100} />
         </div>
       ))}
     </div>
@@ -115,43 +60,29 @@ export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) =>
 interface BooleanBarGroupProps {
   names: string[];
   cohortData: CohortClassified[];
+  startIndex: number;
 }
 
-const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData }) => {
-  const nc = cohortData.length;
-  const barRowH = 16; // BAR_H + determines  ##HEIGHT_TABLE1_ROW_BOOLEAN_TOTAL
-  const rowPaddingTop = 20;
-  const rowPaddingBottom = 20;
+const BAR_ROW_H = 16;
+const ROW_PADDING_TOP = 20;
+const ROW_PADDING_BOTTOM = 20;
 
-  const rowData = useMemo(
-    () =>
-      names.map((name, i) => ({
-        name,
-        chart: name,
-        analysis: getAnalysis(name, i),
-        _meta: { cohortData },
-      })),
-    [names, cohortData],
-  );
-
-  const getRowHeight = () => nc * barRowH + rowPaddingTop + rowPaddingBottom;
-  const gridH = names.length * getRowHeight() + 2; // +4 for border
+const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData, startIndex }) => {
+  const rowHeight = cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
 
   return (
-    <div className={styles.gridContainer} style={{ height: gridH }}>
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs}
-        theme={gridTheme}
-        headerHeight={0}
-        domLayout="normal"
-        suppressRowHoverHighlight={false}
-        getRowHeight={getRowHeight}
-        defaultColDef={{
-          filter: false,
-          suppressHeaderMenuButton: true,
-        }}
-      />
+    <div className={styles.table}>
+      {names.map((name, i) => (
+        <div key={name} className={styles.row} style={{ height: rowHeight }}>
+          <div className={styles.nameCell}>{name}</div>
+          <div className={styles.chartCell}>
+            <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
+          </div>
+          <div className={styles.analysisCell}>
+            <p className={styles.analysisText}>{getAnalysis(name, startIndex + i)}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
