@@ -1,10 +1,9 @@
-import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
 import { useViewZoom } from '../../hooks/useViewZoom';
-import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
-import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
+import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
@@ -44,6 +43,33 @@ function formatRunTimestamp(raw: string): string {
   const [, year, month, day, hour, minute] = m;
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${ordinal(parseInt(day, 10))} ${year} @${hour}:${minute} CET`;
 }
+
+const ZoomScrubber: React.FC<{ percentage: number; onChange: (p: number) => void }> = ({ percentage, onChange }) => {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  const updateFromEvent = (e: MouseEvent | React.MouseEvent) => {
+    if (!barRef.current) return;
+    const rect = barRef.current.getBoundingClientRect();
+    onChange(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    updateFromEvent(e);
+    const onMove = (ev: MouseEvent) => updateFromEvent(ev);
+    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  return (
+    <div className={navBarStyles.horizontalScrollContainer}>
+      <div ref={barRef} className={navBarStyles.horizontalScrollbar} onMouseDown={handleMouseDown} style={{ width: 120 }}>
+        <div className={navBarStyles.scrollbarThumb} style={{ left: `${percentage}%` }} />
+      </div>
+    </div>
+  );
+};
 
 export const ReportViewer: FC = () => {
   const { timestamp } = useParams<{ studyName?: string; timestamp?: string }>();
@@ -347,6 +373,9 @@ export const ReportViewer: FC = () => {
         }
         bottom={
           <>
+            <ReportNavPanelCard title="Zoom">
+              <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
+            </ReportNavPanelCard>
             <ReportNavPanelCard title="Types">
               <ReportDataTypeSelector
                 activeTab={activeTab}
@@ -412,16 +441,6 @@ export const ReportViewer: FC = () => {
         </div>
       </div>
       <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30}/>
-      <div className={navBarStyles.topRight}>
-        <ViewNavBar
-          height={44}
-          scrollPercentage={zoomPercentage}
-          canScrollLeft={false}
-          canScrollRight={false}
-          onViewNavigationScroll={setZoomPercentage}
-          scrollbarTooltipLabel="Zoom"
-        />
-      </div>
     </div>
   );
 };
