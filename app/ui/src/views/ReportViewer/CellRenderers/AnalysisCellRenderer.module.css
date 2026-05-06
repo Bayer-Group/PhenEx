@@ -1,12 +1,12 @@
 .analysisCell {
-  padding: 30px 12px 0px 30px;
+  padding: 20px 12px 15px 30px;
   width: 100%;
   box-sizing: border-box;
 }
 
 .analysisText {
-  font-style: italic;
-  font-size: var(--font_size_items, 16px);
+    font-family:"IBMPlexSans-regular", sans-serif;
+  font-size: var(--font_size_infotext, 16px);
   color: #999;
   line-height: 1.4;
   white-space: normal;

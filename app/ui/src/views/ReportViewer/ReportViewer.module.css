@@ -7,33 +7,39 @@
 }
 
 /* ── Header card (bottom-right) ───────────────────────────────────────── */
-.legendContainer {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 10;
-  max-width: 380px;
-  padding: 16px 20px;
-  background: var(--line-color, #e0e0e0);
-  opacity: 0.85;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
 
-.legendContainer::after {
-  content: '';
+.titleContainer{
   position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 60%);
-  pointer-events: none;
+  top: 20px;
+  left: 30px;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  z-index: 10;
+  padding: 6px 16px;
+  gap: 2px;
+  font-size: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: var(--line-color) 1px solid;
+  font-family: "IBMPlexSans-bold", sans-serif;
 }
 
 .title {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  margin: 0;
   font-weight: bold;
   color: #222;
+  font-size: var(--font_size_pagetitle, 18px);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font_size_breadcrumbs, 11px);
+  font-weight: 400;
+  color: #555;
+  line-height: 1.2;
 }
 
 .runSelector {
@@ -73,10 +79,19 @@
 .content {
   overflow-y: auto;
   height: 100%;
-  padding-top:0px;
-  /* height: calc(100vh - 80px);
-  overflow-y: auto;
-  padding: 80px 0px 300px 0px; */
+  width: 100%;
+  scrollbar-width: none;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}
+
+.contentInner {
+  max-width: 900px;
+  width: 100%;
+  margin-left: min(8vw, 120px);
+  padding-top: 0px;
 }
 
 .bottomSpacer{
@@ -86,8 +101,7 @@
 
 /* ── Chart sections ──────────────────────────────────────────────────── */
 .sectionHeader {
-  font-size: var(--font_size_breadcrumb, 14px);
-  font-weight: bold;
+  font-size: var(--font_size_pagetitle, 14px);
   color: #333;
   margin: 0px 0 0px 0;
   padding: 80px 0px 30px 20px;
@@ -95,7 +109,7 @@
   border-left: none;
   border-radius: 0;
   border-bottom: var(--line-color, #e0e0e0) 1px solid;
-
+  font-family: "IBMPlexSans-regular", sans-serif;
 }
 
 .sectionHeader:first-child {

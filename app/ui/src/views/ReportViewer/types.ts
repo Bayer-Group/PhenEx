@@ -1,14 +1,11 @@
-/** Base cohort colors — one per cohort group. */
-export const COHORT_BASE_COLORS = [
-  '#1A4225',
-  '#27607C',
-  '#C22D4E',
-  '#7B5EA7',
-  '#C4853A',
-  '#3A7D6E',
-  '#5B8C3E',
-  '#A04668',
-];
+import { colorConfig } from './data/barchartcolors';
+
+/** Build COHORT_BASE_COLORS from the config. */
+const palette = colorConfig.palette as Record<string, readonly [number, number, number]>;
+export const COHORT_BASE_COLORS: string[] = colorConfig.cohortColorOrder.map((name) => {
+  const [r, g, b] = palette[name];
+  return `rgb(${r}, ${g}, ${b})`;
+});
 
 /**
  * Get the color for a selection, based on its cohort group index and
@@ -21,19 +18,13 @@ export function getCohortColor(
 ): string {
   const base = COHORT_BASE_COLORS[groupIndex % COHORT_BASE_COLORS.length];
   if (totalSubs <= 1) return base;
-  // Alpha from 1.0 (first sub) fading down, minimum 0.35
   const alpha = 1.0 - (subIndex / totalSubs) * 0.65;
-  return hexToRgba(base, alpha);
+  const m = base.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!m) return base;
+  return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`;
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// Keep COLORS for backward compat (BooleanChart bar fills still use it)
+// Keep COLORS for backward compat
 export const COLORS = COHORT_BASE_COLORS;
 
 /** An active legend item: a selected cohort at a specific display index/color. */

@@ -101,7 +101,7 @@ export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) =>
   const groups = groupBySection(allNames, sections);
 
   return (
-    <div>
+    <div className={styles.mainContent}>
       {groups.map((g, gi) => (
         <div key={gi}>
           {g.section && <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>}

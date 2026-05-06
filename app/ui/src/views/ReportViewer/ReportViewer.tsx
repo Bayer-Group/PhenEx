@@ -1,14 +1,14 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
-import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
 import { NumericChart } from './NumericChart';
-import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
-import { PhenExNavBarMenu } from '../../components/PhenExNavBar/PhenExNavBarMenu';
-import { SwitchButton } from '../../components/ButtonsAndTabs/SwitchButton/SwitchButton';
+import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
+import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
+import { ReportDataTypeSelector } from './ReportViewNavBar/ReportDataTypeSelector';
 import {
   fetchRuns,
   fetchCohorts,
@@ -27,6 +27,16 @@ import {
 } from './types';
 
 type TabKey = 'boolean' | 'categorical' | 'numeric';
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const ordinal = (d: number) => d + (['th', 'st', 'nd', 'rd'][(d % 100 > 10 && d % 100 < 14) ? 0 : d % 10] ?? 'th');
+
+function formatRunTimestamp(raw: string): string {
+  const m = raw.match(/D(\d{4})-(\d{2})-(\d{2})__T(\d{2})-(\d{2})/);
+  if (!m) return raw;
+  const [, year, month, day, hour, minute] = m;
+  return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${ordinal(parseInt(day, 10))} ${year} @${hour}:${minute} CET`;
+}
 
 export const ReportViewer: FC = () => {
   const { timestamp } = useParams<{ studyName?: string; timestamp?: string }>();
@@ -285,95 +295,54 @@ export const ReportViewer: FC = () => {
   }, [cohortEntries]);
 
   // ── Render ────────────────────────────────────────────────────────────
-  const TAB_KEYS: TabKey[] = ['boolean', 'categorical', 'numeric'];
-  const TAB_LABELS = ['Boolean', 'Categorical', 'Numeric'];
-
-  const handleTabChange = (index: number) => {
-    const key = TAB_KEYS[index];
-    if (tabAvail[key]) setActiveTab(key);
-  };
-
-  // ── Visibility menu state ─────────────────────────────────────────────
+  // ── Visibility state ──────────────────────────────────────────────────
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [isVisMenuOpen, setIsVisMenuOpen] = useState(false);
-  const eyeBtnRef = useRef<HTMLButtonElement>(null);
-  const visMenuRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const contentRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className={styles.page}>
-      <div className={styles.legendContainer}>
-        <h1 className={styles.title}>Baseline Characteristics</h1>
-        <CohortSelector
-          groups={groups}
-          selections={selections}
-          onReplace={handleReplace}
-          onAdd={handleAdd}
-          onRemove={(index) => setSelections((prev) => prev.filter((_, i) => i !== index))}
-        />
+      <div className={styles.titleContainer}>
+        <span className={styles.title}>LUMINOUS</span>
+        <span className={styles.subtitle}>Executed {selectedRun ? formatRunTimestamp(selectedRun) : 'Loading runs...'}</span>
       </div>
 
-      <div className={styles.navBarContainer}>
-        <div className={navBarStyles.navBar} style={{ height: 44 }}>
-          <div className={navBarStyles.viewNavContent}>
-            <Tabs
-              tabs={TAB_LABELS}
-              active_tab_index={TAB_KEYS.indexOf(activeTab)}
-              onTabChange={handleTabChange}
-              classNameTabs={navBarStyles.classNameSectionTabs}
-              classNameTabsContainer={navBarStyles.classNameTabsContainer}
-              classNameActiveTab={navBarStyles.classNameActiveTab}
-              classNameHoverTab={navBarStyles.classNameHoverTab}
-            />
-            <button
-              ref={eyeBtnRef}
-              className={navBarStyles.eyeButton}
-              onMouseEnter={() => setIsVisMenuOpen(true)}
-              onMouseLeave={() => {
-                setTimeout(() => {
-                  if (!visMenuRef.current?.matches(':hover')) {
-                    setIsVisMenuOpen(false);
-                  }
-                }, 100);
-              }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </button>
-          </div>
-        </div>
 
-        <PhenExNavBarMenu
-          isOpen={isVisMenuOpen}
-          onClose={() => setIsVisMenuOpen(false)}
-          anchorElement={eyeBtnRef.current}
-          menuRef={visMenuRef}
-          onMouseEnter={() => setIsVisMenuOpen(true)}
-          onMouseLeave={() => setIsVisMenuOpen(false)}
-          verticalPosition="above"
-          horizontalAlignment="center"
-        >
-          <div style={{ padding: '12px', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>Visibility Options</div>
-            <SwitchButton
-              label="Show Analysis"
-              value={showAnalysis}
-              onValueChange={setShowAnalysis}
-            />
-            <SwitchButton
-              label="Show Labels"
-              value={showLabels}
-              onValueChange={setShowLabels}
-            />
-          </div>
-        </PhenExNavBarMenu>
-      </div>
+      <ReportNavPanel
+        top={
+          <div style={{ height: 100 }} />
+        }
+        bottom={
+          <>
+            <ReportNavPanelCard title="Types">
+              <ReportDataTypeSelector
+                activeTab={activeTab}
+                tabAvail={tabAvail}
+                onTabChange={setActiveTab}
+                showAnalysis={showAnalysis}
+                onShowAnalysisChange={setShowAnalysis}
+                showLabels={showLabels}
+                onShowLabelsChange={setShowLabels}
+              />
+            </ReportNavPanelCard>
+            <ReportNavPanelCard title="Visible cohorts">
+              <CohortSelector
+                groups={groups}
+                selections={selections}
+                onReplace={handleReplace}
+                onAdd={handleAdd}
+                onRemove={(index) => setSelections((prev) => prev.filter((_, i) => i !== index))}
+              />
+            </ReportNavPanelCard>
+          </>
+        }
+      />
 
-      <div className={styles.content}>
+      <div className={styles.content} ref={contentRef}>
               <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
+
+        <div className={styles.contentInner}>
 
         {loadingRun && <div className={styles.loading}>Loading…</div>}
 
@@ -402,7 +371,9 @@ export const ReportViewer: FC = () => {
           </>
 
         )}
+        </div>
       </div>
+      <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30}/>
     </div>
   );
 };
