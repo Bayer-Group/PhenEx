@@ -40,10 +40,6 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
     onTransformChange,
   } = options;
 
-  // Use a ref so applyTransform never needs onTransformChange in its deps
-  const onTransformChangeRef = useRef(onTransformChange);
-  onTransformChangeRef.current = onTransformChange;
-
   const loadInitial = (): ViewTransform => {
     if (storageKey) {
       try {
@@ -73,11 +69,10 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
       }
       currentTransform.current = { x, y, scale };
 
-      onTransformChangeRef.current?.(x, y, scale);
-
       const pct = scaleToPercentage(scale, minScale, maxScale);
       setZoomPercentageState(pct);
       onZoomChange?.(pct);
+      onTransformChange?.(x, y, scale);
 
       if (storageKey) {
         if (persistTimeout.current) clearTimeout(persistTimeout.current);
@@ -86,7 +81,7 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
         }, 500);
       }
     },
-    [minScale, maxScale, storageKey, onZoomChange],
+    [minScale, maxScale, storageKey, onZoomChange, onTransformChange],
   );
 
   const setZoomPercentage = useCallback(
