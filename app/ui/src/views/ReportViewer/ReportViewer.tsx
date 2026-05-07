@@ -61,6 +61,7 @@ export const ReportViewer: FC = () => {
 
   // ── Data state ────────────────────────────────────────────────────────
   const [allCohortEntries, setAllCohortEntries] = useState<CohortEntry[]>([]);
+  const [allOutcomesEntries, setAllOutcomesEntries] = useState<CohortEntry[]>([]);
   const [waterfallData, setWaterfallData] = useState<Record<string, unknown>>({});
   const [loadingRun, setLoadingRun] = useState(false);
 
@@ -112,22 +113,23 @@ export const ReportViewer: FC = () => {
 
     if (cached) {
       console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts, ${cached.frozenCohorts.length} definitions`);
-      applyLoadedData(runId, cached.entries, cached.frozenCohorts, cached.info, cached.waterfall);
+      applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.frozenCohorts, cached.info, cached.waterfall);
       return;
     }
 
     console.log(`[ReportViewer] fetching run data for: ${runId}`);
     Promise.all([
       fetchCombinedTable1(runId),
+      fetchCombinedTable1(runId, 'table1_outcomes').catch(() => []),
       fetchFrozenCohortsCombined(runId),
       fetchRunInfo(runId),
       fetchWaterfallCombined(runId).catch(() => ({})),
     ])
-      .then(([entries, frozenCohorts, info, waterfall]) => {
-        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${frozenCohorts.length} frozen definitions, ${Object.keys(waterfall).length} waterfalls, info keys: ${Object.keys(info).join(',')}`);
-        const runData: RunData = { entries, frozenCohorts, info, waterfall };
+      .then(([entries, outcomesEntries, frozenCohorts, info, waterfall]) => {
+        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${outcomesEntries.length} outcomes, ${frozenCohorts.length} frozen definitions, ${Object.keys(waterfall).length} waterfalls`);
+        const runData: RunData = { entries, outcomesEntries, frozenCohorts, info, waterfall };
         setCache(runId, runData);
-        applyLoadedData(runId, entries, frozenCohorts, info, waterfall);
+        applyLoadedData(runId, entries, outcomesEntries, frozenCohorts, info, waterfall);
       })
       .catch((err) => {
         console.error('[ReportViewer] failed to load run data:', err);
@@ -137,7 +139,7 @@ export const ReportViewer: FC = () => {
 
   /** Shared logic: set groups, entries, and resolve initial selections. */
   const applyLoadedData = useCallback(
-    (runId: string, entries: CohortEntry[], frozenCohorts: Record<string, unknown>[], info: Record<string, string>, waterfall: Record<string, unknown>) => {
+    (runId: string, entries: CohortEntry[], outcomesEntries: CohortEntry[], frozenCohorts: Record<string, unknown>[], info: Record<string, string>, waterfall: Record<string, unknown>) => {
       console.log('[ReportViewer] frozen cohort definitions:', frozenCohorts);
       console.log('[ReportViewer] run info:', info);
       console.log('[ReportViewer] waterfall data:', Object.keys(waterfall).length, 'cohorts');
@@ -146,6 +148,7 @@ export const ReportViewer: FC = () => {
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
       setAllCohortEntries(entries);
+      setAllOutcomesEntries(outcomesEntries);
       setWaterfallData(waterfall);
 
       // Priority: URL params > saved state > default first cohort
@@ -317,6 +320,38 @@ export const ReportViewer: FC = () => {
     return null;
   }, [cohortEntries]);
 
+  // ── Outcomes: filter + classify selected cohorts ──────────────────────
+  const outcomesEntries = useMemo(
+    () => allOutcomesEntries.filter((e) => selectedCohortNames.has(e.cohortName)),
+    [allOutcomesEntries, selectedCohortNames],
+  );
+
+  const outcomesCohortData: CohortClassified[] = useMemo(
+    () =>
+      selections
+        .map((sel) => {
+          const entry = outcomesEntries.find((e) => e.cohortName === sel.cohortName);
+          if (!entry) return null;
+          return {
+            name: entry.cohortName,
+            ci: sel.colorIndex,
+            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+            classified: classifyRows(entry.data.rows),
+            data: entry.data,
+          };
+        })
+        .filter((c): c is CohortClassified => c !== null),
+    [outcomesEntries, selections],
+  );
+
+  const outcomesSections = useMemo(() => {
+    for (const entry of outcomesEntries) {
+      const s = entry.data.sections;
+      if (s && Object.keys(s).length) return s;
+    }
+    return null;
+  }, [outcomesEntries]);
+
   // ── Render ────────────────────────────────────────────────────────────
   // ── Visibility state ──────────────────────────────────────────────────
   const [showAnalysis, setShowAnalysis] = useState(true);
@@ -436,16 +471,16 @@ export const ReportViewer: FC = () => {
 
             <ChartGroup title="Outcomes">
               <div className={styles.chartPanel}>
-                <BooleanChart cohortData={cohortData} sections={sections} />
+                <BooleanChart cohortData={outcomesCohortData} sections={outcomesSections} />
               </div>
               <div className={styles.chartPanel}>
-                <CategoricalChart cohortData={cohortData} sections={sections} />
+                <CategoricalChart cohortData={outcomesCohortData} sections={outcomesSections} />
               </div>
               <div className={styles.chartPanel}>
                 {selectedRun && (
                   <NumericChart
-                    cohortData={cohortData}
-                    sections={sections}
+                    cohortData={outcomesCohortData}
+                    sections={outcomesSections}
                     runId={selectedRun}
                     selectedCohorts={selectedCohortNames}
                   />
