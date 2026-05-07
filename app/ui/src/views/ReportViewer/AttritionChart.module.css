@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  align-items: flex-start;
+}
+
+.cohortBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.cohortTitle {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 12px 4px;
+}
+
+/* Let the SVG scale up while the wrapper fits its content */
+.d3Wrapper {
+  width: max-content;
+  zoom: 2;
+}
+
+.d3Wrapper > div {
+  max-width: none !important;
+}

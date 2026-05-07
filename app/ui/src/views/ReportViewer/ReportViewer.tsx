@@ -7,6 +7,8 @@ import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
 import { NumericChart } from './NumericChart';
+import { AttritionChart } from './AttritionChart';
+import { ChartGroup } from './ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
 import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { ReportDataTypeSelector } from './ReportViewNavBar/ReportDataTypeSelector';
@@ -31,10 +33,6 @@ import {
 } from './types';
 
 type TabKey = 'boolean' | 'categorical' | 'numeric';
-
-const TAB_ORDER: TabKey[] = ['boolean', 'categorical', 'numeric'];
-const PANEL_WIDTH = 900;
-const PANEL_GAP = 300;
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const ordinal = (d: number) => d + (['th', 'st', 'nd', 'rd'][(d % 100 > 10 && d % 100 < 14) ? 0 : d % 10] ?? 'th');
@@ -63,6 +61,7 @@ export const ReportViewer: FC = () => {
 
   // ── Data state ────────────────────────────────────────────────────────
   const [allCohortEntries, setAllCohortEntries] = useState<CohortEntry[]>([]);
+  const [waterfallData, setWaterfallData] = useState<Record<string, unknown>>({});
   const [loadingRun, setLoadingRun] = useState(false);
 
   // ── Tab state ─────────────────────────────────────────────────────────
@@ -147,6 +146,7 @@ export const ReportViewer: FC = () => {
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
       setAllCohortEntries(entries);
+      setWaterfallData(waterfall);
 
       // Priority: URL params > saved state > default first cohort
       const cohortParams = urlCohortsRef.current;
@@ -322,31 +322,13 @@ export const ReportViewer: FC = () => {
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
-  const panelRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
 
-  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
+  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage } = useViewZoom({
     minScale: 0.1,
     maxScale: 1.4,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
-    onTransformChange: (x, _y, scale) => {
-      const viewW = contentRef.current?.clientWidth ?? window.innerWidth;
-      TAB_ORDER.forEach((_, i) => {
-        const panelLeft = i * (PANEL_WIDTH + PANEL_GAP);
-        const screenLeft = panelLeft * scale + x;
-        const screenRight = (panelLeft + PANEL_WIDTH) * scale + x;
-        const visiblePx = Math.max(0, Math.min(screenRight, viewW) - Math.max(screenLeft, 0));
-        const visibility = Math.max(0.15, visiblePx / (PANEL_WIDTH * scale));
-        panelRefs.current[i]?.style.setProperty('--panel-visibility', String(visibility));
-      });
-    },
   });
-
-  // ── Pan to active tab's panel on change ───────────────────────────────
-  useEffect(() => {
-    const i = TAB_ORDER.indexOf(activeTab);
-    panToX(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={styles.page}>
@@ -365,7 +347,30 @@ export const ReportViewer: FC = () => {
             <ReportNavPanelCard title="Zoom">
               <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
             </ReportNavPanelCard>
-            <ReportNavPanelCard title="Types">
+            <ReportNavPanelCard title="Attrition">
+              <ReportDataTypeSelector
+                activeTab={activeTab}
+                tabAvail={tabAvail}
+                onTabChange={setActiveTab}
+                showAnalysis={showAnalysis}
+                onShowAnalysisChange={setShowAnalysis}
+                showLabels={showLabels}
+                onShowLabelsChange={setShowLabels}
+              />
+            </ReportNavPanelCard>
+
+            <ReportNavPanelCard title="Baseline characteristics">
+              <ReportDataTypeSelector
+                activeTab={activeTab}
+                tabAvail={tabAvail}
+                onTabChange={setActiveTab}
+                showAnalysis={showAnalysis}
+                onShowAnalysisChange={setShowAnalysis}
+                showLabels={showLabels}
+                onShowLabelsChange={setShowLabels}
+              />
+            </ReportNavPanelCard>
+            <ReportNavPanelCard title="Outcomes">
               <ReportDataTypeSelector
                 activeTab={activeTab}
                 tabAvail={tabAvail}
@@ -406,25 +411,49 @@ export const ReportViewer: FC = () => {
 
         {cohortData.length > 0 && (
           <>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[0] = el; }}>
-              <BooleanChart cohortData={cohortData} sections={sections} />
-              <div className={styles.bottomSpacer} />
-            </div>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[1] = el; }}>
-              <CategoricalChart cohortData={cohortData} sections={sections} />
-              <div className={styles.bottomSpacer} />
-            </div>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[2] = el; }}>
-              {selectedRun && (
-                <NumericChart
-                  cohortData={cohortData}
-                  sections={sections}
-                  runId={selectedRun}
-                  selectedCohorts={selectedCohortNames}
-                />
-              )}
-              <div className={styles.bottomSpacer} />
-            </div>
+            <ChartGroup title="Attrition">
+              <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
+            </ChartGroup>
+
+            <ChartGroup title="Baseline Characteristics">
+              <div className={styles.chartPanel}>
+                <BooleanChart cohortData={cohortData} sections={sections} />
+              </div>
+              <div className={styles.chartPanel}>
+                <CategoricalChart cohortData={cohortData} sections={sections} />
+              </div>
+              <div className={styles.chartPanel}>
+                {selectedRun && (
+                  <NumericChart
+                    cohortData={cohortData}
+                    sections={sections}
+                    runId={selectedRun}
+                    selectedCohorts={selectedCohortNames}
+                  />
+                )}
+              </div>
+            </ChartGroup>
+
+            <ChartGroup title="Outcomes">
+              <div className={styles.chartPanel}>
+                <BooleanChart cohortData={cohortData} sections={sections} />
+              </div>
+              <div className={styles.chartPanel}>
+                <CategoricalChart cohortData={cohortData} sections={sections} />
+              </div>
+              <div className={styles.chartPanel}>
+                {selectedRun && (
+                  <NumericChart
+                    cohortData={cohortData}
+                    sections={sections}
+                    runId={selectedRun}
+                    selectedCohorts={selectedCohortNames}
+                  />
+                )}
+              </div>
+            </ChartGroup>
+
+            <div className={styles.bottomSpacer} />
           </>
         )}
         </div>
