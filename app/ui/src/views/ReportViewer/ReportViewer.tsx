@@ -15,6 +15,7 @@ import {
   fetchRuns,
   fetchCombinedTable1,
   fetchFrozenCohortsCombined,
+  fetchWaterfallCombined,
   fetchRunInfo,
   fetchReportAnalysis,
 } from './ReportViewerDataService';
@@ -112,7 +113,7 @@ export const ReportViewer: FC = () => {
 
     if (cached) {
       console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts, ${cached.frozenCohorts.length} definitions`);
-      applyLoadedData(runId, cached.entries, cached.frozenCohorts, cached.info);
+      applyLoadedData(runId, cached.entries, cached.frozenCohorts, cached.info, cached.waterfall);
       return;
     }
 
@@ -121,12 +122,13 @@ export const ReportViewer: FC = () => {
       fetchCombinedTable1(runId),
       fetchFrozenCohortsCombined(runId),
       fetchRunInfo(runId),
+      fetchWaterfallCombined(runId).catch(() => ({})),
     ])
-      .then(([entries, frozenCohorts, info]) => {
-        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${frozenCohorts.length} frozen definitions, info keys: ${Object.keys(info).join(',')}`);
-        const runData: RunData = { entries, frozenCohorts, info };
+      .then(([entries, frozenCohorts, info, waterfall]) => {
+        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${frozenCohorts.length} frozen definitions, ${Object.keys(waterfall).length} waterfalls, info keys: ${Object.keys(info).join(',')}`);
+        const runData: RunData = { entries, frozenCohorts, info, waterfall };
         setCache(runId, runData);
-        applyLoadedData(runId, entries, frozenCohorts, info);
+        applyLoadedData(runId, entries, frozenCohorts, info, waterfall);
       })
       .catch((err) => {
         console.error('[ReportViewer] failed to load run data:', err);
@@ -136,9 +138,10 @@ export const ReportViewer: FC = () => {
 
   /** Shared logic: set groups, entries, and resolve initial selections. */
   const applyLoadedData = useCallback(
-    (runId: string, entries: CohortEntry[], frozenCohorts: Record<string, unknown>[], info: Record<string, string>) => {
+    (runId: string, entries: CohortEntry[], frozenCohorts: Record<string, unknown>[], info: Record<string, string>, waterfall: Record<string, unknown>) => {
       console.log('[ReportViewer] frozen cohort definitions:', frozenCohorts);
       console.log('[ReportViewer] run info:', info);
+      console.log('[ReportViewer] waterfall data:', Object.keys(waterfall).length, 'cohorts');
 
       const names = entries.map((e) => e.cohortName);
       const parsed = parseCohortGroups(names);

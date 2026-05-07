@@ -127,6 +127,21 @@ def get_frozen_cohorts_combined(run_id: str) -> list:
     return _nan_to_none(data)
 
 
+# ── Combined waterfall (all cohorts in one file) ─────────────────────────
+
+@router.get("/report/runs/{run_id}/waterfall_combined")
+def get_waterfall_combined(run_id: str) -> Dict[str, Any]:
+    """Return combined waterfall data for all cohorts in a single response.
+
+    Reads ``combined_waterfall.json`` from the run directory, produced by
+    the ``report_concatenator.py`` script.
+    """
+    data = storage.read_run_file(run_id, "combined_waterfall.json")
+    if data is None:
+        raise HTTPException(status_code=404, detail="combined_waterfall.json not found")
+    return _nan_to_none(data)
+
+
 # ── Combined table1 (all cohorts in one file) ────────────────────────────
 
 @router.get("/report/runs/{run_id}/table1_combined")

@@ -94,6 +94,17 @@ export async function fetchFrozenCohortsCombined(runId: string): Promise<Record<
   return data;
 }
 
+/** Fetch combined waterfall data for all cohorts in a single request. */
+export async function fetchWaterfallCombined(
+  runId: string,
+): Promise<Record<string, unknown>> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/waterfall_combined`;
+  console.log(`[DataService] GET ${url}`);
+  const { data } = await api.get<Record<string, unknown>>(url);
+  console.log(`[DataService] waterfall_combined: ${Object.keys(data).length} cohorts`);
+  return data;
+}
+
 /** Request AI analysis comparing selected cohorts. */
 export async function fetchReportAnalysis(
   runId: string,

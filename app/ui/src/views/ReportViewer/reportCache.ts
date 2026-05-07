@@ -17,6 +17,7 @@ export interface RunData {
   entries: CohortEntry[];
   frozenCohorts: Record<string, unknown>[];
   info: Record<string, string>;
+  waterfall: Record<string, unknown>;
 }
 
 function runKey(runId: string): string {
