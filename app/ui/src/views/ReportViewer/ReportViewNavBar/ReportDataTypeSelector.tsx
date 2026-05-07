@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
-import navBarStyles from '../../../components/PhenExNavBar/NavBar.module.css';
+import styles from './ReportDataTypeSelector.module.css';
 
 type TabKey = 'boolean' | 'categorical' | 'numeric';
 
@@ -28,15 +28,16 @@ export const ReportDataTypeSelector: FC<ReportDataTypeSelectorProps> = ({
   };
 
   return (
-    <Tabs
-      tabs={TAB_LABELS}
-      active_tab_index={TAB_KEYS.indexOf(activeTab)}
-      onTabChange={handleTabChange}
-      classNameTabs={navBarStyles.classNameSectionTabs}
-      classNameTabsContainer={navBarStyles.classNameTabsContainer}
-      classNameActiveTab={navBarStyles.classNameActiveTab}
-      classNameHoverTab={navBarStyles.classNameHoverTab}
-      width="100%"
-    />
+    <div style={{ display: 'flex', justifyContent: 'center', width: '100%'}}>
+      <Tabs
+        tabs={TAB_LABELS}
+        active_tab_index={TAB_KEYS.indexOf(activeTab)}
+        onTabChange={handleTabChange}
+        classNameTabs={styles.classNameSectionTabs}
+        classNameTabsContainer={styles.classNameTabsContainer}
+        classNameActiveTab={styles.classNameActiveTab}
+        classNameHoverTab={styles.classNameHoverTab}
+      />
+    </div>
   );
 };

@@ -78,9 +78,9 @@ const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData, startInd
           <div className={styles.chartCell}>
             <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
           </div>
-          <div className={styles.analysisCell}>
+          {/* <div className={styles.analysisCell}>
             <p className={styles.analysisText}>{getAnalysis(name, startIndex + i)}</p>
-          </div>
+          </div> */}
         </div>
       ))}
     </div>
