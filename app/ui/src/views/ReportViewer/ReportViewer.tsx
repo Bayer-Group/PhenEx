@@ -3,8 +3,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
 import { useViewZoom } from '../../hooks/useViewZoom';
-import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
-import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
@@ -12,6 +10,7 @@ import { NumericChart } from './NumericChart';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
 import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { ReportDataTypeSelector } from './ReportViewNavBar/ReportDataTypeSelector';
+import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
 import {
   fetchRuns,
   fetchCombinedTable1,
@@ -348,6 +347,9 @@ export const ReportViewer: FC = () => {
         }
         bottom={
           <>
+            <ReportNavPanelCard title="Zoom">
+              <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
+            </ReportNavPanelCard>
             <ReportNavPanelCard title="Types">
               <ReportDataTypeSelector
                 activeTab={activeTab}
@@ -413,16 +415,6 @@ export const ReportViewer: FC = () => {
         </div>
       </div>
       <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30}/>
-      <div className={navBarStyles.topRight}>
-        <ViewNavBar
-          height={44}
-          scrollPercentage={zoomPercentage}
-          canScrollLeft={false}
-          canScrollRight={false}
-          onViewNavigationScroll={setZoomPercentage}
-          scrollbarTooltipLabel="Zoom"
-        />
-      </div>
     </div>
   );
 };
