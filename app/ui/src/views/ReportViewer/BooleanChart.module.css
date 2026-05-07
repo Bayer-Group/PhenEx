@@ -1,12 +1,31 @@
 /* ── BooleanChart layout ─────────────────────────────────────────────── */
 
-.mainContent {
-  padding-top: 0px;
+/* Horizontal flow of placement blocks */
+.blocksContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   user-select: none;
 }
 
-.table {
-  width: 100%;
+/* A block is either a vertical stack of short sections or a single wide section */
+.block {
+  flex-shrink: 0;
+}
+
+/* Vertical spacing between stacked sections within a block */
+.section {
+  margin-bottom: 4px;
+}
+
+/* Columns within a section (items wrap after MAX_ROWS) */
+.sectionColumns {
+  display: flex;
+  align-items: flex-start;
+}
+
+.column {
+  flex-shrink: 0;
 }
 
 .row {
@@ -40,20 +59,4 @@
   width: 300px;
   flex-shrink: 0;
   box-sizing: border-box;
-}
-
-.analysisCell {
-  flex: 1;
-  padding: 20px 12px 15px 30px;
-  box-sizing: border-box;
-}
-
-.analysisText {
-  font-family: "IBMPlexSans-regular", sans-serif;
-  font-size: var(--font_size_infotext, 16px);
-  color: #999;
-  line-height: 1.4;
-  white-space: normal;
-  word-break: break-word;
-  margin: 0;
 }

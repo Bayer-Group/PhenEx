@@ -1,25 +1,58 @@
 import { FC } from 'react';
-import { type CohortClassified } from './types';
+import { type CohortClassified, type SectionGroup } from './types';
 import { groupBySection } from './types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
 import styles from './BooleanChart.module.css';
 import sectionStyles from './ReportViewer.module.css';
 
-/* ── Fake AI analysis data ───────────────────────────────────────────── */
-const FAKE_ANALYSES: Record<string, string> = {};
-const DEFAULT_ANALYSES = [
-  'This is to be expected because prior diagnosis of menopause was part of the cohort definition. An outlier is the age cohort 60-65.',
-  'Prevalence is consistent across subcohorts, suggesting this characteristic is independent of the stratification variable.',
-  'Higher than expected rate in the baseline cohort — may reflect referral bias in the source population.',
-  'The difference between cohorts is not clinically meaningful despite statistical significance (p<0.05).',
-  'Consider that this phenotype overlaps with the exclusion criteria, which may explain the low prevalence.',
-  'Distribution matches published literature for this population. No further investigation needed.',
-  'Notably absent in the youngest age stratum. This warrants manual chart review to rule out coding artifacts.',
-  'The 12% gap between cohort1 and cohort2 likely reflects differences in follow-up duration rather than true prevalence.',
-];
+/* ── Layout constants ────────────────────────────────────────────────── */
 
-function getAnalysis(name: string, index: number): string {
-  return FAKE_ANALYSES[name] || DEFAULT_ANALYSES[index % DEFAULT_ANALYSES.length];
+const MAX_ROWS = 10;
+const BAR_ROW_H = 16;
+const ROW_PADDING_TOP = 20;
+const ROW_PADDING_BOTTOM = 20;
+
+/* ── Layout helpers ──────────────────────────────────────────────────── */
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+/**
+ * A placement block is either:
+ *  - A vertical stack of single-column sections, or
+ *  - A single multi-column section.
+ * Blocks are rendered side by side horizontally.
+ */
+interface PlacementBlock {
+  sections: SectionGroup[];
+  cols: number;
+}
+
+function buildLayout(groups: SectionGroup[]): PlacementBlock[] {
+  const blocks: PlacementBlock[] = [];
+  let shortStack: SectionGroup[] = [];
+
+  const flush = () => {
+    if (shortStack.length) {
+      blocks.push({ sections: [...shortStack], cols: 1 });
+      shortStack = [];
+    }
+  };
+
+  for (const g of groups) {
+    const cols = Math.ceil(g.items.length / MAX_ROWS);
+    if (cols <= 1) {
+      shortStack.push(g);
+    } else {
+      flush();
+      blocks.push({ sections: [g], cols });
+    }
+  }
+  flush();
+  return blocks;
 }
 
 /* ── Components ──────────────────────────────────────────────────────── */
@@ -44,43 +77,47 @@ export const BooleanChart: FC<BooleanChartProps> = ({ cohortData, sections }) =>
   if (!allNames.length) return null;
 
   const groups = groupBySection(allNames, sections);
+  const blocks = buildLayout(groups);
 
   return (
-    <div className={styles.mainContent}>
-      {groups.map((g, gi) => (
-        <div key={gi}>
-          {g.section && <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>}
-          <BooleanBarGroup names={g.items} cohortData={cohortData} startIndex={gi * 100} />
+    <div className={styles.blocksContainer}>
+      {blocks.map((block, bi) => (
+        <div key={bi} className={styles.block}>
+          {block.sections.map((g, gi) => (
+            <div key={gi} className={styles.section}>
+              {g.section && <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>}
+              <SectionColumns names={g.items} cohortData={cohortData} />
+            </div>
+          ))}
         </div>
       ))}
     </div>
   );
 };
 
-interface BooleanBarGroupProps {
+/* ── Section with column wrapping ────────────────────────────────────── */
+
+interface SectionColumnsProps {
   names: string[];
   cohortData: CohortClassified[];
-  startIndex: number;
 }
 
-const BAR_ROW_H = 16;
-const ROW_PADDING_TOP = 20;
-const ROW_PADDING_BOTTOM = 20;
-
-const BooleanBarGroup: FC<BooleanBarGroupProps> = ({ names, cohortData, startIndex }) => {
+const SectionColumns: FC<SectionColumnsProps> = ({ names, cohortData }) => {
   const rowHeight = cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
+  const columns = chunk(names, MAX_ROWS);
 
   return (
-    <div className={styles.table}>
-      {names.map((name, i) => (
-        <div key={name} className={styles.row} style={{ height: rowHeight }}>
-          <div className={styles.nameCell}>{name}</div>
-          <div className={styles.chartCell}>
-            <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
-          </div>
-          {/* <div className={styles.analysisCell}>
-            <p className={styles.analysisText}>{getAnalysis(name, startIndex + i)}</p>
-          </div> */}
+    <div className={styles.sectionColumns}>
+      {columns.map((colItems, ci) => (
+        <div key={ci} className={styles.column}>
+          {colItems.map((name) => (
+            <div key={name} className={styles.row} style={{ height: rowHeight }}>
+              <div className={styles.nameCell}>{name}</div>
+              <div className={styles.chartCell}>
+                <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
+              </div>
+            </div>
+          ))}
         </div>
       ))}
     </div>

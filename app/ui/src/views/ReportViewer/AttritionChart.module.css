@@ -21,7 +21,7 @@
 /* Let the SVG scale up while the wrapper fits its content */
 .d3Wrapper {
   width: max-content;
-  zoom: 2;
+  zoom: 1.2;
 }
 
 .d3Wrapper > div {
