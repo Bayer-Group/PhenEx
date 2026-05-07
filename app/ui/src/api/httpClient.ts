@@ -18,8 +18,8 @@ export const BACKEND_URL: string =
 // Single axios instance
 export const api = axios.create({
   baseURL: BACKEND_URL,
-  // You can set a sane default timeout; adjust as needed
-  timeout: 60_000,
+  // Generous timeout for large combined report payloads
+  timeout: 120_000,
   withCredentials: false, // set true if backend uses cookie auth
 });
 

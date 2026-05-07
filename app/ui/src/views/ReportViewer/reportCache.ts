@@ -1,8 +1,10 @@
 /**
  * Local-storage cache for report data.
  *
- * Each run's combined table1 payload is stored under a namespaced key
- * so subsequent visits skip the network fetch entirely.
+ * Stores three pieces per run:
+ *   - cohort entries (from combined_table1.json)
+ *   - frozen cohort definitions (from combined_frozen_cohorts.json)
+ *   - run info (from info.txt)
  */
 
 import type { CohortEntry, LegendSelection } from './types';
@@ -10,27 +12,33 @@ import type { CohortEntry, LegendSelection } from './types';
 const PREFIX = 'phenex:report:';
 const SEL_PREFIX = 'phenex:report:sel:';
 
-/** Build the storage key for a run + report combination. */
-function cacheKey(runId: string, report: string = 'table1'): string {
-  return `${PREFIX}${report}:${runId}`;
+/** All data needed to display a run, fetched once and cached. */
+export interface RunData {
+  entries: CohortEntry[];
+  frozenCohorts: Record<string, unknown>[];
+  info: Record<string, string>;
 }
 
-/** Read cached entries. Returns null on miss or corrupt data. */
-export function getCached(runId: string, report: string = 'table1'): CohortEntry[] | null {
+function runKey(runId: string): string {
+  return `${PREFIX}run:${runId}`;
+}
+
+/** Read cached run data. Returns null on miss or corrupt data. */
+export function getCached(runId: string): RunData | null {
   try {
-    const raw = localStorage.getItem(cacheKey(runId, report));
+    const raw = localStorage.getItem(runKey(runId));
     if (!raw) return null;
-    return JSON.parse(raw) as CohortEntry[];
+    return JSON.parse(raw) as RunData;
   } catch {
     return null;
   }
 }
 
-/** Write entries to cache. Logs a warning on quota errors. */
-export function setCache(runId: string, entries: CohortEntry[], report: string = 'table1'): void {
+/** Write run data to cache. */
+export function setCache(runId: string, data: RunData): void {
   try {
-    const json = JSON.stringify(entries);
-    localStorage.setItem(cacheKey(runId, report), json);
+    const json = JSON.stringify(data);
+    localStorage.setItem(runKey(runId), json);
     console.debug(`[reportCache] cached ${runId} (${(json.length / 1024).toFixed(0)} KB)`);
   } catch (e) {
     console.warn('[reportCache] failed to cache — localStorage may be full', e);
@@ -38,8 +46,8 @@ export function setCache(runId: string, entries: CohortEntry[], report: string =
 }
 
 /** Delete the cache for a single run. */
-export function clearCache(runId: string, report: string = 'table1'): void {
-  localStorage.removeItem(cacheKey(runId, report));
+export function clearCache(runId: string): void {
+  localStorage.removeItem(runKey(runId));
 }
 
 /** Delete all cached report data. */
@@ -50,20 +58,6 @@ export function clearAllCaches(): void {
     if (key?.startsWith(PREFIX)) toRemove.push(key);
   }
   toRemove.forEach((k) => localStorage.removeItem(k));
-}
-
-/** List run IDs that are currently cached. */
-export function listCachedRuns(): string[] {
-  const runs: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(PREFIX)) {
-      // key format: phenex:report:<report>:<runId>
-      const runId = key.slice(key.lastIndexOf(':') + 1);
-      if (runId && !runs.includes(runId)) runs.push(runId);
-    }
-  }
-  return runs.sort();
 }
 
 // ── Selection persistence ───────────────────────────────────────────────

@@ -17,9 +17,10 @@ export async function fetchCohorts(runId: string): Promise<string[]> {
 
 /** Fetch run metadata (info.txt). */
 export async function fetchRunInfo(runId: string): Promise<Record<string, string>> {
-  const { data } = await api.get<Record<string, string>>(
-    `${BASE}/runs/${encodeURIComponent(runId)}/info`,
-  );
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/info`;
+  console.log(`[DataService] GET ${url}`);
+  const { data } = await api.get<Record<string, string>>(url);
+  console.log(`[DataService] info: ${Object.keys(data).length} keys`);
   return data;
 }
 
@@ -74,14 +75,23 @@ export async function fetchCombinedTable1(
   runId: string,
   report: 'table1' | 'table1_outcomes' = 'table1',
 ): Promise<CohortEntry[]> {
-  const { data } = await api.get<Record<string, Table1Data>>(
-    `${BASE}/runs/${encodeURIComponent(runId)}/table1_combined`,
-    { params: { report } },
-  );
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/table1_combined`;
+  console.log(`[DataService] GET ${url}`);
+  const { data } = await api.get<Record<string, Table1Data>>(url, { params: { report } });
+  console.log(`[DataService] table1_combined: ${Object.keys(data).length} cohorts`);
   return Object.entries(data).map(([cohortName, table1]) => ({
     cohortName,
     data: table1,
   }));
+}
+
+/** Fetch all frozen cohort definitions (codelists stripped) for a run. */
+export async function fetchFrozenCohortsCombined(runId: string): Promise<Record<string, unknown>[]> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/frozen_cohorts_combined`;
+  console.log(`[DataService] GET ${url}`);
+  const { data } = await api.get<Record<string, unknown>[]>(url);
+  console.log(`[DataService] frozen_cohorts_combined: ${data.length} items`);
+  return data;
 }
 
 /** Request AI analysis comparing selected cohorts. */

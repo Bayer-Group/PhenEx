@@ -31,15 +31,23 @@ def _nan_to_none(obj: Any) -> Any:
 # ── List available runs ──────────────────────────────────────────────────
 
 @router.get("/report/runs")
-async def list_runs() -> List[str]:
+def list_runs() -> List[str]:
     """Return the names of available run directories (timestamp folders)."""
     return storage.list_runs()
+
+
+# ── List files in a run directory (debug) ────────────────────────────────
+
+@router.get("/report/runs/{run_id}/files")
+def list_run_files(run_id: str) -> List[str]:
+    """Return filenames (non-directory) at the run level.  Useful for debugging."""
+    return storage.list_run_files(run_id)
 
 
 # ── List cohorts inside a run ────────────────────────────────────────────
 
 @router.get("/report/runs/{run_id}/cohorts")
-async def list_cohorts(run_id: str) -> List[str]:
+def list_cohorts(run_id: str) -> List[str]:
     """Return cohort directory names within a run."""
     return storage.list_cohorts(run_id)
 
@@ -47,7 +55,7 @@ async def list_cohorts(run_id: str) -> List[str]:
 # ── Run metadata ─────────────────────────────────────────────────────────
 
 @router.get("/report/runs/{run_id}/info")
-async def get_run_info(run_id: str) -> Dict[str, str]:
+def get_run_info(run_id: str) -> Dict[str, str]:
     """Return the info.txt content as key-value pairs."""
     return storage.read_info(run_id)
 
@@ -55,7 +63,7 @@ async def get_run_info(run_id: str) -> Dict[str, str]:
 # ── Table1 data (rows + sections, no distributions) ─────────────────────
 
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1")
-async def get_table1(
+def get_table1(
     run_id: str,
     cohort_name: str,
     report: str = Query("table1", regex=r"^table1(_outcomes)?$"),
@@ -75,7 +83,7 @@ async def get_table1(
 # ── Value distributions (lazy-loaded per variable) ───────────────────────
 
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1/distributions")
-async def get_distributions(
+def get_distributions(
     run_id: str,
     cohort_name: str,
     variable: Optional[str] = Query(None),
@@ -104,33 +112,40 @@ async def get_distributions(
     return _nan_to_none(distributions)
 
 
+# ── Combined frozen cohort definitions ──────────────────────────────────
+
+@router.get("/report/runs/{run_id}/frozen_cohorts_combined")
+def get_frozen_cohorts_combined(run_id: str) -> list:
+    """Return the combined list of frozen cohort definitions (codelists stripped).
+
+    Reads ``combined_frozen_cohorts.json`` from the run directory, produced by
+    the ``report_concatenator.py`` script.  Returns an empty list if not found.
+    """
+    data = storage.read_run_file(run_id, "combined_frozen_cohorts.json")
+    if data is None:
+        return []
+    return _nan_to_none(data)
+
+
 # ── Combined table1 (all cohorts in one file) ────────────────────────────
 
 @router.get("/report/runs/{run_id}/table1_combined")
-async def get_table1_combined(
+def get_table1_combined(
     run_id: str,
     report: str = Query("table1", regex=r"^table1(_outcomes)?$"),
 ) -> Dict[str, Any]:
     """Return combined table1 data for all cohorts in a single response.
 
-    Looks for ``combined_<report>.json`` in the run directory.  Falls back
-    to loading each cohort's file individually if the combined file is
-    missing.
+    Reads ``combined_<report>.json`` from the run directory (produced by
+    ``report_concatenator.py``).
     """
-    combined = storage.read_run_file(run_id, f"combined_{report}.json")
-    if combined is not None:
-        return _nan_to_none(combined)
-
-    # Fallback: build on the fly from individual cohort files
-    cohort_names = storage.list_cohorts(run_id)
-    result: Dict[str, Any] = {}
-    for name in cohort_names:
-        try:
-            data = storage.read_json(run_id, name, f"{report}.json")
-            result[name] = {
-                "rows": data.get("rows", []),
-                "sections": data.get("sections", {}),
-            }
-        except Exception:
-            pass
-    return _nan_to_none(result)
+    filename = f"combined_{report}.json"
+    logger.info("get_table1_combined: run_id=%r filename=%r", run_id, filename)
+    try:
+        combined = storage.read_run_file(run_id, filename)
+    except Exception as e:
+        logger.exception("get_table1_combined: error reading %s", filename)
+        raise HTTPException(status_code=500, detail=f"Error reading {filename}: {e}")
+    if combined is None:
+        raise HTTPException(status_code=404, detail=f"'{filename}' not found for run '{run_id}'")
+    return _nan_to_none(combined)

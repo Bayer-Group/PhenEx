@@ -72,11 +72,17 @@ def list_runs() -> List[str]:
 def list_cohorts(run_id: str) -> List[str]:
     """Return cohort directory names inside a run."""
     safe = _sanitise(run_id)
+    logger.info("list_cohorts: run_id=%r safe=%r s3=%s", run_id, safe, bool(_get_s3_bucket()))
     if _get_s3_bucket():
         _assert_prefix_exists(safe)
-        return _s3_list_dirs(_s3_prefix(safe))
+        result = _s3_list_dirs(_s3_prefix(safe))
+        logger.info("list_cohorts: found %d cohorts in S3", len(result))
+        return result
     run_dir = _resolve_local_run(safe)
-    return sorted(d.name for d in run_dir.iterdir() if d.is_dir())
+    logger.info("list_cohorts: resolved local dir %s", run_dir)
+    result = sorted(d.name for d in run_dir.iterdir() if d.is_dir())
+    logger.info("list_cohorts: found %d cohorts locally", len(result))
+    return result
 
 
 def read_info(run_id: str) -> Dict[str, str]:
@@ -192,14 +198,20 @@ def _s3_read_text(run_id: str, *parts: str) -> Optional[str]:
     segments = [prefix, run_id] + list(parts) if prefix else [run_id] + list(parts)
     key = "/".join(segments)
     bucket = _get_s3_bucket()
+    logger.info("_s3_read_text: bucket=%r key=%r (prefix=%r)", bucket, key, prefix)
     s3 = _s3_client()
     try:
         resp = s3.get_object(Bucket=bucket, Key=key)
-        return resp["Body"].read().decode("utf-8")
-    except s3.exceptions.NoSuchKey:
-        return None
+        body = resp["Body"].read().decode("utf-8")
+        logger.info("_s3_read_text: success, %d bytes", len(body))
+        return body
     except Exception as e:
-        logger.warning("S3 read failed for %s: %s", key, e)
+        error_code = getattr(getattr(e, 'response', {}).get('Error', {}), '__getitem__', lambda k: None)('Code') if hasattr(e, 'response') else None
+        if hasattr(e, 'response') and isinstance(e.response, dict):
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+        else:
+            error_code = type(e).__name__
+        logger.warning("_s3_read_text FAILED: bucket=%r key=%r error_code=%s error=%s", bucket, key, error_code, e)
         return None
 
 
@@ -221,22 +233,49 @@ def read_run_file(run_id: str, filename: str) -> Optional[Dict[str, Any]]:
     Returns None if the file doesn't exist.
     """
     safe_run = _sanitise(run_id)
+    logger.info("read_run_file: run_id=%r filename=%r", run_id, filename)
     if _get_s3_bucket():
         text = _s3_read_text(safe_run, filename)
         if text is None:
+            logger.warning("read_run_file: %r not found in S3 for run %r", filename, run_id)
             return None
         return json.loads(text)
 
     json_file = _resolve_local_run(safe_run) / filename
     if not json_file.is_file():
+        logger.warning("read_run_file: %s not found", json_file)
         return None
+    logger.info("read_run_file: reading %s (%.1f MB)", json_file, json_file.stat().st_size / 1e6)
     with json_file.open() as f:
         return json.load(f)
+
+
+def list_run_files(run_id: str) -> List[str]:
+    """List non-directory files at the run level (not inside cohort subdirs)."""
+    safe = _sanitise(run_id)
+    bucket = _get_s3_bucket()
+    if bucket:
+        prefix = _s3_prefix(safe)
+        logger.info("list_run_files: listing S3 prefix=%r", prefix)
+        s3 = _s3_client()
+        resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
+        files = []
+        for obj in resp.get("Contents", []):
+            key = obj["Key"]
+            basename = key.rsplit("/", 1)[-1]
+            if basename:
+                files.append(basename)
+        logger.info("list_run_files: found %d files in S3", len(files))
+        return sorted(files)
+    run_dir = _resolve_local_run(safe)
+    return sorted(f.name for f in run_dir.iterdir() if f.is_file())
 
 
 def _resolve_local_run(safe_run_id: str) -> Path:
     """Return a validated local run directory path."""
     run_dir = LOCAL_DATA_DIR / safe_run_id
+    logger.info("_resolve_local_run: checking %s", run_dir)
     if not run_dir.is_dir():
+        logger.error("_resolve_local_run: run not found at %s (LOCAL_DATA_DIR=%s)", run_dir, LOCAL_DATA_DIR)
         raise HTTPException(status_code=404, detail=f"Run '{safe_run_id}' not found")
     return run_dir

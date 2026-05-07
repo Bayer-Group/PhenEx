@@ -269,7 +269,15 @@ class AzureADAuthenticator:
         keys_url = (
             f"https://login.microsoftonline.com/{self._tenant}/discovery/v2.0/keys"
         )
-        self.keys = requests.get(keys_url).json()
+        try:
+            self.keys = requests.get(keys_url, timeout=10).json()
+        except Exception as e:
+            logger.warning(
+                "Failed to fetch Azure AD keys from %s: %s. "
+                "AD authentication will be unavailable until keys are fetched.",
+                keys_url, e,
+            )
+            self.keys = {"keys": []}
 
     @property
     def error(self) -> Exception | None:

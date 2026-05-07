@@ -1,9 +1,10 @@
-import React, { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import styles from './ReportViewer.module.css';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
 import { useViewZoom } from '../../hooks/useViewZoom';
-import navBarStyles from '../../components/PhenExNavBar/NavBar.module.css';
+import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { CohortSelector } from './CohortSelector';
 import { BooleanChart } from './BooleanChart';
 import { CategoricalChart } from './CategoricalChart';
@@ -13,11 +14,12 @@ import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { ReportDataTypeSelector } from './ReportViewNavBar/ReportDataTypeSelector';
 import {
   fetchRuns,
-  fetchCohorts,
   fetchCombinedTable1,
+  fetchFrozenCohortsCombined,
+  fetchRunInfo,
   fetchReportAnalysis,
 } from './ReportViewerDataService';
-import { getCached, setCache, clearCache, saveSelections, loadSelections } from './reportCache';
+import { getCached, setCache, clearCache, saveSelections, loadSelections, type RunData } from './reportCache';
 import {
   classifyRows,
   parseCohortGroups,
@@ -43,35 +45,6 @@ function formatRunTimestamp(raw: string): string {
   const [, year, month, day, hour, minute] = m;
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${ordinal(parseInt(day, 10))} ${year} @${hour}:${minute} CET`;
 }
-
-const ZoomScrubber: React.FC<{ percentage: number; onChange: (p: number) => void }> = ({ percentage, onChange }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const updateFromEvent = (e: MouseEvent | React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    onChange(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    updateFromEvent(e);
-    const onMove = (ev: MouseEvent) => updateFromEvent(ev);
-    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      onMouseDown={handleMouseDown}
-      style={{ position: 'relative', height: 8, borderRadius: 10, background: 'var(--line-color)', cursor: 'pointer', width: '100%' }}
-    >
-      <div className={navBarStyles.scrollbarThumb} style={{ left: `${percentage}%` }} />
-    </div>
-  );
-};
 
 export const ReportViewer: FC = () => {
   const { timestamp } = useParams<{ studyName?: string; timestamp?: string }>();
@@ -139,23 +112,36 @@ export const ReportViewer: FC = () => {
     console.debug(`[ReportViewer] loadRun ${runId} — cache ${cached ? 'HIT' : 'MISS'}`);
 
     if (cached) {
-      // Fully offline path — derive cohort names from cached entries
-      const names = cached.map((e) => e.cohortName);
-      applyLoadedData(runId, names, cached);
+      console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts, ${cached.frozenCohorts.length} definitions`);
+      applyLoadedData(runId, cached.entries, cached.frozenCohorts, cached.info);
       return;
     }
 
-    Promise.all([fetchCohorts(runId), fetchCombinedTable1(runId)]).then(
-      ([names, entries]) => {
-        setCache(runId, entries);
-        applyLoadedData(runId, names, entries);
-      },
-    );
+    console.log(`[ReportViewer] fetching run data for: ${runId}`);
+    Promise.all([
+      fetchCombinedTable1(runId),
+      fetchFrozenCohortsCombined(runId),
+      fetchRunInfo(runId),
+    ])
+      .then(([entries, frozenCohorts, info]) => {
+        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${frozenCohorts.length} frozen definitions, info keys: ${Object.keys(info).join(',')}`);
+        const runData: RunData = { entries, frozenCohorts, info };
+        setCache(runId, runData);
+        applyLoadedData(runId, entries, frozenCohorts, info);
+      })
+      .catch((err) => {
+        console.error('[ReportViewer] failed to load run data:', err);
+        setLoadingRun(false);
+      });
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Shared logic: set groups, entries, and resolve initial selections. */
   const applyLoadedData = useCallback(
-    (runId: string, names: string[], entries: CohortEntry[]) => {
+    (runId: string, entries: CohortEntry[], frozenCohorts: Record<string, unknown>[], info: Record<string, string>) => {
+      console.log('[ReportViewer] frozen cohort definitions:', frozenCohorts);
+      console.log('[ReportViewer] run info:', info);
+
+      const names = entries.map((e) => e.cohortName);
       const parsed = parseCohortGroups(names);
       setGroups(parsed);
       setAllCohortEntries(entries);
@@ -334,32 +320,19 @@ export const ReportViewer: FC = () => {
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
-  const panelRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
-  const panToXRef = useRef<((contentX: number, viewFraction?: number) => void) | null>(null);
 
   const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panToX } = useViewZoom({
-    minScale: 0.15,
-    maxScale: 1.3,
+    minScale: 0.5,
+    maxScale: 2.0,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
-    onTransformChange: (x, _y, scale) => {
-      const viewW = contentRef.current?.clientWidth ?? window.innerWidth;
-      TAB_ORDER.forEach((_, i) => {
-        const panelLeft = i * (PANEL_WIDTH + PANEL_GAP);
-        const screenLeft = panelLeft * scale + x;
-        const screenRight = (panelLeft + PANEL_WIDTH) * scale + x;
-        const visiblePx = Math.max(0, Math.min(screenRight, viewW) - Math.max(screenLeft, 0));
-        const visibility = Math.max(0.15, visiblePx / (PANEL_WIDTH * scale));
-        panelRefs.current[i]?.style.setProperty('--panel-visibility', String(visibility));
-      });
-    },
   });
-  panToXRef.current = panToX;
 
-  const handleTabChange = useCallback((tab: TabKey) => {
-    const i = TAB_ORDER.indexOf(tab);
-    panToXRef.current?.(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
-  }, []);
+  // ── Pan to active tab's panel on change ───────────────────────────────
+  useEffect(() => {
+    const i = TAB_ORDER.indexOf(activeTab);
+    panToX(i * (PANEL_WIDTH + PANEL_GAP) + PANEL_WIDTH / 2, 0.3);
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={styles.page}>
@@ -375,14 +348,11 @@ export const ReportViewer: FC = () => {
         }
         bottom={
           <>
-            <ReportNavPanelCard title="Zoom">
-              <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
-            </ReportNavPanelCard>
             <ReportNavPanelCard title="Types">
               <ReportDataTypeSelector
                 activeTab={activeTab}
                 tabAvail={tabAvail}
-                onTabChange={handleTabChange}
+                onTabChange={setActiveTab}
                 showAnalysis={showAnalysis}
                 onShowAnalysisChange={setShowAnalysis}
                 showLabels={showLabels}
@@ -419,15 +389,15 @@ export const ReportViewer: FC = () => {
 
         {cohortData.length > 0 && (
           <>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[0] = el; }}>
+            <div className={styles.chartPanel}>
               <BooleanChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[1] = el; }}>
+            <div className={styles.chartPanel}>
               <CategoricalChart cohortData={cohortData} sections={sections} />
               <div className={styles.bottomSpacer} />
             </div>
-            <div className={styles.chartPanel} ref={el => { panelRefs.current[2] = el; }}>
+            <div className={styles.chartPanel}>
               {selectedRun && (
                 <NumericChart
                   cohortData={cohortData}
@@ -443,6 +413,16 @@ export const ReportViewer: FC = () => {
         </div>
       </div>
       <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30}/>
+      <div className={navBarStyles.topRight}>
+        <ViewNavBar
+          height={44}
+          scrollPercentage={zoomPercentage}
+          canScrollLeft={false}
+          canScrollRight={false}
+          onViewNavigationScroll={setZoomPercentage}
+          scrollbarTooltipLabel="Zoom"
+        />
+      </div>
     </div>
   );
 };
