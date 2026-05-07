@@ -4,14 +4,12 @@ import styles from './ReportViewer.module.css';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
 import { useViewZoom } from '../../hooks/useViewZoom';
 import { CohortSelector } from './CohortSelector';
-import { BooleanChart } from './BooleanChart';
-import { CategoricalChart } from './CategoricalChart';
-import { NumericChart } from './NumericChart';
+import { CharacteristicsChart } from './CharacteristicsChart';
 import { AttritionChart } from './AttritionChart';
 import { ChartGroup } from './ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
 import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
-import { ReportDataTypeSelector } from './ReportViewNavBar/ReportDataTypeSelector';
+import { SectionSelector } from './SectionSelector';
 import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
 import {
   fetchRuns,
@@ -31,8 +29,6 @@ import {
   type CohortGroup,
   type LegendSelection,
 } from './types';
-
-type TabKey = 'boolean' | 'categorical' | 'numeric';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const ordinal = (d: number) => d + (['th', 'st', 'nd', 'rd'][(d % 100 > 10 && d % 100 < 14) ? 0 : d % 10] ?? 'th');
@@ -64,9 +60,6 @@ export const ReportViewer: FC = () => {
   const [allOutcomesEntries, setAllOutcomesEntries] = useState<CohortEntry[]>([]);
   const [waterfallData, setWaterfallData] = useState<Record<string, unknown>>({});
   const [loadingRun, setLoadingRun] = useState(false);
-
-  // ── Tab state ─────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<TabKey>('boolean');
 
   // ── Resolve run from URL param or fall back to latest ─────────────────
   useEffect(() => {
@@ -292,25 +285,6 @@ export const ReportViewer: FC = () => {
     [cohortEntries, selections],
   );
 
-  // ── Determine which tabs have data ────────────────────────────────────
-  const tabAvail = useMemo(() => {
-    const has = { boolean: false, categorical: false, numeric: false };
-    for (const cd of cohortData) {
-      if (cd.classified.booleans.length) has.boolean = true;
-      if (cd.classified.catOrder.length) has.categorical = true;
-      if (cd.classified.numerics.length) has.numeric = true;
-    }
-    return has;
-  }, [cohortData]);
-
-  useEffect(() => {
-    if (!tabAvail[activeTab]) {
-      const order: TabKey[] = ['boolean', 'categorical', 'numeric'];
-      const first = order.find((t) => tabAvail[t]);
-      if (first) setActiveTab(first);
-    }
-  }, [tabAvail, activeTab]);
-
   // ── Sections from first cohort that has them ──────────────────────────
   const sections = useMemo(() => {
     for (const entry of cohortEntries) {
@@ -353,17 +327,41 @@ export const ReportViewer: FC = () => {
   }, [outcomesEntries]);
 
   // ── Render ────────────────────────────────────────────────────────────
-  // ── Visibility state ──────────────────────────────────────────────────
-  const [showAnalysis, setShowAnalysis] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const baselineSectionRefs = useRef(new Map<string, HTMLDivElement>());
+  const outcomesSectionRefs = useRef(new Map<string, HTMLDivElement>());
 
-  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage } = useViewZoom({
+  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panTo } = useViewZoom({
     minScale: 0.1,
     maxScale: 1.4,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey: selectedRun ? `report-zoom-${selectedRun}` : undefined,
   });
+
+  const baselineSectionNames = useMemo(
+    () => (sections ? Object.keys(sections) : []),
+    [sections],
+  );
+  const outcomesSectionNames = useMemo(
+    () => (outcomesSections ? Object.keys(outcomesSections) : []),
+    [outcomesSections],
+  );
+
+  const scrollToSection = useCallback(
+    (name: string, refs: Map<string, HTMLDivElement>) => {
+      const el = refs.get(name);
+      const contentInner = transformRef.current;
+      if (!el || !contentInner) return;
+      let top = 0;
+      let current: HTMLElement | null = el;
+      while (current && current !== contentInner) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      panTo(0, top);
+    },
+    [panTo, transformRef],
+  );
 
   return (
     <div className={styles.page}>
@@ -371,7 +369,6 @@ export const ReportViewer: FC = () => {
         <span className={styles.title}>LUMINOUS</span>
         <span className={styles.subtitle}>Executed {selectedRun ? formatRunTimestamp(selectedRun) : 'Loading runs...'}</span>
       </div>
-
 
       <ReportNavPanel
         top={
@@ -382,38 +379,16 @@ export const ReportViewer: FC = () => {
             <ReportNavPanelCard title="Zoom">
               <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
             </ReportNavPanelCard>
-            <ReportNavPanelCard title="Attrition">
-              <ReportDataTypeSelector
-                activeTab={activeTab}
-                tabAvail={tabAvail}
-                onTabChange={setActiveTab}
-                showAnalysis={showAnalysis}
-                onShowAnalysisChange={setShowAnalysis}
-                showLabels={showLabels}
-                onShowLabelsChange={setShowLabels}
-              />
-            </ReportNavPanelCard>
-
             <ReportNavPanelCard title="Baseline characteristics">
-              <ReportDataTypeSelector
-                activeTab={activeTab}
-                tabAvail={tabAvail}
-                onTabChange={setActiveTab}
-                showAnalysis={showAnalysis}
-                onShowAnalysisChange={setShowAnalysis}
-                showLabels={showLabels}
-                onShowLabelsChange={setShowLabels}
+              <SectionSelector
+                sections={baselineSectionNames}
+                onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
               />
             </ReportNavPanelCard>
             <ReportNavPanelCard title="Outcomes">
-              <ReportDataTypeSelector
-                activeTab={activeTab}
-                tabAvail={tabAvail}
-                onTabChange={setActiveTab}
-                showAnalysis={showAnalysis}
-                onShowAnalysisChange={setShowAnalysis}
-                showLabels={showLabels}
-                onShowLabelsChange={setShowLabels}
+              <SectionSelector
+                sections={outcomesSectionNames}
+                onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
               />
             </ReportNavPanelCard>
             <ReportNavPanelCard title="Visible cohorts">
@@ -451,41 +426,19 @@ export const ReportViewer: FC = () => {
             </ChartGroup>
 
             <ChartGroup title="Baseline Characteristics">
-              <div className={styles.chartPanel}>
-                <BooleanChart cohortData={cohortData} sections={sections} />
-              </div>
-              <div className={styles.chartPanel}>
-                <CategoricalChart cohortData={cohortData} sections={sections} />
-              </div>
-              <div className={styles.chartPanel}>
-                {selectedRun && (
-                  <NumericChart
-                    cohortData={cohortData}
-                    sections={sections}
-                    runId={selectedRun}
-                    selectedCohorts={selectedCohortNames}
-                  />
-                )}
-              </div>
+              <CharacteristicsChart
+                cohortData={cohortData}
+                sections={sections}
+                sectionRefs={baselineSectionRefs.current}
+              />
             </ChartGroup>
 
             <ChartGroup title="Outcomes">
-              <div className={styles.chartPanel}>
-                <BooleanChart cohortData={outcomesCohortData} sections={outcomesSections} />
-              </div>
-              <div className={styles.chartPanel}>
-                <CategoricalChart cohortData={outcomesCohortData} sections={outcomesSections} />
-              </div>
-              <div className={styles.chartPanel}>
-                {selectedRun && (
-                  <NumericChart
-                    cohortData={outcomesCohortData}
-                    sections={outcomesSections}
-                    runId={selectedRun}
-                    selectedCohorts={selectedCohortNames}
-                  />
-                )}
-              </div>
+              <CharacteristicsChart
+                cohortData={outcomesCohortData}
+                sections={outcomesSections}
+                sectionRefs={outcomesSectionRefs.current}
+              />
             </ChartGroup>
 
             <div className={styles.bottomSpacer} />

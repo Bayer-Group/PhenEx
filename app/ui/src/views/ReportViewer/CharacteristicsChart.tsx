@@ -1,0 +1,192 @@
+import { FC, useMemo } from 'react';
+import {
+  type CohortClassified,
+  type CharacteristicItem,
+  collectCharacteristics,
+  groupCharacteristicsBySection,
+} from './types';
+import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
+import styles from './CharacteristicsChart.module.css';
+import sectionStyles from './ReportViewer.module.css';
+
+/* ── Constants ───────────────────────────────────────────────────────── */
+
+const BAR_ROW_H = 16;
+const ROW_PADDING_TOP = 20;
+const ROW_PADDING_BOTTOM = 20;
+const STAT_KEYS = ['Mean', 'STD', 'Median', 'Min', 'Max'] as const;
+
+/* ── Main component ──────────────────────────────────────────────────── */
+
+interface CharacteristicsChartProps {
+  cohortData: CohortClassified[];
+  sections: Record<string, string[]> | null;
+  sectionRefs: Map<string, HTMLDivElement>;
+}
+
+export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
+  cohortData,
+  sections,
+  sectionRefs,
+}) => {
+  const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
+  const groups = useMemo(
+    () => groupCharacteristicsBySection(items, sections),
+    [items, sections],
+  );
+
+  if (!items.length) return null;
+
+  return (
+    <div className={styles.container}>
+      {groups.map((g, gi) => {
+        const key = g.section ?? `_ungrouped_${gi}`;
+        return (
+          <div
+            key={key}
+            ref={(el) => {
+              if (el) sectionRefs.set(key, el);
+              else sectionRefs.delete(key);
+            }}
+          >
+            {g.section && (
+              <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>
+            )}
+            {g.items.map((item) => (
+              <CharacteristicRow
+                key={item.baseName}
+                item={item}
+                cohortData={cohortData}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ── Row dispatcher ──────────────────────────────────────────────────── */
+
+const CharacteristicRow: FC<{
+  item: CharacteristicItem;
+  cohortData: CohortClassified[];
+}> = ({ item, cohortData }) => {
+  if (item.type === 'categorical') {
+    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} />;
+  }
+  if (item.type === 'numeric') {
+    return <NumericRow name={item.baseName} cohortData={cohortData} />;
+  }
+  return <BooleanRow name={item.baseName} cohortData={cohortData} />;
+};
+
+/* ── Boolean row ─────────────────────────────────────────────────────── */
+
+const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
+  name,
+  cohortData,
+}) => {
+  const rowHeight =
+    cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
+  return (
+    <div className={styles.row} style={{ height: rowHeight }}>
+      <div className={styles.nameCell}>{name}</div>
+      <div className={styles.chartCell}>
+        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
+      </div>
+    </div>
+  );
+};
+
+/* ── Categorical row (each category as a sub-row) ────────────────────── */
+
+const CategoricalRow: FC<{
+  baseName: string;
+  cohortData: CohortClassified[];
+}> = ({ baseName, cohortData }) => {
+  const categories = useMemo(() => {
+    const cats: string[] = [];
+    const catSet = new Set<string>();
+    for (const cd of cohortData) {
+      const items = cd.classified.categoricals[baseName];
+      if (items) {
+        for (const item of items) {
+          if (!catSet.has(item.category)) {
+            catSet.add(item.category);
+            cats.push(item.category);
+          }
+        }
+      }
+    }
+    return cats;
+  }, [baseName, cohortData]);
+
+  const subRowHeight =
+    cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
+
+  return (
+    <div className={styles.categoricalGroup}>
+      <div className={styles.categoricalHeader}>{baseName}</div>
+      {categories.map((cat) => {
+        const fullName = `${baseName}=${cat}`;
+        return (
+          <div key={cat} className={styles.row} style={{ height: subRowHeight }}>
+            <div className={`${styles.nameCell} ${styles.subNameCell}`}>
+              {cat}
+            </div>
+            <div className={styles.chartCell}>
+              <BarChartCellRenderer
+                data={{ name: fullName, _meta: { cohortData } }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ── Numeric row ─────────────────────────────────────────────────────── */
+
+const fmt = (v: number | null | undefined) => {
+  if (v == null || isNaN(v)) return '–';
+  return v % 1 !== 0 ? v.toFixed(1) : String(v);
+};
+
+const NumericRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
+  name,
+  cohortData,
+}) => (
+  <div className={styles.numericRow}>
+    <div className={styles.nameCell}>{name}</div>
+    <div className={styles.statsCell}>
+      {cohortData.map((cd) => {
+        const row = cd.data.rows.find((r) => r.Name === name);
+        if (!row) return null;
+        return (
+          <div key={cd.name} className={styles.statLine}>
+            <span
+              className={styles.statDot}
+              style={{ backgroundColor: cd.color }}
+            />
+            {STAT_KEYS.map((k) => (
+              <span key={k} className={styles.statItem}>
+                <span className={styles.statLabel}>{k}</span>
+                <span className={styles.statValue}>
+                  {fmt(row[k] as number | null | undefined)}
+                </span>
+              </span>
+            ))}
+            <span className={styles.statItem}>
+              <span className={styles.statLabel}>N</span>
+              <span className={styles.statValue}>
+                {row.N.toLocaleString()}
+              </span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);

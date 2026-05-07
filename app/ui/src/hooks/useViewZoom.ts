@@ -21,6 +21,7 @@ interface UseViewZoomReturn {
   zoomPercentage: number;
   setZoomPercentage: (percentage: number) => void;
   panToX: (contentX: number, viewFraction?: number) => void;
+  panTo: (contentX: number, contentY: number) => void;
   currentScale: number;
 }
 
@@ -255,12 +256,43 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
     [applyTransform],
   );
 
+  const panTo = useCallback(
+    (contentX: number, contentY: number) => {
+      if (!viewportRef.current) return;
+      const { scale, x: startX, y: startY } = currentTransform.current;
+      const targetX = -contentX * scale + 100;
+      const targetY = -contentY * scale + 100;
+      const duration = 500;
+      const startTime = performance.now();
+
+      if (panAnimRef.current !== null) cancelAnimationFrame(panAnimRef.current);
+
+      const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+      const step = (now: number) => {
+        const t = Math.min((now - startTime) / duration, 1);
+        const e = ease(t);
+        applyTransform(
+          startX + (targetX - startX) * e,
+          startY + (targetY - startY) * e,
+          scale,
+        );
+        if (t < 1) panAnimRef.current = requestAnimationFrame(step);
+        else panAnimRef.current = null;
+      };
+
+      panAnimRef.current = requestAnimationFrame(step);
+    },
+    [applyTransform],
+  );
+
   return {
     viewportRef,
     transformRef,
     zoomPercentage,
     setZoomPercentage,
     panToX,
+    panTo,
     currentScale: currentTransform.current.scale,
   };
 }

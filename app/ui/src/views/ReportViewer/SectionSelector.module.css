@@ -1,0 +1,33 @@
+/* ── SectionSelector ──────────────────────────────────────────────────── */
+
+.list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  transition: background-color 0.15s;
+}
+
+.item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #222;
+}
+
+.empty {
+  font-size: 11px;
+  color: #999;
+  padding: 4px 8px;
+}

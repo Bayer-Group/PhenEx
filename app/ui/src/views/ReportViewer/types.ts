@@ -129,6 +129,79 @@ export interface SectionGroup {
   items: string[];
 }
 
+/* ── Unified characteristic types ──────────────────────────────────── */
+
+export type CharacteristicType = 'boolean' | 'categorical' | 'numeric';
+
+export interface CharacteristicItem {
+  baseName: string;
+  type: CharacteristicType;
+}
+
+export interface MixedSectionGroup {
+  section: string | null;
+  items: CharacteristicItem[];
+}
+
+/** Collect all unique characteristics across cohorts, preserving order. */
+export function collectCharacteristics(cohortData: CohortClassified[]): CharacteristicItem[] {
+  const seen = new Map<string, CharacteristicType>();
+  const order: string[] = [];
+
+  for (const cd of cohortData) {
+    for (const row of cd.data.rows) {
+      if (row.Name === 'Cohort') continue;
+      if (row._level && row._level > 0) continue;
+
+      const eqIdx = row.Name.indexOf('=');
+      const baseName = eqIdx !== -1 ? row.Name.substring(0, eqIdx) : row.Name;
+
+      if (!seen.has(baseName)) {
+        let type: CharacteristicType;
+        if (eqIdx !== -1) {
+          type = 'categorical';
+        } else if (row.Mean != null && !isNaN(row.Mean)) {
+          type = 'numeric';
+        } else {
+          type = 'boolean';
+        }
+        seen.set(baseName, type);
+        order.push(baseName);
+      }
+    }
+  }
+
+  return order.map((name) => ({ baseName: name, type: seen.get(name)! }));
+}
+
+/** Group mixed characteristics by section definitions. */
+export function groupCharacteristicsBySection(
+  items: CharacteristicItem[],
+  sections: Record<string, string[]> | null,
+): MixedSectionGroup[] {
+  if (!sections) return [{ section: null, items }];
+
+  const groups: MixedSectionGroup[] = [];
+  const used = new Set<string>();
+
+  for (const sec of Object.keys(sections)) {
+    const chars = sections[sec];
+    const matched: CharacteristicItem[] = [];
+    for (const item of items) {
+      if (chars.includes(item.baseName)) {
+        matched.push(item);
+        used.add(item.baseName);
+      }
+    }
+    if (matched.length) groups.push({ section: sec, items: matched });
+  }
+
+  const ungrouped = items.filter((item) => !used.has(item.baseName));
+  if (ungrouped.length) groups.push({ section: null, items: ungrouped });
+
+  return groups;
+}
+
 /** Classify table1 rows into booleans, categoricals, and numerics. */
 export function classifyRows(rows: Table1Row[]): ClassifiedRows {
   const booleans: Table1Row[] = [];

@@ -37,7 +37,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
 
       <div className={styles.rows}>
         {cohortData.map((cd, i) => {
-          const row = cd.classified.booleans.find((r) => r.Name === name);
+          const row = cd.data.rows.find((r) => r.Name === name);
           const pct = row?.Pct ?? 0;
           const n = row?.N ?? 0;
           const dimmed = hoveredIndex !== null && hoveredIndex !== i;
