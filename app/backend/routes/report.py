@@ -77,6 +77,7 @@ def get_table1(
     return _nan_to_none({
         "rows": data.get("rows", []),
         "sections": data.get("sections", {}),
+        "kdes": data.get("kdes", {}),
     })
 
 

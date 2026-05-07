@@ -37,14 +37,20 @@ export async function fetchTable1(
   return data;
 }
 
-/** Fetch value distributions for a specific variable or all variables. */
+/** KDE curve for a numeric variable: x grid + y normalised 0–100. */
+export interface KdeCurve {
+  x: number[];
+  y: number[];
+}
+
+/** Fetch KDE curves for numeric variables. */
 export async function fetchDistributions(
   runId: string,
   cohortName: string,
   variable?: string,
   report: 'table1' | 'table1_outcomes' = 'table1',
-): Promise<Record<string, number[]>> {
-  const { data } = await api.get<Record<string, number[]>>(
+): Promise<Record<string, KdeCurve>> {
+  const { data } = await api.get<Record<string, KdeCurve>>(
     `${BASE}/runs/${encodeURIComponent(runId)}/cohorts/${encodeURIComponent(cohortName)}/table1/distributions`,
     { params: { report, ...(variable ? { variable } : {}) } },
   );

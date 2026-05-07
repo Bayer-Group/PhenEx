@@ -97,9 +97,15 @@ export interface Table1Row {
   Max?: number | null;
 }
 
+export interface KdeCurve {
+  x: number[];
+  y: number[];
+}
+
 export interface Table1Data {
   rows: Table1Row[];
   sections: Record<string, string[]>;
+  kdes?: Record<string, KdeCurve>;
 }
 
 export interface CohortEntry {

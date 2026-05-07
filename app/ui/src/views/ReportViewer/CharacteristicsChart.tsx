@@ -2,6 +2,7 @@ import { FC, useMemo } from 'react';
 import {
   type CohortClassified,
   type CharacteristicItem,
+  type KdeCurve,
   collectCharacteristics,
   groupCharacteristicsBySection,
 } from './types';
@@ -35,6 +36,15 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
     [items, sections],
   );
 
+  // Derive KDE data from cohortData (already loaded with table1)
+  const kdeData = useMemo(() => {
+    const result: Record<string, Record<string, KdeCurve>> = {};
+    for (const cd of cohortData) {
+      if (cd.data.kdes) result[cd.name] = cd.data.kdes;
+    }
+    return result;
+  }, [cohortData]);
+
   if (!items.length) return null;
 
   return (
@@ -57,6 +67,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
                 key={item.baseName}
                 item={item}
                 cohortData={cohortData}
+                kdeData={kdeData}
               />
             ))}
           </div>
@@ -71,12 +82,13 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
 const CharacteristicRow: FC<{
   item: CharacteristicItem;
   cohortData: CohortClassified[];
-}> = ({ item, cohortData }) => {
+  kdeData: Record<string, Record<string, KdeCurve>>;
+}> = ({ item, cohortData, kdeData }) => {
   if (item.type === 'categorical') {
     return <CategoricalRow baseName={item.baseName} cohortData={cohortData} />;
   }
   if (item.type === 'numeric') {
-    return <NumericRow name={item.baseName} cohortData={cohortData} />;
+    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} />;
   }
   return <BooleanRow name={item.baseName} cohortData={cohortData} />;
 };
@@ -154,39 +166,85 @@ const fmt = (v: number | null | undefined) => {
   return v % 1 !== 0 ? v.toFixed(1) : String(v);
 };
 
-const NumericRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
-  name,
-  cohortData,
-}) => (
-  <div className={styles.numericRow}>
-    <div className={styles.nameCell}>{name}</div>
-    <div className={styles.statsCell}>
-      {cohortData.map((cd) => {
-        const row = cd.data.rows.find((r) => r.Name === name);
-        if (!row) return null;
-        return (
-          <div key={cd.name} className={styles.statLine}>
-            <span
-              className={styles.statDot}
-              style={{ backgroundColor: cd.color }}
-            />
-            {STAT_KEYS.map((k) => (
-              <span key={k} className={styles.statItem}>
-                <span className={styles.statLabel}>{k}</span>
+const KDE_W = 300;
+const KDE_H = 60;
+
+function buildKdePath(curve: KdeCurve, w: number, h: number): string {
+  const { x, y } = curve;
+  if (!x.length) return '';
+  const xMin = x[0], xMax = x[x.length - 1];
+  const xRange = xMax - xMin || 1;
+  const sx = (v: number) => ((v - xMin) / xRange) * w;
+  const sy = (v: number) => h - (v / 100) * h;
+  let d = `M${sx(x[0])},${sy(y[0])}`;
+  for (let i = 1; i < x.length; i++) {
+    d += `L${sx(x[i])},${sy(y[i])}`;
+  }
+  return d;
+}
+
+const NumericRow: FC<{
+  name: string;
+  cohortData: CohortClassified[];
+  kdeData: Record<string, Record<string, KdeCurve>>;
+}> = ({ name, cohortData, kdeData }) => {
+  const curves = cohortData
+    .map((cd) => {
+      const curve = kdeData[cd.name]?.[name];
+      if (!curve) return null;
+      return { color: cd.color, curve, cohortName: cd.name };
+    })
+    .filter(Boolean) as { color: string; curve: KdeCurve; cohortName: string }[];
+
+  return (
+    <div className={styles.numericRow}>
+      <div className={styles.nameCell}>{name}</div>
+      <div className={styles.kdeCell}>
+        {curves.length > 0 ? (
+          <svg width={KDE_W} height={KDE_H} className={styles.kdeSvg}>
+            {curves.map((c) => (
+              <path
+                key={c.cohortName}
+                d={buildKdePath(c.curve, KDE_W, KDE_H)}
+                fill="none"
+                stroke={c.color}
+                strokeWidth={1.5}
+                opacity={0.85}
+              />
+            ))}
+          </svg>
+        ) : (
+          <div className={styles.kdeEmpty}>no distribution</div>
+        )}
+      </div>
+      <div className={styles.statsCell}>
+        {cohortData.map((cd) => {
+          const row = cd.data.rows.find((r) => r.Name === name);
+          if (!row) return null;
+          return (
+            <div key={cd.name} className={styles.statLine}>
+              <span
+                className={styles.statDot}
+                style={{ backgroundColor: cd.color }}
+              />
+              {STAT_KEYS.map((k) => (
+                <span key={k} className={styles.statItem}>
+                  <span className={styles.statLabel}>{k}</span>
+                  <span className={styles.statValue}>
+                    {fmt(row[k] as number | null | undefined)}
+                  </span>
+                </span>
+              ))}
+              <span className={styles.statItem}>
+                <span className={styles.statLabel}>N</span>
                 <span className={styles.statValue}>
-                  {fmt(row[k] as number | null | undefined)}
+                  {row.N.toLocaleString()}
                 </span>
               </span>
-            ))}
-            <span className={styles.statItem}>
-              <span className={styles.statLabel}>N</span>
-              <span className={styles.statValue}>
-                {row.N.toLocaleString()}
-              </span>
-            </span>
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};

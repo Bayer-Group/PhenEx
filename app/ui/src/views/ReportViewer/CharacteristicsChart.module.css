@@ -72,11 +72,30 @@
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--line-color, #e0e0e0);
-  min-height: 60px;
+  min-height: 70px;
 }
 
 .numericRow:hover {
   background: rgba(211, 213, 215, 0.04);
+}
+
+.kdeCell {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  box-sizing: border-box;
+}
+
+.kdeSvg {
+  display: block;
+}
+
+.kdeEmpty {
+  font-size: 11px;
+  color: #bbb;
+  font-style: italic;
 }
 
 .statsCell {
