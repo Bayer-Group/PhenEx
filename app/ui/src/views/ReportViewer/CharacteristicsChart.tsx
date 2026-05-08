@@ -15,7 +15,7 @@ import sectionStyles from './ReportViewer.module.css';
 const BAR_ROW_H = 16;
 const ROW_PADDING_TOP = 20;
 const ROW_PADDING_BOTTOM = 20;
-const STAT_KEYS = ['Mean', 'STD', 'Median', 'Min', 'Max'] as const;
+const STAT_KEYS = ['N', 'Mean', 'STD', 'Median', 'Min', 'Max'] as const;
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
@@ -166,17 +166,19 @@ const fmt = (v: number | null | undefined) => {
   return v % 1 !== 0 ? v.toFixed(1) : String(v);
 };
 
+const KDE_PAD = 4; // horizontal padding so strokes aren't clipped
 const KDE_W = 300;
+const KDE_PLOT_W = KDE_W - KDE_PAD * 2; // actual plot area
 const KDE_H = 60;
-const KDE_AXIS_H = 16; // space for x-axis ticks
+const KDE_AXIS_H = 16;
 const KDE_TOTAL_H = KDE_H + KDE_AXIS_H;
 const N_TICKS = 5;
 
-function buildKdePath(curve: KdeCurve, w: number, h: number, xMin: number, xMax: number): string {
+function buildKdePath(curve: KdeCurve, plotW: number, h: number, pad: number, xMin: number, xMax: number): string {
   const { x, y } = curve;
   if (!x.length) return '';
   const xRange = xMax - xMin || 1;
-  const sx = (v: number) => ((v - xMin) / xRange) * w;
+  const sx = (v: number) => pad + ((v - xMin) / xRange) * plotW;
   const sy = (v: number) => h - (v / 100) * h;
   let d = `M${sx(x[0])},${sy(y[0])}`;
   for (let i = 1; i < x.length; i++) {
@@ -226,7 +228,7 @@ const NumericRow: FC<{
             {curves.map((c) => (
               <path
                 key={c.cohortName}
-                d={buildKdePath(c.curve, KDE_W, KDE_H, gMin, gMax)}
+                d={buildKdePath(c.curve, KDE_PLOT_W, KDE_H, KDE_PAD, gMin, gMax)}
                 fill="none"
                 stroke={c.color}
                 strokeWidth={1.5}
@@ -237,7 +239,7 @@ const NumericRow: FC<{
             {Array.from({ length: N_TICKS + 1 }, (_, i) => {
               const frac = i / N_TICKS;
               const val = gMin + frac * (gMax - gMin);
-              const px = frac * KDE_W;
+              const px = KDE_PAD + frac * KDE_PLOT_W;
               return (
                 <g key={i}>
                   <line x1={px} y1={KDE_H} x2={px} y2={KDE_H + 4} stroke="#999" strokeWidth={0.5} />
@@ -252,30 +254,26 @@ const NumericRow: FC<{
           <div className={styles.kdeEmpty}>no distribution</div>
         )}
       </div>
-      <div className={styles.statsCell}>
+      <div className={styles.statsGrid}>
+        <div className={styles.statsHeaderRow}>
+          <div className={styles.statsCohortCell} />
+          {STAT_KEYS.map((k) => (
+            <div key={k} className={styles.statsHeaderCell}>{k}</div>
+          ))}
+        </div>
         {cohortData.map((cd) => {
           const row = cd.data.rows.find((r) => r.Name === name);
           if (!row) return null;
           return (
-            <div key={cd.name} className={styles.statLine}>
-              <span
-                className={styles.statDot}
-                style={{ backgroundColor: cd.color }}
-              />
+            <div key={cd.name} className={styles.statsRow}>
+              <div className={styles.statsCohortCell}>
+                <span className={styles.statDot} style={{ backgroundColor: cd.color }} />
+              </div>
               {STAT_KEYS.map((k) => (
-                <span key={k} className={styles.statItem}>
-                  <span className={styles.statLabel}>{k}</span>
-                  <span className={styles.statValue}>
-                    {fmt(row[k] as number | null | undefined)}
-                  </span>
-                </span>
+                <div key={k} className={styles.statsValueCell}>
+                  {fmt(row[k] as number | null | undefined)}
+                </div>
               ))}
-              <span className={styles.statItem}>
-                <span className={styles.statLabel}>N</span>
-                <span className={styles.statValue}>
-                  {row.N.toLocaleString()}
-                </span>
-              </span>
             </div>
           );
         })}

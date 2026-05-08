@@ -86,6 +86,7 @@
   align-items: center;
   padding: 6px 0;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .kdeSvg {
@@ -98,21 +99,62 @@
   font-style: italic;
 }
 
-.statsCell {
-  flex: 1;
+/* ── Stats grid (numeric rows) ────────────────────────────────────────── */
+
+.statsGrid {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 8px 0;
-  gap: 2px;
+  /* border: 1px solid var(--line-color, #e0e0e0); */
+  width: fit-content;
+  align-self: center;
+  margin: 0px 0;
 }
 
-.statLine {
+.statsHeaderRow {
+  display: flex;
+  align-items: stretch;
+  /* border-bottom: 1px solid var(--line-color, #e0e0e0); */
+}
+
+.statsHeaderCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200,200,200,.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  height: 18px;
+  justify-content: flex-end;
+  /* border-right: 1px solid var(--line-color, #e0e0e0); */
+}
+
+.statsHeaderCell:last-child {
+  border-right: none;
+}
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsRow:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.statsRow + .statsRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.statsCohortCell {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  /* border-right: 1px solid var(--line-color, #e0e0e0); */
 }
 
 .statDot {
@@ -122,17 +164,20 @@
   flex-shrink: 0;
 }
 
-.statItem {
-  display: flex;
-  gap: 3px;
-}
-
-.statLabel {
-  color: #999;
-  font-family: 'IBMPlexSans-regular', sans-serif;
-}
-
-.statValue {
+.statsValueCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 12px;
   color: #333;
-  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* border-right: 1px solid var(--line-color, #e0e0e0); */
+}
+
+.statsValueCell:last-child {
+  border-right: none;
 }

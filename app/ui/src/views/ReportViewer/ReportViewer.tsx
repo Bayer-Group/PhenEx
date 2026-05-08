@@ -240,7 +240,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   const pz = usePanZoom({
     minScale: 0.1,
-    maxScale: 1.4,
+    maxScale: 2.5,
     initialTransform: { x: 0, y: 0, scale: 1 },
     storageKey,
   });

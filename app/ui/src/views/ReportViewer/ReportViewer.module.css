@@ -145,25 +145,6 @@
   gap: 12px;
 }
 
-/* ── Summary table ───────────────────────────────────────────────────── */
-.summaryTable {
-  border-collapse: collapse;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-.summaryTable th,
-.summaryTable td {
-  padding: 3px 10px;
-  text-align: right;
-  border-bottom: 1px solid #eee;
-}
-
-.summaryTable th {
-  color: #999;
-  font-weight: normal;
-}
-
 /* ── Load distribution button ────────────────────────────────────────── */
 .loadDistBtn {
   font-size: 11px;
