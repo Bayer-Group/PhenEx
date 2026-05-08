@@ -19,7 +19,6 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #666;
-  padding-bottom: 10px;
 }
 
 .collapseBtn {
@@ -50,6 +49,7 @@
 }
 
 .body {
+  padding-top:10px;
   overflow: hidden;
   transition: max-height 0.25s ease;
 }

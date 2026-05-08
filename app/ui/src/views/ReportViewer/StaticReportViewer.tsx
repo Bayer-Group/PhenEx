@@ -316,14 +316,14 @@ export const StaticReportViewer: FC = () => {
         }
         center={
           <>
-            <ReportNavPanelCard title="Baseline characteristics">
+            <ReportNavPanelCard title="Outline" background={true}>
               <SectionSelector
+                title="Baseline characteristics"
                 sections={baselineSectionNames}
                 onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
               />
-            </ReportNavPanelCard>
-            <ReportNavPanelCard title="Outcomes">
               <SectionSelector
+                title="Outcomes"
                 sections={outcomesSectionNames}
                 onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
               />
