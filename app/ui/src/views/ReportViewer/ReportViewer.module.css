@@ -1,9 +1,11 @@
 .page {
   position: relative;
   height: 100vh;
+  width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
-  background: #fff;
+  background: green;
+
 }
 
 /* ── Header card (bottom-right) ───────────────────────────────────────── */
@@ -80,6 +82,7 @@
   overflow-y: auto;
   height: 100%;
   width: 100%;
+  background-color: red;
   scrollbar-width: none;
   overflow: hidden;
 }
@@ -93,9 +96,12 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 80px;
+  width: 100%;
+  min-width: 100%;
   margin-left: min(8vw, 120px);
   padding-top: 0px;
   transform-origin: top left;
+  background-color: blue;
 }
 
 .chartPanel {
