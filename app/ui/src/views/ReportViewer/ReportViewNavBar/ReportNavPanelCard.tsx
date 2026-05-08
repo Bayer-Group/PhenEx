@@ -4,9 +4,10 @@ import styles from './ReportNavPanelCard.module.css';
 interface ReportNavPanelCardProps {
   title: string;
   children: ReactNode;
+  background?: boolean;
 }
 
-export const ReportNavPanelCard: FC<ReportNavPanelCardProps> = ({ title, children }) => {
+export const ReportNavPanelCard: FC<ReportNavPanelCardProps> = ({ title, background = false, children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | undefined>(undefined);
@@ -18,7 +19,7 @@ export const ReportNavPanelCard: FC<ReportNavPanelCardProps> = ({ title, childre
   }, [children, collapsed]);
 
   return (
-    <div className={styles.card}>
+    <div className={styles.card + (background ? ` ${styles.background}` : '')}>
       <div className={styles.titleRow}>
         <div className={styles.title}>{title}</div>
         <button

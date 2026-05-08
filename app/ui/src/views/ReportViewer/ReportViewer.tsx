@@ -425,7 +425,7 @@ export const ReportViewer: FC = () => {
         }
         center = {
           <>
-            <ReportNavPanelCard title="Outline">
+            <ReportNavPanelCard title="Outline" background={true}>
               <SectionSelector
                 title="Baseline characteristics"
                 sections={baselineSectionNames}
@@ -435,16 +435,6 @@ export const ReportViewer: FC = () => {
                 title="Outcomes"
                 sections={outcomesSectionNames}
                 onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
-              />
-                            <SectionSelector
-                title="Baseline characteristics"
-                sections={baselineSectionNames}
-                onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
-              />
-                            <SectionSelector
-                title="Baseline characteristics"
-                sections={baselineSectionNames}
-                onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
               />
             </ReportNavPanelCard>
           </>

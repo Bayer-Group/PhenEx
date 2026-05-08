@@ -1,8 +1,7 @@
 .card {
-  padding: 0px 12px 0px 12px;
+  padding: 0px 10px 0px 0px;
   box-sizing: border-box;
   margin-bottom: 0px;
-  border-bottom: var(--line-color) 1px solid;
 }
 
 .titleRow {
@@ -12,7 +11,7 @@
 }
 
 .title {
-  height: 40px;
+  height: 100%;
   display: flex;
   align-items: center;
   font-size: 11px;
@@ -20,6 +19,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #666;
+  padding-bottom: 10px;
 }
 
 .collapseBtn {
@@ -27,6 +27,7 @@
   height: 20px;
   border: none;
   background: none;
+  outline:none;
   color: #999;
   font-size: 14px;
   line-height: 1;
@@ -38,6 +39,10 @@
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
+.collapseBtn:focus {
+  background: none;
+  outline:none;
+}
 
 .collapseBtn:hover {
   background: rgba(0, 0, 0, 0.08);
@@ -47,4 +52,13 @@
 .body {
   overflow: hidden;
   transition: max-height 0.25s ease;
+}
+
+.background{
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  box-sizing: border-box;
+  border: var(--line-color) 1px solid;
 }

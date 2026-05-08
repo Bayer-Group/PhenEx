@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import styles from './SimpleCustomScrollbar.module.css';
 
 export interface SimpleCustomScrollbarProps {
@@ -30,14 +30,10 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     isScrollable: false
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({
-    x: 0,
-    y: 0,
-    scrollTop: 0,
-    scrollLeft: 0
-  });
+  const dragRef = useRef({ startY: 0, startX: 0, startScrollTop: 0, startScrollLeft: 0 });
+  const trackRef = useRef<HTMLDivElement>(null);
 
-  const updateScrollInfo = () => {
+  const updateScrollInfo = useCallback(() => {
     const element = targetRef.current;
     if (!element) return;
 
@@ -61,20 +57,21 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
       clientWidth,
       isScrollable
     });
-  };
+  }, [targetRef, orientation]);
 
   const handleThumbMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const element = targetRef.current;
     if (!element) return;
 
+    dragRef.current = {
+      startY: e.clientY,
+      startX: e.clientX,
+      startScrollTop: element.scrollTop,
+      startScrollLeft: element.scrollLeft,
+    };
     setIsDragging(true);
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY,
-      scrollTop: element.scrollTop,
-      scrollLeft: element.scrollLeft
-    });
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
@@ -88,39 +85,42 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         const clickY = e.clientY - rect.top;
         const trackHeight = rect.height;
         const scrollRatio = clickY / trackHeight;
-        const newScrollTop = scrollRatio * (scrollInfo.scrollHeight - scrollInfo.clientHeight);
-        element.scrollTop = Math.max(0, Math.min(newScrollTop, scrollInfo.scrollHeight - scrollInfo.clientHeight));
+        const maxScroll = element.scrollHeight - element.clientHeight;
+        element.scrollTop = Math.max(0, Math.min(scrollRatio * maxScroll, maxScroll));
       } else {
         const clickX = e.clientX - rect.left;
         const trackWidth = rect.width;
         const scrollRatio = clickX / trackWidth;
-        const newScrollLeft = scrollRatio * (scrollInfo.scrollWidth - scrollInfo.clientWidth);
-        element.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollInfo.scrollWidth - scrollInfo.clientWidth));
+        const maxScroll = element.scrollWidth - element.clientWidth;
+        element.scrollLeft = Math.max(0, Math.min(scrollRatio * maxScroll, maxScroll));
       }
     }
   };
 
   // Mouse move and up handlers
   useEffect(() => {
+    if (!isDragging) return;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      
       const element = targetRef.current;
-      if (!element) return;
+      const track = trackRef.current;
+      if (!element || !track) return;
 
       if (orientation === 'vertical') {
-        const deltaY = e.clientY - dragStart.y;
-        const scrollableHeight = scrollInfo.scrollHeight - scrollInfo.clientHeight;
-        const trackHeight = element.offsetHeight * 0.85; // Approximate track height
+        const deltaY = e.clientY - dragRef.current.startY;
+        const scrollableHeight = element.scrollHeight - element.clientHeight;
+        const trackHeight = track.getBoundingClientRect().height;
+        if (trackHeight === 0 || scrollableHeight === 0) return;
         const scrollDelta = (deltaY / trackHeight) * scrollableHeight;
-        const newScrollTop = dragStart.scrollTop + scrollDelta;
+        const newScrollTop = dragRef.current.startScrollTop + scrollDelta;
         element.scrollTop = Math.max(0, Math.min(newScrollTop, scrollableHeight));
       } else {
-        const deltaX = e.clientX - dragStart.x;
-        const scrollableWidth = scrollInfo.scrollWidth - scrollInfo.clientWidth;
-        const trackWidth = element.offsetWidth * 0.85; // Approximate track width
+        const deltaX = e.clientX - dragRef.current.startX;
+        const scrollableWidth = element.scrollWidth - element.clientWidth;
+        const trackWidth = track.getBoundingClientRect().width;
+        if (trackWidth === 0 || scrollableWidth === 0) return;
         const scrollDelta = (deltaX / trackWidth) * scrollableWidth;
-        const newScrollLeft = dragStart.scrollLeft + scrollDelta;
+        const newScrollLeft = dragRef.current.startScrollLeft + scrollDelta;
         element.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollableWidth));
       }
     };
@@ -129,15 +129,13 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
       setIsDragging(false);
     };
 
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, dragStart, scrollInfo, orientation, targetRef]);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, orientation, targetRef]);
 
   // Set up scroll listeners and observers
   useEffect(() => {
@@ -152,16 +150,27 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     // Set up event listeners
     element.addEventListener('scroll', handleScroll);
     
-    // Set up ResizeObserver
+    // Set up ResizeObserver — observe container and all children
     let resizeObserver: ResizeObserver | null = null;
     if (window.ResizeObserver) {
       resizeObserver = new ResizeObserver(updateScrollInfo);
       resizeObserver.observe(element);
+      for (const child of Array.from(element.children)) {
+        resizeObserver.observe(child);
+      }
     }
 
     // Set up MutationObserver for content changes
     let mutationObserver: MutationObserver | null = null;
-    mutationObserver = new MutationObserver(() => {
+    mutationObserver = new MutationObserver((mutations) => {
+      // Also observe newly added children
+      if (resizeObserver) {
+        for (const m of mutations) {
+          for (const node of Array.from(m.addedNodes)) {
+            if (node instanceof Element) resizeObserver.observe(node);
+          }
+        }
+      }
       requestAnimationFrame(updateScrollInfo);
     });
     mutationObserver.observe(element, {
@@ -182,7 +191,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         mutationObserver.disconnect();
       }
     };
-  }, [targetRef, orientation]);
+  }, [targetRef, orientation, updateScrollInfo]);
 
   // Calculate thumb size and position
   let scrollbarStyle, thumbStyle;
@@ -239,6 +248,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
 
   return (
     <div
+      ref={trackRef}
       className={scrollbarClass}
       onClick={handleTrackClick}
       style={scrollbarStyle}
