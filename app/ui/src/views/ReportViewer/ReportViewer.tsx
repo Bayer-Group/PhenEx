@@ -18,7 +18,9 @@ import {
   fetchWaterfallCombined,
   fetchRunInfo,
   fetchReportAnalysis,
+  fetchKdeCombined,
 } from './ReportViewerDataService';
+import type { KdeCurve } from './types';
 import { getCached, setCache, clearCache, saveSelections, loadSelections, type RunData } from './reportCache';
 import {
   classifyRows,
@@ -38,6 +40,22 @@ function formatRunTimestamp(raw: string): string {
   if (!m) return raw;
   const [, year, month, day, hour, minute] = m;
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${ordinal(parseInt(day, 10))} ${year} @${hour}:${minute} CET`;
+}
+
+/** Merge combined KDE data into each cohort entry's `kdes` field. */
+function mergeKdesIntoEntries(
+  entries: CohortEntry[],
+  kdes: Record<string, Record<string, KdeCurve>>,
+): void {
+  let merged = 0;
+  for (const entry of entries) {
+    const cohortKdes = kdes[entry.cohortName];
+    if (cohortKdes) {
+      entry.data = { ...entry.data, kdes: cohortKdes };
+      merged++;
+    }
+  }
+  console.log(`[mergeKdes] merged KDEs into ${merged}/${entries.length} entries`);
 }
 
 export const ReportViewer: FC = () => {
@@ -107,6 +125,16 @@ export const ReportViewer: FC = () => {
     if (cached) {
       console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts, ${cached.frozenCohorts.length} definitions`);
       applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.frozenCohorts, cached.info, cached.waterfall);
+      // KDEs are not cached (too large) — fetch them separately
+      Promise.all([
+        fetchKdeCombined(runId).catch(() => ({})),
+        fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
+      ]).then(([kdes, outcomesKdes]) => {
+        mergeKdesIntoEntries(cached.entries, kdes);
+        mergeKdesIntoEntries(cached.outcomesEntries, outcomesKdes);
+        setAllCohortEntries([...cached.entries]);
+        setAllOutcomesEntries([...cached.outcomesEntries]);
+      });
       return;
     }
 
@@ -117,10 +145,15 @@ export const ReportViewer: FC = () => {
       fetchFrozenCohortsCombined(runId),
       fetchRunInfo(runId),
       fetchWaterfallCombined(runId).catch(() => ({})),
+      fetchKdeCombined(runId).catch(() => ({})),
+      fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
     ])
-      .then(([entries, outcomesEntries, frozenCohorts, info, waterfall]) => {
-        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${outcomesEntries.length} outcomes, ${frozenCohorts.length} frozen definitions, ${Object.keys(waterfall).length} waterfalls`);
-        const runData: RunData = { entries, outcomesEntries, frozenCohorts, info, waterfall };
+      .then(([entries, outcomesEntries, frozenCohorts, info, waterfall, kdes, outcomesKdes]) => {
+        console.log(`[ReportViewer] loaded ${entries.length} cohorts, ${outcomesEntries.length} outcomes, ${frozenCohorts.length} frozen definitions, ${Object.keys(waterfall).length} waterfalls, ${Object.keys(kdes).length} kdes`);
+        mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
+        mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
+        // Cache without KDEs (too large for localStorage)
+        const runData: RunData = { entries: entries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), outcomesEntries: outcomesEntries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), frozenCohorts, info, waterfall };
         setCache(runId, runData);
         applyLoadedData(runId, entries, outcomesEntries, frozenCohorts, info, waterfall);
       })

@@ -143,6 +143,25 @@ def get_waterfall_combined(run_id: str) -> Dict[str, Any]:
     return _nan_to_none(data)
 
 
+# ── Combined KDE distributions (all cohorts in one file) ─────────────────
+
+@router.get("/report/runs/{run_id}/kde_combined")
+def get_kde_combined(
+    run_id: str,
+    report: str = Query("table1", regex=r"^table1(_outcomes)?$"),
+) -> Dict[str, Any]:
+    """Return combined KDE distributions for all cohorts.
+
+    Reads ``combined_<report>_value_distributions.json`` from the run directory.
+    Returns an empty dict if not found.
+    """
+    filename = f"combined_{report}_value_distributions.json"
+    data = storage.read_run_file(run_id, filename)
+    if data is None:
+        return {}
+    return _nan_to_none(data)
+
+
 # ── Combined table1 (all cohorts in one file) ────────────────────────────
 
 @router.get("/report/runs/{run_id}/table1_combined")

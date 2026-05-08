@@ -168,11 +168,13 @@ const fmt = (v: number | null | undefined) => {
 
 const KDE_W = 300;
 const KDE_H = 60;
+const KDE_AXIS_H = 16; // space for x-axis ticks
+const KDE_TOTAL_H = KDE_H + KDE_AXIS_H;
+const N_TICKS = 5;
 
-function buildKdePath(curve: KdeCurve, w: number, h: number): string {
+function buildKdePath(curve: KdeCurve, w: number, h: number, xMin: number, xMax: number): string {
   const { x, y } = curve;
   if (!x.length) return '';
-  const xMin = x[0], xMax = x[x.length - 1];
   const xRange = xMax - xMin || 1;
   const sx = (v: number) => ((v - xMin) / xRange) * w;
   const sy = (v: number) => h - (v / 100) * h;
@@ -181,6 +183,14 @@ function buildKdePath(curve: KdeCurve, w: number, h: number): string {
     d += `L${sx(x[i])},${sy(y[i])}`;
   }
   return d;
+}
+
+function fmtTick(v: number): string {
+  const abs = Math.abs(v);
+  if (abs >= 1000) return v.toFixed(0);
+  if (abs >= 10) return v.toFixed(0);
+  if (abs >= 1) return v.toFixed(1);
+  return v.toPrecision(2);
 }
 
 const NumericRow: FC<{
@@ -196,22 +206,47 @@ const NumericRow: FC<{
     })
     .filter(Boolean) as { color: string; curve: KdeCurve; cohortName: string }[];
 
+  // Compute global x range across all curves
+  let gMin = Infinity, gMax = -Infinity;
+  for (const c of curves) {
+    const xs = c.curve.x;
+    if (xs.length) {
+      if (xs[0] < gMin) gMin = xs[0];
+      if (xs[xs.length - 1] > gMax) gMax = xs[xs.length - 1];
+    }
+  }
+  if (!isFinite(gMin)) { gMin = 0; gMax = 1; }
+
   return (
     <div className={styles.numericRow}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.kdeCell}>
         {curves.length > 0 ? (
-          <svg width={KDE_W} height={KDE_H} className={styles.kdeSvg}>
+          <svg width={KDE_W} height={KDE_TOTAL_H} className={styles.kdeSvg}>
             {curves.map((c) => (
               <path
                 key={c.cohortName}
-                d={buildKdePath(c.curve, KDE_W, KDE_H)}
+                d={buildKdePath(c.curve, KDE_W, KDE_H, gMin, gMax)}
                 fill="none"
                 stroke={c.color}
                 strokeWidth={1.5}
                 opacity={0.85}
               />
             ))}
+            {/* x-axis ticks */}
+            {Array.from({ length: N_TICKS + 1 }, (_, i) => {
+              const frac = i / N_TICKS;
+              const val = gMin + frac * (gMax - gMin);
+              const px = frac * KDE_W;
+              return (
+                <g key={i}>
+                  <line x1={px} y1={KDE_H} x2={px} y2={KDE_H + 4} stroke="#999" strokeWidth={0.5} />
+                  <text x={px} y={KDE_H + 14} textAnchor="middle" fontSize={9} fill="#999">
+                    {fmtTick(val)}
+                  </text>
+                </g>
+              );
+            })}
           </svg>
         ) : (
           <div className={styles.kdeEmpty}>no distribution</div>

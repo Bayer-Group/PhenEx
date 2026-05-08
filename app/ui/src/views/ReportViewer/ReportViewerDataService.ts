@@ -111,6 +111,18 @@ export async function fetchWaterfallCombined(
   return data;
 }
 
+/** Fetch combined KDE distributions for all cohorts in a single request. */
+export async function fetchKdeCombined(
+  runId: string,
+  report: 'table1' | 'table1_outcomes' = 'table1',
+): Promise<Record<string, Record<string, KdeCurve>>> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/kde_combined`;
+  console.log(`[DataService] GET ${url}`);
+  const { data } = await api.get<Record<string, Record<string, KdeCurve>>>(url, { params: { report } });
+  console.log(`[DataService] kde_combined: ${Object.keys(data).length} cohorts`);
+  return data;
+}
+
 /** Request AI analysis comparing selected cohorts. */
 export async function fetchReportAnalysis(
   runId: string,
