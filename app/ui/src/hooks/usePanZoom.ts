@@ -19,8 +19,10 @@ export interface UsePanZoomOptions {
   minScale?: number;
   maxScale?: number;
   initialTransform?: Transform;
-  /** Extra pixels of allowed overscroll beyond content edges (default 0). */
-  padding?: number;
+  /** Horizontal overscroll pixels beyond content edges (default 100). */
+  paddingX?: number;
+  /** Vertical overscroll pixels beyond content edges (default 400). */
+  paddingY?: number;
   /** localStorage key for persisting transform state. */
   storageKey?: string;
 }
@@ -52,7 +54,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
 
   const {
     minScale = 0.1,
-    maxScale = 2,
+    maxScale = 1.2,
     initialTransform = { x: 0, y: 0, scale: 1 },
   } = options;
 
@@ -95,23 +97,24 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
   }
 
   function getBounds() {
-    const pad = getOpt('padding', 0);
+    const padX = getOpt('paddingX', 1000);
+    const padY = getOpt('paddingY', 400);
     const vp = vpDims();
     const s = t.current.scale;
     const cw = cs.current.w * s;
     const ch = cs.current.h * s;
 
-    const axis = (visual: number, viewport: number) => {
+    const axis = (visual: number, viewport: number, pad: number) => {
       if (visual <= viewport) {
-        // Content fits — lock to centered position
+        // Content fits — allow padding around the centered position
         const center = (viewport - visual) / 2;
-        return { min: center, max: center };
+        return { min: center - pad, max: center + pad };
       }
       return { min: viewport - visual - pad, max: pad };
     };
 
-    const h = axis(cw, vp.w);
-    const v = axis(ch, vp.h);
+    const h = axis(cw, vp.w, padX);
+    const v = axis(ch, vp.h, padY);
     return { minX: h.min, maxX: h.max, minY: v.min, maxY: v.max };
   }
 
@@ -132,7 +135,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     const canH = cw > vp.w;
     if (hTrackRef.current) hTrackRef.current.style.display = canH ? '' : 'none';
     if (canH && hThumbRef.current) {
-      const size = Math.max(0.05, vp.w / (cw + (getOpt('padding', 0)) * 2));
+      const size = Math.max(0.05, vp.w / (cw + (getOpt('paddingX', 100)) * 2));
       const range = b.maxX - b.minX;
       const pos = range > 0 ? clamp((b.maxX - t.current.x) / range, 0, 1) : 0;
       hThumbRef.current.style.width = `${size * 100}%`;
@@ -144,7 +147,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     const canV = ch > vp.h;
     if (vTrackRef.current) vTrackRef.current.style.display = canV ? '' : 'none';
     if (canV && vThumbRef.current) {
-      const size = Math.max(0.05, vp.h / (ch + (getOpt('padding', 0)) * 2));
+      const size = Math.max(0.05, vp.h / (ch + (getOpt('paddingY', 400)) * 2));
       const range = b.maxY - b.minY;
       const pos = range > 0 ? clamp((b.maxY - t.current.y) / range, 0, 1) : 0;
       vThumbRef.current.style.height = `${size * 100}%`;

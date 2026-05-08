@@ -2,9 +2,9 @@
 
 .hTrack {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
-  right: 18px; /* avoid overlap with vertical track */
+  bottom: 20px;
+  left: 40px;
+  right: 50px; /* avoid overlap with vertical track */
   height: 8px;
   border-radius: 4px;
   z-index: 20;
@@ -12,9 +12,9 @@
 
 .vTrack {
   position: absolute;
-  right: 6px;
-  top: 6px;
-  bottom: 18px; /* avoid overlap with horizontal track */
+  right: 20px;
+  top: 40px;
+  bottom: 50px; /* avoid overlap with horizontal track */
   width: 8px;
   border-radius: 4px;
   z-index: 20;
