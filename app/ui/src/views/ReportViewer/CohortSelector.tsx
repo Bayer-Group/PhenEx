@@ -19,7 +19,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onAdd,
   onRemove,
 }) => {
-  const { hoveredIndex } = useBarHoverStore();
+  const { activeIndex } = useBarHoverStore();
   const [menuState, setMenuState] = useState<{
     type: 'replace' | 'add';
     index: number;
@@ -65,7 +65,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         <LegendItem
           key={`${sel.cohortName}-${sel.colorIndex}`}
           selection={sel}
-          dimmed={hoveredIndex !== null && hoveredIndex !== i}
+          dimmed={activeIndex !== null && activeIndex !== i}
           onClick={(el) => handleItemClick(i, el)}
           onRemove={() => onRemove(i)}
         />
