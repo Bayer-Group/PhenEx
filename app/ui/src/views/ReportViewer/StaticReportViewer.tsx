@@ -8,8 +8,8 @@
  */
 import { FC, useState, useCallback, useMemo, useRef } from 'react';
 import styles from './ReportViewer.module.css';
-import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar';
-import { useViewZoom } from '../../hooks/useViewZoom';
+import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
+import { usePanZoom } from '../../hooks/usePanZoom';
 import { CohortSelector } from './CohortSelector';
 import { CharacteristicsChart } from './CharacteristicsChart';
 import { AttritionChart } from './AttritionChart';
@@ -260,11 +260,10 @@ export const StaticReportViewer: FC = () => {
   );
 
   // ── View zoom ─────────────────────────────────────────────────────────
-  const contentRef = useRef<HTMLDivElement>(null);
   const baselineSectionRefs = useRef(new Map<string, HTMLDivElement>());
   const outcomesSectionRefs = useRef(new Map<string, HTMLDivElement>());
 
-  const { viewportRef, transformRef, zoomPercentage, setZoomPercentage, panTo } = useViewZoom({
+  const pz = usePanZoom({
     minScale: 0.1,
     maxScale: 1.4,
     initialTransform: { x: 0, y: 0, scale: 1 },
@@ -276,7 +275,7 @@ export const StaticReportViewer: FC = () => {
   const scrollToSection = useCallback(
     (name: string, refs: Map<string, HTMLDivElement>) => {
       const el = refs.get(name);
-      const contentInner = transformRef.current;
+      const contentInner = pz.contentRef.current;
       if (!el || !contentInner) return;
       let top = 0;
       let current: HTMLElement | null = el;
@@ -284,9 +283,9 @@ export const StaticReportViewer: FC = () => {
         top += current.offsetTop;
         current = current.offsetParent as HTMLElement | null;
       }
-      panTo(0, top);
+      pz.panToContent(0, top);
     },
-    [panTo, transformRef],
+    [pz],
   );
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -333,22 +332,19 @@ export const StaticReportViewer: FC = () => {
         }
         bottom={
           <ReportNavPanelCard title="Zoom">
-            <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
+            <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
           </ReportNavPanelCard>
         }
       />
 
       <div
         className={styles.content}
-        ref={(el) => {
-          (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-          (viewportRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-        }}
+        ref={pz.viewportRef}
       >
         <div className={styles.bottomGradient} />
         <div className={styles.topGradient} />
 
-        <div className={styles.contentInner} ref={transformRef}>
+        <div className={styles.contentInner} ref={pz.contentRef}>
           {!cohortData.length && (
             <div className={styles.empty}>Select one or more cohorts to view data.</div>
           )}
@@ -381,8 +377,8 @@ export const StaticReportViewer: FC = () => {
             </>
           )}
         </div>
+        <PanZoomScrollbar {...pz.scrollbar} />
       </div>
-      <SimpleCustomScrollbar targetRef={contentRef} marginToEnd={15} marginBottom={30} marginTop={30} />
     </div>
   );
 };
