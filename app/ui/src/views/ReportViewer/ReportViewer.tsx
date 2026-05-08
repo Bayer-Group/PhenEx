@@ -276,6 +276,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
       <ReportNavPanel
         top={
+          <>
           <ReportNavPanelCard title="Visible cohorts">
             <CohortSelector
               groups={groups}
@@ -285,9 +286,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
             />
           </ReportNavPanelCard>
-        }
-        center={
-          <ReportNavPanelCard title="Outline" background={true}>
+          <div style={{ height: 20}} />
+          <ReportNavPanelCard title="Outline" background={false}>
             <SectionSelector
               title="Baseline characteristics"
               sections={baselineSectionNames}
@@ -299,7 +299,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
             />
           </ReportNavPanelCard>
+          </>
         }
+
         bottom={
           <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
         }
