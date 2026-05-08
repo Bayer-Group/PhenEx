@@ -123,8 +123,12 @@ export const ReportViewer: FC = () => {
     console.debug(`[ReportViewer] loadRun ${runId} — cache ${cached ? 'HIT' : 'MISS'}`);
 
     if (cached) {
-      console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts, ${cached.frozenCohorts.length} definitions`);
-      applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.frozenCohorts, cached.info, cached.waterfall);
+      console.log(`[ReportViewer] from cache: ${cached.entries.length} cohorts`);
+      // Frozen cohorts not cached (too large) — fetch separately
+      const frozenPromise = fetchFrozenCohortsCombined(runId).catch(() => []);
+      frozenPromise.then((frozenCohorts) => {
+        applyLoadedData(runId, cached.entries, cached.outcomesEntries, frozenCohorts, cached.info, cached.waterfall);
+      });
       // KDEs are not cached (too large) — fetch them separately
       Promise.all([
         fetchKdeCombined(runId).catch(() => ({})),
@@ -153,7 +157,7 @@ export const ReportViewer: FC = () => {
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
         // Cache without KDEs (too large for localStorage)
-        const runData: RunData = { entries: entries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), outcomesEntries: outcomesEntries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), frozenCohorts, info, waterfall };
+        const runData: RunData = { entries: entries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), outcomesEntries: outcomesEntries.map(e => ({...e, data: {rows: e.data.rows, sections: e.data.sections}})), info, waterfall };
         setCache(runId, runData);
         applyLoadedData(runId, entries, outcomesEntries, frozenCohorts, info, waterfall);
       })
@@ -407,11 +411,21 @@ export const ReportViewer: FC = () => {
         top={
           <div style={{ height: 100 }} />
         }
-        bottom={
+        top = {
           <>
-            <ReportNavPanelCard title="Zoom">
-              <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
+          <ReportNavPanelCard title="Visible cohorts">
+              <CohortSelector
+                groups={groups}
+                selections={selections}
+                onReplace={handleReplace}
+                onAdd={handleAdd}
+                onRemove={(index) => setSelections((prev) => prev.filter((_, i) => i !== index))}
+              />
             </ReportNavPanelCard>
+          </>
+        }
+        center = {
+          <>
             <ReportNavPanelCard title="Baseline characteristics">
               <SectionSelector
                 sections={baselineSectionNames}
@@ -424,14 +438,12 @@ export const ReportViewer: FC = () => {
                 onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
               />
             </ReportNavPanelCard>
-            <ReportNavPanelCard title="Visible cohorts">
-              <CohortSelector
-                groups={groups}
-                selections={selections}
-                onReplace={handleReplace}
-                onAdd={handleAdd}
-                onRemove={(index) => setSelections((prev) => prev.filter((_, i) => i !== index))}
-              />
+          </>
+        }
+        bottom={
+          <>
+            <ReportNavPanelCard title="Zoom">
+              <ZoomScrubber percentage={zoomPercentage} onChange={setZoomPercentage} />
             </ReportNavPanelCard>
           </>
         }

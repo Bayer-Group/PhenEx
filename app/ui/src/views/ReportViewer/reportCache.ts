@@ -16,7 +16,6 @@ const SEL_PREFIX = 'phenex:report:sel:';
 export interface RunData {
   entries: CohortEntry[];
   outcomesEntries: CohortEntry[];
-  frozenCohorts: Record<string, unknown>[];
   info: Record<string, string>;
   waterfall: Record<string, unknown>;
 }

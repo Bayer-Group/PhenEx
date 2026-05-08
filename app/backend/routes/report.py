@@ -155,7 +155,7 @@ def get_kde_combined(
     Reads ``combined_<report>_value_distributions.json`` from the run directory.
     Returns an empty dict if not found.
     """
-    filename = f"combined_{report}_value_distributions.json"
+    filename = f"{report}_value_distributions.json"
     data = storage.read_run_file(run_id, filename)
     if data is None:
         return {}
