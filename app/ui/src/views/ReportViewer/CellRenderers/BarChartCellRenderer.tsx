@@ -25,6 +25,13 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
 
   return (
     <div className={styles.container}>
+      {/* Header row */}
+      <div className={styles.headerRow}>
+        <div className={styles.headerPct}>%</div>
+        <div className={styles.headerBar} />
+        <div className={styles.headerN}>N</div>
+      </div>
+
       {/* Grid lines positioned over the bar column */}
       <div className={styles.gridOverlay} style={{ left: '15%', width: '60%' }}>
         {allTicks.map((t) => (

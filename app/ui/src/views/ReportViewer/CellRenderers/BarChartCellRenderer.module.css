@@ -28,10 +28,42 @@
 }
 
 /* ── Rows ──────────────────────────────────────────────────────────────── */
+.headerRow {
+  display: flex;
+  align-items: center;
+  height: var(--HEIGHT_TABLE1_ROW_BOOLEAN_TOP);
+}
+
+.headerPct {
+  width: 15%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  text-align: right;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  white-space: nowrap;
+}
+
+.headerBar {
+  width: 60%;
+  flex-shrink: 0;
+}
+
+.headerN {
+  flex: 1;
+  text-align: left;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  white-space: nowrap;
+}
+
 .rows {
   position: relative;
   z-index: 1;
-  padding-top: var(--HEIGHT_TABLE1_ROW_BOOLEAN_TOP);
 }
 
 .cohortRow { /* This is a bar row*/
