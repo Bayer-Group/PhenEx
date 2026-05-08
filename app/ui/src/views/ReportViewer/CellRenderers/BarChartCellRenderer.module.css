@@ -74,10 +74,12 @@
 /* ── N cell (right) ───────────────────────────────────────────────────── */
 .nCell {
   flex: 1;
-  text-align: right;
-  padding-right: 4px;
-  font-size: var(--font_size_infotext, 12px);
-  color: var(--color_inactive, #999);
+  text-align: left;
+  padding-left: 10px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  
+  font-size: 12px;
+  color: #333;
   white-space: nowrap;
   line-height: 16px;
   transition: opacity 0.15s ease;

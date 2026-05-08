@@ -16,7 +16,7 @@ import sectionStyles from './ReportViewer.module.css';
 const BAR_ROW_H = 16;
 const ROW_PADDING_TOP = 20;
 const ROW_PADDING_BOTTOM = 20;
-const STAT_KEYS = ['N', 'Mean', 'STD', 'Median', 'Min', 'Max'] as const;
+const STAT_KEYS = ['Mean', 'STD', 'Median', 'Min', 'Max'] as const;
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
@@ -263,6 +263,8 @@ const NumericRow: FC<{
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
           <div className={styles.statsCohortCell} />
+          <div className={styles.statsPctHeaderCell}>%</div>
+          <div className={styles.statsNHeaderCell}>N</div>
           {STAT_KEYS.map((k) => (
             <div key={k} className={styles.statsHeaderCell}>{k}</div>
           ))}
@@ -280,6 +282,12 @@ const NumericRow: FC<{
             >
               <div className={styles.statsCohortCell}>
                 <span className={styles.statDot} style={{ backgroundColor: cd.color }} />
+              </div>
+              <div className={styles.statsPctCell}>
+                {row.Pct != null ? `${Math.round(row.Pct * 10) / 10}` : '–'}
+              </div>
+              <div className={styles.statsNCell}>
+                {row.N != null ? row.N.toLocaleString() : '–'}
               </div>
               {STAT_KEYS.map((k) => (
                 <div key={k} className={styles.statsValueCell}>
