@@ -37,15 +37,15 @@ export const CohortMenu: FC<CohortMenuProps> = ({
     return () => document.removeEventListener('mousedown', handle);
   }, [onClose]);
 
-  // Compute position: above anchor, anchored to bottom-right of viewport
+  // Compute position: below anchor, anchored to right
   const computeStyle = useCallback((): React.CSSProperties => {
-    const bottom = window.innerHeight - anchorRect.top + 4;
+    const top = anchorRect.bottom + 4;
     const right = window.innerWidth - anchorRect.right;
     return {
       position: 'fixed',
-      bottom: Math.max(bottom, 8),
+      top: Math.max(top, 8),
       right: Math.max(right, 8),
-      maxHeight: window.innerHeight - 16,
+      maxHeight: window.innerHeight - top - 8,
     };
   }, [anchorRect]);
 
